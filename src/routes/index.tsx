@@ -1,6 +1,7 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { CATEGORIES } from "@/lib/categories";
 import { useAuth } from "@/hooks/use-auth";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -33,12 +34,15 @@ function Home() {
           <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Golfträning</p>
           <h1 className="text-5xl leading-none">Tester</h1>
         </div>
+        <div className="flex items-center gap-2">
+        <ThemeToggle />
         <Link
           to="/konto"
           className="rounded-full border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
         >
           {displayName ?? (user ? "Konto" : "Logga in")}
         </Link>
+        </div>
       </header>
 
       <nav className="mt-5 grid grid-cols-2 gap-2">
