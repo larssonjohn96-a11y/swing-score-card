@@ -298,6 +298,13 @@ function CombinePage() {
                 {combineScore(analysis).toFixed(1)}
               </span>
             </div>
+            {analysisProxPct !== null ? (
+              <p className="mt-1 text-sm text-muted-foreground">
+                Snittproximity approach:{" "}
+                <span className="text-foreground">{analysisProxPct.toFixed(1)} %</span> av
+                slaglängden
+              </p>
+            ) : null}
             {bestStation && worstStation ? (
               <p className="mt-2 text-sm">
                 Bäst:{" "}
@@ -320,11 +327,23 @@ function CombinePage() {
                 >
                   <span className="text-muted-foreground">{s.station.label}</span>
                   <span>
-                    {s.score.toFixed(0)} p · {s.avg.toFixed(1)} m{s.station.driver ? " carry" : ""}
+                    {s.score.toFixed(0)} p · {s.avg.toFixed(1)} m
+                    {s.station.driver
+                      ? ` carry${
+                          s.avgOffline !== null
+                            ? ` · ${s.avgOffline.toFixed(1)} m offline${
+                                s.avgOfflinePct !== null ? ` (${s.avgOfflinePct.toFixed(1)} %)` : ""
+                              }`
+                            : ""
+                        }`
+                      : s.avgPct !== null
+                        ? ` (${s.avgPct.toFixed(1)} %)`
+                        : ""}
                   </span>
                 </div>
               ))}
             </div>
+
           </section>
 
           <ChartCard
