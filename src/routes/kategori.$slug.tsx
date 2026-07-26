@@ -4,6 +4,7 @@ import { findCategory, CATEGORIES, type Category, type CategoryTest } from "@/li
 import { formatScore, loadSessions } from "@/lib/drill";
 import { loadBunkerSessions } from "@/lib/bunker";
 import { loadSpeedEntries } from "@/lib/speed";
+import { loadLongDriveSessions, sessionBest } from "@/lib/longdrive";
 
 export const Route = createFileRoute("/kategori/$slug")({
   loader: ({ params }) => {
@@ -52,7 +53,11 @@ function CategoryPage() {
     const d = loadSessions();
     const b = loadBunkerSessions();
     const sp = loadSpeedEntries();
+    const ld = loadLongDriveSessions();
     setLast({
+      "/longdrive": ld.length
+        ? `Senast ${sessionBest(ld[ld.length - 1]).toFixed(0)} ${ld[ld.length - 1].unit} längsta carry`
+        : undefined,
       "/speed": sp.length
         ? `Senast ${sp[sp.length - 1].ballSpeed.toFixed(1)} mph ball speed`
         : undefined,
