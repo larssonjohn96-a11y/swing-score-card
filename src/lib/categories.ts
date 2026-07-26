@@ -7,7 +7,6 @@ export type CategoryTest = {
     | "/fairway"
     | "/teeshot"
     | "/wedge"
-    | "/combine"
     | "/shaping"
     | "/par3";
 
