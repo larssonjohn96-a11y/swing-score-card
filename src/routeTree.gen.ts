@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as KontoRouteImport } from './routes/konto'
 import { Route as HistorikRouteImport } from './routes/historik'
 import { Route as DrillRouteImport } from './routes/drill'
 import { Route as BunkerRouteImport } from './routes/bunker'
@@ -18,6 +19,11 @@ import { Route as IndexRouteImport } from './routes/index'
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KontoRoute = KontoRouteImport.update({
+  id: '/konto',
+  path: '/konto',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HistorikRoute = HistorikRouteImport.update({
@@ -46,6 +52,7 @@ export interface FileRoutesByFullPath {
   '/bunker': typeof BunkerRoute
   '/drill': typeof DrillRoute
   '/historik': typeof HistorikRoute
+  '/konto': typeof KontoRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
 }
 export interface FileRoutesByTo {
@@ -53,6 +60,7 @@ export interface FileRoutesByTo {
   '/bunker': typeof BunkerRoute
   '/drill': typeof DrillRoute
   '/historik': typeof HistorikRoute
+  '/konto': typeof KontoRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
 }
 export interface FileRoutesById {
@@ -61,14 +69,28 @@ export interface FileRoutesById {
   '/bunker': typeof BunkerRoute
   '/drill': typeof DrillRoute
   '/historik': typeof HistorikRoute
+  '/konto': typeof KontoRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/bunker' | '/drill' | '/historik' | '/sitemap.xml'
+  fullPaths:
+    | '/'
+    | '/bunker'
+    | '/drill'
+    | '/historik'
+    | '/konto'
+    | '/sitemap.xml'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/bunker' | '/drill' | '/historik' | '/sitemap.xml'
-  id: '__root__' | '/' | '/bunker' | '/drill' | '/historik' | '/sitemap.xml'
+  to: '/' | '/bunker' | '/drill' | '/historik' | '/konto' | '/sitemap.xml'
+  id:
+    | '__root__'
+    | '/'
+    | '/bunker'
+    | '/drill'
+    | '/historik'
+    | '/konto'
+    | '/sitemap.xml'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -76,6 +98,7 @@ export interface RootRouteChildren {
   BunkerRoute: typeof BunkerRoute
   DrillRoute: typeof DrillRoute
   HistorikRoute: typeof HistorikRoute
+  KontoRoute: typeof KontoRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
 }
 
@@ -86,6 +109,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/konto': {
+      id: '/konto'
+      path: '/konto'
+      fullPath: '/konto'
+      preLoaderRoute: typeof KontoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/historik': {
@@ -124,6 +154,7 @@ const rootRouteChildren: RootRouteChildren = {
   BunkerRoute: BunkerRoute,
   DrillRoute: DrillRoute,
   HistorikRoute: HistorikRoute,
+  KontoRoute: KontoRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
 }
 export const routeTree = rootRouteImport
