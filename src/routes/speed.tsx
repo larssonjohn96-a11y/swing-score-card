@@ -210,86 +210,87 @@ function SpeedPage() {
       </section>
 
       {entries.length > 1 ? (
-        <section className="mt-6 rounded-3xl border border-border bg-card p-5">
-          <h2 className="text-sm uppercase tracking-[0.25em] text-muted-foreground">
-            Utveckling över tid
-          </h2>
-          <div className="mt-4 h-56 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ top: 5, right: 8, bottom: 0, left: -20 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                <XAxis dataKey="label" tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
-                <YAxis tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" domain={["auto", "auto"]} />
-                <Tooltip
-                  contentStyle={{
-                    background: "var(--color-card)",
-                    border: "1px solid var(--color-border)",
-                    borderRadius: 12,
-                    fontSize: 12,
+        <ChartCard
+          title="Utveckling över tid"
+          footer={
+            <p className="text-xs text-muted-foreground">
+              Streckade linjer: alla nivåer från 30 hcp till tourens long hitters. Tryck på grafen
+              för helskärm.
+            </p>
+          }
+        >
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData} margin={{ top: 5, right: 8, bottom: 0, left: -20 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+              <XAxis dataKey="label" tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
+              <YAxis tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" domain={["auto", "auto"]} />
+              <Tooltip
+                contentStyle={{
+                  background: "var(--color-card)",
+                  border: "1px solid var(--color-border)",
+                  borderRadius: 12,
+                  fontSize: 12,
+                }}
+              />
+              {LEVELS.map((l) => (
+                <ReferenceLine
+                  key={`ball-${l.key}`}
+                  y={l.ballSpeed}
+                  stroke="var(--color-flag)"
+                  strokeDasharray="5 5"
+                  label={{
+                    value: `${l.label} ${l.ballSpeed}`,
+                    position: "insideTopRight",
+                    fontSize: 10,
+                    fill: "var(--color-muted-foreground)",
                   }}
                 />
-                {[
-                  { y: TOUR_TOP5.ballSpeed, text: `Long hitters ${TOUR_TOP5.ballSpeed}` },
-                  { y: TOUR.ballSpeed, text: `Tour ${TOUR.ballSpeed}` },
-                  { y: HCP.scratch.ballSpeed, text: `0 hcp ${HCP.scratch.ballSpeed}` },
-                  { y: HCP.ten.ballSpeed, text: `10 hcp ${HCP.ten.ballSpeed}` },
-                  { y: HCP.twenty.ballSpeed, text: `20 hcp ${HCP.twenty.ballSpeed}` },
-                ].map((r) => (
-                  <ReferenceLine
-                    key={`ball-${r.y}`}
-                    y={r.y}
-                    stroke="var(--color-flag)"
-                    strokeDasharray="5 5"
-                    label={{ value: r.text, position: "insideTopRight", fontSize: 10, fill: "var(--color-muted-foreground)" }}
-                  />
-                ))}
-                {hasClub
-                  ? [
-                      { y: TOUR_TOP5.clubSpeed, text: `CHS long hitters ${TOUR_TOP5.clubSpeed}` },
-                      { y: TOUR.clubSpeed, text: `CHS tour ${TOUR.clubSpeed}` },
-                      { y: HCP.scratch.clubSpeed, text: `CHS 0 hcp ${HCP.scratch.clubSpeed}` },
-                      { y: HCP.ten.clubSpeed, text: `CHS 10 hcp ${HCP.ten.clubSpeed}` },
-                      { y: HCP.twenty.clubSpeed, text: `CHS 20 hcp ${HCP.twenty.clubSpeed}` },
-                    ].map((r) => (
-                      <ReferenceLine
-                        key={`club-${r.y}`}
-                        y={r.y}
-                        stroke="var(--color-muted-foreground)"
-                        strokeDasharray="2 6"
-                        label={{ value: r.text, position: "insideBottomLeft", fontSize: 10, fill: "var(--color-muted-foreground)" }}
-                      />
-                    ))
-                  : null}
+              ))}
+              {hasClub
+                ? LEVELS.map((l) => (
+                    <ReferenceLine
+                      key={`club-${l.key}`}
+                      y={l.clubSpeed}
+                      stroke="var(--color-muted-foreground)"
+                      strokeDasharray="2 6"
+                      label={{
+                        value: `CHS ${l.label} ${l.clubSpeed}`,
+                        position: "insideBottomLeft",
+                        fontSize: 10,
+                        fill: "var(--color-muted-foreground)",
+                      }}
+                    />
+                  ))
+                : null}
+              <Line
+                type="monotone"
+                dataKey="ball"
+                name="Ball speed"
+                stroke="var(--color-primary)"
+                strokeWidth={3}
+                connectNulls
+                isAnimationActive={false}
+                dot={{ r: 4, fill: "var(--color-primary)", stroke: "var(--color-card)", strokeWidth: 2 }}
+                activeDot={{ r: 6 }}
+              />
+              {hasClub ? (
                 <Line
                   type="monotone"
-                  dataKey="ball"
-                  name="Ball speed"
-                  stroke="var(--color-primary)"
+                  dataKey="club"
+                  name="Club head speed"
+                  stroke="var(--color-flag)"
                   strokeWidth={3}
                   connectNulls
                   isAnimationActive={false}
-                  dot={{ r: 4, fill: "var(--color-primary)", stroke: "var(--color-card)", strokeWidth: 2 }}
+                  dot={{ r: 4, fill: "var(--color-flag)", stroke: "var(--color-card)", strokeWidth: 2 }}
                   activeDot={{ r: 6 }}
                 />
-                {hasClub ? (
-                  <Line
-                    type="monotone"
-                    dataKey="club"
-                    name="Club head speed"
-                    stroke="var(--color-flag)"
-                    strokeWidth={3}
-                    connectNulls
-                    isAnimationActive={false}
-                    dot={{ r: 4, fill: "var(--color-flag)", stroke: "var(--color-card)", strokeWidth: 2 }}
-                    activeDot={{ r: 6 }}
-                  />
-                ) : null}
-              </LineChart>
-
-            </ResponsiveContainer>
-          </div>
-        </section>
+              ) : null}
+            </LineChart>
+          </ResponsiveContainer>
+        </ChartCard>
       ) : null}
+
 
       {entries.length ? (
         <section className="mt-6">
