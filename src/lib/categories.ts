@@ -17,56 +17,6 @@ export type Category = {
 
 export const CATEGORIES: Category[] = [
   {
-    slug: "around-the-green",
-    title: "Around the green",
-    subtitle: "Shortgame",
-    description: "Chip, pitch och bunkerslag runt greenen.",
-    tests: [
-      {
-        to: "/bunker",
-        number: "3",
-        title: "Bunkerslag",
-        subtitle: "6 olika lägen",
-        bullets: ["Varierande avstånd och lägen.", "1 boll från varje position."],
-        result: "RESULTAT: MÄT AVSTÅNDET TILL HÅLET I FOT",
-      },
-    ],
-  },
-  {
-    slug: "puttning",
-    title: "Puttning",
-    subtitle: "På greenen",
-    description: "Tester för längdkänsla och korta puttar.",
-    tests: [],
-  },
-  {
-    slug: "approach",
-    title: "Approach",
-    subtitle: "Inspel mot green",
-    description: "Precision på fulla och halva inspel.",
-    tests: [
-      {
-        to: "/drill",
-        number: "1",
-        title: "18 bollar - jÖNKÖPINGS RAnGE",
-        subtitle: "75 / 125 / 150 meter",
-        bullets: ["2 bollar per avstånd innan du går vidare.", "Tre varv ger 3.0 i score."],
-        result: "RESULTAT: SCORE 0–3.0",
-      },
-      {
-        to: "/wedge",
-        number: "7",
-        title: "Wedge matrix",
-        subtitle: "20 slag – 40 till 120 m",
-        bullets: [
-          "5 avstånd × 2 bollar × 2 varv.",
-          "Mät avstånd till hål – snitt och spridning per avstånd.",
-        ],
-        result: "RESULTAT: MEDELPROXIMITY + SPRIDNING",
-      },
-    ],
-  },
-  {
     slug: "combine",
     title: "Combine",
     subtitle: "Approach + driving",
@@ -125,6 +75,56 @@ export const CATEGORIES: Category[] = [
         result: "RESULTAT: TOTALPOÄNG 0–100",
       },
     ],
+  },
+  {
+    slug: "approach",
+    title: "Approach",
+    subtitle: "Inspel mot green",
+    description: "Precision på fulla och halva inspel.",
+    tests: [
+      {
+        to: "/drill",
+        number: "1",
+        title: "18 bollar - jÖNKÖPINGS RAnGE",
+        subtitle: "75 / 125 / 150 meter",
+        bullets: ["2 bollar per avstånd innan du går vidare.", "Tre varv ger 3.0 i score."],
+        result: "RESULTAT: SCORE 0–3.0",
+      },
+      {
+        to: "/wedge",
+        number: "7",
+        title: "Wedge matrix",
+        subtitle: "20 slag – 40 till 120 m",
+        bullets: [
+          "5 avstånd × 2 bollar × 2 varv.",
+          "Mät avstånd till hål – snitt och spridning per avstånd.",
+        ],
+        result: "RESULTAT: MEDELPROXIMITY + SPRIDNING",
+      },
+    ],
+  },
+  {
+    slug: "around-the-green",
+    title: "Around the green",
+    subtitle: "Shortgame",
+    description: "Chip, pitch och bunkerslag runt greenen.",
+    tests: [
+      {
+        to: "/bunker",
+        number: "3",
+        title: "Bunkerslag",
+        subtitle: "6 olika lägen",
+        bullets: ["Varierande avstånd och lägen.", "1 boll från varje position."],
+        result: "RESULTAT: MÄT AVSTÅNDET TILL HÅLET I FOT",
+      },
+    ],
+  },
+  {
+    slug: "puttning",
+    title: "Puttning",
+    subtitle: "På greenen",
+    description: "Tester för längdkänsla och korta puttar.",
+    tests: [],
   },
 ];
 
