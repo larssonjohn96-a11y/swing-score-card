@@ -1,8 +1,11 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { CATEGORIES } from "@/lib/categories";
 import { useAuth } from "@/hooks/use-auth";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { TrainingFocus } from "@/components/training-focus";
+import { PlayerHcpCard } from "@/components/player-hcp-card";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
