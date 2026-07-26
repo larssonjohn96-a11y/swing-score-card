@@ -8,16 +8,16 @@ import { TrainingFocus } from "@/components/training-focus";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Golftester – shortgame, puttning, approach & driving" },
+      { title: "SG4 – Testa hela ditt spel och sänk ditt handicap" },
       {
         name: "description",
         content:
-          "Alla dina golftester i fyra kategorier: around the green, puttning, approach och driving. Kör testerna och följ utvecklingen över tid.",
+          "SG4 mäter ditt spel i fyra kategorier: driving, approach, around the green och puttning. Kör testerna, följ utvecklingen och få personliga träningsprogram.",
       },
-      { property: "og:title", content: "Golftester – fyra kategorier" },
+      { property: "og:title", content: "SG4 – Testa hela ditt spel" },
       {
         property: "og:description",
-        content: "Välj kategori, kör dina tester och följ utvecklingen över tid.",
+        content: "Mät, följ och förbättra ditt golfspel från utslag till putt med SG4.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
