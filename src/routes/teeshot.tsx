@@ -224,20 +224,14 @@ function TeeShotPage() {
 
                       <div className="mt-2 flex gap-2">
                         <input
-                          aria-label={`Klubba varv ${round} ${zoneById(r.zoneId)?.label}`}
-                          value={r.club}
-                          onChange={(e) => setRow(i, { club: e.target.value })}
-                          placeholder="Klubba"
-                          className="min-w-0 flex-1 rounded-xl border border-input bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
-                        />
-                        <input
                           aria-label={`Längd varv ${round} ${zoneById(r.zoneId)?.label}`}
                           inputMode="decimal"
                           value={r.carry}
                           onChange={(e) => setRow(i, { carry: e.target.value })}
                           placeholder="längd m"
-                          className="w-24 rounded-xl border border-input bg-card px-2 py-2 text-center text-lg text-foreground outline-none focus:border-primary"
+                          className="min-w-0 flex-1 rounded-xl border border-input bg-card px-2 py-2 text-center text-lg text-foreground outline-none focus:border-primary"
                         />
+
                         <input
                           aria-label={`Sidoavvikelse varv ${round} ${zoneById(r.zoneId)?.label}`}
                           inputMode="decimal"
