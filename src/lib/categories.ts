@@ -27,25 +27,6 @@ export type Category = {
 
 export const CATEGORIES: Category[] = [
   {
-    slug: "combine",
-    title: "Combine",
-    subtitle: "Approach + driving",
-    description: "Komplett test som mäter både inspel och driver i samma score.",
-    tests: [
-      {
-        to: "/combine",
-        number: "8",
-        title: "Combine test",
-        subtitle: "30 eller 60 slag – 55 till 165 m + driver",
-        bullets: [
-          "3 slag per station, två varv (small 5 stationer, large 10).",
-          "Avstånd till hål och driverns carry ger totalpoäng 0–100.",
-        ],
-        result: "RESULTAT: SCORE 0–100 + NIVÅ",
-      },
-    ],
-  },
-  {
     slug: "driving",
     title: "Driving",
     subtitle: "Utslag",
