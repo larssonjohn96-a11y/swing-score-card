@@ -24,6 +24,9 @@ import {
   statsByZone,
   teeAvgOffline,
   teeHitRate,
+  teeLengthMissDirection,
+  teeMissBreakdown,
+
   teeLengthRate,
   teeStats,
   teeTotalPoints,
@@ -351,29 +354,59 @@ function TeeShotPage() {
         <section className="mt-6">
           <h2 className="text-2xl">Historik</h2>
           <div className="mt-3 space-y-2">
-            {[...sessions].reverse().map((s) => (
-              <div
-                key={s.id}
-                className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3"
-              >
-                <div>
-                  <p className="text-foreground">
-                    {s.points} / {TEE_SHOTS} p
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {fmtDate(s.date)}
-                    {s.note ? ` · ${s.note}` : ""}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setSessions(deleteTeeSession(s.id))}
-                  className="text-xs text-muted-foreground transition-colors hover:text-destructive"
+            {[...sessions].reverse().map((s) => {
+              const miss = teeMissBreakdown(s.shots ?? []);
+              const dir = teeLengthMissDirection(s.shots ?? []);
+              return (
+                <div
+                  key={s.id}
+                  className="rounded-2xl border border-border bg-card px-4 py-3"
                 >
-                  Ta bort
-                </button>
-              </div>
-            ))}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-foreground">
+                        {s.points} / {TEE_SHOTS} p
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {fmtDate(s.date)}
+                        {s.note ? ` · ${s.note}` : ""}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSessions(deleteTeeSession(s.id))}
+                      className="text-xs text-muted-foreground transition-colors hover:text-destructive"
+                    >
+                      Ta bort
+                    </button>
+                  </div>
+                  {miss.total ? (
+                    <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs text-muted-foreground">
+                      <div className="rounded-xl border border-border bg-background p-2">
+                        <p>Miss längd</p>
+                        <p className="text-sm text-foreground">{miss.lengthOnly}</p>
+                        <p className="text-[10px]">
+                          {dir.short} kort · {dir.long} lång
+                        </p>
+                      </div>
+                      <div className="rounded-xl border border-border bg-background p-2">
+                        <p>Miss sidled</p>
+                        <p className="text-sm text-foreground">{miss.sideOnly}</p>
+                        <p className="text-[10px]">&gt; {TEE_HALF_WIDTH_M} m</p>
+                      </div>
+                      <div className="rounded-xl border border-border bg-background p-2">
+                        <p>Miss båda</p>
+                        <p className="text-sm text-foreground">{miss.both}</p>
+                        <p className="text-[10px]">längd + sida</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-xs text-muted-foreground">Inga missar – allt inom mål.</p>
+                  )}
+                </div>
+              );
+            })}
+
           </div>
         </section>
       ) : null}

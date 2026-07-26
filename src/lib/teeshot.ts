@@ -178,3 +178,45 @@ export function teeStats(sessions: TeeSession[]) {
 export function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
+
+export type MissBreakdown = {
+  /** missade endast längdspannet */
+  lengthOnly: number;
+  /** missade endast sidobredden */
+  sideOnly: number;
+  /** missade både längd och sida */
+  both: number;
+  /** totalt antal missar */
+  total: number;
+};
+
+/** Delar upp missarna i längd-, sido- och kombinerade missar. */
+export function teeMissBreakdown(shots: TeeShot[]): MissBreakdown {
+  let lengthOnly = 0;
+  let sideOnly = 0;
+  let both = 0;
+  for (const s of shots) {
+    const zone = zoneById(s.zoneId);
+    if (!zone) continue;
+    const lengthOk = s.carry >= zone.min && s.carry <= zone.max;
+    const widthOk = Math.abs(s.offline) <= TEE_HALF_WIDTH_M;
+    if (lengthOk && widthOk) continue;
+    if (!lengthOk && !widthOk) both += 1;
+    else if (!lengthOk) lengthOnly += 1;
+    else sideOnly += 1;
+  }
+  return { lengthOnly, sideOnly, both, total: lengthOnly + sideOnly + both };
+}
+
+/** Missade längden: för kort eller för långt. */
+export function teeLengthMissDirection(shots: TeeShot[]) {
+  let short = 0;
+  let long = 0;
+  for (const s of shots) {
+    const zone = zoneById(s.zoneId);
+    if (!zone) continue;
+    if (s.carry < zone.min) short += 1;
+    else if (s.carry > zone.max) long += 1;
+  }
+  return { short, long };
+}
