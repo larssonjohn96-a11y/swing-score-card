@@ -48,7 +48,7 @@ export const CATEGORIES: Category[] = [
       {
         to: "/drill",
         number: "1",
-        title: "18 bollar",
+        title: "18 bollar - jÖNKÖPINGS RAnGE",
         subtitle: "75 / 125 / 150 meter",
         bullets: ["2 bollar per avstånd innan du går vidare.", "Tre varv ger 3.0 i score."],
         result: "RESULTAT: SCORE 0–3.0",
