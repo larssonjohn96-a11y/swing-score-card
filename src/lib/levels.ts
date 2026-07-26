@@ -1,5 +1,5 @@
-/** Jämförelsenivåer: 30/20/10/0 hcp, PGA Tour-snitt och tourens long hitters. */
-export type LevelKey = "thirty" | "twenty" | "ten" | "scratch" | "tour" | "top5";
+/** Jämförelsenivåer: PGA Tour-snitt och tourens long hitters. */
+export type LevelKey = "tour" | "top5";
 
 export type Level = {
   key: LevelKey;
@@ -21,50 +21,6 @@ export type Level = {
 };
 
 export const LEVELS: Level[] = [
-  {
-    key: "thirty",
-    label: "30 hcp",
-    ballSpeed: 122,
-    clubSpeed: 83,
-    carryM: 165,
-    carryYds: 180,
-    bunkerFeet: 30,
-    drillScore: 0.5,
-    wedgePct: 20,
-  },
-  {
-    key: "twenty",
-    label: "20 hcp",
-    ballSpeed: 133,
-    clubSpeed: 90,
-    carryM: 183,
-    carryYds: 200,
-    bunkerFeet: 24,
-    drillScore: 0.9,
-    wedgePct: 15,
-  },
-  {
-    key: "ten",
-    label: "10 hcp",
-    ballSpeed: 147,
-    clubSpeed: 98,
-    carryM: 206,
-    carryYds: 225,
-    bunkerFeet: 18,
-    drillScore: 1.4,
-    wedgePct: 11,
-  },
-  {
-    key: "scratch",
-    label: "0 hcp",
-    ballSpeed: 161,
-    clubSpeed: 107,
-    carryM: 230,
-    carryYds: 251,
-    bunkerFeet: 13,
-    drillScore: 2.0,
-    wedgePct: 8,
-  },
   {
     key: "tour",
     label: "PGA Tour",
@@ -91,18 +47,9 @@ export const LEVELS: Level[] = [
 
 export const DEFAULT_LEVEL: LevelKey = "tour";
 
-export function getLevel(key: LevelKey): Level {
-  return LEVELS.find((l) => l.key === key) ?? LEVELS[LEVELS.length - 2];
+export function getLevel(key: LevelKey = DEFAULT_LEVEL): Level {
+  return LEVELS.find((l) => l.key === key) ?? LEVELS[0];
 }
 
-const KEY = "golf-compare-level-v1";
-
-export function loadLevel(): LevelKey {
-  if (typeof window === "undefined") return DEFAULT_LEVEL;
-  const raw = window.localStorage.getItem(KEY) as LevelKey | null;
-  return raw && LEVELS.some((l) => l.key === raw) ? raw : DEFAULT_LEVEL;
-}
-
-export function saveLevel(key: LevelKey) {
-  if (typeof window !== "undefined") window.localStorage.setItem(KEY, key);
-}
+/** Standardnivån att jämföra mot (PGA Tour). */
+export const TOUR_LEVEL = getLevel("tour");
