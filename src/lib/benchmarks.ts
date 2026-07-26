@@ -30,13 +30,6 @@ export const TOUR_TOP5 = {
   carryM: 286,
 } as const;
 
-/** Snitt per handicapnivå (amatör, driver). */
-export const HCP = {
-  scratch: { label: "0 hcp", ballSpeed: 161, clubSpeed: 107, carryYds: 251, carryM: 230 },
-  ten: { label: "10 hcp", ballSpeed: 147, clubSpeed: 98, carryYds: 225, carryM: 206 },
-  twenty: { label: "20 hcp", ballSpeed: 133, clubSpeed: 90, carryYds: 200, carryM: 183 },
-} as const;
-
 export function toursLabel(value: number, unit: string) {
   return `PGA Tour-snitt ${value} ${unit}`;
 }

@@ -216,7 +216,7 @@ function SpeedPage() {
           title="Utveckling över tid"
           footer={
             <p className="text-xs text-muted-foreground">
-              Streckade linjer: alla nivåer från 30 hcp till tourens long hitters. Tryck på grafen
+              Streckade linjer: PGA Tour-snitt och tourens long hitters. Tryck på grafen
               för helskärm.
             </p>
           }

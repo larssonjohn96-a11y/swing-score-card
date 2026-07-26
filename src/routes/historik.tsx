@@ -24,8 +24,7 @@ import {
   type BunkerSession,
 } from "@/lib/bunker";
 import { ChartCard } from "@/components/chart-card";
-import { LevelToggle } from "@/components/level-toggle";
-import { DEFAULT_LEVEL, getLevel, loadLevel, saveLevel, type LevelKey } from "@/lib/levels";
+import { TOUR_LEVEL } from "@/lib/levels";
 
 export const Route = createFileRoute("/historik")({
   head: () => ({
@@ -52,18 +51,11 @@ function HistoryPage() {
   const [tab, setTab] = useState<Tab>("drill");
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
   const [bunker, setBunker] = useState<BunkerSession[]>([]);
-  const [level, setLevel] = useState<LevelKey>(DEFAULT_LEVEL);
 
   useEffect(() => {
     setSessions(loadSessions());
     setBunker(loadBunkerSessions());
-    setLevel(loadLevel());
   }, []);
-
-  function pickLevel(key: LevelKey) {
-    setLevel(key);
-    saveLevel(key);
-  }
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-16 pt-8">
@@ -99,21 +91,14 @@ function HistoryPage() {
         ))}
       </div>
 
-      <p className="mt-4 text-xs uppercase tracking-[0.2em] text-muted-foreground">Jämför mot nivå</p>
-      <div className="mt-2">
-        <LevelToggle value={level} onChange={pickLevel} />
-      </div>
-
       {tab === "drill" ? (
         <DrillHistory
           sessions={sessions}
-          level={level}
           onDelete={(id) => setSessions(deleteSession(id))}
         />
       ) : (
         <BunkerHistory
           sessions={bunker}
-          level={level}
           onDelete={(id) => setBunker(deleteBunkerSession(id))}
         />
       )}
@@ -204,11 +189,9 @@ function Empty({ text }: { text: string }) {
 
 function DrillHistory({
   sessions,
-  level,
   onDelete,
 }: {
   sessions: SessionRecord[];
-  level: LevelKey;
   onDelete: (id: string) => void;
 }) {
   if (sessions.length === 0)
@@ -217,7 +200,7 @@ function DrillHistory({
   const best = sessions.reduce((m, s) => Math.max(m, s.score), 0);
   const avg = sessions.reduce((a, s) => a + s.score, 0) / sessions.length;
   const allShots = sessions.flatMap((s) => s.shots);
-  const lv = getLevel(level);
+  const lv = TOUR_LEVEL;
 
   return (
     <>
@@ -279,11 +262,9 @@ function DrillHistory({
 
 function BunkerHistory({
   sessions,
-  level,
   onDelete,
 }: {
   sessions: BunkerSession[];
-  level: LevelKey;
   onDelete: (id: string) => void;
 }) {
   if (sessions.length === 0)
@@ -291,7 +272,7 @@ function BunkerHistory({
 
   const best = Math.min(...sessions.map((s) => s.avgFeet));
   const avg = sessions.reduce((a, s) => a + s.avgFeet, 0) / sessions.length;
-  const lv = getLevel(level);
+  const lv = TOUR_LEVEL;
 
   const perLie = BUNKER_LIES.map((lie) => {
     const rows = sessions.flatMap((s) => s.shots.filter((x) => x.lie === lie));
