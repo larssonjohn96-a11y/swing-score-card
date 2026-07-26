@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Home, Play, X } from "lucide-react";
+import { Home, Play, TrendingUp, X } from "lucide-react";
 
 import { CATEGORIES } from "@/lib/categories";
 import { Button } from "@/components/ui/button";
@@ -90,8 +90,16 @@ export function BottomNav() {
             </SheetContent>
           </Sheet>
 
-          {/* Spacer to keep home and start button balanced */}
-          <div className="w-14" />
+          <Link
+            to="/framsteg"
+            className="flex flex-col items-center gap-0.5 px-4 py-2 text-muted-foreground transition-colors hover:text-foreground active:scale-95"
+            activeProps={{ className: "text-foreground" }}
+          >
+            <TrendingUp className="h-5 w-5" />
+            <span className="text-[10px] font-medium uppercase tracking-wide">
+              Framsteg
+            </span>
+          </Link>
         </div>
       </nav>
     </>
