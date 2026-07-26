@@ -5,6 +5,8 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  LabelList,
+
   Line,
   LineChart,
   ReferenceLine,
