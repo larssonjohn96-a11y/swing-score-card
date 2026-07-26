@@ -127,7 +127,10 @@ function Chart({
             dataKey="value"
             stroke="var(--color-primary)"
             strokeWidth={3}
-            dot={{ r: 3, fill: "var(--color-primary)" }}
+            connectNulls
+            isAnimationActive={false}
+            dot={{ r: 4, fill: "var(--color-primary)", stroke: "hsl(var(--card))", strokeWidth: 2 }}
+            activeDot={{ r: 6 }}
           />
         </LineChart>
       </ResponsiveContainer>
