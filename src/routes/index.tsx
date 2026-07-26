@@ -31,12 +31,15 @@ function Home() {
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-16 pt-10">
-      <header className="flex items-end justify-between">
+      <header className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Golfträning</p>
-          <h1 className="text-5xl leading-none">Tester</h1>
+          <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Strokes Gained</p>
+          <h1 className="text-5xl leading-none">SG4</h1>
+          <p className="mt-3 max-w-[16rem] text-sm leading-relaxed text-muted-foreground">
+            Testa hela ditt spel – från utslag till putt – och få personliga träningsprogram som sänker ditt handicap och dina scorer.
+          </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
         <ThemeToggle />
         <Link
           to="/konto"
