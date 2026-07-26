@@ -279,9 +279,11 @@ function DrillHistory({
 
 function BunkerHistory({
   sessions,
+  level,
   onDelete,
 }: {
   sessions: BunkerSession[];
+  level: LevelKey;
   onDelete: (id: string) => void;
 }) {
   if (sessions.length === 0)
@@ -289,6 +291,7 @@ function BunkerHistory({
 
   const best = Math.min(...sessions.map((s) => s.avgFeet));
   const avg = sessions.reduce((a, s) => a + s.avgFeet, 0) / sessions.length;
+  const lv = getLevel(level);
 
   const perLie = BUNKER_LIES.map((lie) => {
     const rows = sessions.flatMap((s) => s.shots.filter((x) => x.lie === lie));
@@ -308,7 +311,9 @@ function BunkerHistory({
       <Chart
         data={sessions.map((s, i) => ({ name: `#${i + 1}`, value: Number(s.avgFeet.toFixed(1)) }))}
         domain={[0, "auto"]}
+        refLines={[{ y: lv.bunkerFeet, text: `${lv.label} ${lv.bunkerFeet} fot` }]}
       />
+
 
       <section className="mt-4 rounded-3xl border border-border bg-card p-5">
         <h2 className="text-xl">Snitt per läge (fot)</h2>
