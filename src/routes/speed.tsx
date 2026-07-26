@@ -19,7 +19,7 @@ import {
   todayISO,
   type SpeedEntry,
 } from "@/lib/speed";
-import { TOUR } from "@/lib/benchmarks";
+import { TOUR, TOUR_TOP5 } from "@/lib/benchmarks";
 
 export const Route = createFileRoute("/speed")({
   head: () => ({
@@ -125,7 +125,7 @@ function SpeedPage() {
             {stats.bestBall ? stats.bestBall.toFixed(1) : "–"}
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            mph · tour {TOUR.ballSpeed}
+            mph · tour {TOUR.ballSpeed} · topp 5 {TOUR_TOP5.ballSpeed}
           </p>
         </div>
         <div className="rounded-3xl border border-border bg-card p-5 text-center">
@@ -134,7 +134,7 @@ function SpeedPage() {
             {stats.bestClub ? stats.bestClub.toFixed(1) : "–"}
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            mph · tour {TOUR.clubSpeed}
+            mph · tour {TOUR.clubSpeed} · topp 5 {TOUR_TOP5.clubSpeed}
           </p>
         </div>
       </section>
@@ -240,6 +240,18 @@ function SpeedPage() {
                   strokeDasharray="2 6"
                   label={{ value: `Tour ${TOUR.clubSpeed}`, position: "insideBottomRight", fontSize: 10 }}
                 />
+                <ReferenceLine
+                  y={TOUR_TOP5.ballSpeed}
+                  stroke="hsl(var(--muted-foreground))"
+                  strokeDasharray="5 5"
+                  label={{ value: `Topp 5 ${TOUR_TOP5.ballSpeed}`, position: "insideTopLeft", fontSize: 10 }}
+                />
+                <ReferenceLine
+                  y={TOUR_TOP5.clubSpeed}
+                  stroke="hsl(var(--muted-foreground))"
+                  strokeDasharray="2 6"
+                  label={{ value: `Topp 5 ${TOUR_TOP5.clubSpeed}`, position: "insideBottomLeft", fontSize: 10 }}
+                />
                 <Line
                   type="monotone"
                   dataKey="ball"
@@ -311,6 +323,10 @@ function SpeedPage() {
         <p className="mt-3">
           PGA Tour-snitt med driver: {TOUR.ballSpeed} mph ball speed, {TOUR.clubSpeed} mph club head
           speed och smash factor {TOUR.smashFactor}. Linjerna i grafen visar tournivån.
+        </p>
+        <p className="mt-3">
+          Snitt för tourens fem längsta slagare (long hitters): {TOUR_TOP5.ballSpeed} mph ball speed
+          och {TOUR_TOP5.clubSpeed} mph club head speed.
         </p>
       </section>
     </main>
