@@ -1,6 +1,6 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import {
   LONG_DRIVE_ATTEMPTS,
   deleteLongDriveSession,
@@ -13,7 +13,7 @@ import {
   type LongDriveSession,
   type LongDriveUnit,
 } from "@/lib/longdrive";
-import { TOUR } from "@/lib/benchmarks";
+import { HCP, TOUR, TOUR_TOP5 } from "@/lib/benchmarks";
 
 export const Route = createFileRoute("/longdrive")({
   head: () => ({
@@ -64,6 +64,19 @@ function LongDrivePage() {
       })),
     [sessions],
   );
+
+  const chartUnit = sessions.length ? sessions[sessions.length - 1].unit : unit;
+  const refLines = useMemo(() => {
+    const yds = chartUnit === "yds";
+    return [
+      { y: yds ? TOUR_TOP5.carryYds : TOUR_TOP5.carryM, text: `Long hitters ${yds ? TOUR_TOP5.carryYds : TOUR_TOP5.carryM}` },
+      { y: yds ? TOUR.carryYds : TOUR.carryM, text: `Tour ${yds ? TOUR.carryYds : TOUR.carryM}` },
+      { y: yds ? HCP.scratch.carryYds : HCP.scratch.carryM, text: `0 hcp ${yds ? HCP.scratch.carryYds : HCP.scratch.carryM}` },
+      { y: yds ? HCP.ten.carryYds : HCP.ten.carryM, text: `10 hcp ${yds ? HCP.ten.carryYds : HCP.ten.carryM}` },
+      { y: yds ? HCP.twenty.carryYds : HCP.twenty.carryM, text: `20 hcp ${yds ? HCP.twenty.carryYds : HCP.twenty.carryM}` },
+    ];
+  }, [chartUnit]);
+
 
   const parsed = values.map((v) => {
     const n = Number(v.replace(",", "."));
@@ -220,41 +233,55 @@ function LongDrivePage() {
           <div className="mt-4 h-56 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} margin={{ top: 5, right: 8, bottom: 0, left: -20 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="label" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-                <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" domain={["auto", "auto"]} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                <XAxis dataKey="label" tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
+                <YAxis tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" domain={["auto", "auto"]} />
                 <Tooltip
                   contentStyle={{
-                    background: "hsl(var(--card))",
-                    border: "1px solid hsl(var(--border))",
+                    background: "var(--color-card)",
+                    border: "1px solid var(--color-border)",
                     borderRadius: 12,
                     fontSize: 12,
                   }}
                 />
+                {refLines.map((r) => (
+                  <ReferenceLine
+                    key={r.text}
+                    y={r.y}
+                    stroke="var(--color-flag)"
+                    strokeDasharray="5 5"
+                    label={{
+                      value: r.text,
+                      position: "insideTopRight",
+                      fontSize: 10,
+                      fill: "var(--color-muted-foreground)",
+                    }}
+                  />
+                ))}
                 <Line
                   type="monotone"
                   dataKey="best"
                   name="Längsta"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth={2}
+                  stroke="var(--color-primary)"
+                  strokeWidth={3}
                   connectNulls
                   isAnimationActive={false}
-                  dot={{ r: 4, strokeWidth: 2, stroke: "hsl(var(--card))" }}
+                  dot={{ r: 4, fill: "var(--color-primary)", strokeWidth: 2, stroke: "var(--color-card)" }}
                   activeDot={{ r: 6 }}
                 />
                 <Line
                   type="monotone"
                   dataKey="snitt"
                   name="Snitt"
-                  stroke="hsl(var(--muted-foreground))"
-                  strokeWidth={2}
-                  strokeDasharray="4 4"
+                  stroke="var(--color-flag)"
+                  strokeWidth={3}
                   connectNulls
                   isAnimationActive={false}
-                  dot={{ r: 4, strokeWidth: 2, stroke: "hsl(var(--card))" }}
+                  dot={{ r: 4, fill: "var(--color-flag)", strokeWidth: 2, stroke: "var(--color-card)" }}
                   activeDot={{ r: 6 }}
                 />
               </LineChart>
+
             </ResponsiveContainer>
           </div>
         </section>
