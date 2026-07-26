@@ -220,41 +220,55 @@ function LongDrivePage() {
           <div className="mt-4 h-56 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} margin={{ top: 5, right: 8, bottom: 0, left: -20 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="label" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-                <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" domain={["auto", "auto"]} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                <XAxis dataKey="label" tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
+                <YAxis tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" domain={["auto", "auto"]} />
                 <Tooltip
                   contentStyle={{
-                    background: "hsl(var(--card))",
-                    border: "1px solid hsl(var(--border))",
+                    background: "var(--color-card)",
+                    border: "1px solid var(--color-border)",
                     borderRadius: 12,
                     fontSize: 12,
                   }}
                 />
+                {refLines.map((r) => (
+                  <ReferenceLine
+                    key={r.text}
+                    y={r.y}
+                    stroke="var(--color-flag)"
+                    strokeDasharray="5 5"
+                    label={{
+                      value: r.text,
+                      position: "insideTopRight",
+                      fontSize: 10,
+                      fill: "var(--color-muted-foreground)",
+                    }}
+                  />
+                ))}
                 <Line
                   type="monotone"
                   dataKey="best"
                   name="Längsta"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth={2}
+                  stroke="var(--color-primary)"
+                  strokeWidth={3}
                   connectNulls
                   isAnimationActive={false}
-                  dot={{ r: 4, strokeWidth: 2, stroke: "hsl(var(--card))" }}
+                  dot={{ r: 4, fill: "var(--color-primary)", strokeWidth: 2, stroke: "var(--color-card)" }}
                   activeDot={{ r: 6 }}
                 />
                 <Line
                   type="monotone"
                   dataKey="snitt"
                   name="Snitt"
-                  stroke="hsl(var(--muted-foreground))"
-                  strokeWidth={2}
-                  strokeDasharray="4 4"
+                  stroke="var(--color-flag)"
+                  strokeWidth={3}
                   connectNulls
                   isAnimationActive={false}
-                  dot={{ r: 4, strokeWidth: 2, stroke: "hsl(var(--card))" }}
+                  dot={{ r: 4, fill: "var(--color-flag)", strokeWidth: 2, stroke: "var(--color-card)" }}
                   activeDot={{ r: 6 }}
                 />
               </LineChart>
+
             </ResponsiveContainer>
           </div>
         </section>
