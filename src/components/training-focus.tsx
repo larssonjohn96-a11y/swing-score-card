@@ -1,13 +1,24 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { computeRatings, weakestCategory, type CategoryRating } from "@/lib/focus";
+import { LevelToggle } from "@/components/level-toggle";
+import { DEFAULT_LEVEL, getLevel, loadLevel, saveLevel, type LevelKey } from "@/lib/levels";
 
 export function TrainingFocus() {
   const [ratings, setRatings] = useState<CategoryRating[] | null>(null);
+  const [level, setLevel] = useState<LevelKey>(DEFAULT_LEVEL);
 
   useEffect(() => {
-    setRatings(computeRatings());
+    const stored = loadLevel();
+    setLevel(stored);
+    setRatings(computeRatings(stored));
   }, []);
+
+  function pickLevel(key: LevelKey) {
+    setLevel(key);
+    saveLevel(key);
+    setRatings(computeRatings(key));
+  }
 
   if (!ratings) return null;
   const weakest = weakestCategory(ratings);
@@ -18,13 +29,19 @@ export function TrainingFocus() {
   return (
     <section className="mt-8 rounded-3xl border border-border bg-card p-5 shadow-[var(--shadow-glow)]">
       <h2 className="text-sm uppercase tracking-[0.25em] text-muted-foreground">Träningsfokus</h2>
+
+      <p className="mt-3 text-xs text-muted-foreground">Jämför mot nivå</p>
+      <div className="mt-2">
+        <LevelToggle value={level} onChange={pickLevel} />
+      </div>
+
       {weakest ? (
-        <p className="mt-2 text-sm text-muted-foreground">
+        <p className="mt-3 text-sm text-muted-foreground">
           Just nu ligger du lägst i{" "}
           <span className="font-semibold text-flag">{weakest.title}</span> – lägg mest tid där.
         </p>
       ) : (
-        <p className="mt-2 text-sm text-muted-foreground">
+        <p className="mt-3 text-sm text-muted-foreground">
           Kör minst ett test så räknar vi ut vilken kategori du behöver träna mest på.
         </p>
       )}
@@ -63,7 +80,8 @@ export function TrainingFocus() {
       </div>
 
       <p className="mt-4 text-xs text-muted-foreground">
-        Nivån jämförs mot PGA Tour-snitt: 100 = tournivå.
+        100 = {getLevel(level).label}-nivå. Byt nivå ovan för att jämföra mot 30, 20, 10 eller 0 hcp,
+        PGA Tour eller tourens long hitters.
       </p>
     </section>
   );
