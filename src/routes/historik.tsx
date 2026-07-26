@@ -105,13 +105,22 @@ function Chart({
   data,
   domain,
   ticks,
+  refLines,
 }: {
   data: { name: string; value: number }[];
   domain: [number, number | "auto"];
   ticks?: number[];
+  refLines?: { y: number; text: string }[];
 }) {
   return (
-    <section className="mt-4 h-56 rounded-3xl border border-border bg-card p-4">
+    <ChartCard
+      title="Utveckling över tid"
+      footer={
+        <p className="text-xs text-muted-foreground">
+          Streckade linjer visar vald jämförelsenivå. Tryck på grafen för helskärm.
+        </p>
+      }
+    >
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
           <CartesianGrid stroke="var(--color-border)" vertical={false} />
@@ -122,6 +131,20 @@ function Chart({
             stroke="var(--color-muted-foreground)"
             fontSize={11}
           />
+          {(refLines ?? []).map((r) => (
+            <ReferenceLine
+              key={r.text}
+              y={r.y}
+              stroke="var(--color-flag)"
+              strokeDasharray="5 5"
+              label={{
+                value: r.text,
+                position: "insideTopRight",
+                fontSize: 10,
+                fill: "var(--color-muted-foreground)",
+              }}
+            />
+          ))}
           <Line
             type="monotone"
             dataKey="value"
@@ -129,14 +152,15 @@ function Chart({
             strokeWidth={3}
             connectNulls
             isAnimationActive={false}
-            dot={{ r: 4, fill: "var(--color-primary)", stroke: "hsl(var(--card))", strokeWidth: 2 }}
+            dot={{ r: 4, fill: "var(--color-primary)", stroke: "var(--color-card)", strokeWidth: 2 }}
             activeDot={{ r: 6 }}
           />
         </LineChart>
       </ResponsiveContainer>
-    </section>
+    </ChartCard>
   );
 }
+
 
 function Empty({ text }: { text: string }) {
   return (
