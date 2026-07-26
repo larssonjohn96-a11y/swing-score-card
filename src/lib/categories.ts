@@ -7,7 +7,8 @@ export type CategoryTest = {
     | "/fairway"
     | "/wedge"
     | "/combine"
-    | "/shaping";
+    | "/shaping"
+    | "/par3";
   number: string;
   title: string;
   subtitle: string;
@@ -119,6 +120,17 @@ export const CATEGORIES: Category[] = [
           "Godkänt eller ej per slag, inget annat räknas.",
         ],
         result: "RESULTAT: SHOT SHAPE SCORE 0–100 %",
+      },
+      {
+        to: "/par3",
+        number: "10",
+        title: "Approach precision (par 3)",
+        subtitle: "20 slag – 110 till 170 m",
+        bullets: [
+          "5 avstånd × 2 slag × 2 varv med järn.",
+          "Mät avstånd till hål – snitt i meter och procent.",
+        ],
+        result: "RESULTAT: SNITT TILL HÅL + PROXIMITY %",
       },
     ],
   },

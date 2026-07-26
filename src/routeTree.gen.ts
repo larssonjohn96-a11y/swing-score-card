@@ -14,6 +14,7 @@ import { Route as TopplistaRouteImport } from './routes/topplista'
 import { Route as SpeedRouteImport } from './routes/speed'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ShapingRouteImport } from './routes/shaping'
+import { Route as Par3RouteImport } from './routes/par3'
 import { Route as LongdriveRouteImport } from './routes/longdrive'
 import { Route as KontoRouteImport } from './routes/konto'
 import { Route as HistorikRouteImport } from './routes/historik'
@@ -47,6 +48,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const ShapingRoute = ShapingRouteImport.update({
   id: '/shaping',
   path: '/shaping',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Par3Route = Par3RouteImport.update({
+  id: '/par3',
+  path: '/par3',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LongdriveRoute = LongdriveRouteImport.update({
@@ -104,6 +110,7 @@ export interface FileRoutesByFullPath {
   '/historik': typeof HistorikRoute
   '/konto': typeof KontoRoute
   '/longdrive': typeof LongdriveRoute
+  '/par3': typeof Par3Route
   '/shaping': typeof ShapingRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
@@ -120,6 +127,7 @@ export interface FileRoutesByTo {
   '/historik': typeof HistorikRoute
   '/konto': typeof KontoRoute
   '/longdrive': typeof LongdriveRoute
+  '/par3': typeof Par3Route
   '/shaping': typeof ShapingRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
@@ -137,6 +145,7 @@ export interface FileRoutesById {
   '/historik': typeof HistorikRoute
   '/konto': typeof KontoRoute
   '/longdrive': typeof LongdriveRoute
+  '/par3': typeof Par3Route
   '/shaping': typeof ShapingRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
@@ -155,6 +164,7 @@ export interface FileRouteTypes {
     | '/historik'
     | '/konto'
     | '/longdrive'
+    | '/par3'
     | '/shaping'
     | '/sitemap.xml'
     | '/speed'
@@ -171,6 +181,7 @@ export interface FileRouteTypes {
     | '/historik'
     | '/konto'
     | '/longdrive'
+    | '/par3'
     | '/shaping'
     | '/sitemap.xml'
     | '/speed'
@@ -187,6 +198,7 @@ export interface FileRouteTypes {
     | '/historik'
     | '/konto'
     | '/longdrive'
+    | '/par3'
     | '/shaping'
     | '/sitemap.xml'
     | '/speed'
@@ -204,6 +216,7 @@ export interface RootRouteChildren {
   HistorikRoute: typeof HistorikRoute
   KontoRoute: typeof KontoRoute
   LongdriveRoute: typeof LongdriveRoute
+  Par3Route: typeof Par3Route
   ShapingRoute: typeof ShapingRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SpeedRoute: typeof SpeedRoute
@@ -247,6 +260,13 @@ declare module '@tanstack/react-router' {
       path: '/shaping'
       fullPath: '/shaping'
       preLoaderRoute: typeof ShapingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/par3': {
+      id: '/par3'
+      path: '/par3'
+      fullPath: '/par3'
+      preLoaderRoute: typeof Par3RouteImport
       parentRoute: typeof rootRouteImport
     }
     '/longdrive': {
@@ -324,6 +344,7 @@ const rootRouteChildren: RootRouteChildren = {
   HistorikRoute: HistorikRoute,
   KontoRoute: KontoRoute,
   LongdriveRoute: LongdriveRoute,
+  Par3Route: Par3Route,
   ShapingRoute: ShapingRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SpeedRoute: SpeedRoute,
