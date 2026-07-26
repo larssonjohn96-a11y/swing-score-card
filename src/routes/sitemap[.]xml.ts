@@ -19,6 +19,7 @@ export const Route = createFileRoute("/sitemap.xml")({
           { path: "/kategori/around-the-green", changefreq: "weekly", priority: "0.9" },
           { path: "/kategori/puttning", changefreq: "weekly", priority: "0.9" },
           { path: "/kategori/approach", changefreq: "weekly", priority: "0.9" },
+          { path: "/kategori/combine", changefreq: "weekly", priority: "0.9" },
           { path: "/kategori/driving", changefreq: "weekly", priority: "0.9" },
           { path: "/drill", changefreq: "weekly", priority: "0.9" },
           { path: "/speed", changefreq: "weekly", priority: "0.9" },
