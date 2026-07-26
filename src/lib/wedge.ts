@@ -105,3 +105,30 @@ export function deleteWedgeSession(id: string): WedgeSession[] {
   window.localStorage.setItem(KEY, JSON.stringify(all));
   return all;
 }
+
+export type DistancePctStat = DistanceStat & {
+  /** snittavstånd till hål i procent av måldistansen (lägre är bättre) */
+  pct: number;
+};
+
+/** Proximity i procent av måldistans per avstånd. */
+export function wedgePctByDistance(shots: WedgeShot[]): DistancePctStat[] {
+  return wedgeStatsByDistance(shots).map((d) => ({
+    ...d,
+    pct: d.count ? (d.avg / d.distance) * 100 : 0,
+  }));
+}
+
+/** Totalt snitt i procent (viktat per slag). */
+export function wedgeOverallPct(shots: WedgeShot[]): number {
+  if (!shots.length) return 0;
+  return mean(shots.map((s) => (s.proximity / s.distance) * 100));
+}
+
+/** Bästa och sämsta längdnivå i procent. */
+export function bestWorstDistance(shots: WedgeShot[]) {
+  const withData = wedgePctByDistance(shots).filter((d) => d.count > 0);
+  if (!withData.length) return { best: undefined, worst: undefined };
+  const sorted = [...withData].sort((a, b) => a.pct - b.pct);
+  return { best: sorted[0], worst: sorted[sorted.length - 1] };
+}
