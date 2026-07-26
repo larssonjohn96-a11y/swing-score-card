@@ -203,8 +203,8 @@ function CombinePage() {
           ))}
         </div>
         <p className="mt-3 text-sm text-muted-foreground">
-          Avstånd till hål i meter per slag. För driver anger du carry i meter. 3 slag per station,
-          två varv.
+          Avstånd till hål i meter per slag. För driver anger du carry i meter och sidoavvikelse
+          (hur långt från mittlinjen bollen hamnar). 3 slag per station, två varv.
         </p>
 
         {Array.from({ length: COMBINE_ROUNDS }, (_, r) => r + 1).map((round) => (
@@ -226,16 +226,30 @@ function CombinePage() {
                       (s) => s.round === round && s.stationId === station.id && s.shot === shot,
                     );
                     return (
-                      <input
-                        key={shot}
-                        id={`combine-${i}`}
-                        aria-label={`Varv ${round}, ${station.label}, slag ${shot}`}
-                        inputMode="decimal"
-                        value={values[i] ?? ""}
-                        onChange={(e) => setValue(i, e.target.value)}
-                        placeholder={station.driver ? "carry" : `${shot}`}
-                        className="w-full min-w-0 rounded-xl bg-card px-2 py-2 text-center font-[family-name:var(--font-display)] text-xl text-foreground outline-none focus:ring-1 focus:ring-primary"
-                      />
+                      <div key={shot} className="flex w-full min-w-0 flex-col gap-1">
+                        <input
+                          id={`combine-${i}`}
+                          aria-label={`Varv ${round}, ${station.label}, slag ${shot}${
+                            station.driver ? " carry" : ""
+                          }`}
+                          inputMode="decimal"
+                          value={values[i] ?? ""}
+                          onChange={(e) => setValue(i, e.target.value)}
+                          placeholder={station.driver ? "carry" : `${shot}`}
+                          className="w-full min-w-0 rounded-xl bg-card px-2 py-2 text-center font-[family-name:var(--font-display)] text-xl text-foreground outline-none focus:ring-1 focus:ring-primary"
+                        />
+                        {station.driver ? (
+                          <input
+                            id={`combine-offline-${i}`}
+                            aria-label={`Varv ${round}, driver, slag ${shot} sidoavvikelse i meter`}
+                            inputMode="decimal"
+                            value={offlines[i] ?? ""}
+                            onChange={(e) => setOffline(i, e.target.value)}
+                            placeholder="offline"
+                            className="w-full min-w-0 rounded-xl bg-card px-2 py-1 text-center text-sm text-foreground outline-none focus:ring-1 focus:ring-primary"
+                          />
+                        ) : null}
+                      </div>
                     );
                   })}
                 </div>
@@ -243,6 +257,7 @@ function CombinePage() {
             </div>
           </div>
         ))}
+
 
         {filledShots.length ? (
           <p className="mt-4 text-sm text-muted-foreground">
