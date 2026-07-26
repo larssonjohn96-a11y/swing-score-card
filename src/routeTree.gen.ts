@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WedgeRouteImport } from './routes/wedge'
 import { Route as TopplistaRouteImport } from './routes/topplista'
 import { Route as SpeedRouteImport } from './routes/speed'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
@@ -21,6 +22,11 @@ import { Route as BunkerRouteImport } from './routes/bunker'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as KategoriSlugRouteImport } from './routes/kategori.$slug'
 
+const WedgeRoute = WedgeRouteImport.update({
+  id: '/wedge',
+  path: '/wedge',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TopplistaRoute = TopplistaRouteImport.update({
   id: '/topplista',
   path: '/topplista',
@@ -88,6 +94,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
   '/topplista': typeof TopplistaRoute
+  '/wedge': typeof WedgeRoute
   '/kategori/$slug': typeof KategoriSlugRoute
 }
 export interface FileRoutesByTo {
@@ -101,6 +108,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
   '/topplista': typeof TopplistaRoute
+  '/wedge': typeof WedgeRoute
   '/kategori/$slug': typeof KategoriSlugRoute
 }
 export interface FileRoutesById {
@@ -115,6 +123,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
   '/topplista': typeof TopplistaRoute
+  '/wedge': typeof WedgeRoute
   '/kategori/$slug': typeof KategoriSlugRoute
 }
 export interface FileRouteTypes {
@@ -130,6 +139,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/speed'
     | '/topplista'
+    | '/wedge'
     | '/kategori/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -143,6 +153,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/speed'
     | '/topplista'
+    | '/wedge'
     | '/kategori/$slug'
   id:
     | '__root__'
@@ -156,6 +167,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/speed'
     | '/topplista'
+    | '/wedge'
     | '/kategori/$slug'
   fileRoutesById: FileRoutesById
 }
@@ -170,11 +182,19 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SpeedRoute: typeof SpeedRoute
   TopplistaRoute: typeof TopplistaRoute
+  WedgeRoute: typeof WedgeRoute
   KategoriSlugRoute: typeof KategoriSlugRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/wedge': {
+      id: '/wedge'
+      path: '/wedge'
+      fullPath: '/wedge'
+      preLoaderRoute: typeof WedgeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/topplista': {
       id: '/topplista'
       path: '/topplista'
@@ -266,6 +286,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SpeedRoute: SpeedRoute,
   TopplistaRoute: TopplistaRoute,
+  WedgeRoute: WedgeRoute,
   KategoriSlugRoute: KategoriSlugRoute,
 }
 export const routeTree = rootRouteImport
