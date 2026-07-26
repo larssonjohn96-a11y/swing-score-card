@@ -1,7 +1,6 @@
 import { loadSpeedEntries } from "@/lib/speed";
 import { loadLongDriveSessions, sessionBest } from "@/lib/longdrive";
 import { loadWedgeSessions } from "@/lib/wedge";
-import { loadCombineSessions } from "@/lib/combine";
 
 export type Highlight = {
   key: string;
