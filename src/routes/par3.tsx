@@ -118,7 +118,7 @@ function Par3Page() {
       <header className="flex items-end justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
-            Par 3 · 20 slag
+            Par 3 · 16 slag
           </p>
           <h1 className="text-4xl leading-none">Approach precision</h1>
         </div>
