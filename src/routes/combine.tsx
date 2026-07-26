@@ -130,7 +130,7 @@ function CombinePage() {
         </div>
         <Link
           to="/kategori/$slug"
-          params={{ slug: "approach" }}
+          params={{ slug: "combine" }}
           className="rounded-full border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
         >
           Tillbaka

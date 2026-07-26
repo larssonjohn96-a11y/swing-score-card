@@ -64,6 +64,14 @@ export const CATEGORIES: Category[] = [
         ],
         result: "RESULTAT: MEDELPROXIMITY + SPRIDNING",
       },
+    ],
+  },
+  {
+    slug: "combine",
+    title: "Combine",
+    subtitle: "Approach + driving",
+    description: "Komplett test som mäter både inspel och driver i samma score.",
+    tests: [
       {
         to: "/combine",
         number: "8",
