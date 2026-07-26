@@ -77,13 +77,19 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "18-bollarsdrillen – Golfträning" },
+      { title: "18-bollarsdrillen – Golfträning 75/125/150m" },
       {
         name: "description",
-        content: "Träningsapp för 18-bollarsdrillen på 75, 125 och 150 meter.",
+        content: "Kör 18-bollarsdrillen på 75, 125 och 150 meter. Registrera träffar, räkna varv och följ din score över tid.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:title", content: "18-bollarsdrillen – Golfträning 75/125/150m" },
+      { name: "twitter:title", content: "18-bollarsdrillen – Golfträning 75/125/150m" },
+      { property: "og:description", content: "Kör 18-bollarsdrillen på 75, 125 och 150 meter. Registrera träffar, räkna varv och följ din score över tid." },
+      { name: "twitter:description", content: "Kör 18-bollarsdrillen på 75, 125 och 150 meter. Registrera träffar, räkna varv och följ din score över tid." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/fd1440f1-021b-448e-b236-f00665931288/id-preview-6339d7c2--e6eaffe8-9d53-49c7-8353-659215697a59.lovable.app-1785048898778.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/fd1440f1-021b-448e-b236-f00665931288/id-preview-6339d7c2--e6eaffe8-9d53-49c7-8353-659215697a59.lovable.app-1785048898778.png" },
     ],
     links: [
       {

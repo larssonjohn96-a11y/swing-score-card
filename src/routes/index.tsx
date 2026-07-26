@@ -28,7 +28,7 @@ export const Route = createFileRoute("/")({
       { property: "og:title", content: "18-bollarsdrillen – Golfträning 75/125/150m" },
       {
         property: "og:description",
-        content: "Registrera träffar, räkna varv och följ din score 0–3.0 över tid.",
+        content: "Kör 18-bollarsdrillen på 75, 125 och 150 meter. Registrera träffar, räkna varv och följ din score över tid.",
       },
     ],
   }),
