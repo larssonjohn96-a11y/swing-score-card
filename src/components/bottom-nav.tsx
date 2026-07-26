@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Dumbbell, Home, Play, TrendingUp, X } from "lucide-react";
+import { Home, Play, TrendingUp, X } from "lucide-react";
 
 import { CATEGORIES } from "@/lib/categories";
 import { Button } from "@/components/ui/button";
@@ -22,27 +22,16 @@ export function BottomNav() {
   return (
     <>
       <nav className="fixed bottom-0 left-0 right-0 z-40 h-16 border-t border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
-        <div className="mx-auto flex h-full w-full max-w-md items-center justify-around px-2">
+        <div className="mx-auto flex h-full w-full max-w-md items-center px-2">
           <Link
             to="/"
-            className="flex flex-col items-center gap-0.5 px-4 py-2 text-muted-foreground transition-colors hover:text-foreground active:scale-95"
+            className="flex flex-1 flex-col items-center gap-0.5 px-4 py-2 text-muted-foreground transition-colors hover:text-foreground active:scale-95"
             activeProps={{ className: "text-foreground" }}
             activeOptions={{ exact: true }}
           >
             <Home className="h-5 w-5" />
             <span className="text-[10px] font-medium uppercase tracking-wide">
               Hem
-            </span>
-          </Link>
-
-          <Link
-            to="/traning"
-            className="flex flex-col items-center gap-0.5 px-4 py-2 text-muted-foreground transition-colors hover:text-foreground active:scale-95"
-            activeProps={{ className: "text-foreground" }}
-          >
-            <Dumbbell className="h-5 w-5" />
-            <span className="text-[10px] font-medium uppercase tracking-wide">
-              Träning
             </span>
           </Link>
 
@@ -55,7 +44,7 @@ export function BottomNav() {
               >
                 <Play className="h-5 w-5 fill-current" />
                 <span className="mt-0.5 text-[9px] font-bold uppercase tracking-wide leading-none">
-                  Test
+                  Starta test
                 </span>
               </button>
             </SheetTrigger>
@@ -63,7 +52,7 @@ export function BottomNav() {
             <SheetContent side="bottom" className="rounded-t-3xl pb-8 pt-6">
               <SheetHeader className="mb-4">
                 <SheetTitle className="text-center text-lg font-display tracking-wide">
-                  Välj kategori
+                  Starta test
                 </SheetTitle>
               </SheetHeader>
 
@@ -103,7 +92,7 @@ export function BottomNav() {
 
           <Link
             to="/framsteg"
-            className="flex flex-col items-center gap-0.5 px-4 py-2 text-muted-foreground transition-colors hover:text-foreground active:scale-95"
+            className="flex flex-1 flex-col items-center gap-0.5 px-4 py-2 text-muted-foreground transition-colors hover:text-foreground active:scale-95"
             activeProps={{ className: "text-foreground" }}
           >
             <TrendingUp className="h-5 w-5" />
