@@ -1,9 +1,13 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
+  Bar,
+  BarChart,
   CartesianGrid,
+  Cell,
   Line,
   LineChart,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -19,9 +23,14 @@ import {
   saveWedgeSession,
   stdDev,
   wedgeStatsByDistance,
+  wedgePctByDistance,
+  wedgeOverallPct,
+  bestWorstDistance,
   type WedgeSession,
 } from "@/lib/wedge";
 import { ChartCard } from "@/components/chart-card";
+import { LevelToggle } from "@/components/level-toggle";
+import { LEVELS, getLevel, loadLevel, saveLevel, type LevelKey } from "@/lib/levels";
 
 export const Route = createFileRoute("/wedge")({
   head: () => ({
@@ -54,8 +63,17 @@ function WedgePage() {
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
   const [sessions, setSessions] = useState<WedgeSession[]>([]);
+  const [level, setLevel] = useState<LevelKey>("tour");
 
-  useEffect(() => setSessions(loadWedgeSessions()), []);
+  useEffect(() => {
+    setSessions(loadWedgeSessions());
+    setLevel(loadLevel());
+  }, []);
+
+  function changeLevel(key: LevelKey) {
+    setLevel(key);
+    saveLevel(key);
+  }
 
   const filledShots = shotOrder
     .map((s, i) => ({ ...s, proximity: Number(values[i].replace(",", ".")) }))
@@ -89,6 +107,26 @@ function WedgePage() {
     label: fmtDate(s.date),
     Snitt: Number(s.avgProximity.toFixed(2)),
     Spridning: Number(s.spread.toFixed(2)),
+  }));
+
+  const lv = getLevel(level);
+  const analysisShots = filledShots.length
+    ? filledShots
+    : sessions.length
+      ? sessions[sessions.length - 1].shots
+      : [];
+  const pctByDistance = wedgePctByDistance(analysisShots);
+  const overallPct = wedgeOverallPct(analysisShots);
+  const { best: bestDist, worst: worstDist } = bestWorstDistance(analysisShots);
+  const pctChartData = pctByDistance.map((d) => ({
+    label: `${d.distance} m`,
+    Procent: d.count ? Number(d.pct.toFixed(1)) : 0,
+    best: bestDist?.distance === d.distance,
+    worst: worstDist?.distance === d.distance,
+  }));
+  const pctOverTime = sessions.map((s) => ({
+    label: fmtDate(s.date),
+    Procent: Number(wedgeOverallPct(s.shots).toFixed(1)),
   }));
 
   const latest = sessions[sessions.length - 1];
