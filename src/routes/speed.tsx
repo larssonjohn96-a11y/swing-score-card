@@ -230,13 +230,13 @@ function SpeedPage() {
                 />
                 <ReferenceLine
                   y={TOUR.ballSpeed}
-                  stroke="hsl(var(--flag))"
+                  stroke="var(--flag)"
                   strokeDasharray="5 5"
                   label={{ value: `Tour ${TOUR.ballSpeed}`, position: "insideTopRight", fontSize: 10 }}
                 />
                 <ReferenceLine
                   y={TOUR.clubSpeed}
-                  stroke="hsl(var(--flag))"
+                  stroke="var(--flag)"
                   strokeDasharray="2 6"
                   label={{ value: `Tour ${TOUR.clubSpeed}`, position: "insideBottomRight", fontSize: 10 }}
                 />
