@@ -2,6 +2,7 @@ import { Link, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { formatScore, loadSessions } from "@/lib/drill";
 import { loadBunkerSessions } from "@/lib/bunker";
+import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -23,6 +24,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
+  const { user, displayName } = useAuth();
   const [last, setLast] = useState<{ drill?: string; bunker?: string }>({});
 
   useEffect(() => {
