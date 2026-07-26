@@ -35,20 +35,6 @@ const byDate = (a: ProgressPoint, b: ProgressPoint) => a.date.localeCompare(b.da
 
 export const PROGRESS_TESTS: ProgressTest[] = [
   {
-    id: "combine",
-    title: "Combine test",
-    categorySlug: "combine",
-    to: "/combine",
-    metric: "Totalpoäng",
-    unit: "p",
-    higherIsBetter: true,
-    decimals: 0,
-    load: () =>
-      loadCombineSessions()
-        .map((s) => ({ date: day(s.date), value: s.score }))
-        .sort(byDate),
-  },
-  {
     id: "speed",
     title: "Speed test",
     categorySlug: "driving",
