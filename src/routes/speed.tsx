@@ -19,7 +19,7 @@ import {
   todayISO,
   type SpeedEntry,
 } from "@/lib/speed";
-import { TOUR, TOUR_TOP5 } from "@/lib/benchmarks";
+import { HCP, TOUR, TOUR_TOP5 } from "@/lib/benchmarks";
 
 export const Route = createFileRoute("/speed")({
   head: () => ({
