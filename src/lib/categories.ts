@@ -1,5 +1,5 @@
 export type CategoryTest = {
-  to: "/drill" | "/bunker" | "/speed" | "/longdrive" | "/fairway" | "/wedge";
+  to: "/drill" | "/bunker" | "/speed" | "/longdrive" | "/fairway" | "/wedge" | "/combine";
   number: string;
   title: string;
   subtitle: string;

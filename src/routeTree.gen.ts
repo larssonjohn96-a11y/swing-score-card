@@ -18,6 +18,7 @@ import { Route as KontoRouteImport } from './routes/konto'
 import { Route as HistorikRouteImport } from './routes/historik'
 import { Route as FairwayRouteImport } from './routes/fairway'
 import { Route as DrillRouteImport } from './routes/drill'
+import { Route as CombineRouteImport } from './routes/combine'
 import { Route as BunkerRouteImport } from './routes/bunker'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as KategoriSlugRouteImport } from './routes/kategori.$slug'
@@ -67,6 +68,11 @@ const DrillRoute = DrillRouteImport.update({
   path: '/drill',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CombineRoute = CombineRouteImport.update({
+  id: '/combine',
+  path: '/combine',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BunkerRoute = BunkerRouteImport.update({
   id: '/bunker',
   path: '/bunker',
@@ -86,6 +92,7 @@ const KategoriSlugRoute = KategoriSlugRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/bunker': typeof BunkerRoute
+  '/combine': typeof CombineRoute
   '/drill': typeof DrillRoute
   '/fairway': typeof FairwayRoute
   '/historik': typeof HistorikRoute
@@ -100,6 +107,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/bunker': typeof BunkerRoute
+  '/combine': typeof CombineRoute
   '/drill': typeof DrillRoute
   '/fairway': typeof FairwayRoute
   '/historik': typeof HistorikRoute
@@ -115,6 +123,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/bunker': typeof BunkerRoute
+  '/combine': typeof CombineRoute
   '/drill': typeof DrillRoute
   '/fairway': typeof FairwayRoute
   '/historik': typeof HistorikRoute
@@ -131,6 +140,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/bunker'
+    | '/combine'
     | '/drill'
     | '/fairway'
     | '/historik'
@@ -145,6 +155,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/bunker'
+    | '/combine'
     | '/drill'
     | '/fairway'
     | '/historik'
@@ -159,6 +170,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/bunker'
+    | '/combine'
     | '/drill'
     | '/fairway'
     | '/historik'
@@ -174,6 +186,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BunkerRoute: typeof BunkerRoute
+  CombineRoute: typeof CombineRoute
   DrillRoute: typeof DrillRoute
   FairwayRoute: typeof FairwayRoute
   HistorikRoute: typeof HistorikRoute
@@ -251,6 +264,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DrillRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/combine': {
+      id: '/combine'
+      path: '/combine'
+      fullPath: '/combine'
+      preLoaderRoute: typeof CombineRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/bunker': {
       id: '/bunker'
       path: '/bunker'
@@ -278,6 +298,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BunkerRoute: BunkerRoute,
+  CombineRoute: CombineRoute,
   DrillRoute: DrillRoute,
   FairwayRoute: FairwayRoute,
   HistorikRoute: HistorikRoute,
