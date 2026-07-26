@@ -16,12 +16,16 @@ import { Route as TeeshotRouteImport } from './routes/teeshot'
 import { Route as SpeedRouteImport } from './routes/speed'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ShapingRouteImport } from './routes/shaping'
+import { Route as PitchRouteImport } from './routes/pitch'
 import { Route as Par3RouteImport } from './routes/par3'
 import { Route as LongdriveRouteImport } from './routes/longdrive'
+import { Route as LagputtRouteImport } from './routes/lagputt'
+import { Route as KortputtRouteImport } from './routes/kortputt'
 import { Route as KontoRouteImport } from './routes/konto'
 import { Route as FairwayRouteImport } from './routes/fairway'
 import { Route as DrillRouteImport } from './routes/drill'
 import { Route as CombineRouteImport } from './routes/combine'
+import { Route as ChipRouteImport } from './routes/chip'
 import { Route as BunkerRouteImport } from './routes/bunker'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as FramstegIndexRouteImport } from './routes/framsteg.index'
@@ -64,6 +68,11 @@ const ShapingRoute = ShapingRouteImport.update({
   path: '/shaping',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PitchRoute = PitchRouteImport.update({
+  id: '/pitch',
+  path: '/pitch',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const Par3Route = Par3RouteImport.update({
   id: '/par3',
   path: '/par3',
@@ -72,6 +81,16 @@ const Par3Route = Par3RouteImport.update({
 const LongdriveRoute = LongdriveRouteImport.update({
   id: '/longdrive',
   path: '/longdrive',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LagputtRoute = LagputtRouteImport.update({
+  id: '/lagputt',
+  path: '/lagputt',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KortputtRoute = KortputtRouteImport.update({
+  id: '/kortputt',
+  path: '/kortputt',
   getParentRoute: () => rootRouteImport,
 } as any)
 const KontoRoute = KontoRouteImport.update({
@@ -92,6 +111,11 @@ const DrillRoute = DrillRouteImport.update({
 const CombineRoute = CombineRouteImport.update({
   id: '/combine',
   path: '/combine',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChipRoute = ChipRouteImport.update({
+  id: '/chip',
+  path: '/chip',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BunkerRoute = BunkerRouteImport.update({
@@ -128,12 +152,16 @@ const FramstegSlugTestRoute = FramstegSlugTestRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/bunker': typeof BunkerRoute
+  '/chip': typeof ChipRoute
   '/combine': typeof CombineRoute
   '/drill': typeof DrillRoute
   '/fairway': typeof FairwayRoute
   '/konto': typeof KontoRoute
+  '/kortputt': typeof KortputtRoute
+  '/lagputt': typeof LagputtRoute
   '/longdrive': typeof LongdriveRoute
   '/par3': typeof Par3Route
+  '/pitch': typeof PitchRoute
   '/shaping': typeof ShapingRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
@@ -149,12 +177,16 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/bunker': typeof BunkerRoute
+  '/chip': typeof ChipRoute
   '/combine': typeof CombineRoute
   '/drill': typeof DrillRoute
   '/fairway': typeof FairwayRoute
   '/konto': typeof KontoRoute
+  '/kortputt': typeof KortputtRoute
+  '/lagputt': typeof LagputtRoute
   '/longdrive': typeof LongdriveRoute
   '/par3': typeof Par3Route
+  '/pitch': typeof PitchRoute
   '/shaping': typeof ShapingRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
@@ -171,12 +203,16 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/bunker': typeof BunkerRoute
+  '/chip': typeof ChipRoute
   '/combine': typeof CombineRoute
   '/drill': typeof DrillRoute
   '/fairway': typeof FairwayRoute
   '/konto': typeof KontoRoute
+  '/kortputt': typeof KortputtRoute
+  '/lagputt': typeof LagputtRoute
   '/longdrive': typeof LongdriveRoute
   '/par3': typeof Par3Route
+  '/pitch': typeof PitchRoute
   '/shaping': typeof ShapingRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
@@ -194,12 +230,16 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/bunker'
+    | '/chip'
     | '/combine'
     | '/drill'
     | '/fairway'
     | '/konto'
+    | '/kortputt'
+    | '/lagputt'
     | '/longdrive'
     | '/par3'
+    | '/pitch'
     | '/shaping'
     | '/sitemap.xml'
     | '/speed'
@@ -215,12 +255,16 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/bunker'
+    | '/chip'
     | '/combine'
     | '/drill'
     | '/fairway'
     | '/konto'
+    | '/kortputt'
+    | '/lagputt'
     | '/longdrive'
     | '/par3'
+    | '/pitch'
     | '/shaping'
     | '/sitemap.xml'
     | '/speed'
@@ -236,12 +280,16 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/bunker'
+    | '/chip'
     | '/combine'
     | '/drill'
     | '/fairway'
     | '/konto'
+    | '/kortputt'
+    | '/lagputt'
     | '/longdrive'
     | '/par3'
+    | '/pitch'
     | '/shaping'
     | '/sitemap.xml'
     | '/speed'
@@ -258,12 +306,16 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BunkerRoute: typeof BunkerRoute
+  ChipRoute: typeof ChipRoute
   CombineRoute: typeof CombineRoute
   DrillRoute: typeof DrillRoute
   FairwayRoute: typeof FairwayRoute
   KontoRoute: typeof KontoRoute
+  KortputtRoute: typeof KortputtRoute
+  LagputtRoute: typeof LagputtRoute
   LongdriveRoute: typeof LongdriveRoute
   Par3Route: typeof Par3Route
+  PitchRoute: typeof PitchRoute
   ShapingRoute: typeof ShapingRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SpeedRoute: typeof SpeedRoute
@@ -327,6 +379,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShapingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pitch': {
+      id: '/pitch'
+      path: '/pitch'
+      fullPath: '/pitch'
+      preLoaderRoute: typeof PitchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/par3': {
       id: '/par3'
       path: '/par3'
@@ -339,6 +398,20 @@ declare module '@tanstack/react-router' {
       path: '/longdrive'
       fullPath: '/longdrive'
       preLoaderRoute: typeof LongdriveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lagputt': {
+      id: '/lagputt'
+      path: '/lagputt'
+      fullPath: '/lagputt'
+      preLoaderRoute: typeof LagputtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/kortputt': {
+      id: '/kortputt'
+      path: '/kortputt'
+      fullPath: '/kortputt'
+      preLoaderRoute: typeof KortputtRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/konto': {
@@ -367,6 +440,13 @@ declare module '@tanstack/react-router' {
       path: '/combine'
       fullPath: '/combine'
       preLoaderRoute: typeof CombineRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/chip': {
+      id: '/chip'
+      path: '/chip'
+      fullPath: '/chip'
+      preLoaderRoute: typeof ChipRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/bunker': {
@@ -429,12 +509,16 @@ const FramstegSlugRouteWithChildren = FramstegSlugRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BunkerRoute: BunkerRoute,
+  ChipRoute: ChipRoute,
   CombineRoute: CombineRoute,
   DrillRoute: DrillRoute,
   FairwayRoute: FairwayRoute,
   KontoRoute: KontoRoute,
+  KortputtRoute: KortputtRoute,
+  LagputtRoute: LagputtRoute,
   LongdriveRoute: LongdriveRoute,
   Par3Route: Par3Route,
+  PitchRoute: PitchRoute,
   ShapingRoute: ShapingRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SpeedRoute: SpeedRoute,

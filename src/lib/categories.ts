@@ -8,7 +8,11 @@ export type CategoryTest = {
     | "/teeshot"
     | "/wedge"
     | "/shaping"
-    | "/par3";
+    | "/par3"
+    | "/pitch"
+    | "/chip"
+    | "/kortputt"
+    | "/lagputt";
 
   number: string;
   title: string;
@@ -143,6 +147,28 @@ export const CATEGORIES: Category[] = [
         bullets: ["Varierande avstånd och lägen.", "1 boll från varje position."],
         result: "RESULTAT: MÄT AVSTÅNDET TILL HÅLET I FOT",
       },
+      {
+        to: "/pitch",
+        number: "12",
+        title: "Pitch",
+        subtitle: "6 slag – 8 till 18 m",
+        bullets: [
+          "Sex pitchar från 8, 12, 16, 10, 14 och 18 meter.",
+          "Mät avståndet till hålet i meter.",
+        ],
+        result: "RESULTAT: MÄT AVSTÅNDET TILL HÅLET I METER",
+      },
+      {
+        to: "/chip",
+        number: "13",
+        title: "Chippar",
+        subtitle: "6 slag – 8 till 18 m",
+        bullets: [
+          "Sex chippar från 8, 12, 16, 10, 14 och 18 meter.",
+          "Mät avståndet till hålet i fot.",
+        ],
+        result: "RESULTAT: MÄT AVSTÅNDET TILL HÅLET I FOT",
+      },
     ],
   },
   {
@@ -150,7 +176,30 @@ export const CATEGORIES: Category[] = [
     title: "Puttning",
     subtitle: "På greenen",
     description: "Tester för längdkänsla och korta puttar.",
-    tests: [],
+    tests: [
+      {
+        to: "/kortputt",
+        number: "14",
+        title: "Kortputt",
+        subtitle: "12 puttar inom 1,5 m",
+        bullets: [
+          "4 puttar från vardera 0,5, 1,0 och 1,5 meter.",
+          "Räkna isatta puttar per avstånd.",
+        ],
+        result: "RESULTAT: ANDEL ISATTA PUTTAR I %",
+      },
+      {
+        to: "/lagputt",
+        number: "15",
+        title: "Lagputt",
+        subtitle: "6 puttar – 8 till 18 m",
+        bullets: [
+          "En putt från 8, 10, 12, 14, 16 och 18 meter.",
+          "Allt inom 1 meter från hålet är godkänt.",
+        ],
+        result: "RESULTAT: ANDEL GODKÄNDA + SNITT KVAR",
+      },
+    ],
   },
 ];
 

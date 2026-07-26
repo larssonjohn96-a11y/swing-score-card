@@ -9,6 +9,10 @@ import { loadWedgeSessions } from "@/lib/wedge";
 
 import { loadShapingSessions } from "@/lib/shaping";
 import { loadPar3Sessions } from "@/lib/par3";
+import { loadPitchSessions } from "@/lib/pitch";
+import { loadChipSessions } from "@/lib/chip";
+import { loadShortPuttSessions } from "@/lib/shortputt";
+import { loadLagPuttSessions } from "@/lib/lagputt";
 
 export type ProgressPoint = {
   date: string;
@@ -158,6 +162,62 @@ export const PROGRESS_TESTS: ProgressTest[] = [
     load: () =>
       loadBunkerSessions()
         .map((s) => ({ date: day(s.date), value: s.avgFeet }))
+        .sort(byDate),
+  },
+  {
+    id: "pitch",
+    title: "Pitch",
+    categorySlug: "around-the-green",
+    to: "/pitch",
+    metric: "Snitt till hål",
+    unit: "m",
+    higherIsBetter: false,
+    decimals: 1,
+    load: () =>
+      loadPitchSessions()
+        .map((s) => ({ date: day(s.date), value: s.avgProximity }))
+        .sort(byDate),
+  },
+  {
+    id: "chip",
+    title: "Chippar",
+    categorySlug: "around-the-green",
+    to: "/chip",
+    metric: "Snitt till hål",
+    unit: "fot",
+    higherIsBetter: false,
+    decimals: 1,
+    load: () =>
+      loadChipSessions()
+        .map((s) => ({ date: day(s.date), value: s.avgFeet }))
+        .sort(byDate),
+  },
+  {
+    id: "kortputt",
+    title: "Kortputt",
+    categorySlug: "puttning",
+    to: "/kortputt",
+    metric: "Isatta puttar",
+    unit: "%",
+    higherIsBetter: true,
+    decimals: 0,
+    load: () =>
+      loadShortPuttSessions()
+        .map((s) => ({ date: day(s.date), value: s.pct }))
+        .sort(byDate),
+  },
+  {
+    id: "lagputt",
+    title: "Lagputt",
+    categorySlug: "puttning",
+    to: "/lagputt",
+    metric: "Godkända puttar",
+    unit: "%",
+    higherIsBetter: true,
+    decimals: 0,
+    load: () =>
+      loadLagPuttSessions()
+        .map((s) => ({ date: day(s.date), value: s.pct }))
         .sort(byDate),
   },
 ];
