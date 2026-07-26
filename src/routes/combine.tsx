@@ -61,6 +61,7 @@ function CombinePage() {
   const [size, setSize] = useState<CombineSize>("large");
   const shotOrder = useMemo(() => emptyCombineShots(size), [size]);
   const [values, setValues] = useState<string[]>(() => shotOrder.map(() => ""));
+  const [offlines, setOfflines] = useState<string[]>(() => shotOrder.map(() => ""));
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
   const [sessions, setSessions] = useState<CombineSession[]>([]);
@@ -71,11 +72,20 @@ function CombinePage() {
 
   useEffect(() => {
     setValues(shotOrder.map(() => ""));
+    setOfflines(shotOrder.map(() => ""));
     setError("");
   }, [shotOrder]);
 
   const filledShots = shotOrder
-    .map((s, i) => ({ ...s, value: Number((values[i] ?? "").replace(",", ".")) }))
+    .map((s, i) => {
+      const off = (offlines[i] ?? "").replace(",", ".").trim();
+      const offNum = Number(off);
+      return {
+        ...s,
+        value: Number((values[i] ?? "").replace(",", ".")),
+        offline: off !== "" && Number.isFinite(offNum) ? Math.abs(offNum) : undefined,
+      };
+    })
     .filter((s, i) => (values[i] ?? "").trim() !== "" && Number.isFinite(s.value));
 
   const liveScore = combineScore(filledShots);
@@ -83,6 +93,10 @@ function CombinePage() {
 
   function setValue(i: number, v: string) {
     setValues((prev) => prev.map((old, idx) => (idx === i ? v : old)));
+  }
+
+  function setOffline(i: number, v: string) {
+    setOfflines((prev) => prev.map((old, idx) => (idx === i ? v : old)));
   }
 
   function submit() {
@@ -94,6 +108,7 @@ function CombinePage() {
     saveCombineSession(size, filledShots, note);
     setSessions(loadCombineSessions());
     setValues(shotOrder.map(() => ""));
+    setOfflines(shotOrder.map(() => ""));
     setNote("");
   }
 
@@ -107,9 +122,12 @@ function CombinePage() {
   const analysis = filledShots.length ? filledShots : latest ? latest.shots : [];
   const analysisSize: CombineSize = filledShots.length ? size : (latest?.size ?? size);
   const stationScores = scoresByStation(analysis, analysisSize).filter((s) => s.count > 0);
+  const analysisProxPct = avgProximityPct(analysis);
   const stationChart = stationScores.map((s) => ({
     label: s.station.driver ? "Driver" : `${s.station.distance} m`,
     Poäng: Number(s.score.toFixed(1)),
+    pct: s.station.driver ? s.avgOfflinePct : s.avgPct,
+    driver: !!s.station.driver,
   }));
   const bestStation = [...stationScores].sort((a, b) => b.score - a.score)[0];
   const worstStation = [...stationScores].sort((a, b) => a.score - b.score)[0];
@@ -118,6 +136,7 @@ function CombinePage() {
     label: fmtDate(s.date),
     Poäng: Number(s.score.toFixed(1)),
   }));
+
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-16 pt-8">
