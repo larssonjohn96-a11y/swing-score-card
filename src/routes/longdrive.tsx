@@ -65,6 +65,19 @@ function LongDrivePage() {
     [sessions],
   );
 
+  const chartUnit = sessions.length ? sessions[sessions.length - 1].unit : unit;
+  const refLines = useMemo(() => {
+    const yds = chartUnit === "yds";
+    return [
+      { y: yds ? TOUR_TOP5.carryYds : TOUR_TOP5.carryM, text: `Long hitters ${yds ? TOUR_TOP5.carryYds : TOUR_TOP5.carryM}` },
+      { y: yds ? TOUR.carryYds : TOUR.carryM, text: `Tour ${yds ? TOUR.carryYds : TOUR.carryM}` },
+      { y: yds ? HCP.scratch.carryYds : HCP.scratch.carryM, text: `0 hcp ${yds ? HCP.scratch.carryYds : HCP.scratch.carryM}` },
+      { y: yds ? HCP.ten.carryYds : HCP.ten.carryM, text: `10 hcp ${yds ? HCP.ten.carryYds : HCP.ten.carryM}` },
+      { y: yds ? HCP.twenty.carryYds : HCP.twenty.carryM, text: `20 hcp ${yds ? HCP.twenty.carryYds : HCP.twenty.carryM}` },
+    ];
+  }, [chartUnit]);
+
+
   const parsed = values.map((v) => {
     const n = Number(v.replace(",", "."));
     return v.trim() && Number.isFinite(n) && n > 0 ? n : undefined;
