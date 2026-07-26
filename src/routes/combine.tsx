@@ -5,6 +5,8 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  LabelList,
+
   Line,
   LineChart,
   ReferenceLine,
@@ -18,7 +20,9 @@ import {
   COMBINE_LEVELS,
   COMBINE_ROUNDS,
   SHOTS_PER_STATION,
+  avgProximityPct,
   combineScore,
+
   deleteCombineSession,
   emptyCombineShots,
   levelFor,
@@ -61,6 +65,7 @@ function CombinePage() {
   const [size, setSize] = useState<CombineSize>("large");
   const shotOrder = useMemo(() => emptyCombineShots(size), [size]);
   const [values, setValues] = useState<string[]>(() => shotOrder.map(() => ""));
+  const [offlines, setOfflines] = useState<string[]>(() => shotOrder.map(() => ""));
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
   const [sessions, setSessions] = useState<CombineSession[]>([]);
@@ -71,11 +76,20 @@ function CombinePage() {
 
   useEffect(() => {
     setValues(shotOrder.map(() => ""));
+    setOfflines(shotOrder.map(() => ""));
     setError("");
   }, [shotOrder]);
 
   const filledShots = shotOrder
-    .map((s, i) => ({ ...s, value: Number((values[i] ?? "").replace(",", ".")) }))
+    .map((s, i) => {
+      const off = (offlines[i] ?? "").replace(",", ".").trim();
+      const offNum = Number(off);
+      return {
+        ...s,
+        value: Number((values[i] ?? "").replace(",", ".")),
+        offline: off !== "" && Number.isFinite(offNum) ? Math.abs(offNum) : undefined,
+      };
+    })
     .filter((s, i) => (values[i] ?? "").trim() !== "" && Number.isFinite(s.value));
 
   const liveScore = combineScore(filledShots);
@@ -83,6 +97,10 @@ function CombinePage() {
 
   function setValue(i: number, v: string) {
     setValues((prev) => prev.map((old, idx) => (idx === i ? v : old)));
+  }
+
+  function setOffline(i: number, v: string) {
+    setOfflines((prev) => prev.map((old, idx) => (idx === i ? v : old)));
   }
 
   function submit() {
@@ -94,6 +112,7 @@ function CombinePage() {
     saveCombineSession(size, filledShots, note);
     setSessions(loadCombineSessions());
     setValues(shotOrder.map(() => ""));
+    setOfflines(shotOrder.map(() => ""));
     setNote("");
   }
 
@@ -107,9 +126,12 @@ function CombinePage() {
   const analysis = filledShots.length ? filledShots : latest ? latest.shots : [];
   const analysisSize: CombineSize = filledShots.length ? size : (latest?.size ?? size);
   const stationScores = scoresByStation(analysis, analysisSize).filter((s) => s.count > 0);
+  const analysisProxPct = avgProximityPct(analysis);
   const stationChart = stationScores.map((s) => ({
     label: s.station.driver ? "Driver" : `${s.station.distance} m`,
     Poäng: Number(s.score.toFixed(1)),
+    pct: s.station.driver ? s.avgOfflinePct : s.avgPct,
+    driver: !!s.station.driver,
   }));
   const bestStation = [...stationScores].sort((a, b) => b.score - a.score)[0];
   const worstStation = [...stationScores].sort((a, b) => a.score - b.score)[0];
@@ -118,6 +140,7 @@ function CombinePage() {
     label: fmtDate(s.date),
     Poäng: Number(s.score.toFixed(1)),
   }));
+
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-16 pt-8">
@@ -182,8 +205,8 @@ function CombinePage() {
           ))}
         </div>
         <p className="mt-3 text-sm text-muted-foreground">
-          Avstånd till hål i meter per slag. För driver anger du carry i meter. 3 slag per station,
-          två varv.
+          Avstånd till hål i meter per slag. För driver anger du carry i meter och sidoavvikelse
+          (hur långt från mittlinjen bollen hamnar). 3 slag per station, två varv.
         </p>
 
         {Array.from({ length: COMBINE_ROUNDS }, (_, r) => r + 1).map((round) => (
@@ -205,16 +228,30 @@ function CombinePage() {
                       (s) => s.round === round && s.stationId === station.id && s.shot === shot,
                     );
                     return (
-                      <input
-                        key={shot}
-                        id={`combine-${i}`}
-                        aria-label={`Varv ${round}, ${station.label}, slag ${shot}`}
-                        inputMode="decimal"
-                        value={values[i] ?? ""}
-                        onChange={(e) => setValue(i, e.target.value)}
-                        placeholder={station.driver ? "carry" : `${shot}`}
-                        className="w-full min-w-0 rounded-xl bg-card px-2 py-2 text-center font-[family-name:var(--font-display)] text-xl text-foreground outline-none focus:ring-1 focus:ring-primary"
-                      />
+                      <div key={shot} className="flex w-full min-w-0 flex-col gap-1">
+                        <input
+                          id={`combine-${i}`}
+                          aria-label={`Varv ${round}, ${station.label}, slag ${shot}${
+                            station.driver ? " carry" : ""
+                          }`}
+                          inputMode="decimal"
+                          value={values[i] ?? ""}
+                          onChange={(e) => setValue(i, e.target.value)}
+                          placeholder={station.driver ? "carry" : `${shot}`}
+                          className="w-full min-w-0 rounded-xl bg-card px-2 py-2 text-center font-[family-name:var(--font-display)] text-xl text-foreground outline-none focus:ring-1 focus:ring-primary"
+                        />
+                        {station.driver ? (
+                          <input
+                            id={`combine-offline-${i}`}
+                            aria-label={`Varv ${round}, driver, slag ${shot} sidoavvikelse i meter`}
+                            inputMode="decimal"
+                            value={offlines[i] ?? ""}
+                            onChange={(e) => setOffline(i, e.target.value)}
+                            placeholder="offline"
+                            className="w-full min-w-0 rounded-xl bg-card px-2 py-1 text-center text-sm text-foreground outline-none focus:ring-1 focus:ring-primary"
+                          />
+                        ) : null}
+                      </div>
                     );
                   })}
                 </div>
@@ -222,6 +259,7 @@ function CombinePage() {
             </div>
           </div>
         ))}
+
 
         {filledShots.length ? (
           <p className="mt-4 text-sm text-muted-foreground">
@@ -262,6 +300,13 @@ function CombinePage() {
                 {combineScore(analysis).toFixed(1)}
               </span>
             </div>
+            {analysisProxPct !== null ? (
+              <p className="mt-1 text-sm text-muted-foreground">
+                Snittproximity approach:{" "}
+                <span className="text-foreground">{analysisProxPct.toFixed(1)} %</span> av
+                slaglängden
+              </p>
+            ) : null}
             {bestStation && worstStation ? (
               <p className="mt-2 text-sm">
                 Bäst:{" "}
@@ -284,23 +329,36 @@ function CombinePage() {
                 >
                   <span className="text-muted-foreground">{s.station.label}</span>
                   <span>
-                    {s.score.toFixed(0)} p · {s.avg.toFixed(1)} m{s.station.driver ? " carry" : ""}
+                    {s.score.toFixed(0)} p · {s.avg.toFixed(1)} m
+                    {s.station.driver
+                      ? ` carry${
+                          s.avgOffline !== null
+                            ? ` · ${s.avgOffline.toFixed(1)} m offline${
+                                s.avgOfflinePct !== null ? ` (${s.avgOfflinePct.toFixed(1)} %)` : ""
+                              }`
+                            : ""
+                        }`
+                      : s.avgPct !== null
+                        ? ` (${s.avgPct.toFixed(1)} %)`
+                        : ""}
                   </span>
                 </div>
               ))}
             </div>
+
           </section>
 
           <ChartCard
             title="Poäng per station"
             footer={
               <p className="text-xs text-muted-foreground">
-                100 poäng = elitträff. Grön = bästa station, röd = svagaste.
+                100 poäng = elitträff. Siffran ovanför stapeln är proximity i procent av avståndet
+                (driver: sidoavvikelse i procent av carry). Grön = bästa station, röd = svagaste.
               </p>
             }
           >
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={stationChart} margin={{ top: 5, right: 8, bottom: 0, left: -20 }}>
+              <BarChart data={stationChart} margin={{ top: 16, right: 8, bottom: 0, left: -20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                 <XAxis
                   dataKey="label"
@@ -319,8 +377,27 @@ function CombinePage() {
                     borderRadius: 12,
                     fontSize: 12,
                   }}
+                  formatter={(value: number, _name: string, item: { payload?: { pct?: number | null; driver?: boolean } }) => {
+                    const pct = item?.payload?.pct;
+                    const suffix =
+                      pct === null || pct === undefined
+                        ? ""
+                        : item?.payload?.driver
+                          ? ` (${pct.toFixed(1)} % offline)`
+                          : ` (${pct.toFixed(1)} % proximity)`;
+                    return [`${value}${suffix}`, "Poäng"];
+                  }}
                 />
                 <Bar dataKey="Poäng" radius={[8, 8, 0, 0]}>
+                  <LabelList
+                    dataKey="pct"
+                    position="top"
+                    fontSize={10}
+                    fill="var(--color-muted-foreground)"
+                    formatter={(v: number | null) =>
+                      v === null || v === undefined ? "" : `${v.toFixed(1)}%`
+                    }
+                  />
                   {stationChart.map((d) => (
                     <Cell
                       key={d.label}
@@ -342,6 +419,7 @@ function CombinePage() {
                     />
                   ))}
                 </Bar>
+
               </BarChart>
             </ResponsiveContainer>
           </ChartCard>
@@ -442,8 +520,11 @@ function CombinePage() {
         <p className="mt-2">
           Slå stationerna i ordning med 3 bollar per station, vila och kör exakt samma varv en gång
           till. Approach poängsätts på avstånd till hål i procent av slaglängden (3 % ger 100 poäng,
-          25 % ger 0). Driver poängsätts på carry: 140 m ger 0 och 280 m ger 100.
+          25 % ger 0). Driver poängsätts på både längd och rakhet: 60 % av poängen kommer från carry
+          (140 m = 0, 280 m = 100) och 40 % från sidoavvikelsen (0 % av carry = 100 poäng, 8 % = 0).
+          Lämnar du sidoavvikelsen tom räknas bara längden.
         </p>
+
         <div className="mt-3 space-y-1">
           {COMBINE_LEVELS.map((l) => (
             <div key={l.label} className="flex justify-between border-b border-border pb-1">

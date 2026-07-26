@@ -48,6 +48,8 @@ export type CombineShot = {
   shot: number;
   /** proximity i meter (approach) eller carry i meter (driver) */
   value: number;
+  /** driver: sidoavvikelse i meter från mittlinjen */
+  offline?: number;
 };
 
 export type CombineSession = {
@@ -68,17 +70,49 @@ const ZERO_PCT = 25;
 const DRIVER_MIN = 140;
 const DRIVER_MAX = 280;
 
+/** Driver: sidoavvikelse i procent av carry där poängen når 0. */
+const DRIVER_OFFLINE_ZERO_PCT = 8;
+
+/** Vikter för driverpoängen. */
+const DRIVER_LENGTH_WEIGHT = 0.6;
+const DRIVER_STRAIGHT_WEIGHT = 0.4;
+
 function clamp(v: number, min = 0, max = 100) {
   return Math.min(max, Math.max(min, v));
 }
 
+/** Längdpoäng 0–100 för ett driverslag. */
+export function driverLengthScore(carry: number): number {
+  return clamp(((carry - DRIVER_MIN) / (DRIVER_MAX - DRIVER_MIN)) * 100);
+}
+
+/** Rakhetspoäng 0–100 utifrån sidoavvikelse i procent av carry. */
+export function driverStraightScore(carry: number, offline: number): number {
+  if (!carry) return 0;
+  const pct = (Math.abs(offline) / carry) * 100;
+  return clamp(100 * (1 - pct / DRIVER_OFFLINE_ZERO_PCT));
+}
+
+/** Driverpoäng: längd + rakhet. Utan sidoavvikelse används enbart längd. */
+export function driverScore(carry: number, offline?: number): number {
+  const length = driverLengthScore(carry);
+  if (offline === undefined || !Number.isFinite(offline)) return length;
+  return (
+    length * DRIVER_LENGTH_WEIGHT + driverStraightScore(carry, offline) * DRIVER_STRAIGHT_WEIGHT
+  );
+}
+
+/** Proximity i procent av slaglängden. */
+export function proximityPct(distance: number, proximity: number): number {
+  if (!distance) return 0;
+  return (proximity / distance) * 100;
+}
+
 /** Poäng 0–100 för ett enskilt slag. */
-export function shotScore(station: CombineStation, value: number): number {
-  if (station.driver) {
-    return clamp(((value - DRIVER_MIN) / (DRIVER_MAX - DRIVER_MIN)) * 100);
-  }
+export function shotScore(station: CombineStation, value: number, offline?: number): number {
+  if (station.driver) return driverScore(value, offline);
   if (!station.distance) return 0;
-  const pct = (value / station.distance) * 100;
+  const pct = proximityPct(station.distance, value);
   return clamp(100 * (1 - (pct - ELITE_PCT) / (ZERO_PCT - ELITE_PCT)));
 }
 
@@ -90,9 +124,22 @@ export function combineScore(shots: CombineShot[]): number {
   if (!shots.length) return 0;
   const total = shots.reduce((sum, s) => {
     const st = stationById(s.stationId);
-    return sum + (st ? shotScore(st, s.value) : 0);
+    return sum + (st ? shotScore(st, s.value, s.offline) : 0);
   }, 0);
   return total / shots.length;
+}
+
+/** Snittproximity i procent för alla approachslag i en session. */
+export function avgProximityPct(shots: CombineShot[]): number | null {
+  const pcts = shots
+    .map((s) => {
+      const st = stationById(s.stationId);
+      if (!st || st.driver || !st.distance) return null;
+      return proximityPct(st.distance, s.value);
+    })
+    .filter((v): v is number => v !== null);
+  if (!pcts.length) return null;
+  return pcts.reduce((a, b) => a + b, 0) / pcts.length;
 }
 
 export type StationScore = {
@@ -102,19 +149,38 @@ export type StationScore = {
   /** snittvärde (proximity eller carry) i meter */
   avg: number;
   count: number;
+  /** approach: snittproximity i procent av avståndet */
+  avgPct: number | null;
+  /** driver: snittavvikelse i meter */
+  avgOffline: number | null;
+  /** driver: snittavvikelse i procent av carry */
+  avgOfflinePct: number | null;
 };
 
 export function scoresByStation(shots: CombineShot[], size: CombineSize): StationScore[] {
   return stationsFor(size).map((station) => {
-    const vals = shots.filter((s) => s.stationId === station.id).map((s) => s.value);
+    const own = shots.filter((s) => s.stationId === station.id);
+    const vals = own.map((s) => s.value);
     const count = vals.length;
     const avg = count ? vals.reduce((a, b) => a + b, 0) / count : 0;
     const score = count
-      ? vals.reduce((sum, v) => sum + shotScore(station, v), 0) / count
+      ? own.reduce((sum, s) => sum + shotScore(station, s.value, s.offline), 0) / count
       : 0;
-    return { station, score, avg, count };
+
+    const offlines = own.filter(
+      (s) => s.offline !== undefined && Number.isFinite(s.offline),
+    );
+    const avgOffline =
+      station.driver && offlines.length
+        ? offlines.reduce((a, b) => a + Math.abs(b.offline as number), 0) / offlines.length
+        : null;
+    const avgOfflinePct = avgOffline !== null && avg ? (avgOffline / avg) * 100 : null;
+    const avgPct = !station.driver && count ? proximityPct(station.distance, avg) : null;
+
+    return { station, score, avg, count, avgPct, avgOffline, avgOfflinePct };
   });
 }
+
 
 export type CombineLevel = { min: number; label: string };
 
