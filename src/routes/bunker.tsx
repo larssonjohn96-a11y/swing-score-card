@@ -109,10 +109,10 @@ function BunkerPage() {
               Nytt test
             </button>
             <Link
-              to="/historik"
+              to="/framsteg"
               className="flex-1 rounded-2xl border border-border py-4 text-center font-[family-name:var(--font-display)] text-2xl text-muted-foreground"
             >
-              Historik
+              Framsteg
             </Link>
           </div>
         </section>

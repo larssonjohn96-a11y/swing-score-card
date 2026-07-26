@@ -3,6 +3,7 @@ import { CATEGORIES } from "@/lib/categories";
 import { useAuth } from "@/hooks/use-auth";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { TrainingFocus } from "@/components/training-focus";
+import { TopScores } from "@/components/top-scores";
 
 
 export const Route = createFileRoute("/")({
@@ -30,7 +31,7 @@ function Home() {
   const { user, displayName } = useAuth();
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-16 pt-10">
+    <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-28 pt-10">
       <header className="flex items-start justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Strokes Gained</p>
@@ -54,10 +55,10 @@ function Home() {
 
       <nav className="mt-5 grid grid-cols-2 gap-2">
         <Link
-          to="/historik"
+          to="/traning"
           className="rounded-2xl border border-border bg-card py-3 text-center text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
         >
-          Historik
+          Träning
         </Link>
         <Link
           to="/topplista"
@@ -73,6 +74,8 @@ function Home() {
           Strokes Gained jämför dina slag med en referensnivå och visar var du vinner eller förlorar slag. SG4 delar spelet i fyra kategorier – driving, approach, around the green och puttning – så du ser exakt var du har mest att vinna och kan träna smartare.
         </p>
       </section>
+
+      <TopScores />
 
       <TrainingFocus />
 
