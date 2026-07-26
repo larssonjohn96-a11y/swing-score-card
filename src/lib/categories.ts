@@ -5,10 +5,12 @@ export type CategoryTest = {
     | "/speed"
     | "/longdrive"
     | "/fairway"
+    | "/teeshot"
     | "/wedge"
     | "/combine"
     | "/shaping"
     | "/par3";
+
   number: string;
   title: string;
   subtitle: string;
@@ -83,8 +85,20 @@ export const CATEGORIES: Category[] = [
         ],
         result: "RESULTAT: TOTALPOÄNG 0–100",
       },
+      {
+        to: "/teeshot",
+        number: "11",
+        title: "Positionsslag från tee",
+        subtitle: "10 slag utan driver – doglegs & smala fairways",
+        bullets: [
+          "3-wood, hybrid eller järn: välj klubba per slag.",
+          "Träffbilden väger tyngst, längden ger bara bonus.",
+        ],
+        result: "RESULTAT: TOTALPOÄNG 0–100 + FAIRWAY %",
+      },
     ],
   },
+
   {
     slug: "approach",
     title: "Approach",
