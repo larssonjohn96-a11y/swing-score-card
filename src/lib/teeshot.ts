@@ -1,19 +1,26 @@
 /**
- * Off the tee – positionsslag utan driver. Tänkt för doglegs och smala
- * fairways: 10 slag med 3-wood, hybrid eller järn där träffbilden väger
- * tyngre än längden.
+ * Off the tee – positionsslag utan driver mot bestämda landningsytor.
+ * Tre carry-spann × 3 varv = 9 slag. Du väljer klubba själv per slag;
+ * poängen belönar rätt längdkontroll (carry inom spannet) och rätt riktning.
  */
-export const TEE_SHOTS = 10;
 
-export type TeeClub = "wood" | "hybrid" | "iron";
-
-export const TEE_CLUB_LABEL: Record<TeeClub, string> = {
-  wood: "3-wood",
-  hybrid: "Hybrid",
-  iron: "Järn",
+export type TeeZone = {
+  id: string;
+  /** min carry i meter */
+  min: number;
+  /** max carry i meter */
+  max: number;
+  label: string;
 };
 
-export const TEE_CLUBS: TeeClub[] = ["wood", "hybrid", "iron"];
+export const TEE_ZONES: TeeZone[] = [
+  { id: "z1", min: 150, max: 180, label: "150–180 m" },
+  { id: "z2", min: 170, max: 190, label: "170–190 m" },
+  { id: "z3", min: 200, max: 230, label: "200–230 m" },
+];
+
+export const TEE_ROUNDS = 3;
+export const TEE_SHOTS = TEE_ZONES.length * TEE_ROUNDS;
 
 export type TeeResult = "fairway" | "rough" | "out";
 
@@ -25,12 +32,13 @@ export const TEE_RESULT_LABEL: Record<TeeResult, string> = {
 
 export const TEE_RESULTS: TeeResult[] = ["fairway", "rough", "out"];
 
-export type TeeUnit = "m" | "yds";
-
 export type TeeShot = {
-  club: TeeClub;
+  round: number;
+  zoneId: string;
+  /** klubba, fritt vald */
+  club: string;
   result: TeeResult;
-  /** carry i vald enhet, 0 om out/ej mätt */
+  /** carry i meter, 0 om out/ej mätt */
   carry: number;
 };
 
@@ -39,30 +47,49 @@ export type TeeSession = {
   /** ISO-datum, YYYY-MM-DD */
   date: string;
   shots: TeeShot[];
-  unit: TeeUnit;
-  /** carry-mål som användes vid poängsättning */
-  target: number;
+  /** totalpoäng 0–100 */
   points: number;
   note?: string;
 };
 
-/** Standardmål för positionsslag (carry) per enhet. */
-export const DEFAULT_TEE_TARGET = { m: 200, yds: 220 } as const;
-
-/**
- * Poäng per slag, max 10. Träffbilden dominerar (8 p) och längden ger max 2 p –
- * poängen belönar att hitta smala fairways, inte att slå långt.
- */
-export function teeShotPoints(shot: TeeShot, target: number): number {
-  if (shot.result === "out") return -5;
-  const ratio = target > 0 ? Math.min(1, Math.max(0, shot.carry / target)) : 0;
-  if (shot.result === "fairway") return 8 + ratio * 2;
-  return 3 + ratio * 1;
+export function zoneById(id: string): TeeZone | undefined {
+  return TEE_ZONES.find((z) => z.id === id);
 }
 
-/** Totalpoäng för en omgång, max 100. */
-export function teeTotalPoints(shots: TeeShot[], target: number): number {
-  return shots.reduce((sum, s) => sum + teeShotPoints(s, target), 0);
+/** Hur många meter utanför spannet innan längdpoängen är noll. */
+const MISS_ZERO_M = 20;
+
+/** Längdpoäng 0–4 utifrån hur nära carryn ligger landningsytan. */
+export function zoneLengthPoints(zone: TeeZone, carry: number): number {
+  if (carry <= 0) return 0;
+  const miss = carry < zone.min ? zone.min - carry : carry > zone.max ? carry - zone.max : 0;
+  if (miss === 0) return 4;
+  return Math.max(0, 4 * (1 - miss / MISS_ZERO_M));
+}
+
+/** Poäng per slag, max 10: riktning (max 6) + landningsyta (max 4). Out ger −5. */
+export function teeShotPoints(shot: TeeShot): number {
+  if (shot.result === "out") return -5;
+  const zone = zoneById(shot.zoneId);
+  const dir = shot.result === "fairway" ? 6 : 3;
+  return dir + (zone ? zoneLengthPoints(zone, shot.carry) : 0);
+}
+
+/** Totalpoäng 0–100 (9 slag × max 10 p, skalat). */
+export function teeTotalPoints(shots: TeeShot[]): number {
+  if (!shots.length) return 0;
+  const sum = shots.reduce((a, s) => a + teeShotPoints(s), 0);
+  return Math.max(0, (sum / (shots.length * 10)) * 100);
+}
+
+/** Andel slag med carry inom sitt spann. */
+export function zoneHitRate(shots: TeeShot[]) {
+  if (!shots.length) return 0;
+  const hits = shots.filter((s) => {
+    const z = zoneById(s.zoneId);
+    return z && s.result !== "out" && s.carry >= z.min && s.carry <= z.max;
+  }).length;
+  return hits / shots.length;
 }
 
 export function teeHitRate(shots: TeeShot[]) {
@@ -70,7 +97,6 @@ export function teeHitRate(shots: TeeShot[]) {
   return shots.filter((s) => s.result === "fairway").length / shots.length;
 }
 
-/** Andel slag som är i spel (fairway eller ruff). */
 export function teeInPlayRate(shots: TeeShot[]) {
   if (!shots.length) return 0;
   return shots.filter((s) => s.result !== "out").length / shots.length;
@@ -86,26 +112,46 @@ export function teeAvgCarry(shots: TeeShot[]) {
   return inPlay.reduce((a, s) => a + s.carry, 0) / inPlay.length;
 }
 
-export type ClubStat = {
-  club: TeeClub;
+export type ZoneStat = {
+  zone: TeeZone;
   count: number;
+  /** snittpoäng 0–10 */
+  points: number;
+  /** andel carry inom spannet */
   hitRate: number;
+  /** andel fairwayträffar */
+  fairwayRate: number;
   avgCarry: number;
+  /** klubbor som använts */
+  clubs: string[];
 };
 
-export function teeStatsByClub(shots: TeeShot[]): ClubStat[] {
-  return TEE_CLUBS.map((club) => {
-    const own = shots.filter((s) => s.club === club);
+export function statsByZone(shots: TeeShot[]): ZoneStat[] {
+  return TEE_ZONES.map((zone) => {
+    const own = shots.filter((s) => s.zoneId === zone.id);
     return {
-      club,
+      zone,
       count: own.length,
-      hitRate: teeHitRate(own),
+      points: own.length ? own.reduce((a, s) => a + teeShotPoints(s), 0) / own.length : 0,
+      hitRate: zoneHitRate(own),
+      fairwayRate: teeHitRate(own),
       avgCarry: teeAvgCarry(own),
+      clubs: Array.from(new Set(own.map((s) => s.club.trim()).filter(Boolean))),
     };
-  }).filter((c) => c.count > 0);
+  });
 }
 
-const KEY = "golf-teeshot-sessions-v1";
+export function emptyTeeShots(): TeeShot[] {
+  const shots: TeeShot[] = [];
+  for (let round = 1; round <= TEE_ROUNDS; round += 1) {
+    for (const zone of TEE_ZONES) {
+      shots.push({ round, zoneId: zone.id, club: "", result: "fairway", carry: 0 });
+    }
+  }
+  return shots;
+}
+
+const KEY = "golf-teeshot-sessions-v2";
 
 export function loadTeeSessions(): TeeSession[] {
   if (typeof window === "undefined") return [];
