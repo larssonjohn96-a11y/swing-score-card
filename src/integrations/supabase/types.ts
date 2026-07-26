@@ -14,13 +14,114 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      bunker_sessions: {
+        Row: {
+          avg_feet: number
+          created_at: string
+          id: string
+          played_at: string
+          shots: Json
+          total_feet: number
+          user_id: string
+        }
+        Insert: {
+          avg_feet: number
+          created_at?: string
+          id?: string
+          played_at?: string
+          shots?: Json
+          total_feet: number
+          user_id: string
+        }
+        Update: {
+          avg_feet?: number
+          created_at?: string
+          id?: string
+          played_at?: string
+          shots?: Json
+          total_feet?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      drill_sessions: {
+        Row: {
+          created_at: string
+          id: string
+          laps: number
+          played_at: string
+          score: number
+          shots: Json
+          stages_cleared: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          laps?: number
+          played_at?: string
+          score: number
+          shots?: Json
+          stages_cleared?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          laps?: number
+          played_at?: string
+          score?: number
+          shots?: Json
+          stages_cleared?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name: string
+          id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string
+          id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      bunker_leaderboard: {
+        Args: never
+        Returns: {
+          avg_feet: number
+          best_avg_feet: number
+          display_name: string
+          last_played: string
+          sessions: number
+          user_id: string
+        }[]
+      }
+      drill_leaderboard: {
+        Args: never
+        Returns: {
+          avg_score: number
+          best_score: number
+          display_name: string
+          last_played: string
+          sessions: number
+          user_id: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
