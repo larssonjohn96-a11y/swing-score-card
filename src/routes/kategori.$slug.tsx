@@ -108,9 +108,6 @@ function CategoryPage() {
               className="block rounded-3xl border border-border bg-card p-5 shadow-[var(--shadow-glow)] transition-colors hover:border-primary"
             >
               <div className="flex items-start gap-4">
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-flag font-[family-name:var(--font-display)] text-3xl text-primary-foreground">
-                  {t.number}
-                </span>
                 <div>
                   <h2 className="text-3xl leading-none">{t.title}</h2>
                   <p className="text-sm text-muted-foreground">{t.subtitle}</p>
