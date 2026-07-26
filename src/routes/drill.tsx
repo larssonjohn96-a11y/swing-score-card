@@ -64,7 +64,7 @@ function DrillPage() {
       <header className="flex items-end justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Golfdrill</p>
-          <h1 className="text-4xl leading-none">18 bollar</h1>
+          <h1 className="text-4xl leading-none">18 bollar - jÖNKÖPINGS RAnGE</h1>
         </div>
         <Link
           to="/"
