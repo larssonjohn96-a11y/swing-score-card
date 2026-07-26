@@ -26,6 +26,7 @@ import { Route as BunkerRouteImport } from './routes/bunker'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as FramstegIndexRouteImport } from './routes/framsteg.index'
 import { Route as KategoriSlugRouteImport } from './routes/kategori.$slug'
+import { Route as FramstegSlugRouteImport } from './routes/framsteg.$slug'
 
 const WedgeRoute = WedgeRouteImport.update({
   id: '/wedge',
@@ -112,6 +113,11 @@ const KategoriSlugRoute = KategoriSlugRouteImport.update({
   path: '/kategori/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FramstegSlugRoute = FramstegSlugRouteImport.update({
+  id: '/framsteg/$slug',
+  path: '/framsteg/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -129,6 +135,7 @@ export interface FileRoutesByFullPath {
   '/teeshot': typeof TeeshotRoute
   '/topplista': typeof TopplistaRoute
   '/wedge': typeof WedgeRoute
+  '/framsteg/$slug': typeof FramstegSlugRoute
   '/kategori/$slug': typeof KategoriSlugRoute
   '/framsteg/': typeof FramstegIndexRoute
 }
@@ -148,6 +155,7 @@ export interface FileRoutesByTo {
   '/teeshot': typeof TeeshotRoute
   '/topplista': typeof TopplistaRoute
   '/wedge': typeof WedgeRoute
+  '/framsteg/$slug': typeof FramstegSlugRoute
   '/kategori/$slug': typeof KategoriSlugRoute
   '/framsteg': typeof FramstegIndexRoute
 }
@@ -168,6 +176,7 @@ export interface FileRoutesById {
   '/teeshot': typeof TeeshotRoute
   '/topplista': typeof TopplistaRoute
   '/wedge': typeof WedgeRoute
+  '/framsteg/$slug': typeof FramstegSlugRoute
   '/kategori/$slug': typeof KategoriSlugRoute
   '/framsteg/': typeof FramstegIndexRoute
 }
@@ -189,6 +198,7 @@ export interface FileRouteTypes {
     | '/teeshot'
     | '/topplista'
     | '/wedge'
+    | '/framsteg/$slug'
     | '/kategori/$slug'
     | '/framsteg/'
   fileRoutesByTo: FileRoutesByTo
@@ -208,6 +218,7 @@ export interface FileRouteTypes {
     | '/teeshot'
     | '/topplista'
     | '/wedge'
+    | '/framsteg/$slug'
     | '/kategori/$slug'
     | '/framsteg'
   id:
@@ -227,6 +238,7 @@ export interface FileRouteTypes {
     | '/teeshot'
     | '/topplista'
     | '/wedge'
+    | '/framsteg/$slug'
     | '/kategori/$slug'
     | '/framsteg/'
   fileRoutesById: FileRoutesById
@@ -247,6 +259,7 @@ export interface RootRouteChildren {
   TeeshotRoute: typeof TeeshotRoute
   TopplistaRoute: typeof TopplistaRoute
   WedgeRoute: typeof WedgeRoute
+  FramstegSlugRoute: typeof FramstegSlugRoute
   KategoriSlugRoute: typeof KategoriSlugRoute
   FramstegIndexRoute: typeof FramstegIndexRoute
 }
@@ -372,6 +385,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof KategoriSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/framsteg/$slug': {
+      id: '/framsteg/$slug'
+      path: '/framsteg/$slug'
+      fullPath: '/framsteg/$slug'
+      preLoaderRoute: typeof FramstegSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -391,6 +411,7 @@ const rootRouteChildren: RootRouteChildren = {
   TeeshotRoute: TeeshotRoute,
   TopplistaRoute: TopplistaRoute,
   WedgeRoute: WedgeRoute,
+  FramstegSlugRoute: FramstegSlugRoute,
   KategoriSlugRoute: KategoriSlugRoute,
   FramstegIndexRoute: FramstegIndexRoute,
 }
