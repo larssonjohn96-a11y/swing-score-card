@@ -10,7 +10,7 @@ export const Route = createFileRoute("/framsteg/")({
       {
         name: "description",
         content:
-          "Se hur du utvecklas i combine, driving, approach, around the green och puttning – och klicka in på varje enskilt test.",
+          "Se hur du utvecklas i driving, approach, around the green och puttning – och klicka in på varje enskilt test.",
       },
       { property: "og:title", content: "Framsteg – följ din utveckling per kategori" },
       {
