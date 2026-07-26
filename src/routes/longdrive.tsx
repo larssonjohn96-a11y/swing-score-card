@@ -14,6 +14,8 @@ import {
   type LongDriveUnit,
 } from "@/lib/longdrive";
 import { HCP, TOUR, TOUR_TOP5 } from "@/lib/benchmarks";
+import { LEVELS } from "@/lib/levels";
+import { ChartCard } from "@/components/chart-card";
 
 export const Route = createFileRoute("/longdrive")({
   head: () => ({
