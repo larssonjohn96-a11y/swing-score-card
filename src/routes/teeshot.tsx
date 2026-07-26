@@ -315,7 +315,7 @@ function TeeShotPage() {
       </section>
 
       {chartData.length > 1 ? (
-        <ChartCard title="Poäng över tid" subtitle={`Max ${TEE_SHOTS} poäng`}>
+        <ChartCard title="Poäng över tid">
           <ResponsiveContainer width="100%" height={220}>
             <LineChart data={chartData} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
@@ -336,7 +336,7 @@ function TeeShotPage() {
       ) : null}
 
       {chartData.length > 1 ? (
-        <ChartCard title="Längd och bredd" subtitle="Andel slag inom spann respektive bredd">
+        <ChartCard title="Längd och bredd">
           <ResponsiveContainer width="100%" height={220}>
             <LineChart data={chartData} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
