@@ -24,6 +24,9 @@ import {
   statsByZone,
   teeAvgOffline,
   teeHitRate,
+  teeLengthMissDirection,
+  teeMissBreakdown,
+
   teeLengthRate,
   teeStats,
   teeTotalPoints,
