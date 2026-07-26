@@ -350,12 +350,13 @@ function CombinePage() {
             title="Poäng per station"
             footer={
               <p className="text-xs text-muted-foreground">
-                100 poäng = elitträff. Grön = bästa station, röd = svagaste.
+                100 poäng = elitträff. Siffran ovanför stapeln är proximity i procent av avståndet
+                (driver: sidoavvikelse i procent av carry). Grön = bästa station, röd = svagaste.
               </p>
             }
           >
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={stationChart} margin={{ top: 5, right: 8, bottom: 0, left: -20 }}>
+              <BarChart data={stationChart} margin={{ top: 16, right: 8, bottom: 0, left: -20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                 <XAxis
                   dataKey="label"
@@ -374,8 +375,27 @@ function CombinePage() {
                     borderRadius: 12,
                     fontSize: 12,
                   }}
+                  formatter={(value: number, _name: string, item: { payload?: { pct?: number | null; driver?: boolean } }) => {
+                    const pct = item?.payload?.pct;
+                    const suffix =
+                      pct === null || pct === undefined
+                        ? ""
+                        : item?.payload?.driver
+                          ? ` (${pct.toFixed(1)} % offline)`
+                          : ` (${pct.toFixed(1)} % proximity)`;
+                    return [`${value}${suffix}`, "Poäng"];
+                  }}
                 />
                 <Bar dataKey="Poäng" radius={[8, 8, 0, 0]}>
+                  <LabelList
+                    dataKey="pct"
+                    position="top"
+                    fontSize={10}
+                    fill="var(--color-muted-foreground)"
+                    formatter={(v: number | null) =>
+                      v === null || v === undefined ? "" : `${v.toFixed(1)}%`
+                    }
+                  />
                   {stationChart.map((d) => (
                     <Cell
                       key={d.label}
@@ -397,6 +417,7 @@ function CombinePage() {
                     />
                   ))}
                 </Bar>
+
               </BarChart>
             </ResponsiveContainer>
           </ChartCard>
