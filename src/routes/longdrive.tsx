@@ -13,7 +13,8 @@ import {
   type LongDriveSession,
   type LongDriveUnit,
 } from "@/lib/longdrive";
-import { HCP, TOUR, TOUR_TOP5 } from "@/lib/benchmarks";
+import { LEVELS } from "@/lib/levels";
+import { ChartCard } from "@/components/chart-card";
 
 export const Route = createFileRoute("/longdrive")({
   head: () => ({
@@ -68,13 +69,10 @@ function LongDrivePage() {
   const chartUnit = sessions.length ? sessions[sessions.length - 1].unit : unit;
   const refLines = useMemo(() => {
     const yds = chartUnit === "yds";
-    return [
-      { y: yds ? TOUR_TOP5.carryYds : TOUR_TOP5.carryM, text: `Long hitters ${yds ? TOUR_TOP5.carryYds : TOUR_TOP5.carryM}` },
-      { y: yds ? TOUR.carryYds : TOUR.carryM, text: `Tour ${yds ? TOUR.carryYds : TOUR.carryM}` },
-      { y: yds ? HCP.scratch.carryYds : HCP.scratch.carryM, text: `0 hcp ${yds ? HCP.scratch.carryYds : HCP.scratch.carryM}` },
-      { y: yds ? HCP.ten.carryYds : HCP.ten.carryM, text: `10 hcp ${yds ? HCP.ten.carryYds : HCP.ten.carryM}` },
-      { y: yds ? HCP.twenty.carryYds : HCP.twenty.carryM, text: `20 hcp ${yds ? HCP.twenty.carryYds : HCP.twenty.carryM}` },
-    ];
+    return LEVELS.map((l) => {
+      const y = yds ? l.carryYds : l.carryM;
+      return { y, text: `${l.label} ${y}` };
+    });
   }, [chartUnit]);
 
 
@@ -226,66 +224,69 @@ function LongDrivePage() {
       </section>
 
       {sessions.length > 1 ? (
-        <section className="mt-6 rounded-3xl border border-border bg-card p-5">
-          <h2 className="text-sm uppercase tracking-[0.25em] text-muted-foreground">
-            Utveckling över tid
-          </h2>
-          <div className="mt-4 h-56 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ top: 5, right: 8, bottom: 0, left: -20 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                <XAxis dataKey="label" tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
-                <YAxis tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" domain={["auto", "auto"]} />
-                <Tooltip
-                  contentStyle={{
-                    background: "var(--color-card)",
-                    border: "1px solid var(--color-border)",
-                    borderRadius: 12,
-                    fontSize: 12,
+        <ChartCard
+          title="Utveckling över tid"
+          footer={
+            <p className="text-xs text-muted-foreground">
+              Streckade linjer: alla nivåer från 30 hcp till tourens long hitters. Tryck på grafen
+              för helskärm.
+            </p>
+          }
+        >
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData} margin={{ top: 5, right: 8, bottom: 0, left: -20 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+              <XAxis dataKey="label" tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
+              <YAxis tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" domain={["auto", "auto"]} />
+              <Tooltip
+                contentStyle={{
+                  background: "var(--color-card)",
+                  border: "1px solid var(--color-border)",
+                  borderRadius: 12,
+                  fontSize: 12,
+                }}
+              />
+              {refLines.map((r) => (
+                <ReferenceLine
+                  key={r.text}
+                  y={r.y}
+                  stroke="var(--color-flag)"
+                  strokeDasharray="5 5"
+                  label={{
+                    value: r.text,
+                    position: "insideTopRight",
+                    fontSize: 10,
+                    fill: "var(--color-muted-foreground)",
                   }}
                 />
-                {refLines.map((r) => (
-                  <ReferenceLine
-                    key={r.text}
-                    y={r.y}
-                    stroke="var(--color-flag)"
-                    strokeDasharray="5 5"
-                    label={{
-                      value: r.text,
-                      position: "insideTopRight",
-                      fontSize: 10,
-                      fill: "var(--color-muted-foreground)",
-                    }}
-                  />
-                ))}
-                <Line
-                  type="monotone"
-                  dataKey="best"
-                  name="Längsta"
-                  stroke="var(--color-primary)"
-                  strokeWidth={3}
-                  connectNulls
-                  isAnimationActive={false}
-                  dot={{ r: 4, fill: "var(--color-primary)", strokeWidth: 2, stroke: "var(--color-card)" }}
-                  activeDot={{ r: 6 }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="snitt"
-                  name="Snitt"
-                  stroke="var(--color-flag)"
-                  strokeWidth={3}
-                  connectNulls
-                  isAnimationActive={false}
-                  dot={{ r: 4, fill: "var(--color-flag)", strokeWidth: 2, stroke: "var(--color-card)" }}
-                  activeDot={{ r: 6 }}
-                />
-              </LineChart>
-
-            </ResponsiveContainer>
-          </div>
-        </section>
+              ))}
+              <Line
+                type="monotone"
+                dataKey="best"
+                name="Längsta"
+                stroke="var(--color-primary)"
+                strokeWidth={3}
+                connectNulls
+                isAnimationActive={false}
+                dot={{ r: 4, fill: "var(--color-primary)", strokeWidth: 2, stroke: "var(--color-card)" }}
+                activeDot={{ r: 6 }}
+              />
+              <Line
+                type="monotone"
+                dataKey="snitt"
+                name="Snitt"
+                stroke="var(--color-flag)"
+                strokeWidth={3}
+                connectNulls
+                isAnimationActive={false}
+                dot={{ r: 4, fill: "var(--color-flag)", strokeWidth: 2, stroke: "var(--color-card)" }}
+                activeDot={{ r: 6 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </ChartCard>
       ) : null}
+
 
       {sessions.length ? (
         <section className="mt-6">

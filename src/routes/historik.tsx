@@ -1,6 +1,14 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { CartesianGrid, Line, LineChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  ReferenceLine,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+} from "recharts";
 import {
   DISTANCES,
   deleteSession,
@@ -15,6 +23,9 @@ import {
   loadBunkerSessions,
   type BunkerSession,
 } from "@/lib/bunker";
+import { ChartCard } from "@/components/chart-card";
+import { LevelToggle } from "@/components/level-toggle";
+import { DEFAULT_LEVEL, getLevel, loadLevel, saveLevel, type LevelKey } from "@/lib/levels";
 
 export const Route = createFileRoute("/historik")({
   head: () => ({
@@ -41,11 +52,18 @@ function HistoryPage() {
   const [tab, setTab] = useState<Tab>("drill");
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
   const [bunker, setBunker] = useState<BunkerSession[]>([]);
+  const [level, setLevel] = useState<LevelKey>(DEFAULT_LEVEL);
 
   useEffect(() => {
     setSessions(loadSessions());
     setBunker(loadBunkerSessions());
+    setLevel(loadLevel());
   }, []);
+
+  function pickLevel(key: LevelKey) {
+    setLevel(key);
+    saveLevel(key);
+  }
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-16 pt-8">
@@ -81,11 +99,25 @@ function HistoryPage() {
         ))}
       </div>
 
+      <p className="mt-4 text-xs uppercase tracking-[0.2em] text-muted-foreground">Jämför mot nivå</p>
+      <div className="mt-2">
+        <LevelToggle value={level} onChange={pickLevel} />
+      </div>
+
       {tab === "drill" ? (
-        <DrillHistory sessions={sessions} onDelete={(id) => setSessions(deleteSession(id))} />
+        <DrillHistory
+          sessions={sessions}
+          level={level}
+          onDelete={(id) => setSessions(deleteSession(id))}
+        />
       ) : (
-        <BunkerHistory sessions={bunker} onDelete={(id) => setBunker(deleteBunkerSession(id))} />
+        <BunkerHistory
+          sessions={bunker}
+          level={level}
+          onDelete={(id) => setBunker(deleteBunkerSession(id))}
+        />
       )}
+
     </main>
   );
 }
@@ -105,13 +137,22 @@ function Chart({
   data,
   domain,
   ticks,
+  refLines,
 }: {
   data: { name: string; value: number }[];
   domain: [number, number | "auto"];
   ticks?: number[];
+  refLines?: { y: number; text: string }[];
 }) {
   return (
-    <section className="mt-4 h-56 rounded-3xl border border-border bg-card p-4">
+    <ChartCard
+      title="Utveckling över tid"
+      footer={
+        <p className="text-xs text-muted-foreground">
+          Streckade linjer visar vald jämförelsenivå. Tryck på grafen för helskärm.
+        </p>
+      }
+    >
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
           <CartesianGrid stroke="var(--color-border)" vertical={false} />
@@ -122,6 +163,20 @@ function Chart({
             stroke="var(--color-muted-foreground)"
             fontSize={11}
           />
+          {(refLines ?? []).map((r) => (
+            <ReferenceLine
+              key={r.text}
+              y={r.y}
+              stroke="var(--color-flag)"
+              strokeDasharray="5 5"
+              label={{
+                value: r.text,
+                position: "insideTopRight",
+                fontSize: 10,
+                fill: "var(--color-muted-foreground)",
+              }}
+            />
+          ))}
           <Line
             type="monotone"
             dataKey="value"
@@ -129,14 +184,15 @@ function Chart({
             strokeWidth={3}
             connectNulls
             isAnimationActive={false}
-            dot={{ r: 4, fill: "var(--color-primary)", stroke: "hsl(var(--card))", strokeWidth: 2 }}
+            dot={{ r: 4, fill: "var(--color-primary)", stroke: "var(--color-card)", strokeWidth: 2 }}
             activeDot={{ r: 6 }}
           />
         </LineChart>
       </ResponsiveContainer>
-    </section>
+    </ChartCard>
   );
 }
+
 
 function Empty({ text }: { text: string }) {
   return (
@@ -148,9 +204,11 @@ function Empty({ text }: { text: string }) {
 
 function DrillHistory({
   sessions,
+  level,
   onDelete,
 }: {
   sessions: SessionRecord[];
+  level: LevelKey;
   onDelete: (id: string) => void;
 }) {
   if (sessions.length === 0)
@@ -159,6 +217,7 @@ function DrillHistory({
   const best = sessions.reduce((m, s) => Math.max(m, s.score), 0);
   const avg = sessions.reduce((a, s) => a + s.score, 0) / sessions.length;
   const allShots = sessions.flatMap((s) => s.shots);
+  const lv = getLevel(level);
 
   return (
     <>
@@ -172,7 +231,9 @@ function DrillHistory({
         data={sessions.map((s, i) => ({ name: `#${i + 1}`, value: Number(s.score.toFixed(2)) }))}
         domain={[0, 3]}
         ticks={[0, 1, 2, 3]}
+        refLines={[{ y: lv.drillScore, text: `${lv.label} ${lv.drillScore.toFixed(1)}` }]}
       />
+
 
       <section className="mt-4 rounded-3xl border border-border bg-card p-5">
         <h2 className="text-xl">Träffprocent per avstånd</h2>
@@ -218,9 +279,11 @@ function DrillHistory({
 
 function BunkerHistory({
   sessions,
+  level,
   onDelete,
 }: {
   sessions: BunkerSession[];
+  level: LevelKey;
   onDelete: (id: string) => void;
 }) {
   if (sessions.length === 0)
@@ -228,6 +291,7 @@ function BunkerHistory({
 
   const best = Math.min(...sessions.map((s) => s.avgFeet));
   const avg = sessions.reduce((a, s) => a + s.avgFeet, 0) / sessions.length;
+  const lv = getLevel(level);
 
   const perLie = BUNKER_LIES.map((lie) => {
     const rows = sessions.flatMap((s) => s.shots.filter((x) => x.lie === lie));
@@ -247,7 +311,9 @@ function BunkerHistory({
       <Chart
         data={sessions.map((s, i) => ({ name: `#${i + 1}`, value: Number(s.avgFeet.toFixed(1)) }))}
         domain={[0, "auto"]}
+        refLines={[{ y: lv.bunkerFeet, text: `${lv.label} ${lv.bunkerFeet} fot` }]}
       />
+
 
       <section className="mt-4 rounded-3xl border border-border bg-card p-5">
         <h2 className="text-xl">Snitt per läge (fot)</h2>
