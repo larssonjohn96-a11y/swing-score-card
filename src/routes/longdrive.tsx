@@ -13,7 +13,6 @@ import {
   type LongDriveSession,
   type LongDriveUnit,
 } from "@/lib/longdrive";
-import { TOUR } from "@/lib/benchmarks";
 import { LEVELS } from "@/lib/levels";
 import { ChartCard } from "@/components/chart-card";
 
