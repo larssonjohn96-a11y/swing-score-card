@@ -14,10 +14,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 
-const START_TEST_CATEGORIES = CATEGORIES.filter((c) => c.tests.length > 0).slice(
-  0,
-  4,
-);
+const START_TEST_CATEGORIES = CATEGORIES;
 
 export function BottomNav() {
   const [open, setOpen] = useState(false);
