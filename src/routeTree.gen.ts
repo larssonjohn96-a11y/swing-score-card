@@ -11,7 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as HistorikRouteImport } from './routes/historik'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as DrillRouteImport } from './routes/drill'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -23,38 +23,38 @@ const HistorikRoute = HistorikRouteImport.update({
   path: '/historik',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const DrillRoute = DrillRouteImport.update({
+  id: '/drill',
+  path: '/drill',
   getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
+  '/drill': typeof DrillRoute
   '/historik': typeof HistorikRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
+  '/drill': typeof DrillRoute
   '/historik': typeof HistorikRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
+  '/drill': typeof DrillRoute
   '/historik': typeof HistorikRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/historik' | '/sitemap.xml'
+  fullPaths: '/drill' | '/historik' | '/sitemap.xml'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/historik' | '/sitemap.xml'
-  id: '__root__' | '/' | '/historik' | '/sitemap.xml'
+  to: '/drill' | '/historik' | '/sitemap.xml'
+  id: '__root__' | '/drill' | '/historik' | '/sitemap.xml'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
+  DrillRoute: typeof DrillRoute
   HistorikRoute: typeof HistorikRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
 }
@@ -75,18 +75,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HistorikRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/drill': {
+      id: '/drill'
+      path: '/drill'
+      fullPath: '/drill'
+      preLoaderRoute: typeof DrillRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
+  DrillRoute: DrillRoute,
   HistorikRoute: HistorikRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
 }

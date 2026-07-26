@@ -16,7 +16,7 @@ import {
   type DrillState,
 } from "@/lib/drill";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/drill")({
   head: () => ({
     meta: [
       { title: "18-bollarsdrillen – Golfträning 75/125/150m" },
@@ -65,10 +65,10 @@ function DrillPage() {
           <h1 className="text-4xl leading-none">18 bollar</h1>
         </div>
         <Link
-          to="/historik"
+          to="/"
           className="rounded-full border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
         >
-          Historik
+          Tillbaka
         </Link>
       </header>
 
