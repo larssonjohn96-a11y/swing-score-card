@@ -30,6 +30,7 @@ export const Route = createFileRoute("/")({
 
 function Home() {
   const { user, displayName } = useAuth();
+  const [focusKey, setFocusKey] = useState(0);
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-16 pt-10">
@@ -64,7 +65,9 @@ function Home() {
         </Link>
       </nav>
 
-      <TrainingFocus />
+      <PlayerHcpCard onLevelChange={() => setFocusKey((k) => k + 1)} />
+
+      <TrainingFocus key={focusKey} />
 
       <section className="mt-8 space-y-4">
         <h2 className="text-sm uppercase tracking-[0.25em] text-muted-foreground">Kategorier</h2>
