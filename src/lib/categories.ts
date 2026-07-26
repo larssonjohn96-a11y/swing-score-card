@@ -1,5 +1,5 @@
 export type CategoryTest = {
-  to: "/drill" | "/bunker" | "/speed" | "/longdrive" | "/fairway";
+  to: "/drill" | "/bunker" | "/speed" | "/longdrive" | "/fairway" | "/wedge";
   number: string;
   title: string;
   subtitle: string;
@@ -52,6 +52,17 @@ export const CATEGORIES: Category[] = [
         subtitle: "75 / 125 / 150 meter",
         bullets: ["2 bollar per avstånd innan du går vidare.", "Tre varv ger 3.0 i score."],
         result: "RESULTAT: SCORE 0–3.0",
+      },
+      {
+        to: "/wedge",
+        number: "7",
+        title: "Wedge matrix",
+        subtitle: "20 slag – 40 till 120 m",
+        bullets: [
+          "5 avstånd × 2 bollar × 2 varv.",
+          "Mät avstånd till hål – snitt och spridning per avstånd.",
+        ],
+        result: "RESULTAT: MEDELPROXIMITY + SPRIDNING",
       },
     ],
   },
