@@ -28,8 +28,7 @@ import {
   type FairwaySession,
   type FairwayUnit,
 } from "@/lib/fairway";
-import { LEVELS, getLevel, loadLevel, saveLevel, type LevelKey } from "@/lib/levels";
-import { LevelToggle } from "@/components/level-toggle";
+import { TOUR_LEVEL } from "@/lib/levels";
 import { ChartCard } from "@/components/chart-card";
 
 export const Route = createFileRoute("/fairway")({
@@ -69,20 +68,18 @@ function FairwayPage() {
   const [sessions, setSessions] = useState<FairwaySession[]>([]);
   const [date, setDate] = useState(todayISO());
   const [unit, setUnit] = useState<FairwayUnit>("m");
-  const [level, setLevel] = useState<LevelKey>("tour");
   const [rows, setRows] = useState(EMPTY_DRIVES);
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setSessions(loadFairwaySessions());
-    setLevel(loadLevel());
   }, []);
 
-  const target = useMemo(() => {
-    const l = getLevel(level);
-    return unit === "yds" ? l.carryYds : l.carryM;
-  }, [level, unit]);
+  const target = useMemo(
+    () => (unit === "yds" ? TOUR_LEVEL.carryYds : TOUR_LEVEL.carryM),
+    [unit],
+  );
 
   const drives: FairwayDrive[] = useMemo(
     () =>
@@ -110,11 +107,6 @@ function FairwayPage() {
 
   function setRow(i: number, patch: Partial<{ result: DriveResult; carry: string }>) {
     setRows((prev) => prev.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
-  }
-
-  function pickLevel(key: LevelKey) {
-    setLevel(key);
-    saveLevel(key);
   }
 
   function submit() {
@@ -206,9 +198,6 @@ function FairwayPage() {
         />
 
         <p className="mt-4 text-sm text-muted-foreground">Carry-mål (full längdpoäng)</p>
-        <div className="mt-2">
-          <LevelToggle value={level} onChange={pickLevel} />
-        </div>
         <p className="mt-2 text-xs text-muted-foreground">
           Mål: {target} {unit} carry ger full längdpoäng.
         </p>
@@ -407,11 +396,8 @@ function FairwayPage() {
           <li>• Out: −5 p, ingen längdpoäng – precis som ett pliktslag på banan.</li>
         </ul>
         <p className="mt-3">
-          Längdpoängen räknas mot vald nivås carry-mål ({getLevel(level).label}: {target} {unit}).
+          Längdpoängen räknas mot PGA Tour-nivåns carry-mål ({target} {unit}).
           Alla tio i fairway på målavståndet ger 100 poäng.
-        </p>
-        <p className="mt-3">
-          Nivåerna att jämföra mot: {LEVELS.map((l) => l.label).join(", ")}.
         </p>
       </section>
     </main>

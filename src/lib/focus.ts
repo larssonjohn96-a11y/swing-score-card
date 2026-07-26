@@ -3,12 +3,12 @@ import { loadSessions } from "@/lib/drill";
 import { loadBunkerSessions } from "@/lib/bunker";
 import { loadSpeedEntries } from "@/lib/speed";
 import { loadLongDriveSessions, sessionBest } from "@/lib/longdrive";
-import { getLevel, type Level, type LevelKey } from "@/lib/levels";
+import { TOUR_LEVEL, type Level } from "@/lib/levels";
 
 export type CategoryRating = {
   slug: string;
   title: string;
-  /** 0–100 där 100 = vald jämförelsenivå. undefined = inga resultat än */
+  /** 0–100 där 100 = PGA Tour-nivå. undefined = inga resultat än */
   rating?: number;
   detail: string;
   hasTests: boolean;
@@ -22,8 +22,8 @@ function lastAvg(values: number[], n = 3) {
   return slice.length ? slice.reduce((a, b) => a + b, 0) / slice.length : undefined;
 }
 
-export function computeRatings(levelKey: LevelKey = "tour"): CategoryRating[] {
-  const level: Level = getLevel(levelKey);
+export function computeRatings(): CategoryRating[] {
+  const level: Level = TOUR_LEVEL;
   const drill = loadSessions();
   const bunker = loadBunkerSessions();
   const speed = loadSpeedEntries();

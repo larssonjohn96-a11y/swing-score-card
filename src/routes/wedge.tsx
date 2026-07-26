@@ -29,8 +29,7 @@ import {
   type WedgeSession,
 } from "@/lib/wedge";
 import { ChartCard } from "@/components/chart-card";
-import { LevelToggle } from "@/components/level-toggle";
-import { LEVELS, getLevel, loadLevel, saveLevel, type LevelKey } from "@/lib/levels";
+import { LEVELS, TOUR_LEVEL } from "@/lib/levels";
 
 export const Route = createFileRoute("/wedge")({
   head: () => ({
@@ -63,17 +62,10 @@ function WedgePage() {
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
   const [sessions, setSessions] = useState<WedgeSession[]>([]);
-  const [level, setLevel] = useState<LevelKey>("tour");
 
   useEffect(() => {
     setSessions(loadWedgeSessions());
-    setLevel(loadLevel());
   }, []);
-
-  function changeLevel(key: LevelKey) {
-    setLevel(key);
-    saveLevel(key);
-  }
 
   const filledShots = shotOrder
     .map((s, i) => ({ ...s, proximity: Number(values[i].replace(",", ".")) }))
@@ -109,7 +101,7 @@ function WedgePage() {
     Spridning: Number(s.spread.toFixed(2)),
   }));
 
-  const lv = getLevel(level);
+  const lv = TOUR_LEVEL;
   const analysisShots = filledShots.length
     ? filledShots
     : sessions.length
@@ -279,9 +271,6 @@ function WedgePage() {
             <p className="mt-1 text-sm text-muted-foreground">
               Snittavstånd till hål delat med slagets längd. Lägre är bättre.
             </p>
-            <div className="mt-3">
-              <LevelToggle value={level} onChange={changeLevel} />
-            </div>
             {bestDist && worstDist ? (
               <p className="mt-3 text-sm">
                 Bäst: <span className="text-flag">{bestDist.distance} m ({bestDist.pct.toFixed(1)}%)</span>{" "}
@@ -361,7 +350,7 @@ function WedgePage() {
           title="Proximity % över tid"
           footer={
             <p className="text-xs text-muted-foreground">
-              Jämför mot vald nivå: {lv.label} {lv.wedgePct}%. Lägre är bättre.
+              Jämför mot PGA Tour: {lv.wedgePct}%. Lägre är bättre.
             </p>
           }
         >
