@@ -1,0 +1,70 @@
+import { Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { computeRatings, weakestCategory, type CategoryRating } from "@/lib/focus";
+
+export function TrainingFocus() {
+  const [ratings, setRatings] = useState<CategoryRating[] | null>(null);
+
+  useEffect(() => {
+    setRatings(computeRatings());
+  }, []);
+
+  if (!ratings) return null;
+  const weakest = weakestCategory(ratings);
+  const sorted = [...ratings].sort(
+    (a, b) => (a.rating ?? 999) - (b.rating ?? 999),
+  );
+
+  return (
+    <section className="mt-8 rounded-3xl border border-border bg-card p-5 shadow-[var(--shadow-glow)]">
+      <h2 className="text-sm uppercase tracking-[0.25em] text-muted-foreground">Träningsfokus</h2>
+      {weakest ? (
+        <p className="mt-2 text-sm text-muted-foreground">
+          Just nu ligger du lägst i{" "}
+          <span className="font-semibold text-flag">{weakest.title}</span> – lägg mest tid där.
+        </p>
+      ) : (
+        <p className="mt-2 text-sm text-muted-foreground">
+          Kör minst ett test så räknar vi ut vilken kategori du behöver träna mest på.
+        </p>
+      )}
+
+      <div className="mt-4 space-y-3">
+        {sorted.map((r) => (
+          <Link
+            key={r.slug}
+            to="/kategori/$slug"
+            params={{ slug: r.slug }}
+            className="block"
+          >
+            <div className="flex items-baseline justify-between text-sm">
+              <span
+                className={
+                  weakest?.slug === r.slug ? "font-semibold text-flag" : "text-foreground"
+                }
+              >
+                {r.title}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {typeof r.rating === "number" ? `${Math.round(r.rating)} / 100` : "Ingen data"}
+              </span>
+            </div>
+            <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-muted">
+              <div
+                className={`h-full rounded-full ${
+                  weakest?.slug === r.slug ? "bg-flag" : "bg-primary"
+                }`}
+                style={{ width: `${typeof r.rating === "number" ? r.rating : 0}%` }}
+              />
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">{r.detail}</p>
+          </Link>
+        ))}
+      </div>
+
+      <p className="mt-4 text-xs text-muted-foreground">
+        Nivån jämförs mot PGA Tour-snitt: 100 = tournivå.
+      </p>
+    </section>
+  );
+}

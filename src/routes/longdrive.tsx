@@ -13,6 +13,7 @@ import {
   type LongDriveSession,
   type LongDriveUnit,
 } from "@/lib/longdrive";
+import { TOUR } from "@/lib/benchmarks";
 
 export const Route = createFileRoute("/longdrive")({
   head: () => ({

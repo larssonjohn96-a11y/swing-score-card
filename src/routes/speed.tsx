@@ -1,6 +1,15 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  ReferenceLine,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import {
   deleteSpeedEntry,
   loadSpeedEntries,
@@ -10,6 +19,7 @@ import {
   todayISO,
   type SpeedEntry,
 } from "@/lib/speed";
+import { TOUR } from "@/lib/benchmarks";
 
 export const Route = createFileRoute("/speed")({
   head: () => ({
@@ -114,14 +124,18 @@ function SpeedPage() {
           <p className="font-[family-name:var(--font-display)] text-5xl leading-none text-flag">
             {stats.bestBall ? stats.bestBall.toFixed(1) : "–"}
           </p>
-          <p className="mt-1 text-xs text-muted-foreground">mph</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            mph · tour {TOUR.ballSpeed}
+          </p>
         </div>
         <div className="rounded-3xl border border-border bg-card p-5 text-center">
           <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Bästa club</p>
           <p className="font-[family-name:var(--font-display)] text-5xl leading-none">
             {stats.bestClub ? stats.bestClub.toFixed(1) : "–"}
           </p>
-          <p className="mt-1 text-xs text-muted-foreground">mph</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            mph · tour {TOUR.clubSpeed}
+          </p>
         </div>
       </section>
 
@@ -214,6 +228,18 @@ function SpeedPage() {
                     fontSize: 12,
                   }}
                 />
+                <ReferenceLine
+                  y={TOUR.ballSpeed}
+                  stroke="var(--flag)"
+                  strokeDasharray="5 5"
+                  label={{ value: `Tour ${TOUR.ballSpeed}`, position: "insideTopRight", fontSize: 10 }}
+                />
+                <ReferenceLine
+                  y={TOUR.clubSpeed}
+                  stroke="var(--flag)"
+                  strokeDasharray="2 6"
+                  label={{ value: `Tour ${TOUR.clubSpeed}`, position: "insideBottomRight", fontSize: 10 }}
+                />
                 <Line
                   type="monotone"
                   dataKey="ball"
@@ -281,6 +307,10 @@ function SpeedPage() {
           Mät bollhastigheten i mph med launch monitor eller radar. Fyll gärna i klubbhuvudets
           hastighet också – då räknas smash factor ut automatiskt (ball ÷ club). Logga en mätning
           per tillfälle och följ kurvan över tid.
+        </p>
+        <p className="mt-3">
+          PGA Tour-snitt med driver: {TOUR.ballSpeed} mph ball speed, {TOUR.clubSpeed} mph club head
+          speed och smash factor {TOUR.smashFactor}. Linjerna i grafen visar tournivån.
         </p>
       </section>
     </main>

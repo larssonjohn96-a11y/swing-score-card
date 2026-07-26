@@ -2,6 +2,7 @@ import { Link, createFileRoute } from "@tanstack/react-router";
 import { CATEGORIES } from "@/lib/categories";
 import { useAuth } from "@/hooks/use-auth";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { TrainingFocus } from "@/components/training-focus";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -59,6 +60,8 @@ function Home() {
           Topplista
         </Link>
       </nav>
+
+      <TrainingFocus />
 
       <section className="mt-8 space-y-4">
         <h2 className="text-sm uppercase tracking-[0.25em] text-muted-foreground">Kategorier</h2>
