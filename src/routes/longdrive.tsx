@@ -237,7 +237,10 @@ function LongDrivePage() {
                   name="Längsta"
                   stroke="hsl(var(--primary))"
                   strokeWidth={2}
-                  dot={{ r: 3 }}
+                  connectNulls
+                  isAnimationActive={false}
+                  dot={{ r: 4, strokeWidth: 2, stroke: "hsl(var(--card))" }}
+                  activeDot={{ r: 6 }}
                 />
                 <Line
                   type="monotone"
@@ -246,7 +249,10 @@ function LongDrivePage() {
                   stroke="hsl(var(--muted-foreground))"
                   strokeWidth={2}
                   strokeDasharray="4 4"
-                  dot={{ r: 3 }}
+                  connectNulls
+                  isAnimationActive={false}
+                  dot={{ r: 4, strokeWidth: 2, stroke: "hsl(var(--card))" }}
+                  activeDot={{ r: 6 }}
                 />
               </LineChart>
             </ResponsiveContainer>

@@ -258,7 +258,10 @@ function SpeedPage() {
                   name="Ball speed"
                   stroke="hsl(var(--primary))"
                   strokeWidth={2}
-                  dot={{ r: 3 }}
+                  connectNulls
+                  isAnimationActive={false}
+                  dot={{ r: 4, fill: "hsl(var(--primary))", stroke: "hsl(var(--card))", strokeWidth: 2 }}
+                  activeDot={{ r: 6 }}
                 />
                 {hasClub ? (
                   <Line
@@ -269,7 +272,9 @@ function SpeedPage() {
                     strokeWidth={2}
                     strokeDasharray="4 4"
                     connectNulls
-                    dot={{ r: 3 }}
+                    isAnimationActive={false}
+                    dot={{ r: 4, fill: "hsl(var(--muted-foreground))", stroke: "hsl(var(--card))", strokeWidth: 2 }}
+                    activeDot={{ r: 6 }}
                   />
                 ) : null}
               </LineChart>
