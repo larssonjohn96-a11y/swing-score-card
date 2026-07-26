@@ -39,11 +39,11 @@ export function BottomNav() {
             <SheetTrigger asChild>
               <button
                 type="button"
-                className="relative -mt-7 flex h-16 w-16 flex-col items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_8px_24px_-6px_var(--primary)] transition-transform active:scale-95"
+                className="relative -mt-8 flex h-20 w-20 flex-col items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_8px_24px_-6px_var(--primary)] transition-transform active:scale-95"
                 aria-label="Starta test"
               >
                 <Play className="h-5 w-5 fill-current" />
-                <span className="mt-0.5 text-[9px] font-bold uppercase tracking-wide leading-none">
+                <span className="mt-1 text-[10px] font-bold uppercase tracking-wide leading-none">
                   Starta test
                 </span>
               </button>
