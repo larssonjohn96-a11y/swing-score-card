@@ -52,7 +52,7 @@ export function BottomNav() {
             <SheetContent side="bottom" className="rounded-t-3xl pb-8 pt-6">
               <SheetHeader className="mb-4">
                 <SheetTitle className="text-center text-lg font-display tracking-wide">
-                  Välj kategori
+                  Starta test
                 </SheetTitle>
               </SheetHeader>
 
@@ -92,7 +92,7 @@ export function BottomNav() {
 
           <Link
             to="/framsteg"
-            className="flex flex-col items-center gap-0.5 px-4 py-2 text-muted-foreground transition-colors hover:text-foreground active:scale-95"
+            className="flex flex-1 flex-col items-center gap-0.5 px-4 py-2 text-muted-foreground transition-colors hover:text-foreground active:scale-95"
             activeProps={{ className: "text-foreground" }}
           >
             <TrendingUp className="h-5 w-5" />
