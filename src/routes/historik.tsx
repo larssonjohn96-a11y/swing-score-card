@@ -1,6 +1,14 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { CartesianGrid, Line, LineChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  ReferenceLine,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+} from "recharts";
 import {
   DISTANCES,
   deleteSession,
@@ -15,6 +23,9 @@ import {
   loadBunkerSessions,
   type BunkerSession,
 } from "@/lib/bunker";
+import { ChartCard } from "@/components/chart-card";
+import { LevelToggle } from "@/components/level-toggle";
+import { DEFAULT_LEVEL, getLevel, loadLevel, saveLevel, type LevelKey } from "@/lib/levels";
 
 export const Route = createFileRoute("/historik")({
   head: () => ({
