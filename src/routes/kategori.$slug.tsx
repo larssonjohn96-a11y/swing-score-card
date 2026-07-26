@@ -1,6 +1,6 @@
 import { Link, createFileRoute, notFound } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { findCategory, CATEGORIES } from "@/lib/categories";
+import { findCategory, CATEGORIES, type Category, type CategoryTest } from "@/lib/categories";
 import { formatScore, loadSessions } from "@/lib/drill";
 import { loadBunkerSessions } from "@/lib/bunker";
 
@@ -44,7 +44,7 @@ function CategoryNotFound() {
 }
 
 function CategoryPage() {
-  const { category } = Route.useLoaderData();
+  const { category } = Route.useLoaderData() as { category: Category };
   const [last, setLast] = useState<Record<string, string | undefined>>({});
 
   useEffect(() => {
@@ -81,7 +81,7 @@ function CategoryPage() {
             Inga tester här ännu. Säg till så lägger vi in dem.
           </div>
         ) : (
-          category.tests.map((t) => (
+          category.tests.map((t: CategoryTest) => (
             <Link
               key={t.to}
               to={t.to}
@@ -97,7 +97,7 @@ function CategoryPage() {
                 </div>
               </div>
               <ul className="mt-4 space-y-1 text-sm text-muted-foreground">
-                {t.bullets.map((b) => (
+                {t.bullets.map((b: string) => (
                   <li key={b} className="flex gap-2">
                     <span className="text-flag">•</span>
                     {b}
