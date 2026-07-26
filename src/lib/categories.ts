@@ -5,10 +5,12 @@ export type CategoryTest = {
     | "/speed"
     | "/longdrive"
     | "/fairway"
+    | "/teeshot"
     | "/wedge"
     | "/combine"
     | "/shaping"
     | "/par3";
+
   number: string;
   title: string;
   subtitle: string;

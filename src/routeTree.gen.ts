@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WedgeRouteImport } from './routes/wedge'
 import { Route as TopplistaRouteImport } from './routes/topplista'
+import { Route as TeeshotRouteImport } from './routes/teeshot'
 import { Route as SpeedRouteImport } from './routes/speed'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ShapingRouteImport } from './routes/shaping'
@@ -33,6 +34,11 @@ const WedgeRoute = WedgeRouteImport.update({
 const TopplistaRoute = TopplistaRouteImport.update({
   id: '/topplista',
   path: '/topplista',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TeeshotRoute = TeeshotRouteImport.update({
+  id: '/teeshot',
+  path: '/teeshot',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SpeedRoute = SpeedRouteImport.update({
@@ -114,6 +120,7 @@ export interface FileRoutesByFullPath {
   '/shaping': typeof ShapingRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
+  '/teeshot': typeof TeeshotRoute
   '/topplista': typeof TopplistaRoute
   '/wedge': typeof WedgeRoute
   '/kategori/$slug': typeof KategoriSlugRoute
@@ -131,6 +138,7 @@ export interface FileRoutesByTo {
   '/shaping': typeof ShapingRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
+  '/teeshot': typeof TeeshotRoute
   '/topplista': typeof TopplistaRoute
   '/wedge': typeof WedgeRoute
   '/kategori/$slug': typeof KategoriSlugRoute
@@ -149,6 +157,7 @@ export interface FileRoutesById {
   '/shaping': typeof ShapingRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
+  '/teeshot': typeof TeeshotRoute
   '/topplista': typeof TopplistaRoute
   '/wedge': typeof WedgeRoute
   '/kategori/$slug': typeof KategoriSlugRoute
@@ -168,6 +177,7 @@ export interface FileRouteTypes {
     | '/shaping'
     | '/sitemap.xml'
     | '/speed'
+    | '/teeshot'
     | '/topplista'
     | '/wedge'
     | '/kategori/$slug'
@@ -185,6 +195,7 @@ export interface FileRouteTypes {
     | '/shaping'
     | '/sitemap.xml'
     | '/speed'
+    | '/teeshot'
     | '/topplista'
     | '/wedge'
     | '/kategori/$slug'
@@ -202,6 +213,7 @@ export interface FileRouteTypes {
     | '/shaping'
     | '/sitemap.xml'
     | '/speed'
+    | '/teeshot'
     | '/topplista'
     | '/wedge'
     | '/kategori/$slug'
@@ -220,6 +232,7 @@ export interface RootRouteChildren {
   ShapingRoute: typeof ShapingRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SpeedRoute: typeof SpeedRoute
+  TeeshotRoute: typeof TeeshotRoute
   TopplistaRoute: typeof TopplistaRoute
   WedgeRoute: typeof WedgeRoute
   KategoriSlugRoute: typeof KategoriSlugRoute
@@ -239,6 +252,13 @@ declare module '@tanstack/react-router' {
       path: '/topplista'
       fullPath: '/topplista'
       preLoaderRoute: typeof TopplistaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/teeshot': {
+      id: '/teeshot'
+      path: '/teeshot'
+      fullPath: '/teeshot'
+      preLoaderRoute: typeof TeeshotRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/speed': {
@@ -348,6 +368,7 @@ const rootRouteChildren: RootRouteChildren = {
   ShapingRoute: ShapingRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SpeedRoute: SpeedRoute,
+  TeeshotRoute: TeeshotRoute,
   TopplistaRoute: TopplistaRoute,
   WedgeRoute: WedgeRoute,
   KategoriSlugRoute: KategoriSlugRoute,
