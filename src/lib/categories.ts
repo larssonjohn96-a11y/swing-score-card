@@ -89,12 +89,12 @@ export const CATEGORIES: Category[] = [
         to: "/teeshot",
         number: "11",
         title: "Landningsytor från tee",
-        subtitle: "9 slag utan driver – 150–180, 170–190, 200–230 m",
+        subtitle: "9 slag utan driver – 170, 195, 220 m",
         bullets: [
-          "Tre carry-spann × 3 varv, du väljer klubba själv.",
-          "Rätt landningsyta och rätt riktning ger poängen.",
+          "Tre stationer × 3 varv, du väljer klubba själv.",
+          "Inom längdspann (±10 m) och 25 m bredd = 1 poäng.",
         ],
-        result: "RESULTAT: TOTALPOÄNG 0–100 + LANDNINGSYTA %",
+        result: "RESULTAT: POÄNG 0–9",
 
       },
     ],
