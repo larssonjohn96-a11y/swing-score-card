@@ -16,7 +16,6 @@ export function topScores(): Highlight[] {
   const speed = loadSpeedEntries();
   const longdrive = loadLongDriveSessions();
   const wedge = loadWedgeSessions();
-  const combine = loadCombineSessions();
 
   const bestBall = speed.length ? Math.max(...speed.map((e) => e.ballSpeed)) : undefined;
   const bestCarry = longdrive.length
@@ -26,7 +25,6 @@ export function topScores(): Highlight[] {
   const bestProximity = wedge.length
     ? Math.min(...wedge.map((s) => s.avgProximity))
     : undefined;
-  const bestCombine = combine.length ? Math.max(...combine.map((s) => s.score)) : undefined;
 
   return [
     {
