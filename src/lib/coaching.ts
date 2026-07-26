@@ -6,7 +6,6 @@ const STROKES_PER_10PCT: Record<string, string> = {
   approach: "2–3",
   "around-the-green": "2–3",
   puttning: "1–2",
-  combine: "2–3",
 };
 
 export type Insight = {

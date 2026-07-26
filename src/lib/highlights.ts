@@ -1,7 +1,6 @@
 import { loadSpeedEntries } from "@/lib/speed";
 import { loadLongDriveSessions, sessionBest } from "@/lib/longdrive";
 import { loadWedgeSessions } from "@/lib/wedge";
-import { loadCombineSessions } from "@/lib/combine";
 
 export type Highlight = {
   key: string;
@@ -17,7 +16,6 @@ export function topScores(): Highlight[] {
   const speed = loadSpeedEntries();
   const longdrive = loadLongDriveSessions();
   const wedge = loadWedgeSessions();
-  const combine = loadCombineSessions();
 
   const bestBall = speed.length ? Math.max(...speed.map((e) => e.ballSpeed)) : undefined;
   const bestCarry = longdrive.length
@@ -27,7 +25,6 @@ export function topScores(): Highlight[] {
   const bestProximity = wedge.length
     ? Math.min(...wedge.map((s) => s.avgProximity))
     : undefined;
-  const bestCombine = combine.length ? Math.max(...combine.map((s) => s.score)) : undefined;
 
   return [
     {
@@ -53,14 +50,6 @@ export function topScores(): Highlight[] {
       unit: "m",
       decimals: 1,
       hint: "Bästa snittet i wedge matrix",
-    },
-    {
-      key: "combine",
-      label: "Combine",
-      value: bestCombine,
-      unit: "p",
-      decimals: 0,
-      hint: "Högsta combine-score",
     },
   ];
 }

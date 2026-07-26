@@ -6,7 +6,7 @@ import { loadLongDriveSessions, sessionBest } from "@/lib/longdrive";
 import { loadFairwaySessions } from "@/lib/fairway";
 import { loadTeeSessions } from "@/lib/teeshot";
 import { loadWedgeSessions } from "@/lib/wedge";
-import { loadCombineSessions } from "@/lib/combine";
+
 import { loadShapingSessions } from "@/lib/shaping";
 import { loadPar3Sessions } from "@/lib/par3";
 
@@ -34,20 +34,6 @@ const day = (iso: string) => (iso.length > 10 ? iso.slice(0, 10) : iso);
 const byDate = (a: ProgressPoint, b: ProgressPoint) => a.date.localeCompare(b.date);
 
 export const PROGRESS_TESTS: ProgressTest[] = [
-  {
-    id: "combine",
-    title: "Combine test",
-    categorySlug: "combine",
-    to: "/combine",
-    metric: "Totalpoäng",
-    unit: "p",
-    higherIsBetter: true,
-    decimals: 0,
-    load: () =>
-      loadCombineSessions()
-        .map((s) => ({ date: day(s.date), value: s.score }))
-        .sort(byDate),
-  },
   {
     id: "speed",
     title: "Speed test",
