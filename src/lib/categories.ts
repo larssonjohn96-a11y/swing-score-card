@@ -7,7 +7,8 @@ export type CategoryTest = {
     | "/fairway"
     | "/wedge"
     | "/combine"
-    | "/shaping";
+    | "/shaping"
+    | "/par3";
   number: string;
   title: string;
   subtitle: string;
