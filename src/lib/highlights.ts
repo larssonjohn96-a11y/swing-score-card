@@ -51,13 +51,5 @@ export function topScores(): Highlight[] {
       decimals: 1,
       hint: "Bästa snittet i wedge matrix",
     },
-    {
-      key: "combine",
-      label: "Combine",
-      value: bestCombine,
-      unit: "p",
-      decimals: 0,
-      hint: "Högsta combine-score",
-    },
   ];
 }
