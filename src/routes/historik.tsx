@@ -52,11 +52,18 @@ function HistoryPage() {
   const [tab, setTab] = useState<Tab>("drill");
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
   const [bunker, setBunker] = useState<BunkerSession[]>([]);
+  const [level, setLevel] = useState<LevelKey>(DEFAULT_LEVEL);
 
   useEffect(() => {
     setSessions(loadSessions());
     setBunker(loadBunkerSessions());
+    setLevel(loadLevel());
   }, []);
+
+  function pickLevel(key: LevelKey) {
+    setLevel(key);
+    saveLevel(key);
+  }
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-16 pt-8">
@@ -92,11 +99,25 @@ function HistoryPage() {
         ))}
       </div>
 
+      <p className="mt-4 text-xs uppercase tracking-[0.2em] text-muted-foreground">Jämför mot nivå</p>
+      <div className="mt-2">
+        <LevelToggle value={level} onChange={pickLevel} />
+      </div>
+
       {tab === "drill" ? (
-        <DrillHistory sessions={sessions} onDelete={(id) => setSessions(deleteSession(id))} />
+        <DrillHistory
+          sessions={sessions}
+          level={level}
+          onDelete={(id) => setSessions(deleteSession(id))}
+        />
       ) : (
-        <BunkerHistory sessions={bunker} onDelete={(id) => setBunker(deleteBunkerSession(id))} />
+        <BunkerHistory
+          sessions={bunker}
+          level={level}
+          onDelete={(id) => setBunker(deleteBunkerSession(id))}
+        />
       )}
+
     </main>
   );
 }
