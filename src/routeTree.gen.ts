@@ -15,6 +15,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as LongdriveRouteImport } from './routes/longdrive'
 import { Route as KontoRouteImport } from './routes/konto'
 import { Route as HistorikRouteImport } from './routes/historik'
+import { Route as FairwayRouteImport } from './routes/fairway'
 import { Route as DrillRouteImport } from './routes/drill'
 import { Route as BunkerRouteImport } from './routes/bunker'
 import { Route as IndexRouteImport } from './routes/index'
@@ -50,6 +51,11 @@ const HistorikRoute = HistorikRouteImport.update({
   path: '/historik',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FairwayRoute = FairwayRouteImport.update({
+  id: '/fairway',
+  path: '/fairway',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DrillRoute = DrillRouteImport.update({
   id: '/drill',
   path: '/drill',
@@ -75,6 +81,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/bunker': typeof BunkerRoute
   '/drill': typeof DrillRoute
+  '/fairway': typeof FairwayRoute
   '/historik': typeof HistorikRoute
   '/konto': typeof KontoRoute
   '/longdrive': typeof LongdriveRoute
@@ -87,6 +94,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/bunker': typeof BunkerRoute
   '/drill': typeof DrillRoute
+  '/fairway': typeof FairwayRoute
   '/historik': typeof HistorikRoute
   '/konto': typeof KontoRoute
   '/longdrive': typeof LongdriveRoute
@@ -100,6 +108,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/bunker': typeof BunkerRoute
   '/drill': typeof DrillRoute
+  '/fairway': typeof FairwayRoute
   '/historik': typeof HistorikRoute
   '/konto': typeof KontoRoute
   '/longdrive': typeof LongdriveRoute
@@ -114,6 +123,7 @@ export interface FileRouteTypes {
     | '/'
     | '/bunker'
     | '/drill'
+    | '/fairway'
     | '/historik'
     | '/konto'
     | '/longdrive'
@@ -126,6 +136,7 @@ export interface FileRouteTypes {
     | '/'
     | '/bunker'
     | '/drill'
+    | '/fairway'
     | '/historik'
     | '/konto'
     | '/longdrive'
@@ -138,6 +149,7 @@ export interface FileRouteTypes {
     | '/'
     | '/bunker'
     | '/drill'
+    | '/fairway'
     | '/historik'
     | '/konto'
     | '/longdrive'
@@ -151,6 +163,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BunkerRoute: typeof BunkerRoute
   DrillRoute: typeof DrillRoute
+  FairwayRoute: typeof FairwayRoute
   HistorikRoute: typeof HistorikRoute
   KontoRoute: typeof KontoRoute
   LongdriveRoute: typeof LongdriveRoute
@@ -204,6 +217,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HistorikRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/fairway': {
+      id: '/fairway'
+      path: '/fairway'
+      fullPath: '/fairway'
+      preLoaderRoute: typeof FairwayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/drill': {
       id: '/drill'
       path: '/drill'
@@ -239,6 +259,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BunkerRoute: BunkerRoute,
   DrillRoute: DrillRoute,
+  FairwayRoute: FairwayRoute,
   HistorikRoute: HistorikRoute,
   KontoRoute: KontoRoute,
   LongdriveRoute: LongdriveRoute,
