@@ -35,11 +35,11 @@ function Home() {
         <div>
           <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Strokes Gained</p>
           <img
-            src="/sg4-logo.png"
+            src="/sg4-logo-light.png"
             alt="SG4 logotyp"
-            width={160}
-            height={64}
-            className="mt-2 h-12 w-auto"
+            width={192}
+            height={80}
+            className="mt-2 h-14 w-auto"
           />
           <p className="mt-3 max-w-[16rem] text-sm leading-relaxed text-muted-foreground">
             Testa hela ditt spel – från utslag till putt – och få personliga träningsprogram som sänker ditt handicap och dina scorer.
