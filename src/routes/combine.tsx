@@ -18,7 +18,9 @@ import {
   COMBINE_LEVELS,
   COMBINE_ROUNDS,
   SHOTS_PER_STATION,
+  avgProximityPct,
   combineScore,
+
   deleteCombineSession,
   emptyCombineShots,
   levelFor,
