@@ -63,12 +63,28 @@ function Home() {
           <h1 className="text-5xl leading-none">Tester</h1>
         </div>
         <Link
-          to="/historik"
+          to="/konto"
           className="rounded-full border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+        >
+          {displayName ?? (user ? "Konto" : "Logga in")}
+        </Link>
+      </header>
+
+      <nav className="mt-5 grid grid-cols-2 gap-2">
+        <Link
+          to="/historik"
+          className="rounded-2xl border border-border bg-card py-3 text-center text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
         >
           Historik
         </Link>
-      </header>
+        <Link
+          to="/topplista"
+          className="rounded-2xl border border-border bg-card py-3 text-center text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+        >
+          Topplista
+        </Link>
+      </nav>
+
 
       <section className="mt-8 space-y-4">
         {tests.map((t) => (
