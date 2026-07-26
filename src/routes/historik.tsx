@@ -204,9 +204,11 @@ function Empty({ text }: { text: string }) {
 
 function DrillHistory({
   sessions,
+  level,
   onDelete,
 }: {
   sessions: SessionRecord[];
+  level: LevelKey;
   onDelete: (id: string) => void;
 }) {
   if (sessions.length === 0)
@@ -215,6 +217,7 @@ function DrillHistory({
   const best = sessions.reduce((m, s) => Math.max(m, s.score), 0);
   const avg = sessions.reduce((a, s) => a + s.score, 0) / sessions.length;
   const allShots = sessions.flatMap((s) => s.shots);
+  const lv = getLevel(level);
 
   return (
     <>
@@ -228,7 +231,9 @@ function DrillHistory({
         data={sessions.map((s, i) => ({ name: `#${i + 1}`, value: Number(s.score.toFixed(2)) }))}
         domain={[0, 3]}
         ticks={[0, 1, 2, 3]}
+        refLines={[{ y: lv.drillScore, text: `${lv.label} ${lv.drillScore.toFixed(1)}` }]}
       />
+
 
       <section className="mt-4 rounded-3xl border border-border bg-card p-5">
         <h2 className="text-xl">Träffprocent per avstånd</h2>
