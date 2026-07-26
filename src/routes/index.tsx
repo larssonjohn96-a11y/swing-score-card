@@ -8,16 +8,16 @@ import { TrainingFocus } from "@/components/training-focus";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Golftester – shortgame, puttning, approach & driving" },
+      { title: "SG4 – Testa hela ditt spel och sänk ditt handicap" },
       {
         name: "description",
         content:
-          "Alla dina golftester i fyra kategorier: around the green, puttning, approach och driving. Kör testerna och följ utvecklingen över tid.",
+          "SG4 mäter ditt spel i fyra kategorier: driving, approach, around the green och puttning. Kör testerna, följ utvecklingen och få personliga träningsprogram.",
       },
-      { property: "og:title", content: "Golftester – fyra kategorier" },
+      { property: "og:title", content: "SG4 – Testa hela ditt spel" },
       {
         property: "og:description",
-        content: "Välj kategori, kör dina tester och följ utvecklingen över tid.",
+        content: "Mät, följ och förbättra ditt golfspel från utslag till putt med SG4.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -31,12 +31,15 @@ function Home() {
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-16 pt-10">
-      <header className="flex items-end justify-between">
+      <header className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Golfträning</p>
-          <h1 className="text-5xl leading-none">Tester</h1>
+          <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Strokes Gained</p>
+          <h1 className="text-5xl leading-none">SG4</h1>
+          <p className="mt-3 max-w-[16rem] text-sm leading-relaxed text-muted-foreground">
+            Testa hela ditt spel – från utslag till putt – och få personliga träningsprogram som sänker ditt handicap och dina scorer.
+          </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
         <ThemeToggle />
         <Link
           to="/konto"
@@ -61,6 +64,13 @@ function Home() {
           Topplista
         </Link>
       </nav>
+
+      <section className="mt-5 rounded-2xl border border-border bg-card p-4">
+        <h2 className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Vad är Strokes Gained?</h2>
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+          Strokes Gained jämför dina slag med en referensnivå och visar var du vinner eller förlorar slag. SG4 delar spelet i fyra kategorier – driving, approach, around the green och puttning – så du ser exakt var du har mest att vinna och kan träna smartare.
+        </p>
+      </section>
 
       <TrainingFocus />
 
