@@ -16,6 +16,8 @@ export type Level = {
   bunkerFeet: number;
   /** score i 18-bollarsdrillen, 0–3.0 */
   drillScore: number;
+  /** wedge: snittavstånd till hål i procent av slagets längd (lägre är bättre) */
+  wedgePct: number;
 };
 
 export const LEVELS: Level[] = [
@@ -28,6 +30,7 @@ export const LEVELS: Level[] = [
     carryYds: 180,
     bunkerFeet: 30,
     drillScore: 0.5,
+    wedgePct: 20,
   },
   {
     key: "twenty",
@@ -38,6 +41,7 @@ export const LEVELS: Level[] = [
     carryYds: 200,
     bunkerFeet: 24,
     drillScore: 0.9,
+    wedgePct: 15,
   },
   {
     key: "ten",
@@ -48,6 +52,7 @@ export const LEVELS: Level[] = [
     carryYds: 225,
     bunkerFeet: 18,
     drillScore: 1.4,
+    wedgePct: 11,
   },
   {
     key: "scratch",
@@ -58,6 +63,7 @@ export const LEVELS: Level[] = [
     carryYds: 251,
     bunkerFeet: 13,
     drillScore: 2.0,
+    wedgePct: 8,
   },
   {
     key: "tour",
@@ -68,6 +74,7 @@ export const LEVELS: Level[] = [
     carryYds: 282,
     bunkerFeet: 9,
     drillScore: 2.6,
+    wedgePct: 5.5,
   },
   {
     key: "top5",
@@ -78,6 +85,7 @@ export const LEVELS: Level[] = [
     carryYds: 313,
     bunkerFeet: 9,
     drillScore: 2.8,
+    wedgePct: 6,
   },
 ];
 

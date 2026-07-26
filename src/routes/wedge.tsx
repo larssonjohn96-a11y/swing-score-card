@@ -1,9 +1,13 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
+  Bar,
+  BarChart,
   CartesianGrid,
+  Cell,
   Line,
   LineChart,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -19,9 +23,14 @@ import {
   saveWedgeSession,
   stdDev,
   wedgeStatsByDistance,
+  wedgePctByDistance,
+  wedgeOverallPct,
+  bestWorstDistance,
   type WedgeSession,
 } from "@/lib/wedge";
 import { ChartCard } from "@/components/chart-card";
+import { LevelToggle } from "@/components/level-toggle";
+import { LEVELS, getLevel, loadLevel, saveLevel, type LevelKey } from "@/lib/levels";
 
 export const Route = createFileRoute("/wedge")({
   head: () => ({
@@ -54,8 +63,17 @@ function WedgePage() {
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
   const [sessions, setSessions] = useState<WedgeSession[]>([]);
+  const [level, setLevel] = useState<LevelKey>("tour");
 
-  useEffect(() => setSessions(loadWedgeSessions()), []);
+  useEffect(() => {
+    setSessions(loadWedgeSessions());
+    setLevel(loadLevel());
+  }, []);
+
+  function changeLevel(key: LevelKey) {
+    setLevel(key);
+    saveLevel(key);
+  }
 
   const filledShots = shotOrder
     .map((s, i) => ({ ...s, proximity: Number(values[i].replace(",", ".")) }))
@@ -89,6 +107,26 @@ function WedgePage() {
     label: fmtDate(s.date),
     Snitt: Number(s.avgProximity.toFixed(2)),
     Spridning: Number(s.spread.toFixed(2)),
+  }));
+
+  const lv = getLevel(level);
+  const analysisShots = filledShots.length
+    ? filledShots
+    : sessions.length
+      ? sessions[sessions.length - 1].shots
+      : [];
+  const pctByDistance = wedgePctByDistance(analysisShots);
+  const overallPct = wedgeOverallPct(analysisShots);
+  const { best: bestDist, worst: worstDist } = bestWorstDistance(analysisShots);
+  const pctChartData = pctByDistance.map((d) => ({
+    label: `${d.distance} m`,
+    Procent: d.count ? Number(d.pct.toFixed(1)) : 0,
+    best: bestDist?.distance === d.distance,
+    worst: worstDist?.distance === d.distance,
+  }));
+  const pctOverTime = sessions.map((s) => ({
+    label: fmtDate(s.date),
+    Procent: Number(wedgeOverallPct(s.shots).toFixed(1)),
   }));
 
   const latest = sessions[sessions.length - 1];
@@ -225,6 +263,147 @@ function WedgePage() {
             ))}
           </div>
         </section>
+      ) : null}
+
+      {analysisShots.length ? (
+        <>
+          <section className="mt-6 rounded-3xl border border-border bg-card p-5">
+            <div className="flex items-baseline justify-between">
+              <h2 className="text-sm uppercase tracking-[0.25em] text-muted-foreground">
+                Proximity i procent
+              </h2>
+              <span className="font-[family-name:var(--font-display)] text-3xl">
+                {overallPct.toFixed(1)}%
+              </span>
+            </div>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Snittavstånd till hål delat med slagets längd. Lägre är bättre.
+            </p>
+            <div className="mt-3">
+              <LevelToggle value={level} onChange={changeLevel} />
+            </div>
+            {bestDist && worstDist ? (
+              <p className="mt-3 text-sm">
+                Bäst: <span className="text-flag">{bestDist.distance} m ({bestDist.pct.toFixed(1)}%)</span>{" "}
+                · Sämst:{" "}
+                <span className="text-destructive">
+                  {worstDist.distance} m ({worstDist.pct.toFixed(1)}%)
+                </span>
+              </p>
+            ) : null}
+            <div className="mt-2 space-y-1 text-sm">
+              {pctByDistance.map((d) => (
+                <div key={d.distance} className="flex justify-between border-b border-border pb-1">
+                  <span className="text-muted-foreground">{d.distance} m</span>
+                  <span>{d.count ? `${d.pct.toFixed(1)}% · ${d.avg.toFixed(1)} m` : "–"}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <ChartCard
+            title="Procent per längdnivå"
+            footer={
+              <p className="text-xs text-muted-foreground">
+                Streckade linjer: {LEVELS.map((l) => `${l.label} ${l.wedgePct}%`).join(" · ")}
+              </p>
+            }
+          >
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={pctChartData} margin={{ top: 5, right: 8, bottom: 0, left: -20 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                <XAxis dataKey="label" tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
+                <YAxis tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" unit="%" />
+                <Tooltip
+                  contentStyle={{
+                    background: "var(--color-card)",
+                    border: "1px solid var(--color-border)",
+                    borderRadius: 12,
+                    fontSize: 12,
+                  }}
+                />
+                {LEVELS.map((l) => (
+                  <ReferenceLine
+                    key={l.key}
+                    y={l.wedgePct}
+                    stroke="var(--color-muted-foreground)"
+                    strokeDasharray="4 4"
+                    label={{
+                      value: `${l.label} ${l.wedgePct}%`,
+                      position: "right",
+                      fontSize: 10,
+                      fill: "var(--color-muted-foreground)",
+                    }}
+                  />
+                ))}
+                <Bar dataKey="Procent" radius={[8, 8, 0, 0]}>
+                  {pctChartData.map((d) => (
+                    <Cell
+                      key={d.label}
+                      fill={
+                        d.best
+                          ? "var(--color-flag)"
+                          : d.worst
+                            ? "var(--color-destructive)"
+                            : "var(--color-primary)"
+                      }
+                    />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartCard>
+        </>
+      ) : null}
+
+      {pctOverTime.length > 1 ? (
+        <ChartCard
+          title="Proximity % över tid"
+          footer={
+            <p className="text-xs text-muted-foreground">
+              Jämför mot vald nivå: {lv.label} {lv.wedgePct}%. Lägre är bättre.
+            </p>
+          }
+        >
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={pctOverTime} margin={{ top: 5, right: 8, bottom: 0, left: -20 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+              <XAxis dataKey="label" tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
+              <YAxis tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" unit="%" />
+              <Tooltip
+                contentStyle={{
+                  background: "var(--color-card)",
+                  border: "1px solid var(--color-border)",
+                  borderRadius: 12,
+                  fontSize: 12,
+                }}
+              />
+              {LEVELS.map((l) => (
+                <ReferenceLine
+                  key={l.key}
+                  y={l.wedgePct}
+                  stroke="var(--color-muted-foreground)"
+                  strokeDasharray="4 4"
+                  label={{
+                    value: `${l.label} ${l.wedgePct}%`,
+                    position: "right",
+                    fontSize: 10,
+                    fill: "var(--color-muted-foreground)",
+                  }}
+                />
+              ))}
+              <Line
+                type="monotone"
+                dataKey="Procent"
+                stroke="var(--color-primary)"
+                strokeWidth={3}
+                connectNulls
+                dot={{ r: 4, fill: "var(--color-primary)", stroke: "var(--color-primary)" }}
+                activeDot={{ r: 6 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </ChartCard>
       ) : null}
 
       {sessions.length > 1 ? (
