@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TopplistaRouteImport } from './routes/topplista'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as KontoRouteImport } from './routes/konto'
 import { Route as HistorikRouteImport } from './routes/historik'
@@ -16,6 +17,11 @@ import { Route as DrillRouteImport } from './routes/drill'
 import { Route as BunkerRouteImport } from './routes/bunker'
 import { Route as IndexRouteImport } from './routes/index'
 
+const TopplistaRoute = TopplistaRouteImport.update({
+  id: '/topplista',
+  path: '/topplista',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
@@ -54,6 +60,7 @@ export interface FileRoutesByFullPath {
   '/historik': typeof HistorikRoute
   '/konto': typeof KontoRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/topplista': typeof TopplistaRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -62,6 +69,7 @@ export interface FileRoutesByTo {
   '/historik': typeof HistorikRoute
   '/konto': typeof KontoRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/topplista': typeof TopplistaRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -71,6 +79,7 @@ export interface FileRoutesById {
   '/historik': typeof HistorikRoute
   '/konto': typeof KontoRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/topplista': typeof TopplistaRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -81,8 +90,16 @@ export interface FileRouteTypes {
     | '/historik'
     | '/konto'
     | '/sitemap.xml'
+    | '/topplista'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/bunker' | '/drill' | '/historik' | '/konto' | '/sitemap.xml'
+  to:
+    | '/'
+    | '/bunker'
+    | '/drill'
+    | '/historik'
+    | '/konto'
+    | '/sitemap.xml'
+    | '/topplista'
   id:
     | '__root__'
     | '/'
@@ -91,6 +108,7 @@ export interface FileRouteTypes {
     | '/historik'
     | '/konto'
     | '/sitemap.xml'
+    | '/topplista'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -100,10 +118,18 @@ export interface RootRouteChildren {
   HistorikRoute: typeof HistorikRoute
   KontoRoute: typeof KontoRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  TopplistaRoute: typeof TopplistaRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/topplista': {
+      id: '/topplista'
+      path: '/topplista'
+      fullPath: '/topplista'
+      preLoaderRoute: typeof TopplistaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sitemap.xml': {
       id: '/sitemap.xml'
       path: '/sitemap.xml'
@@ -156,6 +182,7 @@ const rootRouteChildren: RootRouteChildren = {
   HistorikRoute: HistorikRoute,
   KontoRoute: KontoRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  TopplistaRoute: TopplistaRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
