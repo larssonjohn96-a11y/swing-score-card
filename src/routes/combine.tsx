@@ -520,8 +520,11 @@ function CombinePage() {
         <p className="mt-2">
           Slå stationerna i ordning med 3 bollar per station, vila och kör exakt samma varv en gång
           till. Approach poängsätts på avstånd till hål i procent av slaglängden (3 % ger 100 poäng,
-          25 % ger 0). Driver poängsätts på carry: 140 m ger 0 och 280 m ger 100.
+          25 % ger 0). Driver poängsätts på både längd och rakhet: 60 % av poängen kommer från carry
+          (140 m = 0, 280 m = 100) och 40 % från sidoavvikelsen (0 % av carry = 100 poäng, 8 % = 0).
+          Lämnar du sidoavvikelsen tom räknas bara längden.
         </p>
+
         <div className="mt-3 space-y-1">
           {COMBINE_LEVELS.map((l) => (
             <div key={l.label} className="flex justify-between border-b border-border pb-1">
