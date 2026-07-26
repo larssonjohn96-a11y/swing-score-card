@@ -1,5 +1,6 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
+import { pushDrillSession } from "@/lib/cloud";
 import {
   BALLS_PER_SESSION,
   DISTANCES,
@@ -46,7 +47,8 @@ function DrillPage() {
 
   useEffect(() => {
     if (done && !saved) {
-      saveSession(state);
+      const record = saveSession(state);
+      void pushDrillSession(record);
       setSaved(true);
     }
   }, [done, saved, state]);

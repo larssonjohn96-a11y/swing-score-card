@@ -1,5 +1,6 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { pushBunkerSession } from "@/lib/cloud";
 import {
   BUNKER_LIES,
   FAILED_PENALTY,
@@ -45,7 +46,7 @@ function BunkerPage() {
     setShots(next);
     setFeet("");
     if (index + 1 >= BUNKER_LIES.length) {
-      saveBunkerSession(next);
+      void pushBunkerSession(saveBunkerSession(next));
       setDone(true);
     } else {
       setIndex(index + 1);
