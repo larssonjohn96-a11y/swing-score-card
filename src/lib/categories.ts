@@ -64,6 +64,17 @@ export const CATEGORIES: Category[] = [
         ],
         result: "RESULTAT: MEDELPROXIMITY + SPRIDNING",
       },
+      {
+        to: "/combine",
+        number: "8",
+        title: "Combine test",
+        subtitle: "30 eller 60 slag – 55 till 165 m + driver",
+        bullets: [
+          "3 slag per station, två varv (small 5 stationer, large 10).",
+          "Avstånd till hål och driverns carry ger totalpoäng 0–100.",
+        ],
+        result: "RESULTAT: SCORE 0–100 + NIVÅ",
+      },
     ],
   },
   {
