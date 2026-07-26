@@ -19,7 +19,7 @@ import {
   todayISO,
   type SpeedEntry,
 } from "@/lib/speed";
-import { HCP, TOUR, TOUR_TOP5 } from "@/lib/benchmarks";
+import { TOUR, TOUR_TOP5 } from "@/lib/benchmarks";
 import { LEVELS } from "@/lib/levels";
 import { ChartCard } from "@/components/chart-card";
 
