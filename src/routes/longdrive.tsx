@@ -1,6 +1,6 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import {
   LONG_DRIVE_ATTEMPTS,
   deleteLongDriveSession,
@@ -13,7 +13,7 @@ import {
   type LongDriveSession,
   type LongDriveUnit,
 } from "@/lib/longdrive";
-import { TOUR } from "@/lib/benchmarks";
+import { HCP, TOUR, TOUR_TOP5 } from "@/lib/benchmarks";
 
 export const Route = createFileRoute("/longdrive")({
   head: () => ({
