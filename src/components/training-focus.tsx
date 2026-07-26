@@ -1,24 +1,14 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { computeRatings, weakestCategory, type CategoryRating } from "@/lib/focus";
-import { LevelToggle } from "@/components/level-toggle";
-import { DEFAULT_LEVEL, getLevel, loadLevel, saveLevel, type LevelKey } from "@/lib/levels";
+
 
 export function TrainingFocus() {
   const [ratings, setRatings] = useState<CategoryRating[] | null>(null);
-  const [level, setLevel] = useState<LevelKey>(DEFAULT_LEVEL);
 
   useEffect(() => {
-    const stored = loadLevel();
-    setLevel(stored);
-    setRatings(computeRatings(stored));
+    setRatings(computeRatings());
   }, []);
-
-  function pickLevel(key: LevelKey) {
-    setLevel(key);
-    saveLevel(key);
-    setRatings(computeRatings(key));
-  }
 
   if (!ratings) return null;
   const weakest = weakestCategory(ratings);
@@ -29,11 +19,6 @@ export function TrainingFocus() {
   return (
     <section className="mt-8 rounded-3xl border border-border bg-card p-5 shadow-[var(--shadow-glow)]">
       <h2 className="text-sm uppercase tracking-[0.25em] text-muted-foreground">Träningsfokus</h2>
-
-      <p className="mt-3 text-xs text-muted-foreground">Jämför mot nivå</p>
-      <div className="mt-2">
-        <LevelToggle value={level} onChange={pickLevel} />
-      </div>
 
       {weakest ? (
         <p className="mt-3 text-sm text-muted-foreground">
@@ -80,8 +65,7 @@ export function TrainingFocus() {
       </div>
 
       <p className="mt-4 text-xs text-muted-foreground">
-        100 = {getLevel(level).label}-nivå. Byt nivå ovan för att jämföra mot 30, 20, 10 eller 0 hcp,
-        PGA Tour eller tourens long hitters.
+        100 = PGA Tour-nivå.
       </p>
     </section>
   );
