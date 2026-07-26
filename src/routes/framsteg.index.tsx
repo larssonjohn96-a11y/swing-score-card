@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { ChevronRight, TrendingUp } from "lucide-react";
 import { categoryProgress, type CategoryProgress } from "@/lib/progress";
 
-export const Route = createFileRoute("/framsteg")({
+export const Route = createFileRoute("/framsteg/")({
   head: () => ({
     meta: [
       { title: "Framsteg – följ din utveckling per kategori | SG4" },

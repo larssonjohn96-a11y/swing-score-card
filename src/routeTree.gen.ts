@@ -19,6 +19,7 @@ import { Route as Par3RouteImport } from './routes/par3'
 import { Route as LongdriveRouteImport } from './routes/longdrive'
 import { Route as KontoRouteImport } from './routes/konto'
 import { Route as HistorikRouteImport } from './routes/historik'
+import { Route as FramstegRouteImport } from './routes/framsteg'
 import { Route as FairwayRouteImport } from './routes/fairway'
 import { Route as DrillRouteImport } from './routes/drill'
 import { Route as CombineRouteImport } from './routes/combine'
@@ -76,6 +77,11 @@ const HistorikRoute = HistorikRouteImport.update({
   path: '/historik',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FramstegRoute = FramstegRouteImport.update({
+  id: '/framsteg',
+  path: '/framsteg',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FairwayRoute = FairwayRouteImport.update({
   id: '/fairway',
   path: '/fairway',
@@ -113,6 +119,7 @@ export interface FileRoutesByFullPath {
   '/combine': typeof CombineRoute
   '/drill': typeof DrillRoute
   '/fairway': typeof FairwayRoute
+  '/framsteg': typeof FramstegRoute
   '/historik': typeof HistorikRoute
   '/konto': typeof KontoRoute
   '/longdrive': typeof LongdriveRoute
@@ -131,6 +138,7 @@ export interface FileRoutesByTo {
   '/combine': typeof CombineRoute
   '/drill': typeof DrillRoute
   '/fairway': typeof FairwayRoute
+  '/framsteg': typeof FramstegRoute
   '/historik': typeof HistorikRoute
   '/konto': typeof KontoRoute
   '/longdrive': typeof LongdriveRoute
@@ -150,6 +158,7 @@ export interface FileRoutesById {
   '/combine': typeof CombineRoute
   '/drill': typeof DrillRoute
   '/fairway': typeof FairwayRoute
+  '/framsteg': typeof FramstegRoute
   '/historik': typeof HistorikRoute
   '/konto': typeof KontoRoute
   '/longdrive': typeof LongdriveRoute
@@ -170,6 +179,7 @@ export interface FileRouteTypes {
     | '/combine'
     | '/drill'
     | '/fairway'
+    | '/framsteg'
     | '/historik'
     | '/konto'
     | '/longdrive'
@@ -188,6 +198,7 @@ export interface FileRouteTypes {
     | '/combine'
     | '/drill'
     | '/fairway'
+    | '/framsteg'
     | '/historik'
     | '/konto'
     | '/longdrive'
@@ -206,6 +217,7 @@ export interface FileRouteTypes {
     | '/combine'
     | '/drill'
     | '/fairway'
+    | '/framsteg'
     | '/historik'
     | '/konto'
     | '/longdrive'
@@ -225,6 +237,7 @@ export interface RootRouteChildren {
   CombineRoute: typeof CombineRoute
   DrillRoute: typeof DrillRoute
   FairwayRoute: typeof FairwayRoute
+  FramstegRoute: typeof FramstegRoute
   HistorikRoute: typeof HistorikRoute
   KontoRoute: typeof KontoRoute
   LongdriveRoute: typeof LongdriveRoute
@@ -310,6 +323,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HistorikRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/framsteg': {
+      id: '/framsteg'
+      path: '/framsteg'
+      fullPath: '/framsteg'
+      preLoaderRoute: typeof FramstegRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/fairway': {
       id: '/fairway'
       path: '/fairway'
@@ -361,6 +381,7 @@ const rootRouteChildren: RootRouteChildren = {
   CombineRoute: CombineRoute,
   DrillRoute: DrillRoute,
   FairwayRoute: FairwayRoute,
+  FramstegRoute: FramstegRoute,
   HistorikRoute: HistorikRoute,
   KontoRoute: KontoRoute,
   LongdriveRoute: LongdriveRoute,
