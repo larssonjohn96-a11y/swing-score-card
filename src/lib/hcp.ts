@@ -1,3 +1,5 @@
+import { LEVELS, type LevelKey } from "@/lib/levels";
+
 /** Spelarens Golf-ID och handicap, sparat lokalt. */
 export type PlayerHcp = {
   /** Golf-ID i formatet ÅÅMMDD-XXX */
@@ -48,8 +50,6 @@ export function clearPlayerHcp() {
 export function minGolfUrl(golfId: string) {
   return `https://mingolf.golf.se/Site/Player/Search?golfId=${encodeURIComponent(golfId.trim())}`;
 }
-
-import { LEVELS, type LevelKey } from "@/lib/levels";
 
 /** Ungefärlig hcp per jämförelsenivå. */
 const LEVEL_HCP: Record<LevelKey, number> = {
