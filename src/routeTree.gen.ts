@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as TopplistaRouteImport } from './routes/topplista'
 import { Route as SpeedRouteImport } from './routes/speed'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as LongdriveRouteImport } from './routes/longdrive'
 import { Route as KontoRouteImport } from './routes/konto'
 import { Route as HistorikRouteImport } from './routes/historik'
 import { Route as DrillRouteImport } from './routes/drill'
@@ -32,6 +33,11 @@ const SpeedRoute = SpeedRouteImport.update({
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LongdriveRoute = LongdriveRouteImport.update({
+  id: '/longdrive',
+  path: '/longdrive',
   getParentRoute: () => rootRouteImport,
 } as any)
 const KontoRoute = KontoRouteImport.update({
@@ -71,6 +77,7 @@ export interface FileRoutesByFullPath {
   '/drill': typeof DrillRoute
   '/historik': typeof HistorikRoute
   '/konto': typeof KontoRoute
+  '/longdrive': typeof LongdriveRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
   '/topplista': typeof TopplistaRoute
@@ -82,6 +89,7 @@ export interface FileRoutesByTo {
   '/drill': typeof DrillRoute
   '/historik': typeof HistorikRoute
   '/konto': typeof KontoRoute
+  '/longdrive': typeof LongdriveRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
   '/topplista': typeof TopplistaRoute
@@ -94,6 +102,7 @@ export interface FileRoutesById {
   '/drill': typeof DrillRoute
   '/historik': typeof HistorikRoute
   '/konto': typeof KontoRoute
+  '/longdrive': typeof LongdriveRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
   '/topplista': typeof TopplistaRoute
@@ -107,6 +116,7 @@ export interface FileRouteTypes {
     | '/drill'
     | '/historik'
     | '/konto'
+    | '/longdrive'
     | '/sitemap.xml'
     | '/speed'
     | '/topplista'
@@ -118,6 +128,7 @@ export interface FileRouteTypes {
     | '/drill'
     | '/historik'
     | '/konto'
+    | '/longdrive'
     | '/sitemap.xml'
     | '/speed'
     | '/topplista'
@@ -129,6 +140,7 @@ export interface FileRouteTypes {
     | '/drill'
     | '/historik'
     | '/konto'
+    | '/longdrive'
     | '/sitemap.xml'
     | '/speed'
     | '/topplista'
@@ -141,6 +153,7 @@ export interface RootRouteChildren {
   DrillRoute: typeof DrillRoute
   HistorikRoute: typeof HistorikRoute
   KontoRoute: typeof KontoRoute
+  LongdriveRoute: typeof LongdriveRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SpeedRoute: typeof SpeedRoute
   TopplistaRoute: typeof TopplistaRoute
@@ -168,6 +181,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/longdrive': {
+      id: '/longdrive'
+      path: '/longdrive'
+      fullPath: '/longdrive'
+      preLoaderRoute: typeof LongdriveRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/konto': {
@@ -221,6 +241,7 @@ const rootRouteChildren: RootRouteChildren = {
   DrillRoute: DrillRoute,
   HistorikRoute: HistorikRoute,
   KontoRoute: KontoRoute,
+  LongdriveRoute: LongdriveRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SpeedRoute: SpeedRoute,
   TopplistaRoute: TopplistaRoute,
@@ -229,13 +250,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

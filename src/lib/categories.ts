@@ -1,5 +1,5 @@
 export type CategoryTest = {
-  to: "/drill" | "/bunker" | "/speed";
+  to: "/drill" | "/bunker" | "/speed" | "/longdrive";
   number: string;
   title: string;
   subtitle: string;
@@ -71,6 +71,17 @@ export const CATEGORIES: Category[] = [
           "Datum på x-axeln så du ser progress över tid.",
         ],
         result: "RESULTAT: MPH ÖVER TID + SMASH FACTOR",
+      },
+      {
+        to: "/longdrive",
+        number: "5",
+        title: "Long drive",
+        subtitle: "6 försök – bara carry",
+        bullets: [
+          "Sex utslag per test, endast carry räknas.",
+          "Längsta och snitt sparas med datum.",
+        ],
+        result: "RESULTAT: LÄNGSTA CARRY + SNITT",
       },
     ],
   },
