@@ -35,12 +35,12 @@ export const Route = createFileRoute("/par3")({
       {
         name: "description",
         content:
-          "Par 3-testet: 20 slag mot 110–170 m. Mät avstånd till hål per klubba, se snitt i meter och procent samt spridning över tid.",
+          "Par 3-testet: 16 slag mot 125–170 m. Mät avstånd till hål, se snitt i meter och procent samt spridning över tid.",
       },
       { property: "og:title", content: "Approach precision test – par 3" },
       {
         property: "og:description",
-        content: "5 avstånd × 2 slag × 2 varv. Precision med järn mot typiska par 3-avstånd.",
+        content: "4 avstånd × 2 slag × 2 varv. Precision med järn mot typiska par 3-avstånd.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
