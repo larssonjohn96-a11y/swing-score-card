@@ -1,5 +1,13 @@
 export type CategoryTest = {
-  to: "/drill" | "/bunker" | "/speed" | "/longdrive" | "/fairway" | "/wedge" | "/combine";
+  to:
+    | "/drill"
+    | "/bunker"
+    | "/speed"
+    | "/longdrive"
+    | "/fairway"
+    | "/wedge"
+    | "/combine"
+    | "/shaping";
   number: string;
   title: string;
   subtitle: string;
@@ -100,6 +108,17 @@ export const CATEGORIES: Category[] = [
           "Mät avstånd till hål – snitt och spridning per avstånd.",
         ],
         result: "RESULTAT: MEDELPROXIMITY + SPRIDNING",
+      },
+      {
+        to: "/shaping",
+        number: "9",
+        title: "Shot shaping",
+        subtitle: "9 slag med 9-järn",
+        bullets: [
+          "Tre varv: draw – rak – fade.",
+          "Godkänt eller ej per slag, inget annat räknas.",
+        ],
+        result: "RESULTAT: SHOT SHAPE SCORE 0–100 %",
       },
     ],
   },
