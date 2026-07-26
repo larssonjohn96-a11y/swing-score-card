@@ -65,6 +65,13 @@ function Home() {
         </Link>
       </nav>
 
+      <section className="mt-5 rounded-2xl border border-border bg-card p-4">
+        <h2 className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Vad är Strokes Gained?</h2>
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+          Strokes Gained jämför dina slag med en referensnivå och visar var du vinner eller förlorar slag. SG4 delar spelet i fyra kategorier – driving, approach, around the green och puttning – så du ser exakt var du har mest att vinna och kan träna smartare.
+        </p>
+      </section>
+
       <TrainingFocus />
 
       <section className="mt-8 space-y-4">
