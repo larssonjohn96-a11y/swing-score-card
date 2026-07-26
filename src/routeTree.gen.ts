@@ -19,12 +19,12 @@ import { Route as Par3RouteImport } from './routes/par3'
 import { Route as LongdriveRouteImport } from './routes/longdrive'
 import { Route as KontoRouteImport } from './routes/konto'
 import { Route as HistorikRouteImport } from './routes/historik'
-import { Route as FramstegRouteImport } from './routes/framsteg'
 import { Route as FairwayRouteImport } from './routes/fairway'
 import { Route as DrillRouteImport } from './routes/drill'
 import { Route as CombineRouteImport } from './routes/combine'
 import { Route as BunkerRouteImport } from './routes/bunker'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as FramstegIndexRouteImport } from './routes/framsteg.index'
 import { Route as KategoriSlugRouteImport } from './routes/kategori.$slug'
 
 const WedgeRoute = WedgeRouteImport.update({
@@ -77,11 +77,6 @@ const HistorikRoute = HistorikRouteImport.update({
   path: '/historik',
   getParentRoute: () => rootRouteImport,
 } as any)
-const FramstegRoute = FramstegRouteImport.update({
-  id: '/framsteg',
-  path: '/framsteg',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const FairwayRoute = FairwayRouteImport.update({
   id: '/fairway',
   path: '/fairway',
@@ -107,6 +102,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FramstegIndexRoute = FramstegIndexRouteImport.update({
+  id: '/framsteg/',
+  path: '/framsteg/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const KategoriSlugRoute = KategoriSlugRouteImport.update({
   id: '/kategori/$slug',
   path: '/kategori/$slug',
@@ -119,7 +119,6 @@ export interface FileRoutesByFullPath {
   '/combine': typeof CombineRoute
   '/drill': typeof DrillRoute
   '/fairway': typeof FairwayRoute
-  '/framsteg': typeof FramstegRoute
   '/historik': typeof HistorikRoute
   '/konto': typeof KontoRoute
   '/longdrive': typeof LongdriveRoute
@@ -131,6 +130,7 @@ export interface FileRoutesByFullPath {
   '/topplista': typeof TopplistaRoute
   '/wedge': typeof WedgeRoute
   '/kategori/$slug': typeof KategoriSlugRoute
+  '/framsteg/': typeof FramstegIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -138,7 +138,6 @@ export interface FileRoutesByTo {
   '/combine': typeof CombineRoute
   '/drill': typeof DrillRoute
   '/fairway': typeof FairwayRoute
-  '/framsteg': typeof FramstegRoute
   '/historik': typeof HistorikRoute
   '/konto': typeof KontoRoute
   '/longdrive': typeof LongdriveRoute
@@ -150,6 +149,7 @@ export interface FileRoutesByTo {
   '/topplista': typeof TopplistaRoute
   '/wedge': typeof WedgeRoute
   '/kategori/$slug': typeof KategoriSlugRoute
+  '/framsteg': typeof FramstegIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -158,7 +158,6 @@ export interface FileRoutesById {
   '/combine': typeof CombineRoute
   '/drill': typeof DrillRoute
   '/fairway': typeof FairwayRoute
-  '/framsteg': typeof FramstegRoute
   '/historik': typeof HistorikRoute
   '/konto': typeof KontoRoute
   '/longdrive': typeof LongdriveRoute
@@ -170,6 +169,7 @@ export interface FileRoutesById {
   '/topplista': typeof TopplistaRoute
   '/wedge': typeof WedgeRoute
   '/kategori/$slug': typeof KategoriSlugRoute
+  '/framsteg/': typeof FramstegIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -179,7 +179,6 @@ export interface FileRouteTypes {
     | '/combine'
     | '/drill'
     | '/fairway'
-    | '/framsteg'
     | '/historik'
     | '/konto'
     | '/longdrive'
@@ -191,6 +190,7 @@ export interface FileRouteTypes {
     | '/topplista'
     | '/wedge'
     | '/kategori/$slug'
+    | '/framsteg/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -198,7 +198,6 @@ export interface FileRouteTypes {
     | '/combine'
     | '/drill'
     | '/fairway'
-    | '/framsteg'
     | '/historik'
     | '/konto'
     | '/longdrive'
@@ -210,6 +209,7 @@ export interface FileRouteTypes {
     | '/topplista'
     | '/wedge'
     | '/kategori/$slug'
+    | '/framsteg'
   id:
     | '__root__'
     | '/'
@@ -217,7 +217,6 @@ export interface FileRouteTypes {
     | '/combine'
     | '/drill'
     | '/fairway'
-    | '/framsteg'
     | '/historik'
     | '/konto'
     | '/longdrive'
@@ -229,6 +228,7 @@ export interface FileRouteTypes {
     | '/topplista'
     | '/wedge'
     | '/kategori/$slug'
+    | '/framsteg/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -237,7 +237,6 @@ export interface RootRouteChildren {
   CombineRoute: typeof CombineRoute
   DrillRoute: typeof DrillRoute
   FairwayRoute: typeof FairwayRoute
-  FramstegRoute: typeof FramstegRoute
   HistorikRoute: typeof HistorikRoute
   KontoRoute: typeof KontoRoute
   LongdriveRoute: typeof LongdriveRoute
@@ -249,6 +248,7 @@ export interface RootRouteChildren {
   TopplistaRoute: typeof TopplistaRoute
   WedgeRoute: typeof WedgeRoute
   KategoriSlugRoute: typeof KategoriSlugRoute
+  FramstegIndexRoute: typeof FramstegIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -323,13 +323,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HistorikRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/framsteg': {
-      id: '/framsteg'
-      path: '/framsteg'
-      fullPath: '/framsteg'
-      preLoaderRoute: typeof FramstegRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/fairway': {
       id: '/fairway'
       path: '/fairway'
@@ -365,6 +358,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/framsteg/': {
+      id: '/framsteg/'
+      path: '/framsteg'
+      fullPath: '/framsteg/'
+      preLoaderRoute: typeof FramstegIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/kategori/$slug': {
       id: '/kategori/$slug'
       path: '/kategori/$slug'
@@ -381,7 +381,6 @@ const rootRouteChildren: RootRouteChildren = {
   CombineRoute: CombineRoute,
   DrillRoute: DrillRoute,
   FairwayRoute: FairwayRoute,
-  FramstegRoute: FramstegRoute,
   HistorikRoute: HistorikRoute,
   KontoRoute: KontoRoute,
   LongdriveRoute: LongdriveRoute,
@@ -393,6 +392,7 @@ const rootRouteChildren: RootRouteChildren = {
   TopplistaRoute: TopplistaRoute,
   WedgeRoute: WedgeRoute,
   KategoriSlugRoute: KategoriSlugRoute,
+  FramstegIndexRoute: FramstegIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
