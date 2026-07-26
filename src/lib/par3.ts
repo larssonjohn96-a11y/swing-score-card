@@ -1,17 +1,14 @@
-/** Approach Precision Test (Par 3) – 20 slag: 5 avstånd × 2 slag × 2 varv. */
+/** Approach Precision Test (Par 3) – 16 slag: 4 avstånd × 2 slag × 2 varv. */
 
 export type Par3Distance = {
   distance: number;
-  /** typisk klubba */
-  club: string;
 };
 
 export const PAR3_DISTANCES: Par3Distance[] = [
-  { distance: 110, club: "PW / 9-järn" },
-  { distance: 125, club: "9- / 8-järn" },
-  { distance: 140, club: "8- / 7-järn" },
-  { distance: 155, club: "7- / 6-järn" },
-  { distance: 170, club: "6- / 5-järn" },
+  { distance: 125 },
+  { distance: 140 },
+  { distance: 155 },
+  { distance: 170 },
 ];
 
 export const PAR3_ROUNDS = 2;
@@ -34,7 +31,7 @@ export type Par3Session = {
   id: string;
   date: string;
   shots: Par3Shot[];
-  /** medelproximity i meter för alla 20 slag */
+  /** medelproximity i meter för alla 16 slag */
   avgProximity: number;
   /** snitt i procent av måldistansen */
   pct: number;
@@ -68,7 +65,6 @@ export function stdDev(values: number[]): number {
 
 export type Par3Stat = {
   distance: number;
-  club: string;
   avg: number;
   /** snittproximity i procent av måldistansen */
   pct: number;
@@ -78,12 +74,11 @@ export type Par3Stat = {
 };
 
 export function par3StatsByDistance(shots: Par3Shot[]): Par3Stat[] {
-  return PAR3_DISTANCES.map(({ distance, club }) => {
+  return PAR3_DISTANCES.map(({ distance }) => {
     const values = shots.filter((s) => s.distance === distance).map((s) => s.proximity);
     const avg = mean(values);
     return {
       distance,
-      club,
       avg,
       pct: values.length ? (avg / distance) * 100 : 0,
       spread: stdDev(values),
@@ -107,7 +102,7 @@ export function par3BestWorst(shots: Par3Shot[]) {
   return { best: sorted[0], worst: sorted[sorted.length - 1] };
 }
 
-const KEY = "golf-par3-sessions-v1";
+const KEY = "golf-par3-sessions-v2";
 
 export function loadPar3Sessions(): Par3Session[] {
   if (typeof window === "undefined") return [];

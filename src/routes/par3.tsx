@@ -35,12 +35,12 @@ export const Route = createFileRoute("/par3")({
       {
         name: "description",
         content:
-          "Par 3-testet: 20 slag mot 110–170 m. Mät avstånd till hål per klubba, se snitt i meter och procent samt spridning över tid.",
+          "Par 3-testet: 16 slag mot 125–170 m. Mät avstånd till hål, se snitt i meter och procent samt spridning över tid.",
       },
       { property: "og:title", content: "Approach precision test – par 3" },
       {
         property: "og:description",
-        content: "5 avstånd × 2 slag × 2 varv. Precision med järn mot typiska par 3-avstånd.",
+        content: "4 avstånd × 2 slag × 2 varv. Precision med järn mot typiska par 3-avstånd.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -113,14 +113,12 @@ function Par3Page() {
   );
   const latest = sessions.length ? sessions[sessions.length - 1] : null;
 
-  const clubFor = (d: number) => PAR3_DISTANCES.find((x) => x.distance === d)?.club ?? "";
-
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-16 pt-8">
       <header className="flex items-end justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
-            Par 3 · 20 slag
+            Par 3 · 16 slag
           </p>
           <h1 className="text-4xl leading-none">Approach precision</h1>
         </div>
@@ -189,7 +187,6 @@ function Par3Page() {
           <h2 className="mt-1 font-[family-name:var(--font-display)] text-5xl leading-none">
             {current.distance} m
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">{clubFor(current.distance)}</p>
           <label htmlFor="prox" className="mt-5 block text-sm text-muted-foreground">
             Avstånd till hål (m)
           </label>
@@ -222,10 +219,7 @@ function Par3Page() {
               className="rounded-2xl border border-border bg-card px-4 py-3 text-sm"
             >
               <div className="flex items-center justify-between">
-                <span>
-                  {s.distance} m
-                  <span className="ml-2 text-xs text-muted-foreground">{s.club}</span>
-                </span>
+                <span>{s.distance} m</span>
                 <span>
                   {s.count ? `${s.avg.toFixed(1)} m · ${s.pct.toFixed(1)} %` : "–"}
                 </span>
@@ -344,9 +338,9 @@ function Par3Page() {
       <section className="mt-8 rounded-2xl border border-border bg-card/60 p-4 text-sm text-muted-foreground">
         <h2 className="text-base text-foreground">Så funkar testet</h2>
         <p className="mt-2">
-          Syftet är att mäta precision med järn mot typiska par 3-avstånd: 110 m (PW/9), 125 m
-          (9/8), 140 m (8/7), 155 m (7/6) och 170 m (6/5). Två slag per avstånd i varv 1 (10 slag),
-          sedan samma fem avstånd igen i varv 2 (10 slag) — totalt {PAR3_TOTAL_SHOTS} slag.
+          Syftet är att mäta precision med järn mot typiska par 3-avstånd: 125 m, 140 m, 155 m och
+          170 m. Två slag per avstånd i varv 1 (8 slag), sedan samma fyra avstånd igen i varv 2
+          (8 slag) — totalt {PAR3_TOTAL_SHOTS} slag.
         </p>
         <p className="mt-2">
           Mät avståndet till hålet i meter för varje slag. Resultatet visas som snitt i meter, i
