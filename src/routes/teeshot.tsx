@@ -60,12 +60,11 @@ function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString("sv-SE", { day: "numeric", month: "short" });
 }
 
-type Row = { round: number; zoneId: string; club: string; carry: string; offline: string };
+type Row = { round: number; zoneId: string; carry: string; offline: string };
 
 const EMPTY_ROWS: Row[] = emptyTeeShots().map((s) => ({
   round: s.round,
   zoneId: s.zoneId,
-  club: "",
   carry: "",
   offline: "",
 }));
@@ -91,7 +90,6 @@ function TeeShotPage() {
       rows.map((r) => ({
         round: r.round,
         zoneId: r.zoneId,
-        club: r.club,
         carry: Math.max(0, num(r.carry)),
         offline: Math.abs(num(r.offline)),
       })),
@@ -175,7 +173,7 @@ function TeeShotPage() {
         <h2 className="text-2xl">Nytt test</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           {TEE_ROUNDS} varv × {TEE_ZONES.length} stationer = {TEE_SHOTS} slag. Godkänd bredd är{" "}
-          {TEE_WIDTH_M} m (±{TEE_HALF_WIDTH_M} m). Välj klubba själv – driver är inte tillåten.
+          {TEE_WIDTH_M} m (±{TEE_HALF_WIDTH_M} m). Driver är inte tillåten.
         </p>
 
         <div className="mt-4 space-y-1 rounded-2xl border border-input bg-background p-3 text-xs text-muted-foreground">
@@ -224,20 +222,14 @@ function TeeShotPage() {
 
                       <div className="mt-2 flex gap-2">
                         <input
-                          aria-label={`Klubba varv ${round} ${zoneById(r.zoneId)?.label}`}
-                          value={r.club}
-                          onChange={(e) => setRow(i, { club: e.target.value })}
-                          placeholder="Klubba"
-                          className="min-w-0 flex-1 rounded-xl border border-input bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
-                        />
-                        <input
                           aria-label={`Längd varv ${round} ${zoneById(r.zoneId)?.label}`}
                           inputMode="decimal"
                           value={r.carry}
                           onChange={(e) => setRow(i, { carry: e.target.value })}
                           placeholder="längd m"
-                          className="w-24 rounded-xl border border-input bg-card px-2 py-2 text-center text-lg text-foreground outline-none focus:border-primary"
+                          className="min-w-0 flex-1 rounded-xl border border-input bg-card px-2 py-2 text-center text-lg text-foreground outline-none focus:border-primary"
                         />
+
                         <input
                           aria-label={`Sidoavvikelse varv ${round} ${zoneById(r.zoneId)?.label}`}
                           inputMode="decimal"
@@ -307,7 +299,6 @@ function TeeShotPage() {
               <span className="text-foreground">{z.zone.label}</span>
               <span className="text-muted-foreground">
                 {z.points}/{z.count} p · sid {z.avgOffline.toFixed(1)} m
-                {z.clubs.length ? ` · ${z.clubs.join(", ")}` : ""}
               </span>
             </div>
           ))}
@@ -391,8 +382,7 @@ function TeeShotPage() {
         <h2 className="text-base text-foreground">Så funkar testet</h2>
         <p className="mt-2">
           Tre stationer: {TEE_ZONES.map((z) => `${z.label} (${z.min}–${z.max} m)`).join(", ")}. Varje
-          station spelas {TEE_ROUNDS} gånger, totalt {TEE_SHOTS} slag. Du väljer klubba själv – allt
-          utom driver.
+          station spelas {TEE_ROUNDS} gånger, totalt {TEE_SHOTS} slag. Alla klubbor utom driver är tillåtna.
         </p>
         <ul className="mt-3 space-y-1">
           <li>• Godkänd sidobredd: {TEE_WIDTH_M} m (±{TEE_HALF_WIDTH_M} m från mittlinjen).</li>

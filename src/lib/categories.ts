@@ -91,7 +91,7 @@ export const CATEGORIES: Category[] = [
         title: "Landningsytor från tee",
         subtitle: "9 slag utan driver – 170, 195, 220 m",
         bullets: [
-          "Tre stationer × 3 varv, du väljer klubba själv.",
+          "Tre stationer × 3 varv, alla klubbor utom driver.",
           "Inom längdspann (±10 m) och 25 m bredd = 1 poäng.",
         ],
         result: "RESULTAT: POÄNG 0–9",

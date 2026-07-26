@@ -1,7 +1,6 @@
 /**
  * Off the tee – positionsslag utan driver mot bestämda landningsytor.
- * Tre stationer × 3 varv = 9 slag. Du väljer klubba själv.
- * Ett slag ger 1 poäng när bollen stannar inom både längdspannet
+ * Tre stationer × 3 varv = 9 slag.  * Ett slag ger 1 poäng när bollen stannar inom både längdspannet
  * och fairwaybredden (25 m). Annars 0 poäng.
  */
 
@@ -32,8 +31,6 @@ export const TEE_SHOTS = TEE_ZONES.length * TEE_ROUNDS;
 export type TeeShot = {
   round: number;
   zoneId: string;
-  /** klubba, fritt vald */
-  club: string;
   /** längd i meter */
   carry: number;
   /** sidoavvikelse i meter från mittlinjen (absolutvärde) */
@@ -114,7 +111,6 @@ export type ZoneStat = {
   hitRate: number;
   avgCarry: number;
   avgOffline: number;
-  clubs: string[];
 };
 
 export function statsByZone(shots: TeeShot[]): ZoneStat[] {
@@ -127,7 +123,6 @@ export function statsByZone(shots: TeeShot[]): ZoneStat[] {
       hitRate: teeHitRate(own),
       avgCarry: teeAvgCarry(own),
       avgOffline: teeAvgOffline(own),
-      clubs: Array.from(new Set(own.map((s) => s.club.trim()).filter(Boolean))),
     };
   });
 }
@@ -136,7 +131,7 @@ export function emptyTeeShots(): TeeShot[] {
   const shots: TeeShot[] = [];
   for (let round = 1; round <= TEE_ROUNDS; round += 1) {
     for (const zone of TEE_ZONES) {
-      shots.push({ round, zoneId: zone.id, club: "", carry: 0, offline: 0 });
+      shots.push({ round, zoneId: zone.id, carry: 0, offline: 0 });
     }
   }
   return shots;
