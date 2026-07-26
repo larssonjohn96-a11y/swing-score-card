@@ -20,16 +20,16 @@ import {
 export const Route = createFileRoute("/drill")({
   head: () => ({
     meta: [
-      { title: "18-bollarsdrillen – Golfträning 75/125/150m" },
+      { title: "18 bollar - jÖNKÖPINGS RAnGE – Golfträning" },
       {
         name: "description",
         content:
-          "Kör 18-bollarsdrillen på 75, 125 och 150 meter. Registrera träffar, räkna varv och följ din score över tid.",
+          "Kör 18 bollar - jÖNKÖPINGS RAnGE på 75, 125 och 150 meter. Registrera träffar, räkna varv och följ din score över tid.",
       },
-      { property: "og:title", content: "18-bollarsdrillen – Golfträning 75/125/150m" },
+      { property: "og:title", content: "18 bollar - jÖNKÖPINGS RAnGE – Golfträning" },
       {
         property: "og:description",
-        content: "Kör 18-bollarsdrillen på 75, 125 och 150 meter. Registrera träffar, räkna varv och följ din score över tid.",
+        content: "Kör 18 bollar - jÖNKÖPINGS RAnGE på 75, 125 och 150 meter. Registrera träffar, räkna varv och följ din score över tid.",
       },
     ],
   }),
