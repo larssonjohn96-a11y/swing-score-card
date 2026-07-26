@@ -1,5 +1,5 @@
 export type CategoryTest = {
-  to: "/drill" | "/bunker";
+  to: "/drill" | "/bunker" | "/speed";
   number: string;
   title: string;
   subtitle: string;
@@ -59,8 +59,20 @@ export const CATEGORIES: Category[] = [
     slug: "driving",
     title: "Driving",
     subtitle: "Utslag",
-    description: "Längd och träffsäkerhet från tee.",
-    tests: [],
+    description: "Längd, hastighet och träffsäkerhet från tee.",
+    tests: [
+      {
+        to: "/speed",
+        number: "4",
+        title: "Speed test",
+        subtitle: "Ball speed & club head speed",
+        bullets: [
+          "Logga bollhastighet i mph, club head speed valfritt.",
+          "Datum på x-axeln så du ser progress över tid.",
+        ],
+        result: "RESULTAT: MPH ÖVER TID + SMASH FACTOR",
+      },
+    ],
   },
 ];
 
