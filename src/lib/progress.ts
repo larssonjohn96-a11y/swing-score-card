@@ -6,7 +6,7 @@ import { loadLongDriveSessions, sessionBest } from "@/lib/longdrive";
 import { loadFairwaySessions } from "@/lib/fairway";
 import { loadTeeSessions } from "@/lib/teeshot";
 import { loadWedgeSessions } from "@/lib/wedge";
-import { loadCombineSessions } from "@/lib/combine";
+
 import { loadShapingSessions } from "@/lib/shaping";
 import { loadPar3Sessions } from "@/lib/par3";
 
