@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as HistorikRouteImport } from './routes/historik'
 import { Route as DrillRouteImport } from './routes/drill'
+import { Route as BunkerRouteImport } from './routes/bunker'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -28,32 +29,41 @@ const DrillRoute = DrillRouteImport.update({
   path: '/drill',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BunkerRoute = BunkerRouteImport.update({
+  id: '/bunker',
+  path: '/bunker',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
+  '/bunker': typeof BunkerRoute
   '/drill': typeof DrillRoute
   '/historik': typeof HistorikRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
 }
 export interface FileRoutesByTo {
+  '/bunker': typeof BunkerRoute
   '/drill': typeof DrillRoute
   '/historik': typeof HistorikRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/bunker': typeof BunkerRoute
   '/drill': typeof DrillRoute
   '/historik': typeof HistorikRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/drill' | '/historik' | '/sitemap.xml'
+  fullPaths: '/bunker' | '/drill' | '/historik' | '/sitemap.xml'
   fileRoutesByTo: FileRoutesByTo
-  to: '/drill' | '/historik' | '/sitemap.xml'
-  id: '__root__' | '/drill' | '/historik' | '/sitemap.xml'
+  to: '/bunker' | '/drill' | '/historik' | '/sitemap.xml'
+  id: '__root__' | '/bunker' | '/drill' | '/historik' | '/sitemap.xml'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  BunkerRoute: typeof BunkerRoute
   DrillRoute: typeof DrillRoute
   HistorikRoute: typeof HistorikRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -82,10 +92,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DrillRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/bunker': {
+      id: '/bunker'
+      path: '/bunker'
+      fullPath: '/bunker'
+      preLoaderRoute: typeof BunkerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
+  BunkerRoute: BunkerRoute,
   DrillRoute: DrillRoute,
   HistorikRoute: HistorikRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
