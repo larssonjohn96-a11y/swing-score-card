@@ -1,5 +1,5 @@
 export type CategoryTest = {
-  to: "/drill" | "/bunker" | "/speed" | "/longdrive";
+  to: "/drill" | "/bunker" | "/speed" | "/longdrive" | "/fairway";
   number: string;
   title: string;
   subtitle: string;
@@ -82,6 +82,17 @@ export const CATEGORIES: Category[] = [
           "Längsta och snitt sparas med datum.",
         ],
         result: "RESULTAT: LÄNGSTA CARRY + SNITT",
+      },
+      {
+        to: "/fairway",
+        number: "6",
+        title: "Fairway challenge",
+        subtitle: "10 drivar – träff & längd",
+        bullets: [
+          "Tio drivar: fairway, ruff eller out plus carry.",
+          "Långa fairwayträffar ger mest, out ger minuspoäng.",
+        ],
+        result: "RESULTAT: TOTALPOÄNG 0–100",
       },
     ],
   },

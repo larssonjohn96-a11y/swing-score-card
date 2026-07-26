@@ -5,6 +5,7 @@ import { formatScore, loadSessions } from "@/lib/drill";
 import { loadBunkerSessions } from "@/lib/bunker";
 import { loadSpeedEntries } from "@/lib/speed";
 import { loadLongDriveSessions, sessionBest } from "@/lib/longdrive";
+import { loadFairwaySessions, fairwayHitRate } from "@/lib/fairway";
 
 export const Route = createFileRoute("/kategori/$slug")({
   loader: ({ params }) => {
@@ -54,7 +55,11 @@ function CategoryPage() {
     const b = loadBunkerSessions();
     const sp = loadSpeedEntries();
     const ld = loadLongDriveSessions();
+    const fw = loadFairwaySessions();
     setLast({
+      "/fairway": fw.length
+        ? `Senast ${fw[fw.length - 1].points.toFixed(0)} p · ${(fairwayHitRate(fw[fw.length - 1].drives) * 100).toFixed(0)}% fairway`
+        : undefined,
       "/longdrive": ld.length
         ? `Senast ${sessionBest(ld[ld.length - 1]).toFixed(0)} ${ld[ld.length - 1].unit} längsta carry`
         : undefined,
