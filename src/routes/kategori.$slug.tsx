@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { findCategory, CATEGORIES, type Category, type CategoryTest } from "@/lib/categories";
 import { formatScore, loadSessions } from "@/lib/drill";
 import { loadBunkerSessions } from "@/lib/bunker";
+import { loadSpeedEntries } from "@/lib/speed";
 
 export const Route = createFileRoute("/kategori/$slug")({
   loader: ({ params }) => {
@@ -50,7 +51,11 @@ function CategoryPage() {
   useEffect(() => {
     const d = loadSessions();
     const b = loadBunkerSessions();
+    const sp = loadSpeedEntries();
     setLast({
+      "/speed": sp.length
+        ? `Senast ${sp[sp.length - 1].ballSpeed.toFixed(1)} mph ball speed`
+        : undefined,
       "/drill": d.length ? `Senast ${formatScore(d[d.length - 1].score)}` : undefined,
       "/bunker": b.length ? `Senast ${b[b.length - 1].avgFeet.toFixed(1)} fot i snitt` : undefined,
     });

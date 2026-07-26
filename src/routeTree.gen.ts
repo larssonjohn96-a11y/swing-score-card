@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TopplistaRouteImport } from './routes/topplista'
+import { Route as SpeedRouteImport } from './routes/speed'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as KontoRouteImport } from './routes/konto'
 import { Route as HistorikRouteImport } from './routes/historik'
@@ -21,6 +22,11 @@ import { Route as KategoriSlugRouteImport } from './routes/kategori.$slug'
 const TopplistaRoute = TopplistaRouteImport.update({
   id: '/topplista',
   path: '/topplista',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SpeedRoute = SpeedRouteImport.update({
+  id: '/speed',
+  path: '/speed',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -66,6 +72,7 @@ export interface FileRoutesByFullPath {
   '/historik': typeof HistorikRoute
   '/konto': typeof KontoRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/speed': typeof SpeedRoute
   '/topplista': typeof TopplistaRoute
   '/kategori/$slug': typeof KategoriSlugRoute
 }
@@ -76,6 +83,7 @@ export interface FileRoutesByTo {
   '/historik': typeof HistorikRoute
   '/konto': typeof KontoRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/speed': typeof SpeedRoute
   '/topplista': typeof TopplistaRoute
   '/kategori/$slug': typeof KategoriSlugRoute
 }
@@ -87,6 +95,7 @@ export interface FileRoutesById {
   '/historik': typeof HistorikRoute
   '/konto': typeof KontoRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/speed': typeof SpeedRoute
   '/topplista': typeof TopplistaRoute
   '/kategori/$slug': typeof KategoriSlugRoute
 }
@@ -99,6 +108,7 @@ export interface FileRouteTypes {
     | '/historik'
     | '/konto'
     | '/sitemap.xml'
+    | '/speed'
     | '/topplista'
     | '/kategori/$slug'
   fileRoutesByTo: FileRoutesByTo
@@ -109,6 +119,7 @@ export interface FileRouteTypes {
     | '/historik'
     | '/konto'
     | '/sitemap.xml'
+    | '/speed'
     | '/topplista'
     | '/kategori/$slug'
   id:
@@ -119,6 +130,7 @@ export interface FileRouteTypes {
     | '/historik'
     | '/konto'
     | '/sitemap.xml'
+    | '/speed'
     | '/topplista'
     | '/kategori/$slug'
   fileRoutesById: FileRoutesById
@@ -130,6 +142,7 @@ export interface RootRouteChildren {
   HistorikRoute: typeof HistorikRoute
   KontoRoute: typeof KontoRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  SpeedRoute: typeof SpeedRoute
   TopplistaRoute: typeof TopplistaRoute
   KategoriSlugRoute: typeof KategoriSlugRoute
 }
@@ -141,6 +154,13 @@ declare module '@tanstack/react-router' {
       path: '/topplista'
       fullPath: '/topplista'
       preLoaderRoute: typeof TopplistaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/speed': {
+      id: '/speed'
+      path: '/speed'
+      fullPath: '/speed'
+      preLoaderRoute: typeof SpeedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -202,9 +222,20 @@ const rootRouteChildren: RootRouteChildren = {
   HistorikRoute: HistorikRoute,
   KontoRoute: KontoRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  SpeedRoute: SpeedRoute,
   TopplistaRoute: TopplistaRoute,
   KategoriSlugRoute: KategoriSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
