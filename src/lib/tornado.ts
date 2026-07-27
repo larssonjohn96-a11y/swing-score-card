@@ -117,3 +117,16 @@ export function deleteTornadoSession(id: string): TornadoSession[] {
   window.localStorage.setItem(KEY, JSON.stringify(all));
   return all;
 }
+
+/** Sammanställer alla sparade pass per avstånd över tid. */
+export function tornadoOverallStats(sessions: TornadoSession[]): TornadoStat[] {
+  return tornadoStats(sessions.flatMap((s) => s.putts));
+}
+
+/** Bästa och sämsta avstånd sett över all historik. */
+export function tornadoBestWorst(sessions: TornadoSession[]) {
+  const stats = tornadoOverallStats(sessions).filter((s) => s.count > 0);
+  if (!stats.length) return null;
+  const sorted = [...stats].sort((a, b) => b.pct - a.pct);
+  return { best: sorted[0], worst: sorted[sorted.length - 1], stats };
+}
