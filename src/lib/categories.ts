@@ -12,6 +12,7 @@ export type CategoryTest = {
     | "/pitch"
     | "/chip"
     | "/kortputt"
+    | "/tornado"
     | "/lagputt";
 
   number: string;
