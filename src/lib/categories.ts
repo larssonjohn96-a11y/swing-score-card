@@ -12,6 +12,7 @@ export type CategoryTest = {
     | "/pitch"
     | "/chip"
     | "/kortputt"
+    | "/tornado"
     | "/lagputt";
 
   number: string;
@@ -187,6 +188,17 @@ export const CATEGORIES: Category[] = [
           "Räkna isatta puttar per avstånd.",
         ],
         result: "RESULTAT: ANDEL ISATTA PUTTAR I %",
+      },
+      {
+        to: "/tornado",
+        number: "16",
+        title: "Tornado drill",
+        subtitle: "10 puttar runt hålet – 1, 2 och 3 m",
+        bullets: [
+          "3 puttar från 1 m, 4 från 2 m och 3 från 3 m i slumpad ordning.",
+          "Ny position runt hålet varje putt. 10 poäng per isatt putt.",
+        ],
+        result: "RESULTAT: POÄNG 0–100",
       },
       {
         to: "/lagputt",

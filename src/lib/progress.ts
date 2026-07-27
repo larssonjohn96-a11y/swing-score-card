@@ -13,6 +13,7 @@ import { loadPitchSessions } from "@/lib/pitch";
 import { loadChipSessions } from "@/lib/chip";
 import { loadShortPuttSessions } from "@/lib/shortputt";
 import { loadLagPuttSessions } from "@/lib/lagputt";
+import { loadTornadoSessions } from "@/lib/tornado";
 
 export type ProgressPoint = {
   date: string;
@@ -204,6 +205,20 @@ export const PROGRESS_TESTS: ProgressTest[] = [
     load: () =>
       loadShortPuttSessions()
         .map((s) => ({ date: day(s.date), value: s.pct }))
+        .sort(byDate),
+  },
+  {
+    id: "tornado",
+    title: "Tornado drill",
+    categorySlug: "puttning",
+    to: "/tornado",
+    metric: "Poäng",
+    unit: "p",
+    higherIsBetter: true,
+    decimals: 0,
+    load: () =>
+      loadTornadoSessions()
+        .map((s) => ({ date: day(s.date), value: s.points }))
         .sort(byDate),
   },
   {

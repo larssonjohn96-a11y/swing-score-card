@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WedgeRouteImport } from './routes/wedge'
 import { Route as TraningRouteImport } from './routes/traning'
+import { Route as TornadoRouteImport } from './routes/tornado'
 import { Route as TopplistaRouteImport } from './routes/topplista'
 import { Route as TeeshotRouteImport } from './routes/teeshot'
 import { Route as SpeedRouteImport } from './routes/speed'
@@ -41,6 +42,11 @@ const WedgeRoute = WedgeRouteImport.update({
 const TraningRoute = TraningRouteImport.update({
   id: '/traning',
   path: '/traning',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TornadoRoute = TornadoRouteImport.update({
+  id: '/tornado',
+  path: '/tornado',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TopplistaRoute = TopplistaRouteImport.update({
@@ -167,6 +173,7 @@ export interface FileRoutesByFullPath {
   '/speed': typeof SpeedRoute
   '/teeshot': typeof TeeshotRoute
   '/topplista': typeof TopplistaRoute
+  '/tornado': typeof TornadoRoute
   '/traning': typeof TraningRoute
   '/wedge': typeof WedgeRoute
   '/framsteg/$slug': typeof FramstegSlugRouteWithChildren
@@ -192,6 +199,7 @@ export interface FileRoutesByTo {
   '/speed': typeof SpeedRoute
   '/teeshot': typeof TeeshotRoute
   '/topplista': typeof TopplistaRoute
+  '/tornado': typeof TornadoRoute
   '/traning': typeof TraningRoute
   '/wedge': typeof WedgeRoute
   '/framsteg/$slug': typeof FramstegSlugRouteWithChildren
@@ -218,6 +226,7 @@ export interface FileRoutesById {
   '/speed': typeof SpeedRoute
   '/teeshot': typeof TeeshotRoute
   '/topplista': typeof TopplistaRoute
+  '/tornado': typeof TornadoRoute
   '/traning': typeof TraningRoute
   '/wedge': typeof WedgeRoute
   '/framsteg/$slug': typeof FramstegSlugRouteWithChildren
@@ -245,6 +254,7 @@ export interface FileRouteTypes {
     | '/speed'
     | '/teeshot'
     | '/topplista'
+    | '/tornado'
     | '/traning'
     | '/wedge'
     | '/framsteg/$slug'
@@ -270,6 +280,7 @@ export interface FileRouteTypes {
     | '/speed'
     | '/teeshot'
     | '/topplista'
+    | '/tornado'
     | '/traning'
     | '/wedge'
     | '/framsteg/$slug'
@@ -295,6 +306,7 @@ export interface FileRouteTypes {
     | '/speed'
     | '/teeshot'
     | '/topplista'
+    | '/tornado'
     | '/traning'
     | '/wedge'
     | '/framsteg/$slug'
@@ -321,6 +333,7 @@ export interface RootRouteChildren {
   SpeedRoute: typeof SpeedRoute
   TeeshotRoute: typeof TeeshotRoute
   TopplistaRoute: typeof TopplistaRoute
+  TornadoRoute: typeof TornadoRoute
   TraningRoute: typeof TraningRoute
   WedgeRoute: typeof WedgeRoute
   FramstegSlugRoute: typeof FramstegSlugRouteWithChildren
@@ -342,6 +355,13 @@ declare module '@tanstack/react-router' {
       path: '/traning'
       fullPath: '/traning'
       preLoaderRoute: typeof TraningRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tornado': {
+      id: '/tornado'
+      path: '/tornado'
+      fullPath: '/tornado'
+      preLoaderRoute: typeof TornadoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/topplista': {
@@ -524,6 +544,7 @@ const rootRouteChildren: RootRouteChildren = {
   SpeedRoute: SpeedRoute,
   TeeshotRoute: TeeshotRoute,
   TopplistaRoute: TopplistaRoute,
+  TornadoRoute: TornadoRoute,
   TraningRoute: TraningRoute,
   WedgeRoute: WedgeRoute,
   FramstegSlugRoute: FramstegSlugRouteWithChildren,
