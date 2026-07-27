@@ -1,4 +1,5 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
+import { Check } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   Bar,
@@ -55,6 +56,7 @@ function Par3Page() {
   const [value, setValue] = useState("");
   const [done, setDone] = useState(false);
   const [notes, setNotes] = useState("");
+  const [saved, setSaved] = useState(false);
   const [sessions, setSessions] = useState<Par3Session[]>([]);
 
   useEffect(() => {
@@ -79,9 +81,11 @@ function Par3Page() {
     const record = savePar3Session(shots, notes);
     setSessions((prev) => [...prev, record]);
     setNotes("");
+    setSaved(true);
   }
 
   function reset() {
+    setSaved(false);
     setShots(emptyPar3Shots());
     setIndex(0);
     setValue("");
@@ -165,12 +169,18 @@ function Par3Page() {
             className="mt-2 w-full rounded-2xl border border-input bg-background px-4 py-3 text-foreground outline-none focus:border-primary"
           />
           <div className="mt-4 flex gap-3">
-            <button
-              onClick={save}
-              className="flex-1 rounded-2xl bg-primary py-4 font-[family-name:var(--font-display)] text-2xl text-primary-foreground"
-            >
-              Spara
-            </button>
+            {saved ? (
+              <div className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-primary bg-primary/10 py-4 text-base font-semibold text-primary">
+                <Check className="h-5 w-5" /> Testet sparat
+              </div>
+            ) : (
+              <button
+                onClick={save}
+                className="flex-1 rounded-2xl bg-primary py-4 font-[family-name:var(--font-display)] text-2xl text-primary-foreground"
+              >
+                Spara
+              </button>
+            )}
             <button
               onClick={reset}
               className="flex-1 rounded-2xl border border-border py-4 font-[family-name:var(--font-display)] text-2xl text-muted-foreground"
