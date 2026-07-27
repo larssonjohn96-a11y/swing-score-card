@@ -1,5 +1,15 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { Check } from "lucide-react";
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import { ChartCard } from "@/components/chart-card";
 import { useEffect, useState } from "react";
 import {
   POINTS_PER_PUTT,
@@ -8,6 +18,7 @@ import {
   loadTornadoSessions,
   randomTornadoPutts,
   saveTornadoSession,
+  tornadoBestWorst,
   tornadoStats,
   type TornadoPutt,
   type TornadoSession,
@@ -51,6 +62,11 @@ function TornadoPage() {
   const holed = played.filter((p) => p.holed).length;
   const points = holed * POINTS_PER_PUTT;
   const stats = tornadoStats(played);
+  const overall = tornadoBestWorst(sessions);
+  const chartData = sessions.map((s, i) => ({
+    label: `${i + 1}`,
+    "Poäng": s.points,
+  }));
 
   function commit(made: boolean) {
     setPutts(putts.map((p, i) => (i === index ? { ...p, holed: made } : p)));
