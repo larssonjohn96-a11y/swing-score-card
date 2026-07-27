@@ -195,31 +195,117 @@ function TornadoPage() {
       ) : null}
 
       {sessions.length ? (
-        <section className="mt-8">
-          <h2 className="text-sm uppercase tracking-[0.25em] text-muted-foreground">Historik</h2>
-          <div className="mt-3 space-y-2">
-            {[...sessions].reverse().map((s) => (
-              <div
-                key={s.id}
-                className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3 text-sm"
-              >
-                <span className="text-muted-foreground">
-                  {new Date(s.date).toLocaleDateString("sv-SE")}
-                </span>
-                <span>
-                  {s.holed}/{s.putts.length} · {s.points} p
-                </span>
-                <button
-                  onClick={() => setSessions(deleteTornadoSession(s.id))}
-                  className="text-xs text-muted-foreground underline"
-                >
-                  Ta bort
-                </button>
+        <>
+          <ChartCard
+            title="Totalpoäng över tid"
+            footer={
+              <p className="text-xs text-muted-foreground">
+                Poäng per pass (max 100). Tryck på grafen för helskärm.
+              </p>
+            }
+          >
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData} margin={{ top: 5, right: 8, bottom: 0, left: -20 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                <XAxis dataKey="label" tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
+                <YAxis tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" domain={[0, 100]} />
+                <Tooltip
+                  contentStyle={{
+                    background: "var(--card)",
+                    border: "1px solid var(--border)",
+                    borderRadius: 12,
+                    fontSize: 12,
+                  }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="Poäng"
+                  stroke="var(--primary)"
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </ChartCard>
+
+          {overall ? (
+            <section className="mt-6 rounded-3xl border border-border bg-card p-5">
+              <h2 className="text-sm uppercase tracking-[0.25em] text-muted-foreground">
+                Avstånd – bäst och sämst
+              </h2>
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                <div className="rounded-2xl border border-primary/40 bg-primary/10 p-3">
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                    Bäst
+                  </p>
+                  <p className="font-[family-name:var(--font-display)] text-3xl leading-none">
+                    {overall.best.distance} m
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {overall.best.pct.toFixed(0)} % ({overall.best.holed}/{overall.best.count})
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-border bg-background p-3">
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                    Sämst
+                  </p>
+                  <p className="font-[family-name:var(--font-display)] text-3xl leading-none text-flag">
+                    {overall.worst.distance} m
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {overall.worst.pct.toFixed(0)} % ({overall.worst.holed}/{overall.worst.count})
+                  </p>
+                </div>
               </div>
-            ))}
-          </div>
-        </section>
+              <div className="mt-4 space-y-3">
+                {overall.stats.map((s) => (
+                  <div key={s.distance}>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">{s.distance} m</span>
+                      <span>
+                        {s.holed}/{s.count} · {s.pct.toFixed(0)} %
+                      </span>
+                    </div>
+                    <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-border">
+                      <div className="h-full bg-primary" style={{ width: `${s.pct}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          <section className="mt-8">
+            <h2 className="text-sm uppercase tracking-[0.25em] text-muted-foreground">Historik</h2>
+            <div className="mt-3 space-y-2">
+              {[...sessions].reverse().map((s) => (
+                <div
+                  key={s.id}
+                  className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3 text-sm"
+                >
+                  <span className="text-muted-foreground">
+                    {new Date(s.date).toLocaleDateString("sv-SE")}{" "}
+                    {new Date(s.date).toLocaleTimeString("sv-SE", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                  <span>
+                    {s.holed}/{s.putts.length} · {s.points} p
+                  </span>
+                  <button
+                    onClick={() => setSessions(deleteTornadoSession(s.id))}
+                    className="text-xs text-muted-foreground underline"
+                  >
+                    Ta bort
+                  </button>
+                </div>
+              ))}
+            </div>
+          </section>
+        </>
       ) : null}
+
 
       <section className="mt-8 rounded-2xl border border-border bg-card/60 p-4 text-sm text-muted-foreground">
         <h2 className="text-base text-foreground">Så funkar testet</h2>
