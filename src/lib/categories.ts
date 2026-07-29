@@ -7,6 +7,7 @@ export type CategoryTest = {
     | "/fairway"
     | "/teeshot"
     | "/wedge"
+    | "/precision"
     | "/shaping"
     | "/par3"
     | "/pitch"
@@ -98,6 +99,17 @@ export const CATEGORIES: Category[] = [
         subtitle: "75 / 125 / 150 meter",
         bullets: ["2 bollar per avstånd innan du går vidare.", "Tre varv ger 3.0 i score."],
         result: "RESULTAT: SCORE 0–3.0",
+      },
+      {
+        to: "/precision",
+        number: "17",
+        title: "Approach Precision Test",
+        subtitle: "18 slag – 55 till 165 m",
+        bullets: [
+          "9 avstånd × 2 varv, mata in carry och sidled.",
+          "Appen räknar ut längdfel, sidledsfel och avstånd till flaggan.",
+        ],
+        result: "RESULTAT: SNITT PROXIMITY + KONSISTENS",
       },
       {
         to: "/wedge",

@@ -6,6 +6,7 @@ import { loadLongDriveSessions, sessionBest } from "@/lib/longdrive";
 import { loadFairwaySessions } from "@/lib/fairway";
 import { loadTeeSessions } from "@/lib/teeshot";
 import { loadWedgeSessions } from "@/lib/wedge";
+import { loadPrecisionSessions } from "@/lib/precision-store";
 
 import { loadShapingSessions } from "@/lib/shaping";
 import { loadPar3Sessions } from "@/lib/par3";
@@ -120,6 +121,20 @@ export const PROGRESS_TESTS: ProgressTest[] = [
     decimals: 1,
     load: () =>
       loadWedgeSessions()
+        .map((s) => ({ date: day(s.date), value: s.avgProximity }))
+        .sort(byDate),
+  },
+  {
+    id: "precision",
+    title: "Approach Precision Test",
+    categorySlug: "approach",
+    to: "/precision",
+    metric: "Snitt till flaggan",
+    unit: "m",
+    higherIsBetter: false,
+    decimals: 2,
+    load: () =>
+      loadPrecisionSessions()
         .map((s) => ({ date: day(s.date), value: s.avgProximity }))
         .sort(byDate),
   },

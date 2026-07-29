@@ -17,6 +17,7 @@ import { Route as TeeshotRouteImport } from './routes/teeshot'
 import { Route as SpeedRouteImport } from './routes/speed'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ShapingRouteImport } from './routes/shaping'
+import { Route as PrecisionRouteImport } from './routes/precision'
 import { Route as PitchRouteImport } from './routes/pitch'
 import { Route as Par3RouteImport } from './routes/par3'
 import { Route as LongdriveRouteImport } from './routes/longdrive'
@@ -72,6 +73,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const ShapingRoute = ShapingRouteImport.update({
   id: '/shaping',
   path: '/shaping',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrecisionRoute = PrecisionRouteImport.update({
+  id: '/precision',
+  path: '/precision',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PitchRoute = PitchRouteImport.update({
@@ -168,6 +174,7 @@ export interface FileRoutesByFullPath {
   '/longdrive': typeof LongdriveRoute
   '/par3': typeof Par3Route
   '/pitch': typeof PitchRoute
+  '/precision': typeof PrecisionRoute
   '/shaping': typeof ShapingRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
@@ -194,6 +201,7 @@ export interface FileRoutesByTo {
   '/longdrive': typeof LongdriveRoute
   '/par3': typeof Par3Route
   '/pitch': typeof PitchRoute
+  '/precision': typeof PrecisionRoute
   '/shaping': typeof ShapingRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
@@ -221,6 +229,7 @@ export interface FileRoutesById {
   '/longdrive': typeof LongdriveRoute
   '/par3': typeof Par3Route
   '/pitch': typeof PitchRoute
+  '/precision': typeof PrecisionRoute
   '/shaping': typeof ShapingRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
@@ -249,6 +258,7 @@ export interface FileRouteTypes {
     | '/longdrive'
     | '/par3'
     | '/pitch'
+    | '/precision'
     | '/shaping'
     | '/sitemap.xml'
     | '/speed'
@@ -275,6 +285,7 @@ export interface FileRouteTypes {
     | '/longdrive'
     | '/par3'
     | '/pitch'
+    | '/precision'
     | '/shaping'
     | '/sitemap.xml'
     | '/speed'
@@ -301,6 +312,7 @@ export interface FileRouteTypes {
     | '/longdrive'
     | '/par3'
     | '/pitch'
+    | '/precision'
     | '/shaping'
     | '/sitemap.xml'
     | '/speed'
@@ -328,6 +340,7 @@ export interface RootRouteChildren {
   LongdriveRoute: typeof LongdriveRoute
   Par3Route: typeof Par3Route
   PitchRoute: typeof PitchRoute
+  PrecisionRoute: typeof PrecisionRoute
   ShapingRoute: typeof ShapingRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SpeedRoute: typeof SpeedRoute
@@ -397,6 +410,13 @@ declare module '@tanstack/react-router' {
       path: '/shaping'
       fullPath: '/shaping'
       preLoaderRoute: typeof ShapingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/precision': {
+      id: '/precision'
+      path: '/precision'
+      fullPath: '/precision'
+      preLoaderRoute: typeof PrecisionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pitch': {
@@ -539,6 +559,7 @@ const rootRouteChildren: RootRouteChildren = {
   LongdriveRoute: LongdriveRoute,
   Par3Route: Par3Route,
   PitchRoute: PitchRoute,
+  PrecisionRoute: PrecisionRoute,
   ShapingRoute: ShapingRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SpeedRoute: SpeedRoute,
