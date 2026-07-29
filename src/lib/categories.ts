@@ -101,6 +101,17 @@ export const CATEGORIES: Category[] = [
         result: "RESULTAT: SCORE 0–3.0",
       },
       {
+        to: "/precision",
+        number: "17",
+        title: "Approach Precision Test",
+        subtitle: "18 slag – 55 till 165 m",
+        bullets: [
+          "9 avstånd × 2 varv, mata in carry och sidled.",
+          "Appen räknar ut längdfel, sidledsfel och avstånd till flaggan.",
+        ],
+        result: "RESULTAT: SNITT PROXIMITY + KONSISTENS",
+      },
+      {
         to: "/wedge",
         number: "7",
         title: "Wedge matrix",
