@@ -1,6 +1,6 @@
 import { loadSpeedEntries } from "@/lib/speed";
 import { loadLongDriveSessions, sessionBest } from "@/lib/longdrive";
-import { loadWedgeSessions } from "@/lib/wedge";
+import { loadPrecisionSessions } from "@/lib/precision-store";
 
 export type Highlight = {
   key: string;
@@ -15,15 +15,15 @@ export type Highlight = {
 export function topScores(): Highlight[] {
   const speed = loadSpeedEntries();
   const longdrive = loadLongDriveSessions();
-  const wedge = loadWedgeSessions();
+  const precision = loadPrecisionSessions();
 
   const bestBall = speed.length ? Math.max(...speed.map((e) => e.ballSpeed)) : undefined;
   const bestCarry = longdrive.length
     ? Math.max(...longdrive.map(sessionBest))
     : undefined;
   const carryUnit = longdrive.length ? longdrive[longdrive.length - 1].unit : "m";
-  const bestProximity = wedge.length
-    ? Math.min(...wedge.map((s) => s.avgProximity))
+  const bestProximity = precision.length
+    ? Math.min(...precision.map((s) => s.avgProximity))
     : undefined;
 
   return [
@@ -49,7 +49,7 @@ export function topScores(): Highlight[] {
       value: bestProximity,
       unit: "m",
       decimals: 1,
-      hint: "Bästa snittet i wedge matrix",
+      hint: "Bästa snittet i Approach Precision Test",
     },
   ];
 }

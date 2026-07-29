@@ -66,21 +66,17 @@ export const TRAINING_PLAN: {
     focus: "Avståndskontroll och proximity på fulla och halva slag.",
     drills: [
       {
-        title: "Wedge-matris",
-        detail: "40–120 m, 2 bollar per avstånd. Notera avstånd till hål i meter.",
+        title: "Approach precision",
+        detail: "55–165 m, mata in carry och sidled per slag och följ proximity.",
         time: "25 min",
       },
       {
-        title: "Par 3-simulering",
-        detail: "125/140/155/170 m, byt klubba varje slag som på banan.",
+        title: "18 bollar",
+        detail: "75/125/150 m – sätt två bollar per avstånd innan du går vidare.",
         time: "20 min",
       },
-      {
-        title: "Shot shaping",
-        detail: "9-järn: draw – rak – fade, tre varv. Godkänt eller ej.",
-        time: "15 min",
-      },
     ],
+
   },
   {
     slug: "around-the-green",

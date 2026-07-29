@@ -6,10 +6,7 @@ export type CategoryTest = {
     | "/longdrive"
     | "/fairway"
     | "/teeshot"
-    | "/wedge"
     | "/precision"
-    | "/shaping"
-    | "/par3"
     | "/pitch"
     | "/chip"
     | "/kortputt"
@@ -110,39 +107,6 @@ export const CATEGORIES: Category[] = [
           "Appen räknar ut längdfel, sidledsfel och avstånd till flaggan.",
         ],
         result: "RESULTAT: SNITT PROXIMITY + KONSISTENS",
-      },
-      {
-        to: "/wedge",
-        number: "7",
-        title: "Wedge matrix",
-        subtitle: "20 slag – 40 till 120 m",
-        bullets: [
-          "5 avstånd × 2 bollar × 2 varv.",
-          "Mät avstånd till hål – snitt och spridning per avstånd.",
-        ],
-        result: "RESULTAT: MEDELPROXIMITY + SPRIDNING",
-      },
-      {
-        to: "/shaping",
-        number: "9",
-        title: "Shot shaping",
-        subtitle: "9 slag med 9-järn",
-        bullets: [
-          "Tre varv: draw – rak – fade.",
-          "Godkänt eller ej per slag, inget annat räknas.",
-        ],
-        result: "RESULTAT: SHOT SHAPE SCORE 0–100 %",
-      },
-      {
-        to: "/par3",
-        number: "10",
-        title: "Approach precision (par 3)",
-        subtitle: "16 slag – 125 till 170 m",
-        bullets: [
-          "4 avstånd × 2 slag × 2 varv med järn.",
-          "Mät avstånd till hål – snitt i meter och procent.",
-        ],
-        result: "RESULTAT: SNITT TILL HÅL + PROXIMITY %",
       },
     ],
   },
