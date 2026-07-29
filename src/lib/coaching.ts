@@ -65,7 +65,18 @@ export const TRAINING_PLAN: {
     title: "Approach",
     focus: "Avståndskontroll och proximity på fulla och halva slag.",
     drills: [
+      {
+        title: "Approach precision",
+        detail: "55–165 m, mata in carry och sidled per slag och följ proximity.",
+        time: "25 min",
+      },
+      {
+        title: "18 bollar",
+        detail: "75/125/150 m – sätt två bollar per avstånd innan du går vidare.",
+        time: "20 min",
+      },
     ],
+
   },
   {
     slug: "around-the-green",
