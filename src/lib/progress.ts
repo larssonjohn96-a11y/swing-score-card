@@ -5,11 +5,8 @@ import { loadSpeedEntries } from "@/lib/speed";
 import { loadLongDriveSessions, sessionBest } from "@/lib/longdrive";
 import { loadFairwaySessions } from "@/lib/fairway";
 import { loadTeeSessions } from "@/lib/teeshot";
-import { loadWedgeSessions } from "@/lib/wedge";
 import { loadPrecisionSessions } from "@/lib/precision-store";
 
-import { loadShapingSessions } from "@/lib/shaping";
-import { loadPar3Sessions } from "@/lib/par3";
 import { loadPitchSessions } from "@/lib/pitch";
 import { loadChipSessions } from "@/lib/chip";
 import { loadShortPuttSessions } from "@/lib/shortputt";
@@ -111,20 +108,6 @@ export const PROGRESS_TESTS: ProgressTest[] = [
         .sort(byDate),
   },
   {
-    id: "wedge",
-    title: "Wedge matrix",
-    categorySlug: "approach",
-    to: "/wedge",
-    metric: "Snitt till hål",
-    unit: "m",
-    higherIsBetter: false,
-    decimals: 1,
-    load: () =>
-      loadWedgeSessions()
-        .map((s) => ({ date: day(s.date), value: s.avgProximity }))
-        .sort(byDate),
-  },
-  {
     id: "precision",
     title: "Approach Precision Test",
     categorySlug: "approach",
@@ -135,34 +118,6 @@ export const PROGRESS_TESTS: ProgressTest[] = [
     decimals: 2,
     load: () =>
       loadPrecisionSessions()
-        .map((s) => ({ date: day(s.date), value: s.avgProximity }))
-        .sort(byDate),
-  },
-  {
-    id: "shaping",
-    title: "Shot shaping",
-    categorySlug: "approach",
-    to: "/shaping",
-    metric: "Godkänt",
-    unit: "%",
-    higherIsBetter: true,
-    decimals: 0,
-    load: () =>
-      loadShapingSessions()
-        .map((s) => ({ date: day(s.date), value: s.pct }))
-        .sort(byDate),
-  },
-  {
-    id: "par3",
-    title: "Approach precision (par 3)",
-    categorySlug: "approach",
-    to: "/par3",
-    metric: "Snitt till hål",
-    unit: "m",
-    higherIsBetter: false,
-    decimals: 1,
-    load: () =>
-      loadPar3Sessions()
         .map((s) => ({ date: day(s.date), value: s.avgProximity }))
         .sort(byDate),
   },

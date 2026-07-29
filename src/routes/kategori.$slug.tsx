@@ -6,7 +6,6 @@ import { loadBunkerSessions } from "@/lib/bunker";
 import { loadSpeedEntries } from "@/lib/speed";
 import { loadLongDriveSessions, sessionBest } from "@/lib/longdrive";
 import { loadFairwaySessions, fairwayHitRate } from "@/lib/fairway";
-import { loadWedgeSessions } from "@/lib/wedge";
 
 export const Route = createFileRoute("/kategori/$slug")({
   loader: ({ params }) => {
@@ -57,11 +56,7 @@ function CategoryPage() {
     const sp = loadSpeedEntries();
     const ld = loadLongDriveSessions();
     const fw = loadFairwaySessions();
-    const wg = loadWedgeSessions();
     setLast({
-      "/wedge": wg.length
-        ? `Senast ${wg[wg.length - 1].avgProximity.toFixed(1)} m i snitt`
-        : undefined,
       "/fairway": fw.length
         ? `Senast ${fw[fw.length - 1].points.toFixed(0)} p · ${(fairwayHitRate(fw[fw.length - 1].drives) * 100).toFixed(0)}% fairway`
         : undefined,
