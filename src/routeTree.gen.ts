@@ -9,17 +9,14 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as WedgeRouteImport } from './routes/wedge'
 import { Route as TraningRouteImport } from './routes/traning'
 import { Route as TornadoRouteImport } from './routes/tornado'
 import { Route as TopplistaRouteImport } from './routes/topplista'
 import { Route as TeeshotRouteImport } from './routes/teeshot'
 import { Route as SpeedRouteImport } from './routes/speed'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
-import { Route as ShapingRouteImport } from './routes/shaping'
 import { Route as PrecisionRouteImport } from './routes/precision'
 import { Route as PitchRouteImport } from './routes/pitch'
-import { Route as Par3RouteImport } from './routes/par3'
 import { Route as LongdriveRouteImport } from './routes/longdrive'
 import { Route as LagputtRouteImport } from './routes/lagputt'
 import { Route as KortputtRouteImport } from './routes/kortputt'
@@ -35,11 +32,6 @@ import { Route as KategoriSlugRouteImport } from './routes/kategori.$slug'
 import { Route as FramstegSlugRouteImport } from './routes/framsteg.$slug'
 import { Route as FramstegSlugTestRouteImport } from './routes/framsteg.$slug.$test'
 
-const WedgeRoute = WedgeRouteImport.update({
-  id: '/wedge',
-  path: '/wedge',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const TraningRoute = TraningRouteImport.update({
   id: '/traning',
   path: '/traning',
@@ -70,11 +62,6 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ShapingRoute = ShapingRouteImport.update({
-  id: '/shaping',
-  path: '/shaping',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const PrecisionRoute = PrecisionRouteImport.update({
   id: '/precision',
   path: '/precision',
@@ -83,11 +70,6 @@ const PrecisionRoute = PrecisionRouteImport.update({
 const PitchRoute = PitchRouteImport.update({
   id: '/pitch',
   path: '/pitch',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const Par3Route = Par3RouteImport.update({
-  id: '/par3',
-  path: '/par3',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LongdriveRoute = LongdriveRouteImport.update({
@@ -172,17 +154,14 @@ export interface FileRoutesByFullPath {
   '/kortputt': typeof KortputtRoute
   '/lagputt': typeof LagputtRoute
   '/longdrive': typeof LongdriveRoute
-  '/par3': typeof Par3Route
   '/pitch': typeof PitchRoute
   '/precision': typeof PrecisionRoute
-  '/shaping': typeof ShapingRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
   '/teeshot': typeof TeeshotRoute
   '/topplista': typeof TopplistaRoute
   '/tornado': typeof TornadoRoute
   '/traning': typeof TraningRoute
-  '/wedge': typeof WedgeRoute
   '/framsteg/$slug': typeof FramstegSlugRouteWithChildren
   '/kategori/$slug': typeof KategoriSlugRoute
   '/framsteg/': typeof FramstegIndexRoute
@@ -199,17 +178,14 @@ export interface FileRoutesByTo {
   '/kortputt': typeof KortputtRoute
   '/lagputt': typeof LagputtRoute
   '/longdrive': typeof LongdriveRoute
-  '/par3': typeof Par3Route
   '/pitch': typeof PitchRoute
   '/precision': typeof PrecisionRoute
-  '/shaping': typeof ShapingRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
   '/teeshot': typeof TeeshotRoute
   '/topplista': typeof TopplistaRoute
   '/tornado': typeof TornadoRoute
   '/traning': typeof TraningRoute
-  '/wedge': typeof WedgeRoute
   '/framsteg/$slug': typeof FramstegSlugRouteWithChildren
   '/kategori/$slug': typeof KategoriSlugRoute
   '/framsteg': typeof FramstegIndexRoute
@@ -227,17 +203,14 @@ export interface FileRoutesById {
   '/kortputt': typeof KortputtRoute
   '/lagputt': typeof LagputtRoute
   '/longdrive': typeof LongdriveRoute
-  '/par3': typeof Par3Route
   '/pitch': typeof PitchRoute
   '/precision': typeof PrecisionRoute
-  '/shaping': typeof ShapingRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
   '/teeshot': typeof TeeshotRoute
   '/topplista': typeof TopplistaRoute
   '/tornado': typeof TornadoRoute
   '/traning': typeof TraningRoute
-  '/wedge': typeof WedgeRoute
   '/framsteg/$slug': typeof FramstegSlugRouteWithChildren
   '/kategori/$slug': typeof KategoriSlugRoute
   '/framsteg/': typeof FramstegIndexRoute
@@ -256,17 +229,14 @@ export interface FileRouteTypes {
     | '/kortputt'
     | '/lagputt'
     | '/longdrive'
-    | '/par3'
     | '/pitch'
     | '/precision'
-    | '/shaping'
     | '/sitemap.xml'
     | '/speed'
     | '/teeshot'
     | '/topplista'
     | '/tornado'
     | '/traning'
-    | '/wedge'
     | '/framsteg/$slug'
     | '/kategori/$slug'
     | '/framsteg/'
@@ -283,17 +253,14 @@ export interface FileRouteTypes {
     | '/kortputt'
     | '/lagputt'
     | '/longdrive'
-    | '/par3'
     | '/pitch'
     | '/precision'
-    | '/shaping'
     | '/sitemap.xml'
     | '/speed'
     | '/teeshot'
     | '/topplista'
     | '/tornado'
     | '/traning'
-    | '/wedge'
     | '/framsteg/$slug'
     | '/kategori/$slug'
     | '/framsteg'
@@ -310,17 +277,14 @@ export interface FileRouteTypes {
     | '/kortputt'
     | '/lagputt'
     | '/longdrive'
-    | '/par3'
     | '/pitch'
     | '/precision'
-    | '/shaping'
     | '/sitemap.xml'
     | '/speed'
     | '/teeshot'
     | '/topplista'
     | '/tornado'
     | '/traning'
-    | '/wedge'
     | '/framsteg/$slug'
     | '/kategori/$slug'
     | '/framsteg/'
@@ -338,17 +302,14 @@ export interface RootRouteChildren {
   KortputtRoute: typeof KortputtRoute
   LagputtRoute: typeof LagputtRoute
   LongdriveRoute: typeof LongdriveRoute
-  Par3Route: typeof Par3Route
   PitchRoute: typeof PitchRoute
   PrecisionRoute: typeof PrecisionRoute
-  ShapingRoute: typeof ShapingRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SpeedRoute: typeof SpeedRoute
   TeeshotRoute: typeof TeeshotRoute
   TopplistaRoute: typeof TopplistaRoute
   TornadoRoute: typeof TornadoRoute
   TraningRoute: typeof TraningRoute
-  WedgeRoute: typeof WedgeRoute
   FramstegSlugRoute: typeof FramstegSlugRouteWithChildren
   KategoriSlugRoute: typeof KategoriSlugRoute
   FramstegIndexRoute: typeof FramstegIndexRoute
@@ -356,13 +317,6 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/wedge': {
-      id: '/wedge'
-      path: '/wedge'
-      fullPath: '/wedge'
-      preLoaderRoute: typeof WedgeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/traning': {
       id: '/traning'
       path: '/traning'
@@ -405,13 +359,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/shaping': {
-      id: '/shaping'
-      path: '/shaping'
-      fullPath: '/shaping'
-      preLoaderRoute: typeof ShapingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/precision': {
       id: '/precision'
       path: '/precision'
@@ -424,13 +371,6 @@ declare module '@tanstack/react-router' {
       path: '/pitch'
       fullPath: '/pitch'
       preLoaderRoute: typeof PitchRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/par3': {
-      id: '/par3'
-      path: '/par3'
-      fullPath: '/par3'
-      preLoaderRoute: typeof Par3RouteImport
       parentRoute: typeof rootRouteImport
     }
     '/longdrive': {
@@ -557,17 +497,14 @@ const rootRouteChildren: RootRouteChildren = {
   KortputtRoute: KortputtRoute,
   LagputtRoute: LagputtRoute,
   LongdriveRoute: LongdriveRoute,
-  Par3Route: Par3Route,
   PitchRoute: PitchRoute,
   PrecisionRoute: PrecisionRoute,
-  ShapingRoute: ShapingRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SpeedRoute: SpeedRoute,
   TeeshotRoute: TeeshotRoute,
   TopplistaRoute: TopplistaRoute,
   TornadoRoute: TornadoRoute,
   TraningRoute: TraningRoute,
-  WedgeRoute: WedgeRoute,
   FramstegSlugRoute: FramstegSlugRouteWithChildren,
   KategoriSlugRoute: KategoriSlugRoute,
   FramstegIndexRoute: FramstegIndexRoute,
