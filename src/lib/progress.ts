@@ -109,16 +109,16 @@ export const PROGRESS_TESTS: ProgressTest[] = [
   },
   {
     id: "precision",
-    title: "Approach Precision Test",
+    title: "Approach Test",
     categorySlug: "approach",
     to: "/precision",
-    metric: "Snitt till flaggan",
-    unit: "m",
-    higherIsBetter: false,
-    decimals: 2,
+    metric: "Approach Score",
+    unit: "/ 100",
+    higherIsBetter: true,
+    decimals: 0,
     load: () =>
       loadPrecisionSessions()
-        .map((s) => ({ date: day(s.date), value: s.avgProximity }))
+        .map((s) => ({ date: day(s.date), value: s.score ?? 0 }))
         .sort(byDate),
   },
   {
