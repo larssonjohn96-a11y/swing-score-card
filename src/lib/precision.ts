@@ -158,3 +158,98 @@ export function bestWorstTarget(stats: TargetStat[]) {
   const sorted = [...withData].sort((a, b) => a.avg - b.avg);
   return { best: sorted[0], worst: sorted[sorted.length - 1] };
 }
+
+/* -------------------------------------------------------------------------
+ * Score, handicapskattning och analys
+ * ---------------------------------------------------------------------- */
+
+/** Avstånd till flaggan i procent av slaglängden. */
+export function proximityPct(shot: Pick<PrecisionShot, "carry" | "target" | "offline">): number {
+  if (!shot.target) return 0;
+  return (proximity(shot) / shot.target) * 100;
+}
+
+/** 0–100 utifrån proximity i procent. 3 % ≈ 100, 20 % ≈ 0. */
+export function scoreFromPct(pct: number): number {
+  return Math.max(0, Math.min(100, Math.round(100 - (pct - 3) * 6)));
+}
+
+/** Grov handicapskattning utifrån proximity i procent. */
+export function handicapFromPct(pct: number): number {
+  return Math.max(0, Math.min(36, Math.round((pct - 4) * 2.2 * 10) / 10));
+}
+
+export type PrecisionResult = {
+  /** Approach Score 0–100 */
+  score: number;
+  handicap: number;
+  avgProximity: number;
+  avgProximityPct: number;
+  consistency: number;
+  perTarget: {
+    target: number;
+    count: number;
+    avgProximity: number;
+    avgPct: number;
+    score: number;
+    handicap: number;
+  }[];
+  strongest?: { target: number; score: number };
+  weakest?: { target: number; score: number };
+};
+
+export function precisionResult(shots: PrecisionShot[]): PrecisionResult {
+  const filled = shots.filter((s) => s.filled);
+  const perTarget = PRECISION_TARGETS.map((target) => {
+    const t = filled.filter((s) => s.target === target);
+    const avgPct = mean(t.map(proximityPct));
+    return {
+      target,
+      count: t.length,
+      avgProximity: mean(t.map(proximity)),
+      avgPct,
+      score: t.length ? scoreFromPct(avgPct) : 0,
+      handicap: t.length ? handicapFromPct(avgPct) : 0,
+    };
+  });
+  const withData = perTarget.filter((t) => t.count > 0);
+  const sorted = [...withData].sort((a, b) => b.score - a.score);
+  const avgPct = mean(filled.map(proximityPct));
+  return {
+    score: filled.length ? scoreFromPct(avgPct) : 0,
+    handicap: filled.length ? handicapFromPct(avgPct) : 0,
+    avgProximity: mean(filled.map(proximity)),
+    avgProximityPct: avgPct,
+    consistency: consistencyScore(shots),
+    perTarget,
+    strongest: sorted[0] ? { target: sorted[0].target, score: sorted[0].score } : undefined,
+    weakest: sorted.length
+      ? { target: sorted[sorted.length - 1].target, score: sorted[sorted.length - 1].score }
+      : undefined,
+  };
+}
+
+/** Referensnivåer i proximity-procent. */
+export const PRECISION_BENCHMARKS = [
+  { label: "PGA Tour", pct: 5 },
+  { label: "Scratch", pct: 8 },
+  { label: "Hcp 10", pct: 12 },
+  { label: "Hcp 20", pct: 17 },
+] as const;
+
+export function benchmarkLabel(pct: number): string {
+  if (pct <= 5) return "PGA Tour-nivå";
+  if (pct <= 8) return "Scratch-nivå";
+  if (pct <= 12) return "Ungefär hcp 10";
+  if (pct <= 17) return "Ungefär hcp 20";
+  return "Nybörjarnivå";
+}
+
+/** Personlig träningsrekommendation baserad på svagaste avstånd. */
+export function precisionAdvice(result: PrecisionResult): string {
+  const w = result.weakest;
+  if (!w) return "Genomför testet för att få en personlig rekommendation.";
+  const low = Math.max(40, w.target - 15);
+  const high = w.target + 15;
+  return `Ditt största förbättringsområde är inspel mellan ${low}–${high} meter (score ${w.score}/100 på ${w.target} m). Om du förbättrar det området kommer det sannolikt ha störst effekt på både din Approach Score och ditt handicap.`;
+}
