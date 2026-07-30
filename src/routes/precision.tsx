@@ -1,13 +1,11 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { Check, Trash2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { ArrowLeft, ArrowRight, Check, Minus, Plus, TrendingDown, TrendingUp } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Bar,
   BarChart,
   CartesianGrid,
   Cell,
-  Line,
-  LineChart,
   ReferenceLine,
   ResponsiveContainer,
   Scatter,
@@ -18,37 +16,32 @@ import {
   ZAxis,
 } from "recharts";
 import {
+  PRECISION_BENCHMARKS,
+  PRECISION_TARGETS,
   PRECISION_TOTAL_SHOTS,
-  bestWorstTarget,
+  benchmarkLabel,
   emptyPrecisionShots,
   lengthError,
-  lengthLabel,
+  precisionAdvice,
+  precisionResult,
   proximity,
-  sideLabel,
-  statsByTarget,
-  summarize,
   type PrecisionShot,
 } from "@/lib/precision";
-import {
-  deletePrecisionSession,
-  loadPrecisionSessions,
-  savePrecisionSession,
-  type PrecisionSession,
-} from "@/lib/precision-store";
+import { loadPrecisionSessions, savePrecisionSession } from "@/lib/precision-store";
 
 export const Route = createFileRoute("/precision")({
   head: () => ({
     meta: [
-      { title: "Approach Precision Test – 18 slag | SG4" },
+      { title: "Approach Test – 18 inspel | SG4" },
       {
         name: "description",
         content:
-          "18 inspel mot 55–165 m. Mata in carry och sidled så räknar appen ut längdfel, sidledsfel och avstånd till flaggan.",
+          "18 inspel mot 55–165 m. Få Approach Score, uppskattat approach-handicap, snittavstånd till flaggan och personliga träningsrekommendationer.",
       },
-      { property: "og:title", content: "Approach Precision Test – 18 slag" },
+      { property: "og:title", content: "Approach Test – 18 inspel" },
       {
         property: "og:description",
-        content: "Mät precision på inspel: proximity, spridning och konsistens per avstånd.",
+        content: "Approach Score, handicapskattning och analys per avstånd.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -57,96 +50,93 @@ export const Route = createFileRoute("/precision")({
   component: PrecisionPage,
 });
 
+type Phase = "intro" | "test" | "result";
+
 function PrecisionPage() {
+  const [phase, setPhase] = useState<Phase>("intro");
   const [shots, setShots] = useState<PrecisionShot[]>(emptyPrecisionShots);
   const [index, setIndex] = useState(0);
-  const [carry, setCarry] = useState("");
-  const [offline, setOffline] = useState("");
-  const [done, setDone] = useState(false);
-  const [note, setNote] = useState("");
-  const [saved, setSaved] = useState(false);
-  const [fade, setFade] = useState(false);
-  const [sessions, setSessions] = useState<PrecisionSession[]>([]);
-
-  useEffect(() => {
-    setSessions(loadPrecisionSessions());
-  }, []);
+  const [carry, setCarry] = useState(0);
+  const [side, setSide] = useState<-1 | 0 | 1>(0);
+  const [offset, setOffset] = useState(0);
+  const [prev, setPrev] = useState<{ score: number; avgProximity: number } | null>(null);
+  const savedRef = useRef(false);
 
   const current = shots[Math.min(index, PRECISION_TOTAL_SHOTS - 1)];
-  const next = shots[index + 1];
-  const summary = useMemo(() => summarize(shots), [shots]);
-  const stats = useMemo(() => statsByTarget(shots), [shots]);
-  const { best: bestTarget, worst: worstTarget } = bestWorstTarget(stats);
-  const filled = shots.filter((s) => s.filled);
 
-  const num = (v: string) => Number(v.replace(",", ".").trim());
-
-  function commit() {
-    const c = num(carry);
-    if (!Number.isFinite(c) || c <= 0) return;
-    const o = offline.trim() === "" ? 0 : num(offline);
-    if (!Number.isFinite(o)) return;
-    setShots((prev) =>
-      prev.map((s, i) => (i === index ? { ...s, carry: c, offline: o, filled: true } : s)),
-    );
-    setCarry("");
-    setOffline("");
-    setFade(true);
-    window.setTimeout(() => setFade(false), 220);
-    if (index + 1 >= PRECISION_TOTAL_SHOTS) setDone(true);
-    else setIndex(index + 1);
-  }
-
-  function save() {
-    const record = savePrecisionSession(shots, note);
-    setSessions((prev) => [...prev, record]);
-    setNote("");
-    setSaved(true);
-  }
-
-  function reset() {
+  function start() {
+    const sessions = loadPrecisionSessions();
+    const last = sessions[sessions.length - 1];
+    setPrev(last ? { score: last.score ?? 0, avgProximity: last.avgProximity } : null);
     setShots(emptyPrecisionShots());
     setIndex(0);
-    setCarry("");
-    setOffline("");
-    setDone(false);
-    setSaved(false);
+    setCarry(PRECISION_TARGETS[0]);
+    setSide(0);
+    setOffset(0);
+    savedRef.current = false;
+    setPhase("test");
   }
 
-  function remove(id: string) {
-    setSessions(deletePrecisionSession(id));
+  function commit() {
+    const offline = side * offset;
+    const next = index + 1;
+    setShots((p) =>
+      p.map((s, i) => (i === index ? { ...s, carry, offline, filled: true } : s)),
+    );
+    if (next >= PRECISION_TOTAL_SHOTS) {
+      setPhase("result");
+    } else {
+      setIndex(next);
+      setCarry(shots[next].target);
+      setSide(0);
+      setOffset(0);
+    }
   }
 
-  const progress = Math.round((filled.length / PRECISION_TOTAL_SHOTS) * 100);
+  function back() {
+    if (index === 0) return;
+    const i = index - 1;
+    setIndex(i);
+    setCarry(shots[i].filled ? shots[i].carry : shots[i].target);
+    setSide(shots[i].offline === 0 ? 0 : shots[i].offline < 0 ? -1 : 1);
+    setOffset(Math.abs(shots[i].offline));
+  }
 
-  const scatterData = filled.map((s) => ({
-    x: Number(s.offline.toFixed(1)),
-    y: Number(lengthError(s).toFixed(1)),
-    label: `${s.target} m`,
-  }));
+  useEffect(() => {
+    if (phase === "result" && !savedRef.current) {
+      savedRef.current = true;
+      savePrecisionSession(shots);
+    }
+  }, [phase, shots]);
 
-  const barData = stats
-    .filter((s) => s.count > 0)
-    .map((s) => ({
-      label: `${s.target}`,
-      avg: Number(s.avg.toFixed(2)),
-      isBest: bestTarget?.target === s.target,
-      isWorst: worstTarget?.target === s.target,
-    }));
+  if (phase === "intro") return <Intro onStart={start} />;
+  if (phase === "test")
+    return (
+      <TestScreen
+        current={current}
+        index={index}
+        carry={carry}
+        side={side}
+        offset={offset}
+        setCarry={setCarry}
+        setSide={setSide}
+        setOffset={setOffset}
+        onCommit={commit}
+        onBack={back}
+      />
+    );
+  return <ResultScreen shots={shots} prev={prev} onRestart={start} />;
+}
 
-  const seriesData = filled.map((s) => ({
-    label: `${s.index}`,
-    prox: Number(proximity(s).toFixed(2)),
-  }));
+/* ---------------------------------------------------------------- intro */
 
+function Intro({ onStart }: { onStart: () => void }) {
   return (
-    <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-16 pt-8">
-      <header className="flex items-end justify-between">
+    <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-28 pt-8">
+      <header className="flex items-start justify-between">
         <div>
-          <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
-            Approach · 18 slag
-          </p>
-          <h1 className="text-4xl leading-none">Precision test</h1>
+          <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Approach</p>
+          <h1 className="text-4xl leading-none">Approach Test</h1>
         </div>
         <Link
           to="/kategori/$slug"
@@ -157,297 +147,408 @@ function PrecisionPage() {
         </Link>
       </header>
 
-      <div className="mt-6">
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>
-            Slag {Math.min(filled.length + (done ? 0 : 1), PRECISION_TOTAL_SHOTS)} av{" "}
-            {PRECISION_TOTAL_SHOTS}
-          </span>
-          <span>{progress} %</span>
-        </div>
-        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted">
-          <div
-            className="h-full rounded-full bg-primary transition-all duration-300"
-            style={{ width: `${progress}%` }}
+      <section className="mt-6 space-y-3">
+        <InfoCard title="Syfte">
+          Mät hur nära flaggan dina inspel landar över nio avstånd. Du får en Approach Score 0–100,
+          ett uppskattat approach-handicap och ser exakt vilka avstånd som kostar dig slag.
+        </InfoCard>
+        <InfoCard title="Det här behöver du">
+          Range eller simulator där du ser carry och sidled, 18 bollar och cirka 20 minuter.
+        </InfoCard>
+        <InfoCard title="Så går det till">
+          18 slag: nio avstånd (55, 64, 73, 82, 91, 110, 128, 146, 165 m) i två varv. Ett slag i
+          taget – du registrerar carry och sidled med knappar. Inga resultat visas förrän testet är
+          klart.
+        </InfoCard>
+        <InfoCard title="Så räknas resultatet">
+          Avstånd till flaggan = √(längdfel² + sidled²). Det delas med slagets längd till en
+          procentsiffra, som översätts till score och handicap. 5 % ≈ PGA Tour, 12 % ≈ hcp 10.
+        </InfoCard>
+      </section>
+
+      <div className="fixed inset-x-0 bottom-0 mx-auto max-w-md bg-gradient-to-t from-background via-background to-transparent px-5 pb-6 pt-4">
+        <button
+          onClick={onStart}
+          className="w-full rounded-2xl bg-primary py-5 font-[family-name:var(--font-display)] text-2xl text-primary-foreground"
+        >
+          Starta test
+        </button>
+        <Link
+          to="/precision-historik"
+          className="mt-2 block text-center text-sm text-muted-foreground underline-offset-4 hover:underline"
+        >
+          Se historik
+        </Link>
+      </div>
+    </main>
+  );
+}
+
+function InfoCard({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-2xl border border-border bg-card p-4">
+      <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{title}</p>
+      <p className="mt-1 text-sm leading-relaxed text-foreground">{children}</p>
+    </div>
+  );
+}
+
+/* ----------------------------------------------------------------- test */
+
+function TestScreen({
+  current,
+  index,
+  carry,
+  side,
+  offset,
+  setCarry,
+  setSide,
+  setOffset,
+  onCommit,
+  onBack,
+}: {
+  current: PrecisionShot;
+  index: number;
+  carry: number;
+  side: -1 | 0 | 1;
+  offset: number;
+  setCarry: (n: number) => void;
+  setSide: (s: -1 | 0 | 1) => void;
+  setOffset: (n: number) => void;
+  onCommit: () => void;
+  onBack: () => void;
+}) {
+  const diff = carry - current.target;
+  return (
+    <main className="mx-auto flex h-[100dvh] w-full max-w-md flex-col overflow-hidden px-5 pb-5 pt-5">
+      <div className="flex items-center justify-between">
+        <button
+          onClick={onBack}
+          disabled={index === 0}
+          aria-label="Föregående slag"
+          className="rounded-full border border-border p-2 text-muted-foreground disabled:opacity-30"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </button>
+        <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
+          Slag {index + 1} / {PRECISION_TOTAL_SHOTS} · varv {current.round}
+        </p>
+        <span className="w-8" />
+      </div>
+
+      <div className="mt-3 flex gap-1">
+        {Array.from({ length: PRECISION_TOTAL_SHOTS }, (_, i) => (
+          <span
+            key={i}
+            className={`h-1 flex-1 rounded-full ${i <= index ? "bg-primary" : "bg-muted"}`}
           />
+        ))}
+      </div>
+
+      <div className="mt-5 text-center">
+        <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Måldistans</p>
+        <p className="font-[family-name:var(--font-display)] text-6xl leading-none text-flag">
+          {current.target}
+          <span className="ml-2 text-xl text-muted-foreground">m</span>
+        </p>
+      </div>
+
+      <div className="mt-5 rounded-3xl border border-border bg-card p-4">
+        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Carry</p>
+        <div className="mt-1 flex items-center justify-between">
+          <StepButton onClick={() => setCarry(Math.max(0, carry - 1))} icon="minus" />
+          <div className="text-center">
+            <p className="font-[family-name:var(--font-display)] text-5xl leading-none">{carry}</p>
+            <p className="text-xs text-muted-foreground">
+              {diff === 0 ? "på måldistans" : `${diff > 0 ? "+" : ""}${diff} m`}
+            </p>
+          </div>
+          <StepButton onClick={() => setCarry(carry + 1)} icon="plus" />
+        </div>
+        <div className="mt-3 grid grid-cols-4 gap-2">
+          {[-10, -5, 5, 10].map((d) => (
+            <button
+              key={d}
+              onClick={() => setCarry(Math.max(0, carry + d))}
+              className="rounded-xl border border-border py-2 text-sm font-semibold text-muted-foreground active:bg-muted"
+            >
+              {d > 0 ? `+${d}` : d}
+            </button>
+          ))}
         </div>
       </div>
 
-      {!done ? (
-        <section
-          className={`mt-6 rounded-3xl border border-border bg-card p-6 shadow-[var(--shadow-glow)] transition-all duration-200 ${
-            fade ? "translate-y-1 opacity-0" : "translate-y-0 opacity-100"
-          }`}
-        >
-          <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
-            Varv {current.round} · mål
-          </p>
-          <p className="font-[family-name:var(--font-display)] text-7xl leading-none text-flag">
-            {current.target}
-            <span className="ml-2 text-2xl text-muted-foreground">meter</span>
-          </p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Slå ett slag mot {current.target} meter.
-          </p>
-
-          <label htmlFor="carry" className="mt-6 block text-sm text-muted-foreground">
-            Carry (meter)
-          </label>
-          <input
-            id="carry"
-            inputMode="decimal"
-            autoFocus
-            value={carry}
-            onChange={(e) => setCarry(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && commit()}
-            placeholder="53,8"
-            className="mt-2 w-full rounded-2xl border border-input bg-background px-4 py-5 text-center font-[family-name:var(--font-display)] text-5xl text-foreground outline-none focus:border-primary"
-          />
-
-          <label htmlFor="offline" className="mt-4 block text-sm text-muted-foreground">
-            Sidled (meter) · − vänster / + höger
-          </label>
-          <input
-            id="offline"
-            inputMode="text"
-            value={offline}
-            onChange={(e) => setOffline(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && commit()}
-            placeholder="-2,1"
-            className="mt-2 w-full rounded-2xl border border-input bg-background px-4 py-5 text-center font-[family-name:var(--font-display)] text-5xl text-foreground outline-none focus:border-primary"
-          />
-
-          <button
-            onClick={commit}
-            className="mt-5 w-full rounded-2xl bg-primary py-5 font-[family-name:var(--font-display)] text-2xl text-primary-foreground"
-          >
-            Spara slag
-          </button>
-          <p className="mt-3 text-center text-xs text-muted-foreground">
-            {next ? `Nästa: ${next.target} m (varv ${next.round})` : "Sista slaget"}
-          </p>
-        </section>
-      ) : (
-        <section className="mt-6 rounded-3xl border border-border bg-card p-6">
-          <h2 className="text-2xl">Testet är klart</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Snittprecision {summary.avgProximity.toFixed(2)} m · konsistens {summary.consistency}
-            /100
-          </p>
-          <label htmlFor="note" className="mt-5 block text-sm text-muted-foreground">
-            Anteckning (valfritt)
-          </label>
-          <input
-            id="note"
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="Simulator, boll, känsla…"
-            className="mt-2 w-full rounded-2xl border border-input bg-background px-4 py-3 text-foreground outline-none focus:border-primary"
-          />
-          <div className="mt-4 flex gap-3">
-            {saved ? (
-              <div className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-primary bg-primary/10 py-4 text-base font-semibold text-primary">
-                <Check className="h-5 w-5" /> Testet sparat
-              </div>
-            ) : (
-              <button
-                onClick={save}
-                className="flex-1 rounded-2xl bg-primary py-4 font-[family-name:var(--font-display)] text-2xl text-primary-foreground"
-              >
-                Spara
-              </button>
-            )}
+      <div className="mt-3 rounded-3xl border border-border bg-card p-4">
+        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Sidled</p>
+        <div className="mt-2 grid grid-cols-3 gap-2">
+          {(
+            [
+              { v: -1 as const, label: "Vänster" },
+              { v: 0 as const, label: "Rakt" },
+              { v: 1 as const, label: "Höger" },
+            ]
+          ).map((o) => (
             <button
-              onClick={reset}
-              className="flex-1 rounded-2xl border border-border py-4 font-[family-name:var(--font-display)] text-2xl text-muted-foreground"
+              key={o.label}
+              onClick={() => {
+                setSide(o.v);
+                if (o.v === 0) setOffset(0);
+                else if (offset === 0) setOffset(3);
+              }}
+              className={`rounded-xl py-3 text-sm font-semibold transition-colors ${
+                side === o.v
+                  ? "bg-primary text-primary-foreground"
+                  : "border border-border text-muted-foreground"
+              }`}
             >
-              Nytt test
+              {o.label}
             </button>
-          </div>
-        </section>
-      )}
-
-      {filled.length > 0 && (
-        <section className="mt-6 grid grid-cols-2 gap-3">
-          <Stat label="Snitt precision" value={`${summary.avgProximity.toFixed(2)} m`} />
-          <Stat label="Median" value={`${summary.medianProximity.toFixed(2)} m`} />
-          <Stat
-            label="Bästa slag"
-            value={summary.best ? `${proximity(summary.best).toFixed(2)} m` : "–"}
-            hint={summary.best ? `${summary.best.target} m mål` : undefined}
-          />
-          <Stat
-            label="Sämsta slag"
-            value={summary.worst ? `${proximity(summary.worst).toFixed(2)} m` : "–"}
-            hint={summary.worst ? `${summary.worst.target} m mål` : undefined}
-          />
-          <Stat
-            label="Snitt längdfel"
-            value={`${summary.avgLengthError > 0 ? "+" : ""}${summary.avgLengthError.toFixed(1)} m`}
-            hint={summary.avgLengthError < 0 ? "kort" : "långt"}
-          />
-          <Stat
-            label="Snitt sidled"
-            value={`${summary.avgAbsSideError.toFixed(1)} m`}
-            hint={sideLabel(summary.avgSideError)}
-          />
-          <div className="col-span-2 rounded-2xl border border-border bg-card p-4">
-            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-              Konsistenspoäng
-            </p>
-            <p className="font-[family-name:var(--font-display)] text-4xl leading-none">
-              {summary.consistency}
-              <span className="ml-1 text-lg text-muted-foreground">/100</span>
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Spridning {summary.spread.toFixed(2)} m mellan slagen
-            </p>
-          </div>
-        </section>
-      )}
-
-      {filled.length > 0 && (
-        <section className="mt-6">
-          <h2 className="text-sm uppercase tracking-[0.25em] text-muted-foreground">
-            Resultat per avstånd
-          </h2>
-          <div className="mt-3 space-y-2">
-            {stats.map((s) => (
-              <div key={s.target} className="rounded-2xl border border-border bg-card px-4 py-3">
-                <div className="flex items-center justify-between text-sm">
-                  <span>{s.target} m</span>
-                  <span className={s.count ? "text-flag" : "text-muted-foreground"}>
-                    {s.count ? `${s.avg.toFixed(2)} m medel` : "–"}
-                  </span>
-                </div>
-                <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
-                  {s.shots.map((shot, i) => (
-                    <p key={i}>
-                      Varv {i + 1}:{" "}
-                      {shot
-                        ? `${shot.carry.toFixed(1)} m carry · ${sideLabel(shot.offline)} · ${proximity(shot).toFixed(2)} m från flaggan (${lengthLabel(shot)})`
-                        : "–"}
-                    </p>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {filled.length > 0 && (
-        <>
-          <ChartBlock title="Spridning runt mål">
-            <ScatterChart margin={{ top: 12, right: 12, left: -18, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis
-                type="number"
-                dataKey="x"
-                name="Sidled"
-                unit=" m"
-                tick={{ fontSize: 11 }}
-                stroke="currentColor"
-              />
-              <YAxis
-                type="number"
-                dataKey="y"
-                name="Längdfel"
-                unit=" m"
-                tick={{ fontSize: 11 }}
-                stroke="currentColor"
-              />
-              <ZAxis range={[60, 60]} />
-              <ReferenceLine x={0} stroke="hsl(var(--flag))" />
-              <ReferenceLine y={0} stroke="hsl(var(--flag))" />
-              <Tooltip cursor={{ strokeDasharray: "3 3" }} />
-              <Scatter data={scatterData} fill="hsl(var(--primary))" />
-            </ScatterChart>
-          </ChartBlock>
-
-          <ChartBlock title="Snitt precision per avstånd">
-            <BarChart data={barData} margin={{ top: 12, right: 8, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="label" tick={{ fontSize: 11 }} stroke="currentColor" unit=" m" />
-              <YAxis tick={{ fontSize: 11 }} stroke="currentColor" />
-              <Tooltip formatter={(v: number) => `${v} m`} />
-              <Bar dataKey="avg" radius={[6, 6, 0, 0]}>
-                {barData.map((d) => (
-                  <Cell
-                    key={d.label}
-                    fill={
-                      d.isBest
-                        ? "hsl(var(--primary))"
-                        : d.isWorst
-                          ? "hsl(var(--flag))"
-                          : "hsl(var(--muted-foreground))"
-                    }
-                  />
-                ))}
-              </Bar>
-            </BarChart>
-          </ChartBlock>
-
-          <ChartBlock title="Konsistens – slag 1 till 18">
-            <LineChart data={seriesData} margin={{ top: 12, right: 12, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="label" tick={{ fontSize: 11 }} stroke="currentColor" />
-              <YAxis tick={{ fontSize: 11 }} stroke="currentColor" />
-              <Tooltip formatter={(v: number) => `${v} m`} />
-              <ReferenceLine
-                y={Number(summary.avgProximity.toFixed(2))}
-                stroke="hsl(var(--flag))"
-                strokeDasharray="4 4"
-              />
-              <Line
-                type="monotone"
-                dataKey="prox"
-                stroke="hsl(var(--primary))"
-                strokeWidth={2}
-                dot={{ r: 3 }}
-              />
-            </LineChart>
-          </ChartBlock>
-        </>
-      )}
-
-      {sessions.length > 0 && (
-        <section className="mt-8">
-          <h2 className="text-sm uppercase tracking-[0.25em] text-muted-foreground">Historik</h2>
-          <div className="mt-3 space-y-2">
-            {[...sessions].reverse().map((s) => (
-              <div
-                key={s.id}
-                className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3 text-sm"
+          ))}
+        </div>
+        {side !== 0 && (
+          <div className="mt-3 grid grid-cols-4 gap-2">
+            {[1, 3, 5, 8, 10, 15, 20, 25].map((m) => (
+              <button
+                key={m}
+                onClick={() => setOffset(m)}
+                className={`rounded-xl py-2 text-sm font-semibold transition-colors ${
+                  offset === m
+                    ? "bg-flag text-background"
+                    : "border border-border text-muted-foreground"
+                }`}
               >
-                <div>
-                  <p>
-                    {new Date(s.date).toLocaleDateString("sv-SE")}{" "}
-                    <span className="text-muted-foreground">
-                      {new Date(s.date).toLocaleTimeString("sv-SE", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {s.avgProximity.toFixed(2)} m snitt · median {s.medianProximity.toFixed(2)} m ·
-                    konsistens {s.consistency}
-                  </p>
-                  {s.note ? <p className="text-xs text-muted-foreground">{s.note}</p> : null}
-                </div>
-                <button
-                  onClick={() => remove(s.id)}
-                  aria-label="Ta bort passet"
-                  className="rounded-full border border-border p-2 text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
+                {m} m
+              </button>
             ))}
           </div>
-        </section>
-      )}
+        )}
+      </div>
+
+      <button
+        onClick={onCommit}
+        className="mt-auto flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-5 font-[family-name:var(--font-display)] text-2xl text-primary-foreground"
+      >
+        {index + 1 === PRECISION_TOTAL_SHOTS ? "Avsluta test" : "Nästa slag"}
+        <ArrowRight className="h-5 w-5" />
+      </button>
+    </main>
+  );
+}
+
+function StepButton({ onClick, icon }: { onClick: () => void; icon: "plus" | "minus" }) {
+  return (
+    <button
+      onClick={onClick}
+      aria-label={icon === "plus" ? "Öka" : "Minska"}
+      className="flex h-14 w-14 items-center justify-center rounded-2xl border border-border text-foreground active:bg-muted"
+    >
+      {icon === "plus" ? <Plus className="h-6 w-6" /> : <Minus className="h-6 w-6" />}
+    </button>
+  );
+}
+
+/* --------------------------------------------------------------- result */
+
+function ResultScreen({
+  shots,
+  prev,
+  onRestart,
+}: {
+  shots: PrecisionShot[];
+  prev: { score: number; avgProximity: number } | null;
+  onRestart: () => void;
+}) {
+  const result = useMemo(() => precisionResult(shots), [shots]);
+  const filled = shots.filter((s) => s.filled);
+  const scoreDelta = prev ? result.score - prev.score : null;
+
+  const scatterData = filled.map((s) => ({
+    x: Number(s.offline.toFixed(1)),
+    y: Number(lengthError(s).toFixed(1)),
+  }));
+  const barData = result.perTarget
+    .filter((t) => t.count > 0)
+    .map((t) => ({
+      label: `${t.target}`,
+      score: t.score,
+      isBest: result.strongest?.target === t.target,
+      isWorst: result.weakest?.target === t.target,
+    }));
+
+  return (
+    <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-16 pt-8">
+      <header>
+        <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
+          Approach Test · klart
+        </p>
+        <h1 className="text-4xl leading-none">Ditt resultat</h1>
+        <p className="mt-2 flex items-center gap-1 text-xs text-primary">
+          <Check className="h-4 w-4" /> Testet är sparat i historiken
+        </p>
+      </header>
+
+      <section className="mt-5 rounded-3xl border border-border bg-card p-6 text-center shadow-[var(--shadow-glow)]">
+        <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Approach Score</p>
+        <p className="font-[family-name:var(--font-display)] text-7xl leading-none">
+          {result.score}
+          <span className="ml-1 text-2xl text-muted-foreground">/100</span>
+        </p>
+        {scoreDelta !== null && (
+          <p
+            className={`mt-1 flex items-center justify-center gap-1 text-sm ${
+              scoreDelta >= 0 ? "text-primary" : "text-flag"
+            }`}
+          >
+            {scoreDelta >= 0 ? (
+              <TrendingUp className="h-4 w-4" />
+            ) : (
+              <TrendingDown className="h-4 w-4" />
+            )}
+            {scoreDelta > 0 ? "+" : ""}
+            {scoreDelta} sedan förra testet
+          </p>
+        )}
+        <p className="mt-2 text-xs text-muted-foreground">
+          Score bygger på hur nära flaggan du landar i procent av slaglängden.
+        </p>
+      </section>
+
+      <section className="mt-4 grid grid-cols-2 gap-3">
+        <Stat
+          label="Est. approach-hcp"
+          value={result.handicap.toFixed(1)}
+          hint="Skattat utifrån precision"
+        />
+        <Stat
+          label="Snitt till flaggan"
+          value={`${result.avgProximity.toFixed(1)} m`}
+          hint={
+            prev
+              ? `${result.avgProximity - prev.avgProximity > 0 ? "+" : ""}${(result.avgProximity - prev.avgProximity).toFixed(1)} m mot förra`
+              : "Alla 18 slag"
+          }
+        />
+        <Stat
+          label="Snitt i procent"
+          value={`${result.avgProximityPct.toFixed(1)} %`}
+          hint="Av slagets längd"
+        />
+        <Stat
+          label="Konsistens"
+          value={`${result.consistency}/100`}
+          hint="Jämnhet mellan slagen"
+        />
+      </section>
+
+      <section className="mt-6">
+        <h2 className="text-sm uppercase tracking-[0.25em] text-muted-foreground">
+          Resultat per avstånd
+        </h2>
+        <div className="mt-3 overflow-hidden rounded-2xl border border-border bg-card">
+          <div className="grid grid-cols-4 gap-2 border-b border-border px-4 py-2 text-[11px] uppercase tracking-wider text-muted-foreground">
+            <span>Mål</span>
+            <span className="text-right">Score</span>
+            <span className="text-right">Hcp</span>
+            <span className="text-right">Närhet</span>
+          </div>
+          {result.perTarget.map((t) => (
+            <div
+              key={t.target}
+              className="grid grid-cols-4 gap-2 border-b border-border/50 px-4 py-2 text-sm last:border-0"
+            >
+              <span>{t.target} m</span>
+              <span className="text-right font-semibold">{t.count ? t.score : "–"}</span>
+              <span className="text-right text-muted-foreground">
+                {t.count ? t.handicap.toFixed(1) : "–"}
+              </span>
+              <span className="text-right text-muted-foreground">
+                {t.count ? `${t.avgProximity.toFixed(1)} m` : "–"}
+              </span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <ChartBlock title="Score per avstånd">
+        <BarChart data={barData} margin={{ top: 12, right: 8, left: -20, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+          <XAxis dataKey="label" tick={{ fontSize: 11 }} stroke="currentColor" unit=" m" />
+          <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} stroke="currentColor" />
+          <Tooltip formatter={(v: number) => `${v} / 100`} />
+          <Bar dataKey="score" radius={[6, 6, 0, 0]}>
+            {barData.map((d) => (
+              <Cell
+                key={d.label}
+                fill={
+                  d.isBest
+                    ? "hsl(var(--primary))"
+                    : d.isWorst
+                      ? "hsl(var(--flag))"
+                      : "hsl(var(--muted-foreground))"
+                }
+              />
+            ))}
+          </Bar>
+        </BarChart>
+      </ChartBlock>
+
+      <ChartBlock title="Spridning runt flaggan">
+        <ScatterChart margin={{ top: 12, right: 12, left: -18, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+          <XAxis type="number" dataKey="x" name="Sidled" unit=" m" tick={{ fontSize: 11 }} stroke="currentColor" />
+          <YAxis type="number" dataKey="y" name="Längdfel" unit=" m" tick={{ fontSize: 11 }} stroke="currentColor" />
+          <ZAxis range={[60, 60]} />
+          <ReferenceLine x={0} stroke="hsl(var(--flag))" />
+          <ReferenceLine y={0} stroke="hsl(var(--flag))" />
+          <Tooltip cursor={{ strokeDasharray: "3 3" }} />
+          <Scatter data={scatterData} fill="hsl(var(--primary))" />
+        </ScatterChart>
+      </ChartBlock>
+
+      <section className="mt-6 space-y-3">
+        <h2 className="text-sm uppercase tracking-[0.25em] text-muted-foreground">Din analys</h2>
+        <InfoCard title="Största styrka">
+          {result.strongest
+            ? `${result.strongest.target} m – score ${result.strongest.score}/100. Här landar du närmast flaggan i förhållande till slaglängden.`
+            : "–"}
+        </InfoCard>
+        <InfoCard title="Största svaghet">
+          {result.weakest
+            ? `${result.weakest.target} m – score ${result.weakest.score}/100. Det avståndet drar ner din totala Approach Score mest.`
+            : "–"}
+        </InfoCard>
+        <InfoCard title="Mot referensnivåer">
+          Du snittar {result.avgProximityPct.toFixed(1)} % av slaglängden till flaggan, vilket
+          motsvarar {benchmarkLabel(result.avgProximityPct).toLowerCase()}. Referens:{" "}
+          {PRECISION_BENCHMARKS.map((b) => `${b.label} ${b.pct} %`).join(", ")}.
+        </InfoCard>
+        <InfoCard title="Träningsrekommendation">{precisionAdvice(result)}</InfoCard>
+        <InfoCard title="Nästa test">
+          Gör om Approach Test en gång per vecka eller en gång per månad för att följa din
+          utveckling.
+        </InfoCard>
+      </section>
+
+      <div className="mt-6 flex gap-3">
+        <button
+          onClick={onRestart}
+          className="flex-1 rounded-2xl bg-primary py-4 font-[family-name:var(--font-display)] text-2xl text-primary-foreground"
+        >
+          Nytt test
+        </button>
+        <Link
+          to="/"
+          className="flex-1 rounded-2xl border border-border py-4 text-center font-[family-name:var(--font-display)] text-2xl text-muted-foreground"
+        >
+          Startsidan
+        </Link>
+      </div>
+      <Link
+        to="/precision-historik"
+        className="mt-3 block text-center text-sm text-muted-foreground underline-offset-4 hover:underline"
+      >
+        Se historik
+      </Link>
     </main>
   );
 }
