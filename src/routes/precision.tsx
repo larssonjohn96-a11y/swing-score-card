@@ -24,7 +24,6 @@ import {
   lengthError,
   precisionAdvice,
   precisionResult,
-  proximity,
   type PrecisionShot,
 } from "@/lib/precision";
 import { loadPrecisionSessions, savePrecisionSession } from "@/lib/precision-store";
