@@ -100,13 +100,13 @@ export const CATEGORIES: Category[] = [
       {
         to: "/precision",
         number: "17",
-        title: "Approach Precision Test",
+        title: "Approach Test",
         subtitle: "18 slag – 55 till 165 m",
         bullets: [
-          "9 avstånd × 2 varv, mata in carry och sidled.",
-          "Appen räknar ut längdfel, sidledsfel och avstånd till flaggan.",
+          "9 avstånd × 2 varv, registrera carry och sidled med knappar.",
+          "Resultat visas först när alla slag är klara.",
         ],
-        result: "RESULTAT: SNITT PROXIMITY + KONSISTENS",
+        result: "RESULTAT: APPROACH SCORE 0–100 + EST. HCP",
       },
     ],
   },

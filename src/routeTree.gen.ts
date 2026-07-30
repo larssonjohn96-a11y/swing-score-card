@@ -15,6 +15,7 @@ import { Route as TopplistaRouteImport } from './routes/topplista'
 import { Route as TeeshotRouteImport } from './routes/teeshot'
 import { Route as SpeedRouteImport } from './routes/speed'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as PrecisionHistorikRouteImport } from './routes/precision-historik'
 import { Route as PrecisionRouteImport } from './routes/precision'
 import { Route as PitchRouteImport } from './routes/pitch'
 import { Route as LongdriveRouteImport } from './routes/longdrive'
@@ -60,6 +61,11 @@ const SpeedRoute = SpeedRouteImport.update({
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrecisionHistorikRoute = PrecisionHistorikRouteImport.update({
+  id: '/precision-historik',
+  path: '/precision-historik',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrecisionRoute = PrecisionRouteImport.update({
@@ -156,6 +162,7 @@ export interface FileRoutesByFullPath {
   '/longdrive': typeof LongdriveRoute
   '/pitch': typeof PitchRoute
   '/precision': typeof PrecisionRoute
+  '/precision-historik': typeof PrecisionHistorikRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
   '/teeshot': typeof TeeshotRoute
@@ -180,6 +187,7 @@ export interface FileRoutesByTo {
   '/longdrive': typeof LongdriveRoute
   '/pitch': typeof PitchRoute
   '/precision': typeof PrecisionRoute
+  '/precision-historik': typeof PrecisionHistorikRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
   '/teeshot': typeof TeeshotRoute
@@ -205,6 +213,7 @@ export interface FileRoutesById {
   '/longdrive': typeof LongdriveRoute
   '/pitch': typeof PitchRoute
   '/precision': typeof PrecisionRoute
+  '/precision-historik': typeof PrecisionHistorikRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
   '/teeshot': typeof TeeshotRoute
@@ -231,6 +240,7 @@ export interface FileRouteTypes {
     | '/longdrive'
     | '/pitch'
     | '/precision'
+    | '/precision-historik'
     | '/sitemap.xml'
     | '/speed'
     | '/teeshot'
@@ -255,6 +265,7 @@ export interface FileRouteTypes {
     | '/longdrive'
     | '/pitch'
     | '/precision'
+    | '/precision-historik'
     | '/sitemap.xml'
     | '/speed'
     | '/teeshot'
@@ -279,6 +290,7 @@ export interface FileRouteTypes {
     | '/longdrive'
     | '/pitch'
     | '/precision'
+    | '/precision-historik'
     | '/sitemap.xml'
     | '/speed'
     | '/teeshot'
@@ -304,6 +316,7 @@ export interface RootRouteChildren {
   LongdriveRoute: typeof LongdriveRoute
   PitchRoute: typeof PitchRoute
   PrecisionRoute: typeof PrecisionRoute
+  PrecisionHistorikRoute: typeof PrecisionHistorikRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SpeedRoute: typeof SpeedRoute
   TeeshotRoute: typeof TeeshotRoute
@@ -357,6 +370,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/precision-historik': {
+      id: '/precision-historik'
+      path: '/precision-historik'
+      fullPath: '/precision-historik'
+      preLoaderRoute: typeof PrecisionHistorikRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/precision': {
@@ -499,6 +519,7 @@ const rootRouteChildren: RootRouteChildren = {
   LongdriveRoute: LongdriveRoute,
   PitchRoute: PitchRoute,
   PrecisionRoute: PrecisionRoute,
+  PrecisionHistorikRoute: PrecisionHistorikRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SpeedRoute: SpeedRoute,
   TeeshotRoute: TeeshotRoute,
@@ -512,13 +533,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

@@ -3,6 +3,7 @@
  * Separerad från testlogik/beräkningar (src/lib/precision.ts) och UI.
  */
 import {
+  precisionResult,
   summarize,
   type PrecisionShot,
   type PrecisionSummary,
@@ -16,6 +17,10 @@ export type PrecisionSession = {
   avgProximity: number;
   medianProximity: number;
   consistency: number;
+  /** Approach Score 0–100 */
+  score?: number;
+  handicap?: number;
+  avgProximityPct?: number;
   note?: string;
 };
 
@@ -41,6 +46,7 @@ function persist(sessions: PrecisionSession[]) {
 
 export function savePrecisionSession(shots: PrecisionShot[], note?: string): PrecisionSession {
   const s: PrecisionSummary = summarize(shots);
+  const r = precisionResult(shots);
   const session: PrecisionSession = {
     id: crypto.randomUUID(),
     date: new Date().toISOString(),
@@ -48,6 +54,9 @@ export function savePrecisionSession(shots: PrecisionShot[], note?: string): Pre
     avgProximity: s.avgProximity,
     medianProximity: s.medianProximity,
     consistency: s.consistency,
+    score: r.score,
+    handicap: r.handicap,
+    avgProximityPct: r.avgProximityPct,
     note: note?.trim() || undefined,
   };
   persist([...loadPrecisionSessions(), session]);
