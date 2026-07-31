@@ -29,7 +29,7 @@ export const Route = createFileRoute("/precision")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: PrecisionPage;
+  component: PrecisionPage,
 });
 
 type Phase = "intro" | "test" | "result";
