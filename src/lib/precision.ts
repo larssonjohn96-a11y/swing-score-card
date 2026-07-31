@@ -269,3 +269,126 @@ export function precisionAdvice(result: PrecisionResult): string {
   const high = w.target + 15;
   return `Ditt största förbättringsområde är inspel mellan ${low}–${high} meter (score ${w.score}/100 på ${w.target} m). Om du förbättrar det området kommer det sannolikt ha störst effekt på både din Approach Score och ditt handicap.`;
 }
+
+/* -------------------------------------------------------------------------
+ * Missmönster, styrkor och rekommendationer
+ * ---------------------------------------------------------------------- */
+
+export type MissPattern = {
+  /** andel slag som missar kort (0–100) */
+  shortPct: number;
+  longPct: number;
+  leftPct: number;
+  rightPct: number;
+  /** dominerande tendens i längd/sidled, om någon */
+  lengthBias?: "kort" | "långt";
+  sideBias?: "vänster" | "höger";
+};
+
+export function missPattern(shots: PrecisionShot[]): MissPattern {
+  const filled = shots.filter((s) => s.filled);
+  const n = filled.length || 1;
+  const pct = (c: number) => Math.round((c / n) * 100);
+  const shortPct = pct(filled.filter((s) => lengthError(s) < -1).length);
+  const longPct = pct(filled.filter((s) => lengthError(s) > 1).length);
+  const leftPct = pct(filled.filter((s) => s.offline < -1).length);
+  const rightPct = pct(filled.filter((s) => s.offline > 1).length);
+  return {
+    shortPct,
+    longPct,
+    leftPct,
+    rightPct,
+    lengthBias:
+      shortPct >= 55 && shortPct > longPct
+        ? "kort"
+        : longPct >= 55 && longPct > shortPct
+          ? "långt"
+          : undefined,
+    sideBias:
+      leftPct >= 55 && leftPct > rightPct
+        ? "vänster"
+        : rightPct >= 55 && rightPct > leftPct
+          ? "höger"
+          : undefined,
+  };
+}
+
+export type PrecisionAnalysis = {
+  strengths: string[];
+  improvements: string[];
+  focus: string[];
+};
+
+/** Automatisk analys: styrkor, förbättringsområden och träningsfokus. */
+export function analysePrecision(
+  shots: PrecisionShot[],
+  result: PrecisionResult = precisionResult(shots),
+): PrecisionAnalysis {
+  const m = missPattern(shots);
+  const strengths: string[] = [];
+  const improvements: string[] = [];
+  const focus: string[] = [];
+
+  if (result.strongest) {
+    strengths.push(
+      `${result.strongest.target} m är ditt bästa avstånd (${result.strongest.score}/100).`,
+    );
+  }
+  const good = result.perTarget.filter((t) => t.count > 0 && t.score >= 70);
+  if (good.length >= 2) {
+    strengths.push(`${good.length} av dina avstånd ligger på 70/100 eller bättre.`);
+  }
+  if (!m.sideBias && m.leftPct + m.rightPct < 70) {
+    strengths.push("Du håller bollen nära siktlinjen – sidledsmissarna är små.");
+  }
+  if (result.avgProximityPct <= 10) {
+    strengths.push(
+      `Du landar i snitt ${result.avgProximityPct.toFixed(1)} % från flaggan – ${benchmarkLabel(result.avgProximityPct).toLowerCase()}.`,
+    );
+  }
+  if (!strengths.length) strengths.push("Du har ett tydligt utgångsläge att bygga vidare från.");
+
+  if (result.weakest) {
+    improvements.push(
+      `${result.weakest.target} m är ditt svagaste avstånd (${result.weakest.score}/100).`,
+    );
+  }
+  if (m.lengthBias === "kort") {
+    improvements.push(`${m.shortPct} % av slagen landar kort – du underskattar längden.`);
+  }
+  if (m.lengthBias === "långt") {
+    improvements.push(`${m.longPct} % av slagen går långt över flaggan.`);
+  }
+  if (m.sideBias) {
+    improvements.push(
+      `${m.sideBias === "vänster" ? m.leftPct : m.rightPct} % av slagen missar åt ${m.sideBias}.`,
+    );
+  }
+  const weakLong = result.perTarget.filter((t) => t.count > 0 && t.target >= 110 && t.score < 50);
+  if (weakLong.length >= 2) improvements.push("De långa inspelen (110 m+) tappar mest score.");
+  if (!improvements.length) improvements.push("Inga tydliga svagheter – jobba på att sänka snittet.");
+
+  if (result.weakest) {
+    const low = Math.max(40, result.weakest.target - 15);
+    focus.push(`10 bollar per pass mot ${low}–${result.weakest.target + 15} m med samma rutin.`);
+  }
+  if (m.lengthBias) {
+    focus.push(
+      m.lengthBias === "kort"
+        ? "Klubba upp ett steg och sikta på flaggans bakkant – logga carry per klubba."
+        : "Träna kontrollerade 3/4-svingar för att ta bort de långa missarna.",
+    );
+  }
+  if (m.sideBias) {
+    focus.push("Startlinjeövning: slå genom en 2 m bred grind 10 m framför bollen.");
+  }
+  if (focus.length < 2) focus.push("Avståndsstege: 3 bollar per avstånd, notera carry varje slag.");
+  return { strengths, improvements, focus: focus.slice(0, 3) };
+}
+
+/** Färgnivå för score: grön/gul/röd. */
+export function scoreGrade(score: number): "good" | "mid" | "poor" {
+  if (score >= 70) return "good";
+  if (score >= 45) return "mid";
+  return "poor";
+}
