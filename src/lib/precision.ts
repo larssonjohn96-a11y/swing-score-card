@@ -174,10 +174,26 @@ export function scoreFromPct(pct: number): number {
   return Math.max(0, Math.min(100, Math.round(100 - (pct - 3) * 6)));
 }
 
-/** Grov handicapskattning utifrån proximity i procent. */
+/** Grov handicapskattning utifrån proximity i procent. Negativt = plushandicap. */
 export function handicapFromPct(pct: number): number {
-  return Math.max(0, Math.min(36, Math.round((pct - 4) * 2.2 * 10) / 10));
+  return Math.max(-6, Math.min(36, Math.round((pct - 6.7) * 2.2 * 10) / 10));
 }
+
+/** Handicap som text, t.ex. "+2,4" för plushandicap. */
+export function handicapLabel(hcp: number): string {
+  const v = Math.abs(hcp).toFixed(1).replace(".", ",");
+  return hcp < 0 ? `+${v}` : v;
+}
+
+/** Skala som visar hur handicap uppskattas ur närhet i procent. */
+export const HANDICAP_SCALE = [
+  { pct: "≤ 4 %", hcp: "+6 till +1", note: "Tourprecision" },
+  { pct: "4–7 %", hcp: "+1 till 1", note: "Elit / scratch" },
+  { pct: "7–10 %", hcp: "1–8", note: "Låg handicap" },
+  { pct: "10–14 %", hcp: "8–16", note: "Medelgod klubbspelare" },
+  { pct: "14–20 %", hcp: "16–30", note: "Utvecklingsnivå" },
+  { pct: "> 20 %", hcp: "30+", note: "Nybörjare" },
+] as const;
 
 export type PrecisionResult = {
   /** Approach Score 0–100 */
