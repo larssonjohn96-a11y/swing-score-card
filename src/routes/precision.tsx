@@ -10,6 +10,7 @@ import {
 import { loadPrecisionSessions, savePrecisionSession } from "@/lib/precision-store";
 import { GreenHero, NumberField } from "@/components/precision-visuals";
 import { PrecisionReport } from "@/components/precision-report";
+import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 
 export const Route = createFileRoute("/precision")({
   head: () => ({
@@ -45,6 +46,8 @@ function PrecisionPage() {
   const savedRef = useRef(false);
 
   const current = shots[Math.min(index, PRECISION_TOTAL_SHOTS - 1)];
+
+  useHideBottomNav(phase === "intro" || phase === "test");
 
   function start() {
     const sessions = loadPrecisionSessions();

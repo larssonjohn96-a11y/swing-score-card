@@ -13,11 +13,15 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { useBottomNavVisibility } from "@/lib/bottom-nav-visibility";
 
 const START_TEST_CATEGORIES = CATEGORIES;
 
 export function BottomNav() {
   const [open, setOpen] = useState(false);
+  const { hidden } = useBottomNavVisibility();
+
+  if (hidden) return null;
 
   return (
     <>
