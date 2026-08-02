@@ -97,7 +97,11 @@ export function NumberField({
           <Plus className="h-5 w-5" />
         </button>
       </div>
-      <div className={`mt-3 grid gap-2 grid-cols-${steps.length}`}>
+      <div
+        className="mt-3 grid gap-2"
+        style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}
+      >
+
         {steps.map((d) => (
           <button
             key={d}
