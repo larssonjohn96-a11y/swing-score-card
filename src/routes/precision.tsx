@@ -309,8 +309,10 @@ function TestScreen({
           value={offset}
           onChange={setOffset}
           unit="m"
+          steps={[1, 5]}
           hint={offset === 0 ? "rakt på" : side < 0 ? "vänster" : "höger"}
         />
+
       </div>
 
       <button

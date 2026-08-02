@@ -1,4 +1,6 @@
+import { CheckCircle2, Flag, Target, Trophy, type LucideIcon } from "lucide-react";
 import {
+
   HANDICAP_SCALE,
   analysePrecision,
   benchmarkLabel,
@@ -19,6 +21,12 @@ const GRADE_TEXT: Record<string, string> = {
   mid: "text-flag",
   poor: "text-destructive",
 };
+const GRADE_SOFT: Record<string, string> = {
+  good: "bg-primary/10",
+  mid: "bg-flag/10",
+  poor: "bg-destructive/10",
+};
+
 
 /** Hela analysen för ett genomfört Approach Precision Test. */
 export function PrecisionReport({
@@ -111,11 +119,11 @@ export function PrecisionReport({
         </div>
       </section>
 
-      <section className="space-y-4">
-        <h2 className="font-display text-2xl leading-none">Analys</h2>
-        <Block title="Styrkor" items={analysis.strengths} tone="good" />
-        <Block title="Förbättringsområden" items={analysis.improvements} tone="poor" />
-        <Block title="Nästa fokus i träningen" items={analysis.focus} tone="mid" />
+      <section className="space-y-5">
+        <h2 className="text-2xl font-extrabold uppercase tracking-tight">Analys</h2>
+        <Block title="Styrkor" items={analysis.strengths} tone="good" icon={Trophy} />
+        <Block title="Förbättringsområden" items={analysis.improvements} tone="poor" icon={Target} />
+        <Block title="Nästa fokus i träningen" items={analysis.focus} tone="mid" icon={Flag} />
       </section>
 
       {!compact && (
@@ -140,18 +148,29 @@ function Block({
   title,
   items,
   tone,
+  icon: Icon,
 }: {
   title: string;
   items: string[];
   tone: "good" | "mid" | "poor";
+  icon: LucideIcon;
 }) {
   return (
-    <div className="rounded-3xl border border-border bg-card p-5">
-      <p className={`text-xs uppercase tracking-[0.2em] ${GRADE_TEXT[tone]}`}>{title}</p>
-      <ul className="mt-3 space-y-2">
+    <div className="rounded-[28px] border border-border bg-card p-5 shadow-sm">
+      <div className="flex items-center gap-3">
+        <span
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${GRADE_SOFT[tone]}`}
+        >
+          <Icon className={`h-5 w-5 ${GRADE_TEXT[tone]}`} />
+        </span>
+        <p className={`text-base font-extrabold uppercase tracking-wide ${GRADE_TEXT[tone]}`}>
+          {title}
+        </p>
+      </div>
+      <ul className="mt-4 space-y-4">
         {items.map((t) => (
-          <li key={t} className="flex gap-2 text-sm leading-relaxed">
-            <span className={GRADE_TEXT[tone]}>•</span>
+          <li key={t} className="flex items-start gap-3 text-[15px] leading-snug">
+            <CheckCircle2 className={`mt-0.5 h-5 w-5 shrink-0 ${GRADE_TEXT[tone]}`} />
             <span>{t}</span>
           </li>
         ))}
@@ -159,3 +178,4 @@ function Block({
     </div>
   );
 }
+

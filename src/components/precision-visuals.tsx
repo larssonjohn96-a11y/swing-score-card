@@ -49,6 +49,7 @@ export function NumberField({
   unit,
   min = 0,
   hint,
+  steps = [-5, -1, 1, 5],
 }: {
   label: string;
   value: number;
@@ -56,8 +57,10 @@ export function NumberField({
   unit: string;
   min?: number;
   hint?: string;
+  steps?: number[];
 }) {
   const set = (n: number) => onChange(Math.max(min, Math.round(n)));
+
   return (
     <div className="rounded-3xl border border-border bg-card p-4">
       <div className="flex items-baseline justify-between">
@@ -94,8 +97,12 @@ export function NumberField({
           <Plus className="h-5 w-5" />
         </button>
       </div>
-      <div className="mt-3 grid grid-cols-4 gap-2">
-        {[-5, -1, 1, 5].map((d) => (
+      <div
+        className="mt-3 grid gap-2"
+        style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}
+      >
+
+        {steps.map((d) => (
           <button
             key={d}
             type="button"
@@ -106,6 +113,7 @@ export function NumberField({
           </button>
         ))}
       </div>
+
     </div>
   );
 }
