@@ -1,5 +1,14 @@
 import { Minus, Plus } from "lucide-react";
-import { lengthError, proximity, type PrecisionShot } from "@/lib/precision";
+import {
+  DISPERSION_RANGE,
+  DISTANCE_RINGS,
+  GREEN_HALF_DEPTH,
+  GREEN_HALF_WIDTH,
+  dispersionStats,
+  lengthError,
+  proximity,
+  type PrecisionShot,
+} from "@/lib/precision";
 
 /** Hero: top-down-vy av en green med flagga, slaglinje och spridda träffar. */
 export function GreenHero() {
