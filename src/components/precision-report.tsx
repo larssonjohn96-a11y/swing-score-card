@@ -21,6 +21,12 @@ const GRADE_TEXT: Record<string, string> = {
   mid: "text-flag",
   poor: "text-destructive",
 };
+const GRADE_SOFT: Record<string, string> = {
+  good: "bg-primary/10",
+  mid: "bg-flag/10",
+  poor: "bg-destructive/10",
+};
+
 
 /** Hela analysen för ett genomfört Approach Precision Test. */
 export function PrecisionReport({
