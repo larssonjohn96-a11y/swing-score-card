@@ -20,7 +20,7 @@
 
 @theme inline {
   --font-display: "Bebas Neue", ui-sans-serif, system-ui;
-  --font-sans: "Barlow", ui-sans-serif, system-ui;
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui;
   --color-hit: var(--hit);
   --color-miss: var(--miss);
   --color-flag: var(--flag);
