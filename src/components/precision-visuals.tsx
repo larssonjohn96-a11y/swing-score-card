@@ -94,8 +94,8 @@ export function NumberField({
           <Plus className="h-5 w-5" />
         </button>
       </div>
-      <div className="mt-3 grid grid-cols-4 gap-2">
-        {[-5, -1, 1, 5].map((d) => (
+      <div className={`mt-3 grid gap-2 grid-cols-${steps.length}`}>
+        {steps.map((d) => (
           <button
             key={d}
             type="button"
@@ -106,6 +106,7 @@ export function NumberField({
           </button>
         ))}
       </div>
+
     </div>
   );
 }
