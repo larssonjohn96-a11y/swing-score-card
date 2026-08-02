@@ -1,4 +1,6 @@
+import { CheckCircle2, Flag, Target, Trophy, type LucideIcon } from "lucide-react";
 import {
+
   HANDICAP_SCALE,
   analysePrecision,
   benchmarkLabel,
