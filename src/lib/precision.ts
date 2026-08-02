@@ -392,3 +392,54 @@ export function scoreGrade(score: number): "good" | "mid" | "poor" {
   if (score >= 45) return "mid";
   return "poor";
 }
+
+/* -------------------------------------------------------------------------
+ * Spridningsanalys – fast skala i meter
+ * ---------------------------------------------------------------------- */
+
+/** Standardgreen som används i spridningsbilden (meter). */
+export const GREEN_HALF_WIDTH = 12.5;
+export const GREEN_HALF_DEPTH = 14;
+/** Halva bredden på visualiseringen i meter (±40 m från flaggan). */
+export const DISPERSION_RANGE = 40;
+/** Fasta avståndsringar i meter. */
+export const DISTANCE_RINGS = [3, 6, 10, 20, 30] as const;
+
+/** True om slaget hamnar innanför standardgreenen. */
+export function onGreen(shot: Pick<PrecisionShot, "carry" | "target" | "offline">): boolean {
+  const dz = lengthError(shot) / GREEN_HALF_DEPTH;
+  const dx = shot.offline / GREEN_HALF_WIDTH;
+  return dx * dx + dz * dz <= 1;
+}
+
+export type DispersionStats = {
+  count: number;
+  avg: number;
+  median: number;
+  best: number;
+  worst: number;
+  /** avstånd mellan närmaste och längsta slag */
+  spread: number;
+  greens: number;
+  birdieChances: number;
+  within10: number;
+};
+
+/** Statistik under spridningsbilden. */
+export function dispersionStats(shots: PrecisionShot[]): DispersionStats {
+  const filled = shots.filter((s) => s.filled);
+  const prox = filled.map(proximity);
+  const best = prox.length ? Math.min(...prox) : 0;
+  const worst = prox.length ? Math.max(...prox) : 0;
+  return {
+    count: filled.length,
+    avg: mean(prox),
+    median: median(prox),
+    best,
+    worst,
+    spread: worst - best,
+    greens: filled.filter(onGreen).length,
+    birdieChances: prox.filter((p) => p < 6).length,
+    within10: prox.filter((p) => p <= 10).length,
+  };
+}
