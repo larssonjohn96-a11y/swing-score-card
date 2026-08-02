@@ -49,6 +49,7 @@ export function NumberField({
   unit,
   min = 0,
   hint,
+  steps = [-5, -1, 1, 5],
 }: {
   label: string;
   value: number;
@@ -56,8 +57,10 @@ export function NumberField({
   unit: string;
   min?: number;
   hint?: string;
+  steps?: number[];
 }) {
   const set = (n: number) => onChange(Math.max(min, Math.round(n)));
+
   return (
     <div className="rounded-3xl border border-border bg-card p-4">
       <div className="flex items-baseline justify-between">
