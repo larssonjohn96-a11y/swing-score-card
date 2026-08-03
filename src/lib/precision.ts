@@ -512,13 +512,13 @@ export function groupScores(result: PrecisionResult): GroupScore[] {
  * Spridningsanalys – fast skala i meter
  * ---------------------------------------------------------------------- */
 
-/** Standardgreen som används i spridningsbilden (meter). */
-export const GREEN_HALF_WIDTH = 12.5;
-export const GREEN_HALF_DEPTH = 14;
+/** Standardgreen som används i spridningsbilden (meter) – smal och djup. */
+export const GREEN_HALF_WIDTH = 9.5;
+export const GREEN_HALF_DEPTH = 16;
 /** Halva bredden på visualiseringen i meter (±40 m från flaggan). */
 export const DISPERSION_RANGE = 40;
 /** Fasta avståndsringar i meter. */
-export const DISTANCE_RINGS = [3, 6, 10, 20, 30] as const;
+export const DISTANCE_RINGS = [5, 10, 15] as const;
 
 /** True om slaget hamnar innanför standardgreenen. */
 export function onGreen(shot: Pick<PrecisionShot, "carry" | "target" | "offline">): boolean {
@@ -536,8 +536,13 @@ export type DispersionStats = {
   /** avstånd mellan närmaste och längsta slag */
   spread: number;
   greens: number;
+  /** slag inom 5 m */
   birdieChances: number;
   within10: number;
+  missLeft: number;
+  missRight: number;
+  missShort: number;
+  missLong: number;
 };
 
 /** Statistik under spridningsbilden. */
@@ -554,7 +559,12 @@ export function dispersionStats(shots: PrecisionShot[]): DispersionStats {
     worst,
     spread: worst - best,
     greens: filled.filter(onGreen).length,
-    birdieChances: prox.filter((p) => p < 6).length,
+    birdieChances: prox.filter((p) => p < 5).length,
     within10: prox.filter((p) => p <= 10).length,
+    missLeft: filled.filter((s) => s.offline < -1).length,
+    missRight: filled.filter((s) => s.offline > 1).length,
+    missShort: filled.filter((s) => lengthError(s) < -1).length,
+    missLong: filled.filter((s) => lengthError(s) > 1).length,
   };
 }
+
