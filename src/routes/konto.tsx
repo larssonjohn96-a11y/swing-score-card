@@ -11,7 +11,7 @@ export const Route = createFileRoute("/konto")({
       {
         name: "description",
         content:
-          "Skapa ett konto eller logga in för att spara dina 18-bollarspass och bunkertester och tävla i topplistan.",
+          "Skapa ett konto eller logga in för att spara dina testresultat och följa din utveckling.",
       },
       { property: "og:title", content: "Konto – spara dina golfresultat" },
       {
@@ -60,7 +60,7 @@ function AccountPage() {
         if (data.session && data.user) {
           await supabase.from("profiles").upsert({ id: data.user.id, display_name: trimmed });
           await syncLocalSessions(data.user.id);
-          navigate({ to: "/topplista" });
+          navigate({ to: "/" });
         } else {
           window.localStorage.setItem("golf-pending-name", trimmed);
           setMessage("Kolla mejlen och bekräfta din adress, sedan kan du logga in.");
@@ -86,7 +86,7 @@ function AccountPage() {
           }
           window.localStorage.removeItem("golf-pending-name");
           await syncLocalSessions(data.user.id);
-          navigate({ to: "/topplista" });
+          navigate({ to: "/" });
         }
       }
     } catch (err) {
@@ -112,7 +112,7 @@ function AccountPage() {
           to="/"
           className="rounded-full border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
         >
-          Tester
+          Hem
         </Link>
       </header>
 
@@ -128,12 +128,6 @@ function AccountPage() {
             <p className="text-xs text-muted-foreground">{user.email}</p>
           </div>
           <NameForm currentName={displayName} userId={user.id} />
-          <Link
-            to="/topplista"
-            className="block rounded-2xl bg-primary py-3 text-center font-medium text-primary-foreground"
-          >
-            Till topplistan
-          </Link>
           <button
             onClick={signOut}
             className="w-full rounded-2xl border border-border py-3 text-sm text-muted-foreground"
@@ -162,7 +156,10 @@ function AccountPage() {
             ))}
           </div>
 
-          <form onSubmit={submit} className="mt-4 space-y-3 rounded-3xl border border-border bg-card p-5">
+          <form
+            onSubmit={submit}
+            className="mt-4 space-y-3 rounded-3xl border border-border bg-card p-5"
+          >
             {mode === "signup" ? (
               <Field
                 label="Spelarnamn"
