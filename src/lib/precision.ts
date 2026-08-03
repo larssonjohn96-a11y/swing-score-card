@@ -316,74 +316,95 @@ export function missPattern(shots: PrecisionShot[]): MissPattern {
 export type PrecisionAnalysis = {
   strengths: string[];
   improvements: string[];
+  /** Behålls för historiksidan – tomt i nya rapporten. */
   focus: string[];
 };
 
-/** Automatisk analys: styrkor, förbättringsområden och träningsfokus. */
+/**
+ * Automatisk, datadriven analys. Alla punkter bygger på faktiska värden i
+ * testet – inga generiska standardtexter.
+ */
 export function analysePrecision(
   shots: PrecisionShot[],
   result: PrecisionResult = precisionResult(shots),
 ): PrecisionAnalysis {
+  const filled = shots.filter((s) => s.filled);
   const m = missPattern(shots);
+  const d = dispersionStats(shots);
   const strengths: string[] = [];
   const improvements: string[] = [];
-  const focus: string[] = [];
 
-  if (result.strongest) {
-    strengths.push(
-      `${result.strongest.target} m är ditt bästa avstånd (${result.strongest.score}/100).`,
-    );
+  if (!filled.length) {
+    return { strengths: ["Genomför testet för att få din analys."], improvements: [], focus: [] };
   }
-  const good = result.perTarget.filter((t) => t.count > 0 && t.score >= 70);
-  if (good.length >= 2) {
-    strengths.push(`${good.length} av dina avstånd ligger på 70/100 eller bättre.`);
-  }
-  if (!m.sideBias && m.leftPct + m.rightPct < 70) {
-    strengths.push("Du håller bollen nära siktlinjen – sidledsmissarna är små.");
-  }
-  if (result.avgProximityPct <= 10) {
-    strengths.push(
-      `Du landar i snitt ${result.avgProximityPct.toFixed(1)} % från flaggan – ${benchmarkLabel(result.avgProximityPct).toLowerCase()}.`,
-    );
-  }
-  if (!strengths.length) strengths.push("Du har ett tydligt utgångsläge att bygga vidare från.");
 
-  if (result.weakest) {
-    improvements.push(
-      `${result.weakest.target} m är ditt svagaste avstånd (${result.weakest.score}/100).`,
-    );
+  const groups = groupScores(result).filter((g) => g.count > 0);
+  const bestGroup = [...groups].sort((a, b) => b.score - a.score)[0];
+  const worstGroup = [...groups].sort((a, b) => a.score - b.score)[0];
+
+  const within5 = filled.filter((s) => proximity(s) < 5).length;
+  const within5Pct = Math.round((within5 / filled.length) * 100);
+  const greenPct = Math.round((d.greens / filled.length) * 100);
+  const absLength = mean(filled.map((s) => Math.abs(lengthError(s))));
+  const absSide = mean(filled.map((s) => Math.abs(s.offline)));
+
+  /* ---------------- Styrkor ---------------- */
+  if (bestGroup && bestGroup.score >= 55) {
+    strengths.push(`Stark precision från ${bestGroup.label} (${bestGroup.score}/100).`);
+  }
+  if (within5Pct >= 25) {
+    strengths.push(`${within5Pct} % av slagen inom 5 meter – gott om birdiechanser.`);
+  }
+  if (greenPct >= 60) {
+    strengths.push(`${greenPct} % greenträffar i testet.`);
+  }
+  if (absLength <= 6 && absLength < absSide) {
+    strengths.push(`Stabil längdkontroll – i snitt ${absLength.toFixed(1)} m längdfel.`);
+  }
+  if (absSide <= 5 && absSide <= absLength) {
+    strengths.push(`Rak startlinje – i snitt bara ${absSide.toFixed(1)} m sidled.`);
+  }
+  if (result.consistency >= 65) {
+    strengths.push(`Jämna slag genom hela testet (konsistens ${result.consistency}/100).`);
+  }
+  if (!strengths.length && bestGroup) {
+    strengths.push(`${bestGroup.label} är ditt bästa intervall (${bestGroup.score}/100).`);
+  }
+
+  /* ---------------- Förbättringsområden ---------------- */
+  if (worstGroup && bestGroup && worstGroup.label !== bestGroup.label && worstGroup.score < 60) {
+    improvements.push(`Svagast från ${worstGroup.label} (${worstGroup.score}/100).`);
   }
   if (m.lengthBias === "kort") {
-    improvements.push(`${m.shortPct} % av slagen landar kort – du underskattar längden.`);
-  }
-  if (m.lengthBias === "långt") {
+    improvements.push(`${m.shortPct} % av slagen landar kort om flaggan.`);
+  } else if (m.lengthBias === "långt") {
     improvements.push(`${m.longPct} % av slagen går långt över flaggan.`);
   }
   if (m.sideBias) {
     improvements.push(
-      `${m.sideBias === "vänster" ? m.leftPct : m.rightPct} % av slagen missar åt ${m.sideBias}.`,
+      `Majoriteten av missarna ligger ${m.sideBias} (${m.sideBias === "vänster" ? m.leftPct : m.rightPct} %).`,
     );
   }
-  const weakLong = result.perTarget.filter((t) => t.count > 0 && t.target >= 110 && t.score < 50);
-  if (weakLong.length >= 2) improvements.push("De långa inspelen (110 m+) tappar mest score.");
-  if (!improvements.length) improvements.push("Inga tydliga svagheter – jobba på att sänka snittet.");
+  const shortG = groups.filter((g) => g.max <= 100);
+  const longG = groups.filter((g) => g.min >= 125);
+  if (shortG.length && longG.length) {
+    const sAvg = mean(shortG.map((g) => g.score));
+    const lAvg = mean(longG.map((g) => g.score));
+    if (sAvg - lAvg >= 20) {
+      improvements.push("Spridningen ökar tydligt på de längre inspelen.");
+    }
+  }
+  if (greenPct >= 60 && within5Pct < 15) {
+    improvements.push("Hög greenträff men få slag inom 5 m – sikta tightare mot flaggan.");
+  }
+  if (absSide - absLength >= 4) {
+    improvements.push(
+      `Bra längdkontroll men stor sidledsspridning (${absSide.toFixed(1)} m i snitt).`,
+    );
+  }
 
-  if (result.weakest) {
-    const low = Math.max(40, result.weakest.target - 15);
-    focus.push(`10 bollar per pass mot ${low}–${result.weakest.target + 15} m med samma rutin.`);
-  }
-  if (m.lengthBias) {
-    focus.push(
-      m.lengthBias === "kort"
-        ? "Klubba upp ett steg och sikta på flaggans bakkant – logga carry per klubba."
-        : "Träna kontrollerade 3/4-svingar för att ta bort de långa missarna.",
-    );
-  }
-  if (m.sideBias) {
-    focus.push("Startlinjeövning: slå genom en 2 m bred grind 10 m framför bollen.");
-  }
-  if (focus.length < 2) focus.push("Avståndsstege: 3 bollar per avstånd, notera carry varje slag.");
-  return { strengths, improvements, focus: focus.slice(0, 3) };
+  const trimmed = result.score >= 95 ? improvements.slice(0, 1) : improvements.slice(0, 3);
+  return { strengths: strengths.slice(0, 3), improvements: trimmed, focus: [] };
 }
 
 /** Färgnivå för score: grön/gul/röd. */
@@ -392,6 +413,100 @@ export function scoreGrade(score: number): "good" | "mid" | "poor" {
   if (score >= 45) return "mid";
   return "poor";
 }
+
+/* -------------------------------------------------------------------------
+ * Scorenivåer och avståndsgrupper
+ * ---------------------------------------------------------------------- */
+
+export type ScoreBand = {
+  key: "low" | "mid" | "ok" | "great" | "elite";
+  label: string;
+  emoji: string;
+  /** Tailwind-klasser byggda på designtokens */
+  text: string;
+  bg: string;
+  bar: string;
+};
+
+const SCORE_BANDS: ScoreBand[] = [
+  {
+    key: "low",
+    label: "Låg",
+    emoji: "🔴",
+    text: "text-destructive",
+    bg: "bg-destructive/10",
+    bar: "bg-destructive",
+  },
+  { key: "mid", label: "Medel", emoji: "🟠", text: "text-sand", bg: "bg-sand/10", bar: "bg-sand" },
+  { key: "ok", label: "Bra", emoji: "🟡", text: "text-flag", bg: "bg-flag/10", bar: "bg-flag" },
+  {
+    key: "great",
+    label: "Mycket bra",
+    emoji: "🟢",
+    text: "text-primary",
+    bg: "bg-primary/10",
+    bar: "bg-primary",
+  },
+  {
+    key: "elite",
+    label: "Exceptionell",
+    emoji: "⭐",
+    text: "text-chart-4",
+    bg: "bg-chart-4/10",
+    bar: "bg-chart-4",
+  },
+];
+
+/** Färgkodad nivå för en score 0–100. */
+export function scoreBand(score: number): ScoreBand {
+  if (score >= 90) return SCORE_BANDS[4];
+  if (score >= 75) return SCORE_BANDS[3];
+  if (score >= 60) return SCORE_BANDS[2];
+  if (score >= 40) return SCORE_BANDS[1];
+  return SCORE_BANDS[0];
+}
+
+/** Avståndsintervall som resultaten grupperas i. */
+export const DISTANCE_GROUPS = [
+  { label: "50–75 m", min: 50, max: 75 },
+  { label: "75–100 m", min: 75, max: 100 },
+  { label: "100–125 m", min: 100, max: 125 },
+  { label: "125–150 m", min: 125, max: 150 },
+  { label: "150–165 m", min: 150, max: 165 },
+] as const;
+
+export type GroupScore = {
+  label: string;
+  min: number;
+  max: number;
+  count: number;
+  score: number;
+  avgProximity: number;
+};
+
+/** Score per avståndsgrupp, viktat på antal slag. */
+export function groupScores(result: PrecisionResult): GroupScore[] {
+  return DISTANCE_GROUPS.map((g) => {
+    const inGroup = result.perTarget.filter(
+      (t) => t.count > 0 && t.target >= g.min && t.target <= g.max,
+    );
+    const shots = inGroup.reduce((a, t) => a + t.count, 0);
+    const pct = shots
+      ? inGroup.reduce((a, t) => a + t.avgPct * t.count, 0) / shots
+      : 0;
+    return {
+      label: g.label,
+      min: g.min,
+      max: g.max,
+      count: shots,
+      score: shots ? scoreFromPct(pct) : 0,
+      avgProximity: shots
+        ? inGroup.reduce((a, t) => a + t.avgProximity * t.count, 0) / shots
+        : 0,
+    };
+  });
+}
+
 
 /* -------------------------------------------------------------------------
  * Spridningsanalys – fast skala i meter
