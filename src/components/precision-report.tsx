@@ -1,32 +1,22 @@
-import { CheckCircle2, Flag, Target, Trophy, type LucideIcon } from "lucide-react";
+import { CheckCircle2, Target, Trophy, type LucideIcon } from "lucide-react";
 import {
-
-  HANDICAP_SCALE,
   analysePrecision,
-  benchmarkLabel,
+  groupScores,
   handicapLabel,
   precisionResult,
-  scoreGrade,
+  scoreBand,
   type PrecisionShot,
 } from "@/lib/precision";
 import { DispersionGreen } from "@/components/precision-visuals";
 
-const GRADE_BAR: Record<string, string> = {
-  good: "bg-primary",
-  mid: "bg-flag",
-  poor: "bg-destructive",
-};
 const GRADE_TEXT: Record<string, string> = {
   good: "text-primary",
-  mid: "text-flag",
   poor: "text-destructive",
 };
 const GRADE_SOFT: Record<string, string> = {
   good: "bg-primary/10",
-  mid: "bg-flag/10",
   poor: "bg-destructive/10",
 };
-
 
 /** Hela analysen för ett genomfört Approach Precision Test. */
 export function PrecisionReport({
@@ -40,6 +30,8 @@ export function PrecisionReport({
 }) {
   const result = precisionResult(shots);
   const analysis = analysePrecision(shots, result);
+  const groups = groupScores(result);
+  const band = scoreBand(result.score);
   const delta = typeof prevScore === "number" ? result.score - prevScore : null;
 
   return (
@@ -48,68 +40,54 @@ export function PrecisionReport({
         <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
           Approach Precision Score
         </p>
-        <p className="mt-2 font-[family-name:var(--font-display)] text-8xl leading-none">
+        <p
+          className={`mt-2 font-[family-name:var(--font-display)] text-8xl leading-none ${band.text}`}
+        >
           {result.score}
           <span className="ml-1 text-2xl text-muted-foreground">/100</span>
         </p>
+        <p
+          className={`mx-auto mt-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-semibold ${band.bg} ${band.text}`}
+        >
+          <span aria-hidden>{band.emoji}</span>
+          {band.label}
+        </p>
         {delta !== null && (
-          <p className={`mt-1 text-sm ${delta >= 0 ? "text-primary" : "text-destructive"}`}>
+          <p className={`mt-2 text-sm ${delta >= 0 ? "text-primary" : "text-destructive"}`}>
             {delta > 0 ? "+" : ""}
             {delta} sedan förra testet
           </p>
         )}
         <div className="mt-6 grid grid-cols-3 gap-3">
           <Stat label="Est. handicap" value={handicapLabel(result.handicap)} />
-          <Stat label="Till flaggan" value={`${result.avgProximity.toFixed(1)} m`} />
-          <Stat label="Av slaglängd" value={`${result.avgProximityPct.toFixed(1)} %`} />
-        </div>
-        <p className="mt-3 text-sm text-muted-foreground">
-          Din precision motsvarar {benchmarkLabel(result.avgProximityPct).toLowerCase()}.
-        </p>
-      </section>
-
-      <section>
-        <h2 className="font-display text-2xl leading-none">Så uppskattas handicap</h2>
-        <div className="mt-4 overflow-hidden rounded-3xl border border-border bg-card">
-          {HANDICAP_SCALE.map((row) => (
-            <div
-              key={row.pct}
-              className="grid grid-cols-3 gap-2 border-b border-border/50 px-4 py-3 text-sm last:border-0"
-            >
-              <span className="text-muted-foreground">{row.pct}</span>
-              <span className="text-center font-semibold">{row.hcp}</span>
-              <span className="text-right text-xs text-muted-foreground">{row.note}</span>
-            </div>
-          ))}
+          <Stat label="Score" value={`${result.score}`} />
+          <Stat label="Snitt från mål" value={`${result.avgProximity.toFixed(1)} m`} />
         </div>
       </section>
 
       <section>
         <h2 className="font-display text-2xl leading-none">Score per avstånd</h2>
         <div className="mt-4 space-y-3">
-          {result.perTarget.map((t) => {
-            const grade = scoreGrade(t.score);
+          {groups.map((g) => {
+            const b = scoreBand(g.score);
             return (
-              <div key={t.target} className="flex items-center gap-3">
-                <span className="w-14 shrink-0 text-sm text-muted-foreground">{t.target} m</span>
+              <div key={g.label} className="flex items-center gap-3">
+                <span className="w-20 shrink-0 text-sm text-muted-foreground">{g.label}</span>
                 <div className="h-3 flex-1 overflow-hidden rounded-full bg-muted">
                   <div
-                    className={`h-full rounded-full ${t.count ? GRADE_BAR[grade] : "bg-muted"}`}
-                    style={{ width: `${t.count ? t.score : 0}%` }}
+                    className={`h-full rounded-full ${g.count ? b.bar : "bg-muted"}`}
+                    style={{ width: `${g.count ? g.score : 0}%` }}
                   />
                 </div>
                 <span
-                  className={`w-12 shrink-0 text-right text-sm font-semibold ${t.count ? GRADE_TEXT[grade] : "text-muted-foreground"}`}
+                  className={`w-12 shrink-0 text-right text-sm font-semibold ${g.count ? b.text : "text-muted-foreground"}`}
                 >
-                  {t.count ? t.score : "–"}
+                  {g.count ? g.score : "–"}
                 </span>
               </div>
             );
           })}
         </div>
-        <p className="mt-3 text-xs text-muted-foreground">
-          Grön 70+ · gul 45–69 · röd under 45
-        </p>
       </section>
 
       <section>
@@ -122,8 +100,14 @@ export function PrecisionReport({
       <section className="space-y-5">
         <h2 className="text-2xl font-extrabold uppercase tracking-tight">Analys</h2>
         <Block title="Styrkor" items={analysis.strengths} tone="good" icon={Trophy} />
-        <Block title="Förbättringsområden" items={analysis.improvements} tone="poor" icon={Target} />
-        <Block title="Nästa fokus i träningen" items={analysis.focus} tone="mid" icon={Flag} />
+        {analysis.improvements.length > 0 && (
+          <Block
+            title="Förbättringsområden"
+            items={analysis.improvements}
+            tone="poor"
+            icon={Target}
+          />
+        )}
       </section>
 
       {!compact && (
@@ -134,6 +118,7 @@ export function PrecisionReport({
     </div>
   );
 }
+
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
