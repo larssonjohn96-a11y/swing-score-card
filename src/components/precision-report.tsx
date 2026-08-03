@@ -137,7 +137,7 @@ function Block({
 }: {
   title: string;
   items: string[];
-  tone: "good" | "mid" | "poor";
+  tone: "good" | "poor";
   icon: LucideIcon;
 }) {
   return (
