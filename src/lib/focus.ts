@@ -3,6 +3,7 @@ import { loadBunkerSessions } from "@/lib/bunker";
 import { loadSpeedEntries } from "@/lib/speed";
 import { loadLongDriveSessions, sessionBest } from "@/lib/longdrive";
 import { loadPrecisionSessions } from "@/lib/precision-store";
+import { loadOffTeeSessions } from "@/lib/offtee-store";
 import { TOUR_LEVEL, type Level } from "@/lib/levels";
 
 export type CategoryRating = {
@@ -57,14 +58,19 @@ export function computeRatings(): CategoryRating[] {
         : `Snitt ${bunkerAvg.toFixed(1)} fot (${level.label} ${level.bunkerFeet} fot)`,
   };
 
-  // Driving: ball speed mot nivån, annars carry mot nivån
+  // Driving: Off the Tee Score i första hand, annars ball speed, annars carry
+  const offtee = loadOffTeeSessions();
+  const offteeAvg = lastAvg(offtee.map((s) => s.score));
   const ballAvg = lastAvg(speed.map((e) => e.ballSpeed));
   const ldLast = longdrive.length ? longdrive[longdrive.length - 1] : undefined;
   const carryBest = ldLast ? sessionBest(ldLast) : undefined;
   const carryTarget = ldLast?.unit === "yds" ? level.carryYds : level.carryM;
   let drivingRating: number | undefined;
-  let drivingDetail = "Kör speed- eller long drive-testet för att få en nivå.";
-  if (ballAvg !== undefined) {
+  let drivingDetail = "Kör Off the Tee Test, speed- eller long drive-testet för att få en nivå.";
+  if (offteeAvg !== undefined) {
+    drivingRating = clamp(offteeAvg);
+    drivingDetail = `Off the Tee Score snitt ${offteeAvg.toFixed(0)} av 100`;
+  } else if (ballAvg !== undefined) {
     drivingRating = clamp((ballAvg / level.ballSpeed) * 100);
     drivingDetail = `Snitt ${ballAvg.toFixed(1)} mph ball speed (${level.label} ${level.ballSpeed})`;
   } else if (carryBest !== undefined) {

@@ -7,6 +7,8 @@ export type CategoryTest = {
     | "/teeshot"
     | "/precision"
     | "/approach"
+    | "/offtee-test"
+    | "/offtee"
     | "/pitch"
     | "/chip"
     | "/kortputt"
@@ -78,6 +80,17 @@ export const CATEGORIES: Category[] = [
           "Inom längdspann (±10 m) och 25 m bredd = 1 poäng.",
         ],
         result: "RESULTAT: POÄNG 0–9",
+      },
+      {
+        to: "/offtee-test",
+        number: "18",
+        title: "Off the Tee Test",
+        subtitle: "12 tee-slag – realistiska hålscenarier",
+        bullets: [
+          "12 hål: breda/smala fairways, dogleger och risk/reward.",
+          "Klubbval, carry, totalt avstånd och sidled per slag.",
+        ],
+        result: "RESULTAT: OFF THE TEE SCORE 0–100 + EST. OTT-HCP",
       },
     ],
   },

@@ -6,6 +6,7 @@ import { loadSpeedEntries } from "@/lib/speed";
 import { loadLongDriveSessions, sessionBest } from "@/lib/longdrive";
 import { loadFairwaySessions, fairwayHitRate } from "@/lib/fairway";
 import { loadPrecisionSessions } from "@/lib/precision-store";
+import { loadOffTeeSessions } from "@/lib/offtee-store";
 
 export const Route = createFileRoute("/kategori/$slug")({
   loader: ({ params }) => {
@@ -63,6 +64,8 @@ function CategoryPage() {
     const fw = loadFairwaySessions();
     const precision = loadPrecisionSessions();
     const lastPrecision = precision[precision.length - 1];
+    const offtee = loadOffTeeSessions();
+    const lastOfftee = offtee[offtee.length - 1];
     setLast({
       "/fairway": fw.length
         ? `Senast ${fw[fw.length - 1].points.toFixed(0)} p · ${(fairwayHitRate(fw[fw.length - 1].drives) * 100).toFixed(0)}% fairway`
@@ -78,6 +81,7 @@ function CategoryPage() {
         lastPrecision?.score !== undefined
           ? `Senast ${lastPrecision.score.toFixed(0)} / 100`
           : undefined,
+      "/offtee-test": lastOfftee ? `Senast ${lastOfftee.score.toFixed(0)} / 100` : undefined,
     });
   }, []);
 

@@ -19,6 +19,8 @@ import { Route as KontoRouteImport } from './routes/konto'
 import { Route as KortputtRouteImport } from './routes/kortputt'
 import { Route as LagputtRouteImport } from './routes/lagputt'
 import { Route as LongdriveRouteImport } from './routes/longdrive'
+import { Route as OffteeRouteImport } from './routes/offtee'
+import { Route as OffteeTestRouteImport } from './routes/offtee-test'
 import { Route as PitchRouteImport } from './routes/pitch'
 import { Route as PrecisionRouteImport } from './routes/precision'
 import { Route as PrecisionHistorikRouteImport } from './routes/precision-historik'
@@ -81,6 +83,16 @@ const LagputtRoute = LagputtRouteImport.update({
 const LongdriveRoute = LongdriveRouteImport.update({
   id: '/longdrive',
   path: '/longdrive',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OffteeRoute = OffteeRouteImport.update({
+  id: '/offtee',
+  path: '/offtee',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OffteeTestRoute = OffteeTestRouteImport.update({
+  id: '/offtee-test',
+  path: '/offtee-test',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PitchRoute = PitchRouteImport.update({
@@ -160,6 +172,8 @@ export interface FileRoutesByFullPath {
   '/kortputt': typeof KortputtRoute
   '/lagputt': typeof LagputtRoute
   '/longdrive': typeof LongdriveRoute
+  '/offtee': typeof OffteeRoute
+  '/offtee-test': typeof OffteeTestRoute
   '/pitch': typeof PitchRoute
   '/precision': typeof PrecisionRoute
   '/precision-historik': typeof PrecisionHistorikRoute
@@ -185,6 +199,8 @@ export interface FileRoutesByTo {
   '/kortputt': typeof KortputtRoute
   '/lagputt': typeof LagputtRoute
   '/longdrive': typeof LongdriveRoute
+  '/offtee': typeof OffteeRoute
+  '/offtee-test': typeof OffteeTestRoute
   '/pitch': typeof PitchRoute
   '/precision': typeof PrecisionRoute
   '/precision-historik': typeof PrecisionHistorikRoute
@@ -211,6 +227,8 @@ export interface FileRoutesById {
   '/kortputt': typeof KortputtRoute
   '/lagputt': typeof LagputtRoute
   '/longdrive': typeof LongdriveRoute
+  '/offtee': typeof OffteeRoute
+  '/offtee-test': typeof OffteeTestRoute
   '/pitch': typeof PitchRoute
   '/precision': typeof PrecisionRoute
   '/precision-historik': typeof PrecisionHistorikRoute
@@ -238,6 +256,8 @@ export interface FileRouteTypes {
     | '/kortputt'
     | '/lagputt'
     | '/longdrive'
+    | '/offtee'
+    | '/offtee-test'
     | '/pitch'
     | '/precision'
     | '/precision-historik'
@@ -263,6 +283,8 @@ export interface FileRouteTypes {
     | '/kortputt'
     | '/lagputt'
     | '/longdrive'
+    | '/offtee'
+    | '/offtee-test'
     | '/pitch'
     | '/precision'
     | '/precision-historik'
@@ -288,6 +310,8 @@ export interface FileRouteTypes {
     | '/kortputt'
     | '/lagputt'
     | '/longdrive'
+    | '/offtee'
+    | '/offtee-test'
     | '/pitch'
     | '/precision'
     | '/precision-historik'
@@ -314,6 +338,8 @@ export interface RootRouteChildren {
   KortputtRoute: typeof KortputtRoute
   LagputtRoute: typeof LagputtRoute
   LongdriveRoute: typeof LongdriveRoute
+  OffteeRoute: typeof OffteeRoute
+  OffteeTestRoute: typeof OffteeTestRoute
   PitchRoute: typeof PitchRoute
   PrecisionRoute: typeof PrecisionRoute
   PrecisionHistorikRoute: typeof PrecisionHistorikRoute
@@ -398,6 +424,20 @@ declare module '@tanstack/react-router' {
       path: '/longdrive'
       fullPath: '/longdrive'
       preLoaderRoute: typeof LongdriveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/offtee': {
+      id: '/offtee'
+      path: '/offtee'
+      fullPath: '/offtee'
+      preLoaderRoute: typeof OffteeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/offtee-test': {
+      id: '/offtee-test'
+      path: '/offtee-test'
+      fullPath: '/offtee-test'
+      preLoaderRoute: typeof OffteeTestRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pitch': {
@@ -517,6 +557,8 @@ const rootRouteChildren: RootRouteChildren = {
   KortputtRoute: KortputtRoute,
   LagputtRoute: LagputtRoute,
   LongdriveRoute: LongdriveRoute,
+  OffteeRoute: OffteeRoute,
+  OffteeTestRoute: OffteeTestRoute,
   PitchRoute: PitchRoute,
   PrecisionRoute: PrecisionRoute,
   PrecisionHistorikRoute: PrecisionHistorikRoute,

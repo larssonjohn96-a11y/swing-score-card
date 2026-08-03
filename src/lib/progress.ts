@@ -5,6 +5,7 @@ import { loadLongDriveSessions, sessionBest } from "@/lib/longdrive";
 import { loadFairwaySessions } from "@/lib/fairway";
 import { loadTeeSessions } from "@/lib/teeshot";
 import { loadPrecisionSessions } from "@/lib/precision-store";
+import { loadOffTeeSessions } from "@/lib/offtee-store";
 
 import { loadPitchSessions } from "@/lib/pitch";
 import { loadChipSessions } from "@/lib/chip";
@@ -104,6 +105,20 @@ export const PROGRESS_TESTS: ProgressTest[] = [
     load: () =>
       loadPrecisionSessions()
         .map((s) => ({ date: day(s.date), value: s.score ?? 0 }))
+        .sort(byDate),
+  },
+  {
+    id: "offtee",
+    title: "Off the Tee Test",
+    categorySlug: "driving",
+    to: "/offtee",
+    metric: "Off the Tee Score",
+    unit: "/ 100",
+    higherIsBetter: true,
+    decimals: 0,
+    load: () =>
+      loadOffTeeSessions()
+        .map((s) => ({ date: day(s.date), value: s.score }))
         .sort(byDate),
   },
   {
