@@ -232,38 +232,43 @@ export function shotOutcome(shot: Pick<TeeShot, "hole" | "offline" | "total">): 
   return { inFairway, inRough, isOB, exceededMax };
 }
 
-/** Avståndspoäng 0–100. Belönar längd upp till idealMin, sedan platå med liten bonus. */
-function distanceScore(total: number, hole: TeeHole): number {
-  if (total < hole.idealMin) {
-    const shortBy = hole.idealMin - total;
-    return Math.max(30, 100 - shortBy * 1.2);
-  }
-  const bonus = Math.min(10, (total - hole.idealMin) * 0.12);
-  return Math.min(100, 90 + bonus);
-}
-
-/** Träffsäkerhetspoäng 0–100 baserat på sidled relativt fairwaybredd. */
-function accuracyScore(offline: number, hole: TeeHole): number {
+/**
+ * Basscore 0–100 utifrån var slaget landar. Platt inom fairwayn – på riktiga
+ * banan spelar det ingen roll var i en fairway bollen ligger, så vi belönar
+ * inte extra precision mot mitten. Sjunkande i ruffen, och lågt/platt vid OB.
+ */
+function tierBaseScore(offline: number, hole: TeeHole): number {
   const abs = Math.abs(offline);
-  const center = hole.fairwayHalfWidth * 0.35;
-  if (abs <= center) return 100;
-  if (abs <= hole.fairwayHalfWidth) {
-    const t = (abs - center) / (hole.fairwayHalfWidth - center);
-    return 100 - t * 30;
-  }
+  if (abs <= hole.fairwayHalfWidth) return 72;
   const roughT = Math.min(1, (abs - hole.fairwayHalfWidth) / hole.roughDepth);
-  return 70 - roughT * 50;
+  return 55 - roughT * 33;
 }
 
-/** Score 0–100 för ett enskilt slag – balans mellan längd och träffsäkerhet, med hårda straff. */
+/**
+ * Explicit längdbonus/-avdrag. Slag som når minst idealMin ger bonus upp
+ * till +28, kortare slag ger ett litet avdrag. Detta är den enda platsen
+ * längd påverkar scoren – och den är oberoende av träffsäkerhet.
+ */
+function lengthBonus(total: number, hole: TeeHole): number {
+  const diff = total - hole.idealMin;
+  if (diff >= 0) return Math.min(28, diff * 0.35);
+  return Math.max(-12, diff * 0.5);
+}
+
+/**
+ * Score 0–100 för ett enskilt slag.
+ * - OB: platt, hård bestraffning (5) – oavsett hur långt slaget gick.
+ * - Överskridet maxlandningsavstånd: score cappas hårt (25).
+ * - Annars: fairway/ruff-nivå + längdbonus, så en bra score alltid
+ *   motsvarar ett slag som faktiskt går att spela vidare från på banan.
+ */
 export function teeShotScore(shot: Pick<TeeShot, "hole" | "total" | "offline">): number {
   const outcome = shotOutcome(shot);
-  const base =
-    0.45 * distanceScore(shot.total, shot.hole) + 0.55 * accuracyScore(shot.offline, shot.hole);
+  if (outcome.isOB) return 5;
 
-  if (outcome.isOB) return Math.round(Math.min(base, 15));
-  if (outcome.exceededMax) return Math.round(Math.min(base, 25));
-  return Math.round(Math.max(0, Math.min(100, base)));
+  const score = tierBaseScore(shot.offline, shot.hole) + lengthBonus(shot.total, shot.hole);
+  if (outcome.exceededMax) return Math.round(Math.max(0, Math.min(25, score)));
+  return Math.round(Math.max(0, Math.min(100, score)));
 }
 
 /* -------------------------------------------------------------------------
