@@ -132,18 +132,24 @@ export function NumberField({
 }
 
 const RING_STYLE: Record<number, string> = {
-  3: "stroke-primary/70",
-  6: "stroke-flag/70",
-  10: "stroke-chart-4/70",
-  20: "stroke-muted-foreground/50",
-  30: "stroke-destructive/50",
+  5: "stroke-background/80",
+  10: "stroke-background/55",
+  15: "stroke-background/40",
 };
 
 const nf = (n: number, d = 1) => n.toFixed(d).replace(".", ",");
 
+/** Färg per misstyp så spridningen går att läsa direkt. */
+function shotTone(s: PrecisionShot): string {
+  const p = proximity(s);
+  if (p < 5) return "fill-primary";
+  if (Math.abs(s.offline) > Math.abs(lengthError(s))) return "fill-chart-4";
+  return "fill-flag";
+}
+
 /**
- * Spridningsbild med fast skala: ±40 m från flaggan, standardgreen med
- * fairway och bunkrar, samt fasta avståndsringar.
+ * Top-down-vy av en smal, djup green med fairway och bunkrar. Fast skala
+ * ±40 m från flaggan, ringar på 5/10/15 m och ett märke per slag.
  */
 export function DispersionGreen({ shots }: { shots: PrecisionShot[] }) {
   const filled = shots.filter((s) => s.filled);
@@ -159,46 +165,83 @@ export function DispersionGreen({ shots }: { shots: PrecisionShot[] }) {
 
   return (
     <div>
+      <div className="mb-4 grid grid-cols-3 gap-2">
+        <MiniStat label="Greenträffar" value={`${stats.greens}/${stats.count}`} />
+        <MiniStat label="Birdiechanser" value={`${stats.birdieChances}`} />
+        <MiniStat label="Snitt" value={`${nf(stats.avg)} m`} />
+        <MiniStat label="Miss vänster" value={`${stats.missLeft}`} />
+        <MiniStat label="Miss höger" value={`${stats.missRight}`} />
+        <MiniStat label="Kort / lång" value={`${stats.missShort} / ${stats.missLong}`} />
+      </div>
+
       <svg
         viewBox={`0 0 ${size} ${size}`}
         className="w-full"
         role="img"
-        aria-label="Spridningsbild med fast skala, 80 gånger 80 meter runt flaggan"
+        aria-label="Spridningskarta med fast skala, 80 gånger 80 meter runt flaggan"
       >
         <defs>
           <clipPath id="dispersion-clip">
             <rect x="0" y="0" width={size} height={size} rx="20" />
           </clipPath>
+          <radialGradient id="green-shade" cx="45%" cy="35%" r="75%">
+            <stop offset="0%" stopColor="white" stopOpacity="0.22" />
+            <stop offset="100%" stopColor="black" stopOpacity="0.12" />
+          </radialGradient>
+          <radialGradient id="rough-shade" cx="50%" cy="20%" r="90%">
+            <stop offset="0%" stopColor="white" stopOpacity="0.06" />
+            <stop offset="100%" stopColor="black" stopOpacity="0.25" />
+          </radialGradient>
         </defs>
         <g clipPath="url(#dispersion-clip)">
           <rect x="0" y="0" width={size} height={size} className="fill-rough" />
 
-          {/* Fairway framför green */}
+          {/* Fairway som leder in mot greenen */}
           <path
-            d={`M${px(-11)} ${py(-16)} Q ${px(-13)} ${py(-32)} ${px(-9)} ${py(-46)} L${px(9)} ${py(-46)} Q ${px(13)} ${py(-32)} ${px(11)} ${py(-16)} Z`}
+            d={`M${px(-10)} ${py(-14)} Q ${px(-14)} ${py(-30)} ${px(-11)} ${py(-46)}
+                L${px(11)} ${py(-46)} Q ${px(14)} ${py(-30)} ${px(10)} ${py(-14)} Z`}
             className="fill-fairway"
           />
+          {/* Klippränder i fairway */}
+          {[-40, -32, -24, -18].map((z) => (
+            <rect
+              key={z}
+              x={px(-13)}
+              y={py(z)}
+              width={m(26)}
+              height={m(4)}
+              className="fill-foreground/[0.04]"
+            />
+          ))}
 
-          {/* Bunkrar */}
+          {/* Bunkrar runt greenen */}
           <ellipse
-            cx={px(-15.5)}
-            cy={py(-11)}
+            cx={px(-13.5)}
+            cy={py(-8)}
             rx={m(5.5)}
-            ry={m(3.2)}
-            transform={`rotate(-25 ${px(-15.5)} ${py(-11)})`}
+            ry={m(3)}
+            transform={`rotate(-28 ${px(-13.5)} ${py(-8)})`}
             className="fill-sand"
           />
           <ellipse
-            cx={px(15.5)}
-            cy={py(-11)}
-            rx={m(5.5)}
+            cx={px(13.5)}
+            cy={py(-6)}
+            rx={m(5)}
             ry={m(3.2)}
-            transform={`rotate(25 ${px(15.5)} ${py(-11)})`}
+            transform={`rotate(30 ${px(13.5)} ${py(-6)})`}
             className="fill-sand"
           />
-          <ellipse cx={px(2)} cy={py(17.5)} rx={m(6)} ry={m(2.8)} className="fill-sand" />
+          <ellipse
+            cx={px(12)}
+            cy={py(13)}
+            rx={m(4.6)}
+            ry={m(2.8)}
+            transform={`rotate(-20 ${px(12)} ${py(13)})`}
+            className="fill-sand"
+          />
+          <ellipse cx={px(-4)} cy={py(21)} rx={m(6)} ry={m(2.6)} className="fill-sand" />
 
-          {/* Green */}
+          {/* Smal, djup green */}
           <ellipse
             cx={c}
             cy={c}
@@ -206,8 +249,18 @@ export function DispersionGreen({ shots }: { shots: PrecisionShot[] }) {
             ry={m(GREEN_HALF_DEPTH)}
             className="fill-green-surface"
           />
+          <ellipse cx={c} cy={c} rx={m(GREEN_HALF_WIDTH)} ry={m(GREEN_HALF_DEPTH)} fill="url(#green-shade)" />
+          <ellipse
+            cx={c}
+            cy={c}
+            rx={m(GREEN_HALF_WIDTH)}
+            ry={m(GREEN_HALF_DEPTH)}
+            fill="none"
+            className="stroke-fairway"
+            strokeWidth="2"
+          />
 
-          {/* Avståndsringar */}
+          {/* Avståndsringar 5 / 10 / 15 m */}
           {DISTANCE_RINGS.map((d) => (
             <g key={d}>
               <circle
@@ -215,18 +268,19 @@ export function DispersionGreen({ shots }: { shots: PrecisionShot[] }) {
                 cy={c}
                 r={m(d)}
                 fill="none"
-                strokeWidth="1"
-                strokeDasharray="3 4"
+                strokeWidth="1.2"
+                strokeDasharray="4 4"
                 className={RING_STYLE[d]}
               />
               <text
-                x={c + 2}
-                y={py(d) - 3}
-                className="fill-foreground/50"
+                x={c + m(d) * 0.72}
+                y={py(d * 0.72) - 2}
+                className="fill-background/85"
                 fontSize="8"
-                textAnchor="start"
+                fontWeight="600"
+                textAnchor="middle"
               >
-                {d} m
+                {d}
               </text>
             </g>
           ))}
@@ -242,26 +296,20 @@ export function DispersionGreen({ shots }: { shots: PrecisionShot[] }) {
                 cx={px(s.offline * k)}
                 cy={py(lengthError(s) * k)}
                 r="4.5"
-                className={clamped ? "fill-foreground/35" : "fill-foreground/70"}
-                stroke="currentColor"
-                strokeOpacity="0.15"
+                className={shotTone(s)}
+                opacity={clamped ? 0.5 : 0.95}
+                stroke="black"
+                strokeOpacity="0.25"
               />
             );
           })}
 
-          {/* Flagga */}
-          <line x1={c} y1={c} x2={c} y2={c - 34} className="stroke-foreground" strokeWidth="1.5" />
-          <path
-            d={`M${c} ${c - 34} L${c + 19} ${c - 28.5} L${c} ${c - 23} Z`}
-            className="fill-flag"
-          />
-          <circle
-            cx={c}
-            cy={c}
-            r="3"
-            className="fill-background stroke-foreground"
-            strokeWidth="1"
-          />
+          {/* Flagga – kort stång så 5-metersringen syns */}
+          <line x1={c} y1={c} x2={c} y2={c - 15} className="stroke-foreground" strokeWidth="1.5" />
+          <path d={`M${c} ${c - 15} L${c + 13} ${c - 11} L${c} ${c - 7} Z`} className="fill-flag" />
+          <circle cx={c} cy={c} r="3" className="fill-background stroke-foreground" strokeWidth="1" />
+
+          <rect x="0" y="0" width={size} height={size} fill="url(#rough-shade)" />
         </g>
         <rect
           x="0.5"
@@ -274,23 +322,10 @@ export function DispersionGreen({ shots }: { shots: PrecisionShot[] }) {
         />
       </svg>
 
-      <div className="mt-4 grid grid-cols-2 gap-2">
-        <MiniStat label="Genomsnitt" value={`${nf(stats.avg)} m`} />
-        <MiniStat label="Median" value={`${nf(stats.median)} m`} />
-        <MiniStat label="Närmast" value={`${nf(stats.best)} m`} />
-        <MiniStat label="Längst bort" value={`${nf(stats.worst)} m`} />
-        <MiniStat label="Greener träffade" value={`${stats.greens}/${stats.count}`} />
-        <MiniStat label="Spridning" value={`${nf(stats.spread, 0)} m`} />
-        <MiniStat label="Birdiechanser (<6 m)" value={`${stats.birdieChances}`} />
-        <MiniStat label="Inom 10 m" value={`${stats.within10}`} />
-      </div>
-
       <div className="mt-3 flex flex-wrap justify-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
-        <Legend className="bg-primary" text="0–3 m" />
-        <Legend className="bg-flag" text="3–6 m" />
-        <Legend className="bg-chart-4" text="6–10 m" />
-        <Legend className="bg-muted-foreground" text="10–20 m" />
-        <Legend className="bg-destructive" text="20 m+" />
+        <Legend className="bg-primary" text="Inom 5 m" />
+        <Legend className="bg-flag" text="Längdmiss" />
+        <Legend className="bg-chart-4" text="Sidledsmiss" />
       </div>
       <p className="mt-2 text-center text-xs text-muted-foreground">
         Fast skala 80 × 80 m · uppåt = långt, nedåt = kort
@@ -298,6 +333,7 @@ export function DispersionGreen({ shots }: { shots: PrecisionShot[] }) {
     </div>
   );
 }
+
 
 function MiniStat({ label, value }: { label: string; value: string }) {
   return (
