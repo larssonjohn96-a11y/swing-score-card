@@ -5,6 +5,8 @@ import { loadBunkerSessions } from "@/lib/bunker";
 import { loadSpeedEntries } from "@/lib/speed";
 import { loadLongDriveSessions, sessionBest } from "@/lib/longdrive";
 import { loadFairwaySessions, fairwayHitRate } from "@/lib/fairway";
+import { loadPrecisionSessions } from "@/lib/precision-store";
+import { ApproachLanding } from "@/components/approach-landing";
 
 export const Route = createFileRoute("/kategori/$slug")({
   loader: ({ params }) => {
@@ -54,12 +56,20 @@ function CategoryNotFound() {
 function CategoryPage() {
   const { category } = Route.useLoaderData() as { category: Category };
   const [last, setLast] = useState<Record<string, string | undefined>>({});
+  const [lastPrecisionScore, setLastPrecisionScore] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     const d = loadBunkerSessions();
     const sp = loadSpeedEntries();
     const ld = loadLongDriveSessions();
     const fw = loadFairwaySessions();
+    const precision = loadPrecisionSessions();
+    const lastPrecision = precision[precision.length - 1];
+    setLastPrecisionScore(
+      lastPrecision?.score !== undefined
+        ? `Ditt senaste resultat: ${lastPrecision.score.toFixed(0)} / 100`
+        : undefined,
+    );
     setLast({
       "/fairway": fw.length
         ? `Senast ${fw[fw.length - 1].points.toFixed(0)} p · ${(fairwayHitRate(fw[fw.length - 1].drives) * 100).toFixed(0)}% fairway`
@@ -73,6 +83,10 @@ function CategoryPage() {
       "/bunker": d.length ? `Senast ${d[d.length - 1].avgFeet.toFixed(1)} fot i snitt` : undefined,
     });
   }, []);
+
+  if (category.slug === "approach" && category.tests[0]) {
+    return <ApproachLanding test={category.tests[0]} lastResultLabel={lastPrecisionScore} />;
+  }
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-16 pt-10">
