@@ -6,6 +6,7 @@ export type CategoryTest = {
     | "/fairway"
     | "/teeshot"
     | "/precision"
+    | "/approach"
     | "/pitch"
     | "/chip"
     | "/kortputt"
@@ -88,7 +89,7 @@ export const CATEGORIES: Category[] = [
     description: "Precision på fulla och halva inspel.",
     tests: [
       {
-        to: "/precision",
+        to: "/approach",
         number: "17",
         title: "Approach Test",
         subtitle: "18 slag – 55 till 165 m",

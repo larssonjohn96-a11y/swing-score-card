@@ -1,4 +1,4 @@
-import { Link, createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, Check, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -8,7 +8,7 @@ import {
   type PrecisionShot,
 } from "@/lib/precision";
 import { loadPrecisionSessions, savePrecisionSession } from "@/lib/precision-store";
-import { GreenHero, NumberField } from "@/components/precision-visuals";
+import { NumberField } from "@/components/precision-visuals";
 import { PrecisionReport } from "@/components/precision-report";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 
@@ -33,13 +33,14 @@ export const Route = createFileRoute("/precision")({
   component: PrecisionPage,
 });
 
-type Phase = "intro" | "test" | "result";
+type Phase = "test" | "result";
 
 function PrecisionPage() {
-  const [phase, setPhase] = useState<Phase>("intro");
+  const navigate = useNavigate();
+  const [phase, setPhase] = useState<Phase>("test");
   const [shots, setShots] = useState<PrecisionShot[]>(emptyPrecisionShots);
   const [index, setIndex] = useState(0);
-  const [carry, setCarry] = useState(0);
+  const [carry, setCarry] = useState<number>(PRECISION_TARGETS[0]);
   const [side, setSide] = useState<-1 | 1>(1);
   const [offset, setOffset] = useState(0);
   const [prevScore, setPrevScore] = useState<number | null>(null);
@@ -47,7 +48,7 @@ function PrecisionPage() {
 
   const current = shots[Math.min(index, PRECISION_TOTAL_SHOTS - 1)];
 
-  useHideBottomNav(phase === "intro" || phase === "test");
+  useHideBottomNav(phase === "test");
 
   function start() {
     const sessions = loadPrecisionSessions();
@@ -61,6 +62,12 @@ function PrecisionPage() {
     savedRef.current = false;
     setPhase("test");
   }
+
+  // Testet startar direkt i "test"-fasen – /kategori/approach är numera den
+  // utförliga landningssidan man ser innan man kommer hit.
+  useEffect(() => {
+    start();
+  }, []);
 
   function commit() {
     const offline = side * offset;
@@ -92,7 +99,6 @@ function PrecisionPage() {
     }
   }, [phase, shots]);
 
-  if (phase === "intro") return <Intro onStart={start} />;
   if (phase === "test")
     return (
       <TestScreen
@@ -106,78 +112,10 @@ function PrecisionPage() {
         setOffset={setOffset}
         onCommit={commit}
         onBack={back}
-        onAbort={() => setPhase("intro")}
+        onAbort={() => navigate({ to: "/kategori/$slug", params: { slug: "approach" } })}
       />
     );
   return <ResultScreen shots={shots} prevScore={prevScore} onRestart={start} />;
-}
-
-/* ---------------------------------------------------------------- intro */
-
-function Intro({ onStart }: { onStart: () => void }) {
-  return (
-    <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-20 pt-10">
-      <GreenHero />
-
-      <header className="mt-8">
-        <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Approach</p>
-        <h1 className="mt-2 text-5xl leading-none">Inspelstest</h1>
-        <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-          Slå 18 inspel och se exakt hur nära flaggan du landar – avstånd för avstånd.
-        </p>
-      </header>
-
-      <section className="mt-8 rounded-3xl border border-border bg-card p-6">
-        <ul className="space-y-3 text-sm leading-relaxed">
-          <Bullet>18 slag: nio avstånd, 55–165 m, i två varv</Bullet>
-          <Bullet>Ett slag i taget – du matar in carry och sidled</Bullet>
-          <Bullet>Cirka 20 minuter på range eller simulator</Bullet>
-          <Bullet>Resultatet visas först när alla slag är klara</Bullet>
-        </ul>
-      </section>
-
-      <section className="mt-10">
-        <h2 className="font-display text-2xl leading-none">Efter testet får du</h2>
-        <ul className="mt-4 space-y-3 text-sm leading-relaxed">
-          <Bullet>Precision Score 0–100</Bullet>
-          <Bullet>Uppskattad handicapnivå</Bullet>
-          <Bullet>Spridningsanalys</Bullet>
-          <Bullet>Identifierade styrkor</Bullet>
-          <Bullet>Förbättringsområden</Bullet>
-          <Bullet>Personliga träningsrekommendationer</Bullet>
-        </ul>
-      </section>
-
-      <button
-        onClick={onStart}
-        className="mt-10 w-full rounded-2xl bg-primary py-5 font-[family-name:var(--font-display)] text-2xl text-primary-foreground"
-      >
-        Starta test
-      </button>
-
-      <div className="mt-8 flex justify-center gap-6 text-sm text-muted-foreground">
-        <Link to="/precision-historik" className="underline-offset-4 hover:underline">
-          Se historik
-        </Link>
-        <Link
-          to="/kategori/$slug"
-          params={{ slug: "approach" }}
-          className="underline-offset-4 hover:underline"
-        >
-          Tillbaka
-        </Link>
-      </div>
-    </main>
-  );
-}
-
-function Bullet({ children }: { children: React.ReactNode }) {
-  return (
-    <li className="flex gap-3">
-      <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
-      <span>{children}</span>
-    </li>
-  );
 }
 
 /* ----------------------------------------------------------------- test */

@@ -11,7 +11,6 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { GreenHero } from "@/components/precision-visuals";
-import type { CategoryTest } from "@/lib/categories";
 
 const VALUE_ITEMS = [
   { icon: Target, label: "Approach Score 0–100" },
@@ -24,21 +23,16 @@ const VALUE_ITEMS = [
 ];
 
 /**
- * Premium landningssida för Approach Test – ersätter den generiska
- * kategorilistan för approach-kategorin. Samma visuella språk som
- * testets egen introskärm: stor hero, kort ingress, värdet först.
+ * Utförlig landningssida för ett specifikt test (Approach Test), nådd via
+ * ett kompakt kort på kategorisidan. Stor hero, kort värdeladdad ingress,
+ * värdet först – tekniska detaljer längre ned.
  */
-export function ApproachLanding({
-  test,
-  lastResultLabel,
-}: {
-  test: CategoryTest;
-  lastResultLabel?: string;
-}) {
+export function ApproachLanding({ lastResultLabel }: { lastResultLabel?: string }) {
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-16 pt-6">
       <Link
-        to="/"
+        to="/kategori/$slug"
+        params={{ slug: "approach" }}
         aria-label="Tillbaka"
         className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:text-foreground"
       >
@@ -50,7 +44,7 @@ export function ApproachLanding({
       </div>
 
       <p className="mt-6 text-xs uppercase tracking-[0.3em] text-flag">Approach</p>
-      <h1 className="mt-2 text-5xl leading-none">{test.title}</h1>
+      <h1 className="mt-2 text-5xl leading-none">Approach Test</h1>
       <p className="mt-4 text-base leading-relaxed text-muted-foreground">
         Se exakt hur nära flaggan du landar – avstånd för avstånd. Testet avslöjar mönstren bakom
         dina inspel och vad som avgör hur många birdiechanser du skapar.
@@ -95,7 +89,7 @@ export function ApproachLanding({
       ) : null}
 
       <Link
-        to={test.to}
+        to="/precision"
         className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-5 font-[family-name:var(--font-display)] text-2xl text-primary-foreground"
       >
         Starta Approach Test

@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApproachRouteImport } from './routes/approach'
 import { Route as BunkerRouteImport } from './routes/bunker'
 import { Route as ChipRouteImport } from './routes/chip'
 import { Route as CombineRouteImport } from './routes/combine'
@@ -35,6 +36,11 @@ import { Route as FramstegSlugTestRouteImport } from './routes/framsteg.$slug.$t
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApproachRoute = ApproachRouteImport.update({
+  id: '/approach',
+  path: '/approach',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BunkerRoute = BunkerRouteImport.update({
@@ -145,6 +151,7 @@ const FramstegSlugTestRoute = FramstegSlugTestRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/approach': typeof ApproachRoute
   '/bunker': typeof BunkerRoute
   '/chip': typeof ChipRoute
   '/combine': typeof CombineRoute
@@ -169,6 +176,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/approach': typeof ApproachRoute
   '/bunker': typeof BunkerRoute
   '/chip': typeof ChipRoute
   '/combine': typeof CombineRoute
@@ -194,6 +202,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/approach': typeof ApproachRoute
   '/bunker': typeof BunkerRoute
   '/chip': typeof ChipRoute
   '/combine': typeof CombineRoute
@@ -220,6 +229,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/approach'
     | '/bunker'
     | '/chip'
     | '/combine'
@@ -244,6 +254,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/approach'
     | '/bunker'
     | '/chip'
     | '/combine'
@@ -268,6 +279,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/approach'
     | '/bunker'
     | '/chip'
     | '/combine'
@@ -293,6 +305,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ApproachRoute: typeof ApproachRoute
   BunkerRoute: typeof BunkerRoute
   ChipRoute: typeof ChipRoute
   CombineRoute: typeof CombineRoute
@@ -322,6 +335,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/approach': {
+      id: '/approach'
+      path: '/approach'
+      fullPath: '/approach'
+      preLoaderRoute: typeof ApproachRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/bunker': {
@@ -488,6 +508,7 @@ const FramstegSlugRouteWithChildren = FramstegSlugRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ApproachRoute: ApproachRoute,
   BunkerRoute: BunkerRoute,
   ChipRoute: ChipRoute,
   CombineRoute: CombineRoute,
