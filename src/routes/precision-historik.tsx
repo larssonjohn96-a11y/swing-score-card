@@ -191,11 +191,6 @@ function PrecisionHistoryPage() {
               items={overview.analysis.improvements}
               tone="text-destructive"
             />
-            <Block
-              title="Inför nästa träningspass"
-              items={overview.analysis.focus}
-              tone="text-flag"
-            />
           </section>
 
           <section>
