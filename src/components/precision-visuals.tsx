@@ -1,4 +1,5 @@
 import { Minus, Plus } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import {
   DISPERSION_RANGE,
   DISTANCE_RINGS,
@@ -50,7 +51,8 @@ export function GreenHero() {
   );
 }
 
-/** Sifferfält med manuell inmatning och finjustering (−5 / −1 / +1 / +5). */
+/** Kompakt sifferfält med manuell inmatning, finjustering och en diskret
+ *  uppdateringsanimation (färgmarkering + mjuk skalning) när värdet ändras. */
 export function NumberField({
   label,
   value,
@@ -71,21 +73,32 @@ export function NumberField({
   const set = (n: number) => onChange(Math.max(min, Math.round(n)));
   const atMin = value <= min;
 
+  const [flash, setFlash] = useState(false);
+  const prevValue = useRef(value);
+  useEffect(() => {
+    if (prevValue.current !== value) {
+      prevValue.current = value;
+      setFlash(true);
+      const t = setTimeout(() => setFlash(false), 260);
+      return () => clearTimeout(t);
+    }
+  }, [value]);
+
   return (
-    <div className="rounded-3xl border border-border bg-card p-4">
+    <div className="rounded-2xl border border-border bg-card p-3">
       <div className="flex items-baseline justify-between">
-        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{label}</p>
-        {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
+        <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">{label}</p>
+        {hint ? <p className="text-[11px] text-muted-foreground">{hint}</p> : null}
       </div>
-      <div className="mt-2 flex items-center gap-3">
+      <div className="mt-1 flex items-center gap-2">
         <button
           type="button"
           onClick={() => set(value - 1)}
           disabled={atMin}
           aria-label={`Minska ${label}`}
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-border active:bg-muted disabled:opacity-30 disabled:active:bg-transparent"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border active:bg-muted disabled:opacity-30 disabled:active:bg-transparent"
         >
-          <Minus className="h-5 w-5" />
+          <Minus className="h-4 w-4" />
         </button>
         <label className="flex flex-1 items-baseline justify-center gap-1">
           <span className="sr-only">{label}</span>
@@ -95,7 +108,9 @@ export function NumberField({
             value={String(value)}
             onFocus={(e) => e.currentTarget.select()}
             onChange={(e) => set(Number(e.target.value) || 0)}
-            className="w-full bg-transparent text-center font-[family-name:var(--font-display)] text-5xl leading-none outline-none"
+            className={`w-full bg-transparent text-center font-[family-name:var(--font-display)] text-4xl leading-none outline-none transition-[color,transform] duration-200 ${
+              flash ? "scale-110 text-flag" : "scale-100 text-foreground"
+            }`}
           />
           <span className="text-sm text-muted-foreground">{unit}</span>
         </label>
@@ -103,13 +118,13 @@ export function NumberField({
           type="button"
           onClick={() => set(value + 1)}
           aria-label={`Öka ${label}`}
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-border active:bg-muted"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border active:bg-muted"
         >
-          <Plus className="h-5 w-5" />
+          <Plus className="h-4 w-4" />
         </button>
       </div>
       <div
-        className="mt-3 grid gap-2"
+        className="mt-2 grid gap-1.5"
         style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}
       >
         {steps.map((d) => {
@@ -120,7 +135,7 @@ export function NumberField({
               type="button"
               onClick={() => set(value + d)}
               disabled={disabled}
-              className="rounded-xl border border-border py-2 text-sm font-semibold text-muted-foreground active:bg-muted disabled:opacity-30 disabled:active:bg-transparent"
+              className="rounded-lg border border-border py-1.5 text-xs font-semibold text-muted-foreground active:bg-muted disabled:opacity-30 disabled:active:bg-transparent"
             >
               {d > 0 ? `+${d}` : d}
             </button>
@@ -249,7 +264,13 @@ export function DispersionGreen({ shots }: { shots: PrecisionShot[] }) {
             ry={m(GREEN_HALF_DEPTH)}
             className="fill-green-surface"
           />
-          <ellipse cx={c} cy={c} rx={m(GREEN_HALF_WIDTH)} ry={m(GREEN_HALF_DEPTH)} fill="url(#green-shade)" />
+          <ellipse
+            cx={c}
+            cy={c}
+            rx={m(GREEN_HALF_WIDTH)}
+            ry={m(GREEN_HALF_DEPTH)}
+            fill="url(#green-shade)"
+          />
           <ellipse
             cx={c}
             cy={c}
@@ -307,7 +328,13 @@ export function DispersionGreen({ shots }: { shots: PrecisionShot[] }) {
           {/* Flagga – kort stång så 5-metersringen syns */}
           <line x1={c} y1={c} x2={c} y2={c - 15} className="stroke-foreground" strokeWidth="1.5" />
           <path d={`M${c} ${c - 15} L${c + 13} ${c - 11} L${c} ${c - 7} Z`} className="fill-flag" />
-          <circle cx={c} cy={c} r="3" className="fill-background stroke-foreground" strokeWidth="1" />
+          <circle
+            cx={c}
+            cy={c}
+            r="3"
+            className="fill-background stroke-foreground"
+            strokeWidth="1"
+          />
 
           <rect x="0" y="0" width={size} height={size} fill="url(#rough-shade)" />
         </g>
@@ -333,7 +360,6 @@ export function DispersionGreen({ shots }: { shots: PrecisionShot[] }) {
     </div>
   );
 }
-
 
 function MiniStat({ label, value }: { label: string; value: string }) {
   return (
