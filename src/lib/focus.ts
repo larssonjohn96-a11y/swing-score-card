@@ -1,8 +1,8 @@
 import { CATEGORIES } from "@/lib/categories";
-import { loadSessions } from "@/lib/drill";
 import { loadBunkerSessions } from "@/lib/bunker";
 import { loadSpeedEntries } from "@/lib/speed";
 import { loadLongDriveSessions, sessionBest } from "@/lib/longdrive";
+import { loadPrecisionSessions } from "@/lib/precision-store";
 import { TOUR_LEVEL, type Level } from "@/lib/levels";
 
 export type CategoryRating = {
@@ -24,22 +24,24 @@ function lastAvg(values: number[], n = 3) {
 
 export function computeRatings(): CategoryRating[] {
   const level: Level = TOUR_LEVEL;
-  const drill = loadSessions();
+  const precision = loadPrecisionSessions();
   const bunker = loadBunkerSessions();
   const speed = loadSpeedEntries();
   const longdrive = loadLongDriveSessions();
 
-  // Approach: score 0–3.0 jämfört med nivåns score
-  const drillAvg = lastAvg(drill.map((s) => s.score));
+  // Approach: Approach Score 0–100 (redan normaliserad)
+  const approachAvg = lastAvg(
+    precision.map((s) => s.score).filter((v): v is number => typeof v === "number"),
+  );
   const approach: CategoryRating = {
     slug: "approach",
     title: "Approach",
     hasTests: true,
-    rating: drillAvg === undefined ? undefined : clamp((drillAvg / level.drillScore) * 100),
+    rating: approachAvg === undefined ? undefined : clamp(approachAvg),
     detail:
-      drillAvg === undefined
-        ? "Kör 18 bollar för att få en nivå."
-        : `Snitt ${drillAvg.toFixed(1)} av 3.0 (${level.label} ${level.drillScore.toFixed(1)})`,
+      approachAvg === undefined
+        ? "Kör Approach Test för att få en nivå."
+        : `Snitt ${approachAvg.toFixed(0)} av 100`,
   };
 
   // Around the green: snittfot i bunker, lägre är bättre

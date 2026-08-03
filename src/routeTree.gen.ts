@@ -9,113 +9,32 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TraningRouteImport } from './routes/traning'
-import { Route as TornadoRouteImport } from './routes/tornado'
-import { Route as TopplistaRouteImport } from './routes/topplista'
-import { Route as TeeshotRouteImport } from './routes/teeshot'
-import { Route as SpeedRouteImport } from './routes/speed'
-import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
-import { Route as PrecisionHistorikRouteImport } from './routes/precision-historik'
-import { Route as PrecisionRouteImport } from './routes/precision'
-import { Route as PitchRouteImport } from './routes/pitch'
-import { Route as LongdriveRouteImport } from './routes/longdrive'
-import { Route as LagputtRouteImport } from './routes/lagputt'
-import { Route as KortputtRouteImport } from './routes/kortputt'
-import { Route as KontoRouteImport } from './routes/konto'
-import { Route as FairwayRouteImport } from './routes/fairway'
-import { Route as DrillRouteImport } from './routes/drill'
-import { Route as CombineRouteImport } from './routes/combine'
-import { Route as ChipRouteImport } from './routes/chip'
-import { Route as BunkerRouteImport } from './routes/bunker'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as BunkerRouteImport } from './routes/bunker'
+import { Route as ChipRouteImport } from './routes/chip'
+import { Route as CombineRouteImport } from './routes/combine'
+import { Route as FairwayRouteImport } from './routes/fairway'
+import { Route as KontoRouteImport } from './routes/konto'
+import { Route as KortputtRouteImport } from './routes/kortputt'
+import { Route as LagputtRouteImport } from './routes/lagputt'
+import { Route as LongdriveRouteImport } from './routes/longdrive'
+import { Route as PitchRouteImport } from './routes/pitch'
+import { Route as PrecisionRouteImport } from './routes/precision'
+import { Route as PrecisionHistorikRouteImport } from './routes/precision-historik'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as SpeedRouteImport } from './routes/speed'
+import { Route as TeeshotRouteImport } from './routes/teeshot'
+import { Route as TopplistaRouteImport } from './routes/topplista'
+import { Route as TornadoRouteImport } from './routes/tornado'
+import { Route as TraningRouteImport } from './routes/traning'
 import { Route as FramstegIndexRouteImport } from './routes/framsteg.index'
-import { Route as KategoriSlugRouteImport } from './routes/kategori.$slug'
 import { Route as FramstegSlugRouteImport } from './routes/framsteg.$slug'
+import { Route as KategoriSlugRouteImport } from './routes/kategori.$slug'
 import { Route as FramstegSlugTestRouteImport } from './routes/framsteg.$slug.$test'
 
-const TraningRoute = TraningRouteImport.update({
-  id: '/traning',
-  path: '/traning',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TornadoRoute = TornadoRouteImport.update({
-  id: '/tornado',
-  path: '/tornado',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TopplistaRoute = TopplistaRouteImport.update({
-  id: '/topplista',
-  path: '/topplista',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TeeshotRoute = TeeshotRouteImport.update({
-  id: '/teeshot',
-  path: '/teeshot',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SpeedRoute = SpeedRouteImport.update({
-  id: '/speed',
-  path: '/speed',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
-  id: '/sitemap.xml',
-  path: '/sitemap.xml',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PrecisionHistorikRoute = PrecisionHistorikRouteImport.update({
-  id: '/precision-historik',
-  path: '/precision-historik',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PrecisionRoute = PrecisionRouteImport.update({
-  id: '/precision',
-  path: '/precision',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PitchRoute = PitchRouteImport.update({
-  id: '/pitch',
-  path: '/pitch',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LongdriveRoute = LongdriveRouteImport.update({
-  id: '/longdrive',
-  path: '/longdrive',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LagputtRoute = LagputtRouteImport.update({
-  id: '/lagputt',
-  path: '/lagputt',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const KortputtRoute = KortputtRouteImport.update({
-  id: '/kortputt',
-  path: '/kortputt',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const KontoRoute = KontoRouteImport.update({
-  id: '/konto',
-  path: '/konto',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FairwayRoute = FairwayRouteImport.update({
-  id: '/fairway',
-  path: '/fairway',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DrillRoute = DrillRouteImport.update({
-  id: '/drill',
-  path: '/drill',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CombineRoute = CombineRouteImport.update({
-  id: '/combine',
-  path: '/combine',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ChipRoute = ChipRouteImport.update({
-  id: '/chip',
-  path: '/chip',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BunkerRoute = BunkerRouteImport.update({
@@ -123,9 +42,84 @@ const BunkerRoute = BunkerRouteImport.update({
   path: '/bunker',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const ChipRoute = ChipRouteImport.update({
+  id: '/chip',
+  path: '/chip',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CombineRoute = CombineRouteImport.update({
+  id: '/combine',
+  path: '/combine',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FairwayRoute = FairwayRouteImport.update({
+  id: '/fairway',
+  path: '/fairway',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KontoRoute = KontoRouteImport.update({
+  id: '/konto',
+  path: '/konto',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KortputtRoute = KortputtRouteImport.update({
+  id: '/kortputt',
+  path: '/kortputt',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LagputtRoute = LagputtRouteImport.update({
+  id: '/lagputt',
+  path: '/lagputt',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LongdriveRoute = LongdriveRouteImport.update({
+  id: '/longdrive',
+  path: '/longdrive',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PitchRoute = PitchRouteImport.update({
+  id: '/pitch',
+  path: '/pitch',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrecisionRoute = PrecisionRouteImport.update({
+  id: '/precision',
+  path: '/precision',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrecisionHistorikRoute = PrecisionHistorikRouteImport.update({
+  id: '/precision-historik',
+  path: '/precision-historik',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SpeedRoute = SpeedRouteImport.update({
+  id: '/speed',
+  path: '/speed',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TeeshotRoute = TeeshotRouteImport.update({
+  id: '/teeshot',
+  path: '/teeshot',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TopplistaRoute = TopplistaRouteImport.update({
+  id: '/topplista',
+  path: '/topplista',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TornadoRoute = TornadoRouteImport.update({
+  id: '/tornado',
+  path: '/tornado',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TraningRoute = TraningRouteImport.update({
+  id: '/traning',
+  path: '/traning',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FramstegIndexRoute = FramstegIndexRouteImport.update({
@@ -133,14 +127,14 @@ const FramstegIndexRoute = FramstegIndexRouteImport.update({
   path: '/framsteg/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const KategoriSlugRoute = KategoriSlugRouteImport.update({
-  id: '/kategori/$slug',
-  path: '/kategori/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const FramstegSlugRoute = FramstegSlugRouteImport.update({
   id: '/framsteg/$slug',
   path: '/framsteg/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KategoriSlugRoute = KategoriSlugRouteImport.update({
+  id: '/kategori/$slug',
+  path: '/kategori/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FramstegSlugTestRoute = FramstegSlugTestRouteImport.update({
@@ -154,7 +148,6 @@ export interface FileRoutesByFullPath {
   '/bunker': typeof BunkerRoute
   '/chip': typeof ChipRoute
   '/combine': typeof CombineRoute
-  '/drill': typeof DrillRoute
   '/fairway': typeof FairwayRoute
   '/konto': typeof KontoRoute
   '/kortputt': typeof KortputtRoute
@@ -179,7 +172,6 @@ export interface FileRoutesByTo {
   '/bunker': typeof BunkerRoute
   '/chip': typeof ChipRoute
   '/combine': typeof CombineRoute
-  '/drill': typeof DrillRoute
   '/fairway': typeof FairwayRoute
   '/konto': typeof KontoRoute
   '/kortputt': typeof KortputtRoute
@@ -205,7 +197,6 @@ export interface FileRoutesById {
   '/bunker': typeof BunkerRoute
   '/chip': typeof ChipRoute
   '/combine': typeof CombineRoute
-  '/drill': typeof DrillRoute
   '/fairway': typeof FairwayRoute
   '/konto': typeof KontoRoute
   '/kortputt': typeof KortputtRoute
@@ -232,7 +223,6 @@ export interface FileRouteTypes {
     | '/bunker'
     | '/chip'
     | '/combine'
-    | '/drill'
     | '/fairway'
     | '/konto'
     | '/kortputt'
@@ -257,7 +247,6 @@ export interface FileRouteTypes {
     | '/bunker'
     | '/chip'
     | '/combine'
-    | '/drill'
     | '/fairway'
     | '/konto'
     | '/kortputt'
@@ -282,7 +271,6 @@ export interface FileRouteTypes {
     | '/bunker'
     | '/chip'
     | '/combine'
-    | '/drill'
     | '/fairway'
     | '/konto'
     | '/kortputt'
@@ -308,7 +296,6 @@ export interface RootRouteChildren {
   BunkerRoute: typeof BunkerRoute
   ChipRoute: typeof ChipRoute
   CombineRoute: typeof CombineRoute
-  DrillRoute: typeof DrillRoute
   FairwayRoute: typeof FairwayRoute
   KontoRoute: typeof KontoRoute
   KortputtRoute: typeof KortputtRoute
@@ -330,123 +317,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/traning': {
-      id: '/traning'
-      path: '/traning'
-      fullPath: '/traning'
-      preLoaderRoute: typeof TraningRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/tornado': {
-      id: '/tornado'
-      path: '/tornado'
-      fullPath: '/tornado'
-      preLoaderRoute: typeof TornadoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/topplista': {
-      id: '/topplista'
-      path: '/topplista'
-      fullPath: '/topplista'
-      preLoaderRoute: typeof TopplistaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/teeshot': {
-      id: '/teeshot'
-      path: '/teeshot'
-      fullPath: '/teeshot'
-      preLoaderRoute: typeof TeeshotRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/speed': {
-      id: '/speed'
-      path: '/speed'
-      fullPath: '/speed'
-      preLoaderRoute: typeof SpeedRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/precision-historik': {
-      id: '/precision-historik'
-      path: '/precision-historik'
-      fullPath: '/precision-historik'
-      preLoaderRoute: typeof PrecisionHistorikRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/precision': {
-      id: '/precision'
-      path: '/precision'
-      fullPath: '/precision'
-      preLoaderRoute: typeof PrecisionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/pitch': {
-      id: '/pitch'
-      path: '/pitch'
-      fullPath: '/pitch'
-      preLoaderRoute: typeof PitchRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/longdrive': {
-      id: '/longdrive'
-      path: '/longdrive'
-      fullPath: '/longdrive'
-      preLoaderRoute: typeof LongdriveRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lagputt': {
-      id: '/lagputt'
-      path: '/lagputt'
-      fullPath: '/lagputt'
-      preLoaderRoute: typeof LagputtRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/kortputt': {
-      id: '/kortputt'
-      path: '/kortputt'
-      fullPath: '/kortputt'
-      preLoaderRoute: typeof KortputtRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/konto': {
-      id: '/konto'
-      path: '/konto'
-      fullPath: '/konto'
-      preLoaderRoute: typeof KontoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/fairway': {
-      id: '/fairway'
-      path: '/fairway'
-      fullPath: '/fairway'
-      preLoaderRoute: typeof FairwayRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/drill': {
-      id: '/drill'
-      path: '/drill'
-      fullPath: '/drill'
-      preLoaderRoute: typeof DrillRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/combine': {
-      id: '/combine'
-      path: '/combine'
-      fullPath: '/combine'
-      preLoaderRoute: typeof CombineRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/chip': {
-      id: '/chip'
-      path: '/chip'
-      fullPath: '/chip'
-      preLoaderRoute: typeof ChipRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/bunker': {
@@ -456,11 +331,116 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BunkerRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/chip': {
+      id: '/chip'
+      path: '/chip'
+      fullPath: '/chip'
+      preLoaderRoute: typeof ChipRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/combine': {
+      id: '/combine'
+      path: '/combine'
+      fullPath: '/combine'
+      preLoaderRoute: typeof CombineRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/fairway': {
+      id: '/fairway'
+      path: '/fairway'
+      fullPath: '/fairway'
+      preLoaderRoute: typeof FairwayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/konto': {
+      id: '/konto'
+      path: '/konto'
+      fullPath: '/konto'
+      preLoaderRoute: typeof KontoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/kortputt': {
+      id: '/kortputt'
+      path: '/kortputt'
+      fullPath: '/kortputt'
+      preLoaderRoute: typeof KortputtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lagputt': {
+      id: '/lagputt'
+      path: '/lagputt'
+      fullPath: '/lagputt'
+      preLoaderRoute: typeof LagputtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/longdrive': {
+      id: '/longdrive'
+      path: '/longdrive'
+      fullPath: '/longdrive'
+      preLoaderRoute: typeof LongdriveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pitch': {
+      id: '/pitch'
+      path: '/pitch'
+      fullPath: '/pitch'
+      preLoaderRoute: typeof PitchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/precision': {
+      id: '/precision'
+      path: '/precision'
+      fullPath: '/precision'
+      preLoaderRoute: typeof PrecisionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/precision-historik': {
+      id: '/precision-historik'
+      path: '/precision-historik'
+      fullPath: '/precision-historik'
+      preLoaderRoute: typeof PrecisionHistorikRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/speed': {
+      id: '/speed'
+      path: '/speed'
+      fullPath: '/speed'
+      preLoaderRoute: typeof SpeedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/teeshot': {
+      id: '/teeshot'
+      path: '/teeshot'
+      fullPath: '/teeshot'
+      preLoaderRoute: typeof TeeshotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/topplista': {
+      id: '/topplista'
+      path: '/topplista'
+      fullPath: '/topplista'
+      preLoaderRoute: typeof TopplistaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tornado': {
+      id: '/tornado'
+      path: '/tornado'
+      fullPath: '/tornado'
+      preLoaderRoute: typeof TornadoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/traning': {
+      id: '/traning'
+      path: '/traning'
+      fullPath: '/traning'
+      preLoaderRoute: typeof TraningRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/framsteg/': {
@@ -470,18 +450,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FramstegIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/kategori/$slug': {
-      id: '/kategori/$slug'
-      path: '/kategori/$slug'
-      fullPath: '/kategori/$slug'
-      preLoaderRoute: typeof KategoriSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/framsteg/$slug': {
       id: '/framsteg/$slug'
       path: '/framsteg/$slug'
       fullPath: '/framsteg/$slug'
       preLoaderRoute: typeof FramstegSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/kategori/$slug': {
+      id: '/kategori/$slug'
+      path: '/kategori/$slug'
+      fullPath: '/kategori/$slug'
+      preLoaderRoute: typeof KategoriSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/framsteg/$slug/$test': {
@@ -511,7 +491,6 @@ const rootRouteChildren: RootRouteChildren = {
   BunkerRoute: BunkerRoute,
   ChipRoute: ChipRoute,
   CombineRoute: CombineRoute,
-  DrillRoute: DrillRoute,
   FairwayRoute: FairwayRoute,
   KontoRoute: KontoRoute,
   KortputtRoute: KortputtRoute,
@@ -533,3 +512,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

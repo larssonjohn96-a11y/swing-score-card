@@ -14,8 +14,6 @@ export type Level = {
   carryYds: number;
   /** snitt närhet till hål från greenbunker, fot (lägre är bättre) */
   bunkerFeet: number;
-  /** score i 18-bollarsdrillen, 0–3.0 */
-  drillScore: number;
   /** wedge: snittavstånd till hål i procent av slagets längd (lägre är bättre) */
   wedgePct: number;
 };
@@ -29,7 +27,6 @@ export const LEVELS: Level[] = [
     carryM: 258,
     carryYds: 282,
     bunkerFeet: 9,
-    drillScore: 2.6,
     wedgePct: 5.5,
   },
   {
@@ -40,7 +37,6 @@ export const LEVELS: Level[] = [
     carryM: 286,
     carryYds: 313,
     bunkerFeet: 9,
-    drillScore: 2.8,
     wedgePct: 6,
   },
 ];

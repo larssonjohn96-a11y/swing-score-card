@@ -1,6 +1,5 @@
 export type CategoryTest = {
   to:
-    | "/drill"
     | "/bunker"
     | "/speed"
     | "/longdrive"
@@ -78,7 +77,6 @@ export const CATEGORIES: Category[] = [
           "Inom längdspann (±10 m) och 25 m bredd = 1 poäng.",
         ],
         result: "RESULTAT: POÄNG 0–9",
-
       },
     ],
   },
@@ -89,14 +87,6 @@ export const CATEGORIES: Category[] = [
     subtitle: "Inspel mot green",
     description: "Precision på fulla och halva inspel.",
     tests: [
-      {
-        to: "/drill",
-        number: "1",
-        title: "18 bollar - jÖNKÖPINGS RAnGE",
-        subtitle: "75 / 125 / 150 meter",
-        bullets: ["2 bollar per avstånd innan du går vidare.", "Tre varv ger 3.0 i score."],
-        result: "RESULTAT: SCORE 0–3.0",
-      },
       {
         to: "/precision",
         number: "17",

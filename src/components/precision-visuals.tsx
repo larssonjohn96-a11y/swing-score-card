@@ -69,6 +69,7 @@ export function NumberField({
   steps?: number[];
 }) {
   const set = (n: number) => onChange(Math.max(min, Math.round(n)));
+  const atMin = value <= min;
 
   return (
     <div className="rounded-3xl border border-border bg-card p-4">
@@ -80,8 +81,9 @@ export function NumberField({
         <button
           type="button"
           onClick={() => set(value - 1)}
+          disabled={atMin}
           aria-label={`Minska ${label}`}
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-border active:bg-muted"
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-border active:bg-muted disabled:opacity-30 disabled:active:bg-transparent"
         >
           <Minus className="h-5 w-5" />
         </button>
@@ -110,19 +112,21 @@ export function NumberField({
         className="mt-3 grid gap-2"
         style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}
       >
-
-        {steps.map((d) => (
-          <button
-            key={d}
-            type="button"
-            onClick={() => set(value + d)}
-            className="rounded-xl border border-border py-2 text-sm font-semibold text-muted-foreground active:bg-muted"
-          >
-            {d > 0 ? `+${d}` : d}
-          </button>
-        ))}
+        {steps.map((d) => {
+          const disabled = d < 0 && atMin;
+          return (
+            <button
+              key={d}
+              type="button"
+              onClick={() => set(value + d)}
+              disabled={disabled}
+              className="rounded-xl border border-border py-2 text-sm font-semibold text-muted-foreground active:bg-muted disabled:opacity-30 disabled:active:bg-transparent"
+            >
+              {d > 0 ? `+${d}` : d}
+            </button>
+          );
+        })}
       </div>
-
     </div>
   );
 }
@@ -247,8 +251,17 @@ export function DispersionGreen({ shots }: { shots: PrecisionShot[] }) {
 
           {/* Flagga */}
           <line x1={c} y1={c} x2={c} y2={c - 34} className="stroke-foreground" strokeWidth="1.5" />
-          <path d={`M${c} ${c - 34} L${c + 19} ${c - 28.5} L${c} ${c - 23} Z`} className="fill-flag" />
-          <circle cx={c} cy={c} r="3" className="fill-background stroke-foreground" strokeWidth="1" />
+          <path
+            d={`M${c} ${c - 34} L${c + 19} ${c - 28.5} L${c} ${c - 23} Z`}
+            className="fill-flag"
+          />
+          <circle
+            cx={c}
+            cy={c}
+            r="3"
+            className="fill-background stroke-foreground"
+            strokeWidth="1"
+          />
         </g>
         <rect
           x="0.5"
@@ -303,4 +316,3 @@ function Legend({ className, text }: { className: string; text: string }) {
     </span>
   );
 }
-

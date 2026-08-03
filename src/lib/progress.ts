@@ -1,5 +1,4 @@
 import { CATEGORIES, type CategoryTest } from "@/lib/categories";
-import { loadSessions } from "@/lib/drill";
 import { loadBunkerSessions } from "@/lib/bunker";
 import { loadSpeedEntries } from "@/lib/speed";
 import { loadLongDriveSessions, sessionBest } from "@/lib/longdrive";
@@ -91,20 +90,6 @@ export const PROGRESS_TESTS: ProgressTest[] = [
     load: () =>
       loadTeeSessions()
         .map((s) => ({ date: day(s.date), value: s.points }))
-        .sort(byDate),
-  },
-  {
-    id: "drill",
-    title: "18 bollar",
-    categorySlug: "approach",
-    to: "/drill",
-    metric: "Score",
-    unit: "/ 3.0",
-    higherIsBetter: true,
-    decimals: 1,
-    load: () =>
-      loadSessions()
-        .map((s) => ({ date: day(s.date), value: s.score }))
         .sort(byDate),
   },
   {

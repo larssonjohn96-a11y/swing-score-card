@@ -213,7 +213,7 @@ function TestScreen({
   const perRound = PRECISION_TOTAL_SHOTS / 2;
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-10 pt-6">
+    <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-32 pt-6">
       <div className="flex items-center justify-between">
         <button
           onClick={onBack}
@@ -283,12 +283,10 @@ function TestScreen({
         <div className="rounded-3xl border border-border bg-card p-4">
           <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Riktning</p>
           <div className="mt-2 grid grid-cols-2 gap-2">
-            {(
-              [
-                { v: -1 as const, label: "Vänster" },
-                { v: 1 as const, label: "Höger" },
-              ]
-            ).map((o) => (
+            {[
+              { v: -1 as const, label: "Vänster" },
+              { v: 1 as const, label: "Höger" },
+            ].map((o) => (
               <button
                 key={o.label}
                 onClick={() => setSide(o.v)}
@@ -312,16 +310,17 @@ function TestScreen({
           steps={[1, 5]}
           hint={offset === 0 ? "rakt på" : side < 0 ? "vänster" : "höger"}
         />
-
       </div>
 
-      <button
-        onClick={onCommit}
-        className="mt-8 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-5 font-[family-name:var(--font-display)] text-2xl text-primary-foreground"
-      >
-        {index + 1 === PRECISION_TOTAL_SHOTS ? "Avsluta test" : "Nästa slag"}
-        <ArrowRight className="h-5 w-5" />
-      </button>
+      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/95 px-6 pb-6 pt-4 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+        <button
+          onClick={onCommit}
+          className="mx-auto flex w-full max-w-md items-center justify-center gap-2 rounded-2xl bg-primary py-5 font-[family-name:var(--font-display)] text-2xl text-primary-foreground"
+        >
+          {index + 1 === PRECISION_TOTAL_SHOTS ? "Avsluta test" : "Nästa slag"}
+          <ArrowRight className="h-5 w-5" />
+        </button>
+      </div>
     </main>
   );
 }

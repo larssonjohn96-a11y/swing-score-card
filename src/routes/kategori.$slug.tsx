@@ -1,7 +1,6 @@
 import { Link, createFileRoute, notFound } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { findCategory, CATEGORIES, type Category, type CategoryTest } from "@/lib/categories";
-import { formatScore, loadSessions } from "@/lib/drill";
 import { loadBunkerSessions } from "@/lib/bunker";
 import { loadSpeedEntries } from "@/lib/speed";
 import { loadLongDriveSessions, sessionBest } from "@/lib/longdrive";
@@ -23,7 +22,10 @@ export const Route = createFileRoute("/kategori/$slug")({
     return {
       meta: [
         { title: `${title} – golftester` },
-        { name: "description", content: `${description} Kör testerna och följ utvecklingen över tid.` },
+        {
+          name: "description",
+          content: `${description} Kör testerna och följ utvecklingen över tid.`,
+        },
         { property: "og:title", content: `${title} – golftester` },
         { property: "og:description", content: description },
         { property: "og:type", content: "website" },
@@ -39,7 +41,10 @@ function CategoryNotFound() {
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-5 pt-16">
       <h1 className="text-4xl">Kategorin finns inte</h1>
-      <Link to="/" className="mt-6 inline-block rounded-full border border-border px-4 py-2 text-sm">
+      <Link
+        to="/"
+        className="mt-6 inline-block rounded-full border border-border px-4 py-2 text-sm"
+      >
         Till menyn
       </Link>
     </main>
@@ -51,8 +56,7 @@ function CategoryPage() {
   const [last, setLast] = useState<Record<string, string | undefined>>({});
 
   useEffect(() => {
-    const d = loadSessions();
-    const b = loadBunkerSessions();
+    const d = loadBunkerSessions();
     const sp = loadSpeedEntries();
     const ld = loadLongDriveSessions();
     const fw = loadFairwaySessions();
@@ -66,8 +70,7 @@ function CategoryPage() {
       "/speed": sp.length
         ? `Senast ${sp[sp.length - 1].ballSpeed.toFixed(1)} mph ball speed`
         : undefined,
-      "/drill": d.length ? `Senast ${formatScore(d[d.length - 1].score)}` : undefined,
-      "/bunker": b.length ? `Senast ${b[b.length - 1].avgFeet.toFixed(1)} fot i snitt` : undefined,
+      "/bunker": d.length ? `Senast ${d[d.length - 1].avgFeet.toFixed(1)} fot i snitt` : undefined,
     });
   }, []);
 
