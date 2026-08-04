@@ -49,39 +49,6 @@ export const CATEGORIES: Category[] = [
         result: "RESULTAT: MPH ÖVER TID + SMASH FACTOR",
       },
       {
-        to: "/longdrive",
-        number: "5",
-        title: "Long drive",
-        subtitle: "6 försök – bara carry",
-        bullets: [
-          "Sex utslag per test, endast carry räknas.",
-          "Längsta och snitt sparas med datum.",
-        ],
-        result: "RESULTAT: LÄNGSTA CARRY + SNITT",
-      },
-      {
-        to: "/fairway",
-        number: "6",
-        title: "Fairway challenge",
-        subtitle: "10 drivar – träff & längd",
-        bullets: [
-          "Tio drivar: fairway, ruff eller out plus carry.",
-          "Långa fairwayträffar ger mest, out ger minuspoäng.",
-        ],
-        result: "RESULTAT: TOTALPOÄNG 0–100",
-      },
-      {
-        to: "/teeshot",
-        number: "11",
-        title: "Landningsytor från tee",
-        subtitle: "9 slag utan driver – 170, 195, 220 m",
-        bullets: [
-          "Tre stationer × 3 varv, alla klubbor utom driver.",
-          "Inom längdspann (±10 m) och 25 m bredd = 1 poäng.",
-        ],
-        result: "RESULTAT: POÄNG 0–9",
-      },
-      {
         to: "/offtee-test",
         number: "18",
         title: "Off the Tee Test",
