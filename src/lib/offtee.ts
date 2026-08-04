@@ -120,12 +120,17 @@ function interpolate(input: number, anchors: Anchor[], decreasing: boolean): num
 const YD = 0.9144;
 
 /**
- * Längd → handicap, kalibrerat mot Arccos 2026 Driving Distance Report
- * (HCP 0–4,9 ≈ 244 yd, alla golfare i snitt ≈ 224,1 yd, HCP 30+ ≈ 181 yd),
- * extrapolerat linjärt i båda ändar. Längre avstånd → lägre handicap.
+ * Längd → handicap, kalibrerat mot verklig data i båda ändar:
+ * - PGA Tour-snitt 2025: 302,8 yards → cirka +6 hcp (Tour-spelare ligger
+ *   normalt runt +5 till +7)
+ * - Topp-hitters på Tour (~320 yd, t.ex. Cameron Champ 321,4 yd 2022)
+ *   extrapoleras naturligt till cirka +8
+ * - Amatördata från Arccos 2026: HCP 0–4,9 ≈ 244 yd, snitt alla golfare
+ *   ≈ 224,1 yd, HCP 30+ ≈ 181 yd
  */
 const DISTANCE_ANCHORS: Anchor[] = [
-  { hcp: -4, value: 232.6 },
+  { hcp: -8, value: 292.0 },
+  { hcp: -6, value: 302.8 * YD },
   { hcp: 2.5, value: 244 * YD },
   { hcp: 15, value: 224.1 * YD },
   { hcp: 32, value: 181 * YD },
@@ -143,7 +148,8 @@ function distanceToHandicap(avgTotalMeters: number): number {
  * OB → högre handicap.
  */
 const WAYWARD_ANCHORS: Anchor[] = [
-  { hcp: -4, value: -3 },
+  { hcp: -8, value: 1 },
+  { hcp: -6, value: 2 },
   { hcp: 2.5, value: 12 },
   { hcp: 32, value: 45 },
   { hcp: 40, value: 71 },
@@ -159,7 +165,8 @@ function waywardToHandicap(waywardPct: number): number {
  * ger mindre variation i totalt avstånd slag för slag.
  */
 const CONSISTENCY_ANCHORS: Anchor[] = [
-  { hcp: -4, value: 3 },
+  { hcp: -8, value: 2 },
+  { hcp: -6, value: 3 },
   { hcp: 3, value: 6 },
   { hcp: 15, value: 12 },
   { hcp: 32, value: 22 },
@@ -170,9 +177,9 @@ function consistencyToHandicap(sdMeters: number): number {
   return interpolate(sdMeters, CONSISTENCY_ANCHORS, false);
 }
 
-/** Handicap → 0–100 Off the Tee Score, för rubrik/kort. */
+/** Handicap → 0–100 Off the Tee Score, för rubrik/kort. Spänner -8 till 40. */
 function scoreFromHandicap(hcp: number): number {
-  return Math.round(Math.max(0, Math.min(100, 100 - (hcp + 4) * 2.35)));
+  return Math.round(Math.max(0, Math.min(100, 100 - (hcp + 8) * (100 / 48))));
 }
 
 export function handicapLabel(hcp: number): string {
@@ -236,9 +243,9 @@ export function offTeeResult(shots: TeeShot[]): OffTeeResult {
   const handicap = results.length
     ? Math.round(
         Math.max(
-          -4,
+          -8,
           Math.min(
-            36,
+            40,
             distanceHcp * DISTANCE_WEIGHT +
               waywardHcp * WAYWARD_WEIGHT +
               consistencyHcp * CONSISTENCY_WEIGHT,
@@ -270,6 +277,9 @@ export function offTeeResult(shots: TeeShot[]): OffTeeResult {
 
 /** Genomsnittlig speldistans enligt Arccos 2026-rapporten, i yards. */
 export const ARCCOS_AVERAGE_YARDS = 224.1;
+
+/** PGA Tour-snitt driving distance 2025, i yards. */
+export const PGA_TOUR_AVERAGE_YARDS = 302.8;
 
 /** Färgnivå för score: grön/gul/röd, delar skala med Approach Test. */
 export function scoreGrade(score: number): "good" | "mid" | "poor" {
@@ -342,7 +352,11 @@ export function analyseOffTee(result: OffTeeResult): OffTeeAnalysis {
   }
 
   const avgYards = result.avgTotal / YD;
-  if (avgYards >= ARCCOS_AVERAGE_YARDS) {
+  if (avgYards >= PGA_TOUR_AVERAGE_YARDS) {
+    strengths.push(
+      `Snittlängden (${avgYards.toFixed(0)} yards) matchar PGA Tour-snittet (${PGA_TOUR_AVERAGE_YARDS} yards).`,
+    );
+  } else if (avgYards >= ARCCOS_AVERAGE_YARDS) {
     strengths.push(
       `Snittlängden (${avgYards.toFixed(0)} yards) slår genomsnittsgolfaren i Arccos 2026-rapporten.`,
     );

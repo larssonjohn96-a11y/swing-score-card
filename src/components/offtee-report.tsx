@@ -1,6 +1,7 @@
 import { CheckCircle2, Target, Trophy, type LucideIcon } from "lucide-react";
 import {
   ARCCOS_AVERAGE_YARDS,
+  PGA_TOUR_AVERAGE_YARDS,
   analyseOffTee,
   handicapLabel,
   scoreBand,
@@ -87,7 +88,8 @@ export function OffTeeReport({
         <p className="mt-3 text-sm text-muted-foreground">
           {vsAverage >= 0
             ? `${vsAverage.toFixed(0)} yards längre än genomsnittsgolfaren (${ARCCOS_AVERAGE_YARDS} yards) i Arccos 2026-rapporten.`
-            : `${Math.abs(vsAverage).toFixed(0)} yards kortare än genomsnittsgolfaren (${ARCCOS_AVERAGE_YARDS} yards) i Arccos 2026-rapporten.`}
+            : `${Math.abs(vsAverage).toFixed(0)} yards kortare än genomsnittsgolfaren (${ARCCOS_AVERAGE_YARDS} yards) i Arccos 2026-rapporten.`}{" "}
+          Till jämförelse ligger PGA Tour-snittet på {PGA_TOUR_AVERAGE_YARDS} yards.
         </p>
       </section>
 
