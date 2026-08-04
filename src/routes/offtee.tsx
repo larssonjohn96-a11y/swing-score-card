@@ -1,5 +1,14 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, ArrowRight, Check, Minus, Plus, X } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Minus,
+  Plus,
+  X,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { OFFTEE_TOTAL_SHOTS, emptyTeeShots, offTeeResult, type TeeShot } from "@/lib/offtee";
 import { loadOffTeeSessions, saveOffTeeSession } from "@/lib/offtee-store";
@@ -23,21 +32,50 @@ export const Route = createFileRoute("/offtee")({
 
 type Phase = "test" | "result";
 
+/** Förval för första slaget: 200 m carry, +10 % rull = 220 m totalt. */
+const DEFAULT_CARRY = 200;
+const DEFAULT_ROLL_RATIO = 1.1;
+const MIN_ROLL_RATIO = 1.0;
+const MAX_ROLL_RATIO = 1.3;
+
+function clampRatio(r: number): number {
+  return Math.max(MIN_ROLL_RATIO, Math.min(MAX_ROLL_RATIO, r));
+}
+
 function OffTeePage() {
   const navigate = useNavigate();
   const [phase, setPhase] = useState<Phase>("test");
   const [shots, setShots] = useState<TeeShot[]>(emptyTeeShots);
   const [index, setIndex] = useState(0);
-  const [carry, setCarry] = useState(0);
-  const [total, setTotal] = useState(0);
+  const [carry, setCarryRaw] = useState(DEFAULT_CARRY);
+  const [total, setTotalRaw] = useState(Math.round(DEFAULT_CARRY * DEFAULT_ROLL_RATIO));
   const [side, setSide] = useState<-1 | 1>(1);
   const [offset, setOffset] = useState(0);
   const [prevScore, setPrevScore] = useState<number | null>(null);
   const savedRef = useRef(false);
 
+  // Kom ihåg carry och rull-förhållandet (totalt / carry) mellan slagen, så
+  // spelaren slipper skriva in samma värden på nytt varje gång.
+  const rollRatioRef = useRef(DEFAULT_ROLL_RATIO);
+  const totalTouchedRef = useRef(false);
+
   const current = shots[Math.min(index, OFFTEE_TOTAL_SHOTS - 1)];
 
   useHideBottomNav(phase === "test");
+
+  /** Ändrar carry – och räknar live om totalt via det ihågkomna rull-förhållandet,
+   *  så länge spelaren inte redan justerat totalt manuellt för det här slaget. */
+  function setCarry(n: number) {
+    setCarryRaw(n);
+    if (!totalTouchedRef.current) {
+      setTotalRaw(Math.round(n * rollRatioRef.current));
+    }
+  }
+
+  function setTotal(n: number) {
+    setTotalRaw(n);
+    totalTouchedRef.current = true;
+  }
 
   function start() {
     const sessions = loadOffTeeSessions();
@@ -45,8 +83,10 @@ function OffTeePage() {
     setPrevScore(last ? last.score : null);
     setShots(emptyTeeShots());
     setIndex(0);
-    setCarry(0);
-    setTotal(0);
+    rollRatioRef.current = DEFAULT_ROLL_RATIO;
+    totalTouchedRef.current = false;
+    setCarryRaw(DEFAULT_CARRY);
+    setTotalRaw(Math.round(DEFAULT_CARRY * DEFAULT_ROLL_RATIO));
     setSide(1);
     setOffset(0);
     savedRef.current = false;
@@ -65,12 +105,26 @@ function OffTeePage() {
     setShots((p) =>
       p.map((s, i) => (i === index ? { ...s, carry, total, offline, filled: true } : s)),
     );
+
+    // Uppdatera det ihågkomna rull-förhållandet från slaget som just registrerades.
+    if (carry > 0) {
+      rollRatioRef.current = clampRatio(total / carry);
+    }
+
     if (next >= OFFTEE_TOTAL_SHOTS) {
       setPhase("result");
     } else {
       setIndex(next);
-      setCarry(shots[next].filled ? shots[next].carry : 0);
-      setTotal(shots[next].filled ? shots[next].total : 0);
+      totalTouchedRef.current = false;
+      const nextShot = shots[next];
+      const nextCarry = nextShot.filled ? nextShot.carry : carry;
+      setCarryRaw(nextCarry);
+      if (nextShot.filled) {
+        setTotalRaw(nextShot.total);
+        totalTouchedRef.current = true;
+      } else {
+        setTotalRaw(Math.round(nextCarry * rollRatioRef.current));
+      }
       setSide(1);
       setOffset(0);
     }
@@ -81,8 +135,12 @@ function OffTeePage() {
     const i = index - 1;
     setIndex(i);
     const s = shots[i];
-    setCarry(s.filled ? s.carry : 0);
-    setTotal(s.filled ? s.total : 0);
+    setCarryRaw(s.filled ? s.carry : carry);
+    setTotalRaw(s.filled ? s.total : total);
+    totalTouchedRef.current = true;
+    if (s.filled && s.carry > 0) {
+      rollRatioRef.current = clampRatio(s.total / s.carry);
+    }
     setSide(s.offline < 0 ? -1 : 1);
     setOffset(Math.abs(s.offline));
   }
@@ -200,27 +258,30 @@ function TestScreen({
         />
 
         <div className="rounded-2xl border border-border bg-card p-3">
-          <div className="flex items-center justify-between">
-            <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-              Sidled från mitten
-            </p>
-            <div className="flex overflow-hidden rounded-full border border-border text-[11px] font-semibold">
-              {[
-                { v: -1 as const, label: "Vänster" },
-                { v: 1 as const, label: "Höger" },
-              ].map((o) => (
-                <button
-                  key={o.label}
-                  type="button"
-                  onClick={() => setSide(o.v)}
-                  className={`px-3 py-1 transition-colors ${
-                    side === o.v ? "bg-primary text-primary-foreground" : "text-muted-foreground"
-                  }`}
-                >
-                  {o.label}
-                </button>
-              ))}
-            </div>
+          <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+            Sidled från mitten
+          </p>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            {[
+              { v: -1 as const, label: "Vänster", Icon: ChevronLeft },
+              { v: 1 as const, label: "Höger", Icon: ChevronRight },
+            ].map((o) => (
+              <button
+                key={o.label}
+                type="button"
+                onClick={() => setSide(o.v)}
+                aria-pressed={side === o.v}
+                className={`flex items-center justify-center gap-1.5 rounded-xl border-2 py-2.5 text-sm font-semibold transition-colors ${
+                  side === o.v
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-transparent text-foreground active:bg-muted"
+                }`}
+              >
+                {o.v === -1 && <o.Icon className="h-4 w-4" />}
+                {o.label}
+                {o.v === 1 && <o.Icon className="h-4 w-4" />}
+              </button>
+            ))}
           </div>
           <SidledValue value={offset} onChange={setOffset} />
         </div>
