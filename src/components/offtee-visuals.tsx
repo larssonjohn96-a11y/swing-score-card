@@ -1,8 +1,8 @@
 import { Minus, Plus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { TEE_CLUBS, type OffTeeResult, type TeeClub, type TeeHole } from "@/lib/offtee";
+import { FAIRWAY, type OffTeeResult } from "@/lib/offtee";
 
-/** Hero: top-down-vy av en fairway med tee, dogleg-antydan och spridda utslag. */
+/** Hero: top-down-vy av en fairway med tee och spridda utslag. */
 export function TeeHero() {
   const hits = [
     [150, 60],
@@ -55,34 +55,6 @@ export function TeeHero() {
         strokeWidth="2"
       />
     </svg>
-  );
-}
-
-/** Klubbval – kompakt horisontell pill-rad. */
-export function ClubPicker({
-  value,
-  onChange,
-}: {
-  value: TeeClub;
-  onChange: (c: TeeClub) => void;
-}) {
-  return (
-    <div className="flex gap-1.5 overflow-x-auto pb-0.5">
-      {TEE_CLUBS.map((club) => (
-        <button
-          key={club}
-          type="button"
-          onClick={() => onChange(club)}
-          className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
-            value === club
-              ? "bg-primary text-primary-foreground"
-              : "border border-border text-muted-foreground"
-          }`}
-        >
-          {club}
-        </button>
-      ))}
-    </div>
   );
 }
 
@@ -180,71 +152,46 @@ export function TeeNumberField({
   );
 }
 
-/** Kompakt hål-illustration: fairwaybredd, ev. dogleg, ev. maxlandningsavstånd. */
-export function HoleIllustration({ hole }: { hole: TeeHole }) {
-  const size = 120;
-  const c = size / 2;
-  const widthPx = Math.min(56, hole.fairwayHalfWidth * 1.9);
-  const bend = hole.dogleg === "left" ? -14 : hole.dogleg === "right" ? 14 : 0;
-
+/** Kompakt illustration av den standardiserade fairwayn – visas en gång, inte per slag. */
+export function FairwaySpec() {
+  const totalWidth = FAIRWAY.halfWidth * 2;
   return (
-    <svg
-      viewBox={`0 0 ${size} ${size}`}
-      className="h-24 w-full"
-      role="img"
-      aria-label={`Illustration av ${hole.label}`}
-    >
-      <path
-        d={`M${c - widthPx / 2} ${size - 6}
-            Q ${c - widthPx / 2 + bend} ${c}
-              ${c - widthPx / 3} 6
-            L ${c + widthPx / 3} 6
-            Q ${c + widthPx / 2 + bend} ${c}
-              ${c + widthPx / 2} ${size - 6}
-            Z`}
-        className="fill-fairway"
-      />
-      {hole.maxLandingDistance ? (
-        <line
-          x1="4"
-          y1={size - 6 - (hole.maxLandingDistance / hole.length) * (size - 16)}
-          x2={size - 4}
-          y2={size - 6 - (hole.maxLandingDistance / hole.length) * (size - 16)}
-          className="stroke-destructive"
-          strokeWidth="2"
-          strokeDasharray="4 4"
+    <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3">
+      <svg viewBox="0 0 60 80" className="h-14 w-11 shrink-0" role="img" aria-hidden>
+        <path d="M30 76 L14 4 L46 4 Z" className="fill-fairway" />
+        <circle
+          cx="30"
+          cy="76"
+          r="3"
+          className="fill-background stroke-foreground"
+          strokeWidth="1.5"
         />
-      ) : null}
-      <circle
-        cx={c}
-        cy={size - 6}
-        r="4"
-        className="fill-background stroke-foreground"
-        strokeWidth="1.5"
-      />
-    </svg>
+      </svg>
+      <div>
+        <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+          Samma fairway – alla 12 slag
+        </p>
+        <p className="text-sm font-semibold">
+          {totalWidth} m bred, {FAIRWAY.roughDepth} m ruff innan OB
+        </p>
+      </div>
+    </div>
   );
 }
 
-/** Normaliserad spridningsbild – alla 12 slag på en fast skala oavsett hål. */
+/** Normaliserad spridningsbild – alla 12 slag mot den standardiserade fairwayn. */
 export function TeeDispersion({ result }: { result: OffTeeResult }) {
   const size = 280;
   const c = size / 2;
   const rangeX = 2.4; // ± multipel av fairwayHalfWidth
-  const rangeY = 1.5; // 0 = tee, 1.15 ≈ genomsnittligt idealMin
+  const rangeY = 1.5; // relativt spelarens eget snittavstånd
 
   const px = (nx: number) => c + (nx / rangeX) * (c - 16);
   const py = (ny: number) => size - 12 - (ny / rangeY) * (size - 24);
 
-  const avgFairwayHalf = result.shots.length
-    ? result.shots.reduce((a, s) => a + s.hole.fairwayHalfWidth, 0) / result.shots.length
-    : 15;
-  const avgRough = result.shots.length
-    ? result.shots.reduce((a, s) => a + s.hole.roughDepth, 0) / result.shots.length
-    : 12;
-
+  const refDistance = Math.max(1, result.avgTotal);
   const fairwayXHalf = 1;
-  const roughXHalf = 1 + avgRough / avgFairwayHalf;
+  const roughXHalf = 1 + FAIRWAY.roughDepth / FAIRWAY.halfWidth;
 
   return (
     <div>
@@ -285,8 +232,8 @@ export function TeeDispersion({ result }: { result: OffTeeResult }) {
             strokeDasharray="4 5"
           />
           {result.shots.map((s) => {
-            const nx = s.offline / s.hole.fairwayHalfWidth;
-            const ny = s.total / s.hole.idealMin;
+            const nx = s.offline / FAIRWAY.halfWidth;
+            const ny = s.total / refDistance;
             const color = s.outcome.isOB
               ? "fill-destructive"
               : s.outcome.inRough

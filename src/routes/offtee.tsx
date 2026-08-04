@@ -1,15 +1,9 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, Check, Minus, Plus, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import {
-  OFFTEE_TOTAL_SHOTS,
-  emptyTeeShots,
-  offTeeResult,
-  type TeeClub,
-  type TeeShot,
-} from "@/lib/offtee";
+import { OFFTEE_TOTAL_SHOTS, emptyTeeShots, offTeeResult, type TeeShot } from "@/lib/offtee";
 import { loadOffTeeSessions, saveOffTeeSession } from "@/lib/offtee-store";
-import { ClubPicker, HoleIllustration, TeeNumberField } from "@/components/offtee-visuals";
+import { FairwaySpec, TeeNumberField } from "@/components/offtee-visuals";
 import { OffTeeReport } from "@/components/offtee-report";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 
@@ -19,7 +13,8 @@ export const Route = createFileRoute("/offtee")({
       { title: "Off the Tee Test – golfträning" },
       {
         name: "description",
-        content: "12 tee-slag, Off the Tee Score 0–100 och en fullständig träffsäkerhetsanalys.",
+        content:
+          "12 drives mot samma fairway – Driving Handicap baserat på längd, precision och konsekvens.",
       },
     ],
   }),
@@ -33,7 +28,6 @@ function OffTeePage() {
   const [phase, setPhase] = useState<Phase>("test");
   const [shots, setShots] = useState<TeeShot[]>(emptyTeeShots);
   const [index, setIndex] = useState(0);
-  const [club, setClub] = useState<TeeClub>("Driver");
   const [carry, setCarry] = useState(0);
   const [total, setTotal] = useState(0);
   const [side, setSide] = useState<-1 | 1>(1);
@@ -51,7 +45,6 @@ function OffTeePage() {
     setPrevScore(last ? last.score : null);
     setShots(emptyTeeShots());
     setIndex(0);
-    setClub("Driver");
     setCarry(0);
     setTotal(0);
     setSide(1);
@@ -70,13 +63,12 @@ function OffTeePage() {
     const offline = side * offset;
     const next = index + 1;
     setShots((p) =>
-      p.map((s, i) => (i === index ? { ...s, club, carry, total, offline, filled: true } : s)),
+      p.map((s, i) => (i === index ? { ...s, carry, total, offline, filled: true } : s)),
     );
     if (next >= OFFTEE_TOTAL_SHOTS) {
       setPhase("result");
     } else {
       setIndex(next);
-      setClub(shots[next].filled ? shots[next].club : club);
       setCarry(shots[next].filled ? shots[next].carry : 0);
       setTotal(shots[next].filled ? shots[next].total : 0);
       setSide(1);
@@ -89,8 +81,7 @@ function OffTeePage() {
     const i = index - 1;
     setIndex(i);
     const s = shots[i];
-    setClub(s.filled ? s.club : club);
-    setCarry(s.filled ? s.carry : s.total ? s.total : 0);
+    setCarry(s.filled ? s.carry : 0);
     setTotal(s.filled ? s.total : 0);
     setSide(s.offline < 0 ? -1 : 1);
     setOffset(Math.abs(s.offline));
@@ -108,12 +99,10 @@ function OffTeePage() {
       <TestScreen
         current={current}
         index={index}
-        club={club}
         carry={carry}
         total={total}
         side={side}
         offset={offset}
-        setClub={setClub}
         setCarry={setCarry}
         setTotal={setTotal}
         setSide={setSide}
@@ -131,12 +120,10 @@ function OffTeePage() {
 function TestScreen({
   current,
   index,
-  club,
   carry,
   total,
   side,
   offset,
-  setClub,
   setCarry,
   setTotal,
   setSide,
@@ -147,12 +134,10 @@ function TestScreen({
 }: {
   current: TeeShot;
   index: number;
-  club: TeeClub;
   carry: number;
   total: number;
   side: -1 | 1;
   offset: number;
-  setClub: (c: TeeClub) => void;
   setCarry: (n: number) => void;
   setTotal: (n: number) => void;
   setSide: (s: -1 | 1) => void;
@@ -161,7 +146,6 @@ function TestScreen({
   onBack: () => void;
   onAbort: () => void;
 }) {
-  const hole = current.hole;
   const pct = Math.round((index / OFFTEE_TOTAL_SHOTS) * 100);
   const roll = Math.max(0, total - carry);
 
@@ -171,7 +155,7 @@ function TestScreen({
         <button
           onClick={onBack}
           disabled={index === 0}
-          aria-label="Föregående hål"
+          aria-label="Föregående slag"
           className="rounded-full border border-border p-2 text-muted-foreground disabled:opacity-30"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -187,7 +171,7 @@ function TestScreen({
       <div className="mt-3">
         <div className="flex items-baseline justify-between text-sm">
           <span className="font-semibold">
-            Hål {index + 1} <span className="text-muted-foreground">av {OFFTEE_TOTAL_SHOTS}</span>
+            Slag {index + 1} <span className="text-muted-foreground">av {OFFTEE_TOTAL_SHOTS}</span>
           </span>
           <span className="text-muted-foreground">{pct} %</span>
         </div>
@@ -199,36 +183,13 @@ function TestScreen({
         </div>
       </div>
 
-      <div className="mt-4 rounded-2xl border border-border bg-card p-3">
-        <div className="flex items-center gap-3">
-          <div className="w-24 shrink-0">
-            <HoleIllustration hole={hole} />
-          </div>
-          <div className="min-w-0">
-            <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-              Par {hole.par} · {hole.length} m
-            </p>
-            <p className="font-[family-name:var(--font-display)] text-xl leading-tight">
-              {hole.label}
-            </p>
-            <p className="mt-0.5 text-xs leading-snug text-muted-foreground">{hole.description}</p>
-            {hole.maxLandingDistance ? (
-              <p className="mt-1 text-[11px] font-semibold text-destructive">
-                Max {hole.maxLandingDistance} m totalt
-              </p>
-            ) : null}
-          </div>
+      {index === 0 && (
+        <div className="mt-4">
+          <FairwaySpec />
         </div>
-      </div>
+      )}
 
-      <div className="mt-3">
-        <p className="mb-1.5 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-          Klubba
-        </p>
-        <ClubPicker value={club} onChange={setClub} />
-      </div>
-
-      <div className="mt-3 space-y-2">
+      <div className="mt-4 space-y-2">
         <TeeNumberField label="Carry" value={carry} onChange={setCarry} unit="m" />
         <TeeNumberField
           label="Totalt"
@@ -240,7 +201,9 @@ function TestScreen({
 
         <div className="rounded-2xl border border-border bg-card p-3">
           <div className="flex items-center justify-between">
-            <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Sidled</p>
+            <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+              Sidled från mitten
+            </p>
             <div className="flex overflow-hidden rounded-full border border-border text-[11px] font-semibold">
               {[
                 { v: -1 as const, label: "Vänster" },
@@ -283,7 +246,7 @@ function TestScreen({
           onClick={onCommit}
           className="mx-auto flex w-full max-w-md items-center justify-center gap-2 rounded-2xl bg-primary py-4 font-[family-name:var(--font-display)] text-2xl text-primary-foreground"
         >
-          {index + 1 === OFFTEE_TOTAL_SHOTS ? "Avsluta test" : "Nästa hål"}
+          {index + 1 === OFFTEE_TOTAL_SHOTS ? "Avsluta test" : "Nästa slag"}
           <ArrowRight className="h-5 w-5" />
         </button>
       </div>

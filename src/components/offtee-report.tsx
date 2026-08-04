@@ -1,7 +1,7 @@
 import { CheckCircle2, Target, Trophy, type LucideIcon } from "lucide-react";
 import {
+  ARCCOS_AVERAGE_YARDS,
   analyseOffTee,
-  clubStats,
   handicapLabel,
   scoreBand,
   type OffTeeResult,
@@ -10,6 +10,8 @@ import { TeeDispersion } from "@/components/offtee-visuals";
 
 const GRADE_TEXT: Record<string, string> = { good: "text-primary", poor: "text-destructive" };
 const GRADE_SOFT: Record<string, string> = { good: "bg-primary/10", poor: "bg-destructive/10" };
+
+const YD = 0.9144;
 
 /** Hela analysen för ett genomfört Off the Tee Test. */
 export function OffTeeReport({
@@ -22,12 +24,10 @@ export function OffTeeReport({
   compact?: boolean;
 }) {
   const analysis = analyseOffTee(result);
-  const clubs = clubStats(result);
   const band = scoreBand(result.score);
   const delta = typeof prevScore === "number" ? result.score - prevScore : null;
-
-  const maxLandingHoles = result.shots.filter((s) => s.hole.maxLandingDistance !== undefined);
-  const doglegHoles = result.shots.filter((s) => s.hole.dogleg);
+  const avgYards = result.avgTotal / YD;
+  const vsAverage = avgYards - ARCCOS_AVERAGE_YARDS;
 
   return (
     <div className="space-y-10">
@@ -54,9 +54,25 @@ export function OffTeeReport({
           </p>
         )}
         <div className="mt-6 grid grid-cols-3 gap-3">
-          <Stat label="Est. OTT-hcp" value={handicapLabel(result.handicap)} />
+          <Stat label="Driving HCP" value={handicapLabel(result.handicap)} />
           <Stat label="Fairway %" value={`${result.fairwayHitPct}`} />
           <Stat label="Snitt total" value={`${result.avgTotal.toFixed(0)} m`} />
+        </div>
+      </section>
+
+      <section>
+        <h2 className="font-display text-2xl leading-none">Hur handicapet räknas fram</h2>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Längd och wayward-andel är kalibrerade mot Arccos Driving Distance Report 2026.
+        </p>
+        <div className="mt-4 space-y-2">
+          <BreakdownRow label="Längd" weight="55 %" hcp={result.breakdown.distanceHcp} />
+          <BreakdownRow
+            label="Wayward-andel (OB)"
+            weight="30 %"
+            hcp={result.breakdown.waywardHcp}
+          />
+          <BreakdownRow label="Konsekvens" weight="15 %" hcp={result.breakdown.consistencyHcp} />
         </div>
       </section>
 
@@ -66,24 +82,31 @@ export function OffTeeReport({
           <Stat label="Snitt totalt" value={`${result.avgTotal.toFixed(0)} m`} />
           <Stat label="Snitt carry" value={`${result.avgCarry.toFixed(0)} m`} />
           <Stat label="Längsta drive" value={`${result.longest.toFixed(0)} m`} />
-          <Stat label="Distanskontroll" value={`${result.distanceConsistency}/100`} />
+          <Stat label="Spridning" value={`±${result.distanceSpread.toFixed(0)} m`} />
         </div>
+        <p className="mt-3 text-sm text-muted-foreground">
+          {vsAverage >= 0
+            ? `${vsAverage.toFixed(0)} yards längre än genomsnittsgolfaren (${ARCCOS_AVERAGE_YARDS} yards) i Arccos 2026-rapporten.`
+            : `${Math.abs(vsAverage).toFixed(0)} yards kortare än genomsnittsgolfaren (${ARCCOS_AVERAGE_YARDS} yards) i Arccos 2026-rapporten.`}
+        </p>
       </section>
 
       <section>
         <h2 className="font-display text-2xl leading-none">Träffsäkerhet</h2>
         <div className="mt-4 grid grid-cols-2 gap-3">
           <Stat label="Fairway-träff" value={`${result.fairwayHitPct} %`} />
-          <Stat label="Out of Bounds" value={`${result.obPct} %`} />
+          <Stat label="Wayward (OB)" value={`${result.waywardPct} %`} />
           <Stat label="Miss vänster" value={`${result.leftPct} %`} />
           <Stat label="Miss höger" value={`${result.rightPct} %`} />
         </div>
         <p className="mt-3 text-sm text-muted-foreground">
-          {result.leftPct > result.rightPct + 15
-            ? "Missarna är i huvudsak riktningsrelaterade – bollen drar konsekvent åt vänster."
-            : result.rightPct > result.leftPct + 15
-              ? "Missarna är i huvudsak riktningsrelaterade – bollen drar konsekvent åt höger."
-              : "Missarna är relativt jämnt fördelade – snarare en konsistensfråga än en riktningstendens."}
+          {result.waywardPct <= 15
+            ? "Låg wayward-andel – nära scratch-nivå (~12 % enligt Arccos data)."
+            : result.leftPct > result.rightPct + 15
+              ? "Missarna är i huvudsak riktningsrelaterade – bollen drar konsekvent åt vänster."
+              : result.rightPct > result.leftPct + 15
+                ? "Missarna är i huvudsak riktningsrelaterade – bollen drar konsekvent åt höger."
+                : "Wayward-andelen är den tydligaste skiljelinjen mot lägre handicap enligt Arccos data – den väger tyngst efter längd."}
         </p>
       </section>
 
@@ -93,65 +116,6 @@ export function OffTeeReport({
           <TeeDispersion result={result} />
         </div>
       </section>
-
-      {(maxLandingHoles.length > 0 || doglegHoles.length > 0) && (
-        <section>
-          <h2 className="font-display text-2xl leading-none">Distanskontroll</h2>
-          <div className="mt-4 space-y-2">
-            {maxLandingHoles.length > 0 && (
-              <div className="rounded-2xl border border-border bg-card p-3 text-sm">
-                <p className="text-muted-foreground">Hål med maxlandningsavstånd</p>
-                <p className="mt-1 font-semibold">
-                  {maxLandingHoles.filter((s) => !s.outcome.exceededMax).length} av{" "}
-                  {maxLandingHoles.length} inom gränsen
-                </p>
-              </div>
-            )}
-            {doglegHoles.length > 0 && (
-              <div className="rounded-2xl border border-border bg-card p-3 text-sm">
-                <p className="text-muted-foreground">Dogleg-hål</p>
-                <p className="mt-1 font-semibold">
-                  Snitt{" "}
-                  {Math.round(doglegHoles.reduce((a, s) => a + s.score, 0) / doglegHoles.length)}
-                  /100
-                </p>
-              </div>
-            )}
-          </div>
-        </section>
-      )}
-
-      {clubs.length > 0 && (
-        <section>
-          <h2 className="font-display text-2xl leading-none">Klubbstatistik</h2>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Informativt – klubbvalet påverkar aldrig score.
-          </p>
-          <div className="mt-4 space-y-2">
-            {clubs.map((c) => (
-              <div
-                key={c.club}
-                className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3"
-              >
-                <div>
-                  <p className="font-semibold">{c.club}</p>
-                  <p className="text-xs text-muted-foreground">{c.count} slag</p>
-                </div>
-                <div className="flex gap-4 text-right text-sm">
-                  <div>
-                    <p className="text-[11px] text-muted-foreground">Snitt</p>
-                    <p className="font-semibold">{c.avgTotal.toFixed(0)} m</p>
-                  </div>
-                  <div>
-                    <p className="text-[11px] text-muted-foreground">Fairway</p>
-                    <p className="font-semibold">{c.fairwayHitPct}%</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
 
       <section className="space-y-5">
         <h2 className="text-2xl font-extrabold uppercase tracking-tight">Analys</h2>
@@ -180,6 +144,20 @@ function Stat({ label, value }: { label: string; value: string }) {
     <div className="rounded-2xl border border-border bg-card p-3">
       <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">{label}</p>
       <p className="mt-1 font-[family-name:var(--font-display)] text-2xl leading-none">{value}</p>
+    </div>
+  );
+}
+
+function BreakdownRow({ label, weight, hcp }: { label: string; weight: string; hcp: number }) {
+  return (
+    <div className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3">
+      <div>
+        <p className="font-semibold">{label}</p>
+        <p className="text-xs text-muted-foreground">Väger {weight}</p>
+      </div>
+      <span className="font-[family-name:var(--font-display)] text-xl leading-none text-flag">
+        HCP {handicapLabel(hcp)}
+      </span>
     </div>
   );
 }

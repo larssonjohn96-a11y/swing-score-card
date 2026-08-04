@@ -14,11 +14,11 @@ import { TeeHero } from "@/components/offtee-visuals";
 
 const VALUE_ITEMS = [
   { icon: Target, label: "Off the Tee Score 0–100" },
-  { icon: Gauge, label: "Uppskattad OTT-handicap" },
+  { icon: Gauge, label: "Driving Handicap" },
   { icon: Map, label: "Spridningskarta" },
-  { icon: Sparkles, label: "Distans- & träffsäkerhetsanalys" },
-  { icon: TrendingUp, label: "Klubbstatistik" },
-  { icon: Compass, label: "Förbättringsområden" },
+  { icon: Sparkles, label: "Längd jämfört med Arccos-data" },
+  { icon: TrendingUp, label: "Wayward-andel (OB)" },
+  { icon: Compass, label: "Konsekvensmått" },
   { icon: AlertTriangle, label: "Upptäckta missmönster" },
 ];
 
@@ -45,8 +45,8 @@ export function OffTeeLanding({ lastResultLabel }: { lastResultLabel?: string })
       <p className="mt-6 text-xs uppercase tracking-[0.3em] text-flag">Driving</p>
       <h1 className="mt-2 text-5xl leading-none">Off the Tee Test</h1>
       <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-        Mät din fullständiga prestation från tee genom 12 realistiska utslagsscenarier – längd,
-        träffsäkerhet och förmågan att hålla bollen i spel.
+        Slå 12 drives mot samma fairway och få en uppskattning av din Driving Handicap baserat på
+        längd, precision och konsekvens.
       </p>
 
       <section className="mt-8">
@@ -68,8 +68,8 @@ export function OffTeeLanding({ lastResultLabel }: { lastResultLabel?: string })
           Vem passar testet för
         </p>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          Dig som vill slå längre utan att offra träffsäkerheten, hålla fler bollar i spel och
-          förstå exakt vilka klubbor och hål som kostar dig slag från tee.
+          Dig som vill slå längre utan att offra träffsäkerheten, hålla fler bollar i spel och få en
+          verklighetsförankrad bild av var din drivinghandicap ligger idag.
         </p>
       </section>
 
@@ -78,10 +78,10 @@ export function OffTeeLanding({ lastResultLabel }: { lastResultLabel?: string })
           Så går testet till
         </p>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          12 tee-slag på en realistisk blandning av par 4- och par 5-hål – breda och smala fairways,
-          dogleger och en risk/reward-station. Välj klubba och registrera carry, totalt avstånd och
-          sidled efter varje slag. Klubbvalet påverkar aldrig poängen – bara resultatet av slaget
-          räknas.
+          12 drives mot samma standardiserade fairway. Bara tre tal per slag – carry, totalt avstånd
+          och sidled från mitten. Ingen klubba att välja. Din Driving Handicap byggs sedan av längd,
+          hur ofta du håller bollen i spel och hur jämn du är slag för slag, kalibrerat mot Arccos
+          verkliga speldata från miljontals tee-slag.
         </p>
       </section>
 
@@ -96,7 +96,7 @@ export function OffTeeLanding({ lastResultLabel }: { lastResultLabel?: string })
         Starta Off the Tee Test
         <ArrowRight className="h-5 w-5" />
       </Link>
-      <p className="mt-3 text-center text-xs text-muted-foreground">Tar ca 10–15 minuter</p>
+      <p className="mt-3 text-center text-xs text-muted-foreground">Tar ca 8–10 minuter</p>
     </main>
   );
 }
