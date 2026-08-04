@@ -15,7 +15,6 @@ import { Route as BunkerRouteImport } from './routes/bunker'
 import { Route as ChipRouteImport } from './routes/chip'
 import { Route as CombineRouteImport } from './routes/combine'
 import { Route as FairwayRouteImport } from './routes/fairway'
-import { Route as HistorikRouteImport } from './routes/historik'
 import { Route as KontoRouteImport } from './routes/konto'
 import { Route as KortputtRouteImport } from './routes/kortputt'
 import { Route as LagputtRouteImport } from './routes/lagputt'
@@ -31,6 +30,7 @@ import { Route as TeeshotRouteImport } from './routes/teeshot'
 import { Route as TesterRouteImport } from './routes/tester'
 import { Route as TornadoRouteImport } from './routes/tornado'
 import { Route as TraningRouteImport } from './routes/traning'
+import { Route as UtvecklingRouteImport } from './routes/utveckling'
 import { Route as FramstegIndexRouteImport } from './routes/framsteg.index'
 import { Route as FramstegSlugRouteImport } from './routes/framsteg.$slug'
 import { Route as KategoriSlugRouteImport } from './routes/kategori.$slug'
@@ -64,11 +64,6 @@ const CombineRoute = CombineRouteImport.update({
 const FairwayRoute = FairwayRouteImport.update({
   id: '/fairway',
   path: '/fairway',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const HistorikRoute = HistorikRouteImport.update({
-  id: '/historik',
-  path: '/historik',
   getParentRoute: () => rootRouteImport,
 } as any)
 const KontoRoute = KontoRouteImport.update({
@@ -146,6 +141,11 @@ const TraningRoute = TraningRouteImport.update({
   path: '/traning',
   getParentRoute: () => rootRouteImport,
 } as any)
+const UtvecklingRoute = UtvecklingRouteImport.update({
+  id: '/utveckling',
+  path: '/utveckling',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FramstegIndexRoute = FramstegIndexRouteImport.update({
   id: '/framsteg/',
   path: '/framsteg/',
@@ -174,7 +174,6 @@ export interface FileRoutesByFullPath {
   '/chip': typeof ChipRoute
   '/combine': typeof CombineRoute
   '/fairway': typeof FairwayRoute
-  '/historik': typeof HistorikRoute
   '/konto': typeof KontoRoute
   '/kortputt': typeof KortputtRoute
   '/lagputt': typeof LagputtRoute
@@ -190,6 +189,7 @@ export interface FileRoutesByFullPath {
   '/tester': typeof TesterRoute
   '/tornado': typeof TornadoRoute
   '/traning': typeof TraningRoute
+  '/utveckling': typeof UtvecklingRoute
   '/framsteg/$slug': typeof FramstegSlugRouteWithChildren
   '/kategori/$slug': typeof KategoriSlugRoute
   '/framsteg/': typeof FramstegIndexRoute
@@ -202,7 +202,6 @@ export interface FileRoutesByTo {
   '/chip': typeof ChipRoute
   '/combine': typeof CombineRoute
   '/fairway': typeof FairwayRoute
-  '/historik': typeof HistorikRoute
   '/konto': typeof KontoRoute
   '/kortputt': typeof KortputtRoute
   '/lagputt': typeof LagputtRoute
@@ -218,6 +217,7 @@ export interface FileRoutesByTo {
   '/tester': typeof TesterRoute
   '/tornado': typeof TornadoRoute
   '/traning': typeof TraningRoute
+  '/utveckling': typeof UtvecklingRoute
   '/framsteg/$slug': typeof FramstegSlugRouteWithChildren
   '/kategori/$slug': typeof KategoriSlugRoute
   '/framsteg': typeof FramstegIndexRoute
@@ -231,7 +231,6 @@ export interface FileRoutesById {
   '/chip': typeof ChipRoute
   '/combine': typeof CombineRoute
   '/fairway': typeof FairwayRoute
-  '/historik': typeof HistorikRoute
   '/konto': typeof KontoRoute
   '/kortputt': typeof KortputtRoute
   '/lagputt': typeof LagputtRoute
@@ -247,6 +246,7 @@ export interface FileRoutesById {
   '/tester': typeof TesterRoute
   '/tornado': typeof TornadoRoute
   '/traning': typeof TraningRoute
+  '/utveckling': typeof UtvecklingRoute
   '/framsteg/$slug': typeof FramstegSlugRouteWithChildren
   '/kategori/$slug': typeof KategoriSlugRoute
   '/framsteg/': typeof FramstegIndexRoute
@@ -261,7 +261,6 @@ export interface FileRouteTypes {
     | '/chip'
     | '/combine'
     | '/fairway'
-    | '/historik'
     | '/konto'
     | '/kortputt'
     | '/lagputt'
@@ -277,6 +276,7 @@ export interface FileRouteTypes {
     | '/tester'
     | '/tornado'
     | '/traning'
+    | '/utveckling'
     | '/framsteg/$slug'
     | '/kategori/$slug'
     | '/framsteg/'
@@ -289,7 +289,6 @@ export interface FileRouteTypes {
     | '/chip'
     | '/combine'
     | '/fairway'
-    | '/historik'
     | '/konto'
     | '/kortputt'
     | '/lagputt'
@@ -305,6 +304,7 @@ export interface FileRouteTypes {
     | '/tester'
     | '/tornado'
     | '/traning'
+    | '/utveckling'
     | '/framsteg/$slug'
     | '/kategori/$slug'
     | '/framsteg'
@@ -317,7 +317,6 @@ export interface FileRouteTypes {
     | '/chip'
     | '/combine'
     | '/fairway'
-    | '/historik'
     | '/konto'
     | '/kortputt'
     | '/lagputt'
@@ -333,6 +332,7 @@ export interface FileRouteTypes {
     | '/tester'
     | '/tornado'
     | '/traning'
+    | '/utveckling'
     | '/framsteg/$slug'
     | '/kategori/$slug'
     | '/framsteg/'
@@ -346,7 +346,6 @@ export interface RootRouteChildren {
   ChipRoute: typeof ChipRoute
   CombineRoute: typeof CombineRoute
   FairwayRoute: typeof FairwayRoute
-  HistorikRoute: typeof HistorikRoute
   KontoRoute: typeof KontoRoute
   KortputtRoute: typeof KortputtRoute
   LagputtRoute: typeof LagputtRoute
@@ -362,6 +361,7 @@ export interface RootRouteChildren {
   TesterRoute: typeof TesterRoute
   TornadoRoute: typeof TornadoRoute
   TraningRoute: typeof TraningRoute
+  UtvecklingRoute: typeof UtvecklingRoute
   FramstegSlugRoute: typeof FramstegSlugRouteWithChildren
   KategoriSlugRoute: typeof KategoriSlugRoute
   FramstegIndexRoute: typeof FramstegIndexRoute
@@ -409,13 +409,6 @@ declare module '@tanstack/react-router' {
       path: '/fairway'
       fullPath: '/fairway'
       preLoaderRoute: typeof FairwayRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/historik': {
-      id: '/historik'
-      path: '/historik'
-      fullPath: '/historik'
-      preLoaderRoute: typeof HistorikRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/konto': {
@@ -523,6 +516,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TraningRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/utveckling': {
+      id: '/utveckling'
+      path: '/utveckling'
+      fullPath: '/utveckling'
+      preLoaderRoute: typeof UtvecklingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/framsteg/': {
       id: '/framsteg/'
       path: '/framsteg'
@@ -573,7 +573,6 @@ const rootRouteChildren: RootRouteChildren = {
   ChipRoute: ChipRoute,
   CombineRoute: CombineRoute,
   FairwayRoute: FairwayRoute,
-  HistorikRoute: HistorikRoute,
   KontoRoute: KontoRoute,
   KortputtRoute: KortputtRoute,
   LagputtRoute: LagputtRoute,
@@ -589,6 +588,7 @@ const rootRouteChildren: RootRouteChildren = {
   TesterRoute: TesterRoute,
   TornadoRoute: TornadoRoute,
   TraningRoute: TraningRoute,
+  UtvecklingRoute: UtvecklingRoute,
   FramstegSlugRoute: FramstegSlugRouteWithChildren,
   KategoriSlugRoute: KategoriSlugRoute,
   FramstegIndexRoute: FramstegIndexRoute,

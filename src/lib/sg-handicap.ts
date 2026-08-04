@@ -55,6 +55,23 @@ function ratingToHandicap(rating: number): number {
   return Math.max(-4, Math.min(36, 30 - rating * 0.34));
 }
 
+/**
+ * Delad, enhetlig skala för hela Utvecklingssidan: handicap (-8 till 40,
+ * plus-handicap inräknat) → 0–100-rating, och tillbaka. Samma princip som
+ * Off the Tee Test använder för sitt score.
+ */
+export function ratingFromHandicap(hcp: number): number {
+  return Math.round(Math.max(0, Math.min(100, 100 - (hcp + 8) * (100 / 48))));
+}
+
+export function handicapFromRating(rating: number): number {
+  return (100 - rating) * (48 / 100) - 8;
+}
+
+export const SCRATCH_HANDICAP = 0;
+/** Ungefärlig elit-/Tour-nivå, samma ankare som Off the Tee Test använder för PGA Tour-snittet. */
+export const ELITE_HANDICAP = -6;
+
 /** Trend = senaste värdet minus värdet i början av de senaste n testen. Negativt = förbättring. */
 function trendOf(values: number[], n = 5): number | undefined {
   if (values.length < 2) return undefined;
@@ -74,11 +91,27 @@ export type CategoryHandicap = {
   count: number;
 };
 
-export function computeCategoryHandicaps(): CategoryHandicap[] {
-  const precision = loadPrecisionSessions();
-  const offtee = loadOffTeeSessions();
-  const bunker = loadBunkerSessions();
-  const putt = loadShortPuttSessions();
+function byDateAsc<T extends { date: string }>(items: T[]): T[] {
+  return [...items].sort((a, b) => a.date.localeCompare(b.date));
+}
+
+/** Filtrerar sessioner till och med ett visst datum – används för historiska ögonblicksbilder. */
+function upTo<T extends { date: string }>(items: T[], asOf?: Date): T[] {
+  if (!asOf) return items;
+  const cutoff = asOf.toISOString();
+  return byDateAsc(items).filter((i) => i.date <= cutoff);
+}
+
+/**
+ * Kategori-HCP, antingen just nu (utan argument) eller som de såg ut vid en
+ * viss tidpunkt (asOf) – det senare används för att bygga utvecklingsgrafer
+ * och "senaste 30 dagarna"-jämförelser utan att behöva egen historisk lagring.
+ */
+export function computeCategoryHandicaps(asOf?: Date): CategoryHandicap[] {
+  const precision = upTo(loadPrecisionSessions(), asOf);
+  const offtee = upTo(loadOffTeeSessions(), asOf);
+  const bunker = upTo(loadBunkerSessions(), asOf);
+  const putt = upTo(loadShortPuttSessions(), asOf);
 
   const approachHcps = precision
     .map((s) => s.handicap)
@@ -173,7 +206,9 @@ export function computeBiggestOpportunity(cats: CategoryHandicap[]): Opportunity
  * Nästa mål
  * ---------------------------------------------------------------------- */
 
-const MILESTONES = [54, 36, 28, 24, 20, 18, 16, 14, 12, 10, 8, 6, 4, 2, 0, -1, -2, -3, -4];
+const MILESTONES = [
+  54, 36, 28, 24, 20, 18, 16, 14, 12, 10, 8, 6, 4, 2, 0, -1, -2, -3, -4, -5, -6, -7, -8,
+];
 
 export function nextMilestone(current: number): number {
   const below = MILESTONES.filter((m) => m < current - 0.05);
@@ -186,6 +221,256 @@ export function categoriesToImprove(cats: CategoryHandicap[], count = 2): Catego
     .filter((c) => c.handicap !== undefined)
     .sort((a, b) => b.handicap! - a.handicap!)
     .slice(0, count);
+}
+
+/* -------------------------------------------------------------------------
+ * Skill Gap – avstånd till nästa nivå per kategori
+ * ---------------------------------------------------------------------- */
+
+export type SkillGap = {
+  slug: CategorySlug;
+  title: string;
+  current: number;
+  next: number;
+  gap: number;
+};
+
+export function computeSkillGaps(cats: CategoryHandicap[]): SkillGap[] {
+  return cats
+    .filter((c) => c.handicap !== undefined)
+    .map((c) => {
+      const current = ratingFromHandicap(c.handicap!);
+      const next = ratingFromHandicap(nextMilestone(c.handicap!));
+      return { slug: c.slug, title: c.title, current, next, gap: Math.max(0, next - current) };
+    })
+    .filter((g) => g.gap > 0);
+}
+
+/* -------------------------------------------------------------------------
+ * Slag som tappas per kategori
+ * ---------------------------------------------------------------------- */
+
+export type StrokesLost = {
+  slug: CategorySlug;
+  title: string;
+  strokes: number;
+};
+
+/**
+ * Ungefärligt antal slag kategorin kostar per runda jämfört med scratch,
+ * baserat på hur mycket kategorins handicap bidrar till helhetsbetyget.
+ * En grov skattning – inte en riktig Strokes Gained-beräkning.
+ */
+export function computeStrokesLost(cats: CategoryHandicap[]): StrokesLost[] {
+  return cats
+    .filter((c) => c.handicap !== undefined)
+    .map((c) => ({
+      slug: c.slug,
+      title: c.title,
+      strokes: Math.round(Math.max(0, c.handicap!) * CATEGORY_WEIGHTS[c.slug] * 0.15 * 10) / 10,
+    }))
+    .sort((a, b) => b.strokes - a.strokes);
+}
+
+/* -------------------------------------------------------------------------
+ * Potential Score – vad en 10-poängs förbättring skulle ge
+ * ---------------------------------------------------------------------- */
+
+export type Potential = {
+  slug: CategorySlug;
+  title: string;
+  fromRating: number;
+  toRating: number;
+  impact: number;
+};
+
+export function computePotentials(cats: CategoryHandicap[]): Potential[] {
+  return cats
+    .filter((c) => c.handicap !== undefined)
+    .map((c) => {
+      const fromRating = ratingFromHandicap(c.handicap!);
+      const toRating = Math.min(100, fromRating + 10);
+      const toHandicap = handicapFromRating(toRating);
+      const impact =
+        Math.round(Math.max(0, c.handicap! - toHandicap) * CATEGORY_WEIGHTS[c.slug] * 10) / 10;
+      return { slug: c.slug, title: c.title, fromRating, toRating, impact };
+    })
+    .filter((p) => p.impact > 0)
+    .sort((a, b) => b.impact - a.impact);
+}
+
+/* -------------------------------------------------------------------------
+ * Utvecklingsgrafer – rating över tid, totalt och per kategori
+ * ---------------------------------------------------------------------- */
+
+export type RatingPoint = {
+  date: string;
+  total?: number;
+  approach?: number;
+  driving?: number;
+  aroundGreen?: number;
+  putting?: number;
+};
+
+const day = (iso: string) => (iso.length > 10 ? iso.slice(0, 10) : iso);
+
+/** Alla datum där minst ett test genomfördes, i valfri period. */
+function sessionDates(periodDays: number | null): string[] {
+  const all = [
+    ...loadPrecisionSessions().map((s) => s.date),
+    ...loadOffTeeSessions().map((s) => s.date),
+    ...loadBunkerSessions().map((s) => s.date),
+    ...loadShortPuttSessions().map((s) => s.date),
+  ];
+  const cutoff = periodDays ? Date.now() - periodDays * 24 * 60 * 60 * 1000 : undefined;
+  const filtered = cutoff ? all.filter((d) => new Date(d).getTime() >= cutoff) : all;
+  return [...new Set(filtered.map(day))].sort((a, b) => a.localeCompare(b));
+}
+
+/**
+ * Total Rating och kategori-rating vid varje testdatum i perioden – bygger
+ * utvecklingsgraferna. Beräknar en historisk ögonblicksbild (asOf) för
+ * varje datum, så ingen egen tidsseriedatabas behövs.
+ */
+export function computeRatingTimeline(periodDays: number | null): RatingPoint[] {
+  const dates = sessionDates(periodDays);
+  return dates.map((d) => {
+    const asOf = new Date(`${d}T23:59:59.999Z`);
+    const cats = computeCategoryHandicaps(asOf);
+    const total = computeEstimatedHandicap(cats);
+    const find = (slug: CategorySlug) => cats.find((c) => c.slug === slug)?.handicap;
+    return {
+      date: d,
+      total: total !== undefined ? ratingFromHandicap(total) : undefined,
+      approach: find("approach") !== undefined ? ratingFromHandicap(find("approach")!) : undefined,
+      driving: find("driving") !== undefined ? ratingFromHandicap(find("driving")!) : undefined,
+      aroundGreen:
+        find("around-the-green") !== undefined
+          ? ratingFromHandicap(find("around-the-green")!)
+          : undefined,
+      putting: find("puttning") !== undefined ? ratingFromHandicap(find("puttning")!) : undefined,
+    };
+  });
+}
+
+/** Rating "just nu" jämfört med `days` dagar sedan – för "+3 poäng senaste 30 dagarna". */
+export function computeRatingChange(days: number): number | undefined {
+  const now = computeEstimatedHandicap(computeCategoryHandicaps());
+  const past = computeEstimatedHandicap(
+    computeCategoryHandicaps(new Date(Date.now() - days * 24 * 60 * 60 * 1000)),
+  );
+  if (now === undefined || past === undefined) return undefined;
+  return ratingFromHandicap(now) - ratingFromHandicap(past);
+}
+
+/* -------------------------------------------------------------------------
+ * Historik – integrerad i Utvecklingssidan
+ * ---------------------------------------------------------------------- */
+
+export type HistoryEntry = {
+  key: string;
+  categorySlug: CategorySlug;
+  title: string;
+  date: string;
+  score?: number;
+  scoreUnit?: string;
+  handicap?: number;
+  /** länk till detaljerad graf/historik för just detta test */
+  to: { slug: string; test: string };
+};
+
+export function computeHistory(filter?: CategorySlug, limit = 200): HistoryEntry[] {
+  const precision = loadPrecisionSessions();
+  const offtee = loadOffTeeSessions();
+  const bunker = loadBunkerSessions();
+  const putt = loadShortPuttSessions();
+  const puttHcps = putt.map((s) => ratingToHandicap(s.pct));
+
+  const all: HistoryEntry[] = [
+    ...precision.map((s) => ({
+      key: `approach-${s.id}`,
+      categorySlug: "approach" as const,
+      title: "Approach",
+      date: s.date,
+      score: s.score,
+      scoreUnit: "/100",
+      handicap: s.handicap,
+      to: { slug: "approach", test: "precision" },
+    })),
+    ...offtee.map((s) => ({
+      key: `offtee-${s.id}`,
+      categorySlug: "driving" as const,
+      title: "Off the Tee",
+      date: s.date,
+      score: s.score,
+      scoreUnit: "/100",
+      handicap: s.handicap,
+      to: { slug: "driving", test: "offtee" },
+    })),
+    ...bunker.map((s) => ({
+      key: `bunker-${s.id}`,
+      categorySlug: "around-the-green" as const,
+      title: "Bunkerslag",
+      date: s.date,
+      score: Math.round(s.avgFeet * 10) / 10,
+      scoreUnit: " fot",
+      handicap: undefined,
+      to: { slug: "around-the-green", test: "bunker" },
+    })),
+    ...putt.map((s, i) => ({
+      key: `putt-${s.id}`,
+      categorySlug: "puttning" as const,
+      title: "Kortputt",
+      date: s.date,
+      score: Math.round(s.pct),
+      scoreUnit: "%",
+      handicap: puttHcps[i],
+      to: { slug: "puttning", test: "kortputt" },
+    })),
+  ];
+
+  const sorted = all.sort((a, b) => b.date.localeCompare(a.date));
+  return (filter ? sorted.filter((e) => e.categorySlug === filter) : sorted).slice(0, limit);
+}
+
+/* -------------------------------------------------------------------------
+ * Approach- och puttningsheatmap per avstånd
+ * ---------------------------------------------------------------------- */
+
+export type HeatmapZone = {
+  label: string;
+  score: number;
+  count: number;
+};
+
+/** Approach: score per avståndszon (50–165 m), aggregerat över alla sessioner. */
+export function computeApproachHeatmap(): HeatmapZone[] {
+  const sessions = loadPrecisionSessions();
+  const allShots = sessions.flatMap((s) => s.shots);
+  if (!allShots.length) return [];
+  const result = precisionResult(allShots);
+  return groupScores(result)
+    .filter((g) => g.count > 0)
+    .map((g) => ({ label: g.label, score: g.score, count: g.count }));
+}
+
+/** Kortputt: träffprocent per avstånd (0,5 / 1,0 / 1,5 m), aggregerat. */
+export function computePuttingHeatmap(): HeatmapZone[] {
+  const sessions = loadShortPuttSessions();
+  const allPutts = sessions.flatMap((s) => s.putts);
+  if (!allPutts.length) return [];
+  const distances = [0.5, 1, 1.5];
+  return distances
+    .map((d) => {
+      const rows = allPutts.filter((p) => p.distance === d);
+      const holed = rows.filter((p) => p.holed).length;
+      return {
+        label: `${d.toString().replace(".", ",")} m`,
+        score: rows.length ? Math.round((holed / rows.length) * 100) : 0,
+        count: rows.length,
+      };
+    })
+    .filter((z) => z.count > 0);
 }
 
 /* -------------------------------------------------------------------------

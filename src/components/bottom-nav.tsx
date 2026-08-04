@@ -1,13 +1,13 @@
 "use client";
 
 import { Link } from "@tanstack/react-router";
-import { History, Home, ListChecks, User } from "lucide-react";
+import { Home, ListChecks, TrendingUp, User } from "lucide-react";
 import { useBottomNavVisibility } from "@/lib/bottom-nav-visibility";
 
 const TABS = [
   { to: "/", label: "Hem", icon: Home, exact: true },
   { to: "/tester", label: "Tester", icon: ListChecks, exact: false },
-  { to: "/historik", label: "Historik", icon: History, exact: false },
+  { to: "/utveckling", label: "Utveckling", icon: TrendingUp, exact: false },
   { to: "/konto", label: "Profil", icon: User, exact: false },
 ] as const;
 

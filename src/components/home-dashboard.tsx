@@ -237,8 +237,8 @@ export function LatestTestsCard({ tests }: { tests: LatestTest[] }) {
     <section className="mt-6">
       <div className="flex items-baseline justify-between">
         <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Senaste tester</p>
-        <Link to="/historik" className="text-xs font-medium text-flag">
-          Visa historik
+        <Link to="/utveckling" className="text-xs font-medium text-flag">
+          Se utveckling
         </Link>
       </div>
       <div className="mt-3 space-y-2">
