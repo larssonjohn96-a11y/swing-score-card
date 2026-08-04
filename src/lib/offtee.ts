@@ -275,11 +275,11 @@ export function offTeeResult(shots: TeeShot[]): OffTeeResult {
   };
 }
 
-/** Genomsnittlig speldistans enligt Arccos 2026-rapporten, i yards. */
-export const ARCCOS_AVERAGE_YARDS = 224.1;
+/** Snittgolfarens speldistans, i meter. */
+export const AVERAGE_GOLFER_METERS = Math.round(224.1 * YD * 10) / 10;
 
-/** PGA Tour-snitt driving distance 2025, i yards. */
-export const PGA_TOUR_AVERAGE_YARDS = 302.8;
+/** PGA Tour-snitt driving distance, i meter. */
+export const PGA_TOUR_AVERAGE_METERS = Math.round(302.8 * YD * 10) / 10;
 
 /** Färgnivå för score: grön/gul/röd, delar skala med Approach Test. */
 export function scoreGrade(score: number): "good" | "mid" | "poor" {
@@ -351,25 +351,20 @@ export function analyseOffTee(result: OffTeeResult): OffTeeAnalysis {
     return { strengths: ["Genomför testet för att få din analys."], improvements: [] };
   }
 
-  const avgYards = result.avgTotal / YD;
-  if (avgYards >= PGA_TOUR_AVERAGE_YARDS) {
+  if (result.avgTotal >= PGA_TOUR_AVERAGE_METERS) {
     strengths.push(
-      `Snittlängden (${avgYards.toFixed(0)} yards) matchar PGA Tour-snittet (${PGA_TOUR_AVERAGE_YARDS} yards).`,
+      `Snittlängden (${result.avgTotal.toFixed(0)} m) matchar PGA Tour-snittet (${PGA_TOUR_AVERAGE_METERS.toFixed(0)} m).`,
     );
-  } else if (avgYards >= ARCCOS_AVERAGE_YARDS) {
-    strengths.push(
-      `Snittlängden (${avgYards.toFixed(0)} yards) slår genomsnittsgolfaren i Arccos 2026-rapporten.`,
-    );
+  } else if (result.avgTotal >= AVERAGE_GOLFER_METERS) {
+    strengths.push(`Snittlängden (${result.avgTotal.toFixed(0)} m) slår snittgolfaren.`);
   }
   if (result.fairwayHitPct >= 55) {
     strengths.push(`Stark fairwayträff – ${result.fairwayHitPct} % av slagen i fairway.`);
   }
   if (result.waywardPct === 0) {
-    strengths.push(
-      "Inga slag Out of Bounds – bra riskhantering, den viktigaste skiljelinjen enligt Arccos data.",
-    );
+    strengths.push("Inga slag Out of Bounds – bra riskhantering.");
   } else if (result.waywardPct <= 15) {
-    strengths.push(`Låg wayward-andel (${result.waywardPct} %) – nära scratch-nivå (~12 %).`);
+    strengths.push(`Låg OB-andel (${result.waywardPct} %) – nära scratch-nivå.`);
   }
   if (result.breakdown.consistencyHcp <= 10) {
     strengths.push(`Jämn längdkontroll mellan slagen (±${result.distanceSpread.toFixed(0)} m).`);
@@ -380,7 +375,7 @@ export function analyseOffTee(result: OffTeeResult): OffTeeAnalysis {
 
   if (result.waywardPct >= 25) {
     improvements.push(
-      `${result.waywardPct} % av slagen slutade Out of Bounds – det största poängtappet enligt Arccos data.`,
+      `${result.waywardPct} % av slagen slutade Out of Bounds – det största poängtappet.`,
     );
   }
   if (result.leftPct >= 45 && result.leftPct > result.rightPct) {
@@ -389,14 +384,12 @@ export function analyseOffTee(result: OffTeeResult): OffTeeAnalysis {
     improvements.push(`Majoriteten av missarna går höger (${result.rightPct} %).`);
   }
   if (result.breakdown.consistencyHcp >= 20) {
-    improvements.push(
-      "Totala avståndet varierar mycket mellan slagen – jobba på konsekvent kontakt.",
-    );
+    improvements.push("Totala avståndet varierar mycket mellan slagen – jobba på jämnare kontakt.");
   }
-  if (avgYards < ARCCOS_AVERAGE_YARDS) {
-    const gap = ARCCOS_AVERAGE_YARDS - avgYards;
+  if (result.avgTotal < AVERAGE_GOLFER_METERS) {
+    const gap = AVERAGE_GOLFER_METERS - result.avgTotal;
     improvements.push(
-      `${gap.toFixed(0)} yards kortare än genomsnittsgolfaren i Arccos-rapporten – mer fart eller bättre center-träff kan hjälpa.`,
+      `${gap.toFixed(0)} m kortare än snittgolfaren – mer fart eller bättre center-träff kan hjälpa.`,
     );
   }
 

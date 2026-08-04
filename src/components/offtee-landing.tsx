@@ -16,9 +16,9 @@ const VALUE_ITEMS = [
   { icon: Target, label: "Off the Tee Score 0–100" },
   { icon: Gauge, label: "Driving Handicap" },
   { icon: Map, label: "Spridningskarta" },
-  { icon: Sparkles, label: "Längd jämfört med Arccos-data" },
-  { icon: TrendingUp, label: "Wayward-andel (OB)" },
-  { icon: Compass, label: "Konsekvensmått" },
+  { icon: Sparkles, label: "Längd jämfört med andra golfare" },
+  { icon: TrendingUp, label: "Out of Bounds (OB)" },
+  { icon: Compass, label: "Jämnhet" },
   { icon: AlertTriangle, label: "Upptäckta missmönster" },
 ];
 
@@ -46,7 +46,7 @@ export function OffTeeLanding({ lastResultLabel }: { lastResultLabel?: string })
       <h1 className="mt-2 text-5xl leading-none">Off the Tee Test</h1>
       <p className="mt-4 text-base leading-relaxed text-muted-foreground">
         Slå 12 drives mot samma fairway och få en uppskattning av din Driving Handicap baserat på
-        längd, precision och konsekvens.
+        längd, precision och jämnhet.
       </p>
 
       <section className="mt-8">
@@ -80,8 +80,7 @@ export function OffTeeLanding({ lastResultLabel }: { lastResultLabel?: string })
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
           12 drives mot samma standardiserade fairway. Bara tre tal per slag – carry, totalt avstånd
           och sidled från mitten. Ingen klubba att välja. Din Driving Handicap byggs sedan av längd,
-          hur ofta du håller bollen i spel och hur jämn du är slag för slag, kalibrerat mot Arccos
-          verkliga speldata från miljontals tee-slag.
+          hur ofta du håller bollen i spel (Out of Bounds) och hur jämn du är slag för slag.
         </p>
       </section>
 

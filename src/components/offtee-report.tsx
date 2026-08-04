@@ -1,7 +1,7 @@
 import { CheckCircle2, Target, Trophy, type LucideIcon } from "lucide-react";
 import {
-  ARCCOS_AVERAGE_YARDS,
-  PGA_TOUR_AVERAGE_YARDS,
+  PGA_TOUR_AVERAGE_METERS,
+  AVERAGE_GOLFER_METERS,
   analyseOffTee,
   handicapLabel,
   scoreBand,
@@ -11,8 +11,6 @@ import { TeeDispersion } from "@/components/offtee-visuals";
 
 const GRADE_TEXT: Record<string, string> = { good: "text-primary", poor: "text-destructive" };
 const GRADE_SOFT: Record<string, string> = { good: "bg-primary/10", poor: "bg-destructive/10" };
-
-const YD = 0.9144;
 
 /** Hela analysen för ett genomfört Off the Tee Test. */
 export function OffTeeReport({
@@ -27,8 +25,7 @@ export function OffTeeReport({
   const analysis = analyseOffTee(result);
   const band = scoreBand(result.score);
   const delta = typeof prevScore === "number" ? result.score - prevScore : null;
-  const avgYards = result.avgTotal / YD;
-  const vsAverage = avgYards - ARCCOS_AVERAGE_YARDS;
+  const vsAverage = result.avgTotal - AVERAGE_GOLFER_METERS;
 
   return (
     <div className="space-y-10">
@@ -62,18 +59,23 @@ export function OffTeeReport({
       </section>
 
       <section>
-        <h2 className="font-display text-2xl leading-none">Hur handicapet räknas fram</h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Längd och wayward-andel är kalibrerade mot Arccos Driving Distance Report 2026.
-        </p>
+        <h2 className="font-display text-2xl leading-none">Vad resultatet betyder</h2>
         <div className="mt-4 space-y-2">
-          <BreakdownRow label="Längd" weight="55 %" hcp={result.breakdown.distanceHcp} />
-          <BreakdownRow
-            label="Wayward-andel (OB)"
-            weight="30 %"
-            hcp={result.breakdown.waywardHcp}
+          <MeaningRow
+            label="Längd"
+            hcp={result.breakdown.distanceHcp}
+            detail={`${result.avgTotal.toFixed(0)} m i snitt`}
           />
-          <BreakdownRow label="Konsekvens" weight="15 %" hcp={result.breakdown.consistencyHcp} />
+          <MeaningRow
+            label="Out of Bounds (OB)"
+            hcp={result.breakdown.waywardHcp}
+            detail={`${result.waywardPct} % av slagen`}
+          />
+          <MeaningRow
+            label="Jämnhet"
+            hcp={result.breakdown.consistencyHcp}
+            detail={`±${result.distanceSpread.toFixed(0)} m spridning`}
+          />
         </div>
       </section>
 
@@ -87,9 +89,9 @@ export function OffTeeReport({
         </div>
         <p className="mt-3 text-sm text-muted-foreground">
           {vsAverage >= 0
-            ? `${vsAverage.toFixed(0)} yards längre än genomsnittsgolfaren (${ARCCOS_AVERAGE_YARDS} yards) i Arccos 2026-rapporten.`
-            : `${Math.abs(vsAverage).toFixed(0)} yards kortare än genomsnittsgolfaren (${ARCCOS_AVERAGE_YARDS} yards) i Arccos 2026-rapporten.`}{" "}
-          Till jämförelse ligger PGA Tour-snittet på {PGA_TOUR_AVERAGE_YARDS} yards.
+            ? `${vsAverage.toFixed(0)} m längre än en snittgolfare (${AVERAGE_GOLFER_METERS.toFixed(0)} m).`
+            : `${Math.abs(vsAverage).toFixed(0)} m kortare än en snittgolfare (${AVERAGE_GOLFER_METERS.toFixed(0)} m).`}{" "}
+          Till jämförelse ligger PGA Tour-snittet på {PGA_TOUR_AVERAGE_METERS.toFixed(0)} m.
         </p>
       </section>
 
@@ -97,18 +99,18 @@ export function OffTeeReport({
         <h2 className="font-display text-2xl leading-none">Träffsäkerhet</h2>
         <div className="mt-4 grid grid-cols-2 gap-3">
           <Stat label="Fairway-träff" value={`${result.fairwayHitPct} %`} />
-          <Stat label="Wayward (OB)" value={`${result.waywardPct} %`} />
+          <Stat label="OB" value={`${result.waywardPct} %`} />
           <Stat label="Miss vänster" value={`${result.leftPct} %`} />
           <Stat label="Miss höger" value={`${result.rightPct} %`} />
         </div>
         <p className="mt-3 text-sm text-muted-foreground">
           {result.waywardPct <= 15
-            ? "Låg wayward-andel – nära scratch-nivå (~12 % enligt Arccos data)."
+            ? "Låg OB-andel – nära scratch-nivå."
             : result.leftPct > result.rightPct + 15
               ? "Missarna är i huvudsak riktningsrelaterade – bollen drar konsekvent åt vänster."
               : result.rightPct > result.leftPct + 15
                 ? "Missarna är i huvudsak riktningsrelaterade – bollen drar konsekvent åt höger."
-                : "Wayward-andelen är den tydligaste skiljelinjen mot lägre handicap enligt Arccos data – den väger tyngst efter längd."}
+                : "OB-andelen är den tydligaste skiljelinjen mot lägre handicap – den väger tyngst efter längd."}
         </p>
       </section>
 
@@ -150,12 +152,12 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function BreakdownRow({ label, weight, hcp }: { label: string; weight: string; hcp: number }) {
+function MeaningRow({ label, hcp, detail }: { label: string; hcp: number; detail: string }) {
   return (
     <div className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3">
       <div>
         <p className="font-semibold">{label}</p>
-        <p className="text-xs text-muted-foreground">Väger {weight}</p>
+        <p className="text-xs text-muted-foreground">{detail}</p>
       </div>
       <span className="font-[family-name:var(--font-display)] text-xl leading-none text-flag">
         HCP {handicapLabel(hcp)}

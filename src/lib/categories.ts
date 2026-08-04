@@ -55,7 +55,7 @@ export const CATEGORIES: Category[] = [
         subtitle: "12 drives mot samma fairway",
         bullets: [
           "Bara carry, totalt avstånd och sidled per slag – ingen klubba.",
-          "Driving Handicap kalibrerat mot Arccos verkliga speldata.",
+          "Driving Handicap kalibrerat mot verklig speldata.",
         ],
         result: "RESULTAT: OFF THE TEE SCORE 0–100 + DRIVING HCP",
       },
