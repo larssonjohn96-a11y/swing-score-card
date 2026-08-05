@@ -73,8 +73,8 @@ export function OffTeeReport({
           />
           <MeaningRow
             label="Jämnhet"
-            hcp={result.breakdown.consistencyHcp}
-            detail={`±${result.distanceSpread.toFixed(0)} m spridning`}
+            hcp={result.breakdown.evennessHcp}
+            detail={`±${result.distanceSpread.toFixed(0)} m längd, ±${result.lateralSpread.toFixed(0)} m sidled`}
           />
         </div>
       </section>

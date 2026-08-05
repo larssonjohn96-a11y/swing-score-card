@@ -58,6 +58,8 @@ function OffTeePage() {
   // spelaren slipper skriva in samma värden på nytt varje gång.
   const rollRatioRef = useRef(DEFAULT_ROLL_RATIO);
   const totalTouchedRef = useRef(false);
+  // Kom ihåg senast valda riktning (vänster/höger) mellan slagen.
+  const lastSideRef = useRef<-1 | 1>(1);
 
   const current = shots[Math.min(index, OFFTEE_TOTAL_SHOTS - 1)];
 
@@ -85,6 +87,7 @@ function OffTeePage() {
     setIndex(0);
     rollRatioRef.current = DEFAULT_ROLL_RATIO;
     totalTouchedRef.current = false;
+    lastSideRef.current = 1;
     setCarryRaw(DEFAULT_CARRY);
     setTotalRaw(Math.round(DEFAULT_CARRY * DEFAULT_ROLL_RATIO));
     setSide(1);
@@ -106,10 +109,11 @@ function OffTeePage() {
       p.map((s, i) => (i === index ? { ...s, carry, total, offline, filled: true } : s)),
     );
 
-    // Uppdatera det ihågkomna rull-förhållandet från slaget som just registrerades.
+    // Uppdatera det ihågkomna rull-förhållandet och riktningen från slaget som just registrerades.
     if (carry > 0) {
       rollRatioRef.current = clampRatio(total / carry);
     }
+    lastSideRef.current = side;
 
     if (next >= OFFTEE_TOTAL_SHOTS) {
       setPhase("result");
@@ -122,11 +126,13 @@ function OffTeePage() {
       if (nextShot.filled) {
         setTotalRaw(nextShot.total);
         totalTouchedRef.current = true;
+        setSide(nextShot.offline < 0 ? -1 : 1);
+        setOffset(Math.abs(nextShot.offline));
       } else {
         setTotalRaw(Math.round(nextCarry * rollRatioRef.current));
+        setSide(lastSideRef.current);
+        setOffset(0);
       }
-      setSide(1);
-      setOffset(0);
     }
   }
 
@@ -140,6 +146,9 @@ function OffTeePage() {
     totalTouchedRef.current = true;
     if (s.filled && s.carry > 0) {
       rollRatioRef.current = clampRatio(s.total / s.carry);
+    }
+    if (s.filled) {
+      lastSideRef.current = s.offline < 0 ? -1 : 1;
     }
     setSide(s.offline < 0 ? -1 : 1);
     setOffset(Math.abs(s.offline));

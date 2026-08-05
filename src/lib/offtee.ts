@@ -160,11 +160,12 @@ function waywardToHandicap(waywardPct: number): number {
 }
 
 /**
- * Konsekvens (spridning i totalt avstånd mellan slagen) → handicap. Ingen
- * extern datakälla för detta – en rimlig egen skattning: jämnare kontakt
- * ger mindre variation i totalt avstånd slag för slag.
+ * Jämnhet (spridning i både totalt avstånd OCH sidled mellan slagen) →
+ * handicap. Ingen extern datakälla för detta – en rimlig egen skattning:
+ * jämnare kontakt ger mindre variation i både längd och riktning slag för
+ * slag. Kombinerar de två spridningsmåtten till ett medelvärde i meter.
  */
-const CONSISTENCY_ANCHORS: Anchor[] = [
+const EVENNESS_ANCHORS: Anchor[] = [
   { hcp: -8, value: 2 },
   { hcp: -6, value: 3 },
   { hcp: 3, value: 6 },
@@ -173,8 +174,8 @@ const CONSISTENCY_ANCHORS: Anchor[] = [
   { hcp: 40, value: 30 },
 ];
 
-function consistencyToHandicap(sdMeters: number): number {
-  return interpolate(sdMeters, CONSISTENCY_ANCHORS, false);
+function evennessToHandicap(combinedSdMeters: number): number {
+  return interpolate(combinedSdMeters, EVENNESS_ANCHORS, false);
 }
 
 /** Handicap → 0–100 Off the Tee Score, för rubrik/kort. Spänner -8 till 40. */
@@ -202,7 +203,7 @@ export type OffTeeResult = {
   /** Estimerat Driving Handicap */
   handicap: number;
   /** de tre delarna som bygger handicapet, för transparens i rapporten */
-  breakdown: { distanceHcp: number; waywardHcp: number; consistencyHcp: number };
+  breakdown: { distanceHcp: number; waywardHcp: number; evennessHcp: number };
   shots: TeeShotResult[];
   avgTotal: number;
   avgCarry: number;
@@ -214,11 +215,13 @@ export type OffTeeResult = {
   rightPct: number;
   /** spridning i totalt avstånd mellan slagen, meter (lägre = jämnare) */
   distanceSpread: number;
+  /** spridning i sidled mellan slagen, meter (lägre = jämnare) */
+  lateralSpread: number;
 };
 
-const DISTANCE_WEIGHT = 0.55;
+const DISTANCE_WEIGHT = 0.5;
 const WAYWARD_WEIGHT = 0.3;
-const CONSISTENCY_WEIGHT = 0.15;
+const EVENNESS_WEIGHT = 0.2;
 
 export function offTeeResult(shots: TeeShot[]): OffTeeResult {
   const filled = shots.filter((s) => s.filled);
@@ -232,13 +235,16 @@ export function offTeeResult(shots: TeeShot[]): OffTeeResult {
 
   const n = results.length || 1;
   const totals = results.map((r) => r.total);
+  const offlines = results.map((r) => r.offline);
   const avgTotal = mean(totals);
   const waywardPct = Math.round((results.filter((r) => r.outcome.isOB).length / n) * 100);
-  const sd = stdDev(totals);
+  const distanceSd = stdDev(totals);
+  const lateralSd = stdDev(offlines);
+  const combinedSd = (distanceSd + lateralSd) / 2;
 
   const distanceHcp = results.length ? distanceToHandicap(avgTotal) : 0;
   const waywardHcp = results.length ? waywardToHandicap(waywardPct) : 0;
-  const consistencyHcp = results.length >= 2 ? consistencyToHandicap(sd) : distanceHcp;
+  const evennessHcp = results.length >= 2 ? evennessToHandicap(combinedSd) : distanceHcp;
 
   const handicap = results.length
     ? Math.round(
@@ -248,7 +254,7 @@ export function offTeeResult(shots: TeeShot[]): OffTeeResult {
             40,
             distanceHcp * DISTANCE_WEIGHT +
               waywardHcp * WAYWARD_WEIGHT +
-              consistencyHcp * CONSISTENCY_WEIGHT,
+              evennessHcp * EVENNESS_WEIGHT,
           ),
         ) * 10,
       ) / 10
@@ -260,7 +266,7 @@ export function offTeeResult(shots: TeeShot[]): OffTeeResult {
     breakdown: {
       distanceHcp: Math.round(distanceHcp * 10) / 10,
       waywardHcp: Math.round(waywardHcp * 10) / 10,
-      consistencyHcp: Math.round(consistencyHcp * 10) / 10,
+      evennessHcp: Math.round(evennessHcp * 10) / 10,
     },
     shots: results,
     avgTotal,
@@ -271,7 +277,8 @@ export function offTeeResult(shots: TeeShot[]): OffTeeResult {
     avgOffline: mean(results.map((r) => Math.abs(r.offline))),
     leftPct: Math.round((results.filter((r) => r.offline < -1).length / n) * 100),
     rightPct: Math.round((results.filter((r) => r.offline > 1).length / n) * 100),
-    distanceSpread: Math.round(sd * 10) / 10,
+    distanceSpread: Math.round(distanceSd * 10) / 10,
+    lateralSpread: Math.round(lateralSd * 10) / 10,
   };
 }
 
@@ -366,8 +373,10 @@ export function analyseOffTee(result: OffTeeResult): OffTeeAnalysis {
   } else if (result.waywardPct <= 15) {
     strengths.push(`Låg OB-andel (${result.waywardPct} %) – nära scratch-nivå.`);
   }
-  if (result.breakdown.consistencyHcp <= 10) {
-    strengths.push(`Jämn längdkontroll mellan slagen (±${result.distanceSpread.toFixed(0)} m).`);
+  if (result.breakdown.evennessHcp <= 10) {
+    strengths.push(
+      `Jämnt slag för slag – både längd (±${result.distanceSpread.toFixed(0)} m) och sidled (±${result.lateralSpread.toFixed(0)} m).`,
+    );
   }
   if (!strengths.length) {
     strengths.push(`Längsta drive ${result.longest.toFixed(0)} m i testet.`);
@@ -383,14 +392,34 @@ export function analyseOffTee(result: OffTeeResult): OffTeeAnalysis {
   } else if (result.rightPct >= 45 && result.rightPct > result.leftPct) {
     improvements.push(`Majoriteten av missarna går höger (${result.rightPct} %).`);
   }
-  if (result.breakdown.consistencyHcp >= 20) {
-    improvements.push("Totala avståndet varierar mycket mellan slagen – jobba på jämnare kontakt.");
+  if (result.breakdown.evennessHcp >= 20) {
+    improvements.push(
+      `Spridningen varierar mycket mellan slagen (±${result.distanceSpread.toFixed(0)} m längd, ±${result.lateralSpread.toFixed(0)} m sidled) – jobba på jämnare kontakt.`,
+    );
   }
   if (result.avgTotal < AVERAGE_GOLFER_METERS) {
     const gap = AVERAGE_GOLFER_METERS - result.avgTotal;
     improvements.push(
       `${gap.toFixed(0)} m kortare än snittgolfaren – mer fart eller bättre center-träff kan hjälpa.`,
     );
+  }
+
+  // Även starka resultat ska ge något att jobba vidare på, om det inte redan är perfekt.
+  if (!improvements.length && result.score < 97) {
+    const weakest = (["distanceHcp", "waywardHcp", "evennessHcp"] as const).reduce((a, b) =>
+      result.breakdown[b] > result.breakdown[a] ? b : a,
+    );
+    if (weakest === "distanceHcp") {
+      improvements.push("Redan starkt – lite mer längd kan sänka handicapet ytterligare.");
+    } else if (weakest === "waywardHcp") {
+      improvements.push(
+        "Redan starkt – fortsätt hålla nere OB-andelen, det väger tyngst efter längd.",
+      );
+    } else {
+      improvements.push(
+        "Redan starkt – jämnare spridning i längd och sidled kan finslipa resultatet.",
+      );
+    }
   }
 
   return { strengths: strengths.slice(0, 3), improvements: improvements.slice(0, 3) };
