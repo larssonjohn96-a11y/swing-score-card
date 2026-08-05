@@ -165,16 +165,16 @@ export const PROGRESS_TESTS: ProgressTest[] = [
   },
   {
     id: "kortputt",
-    title: "Kortputt",
+    title: "Short Putting Test",
     categorySlug: "puttning",
     to: "/kortputt",
-    metric: "Isatta puttar",
-    unit: "%",
+    metric: "Short Putting Score",
+    unit: "/ 100",
     higherIsBetter: true,
     decimals: 0,
     load: () =>
       loadShortPuttSessions()
-        .map((s) => ({ date: day(s.date), value: s.pct }))
+        .map((s) => ({ date: day(s.date), value: s.score }))
         .sort(byDate),
   },
   {

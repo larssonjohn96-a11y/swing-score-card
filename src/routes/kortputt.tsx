@@ -1,13 +1,14 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { Check } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
+  DIRECTIONS,
   SHORT_PUTT_TOTAL,
+  computeShortPuttResult,
   deleteShortPuttSession,
   emptyShortPutts,
   loadShortPuttSessions,
   saveShortPuttSession,
-  shortPuttStats,
   type ShortPutt,
   type ShortPuttSession,
 } from "@/lib/shortputt";
@@ -15,16 +16,16 @@ import {
 export const Route = createFileRoute("/kortputt")({
   head: () => ({
     meta: [
-      { title: "Kortputt – 12 puttar inom 1,5 m | SG4" },
+      { title: "Short Putting Test – 12 puttar från 1–3 m | SG4" },
       {
         name: "description",
         content:
-          "Kortputtstestet: 12 puttar från 0,5, 1,0 och 1,5 meter. Räkna isatta puttar och följ träffprocenten över tid.",
+          "Short Putting Test: 12 puttar från fyra riktningar (klockan 12/3/6/9) på 1, 2 och 3 meter. Viktad score, HCP-uppskattning och analys per riktning.",
       },
-      { property: "og:title", content: "Kortputt – 12 puttar inom 1,5 m" },
+      { property: "og:title", content: "Short Putting Test – 12 puttar från 1–3 m" },
       {
         property: "og:description",
-        content: "4 puttar per avstånd från 0,5 till 1,5 m. Resultat i procent isatta.",
+        content: "4 riktningar × 3 avstånd (1–3 m). Score 0–100 och uppskattat handicap.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -44,9 +45,7 @@ function ShortPuttPage() {
   useEffect(() => setSessions(loadShortPuttSessions()), []);
 
   const played = done ? putts : putts.slice(0, index);
-  const holed = played.filter((p) => p.holed).length;
-  const pct = played.length ? (holed / played.length) * 100 : 0;
-  const stats = shortPuttStats(played);
+  const result = computeShortPuttResult(played);
 
   function commit(made: boolean) {
     setPutts(putts.map((p, i) => (i === index ? { ...p, holed: made } : p)));
@@ -67,6 +66,8 @@ function ShortPuttPage() {
     setDone(false);
   }
 
+  const currentLabel = DIRECTIONS.find((d) => d.key === putts[index]?.direction)?.label;
+
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-24 pt-8">
       <header className="flex items-end justify-between">
@@ -74,7 +75,7 @@ function ShortPuttPage() {
           <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
             Puttning · 12 puttar
           </p>
-          <h1 className="text-4xl leading-none">Kortputt</h1>
+          <h1 className="text-4xl leading-none">Short Putting Test</h1>
         </div>
         <Link
           to="/kategori/$slug"
@@ -85,30 +86,136 @@ function ShortPuttPage() {
         </Link>
       </header>
 
-      <section className="mt-6 rounded-3xl border border-border bg-card p-6 text-center shadow-[var(--shadow-glow)]">
-        <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Isatta puttar</p>
-        <p className="font-[family-name:var(--font-display)] text-7xl leading-none text-flag">
-          {pct.toFixed(0)}
-          <span className="ml-2 text-2xl text-muted-foreground">%</span>
-        </p>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {holed} av {played.length || 0} · {done ? "klart" : `Putt ${index + 1} av ${SHORT_PUTT_TOTAL}`}
-        </p>
-      </section>
+      {!done ? (
+        <>
+          <section className="mt-6 rounded-3xl border border-border bg-card p-6 text-center shadow-[var(--shadow-glow)]">
+            <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
+              Putt {index + 1} av {SHORT_PUTT_TOTAL}
+            </p>
+            <h2 className="mt-1 font-[family-name:var(--font-display)] text-3xl leading-tight">
+              {currentLabel}
+            </h2>
+            <p className="mt-1 font-[family-name:var(--font-display)] text-6xl leading-none text-flag">
+              {putts[index]?.distance}
+              <span className="ml-1 text-2xl text-muted-foreground">m</span>
+            </p>
+          </section>
 
-      {done ? (
-        <section className="mt-6 rounded-3xl border border-border bg-card p-6">
-          <h2 className="text-2xl">Testet är klart</h2>
-          <div className="mt-3 space-y-2 text-sm">
-            {stats.map((s) => (
-              <div key={s.distance} className="flex justify-between border-b border-border pb-1">
-                <span className="text-muted-foreground">{s.distance} m</span>
-                <span>
-                  {s.holed}/{s.count} · {s.pct.toFixed(0)} %
-                </span>
-              </div>
-            ))}
+          <div className="mt-5 flex gap-3">
+            <button
+              onClick={() => commit(true)}
+              className="flex-1 rounded-2xl bg-primary py-5 font-[family-name:var(--font-display)] text-2xl text-primary-foreground"
+            >
+              Satt
+            </button>
+            <button
+              onClick={() => commit(false)}
+              className="flex-1 rounded-2xl border border-border py-5 font-[family-name:var(--font-display)] text-2xl text-muted-foreground"
+            >
+              Missad
+            </button>
           </div>
+        </>
+      ) : (
+        <section className="mt-6">
+          <p className="flex items-center justify-center gap-1 text-xs text-primary">
+            <Check className="h-4 w-4" /> Testet är klart
+          </p>
+
+          <div className="mt-4 rounded-3xl border border-border bg-card p-6 text-center shadow-[var(--shadow-glow)]">
+            <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
+              Short Putting Score
+            </p>
+            <p className="mt-1 font-[family-name:var(--font-display)] text-7xl leading-none text-flag">
+              {result.score}
+              <span className="ml-1 text-2xl text-muted-foreground">/100</span>
+            </p>
+            <p className="mt-3 text-sm text-muted-foreground">
+              Uppskattad Short Putting HCP: {result.handicapRange[0]}–{result.handicapRange[1]}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Ett enda test räcker inte för ett exakt tal – blir stabilare efter fler tester.
+            </p>
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <div className="rounded-2xl border border-border bg-card p-3">
+              <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
+                Totalt satta
+              </p>
+              <p className="mt-1 font-[family-name:var(--font-display)] text-2xl leading-none">
+                {result.holed}/{result.count}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-border bg-card p-3">
+              <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">Poäng</p>
+              <p className="mt-1 font-[family-name:var(--font-display)] text-2xl leading-none">
+                {result.points}/36
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-4 rounded-3xl border border-border bg-card p-5">
+            <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Per avstånd</p>
+            <div className="mt-3 space-y-2 text-sm">
+              {result.byDistance.map((s) => (
+                <div
+                  key={s.distance}
+                  className="flex justify-between border-b border-border pb-1.5"
+                >
+                  <span className="text-muted-foreground">{s.distance} m</span>
+                  <span className="font-semibold">
+                    {s.holed}/{s.count}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {result.byDirection.length > 0 && (
+            <div className="mt-4 rounded-3xl border border-border bg-card p-5">
+              <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
+                Per riktning
+              </p>
+              <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                {result.byDirection.map((d) => (
+                  <div
+                    key={d.direction}
+                    className="rounded-xl border border-border p-2 text-center"
+                  >
+                    <p className="text-[11px] text-muted-foreground">{d.label}</p>
+                    <p className="mt-0.5 font-semibold">
+                      {d.holed}/{d.count}
+                    </p>
+                  </div>
+                ))}
+              </div>
+              {(result.bestDirection || result.worstDirection) && (
+                <div className="mt-3 space-y-0.5 text-xs text-muted-foreground">
+                  {result.bestDirection && (
+                    <p>
+                      Bästa riktning:{" "}
+                      <span className="text-foreground">{result.bestDirection.label}</span>
+                    </p>
+                  )}
+                  {result.worstDirection && (
+                    <p>
+                      Svagaste riktning:{" "}
+                      <span className="text-foreground">{result.worstDirection.label}</span>
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {result.analysis && (
+            <div className="mt-4 rounded-2xl border border-border bg-card/60 p-4">
+              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Analys</p>
+              <p className="mt-1.5 text-sm leading-relaxed">{result.analysis}</p>
+            </div>
+          )}
+
           <label htmlFor="notes" className="mt-5 block text-sm text-muted-foreground">
             Anteckning (valfritt)
           </label>
@@ -140,47 +247,33 @@ function ShortPuttPage() {
             </button>
           </div>
         </section>
-      ) : (
-        <section className="mt-6 rounded-3xl border border-border bg-card p-6">
-          <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
-            Putt {index + 1} av {SHORT_PUTT_TOTAL}
-          </p>
-          <h2 className="text-3xl leading-tight">{putts[index].distance} meter</h2>
-          <button
-            onClick={() => commit(true)}
-            className="mt-5 w-full rounded-2xl bg-primary py-4 font-[family-name:var(--font-display)] text-2xl text-primary-foreground"
-          >
-            I hål
-          </button>
-          <button
-            onClick={() => commit(false)}
-            className="mt-3 w-full rounded-2xl border border-border py-4 font-[family-name:var(--font-display)] text-2xl text-muted-foreground"
-          >
-            Miss
-          </button>
-        </section>
       )}
 
-      <section className="mt-6">
-        <h2 className="text-sm uppercase tracking-[0.25em] text-muted-foreground">Alla puttar</h2>
-        <div className="mt-3 space-y-2">
-          {putts.map((p, i) => (
-            <div
-              key={`${p.distance}-${p.index}`}
-              className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-sm ${
-                !done && i === index
-                  ? "border-primary bg-primary/15"
-                  : "border-border bg-card text-muted-foreground"
-              }`}
-            >
-              <span>
-                {i + 1}. {p.distance} m
-              </span>
-              <span>{done || i < index ? (p.holed ? "I hål" : "Miss") : "–"}</span>
-            </div>
-          ))}
-        </div>
-      </section>
+      {!done && (
+        <section className="mt-6">
+          <h2 className="text-sm uppercase tracking-[0.25em] text-muted-foreground">Alla puttar</h2>
+          <div className="mt-3 space-y-2">
+            {putts.map((p, i) => {
+              const label = DIRECTIONS.find((d) => d.key === p.direction)?.label;
+              return (
+                <div
+                  key={p.index}
+                  className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-sm ${
+                    i === index
+                      ? "border-primary bg-primary/15"
+                      : "border-border bg-card text-muted-foreground"
+                  }`}
+                >
+                  <span>
+                    {i + 1}. {label} · {p.distance} m
+                  </span>
+                  <span>{i < index ? (p.holed ? "Satt" : "Missad") : "–"}</span>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {sessions.length ? (
         <section className="mt-8">
@@ -195,13 +288,14 @@ function ShortPuttPage() {
                   {new Date(s.date).toLocaleDateString("sv-SE")}
                 </span>
                 <span>
-                  {s.holed}/{s.putts.length} · {s.pct.toFixed(0)} %
+                  {s.score}/100 · {s.holed}/{s.putts.length}
                 </span>
                 <button
                   onClick={() => setSessions(deleteShortPuttSession(s.id))}
-                  className="text-xs text-muted-foreground underline"
+                  aria-label="Ta bort test"
+                  className="text-muted-foreground"
                 >
-                  Ta bort
+                  <X className="h-4 w-4" />
                 </button>
               </div>
             ))}
@@ -212,8 +306,10 @@ function ShortPuttPage() {
       <section className="mt-8 rounded-2xl border border-border bg-card/60 p-4 text-sm text-muted-foreground">
         <h2 className="text-base text-foreground">Så funkar testet</h2>
         <p className="mt-2">
-          Fyra puttar från vardera 0,5, 1,0 och 1,5 meter – totalt 12 puttar inom 1,5 m. Resultatet
-          är andelen isatta puttar.
+          Fyra startlinjer runt hålet – klockan 12, 3, 6 och 9 – med en putt från vardera 1, 2 och 3
+          meter. Totalt 12 puttar. En satt putt från 1 m ger 2 poäng, från 2 m 3 poäng och från 3 m
+          4 poäng (max 36). Testet mäter framför allt förmågan att håla puttar från 1–3 meter, inte
+          hela puttingförmågan – prova Lagputt för längre puttar och distanskontroll.
         </p>
       </section>
     </main>

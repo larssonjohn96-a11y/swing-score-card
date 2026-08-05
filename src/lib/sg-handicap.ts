@@ -162,14 +162,14 @@ export function computeCategoryHandicaps(asOf?: Date): CategoryHandicap[] {
     latestScore: undefined,
   };
 
-  const puttHcps = putt.map((s) => ratingToHandicap(s.pct));
+  const puttHcps = putt.map((s) => ratingToHandicap(s.score));
   const putting: CategoryHandicap = {
     slug: "puttning",
     title: CATEGORY_LABELS.puttning,
     count: putt.length,
     handicap: puttHcps.length ? puttHcps[puttHcps.length - 1] : undefined,
     trend: trendOf(puttHcps),
-    latestScore: putt.length ? putt[putt.length - 1].pct : undefined,
+    latestScore: putt.length ? putt[putt.length - 1].score : undefined,
   };
 
   return [approach, driving, aroundGreen, putting];
@@ -401,7 +401,7 @@ export function computeHistory(filter?: CategorySlug, limit = 200): HistoryEntry
   const offtee = loadOffTeeSessions();
   const bunker = loadBunkerSessions();
   const putt = loadShortPuttSessions();
-  const puttHcps = putt.map((s) => ratingToHandicap(s.pct));
+  const puttHcps = putt.map((s) => ratingToHandicap(s.score));
 
   const all: HistoryEntry[] = [
     ...precision.map((s) => ({
@@ -437,10 +437,10 @@ export function computeHistory(filter?: CategorySlug, limit = 200): HistoryEntry
     ...putt.map((s, i) => ({
       key: `putt-${s.id}`,
       categorySlug: "puttning" as const,
-      title: "Kortputt",
+      title: "Short Putting Test",
       date: s.date,
-      score: Math.round(s.pct),
-      scoreUnit: "%",
+      score: s.score,
+      scoreUnit: "/100",
       handicap: puttHcps[i],
       to: { slug: "puttning", test: "kortputt" },
     })),
@@ -471,18 +471,18 @@ export function computeApproachHeatmap(): HeatmapZone[] {
     .map((g) => ({ label: g.label, score: g.score, count: g.count }));
 }
 
-/** Kortputt: träffprocent per avstånd (0,5 / 1,0 / 1,5 m), aggregerat. */
+/** Short Putting Test: träffprocent per avstånd (1 / 2 / 3 m), aggregerat. */
 export function computePuttingHeatmap(): HeatmapZone[] {
   const sessions = loadShortPuttSessions();
   const allPutts = sessions.flatMap((s) => s.putts);
   if (!allPutts.length) return [];
-  const distances = [0.5, 1, 1.5];
+  const distances = [1, 2, 3];
   return distances
     .map((d) => {
       const rows = allPutts.filter((p) => p.distance === d);
       const holed = rows.filter((p) => p.holed).length;
       return {
-        label: `${d.toString().replace(".", ",")} m`,
+        label: `${d} m`,
         score: rows.length ? Math.round((holed / rows.length) * 100) : 0,
         count: rows.length,
       };
@@ -509,7 +509,7 @@ export function computeLatestTests(limit = 3): LatestTest[] {
   const offtee = loadOffTeeSessions();
   const putt = loadShortPuttSessions();
 
-  const puttHcps = putt.map((s) => ratingToHandicap(s.pct));
+  const puttHcps = putt.map((s) => ratingToHandicap(s.score));
 
   const all: LatestTest[] = [
     ...precision.map((s, i, arr) => ({
@@ -535,8 +535,8 @@ export function computeLatestTests(limit = 3): LatestTest[] {
       key: `putt-${s.id}`,
       title: "Putting",
       date: s.date,
-      score: Math.round(s.pct),
-      scoreUnit: "%",
+      score: s.score,
+      scoreUnit: "/100",
       handicap: puttHcps[i],
       trend: i > 0 ? Math.round((puttHcps[i] - puttHcps[i - 1]) * 10) / 10 : undefined,
     })),
@@ -719,7 +719,10 @@ function puttingDetailData(): CategoryDetailData {
     limitation = [...heatmap].sort((a, b) => a.score - b.score)[0].label;
   }
   const keyMetrics = last
-    ? [{ label: "Senaste träffprocent", value: `${Math.round(last.pct)} %` }]
+    ? [
+        { label: "Senaste score", value: `${last.score}/100` },
+        { label: "Senaste träffprocent", value: `${Math.round(last.pct)} %` },
+      ]
     : [];
   const strengths = strength ? [`Stark på ${strength}.`] : [];
   const improvements = limitation ? [`${limitation} har lägst träffprocent just nu.`] : [];
@@ -789,7 +792,7 @@ function categorySessionSeries(): Record<CategorySlug, CategorySessionPoint[]> {
   }));
   const putt = loadShortPuttSessions().map((s) => ({
     date: s.date,
-    handicap: ratingToHandicap(s.pct),
+    handicap: ratingToHandicap(s.score),
   }));
   return {
     approach: byDateAsc(precision),

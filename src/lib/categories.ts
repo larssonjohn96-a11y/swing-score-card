@@ -128,13 +128,13 @@ export const CATEGORIES: Category[] = [
       {
         to: "/kortputt",
         number: "14",
-        title: "Kortputt",
-        subtitle: "12 puttar inom 1,5 m",
+        title: "Short Putting Test",
+        subtitle: "12 puttar – 4 riktningar × 1–3 m",
         bullets: [
-          "4 puttar från vardera 0,5, 1,0 och 1,5 meter.",
-          "Räkna isatta puttar per avstånd.",
+          "Klockan 12, 3, 6 och 9 – en putt vardera från 1, 2 och 3 meter.",
+          "Satta puttar viktas efter avstånd (2/3/4 poäng), max 36.",
         ],
-        result: "RESULTAT: ANDEL ISATTA PUTTAR I %",
+        result: "RESULTAT: SCORE 0–100 + EST. HCP-INTERVALL",
       },
       {
         to: "/lagputt",
