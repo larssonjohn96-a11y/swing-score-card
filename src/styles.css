@@ -125,6 +125,17 @@
   --sidebar-border: oklch(0.36 0.045 155);
   --sidebar-ring: oklch(0.83 0.2 128);
   --bg-glow: oklch(0.3 0.07 152);
+  --tier-bronze: oklch(0.62 0.11 55);
+  --tier-bronze-deep: oklch(0.28 0.06 50);
+  --tier-silver: oklch(0.82 0.015 250);
+  --tier-silver-deep: oklch(0.3 0.015 250);
+  --tier-gold: oklch(0.82 0.15 88);
+  --tier-gold-deep: oklch(0.32 0.08 80);
+  --tier-elite: oklch(0.72 0.12 240);
+  --tier-elite-deep: oklch(0.24 0.07 255);
+  --tier-icon: oklch(0.9 0.05 95);
+  --tier-icon-deep: oklch(0.42 0.03 95);
+  --card-ink: oklch(0.98 0.01 100);
 }
 
 .light {
@@ -168,6 +179,17 @@
   --sidebar-border: oklch(0.86 0.03 140);
   --sidebar-ring: oklch(0.58 0.16 145);
   --bg-glow: oklch(0.93 0.05 140);
+  --tier-bronze: oklch(0.66 0.12 55);
+  --tier-bronze-deep: oklch(0.32 0.07 50);
+  --tier-silver: oklch(0.8 0.015 250);
+  --tier-silver-deep: oklch(0.34 0.015 250);
+  --tier-gold: oklch(0.84 0.15 88);
+  --tier-gold-deep: oklch(0.36 0.09 80);
+  --tier-elite: oklch(0.74 0.12 240);
+  --tier-elite-deep: oklch(0.28 0.08 255);
+  --tier-icon: oklch(0.92 0.05 95);
+  --tier-icon-deep: oklch(0.46 0.03 95);
+  --card-ink: oklch(0.98 0.01 100);
 }
 
 @layer base {
