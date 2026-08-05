@@ -3,7 +3,6 @@ import { Link } from "@tanstack/react-router";
 import { TrendingDown, TrendingUp } from "lucide-react";
 import {
   CartesianGrid,
-  LabelList,
   Line,
   LineChart,
   PolarAngleAxis,
@@ -31,7 +30,6 @@ import {
   BENCHMARK_LEVELS,
   CATEGORY_LABELS,
   SCRATCH_HANDICAP,
-  hcpLabel,
   ratingFromHandicap,
 } from "@/lib/sg-handicap";
 
@@ -104,13 +102,11 @@ export function RadarCard({
     ...cats.map((c) => ({
       subject: `HCP: ${c.title}`,
       spelare: c.handicap !== undefined ? ratingFromHandicap(c.handicap) : 0,
-      spelareHcp: c.handicap !== undefined ? hcpLabel(c.handicap) : "–",
       benchmark: ratingFromHandicap(benchmark),
     })),
     {
       subject: "HCP: Totalt",
       spelare: totalHandicap !== undefined ? ratingFromHandicap(totalHandicap) : 0,
-      spelareHcp: totalHandicap !== undefined ? hcpLabel(totalHandicap) : "–",
       benchmark: ratingFromHandicap(benchmark),
     },
   ];
@@ -134,7 +130,7 @@ export function RadarCard({
       </div>
       <div className="mt-4 h-80 w-full rounded-3xl border border-border bg-card p-3">
         <ResponsiveContainer width="100%" height="100%">
-          <RadarChart data={data} outerRadius="62%">
+          <RadarChart data={data} outerRadius="68%">
             <PolarGrid stroke="var(--border)" />
             <PolarAngleAxis
               dataKey="subject"
@@ -158,14 +154,7 @@ export function RadarCard({
               fillOpacity={0.3}
               strokeWidth={2}
               dot={{ r: 4, fill: "var(--chart-4)", stroke: "var(--card)", strokeWidth: 1 }}
-            >
-              <LabelList
-                dataKey="spelareHcp"
-                position="outside"
-                offset={10}
-                style={{ fontSize: 11, fontWeight: 700, fill: "var(--chart-4)" }}
-              />
-            </Radar>
+            />
             <Tooltip
               contentStyle={{
                 background: "var(--card)",
@@ -180,7 +169,7 @@ export function RadarCard({
       <div className="mt-3 flex justify-center gap-4 text-[11px] text-muted-foreground">
         <span className="flex items-center gap-1.5">
           <span className="h-2.5 w-2.5 rounded-full bg-chart-4" />
-          Din nivå (siffror = ditt HCP)
+          Din nivå
         </span>
         <span className="flex items-center gap-1.5">
           <span className="h-2.5 w-2.5 rounded-full bg-chart-3" />
