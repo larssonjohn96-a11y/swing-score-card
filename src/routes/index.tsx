@@ -3,29 +3,21 @@ import { Link, createFileRoute } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { ThemeToggle } from "@/components/theme-toggle";
 import {
-  categoriesToImprove,
   computeBiggestOpportunity,
   computeCategoryHandicaps,
   computeEstimatedHandicap,
   computeEstimatedTrend,
-  computeLatestTests,
-  getSmartInsight,
   loadRealHandicap,
-  nextMilestone,
   saveRealHandicap,
   type CategoryHandicap,
-  type LatestTest,
   type Opportunity,
 } from "@/lib/sg-handicap";
 import {
   CategoryGrid,
   CategoryTestList,
   DevelopmentCard,
-  GoalCard,
-  LatestTestsCard,
   OpportunityCard,
   RealHandicapCard,
-  SmartInsightCard,
 } from "@/components/home-dashboard";
 import { RadarCard } from "@/components/progress-dashboard";
 
@@ -56,8 +48,6 @@ type HomeData = {
   estimated: number | undefined;
   estimatedTrend: number | undefined;
   opportunity: Opportunity | undefined;
-  latestTests: LatestTest[];
-  insight: string | undefined;
 };
 
 function loadHomeData(): HomeData {
@@ -69,8 +59,6 @@ function loadHomeData(): HomeData {
     estimated: computeEstimatedHandicap(cats),
     estimatedTrend: computeEstimatedTrend(cats),
     opportunity: computeBiggestOpportunity(cats),
-    latestTests: computeLatestTests(3),
-    insight: getSmartInsight(cats),
   };
 }
 
@@ -86,14 +74,6 @@ function Home() {
     saveRealHandicap(value);
     setData(loadHomeData());
   }
-
-  const target =
-    data?.estimated !== undefined
-      ? nextMilestone(data.estimated)
-      : data?.real !== null && data?.real !== undefined
-        ? nextMilestone(data.real)
-        : undefined;
-  const improveCats = data ? categoriesToImprove(data.cats, 2) : [];
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-28 pt-10">
@@ -137,14 +117,6 @@ function Home() {
           <RadarCard cats={data.cats} totalHandicap={data.estimated} />
           <OpportunityCard opportunity={data.opportunity} />
           <CategoryTestList />
-          <LatestTestsCard tests={data.latestTests} />
-          <SmartInsightCard insight={data.insight} />
-          <GoalCard
-            real={data.real}
-            estimated={data.estimated}
-            target={target}
-            improveCats={improveCats}
-          />
         </div>
       )}
 

@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, Pencil, TrendingDown, TrendingUp, Check } from "lucide-react";
+import { Pencil, TrendingDown, TrendingUp, Check } from "lucide-react";
 import {
   hcpLabel,
   ratingFromHandicap,
   type CategoryHandicap,
-  type LatestTest,
   type Opportunity,
 } from "@/lib/sg-handicap";
 import { CATEGORIES } from "@/lib/categories";
@@ -186,14 +185,6 @@ export function CategoryGrid({ cats }: { cats: CategoryHandicap[] }) {
                 <p className="mt-1 font-[family-name:var(--font-display)] text-2xl leading-none">
                   HCP {hcpLabel(c.handicap)}
                 </p>
-                <div className="mt-2 flex items-center justify-between">
-                  <Trend value={c.trend} />
-                  {c.latestScore !== undefined && (
-                    <span className="text-[11px] text-muted-foreground">
-                      Score {Math.round(c.latestScore)}
-                    </span>
-                  )}
-                </div>
                 <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
                   <div
                     className="h-full rounded-full bg-primary"
@@ -217,22 +208,13 @@ export function OpportunityCard({ opportunity }: { opportunity: Opportunity | un
   if (!opportunity) return null;
   return (
     <section className="mt-6 rounded-3xl border border-primary/40 bg-primary/[0.06] p-5">
-      <p className="text-xs uppercase tracking-[0.25em] text-primary">Din största möjlighet</p>
+      <p className="text-xs uppercase tracking-[0.25em] text-primary">Rekommenderat fokus</p>
       <p className="mt-2 font-[family-name:var(--font-display)] text-3xl leading-none">
         {opportunity.title}
       </p>
-      <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-        Förbättrar du {opportunity.title} med cirka 10 % uppskattas du kunna sänka ditt handicap med
-        ungefär {fmt(opportunity.impact)} slag.
+      <p className="mt-2 text-sm text-muted-foreground">
+        Kategorin som just nu ger mest att vinna på att träna vidare.
       </p>
-      <Link
-        to="/kategori/$slug"
-        params={{ slug: opportunity.slug }}
-        className="mt-4 inline-flex items-center gap-2 rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground"
-      >
-        Se rekommenderade tester
-        <ArrowRight className="h-4 w-4" />
-      </Link>
     </section>
   );
 }
@@ -267,109 +249,6 @@ export function CategoryTestList() {
           </Link>
         ))}
       </div>
-    </section>
-  );
-}
-
-/* -------------------------------------------------------------- Senaste tester */
-
-export function LatestTestsCard({ tests }: { tests: LatestTest[] }) {
-  if (!tests.length) return null;
-  return (
-    <section className="mt-6">
-      <div className="flex items-baseline justify-between">
-        <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Senaste tester</p>
-        <Link to="/utveckling" className="text-xs font-medium text-flag">
-          Se utveckling
-        </Link>
-      </div>
-      <div className="mt-3 space-y-2">
-        {tests.map((t) => (
-          <div
-            key={t.key}
-            className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3"
-          >
-            <div>
-              <p className="font-semibold">{t.title}</p>
-              {t.handicap !== undefined && (
-                <p className="text-xs text-muted-foreground">
-                  Estimated HCP {hcpLabel(t.handicap)}
-                </p>
-              )}
-            </div>
-            <div className="flex items-center gap-3">
-              {t.score !== undefined && (
-                <span className="font-[family-name:var(--font-display)] text-xl leading-none">
-                  {t.score}
-                  <span className="text-xs text-muted-foreground">{t.scoreUnit}</span>
-                </span>
-              )}
-              <Trend value={t.trend} />
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-/* ------------------------------------------------------------- Smart Insight */
-
-export function SmartInsightCard({ insight }: { insight: string | undefined }) {
-  if (!insight) return null;
-  return (
-    <section className="mt-6 rounded-2xl border border-border bg-card p-4">
-      <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Smart insight</p>
-      <p className="mt-1.5 text-sm leading-relaxed">{insight}</p>
-    </section>
-  );
-}
-
-/* ------------------------------------------------------------------ Nästa mål */
-
-export function GoalCard({
-  real,
-  estimated,
-  target,
-  improveCats,
-}: {
-  real: number | null;
-  estimated: number | undefined;
-  target: number | undefined;
-  improveCats: CategoryHandicap[];
-}) {
-  if (target === undefined) return null;
-  return (
-    <section className="mt-6 rounded-3xl border border-border bg-card p-5">
-      <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Nästa mål</p>
-      <div className="mt-3 grid grid-cols-3 gap-3 text-center">
-        <div>
-          <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
-            Officiellt
-          </p>
-          <p className="mt-0.5 font-[family-name:var(--font-display)] text-2xl leading-none">
-            {real !== null ? hcpLabel(real) : "–"}
-          </p>
-        </div>
-        <div>
-          <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">Estimated</p>
-          <p className="mt-0.5 font-[family-name:var(--font-display)] text-2xl leading-none text-flag">
-            {estimated !== undefined ? hcpLabel(estimated) : "–"}
-          </p>
-        </div>
-        <div>
-          <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">Mål</p>
-          <p className="mt-0.5 font-[family-name:var(--font-display)] text-2xl leading-none text-primary">
-            {hcpLabel(target)}
-          </p>
-        </div>
-      </div>
-      {improveCats.length > 0 && (
-        <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-          Du behöver förbättra främst {improveCats.map((c) => c.title).join(" och ")} för att nå HCP{" "}
-          {hcpLabel(target)}.
-        </p>
-      )}
     </section>
   );
 }

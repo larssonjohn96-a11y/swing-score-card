@@ -88,7 +88,7 @@ export function OverviewCard({
   );
 }
 
-/* ---------------------------------------------------------- Spindeldiagram */
+/* -------------------------------------------------------- Jämförelseanalys */
 
 export function RadarCard({
   cats,
@@ -114,7 +114,7 @@ export function RadarCard({
 
   return (
     <section className="mt-6">
-      <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Spindeldiagram</p>
+      <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Jämförelseanalys</p>
       <p className="mt-1 text-xs text-muted-foreground">Jämför mot handicapnivå</p>
       <div className="mt-3 flex flex-wrap gap-2">
         {BENCHMARK_LEVELS.map((lvl) => (
@@ -122,7 +122,7 @@ export function RadarCard({
             key={lvl.label}
             active={benchmark === lvl.hcp}
             label={lvl.label}
-            swatch="bg-flag"
+            swatch="bg-chart-3"
             onClick={() => setBenchmark(lvl.hcp)}
           />
         ))}
@@ -139,19 +139,20 @@ export function RadarCard({
             <Radar
               name={`HCP ${BENCHMARK_LEVELS.find((l) => l.hcp === benchmark)?.label ?? benchmark}`}
               dataKey="benchmark"
-              stroke="var(--flag)"
-              fill="var(--flag)"
-              fillOpacity={0.12}
-              strokeDasharray="4 3"
+              stroke="var(--chart-3)"
+              fill="var(--chart-3)"
+              fillOpacity={0.15}
               strokeWidth={2}
+              dot={{ r: 4, fill: "var(--chart-3)", stroke: "var(--card)", strokeWidth: 1 }}
             />
             <Radar
               name="Din nivå"
               dataKey="spelare"
-              stroke="var(--primary)"
-              fill="var(--primary)"
+              stroke="var(--chart-4)"
+              fill="var(--chart-4)"
               fillOpacity={0.3}
               strokeWidth={2}
+              dot={{ r: 4, fill: "var(--chart-4)", stroke: "var(--card)", strokeWidth: 1 }}
             />
             <Tooltip
               contentStyle={{
@@ -163,6 +164,16 @@ export function RadarCard({
             />
           </RadarChart>
         </ResponsiveContainer>
+      </div>
+      <div className="mt-3 flex justify-center gap-4 text-[11px] text-muted-foreground">
+        <span className="flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-full bg-chart-4" />
+          Din nivå
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-full bg-chart-3" />
+          HCP {BENCHMARK_LEVELS.find((l) => l.hcp === benchmark)?.label ?? benchmark}
+        </span>
       </div>
     </section>
   );
