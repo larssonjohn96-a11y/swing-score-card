@@ -72,6 +72,11 @@ export function OffTeeReport({
             detail={`${result.waywardPct} % av slagen`}
           />
           <MeaningRow
+            label="Fairway-träff"
+            hcp={result.breakdown.fairwayHcp}
+            detail={`${result.fairwayHitPct} % av slagen`}
+          />
+          <MeaningRow
             label="Jämnhet"
             hcp={result.breakdown.evennessHcp}
             detail={`±${result.distanceSpread.toFixed(0)} m längd, ±${result.lateralSpread.toFixed(0)} m sidled`}

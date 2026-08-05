@@ -160,6 +160,25 @@ function waywardToHandicap(waywardPct: number): number {
 }
 
 /**
+ * Fairway-träff % → handicap, egen kategori skild från OB. Arccos-rapporten:
+ * scratch-golfare träffar fairway ~50 % av gångerna, 30+ hcp ~40 %. PGA
+ * Tour-snittet ligger på ~60 %. En riktig miss i ruffen kostar historiskt
+ * betydligt mindre än en OB (Broadie: ~0,3–0,5 slag mot 2+ slag för OB),
+ * så den här kategorin väger klart lägre än OB-andelen.
+ */
+const FAIRWAY_ANCHORS: Anchor[] = [
+  { hcp: -8, value: 65 },
+  { hcp: -6, value: 60 },
+  { hcp: 2.5, value: 50 },
+  { hcp: 32, value: 40 },
+  { hcp: 40, value: 30 },
+];
+
+function fairwayToHandicap(fairwayHitPct: number): number {
+  return interpolate(fairwayHitPct, FAIRWAY_ANCHORS, true);
+}
+
+/**
  * Jämnhet (spridning i både totalt avstånd OCH sidled mellan slagen) →
  * handicap. Ingen extern datakälla för detta – en rimlig egen skattning:
  * jämnare kontakt ger mindre variation i både längd och riktning slag för
@@ -202,8 +221,8 @@ export type OffTeeResult = {
   score: number;
   /** Estimerat Driving Handicap */
   handicap: number;
-  /** de tre delarna som bygger handicapet, för transparens i rapporten */
-  breakdown: { distanceHcp: number; waywardHcp: number; evennessHcp: number };
+  /** de fyra delarna som bygger handicapet, för transparens i rapporten */
+  breakdown: { distanceHcp: number; waywardHcp: number; fairwayHcp: number; evennessHcp: number };
   shots: TeeShotResult[];
   avgTotal: number;
   avgCarry: number;
@@ -219,8 +238,9 @@ export type OffTeeResult = {
   lateralSpread: number;
 };
 
-const DISTANCE_WEIGHT = 0.55;
-const WAYWARD_WEIGHT = 0.35;
+const DISTANCE_WEIGHT = 0.45;
+const WAYWARD_WEIGHT = 0.3;
+const FAIRWAY_WEIGHT = 0.15;
 const EVENNESS_WEIGHT = 0.1;
 
 export function offTeeResult(shots: TeeShot[]): OffTeeResult {
@@ -238,12 +258,14 @@ export function offTeeResult(shots: TeeShot[]): OffTeeResult {
   const offlines = results.map((r) => r.offline);
   const avgTotal = mean(totals);
   const waywardPct = Math.round((results.filter((r) => r.outcome.isOB).length / n) * 100);
+  const fairwayHitPct = Math.round((results.filter((r) => r.outcome.inFairway).length / n) * 100);
   const distanceSd = stdDev(totals);
   const lateralSd = stdDev(offlines);
   const combinedSd = (distanceSd + lateralSd) / 2;
 
   const distanceHcp = results.length ? distanceToHandicap(avgTotal) : 0;
   const waywardHcp = results.length ? waywardToHandicap(waywardPct) : 0;
+  const fairwayHcp = results.length ? fairwayToHandicap(fairwayHitPct) : 0;
   const evennessHcp = results.length >= 2 ? evennessToHandicap(combinedSd) : distanceHcp;
 
   const handicap = results.length
@@ -254,6 +276,7 @@ export function offTeeResult(shots: TeeShot[]): OffTeeResult {
             40,
             distanceHcp * DISTANCE_WEIGHT +
               waywardHcp * WAYWARD_WEIGHT +
+              fairwayHcp * FAIRWAY_WEIGHT +
               evennessHcp * EVENNESS_WEIGHT,
           ),
         ) * 10,
@@ -266,13 +289,14 @@ export function offTeeResult(shots: TeeShot[]): OffTeeResult {
     breakdown: {
       distanceHcp: Math.round(distanceHcp * 10) / 10,
       waywardHcp: Math.round(waywardHcp * 10) / 10,
+      fairwayHcp: Math.round(fairwayHcp * 10) / 10,
       evennessHcp: Math.round(evennessHcp * 10) / 10,
     },
     shots: results,
     avgTotal,
     avgCarry: mean(results.map((r) => r.carry)),
     longest: totals.length ? Math.max(...totals) : 0,
-    fairwayHitPct: Math.round((results.filter((r) => r.outcome.inFairway).length / n) * 100),
+    fairwayHitPct,
     waywardPct,
     avgOffline: mean(results.map((r) => Math.abs(r.offline))),
     leftPct: Math.round((results.filter((r) => r.offline < -1).length / n) * 100),
@@ -397,6 +421,11 @@ export function analyseOffTee(result: OffTeeResult): OffTeeAnalysis {
       `Spridningen varierar mycket mellan slagen (±${result.distanceSpread.toFixed(0)} m längd, ±${result.lateralSpread.toFixed(0)} m sidled) – jobba på jämnare kontakt.`,
     );
   }
+  if (result.fairwayHitPct < 40) {
+    improvements.push(
+      `Fairway-träffen (${result.fairwayHitPct} %) ligger under snittet – fler slag i fairway ger enklare andraslag.`,
+    );
+  }
   if (result.avgTotal < AVERAGE_GOLFER_METERS) {
     const gap = AVERAGE_GOLFER_METERS - result.avgTotal;
     improvements.push(
@@ -406,8 +435,8 @@ export function analyseOffTee(result: OffTeeResult): OffTeeAnalysis {
 
   // Även starka resultat ska ge något att jobba vidare på, om det inte redan är perfekt.
   if (!improvements.length && result.score < 97) {
-    const weakest = (["distanceHcp", "waywardHcp", "evennessHcp"] as const).reduce((a, b) =>
-      result.breakdown[b] > result.breakdown[a] ? b : a,
+    const weakest = (["distanceHcp", "waywardHcp", "fairwayHcp", "evennessHcp"] as const).reduce(
+      (a, b) => (result.breakdown[b] > result.breakdown[a] ? b : a),
     );
     if (weakest === "distanceHcp") {
       improvements.push("Redan starkt – lite mer längd kan sänka handicapet ytterligare.");
@@ -415,6 +444,8 @@ export function analyseOffTee(result: OffTeeResult): OffTeeAnalysis {
       improvements.push(
         "Redan starkt – fortsätt hålla nere OB-andelen, det väger tyngst efter längd.",
       );
+    } else if (weakest === "fairwayHcp") {
+      improvements.push("Redan starkt – något högre fairway-träff kan finslipa resultatet.");
     } else {
       improvements.push(
         "Redan starkt – jämnare spridning i längd och sidled kan finslipa resultatet.",
