@@ -158,14 +158,23 @@ export function FairwaySpec() {
   return (
     <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3">
       <svg viewBox="0 0 60 80" className="h-14 w-11 shrink-0" role="img" aria-hidden>
-        <path d="M30 76 L14 4 L46 4 Z" className="fill-fairway" />
-        <circle
-          cx="30"
-          cy="76"
-          r="3"
-          className="fill-background stroke-foreground"
-          strokeWidth="1.5"
-        />
+        <defs>
+          <clipPath id="fairway-spec-clip">
+            <rect x="0" y="0" width="60" height="80" rx="8" />
+          </clipPath>
+        </defs>
+        <g clipPath="url(#fairway-spec-clip)">
+          <rect x="0" y="0" width="60" height="80" className="fill-destructive/15" />
+          <rect x="8" y="0" width="44" height="80" className="fill-sand" />
+          <rect x="18" y="0" width="24" height="80" className="fill-fairway" />
+          <circle
+            cx="30"
+            cy="72"
+            r="3"
+            className="fill-background stroke-foreground"
+            strokeWidth="1.5"
+          />
+        </g>
       </svg>
       <div>
         <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
@@ -213,7 +222,7 @@ export function TeeDispersion({ result }: { result: OffTeeResult }) {
             y="0"
             width={px(roughXHalf) - px(-roughXHalf)}
             height={size}
-            className="fill-rough"
+            className="fill-sand"
           />
           <rect
             x={px(-fairwayXHalf)}
