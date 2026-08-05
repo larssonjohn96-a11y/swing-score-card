@@ -10,6 +10,7 @@ import { loadOffTeeSessions, type OffTeeSession } from "@/lib/offtee-store";
 import { loadBunkerSessions } from "@/lib/bunker";
 import { loadShortPuttSessions } from "@/lib/shortputt";
 import { precisionResult, groupScores } from "@/lib/precision";
+import { offTeeResult, analyseOffTee } from "@/lib/offtee";
 import { TOUR_LEVEL } from "@/lib/levels";
 
 /* -------------------------------------------------------------------------
@@ -597,4 +598,200 @@ export function getSmartInsight(cats: CategoryHandicap[]): string | undefined {
   // Roterar per timme snarare än vid varje render, men utan att kräva state.
   const slot = Math.floor(Date.now() / (1000 * 60 * 60));
   return candidates[slot % candidates.length];
+}
+
+/* -------------------------------------------------------------------------
+ * Kategoridetaljer – styrka/begränsning, nyckeltal, styrkor/förbättringar
+ * ---------------------------------------------------------------------- */
+
+type CategoryDetailData = {
+  strength?: string;
+  limitation?: string;
+  keyMetrics: { label: string; value: string }[];
+  strengths: string[];
+  improvements: string[];
+  heatmap: HeatmapZone[];
+};
+
+function approachDetailData(): CategoryDetailData {
+  const sessions = loadPrecisionSessions();
+  const last = sessions[sessions.length - 1];
+  const heatmap = computeApproachHeatmap();
+  let strength: string | undefined;
+  let limitation: string | undefined;
+  if (heatmap.length) {
+    strength = [...heatmap].sort((a, b) => b.score - a.score)[0].label;
+    limitation = [...heatmap].sort((a, b) => a.score - b.score)[0].label;
+  }
+  const keyMetrics = last
+    ? [
+        { label: "Senaste score", value: `${last.score ?? "–"}/100` },
+        { label: "Est. HCP", value: last.handicap !== undefined ? hcpLabel(last.handicap) : "–" },
+        { label: "Snitt närhet", value: `${last.avgProximity.toFixed(1)} m` },
+        { label: "Konsekvens", value: `${last.consistency.toFixed(0)}/100` },
+      ]
+    : [];
+  const strengths = strength ? [`Starkast på ${strength}.`] : [];
+  const improvements = limitation ? [`${limitation} kostar flest slag just nu.`] : [];
+  return { strength, limitation, keyMetrics, strengths, improvements, heatmap };
+}
+
+const OFFTEE_DIMENSIONS = [
+  { key: "distanceHcp", label: "Längd" },
+  { key: "waywardHcp", label: "OB-kontroll" },
+  { key: "fairwayHcp", label: "Fairway-träff" },
+  { key: "evennessHcp", label: "Jämnhet" },
+] as const;
+
+function drivingDetailData(): CategoryDetailData {
+  const sessions = loadOffTeeSessions();
+  const last = sessions[sessions.length - 1];
+  if (!last) return { keyMetrics: [], strengths: [], improvements: [], heatmap: [] };
+  const result = offTeeResult(last.shots);
+  const analysis = analyseOffTee(result);
+  const sorted = [...OFFTEE_DIMENSIONS].sort(
+    (a, b) => result.breakdown[a.key] - result.breakdown[b.key],
+  );
+  const strength = sorted[0]?.label;
+  const limitation = sorted[sorted.length - 1]?.label;
+  const keyMetrics = [
+    { label: "Senaste score", value: `${result.score}/100` },
+    { label: "Driving HCP", value: hcpLabel(result.handicap) },
+    { label: "Snitt totalt", value: `${result.avgTotal.toFixed(0)} m` },
+    { label: "Fairway-träff", value: `${result.fairwayHitPct} %` },
+  ];
+  return {
+    strength,
+    limitation,
+    keyMetrics,
+    strengths: analysis.strengths,
+    improvements: analysis.improvements,
+    heatmap: [],
+  };
+}
+
+function aroundGreenDetailData(): CategoryDetailData {
+  const sessions = loadBunkerSessions();
+  const last = sessions[sessions.length - 1];
+  if (!last) return { keyMetrics: [], strengths: [], improvements: [], heatmap: [] };
+  const allShots = sessions.flatMap((s) => s.shots);
+  const byLie = new Map<string, { sum: number; count: number }>();
+  for (const s of allShots) {
+    const cur = byLie.get(s.lie) ?? { sum: 0, count: 0 };
+    cur.sum += s.feet;
+    cur.count += 1;
+    byLie.set(s.lie, cur);
+  }
+  const lieStats = [...byLie.entries()].map(([lie, { sum, count }]) => ({
+    lie,
+    avg: sum / count,
+  }));
+  const best = lieStats.length ? [...lieStats].sort((a, b) => a.avg - b.avg)[0] : undefined;
+  const worst = lieStats.length ? [...lieStats].sort((a, b) => b.avg - a.avg)[0] : undefined;
+  const keyMetrics = [
+    { label: "Senaste snitt", value: `${last.avgFeet.toFixed(1)} fot` },
+    { label: "Antal slag senaste test", value: `${last.shots.length}` },
+  ];
+  const strengths = best
+    ? [`Bäst från ${best.lie.toLowerCase()} (snitt ${best.avg.toFixed(1)} fot).`]
+    : [];
+  const improvements = worst
+    ? [`${worst.lie} är svårast (snitt ${worst.avg.toFixed(1)} fot).`]
+    : [];
+  return {
+    strength: best?.lie,
+    limitation: worst?.lie,
+    keyMetrics,
+    strengths,
+    improvements,
+    heatmap: [],
+  };
+}
+
+function puttingDetailData(): CategoryDetailData {
+  const sessions = loadShortPuttSessions();
+  const last = sessions[sessions.length - 1];
+  const heatmap = computePuttingHeatmap();
+  let strength: string | undefined;
+  let limitation: string | undefined;
+  if (heatmap.length) {
+    strength = [...heatmap].sort((a, b) => b.score - a.score)[0].label;
+    limitation = [...heatmap].sort((a, b) => a.score - b.score)[0].label;
+  }
+  const keyMetrics = last
+    ? [{ label: "Senaste träffprocent", value: `${Math.round(last.pct)} %` }]
+    : [];
+  const strengths = strength ? [`Stark på ${strength}.`] : [];
+  const improvements = limitation ? [`${limitation} har lägst träffprocent just nu.`] : [];
+  return { strength, limitation, keyMetrics, strengths, improvements, heatmap };
+}
+
+function categoryDetailData(slug: CategorySlug): CategoryDetailData {
+  switch (slug) {
+    case "approach":
+      return approachDetailData();
+    case "driving":
+      return drivingDetailData();
+    case "around-the-green":
+      return aroundGreenDetailData();
+    case "puttning":
+      return puttingDetailData();
+  }
+}
+
+/** Kompakta, klickbara kategori-kort för Utvecklingssidan. */
+export type CategoryStat = {
+  slug: CategorySlug;
+  title: string;
+  score: number;
+  /** poäng, positivt = förbättring, ungefärlig omräkning av handicap-trenden */
+  trend?: number;
+  strength?: string;
+  limitation?: string;
+};
+
+export function computeCategoryStats(cats: CategoryHandicap[]): CategoryStat[] {
+  return cats.map((c) => {
+    const detail = categoryDetailData(c.slug);
+    return {
+      slug: c.slug,
+      title: c.title,
+      score: c.handicap !== undefined ? ratingFromHandicap(c.handicap) : 0,
+      trend: c.trend !== undefined ? Math.round((-c.trend * 100) / 48) : undefined,
+      strength: detail.strength,
+      limitation: detail.limitation,
+    };
+  });
+}
+
+/** Full detaljvy för en kategori: /utveckling/$slug. */
+export type CategoryDetail = {
+  slug: CategorySlug;
+  title: string;
+  handicap?: number;
+  trend?: number;
+  score: number;
+  keyMetrics: { label: string; value: string }[];
+  strengths: string[];
+  improvements: string[];
+  heatmap: HeatmapZone[];
+  history: HistoryEntry[];
+};
+
+export function computeCategoryDetail(slug: CategorySlug): CategoryDetail {
+  const cats = computeCategoryHandicaps();
+  const cat = cats.find((c) => c.slug === slug);
+  const detail = categoryDetailData(slug);
+  return {
+    slug,
+    title: cat?.title ?? CATEGORY_LABELS[slug],
+    handicap: cat?.handicap,
+    trend: cat?.trend,
+    score: cat?.handicap !== undefined ? ratingFromHandicap(cat.handicap) : 0,
+    keyMetrics: detail.keyMetrics,
+    strengths: detail.strengths,
+    improvements: detail.improvements,
+    heatmap: detail.heatmap,
+    history: computeHistory(slug, 50),
+  };
 }

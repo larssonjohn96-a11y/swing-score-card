@@ -2,33 +2,24 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   categoriesToImprove,
-  computeApproachHeatmap,
   computeCategoryHandicaps,
+  computeCategoryStats,
   computeEstimatedHandicap,
   computeHistory,
-  computePotentials,
-  computePuttingHeatmap,
   computeRatingChange,
   computeRatingTimeline,
-  computeSkillGaps,
-  computeStrokesLost,
+  loadRealHandicap,
   ratingFromHandicap,
   type CategoryHandicap,
-  type HeatmapZone,
+  type CategoryStat,
   type HistoryEntry,
-  type Potential,
   type RatingPoint,
-  type SkillGap,
-  type StrokesLost,
 } from "@/lib/sg-handicap";
 import {
-  HeatmapsSection,
+  CategoryStatsSection,
   HistoryPanel,
   OverviewCard,
-  PotentialCard,
   RadarCard,
-  SkillGapCard,
-  StrokesLostCard,
   TrendChartsCard,
 } from "@/components/progress-dashboard";
 
@@ -39,7 +30,7 @@ export const Route = createFileRoute("/utveckling")({
       {
         name: "description",
         content:
-          "Se hur ditt spel utvecklas över tid: spindeldiagram, skill gaps, heatmaps och full testhistorik i ett analyscenter.",
+          "Se hur ditt spel utvecklas över tid: jämförelseanalys, stats per kategori och full testhistorik i ett analyscenter.",
       },
     ],
   }),
@@ -49,31 +40,26 @@ export const Route = createFileRoute("/utveckling")({
 type Period = 30 | 90 | 365 | null;
 
 type Data = {
+  real: number | null;
   cats: CategoryHandicap[];
   totalHandicap: number | undefined;
   totalRating: number | undefined;
   change30d: number | undefined;
-  skillGaps: SkillGap[];
-  strokesLost: StrokesLost[];
-  potentials: Potential[];
-  approachHeatmap: HeatmapZone[];
-  puttingHeatmap: HeatmapZone[];
+  categoryStats: CategoryStat[];
   history: HistoryEntry[];
 };
 
 function loadData(): Data {
+  const real = loadRealHandicap();
   const cats = computeCategoryHandicaps();
   const total = computeEstimatedHandicap(cats);
   return {
+    real,
     cats,
     totalHandicap: total,
     totalRating: total !== undefined ? ratingFromHandicap(total) : undefined,
     change30d: computeRatingChange(30),
-    skillGaps: computeSkillGaps(cats),
-    strokesLost: computeStrokesLost(cats),
-    potentials: computePotentials(cats),
-    approachHeatmap: computeApproachHeatmap(),
-    puttingHeatmap: computePuttingHeatmap(),
+    categoryStats: computeCategoryStats(cats),
     history: computeHistory(),
   };
 }
@@ -108,17 +94,16 @@ function UtvecklingPage() {
         </p>
       ) : (
         <div className="mt-6">
-          <OverviewCard totalRating={data.totalRating} change30d={data.change30d} />
+          <OverviewCard
+            real={data.real}
+            estimated={data.totalHandicap}
+            totalRating={data.totalRating}
+            change30d={data.change30d}
+          />
 
           <RadarCard cats={data.cats} totalHandicap={data.totalHandicap} />
 
-          <SkillGapCard gaps={data.skillGaps} />
-
-          <StrokesLostCard items={data.strokesLost} />
-
-          <PotentialCard items={data.potentials} />
-
-          <HeatmapsSection approach={data.approachHeatmap} putting={data.puttingHeatmap} />
+          <CategoryStatsSection stats={data.categoryStats} />
 
           <TrendChartsCard points={timeline} period={period} onPeriodChange={setPeriod} />
 

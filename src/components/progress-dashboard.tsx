@@ -19,23 +19,18 @@ import { ChartCard } from "@/components/chart-card";
 import type {
   CategoryHandicap,
   CategorySlug,
+  CategoryStat,
   HeatmapZone,
   HistoryEntry,
-  Potential,
   RatingPoint,
-  SkillGap,
-  StrokesLost,
 } from "@/lib/sg-handicap";
 import {
   BENCHMARK_LEVELS,
   CATEGORY_LABELS,
   SCRATCH_HANDICAP,
+  hcpLabel,
   ratingFromHandicap,
 } from "@/lib/sg-handicap";
-
-function fmt1(n: number): string {
-  return n.toFixed(1).replace(".", ",");
-}
 
 /** Trend där HÖGRE är bättre (rating), till skillnad från home-dashboardens handicap-trend. */
 function RatingTrend({ value }: { value?: number }) {
@@ -58,28 +53,49 @@ function RatingTrend({ value }: { value?: number }) {
 /* --------------------------------------------------------------- Översikt */
 
 export function OverviewCard({
+  real,
+  estimated,
   totalRating,
   change30d,
 }: {
+  real: number | null;
+  estimated: number | undefined;
   totalRating: number | undefined;
   change30d: number | undefined;
 }) {
   return (
     <section className="rounded-3xl border border-border bg-card p-5 shadow-[var(--shadow-glow)]">
-      <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Total Rating</p>
-      <p className="mt-1 font-[family-name:var(--font-display)] text-7xl leading-none text-flag">
-        {totalRating ?? "–"}
-        {totalRating !== undefined && (
-          <span className="ml-1 text-xl text-muted-foreground">/100</span>
-        )}
-      </p>
+      <div className="grid grid-cols-3 gap-3 text-center">
+        <div>
+          <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">Real HCP</p>
+          <p className="mt-0.5 font-[family-name:var(--font-display)] text-3xl leading-none">
+            {real !== null ? hcpLabel(real) : "–"}
+          </p>
+        </div>
+        <div>
+          <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
+            Est. Total HCP
+          </p>
+          <p className="mt-0.5 font-[family-name:var(--font-display)] text-3xl leading-none text-flag">
+            {estimated !== undefined ? hcpLabel(estimated) : "–"}
+          </p>
+        </div>
+        <div>
+          <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
+            Total Rating
+          </p>
+          <p className="mt-0.5 font-[family-name:var(--font-display)] text-3xl leading-none text-primary">
+            {totalRating ?? "–"}
+          </p>
+        </div>
+      </div>
       {change30d !== undefined ? (
-        <p className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
+        <p className="mt-4 flex items-center justify-center gap-2 border-t border-border pt-3 text-sm text-muted-foreground">
           <RatingTrend value={change30d} />
           senaste 30 dagarna
         </p>
       ) : (
-        <p className="mt-3 text-sm text-muted-foreground">
+        <p className="mt-4 border-t border-border pt-3 text-center text-sm text-muted-foreground">
           Kör fler tester för att se din utveckling över tid.
         </p>
       )}
@@ -210,96 +226,46 @@ function Chip({
   );
 }
 
-/* --------------------------------------------------------------- Skill Gap */
+/* ---------------------------------------------------- Kategori-stats (klickbara) */
 
-export function SkillGapCard({ gaps }: { gaps: SkillGap[] }) {
-  if (!gaps.length) return null;
+export function CategoryStatsSection({ stats }: { stats: CategoryStat[] }) {
+  if (!stats.length) return null;
   return (
     <section className="mt-6">
       <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
-        Skill Gap – nästa nivå
+        Stats per kategori
       </p>
       <div className="mt-3 space-y-2">
-        {gaps.map((g) => (
-          <div key={g.slug} className="rounded-2xl border border-border bg-card p-3">
+        {stats.map((s) => (
+          <Link
+            key={s.slug}
+            to="/utveckling/$slug"
+            params={{ slug: s.slug }}
+            className="block rounded-2xl border border-border bg-card p-4 transition-colors hover:border-primary"
+          >
             <div className="flex items-baseline justify-between">
-              <p className="font-semibold">{g.title}</p>
-              <p className="text-sm text-muted-foreground">{g.gap} poäng kvar</p>
-            </div>
-            <div className="mt-2 flex items-center gap-2 text-sm">
-              <span className="font-[family-name:var(--font-display)] text-xl leading-none">
-                {g.current}
-              </span>
-              <span className="text-muted-foreground">→</span>
-              <span className="font-[family-name:var(--font-display)] text-xl leading-none text-primary">
-                {g.next}
-              </span>
-            </div>
-            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
-              <div
-                className="h-full rounded-full bg-primary"
-                style={{ width: `${Math.min(100, (g.current / g.next) * 100)}%` }}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-/* --------------------------------------------------- Slag som tappas */
-
-export function StrokesLostCard({ items }: { items: StrokesLost[] }) {
-  if (!items.length) return null;
-  const max = Math.max(...items.map((i) => i.strokes), 0.1);
-  return (
-    <section className="mt-6">
-      <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
-        Slag som tappas per kategori
-      </p>
-      <div className="mt-3 space-y-2">
-        {items.map((i) => (
-          <div key={i.slug} className="rounded-2xl border border-border bg-card p-3">
-            <div className="flex items-baseline justify-between">
-              <p className="font-semibold">{i.title}</p>
-              <p className="font-[family-name:var(--font-display)] text-xl leading-none text-destructive">
-                +{fmt1(i.strokes)} slag
+              <p className="font-[family-name:var(--font-display)] text-2xl leading-none">
+                {s.title} — {s.score}
               </p>
+              <RatingTrend value={s.trend} />
             </div>
-            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
-              <div
-                className="h-full rounded-full bg-destructive"
-                style={{ width: `${Math.max(4, (i.strokes / max) * 100)}%` }}
-              />
-            </div>
-          </div>
+            {(s.strength || s.limitation) && (
+              <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
+                {s.strength && (
+                  <p>
+                    Styrka: <span className="text-foreground">{s.strength}</span>
+                  </p>
+                )}
+                {s.limitation && (
+                  <p>
+                    Begränsning: <span className="text-foreground">{s.limitation}</span>
+                  </p>
+                )}
+              </div>
+            )}
+          </Link>
         ))}
       </div>
-      <p className="mt-2 text-xs text-muted-foreground">
-        Grov skattning baserad på kategorins handicap och vikt i totalbetyget.
-      </p>
-    </section>
-  );
-}
-
-/* ---------------------------------------------------------- Potential Score */
-
-export function PotentialCard({ items }: { items: Potential[] }) {
-  if (!items.length) return null;
-  return (
-    <section className="mt-6 space-y-2">
-      <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Potential Score</p>
-      {items.slice(0, 3).map((p) => (
-        <div key={p.slug} className="rounded-2xl border border-primary/30 bg-primary/[0.06] p-4">
-          <p className="text-sm leading-relaxed">
-            Om du höjer din <span className="font-semibold">{p.title}</span>-score från{" "}
-            <span className="font-semibold">{p.fromRating}</span> till{" "}
-            <span className="font-semibold">{p.toRating}</span> uppskattas du kunna sänka ditt
-            handicap med ungefär <span className="font-semibold">{fmt1(p.impact)}</span> slag.
-          </p>
-        </div>
-      ))}
     </section>
   );
 }
@@ -337,23 +303,6 @@ export function HeatmapCard({
         ))}
       </div>
     </div>
-  );
-}
-
-export function HeatmapsSection({
-  approach,
-  putting,
-}: {
-  approach: HeatmapZone[];
-  putting: HeatmapZone[];
-}) {
-  if (!approach.length && !putting.length) return null;
-  return (
-    <section className="mt-6 space-y-3">
-      <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Heatmaps</p>
-      <HeatmapCard title="Approach – score per avstånd" zones={approach} />
-      <HeatmapCard title="Kortputt – träffprocent per avstånd" zones={putting} unit="%" />
-    </section>
   );
 }
 

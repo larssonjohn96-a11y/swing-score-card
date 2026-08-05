@@ -34,6 +34,7 @@ import { Route as UtvecklingRouteImport } from './routes/utveckling'
 import { Route as FramstegIndexRouteImport } from './routes/framsteg.index'
 import { Route as FramstegSlugRouteImport } from './routes/framsteg.$slug'
 import { Route as KategoriSlugRouteImport } from './routes/kategori.$slug'
+import { Route as UtvecklingSlugRouteImport } from './routes/utveckling.$slug'
 import { Route as FramstegSlugTestRouteImport } from './routes/framsteg.$slug.$test'
 
 const IndexRoute = IndexRouteImport.update({
@@ -161,6 +162,11 @@ const KategoriSlugRoute = KategoriSlugRouteImport.update({
   path: '/kategori/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const UtvecklingSlugRoute = UtvecklingSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => UtvecklingRoute,
+} as any)
 const FramstegSlugTestRoute = FramstegSlugTestRouteImport.update({
   id: '/$test',
   path: '/$test',
@@ -189,9 +195,10 @@ export interface FileRoutesByFullPath {
   '/tester': typeof TesterRoute
   '/tornado': typeof TornadoRoute
   '/traning': typeof TraningRoute
-  '/utveckling': typeof UtvecklingRoute
+  '/utveckling': typeof UtvecklingRouteWithChildren
   '/framsteg/$slug': typeof FramstegSlugRouteWithChildren
   '/kategori/$slug': typeof KategoriSlugRoute
+  '/utveckling/$slug': typeof UtvecklingSlugRoute
   '/framsteg/': typeof FramstegIndexRoute
   '/framsteg/$slug/$test': typeof FramstegSlugTestRoute
 }
@@ -217,9 +224,10 @@ export interface FileRoutesByTo {
   '/tester': typeof TesterRoute
   '/tornado': typeof TornadoRoute
   '/traning': typeof TraningRoute
-  '/utveckling': typeof UtvecklingRoute
+  '/utveckling': typeof UtvecklingRouteWithChildren
   '/framsteg/$slug': typeof FramstegSlugRouteWithChildren
   '/kategori/$slug': typeof KategoriSlugRoute
+  '/utveckling/$slug': typeof UtvecklingSlugRoute
   '/framsteg': typeof FramstegIndexRoute
   '/framsteg/$slug/$test': typeof FramstegSlugTestRoute
 }
@@ -246,9 +254,10 @@ export interface FileRoutesById {
   '/tester': typeof TesterRoute
   '/tornado': typeof TornadoRoute
   '/traning': typeof TraningRoute
-  '/utveckling': typeof UtvecklingRoute
+  '/utveckling': typeof UtvecklingRouteWithChildren
   '/framsteg/$slug': typeof FramstegSlugRouteWithChildren
   '/kategori/$slug': typeof KategoriSlugRoute
+  '/utveckling/$slug': typeof UtvecklingSlugRoute
   '/framsteg/': typeof FramstegIndexRoute
   '/framsteg/$slug/$test': typeof FramstegSlugTestRoute
 }
@@ -279,6 +288,7 @@ export interface FileRouteTypes {
     | '/utveckling'
     | '/framsteg/$slug'
     | '/kategori/$slug'
+    | '/utveckling/$slug'
     | '/framsteg/'
     | '/framsteg/$slug/$test'
   fileRoutesByTo: FileRoutesByTo
@@ -307,6 +317,7 @@ export interface FileRouteTypes {
     | '/utveckling'
     | '/framsteg/$slug'
     | '/kategori/$slug'
+    | '/utveckling/$slug'
     | '/framsteg'
     | '/framsteg/$slug/$test'
   id:
@@ -335,6 +346,7 @@ export interface FileRouteTypes {
     | '/utveckling'
     | '/framsteg/$slug'
     | '/kategori/$slug'
+    | '/utveckling/$slug'
     | '/framsteg/'
     | '/framsteg/$slug/$test'
   fileRoutesById: FileRoutesById
@@ -361,7 +373,7 @@ export interface RootRouteChildren {
   TesterRoute: typeof TesterRoute
   TornadoRoute: typeof TornadoRoute
   TraningRoute: typeof TraningRoute
-  UtvecklingRoute: typeof UtvecklingRoute
+  UtvecklingRoute: typeof UtvecklingRouteWithChildren
   FramstegSlugRoute: typeof FramstegSlugRouteWithChildren
   KategoriSlugRoute: typeof KategoriSlugRoute
   FramstegIndexRoute: typeof FramstegIndexRoute
@@ -544,6 +556,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof KategoriSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/utveckling/$slug': {
+      id: '/utveckling/$slug'
+      path: '/$slug'
+      fullPath: '/utveckling/$slug'
+      preLoaderRoute: typeof UtvecklingSlugRouteImport
+      parentRoute: typeof UtvecklingRoute
+    }
     '/framsteg/$slug/$test': {
       id: '/framsteg/$slug/$test'
       path: '/$test'
@@ -553,6 +572,18 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface UtvecklingRouteChildren {
+  UtvecklingSlugRoute: typeof UtvecklingSlugRoute
+}
+
+const UtvecklingRouteChildren: UtvecklingRouteChildren = {
+  UtvecklingSlugRoute: UtvecklingSlugRoute,
+}
+
+const UtvecklingRouteWithChildren = UtvecklingRoute._addFileChildren(
+  UtvecklingRouteChildren,
+)
 
 interface FramstegSlugRouteChildren {
   FramstegSlugTestRoute: typeof FramstegSlugTestRoute
@@ -588,7 +619,7 @@ const rootRouteChildren: RootRouteChildren = {
   TesterRoute: TesterRoute,
   TornadoRoute: TornadoRoute,
   TraningRoute: TraningRoute,
-  UtvecklingRoute: UtvecklingRoute,
+  UtvecklingRoute: UtvecklingRouteWithChildren,
   FramstegSlugRoute: FramstegSlugRouteWithChildren,
   KategoriSlugRoute: KategoriSlugRoute,
   FramstegIndexRoute: FramstegIndexRoute,
