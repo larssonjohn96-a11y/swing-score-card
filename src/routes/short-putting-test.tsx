@@ -10,12 +10,12 @@ export const Route = createFileRoute("/short-putting-test")({
       {
         name: "description",
         content:
-          "Short Putting Score 0–100, uppskattat HCP-intervall och analys per avstånd och riktning efter 12 puttar.",
+          "Short Putting Score 0–100, uppskattat HCP-intervall och analys per avstånd och riktning efter 24 puttar (2 varv).",
       },
       { property: "og:title", content: "Short Putting Test – Golfträning" },
       {
         property: "og:description",
-        content: "12 puttar från fyra riktningar runt hålet, 1 till 3 meter.",
+        content: "24 puttar (2 varv) från fyra riktningar runt hålet, 1 till 3 meter.",
       },
     ],
   }),

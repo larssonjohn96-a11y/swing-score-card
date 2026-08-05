@@ -130,7 +130,7 @@ export const CATEGORIES: Category[] = [
         to: "/short-putting-test",
         number: "14",
         title: "Short Putting Test",
-        subtitle: "12 puttar – 4 riktningar × 1–3 m",
+        subtitle: "24 puttar – 4 riktningar × 1–3 m, 2 varv",
         bullets: [
           "Klockan 12, 3, 6 och 9 – en putt vardera från 1, 2 och 3 meter.",
           "Satta puttar viktas efter avstånd (2/3/4 poäng), max 36.",

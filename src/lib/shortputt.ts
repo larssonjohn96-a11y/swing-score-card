@@ -1,20 +1,25 @@
 /**
  * Short Putting Test (tidigare "Kortputt").
  *
- * Fyra startlinjer runt hålet (klockan 12/3/6/9) × tre avstånd (1/2/3 m) =
- * 12 puttar. De fyra riktningarna fångar uppförs-, nedförs- och
- * sidlutande puttar på samma green, så testet mäter både startlinje/teknik
- * och – på en lutande green – greenläsning och fartkontroll.
+ * Fyra startlinjer runt hålet (klockan 12/3/6/9) × tre avstånd (1/2/3 m),
+ * i två varv = 24 puttar totalt (samma upplägg som Approach Test). De fyra
+ * riktningarna fångar uppförs-, nedförs- och sidlutande puttar på samma
+ * green, så testet mäter både startlinje/teknik och – på en lutande green
+ * – greenläsning och fartkontroll.
+ *
+ * Innan testet startar väljer spelaren om hålet man puttar mot är rakt
+ * eller lutande, så resultatet går att jämföra rättvist över tid och
+ * mellan tester.
  *
  * Varje putt registreras bara som Satt eller Missad. En miss straffar mer
  * ju kortare putten är (en 1-metersputt ska normalt sättas betydligt oftare
  * än en 3-metersputt), så satta puttar viktas efter avstånd:
- *   1 m = 2 poäng, 2 m = 3 poäng, 3 m = 4 poäng (max 36 poäng totalt).
+ *   1 m = 2 poäng, 2 m = 3 poäng, 3 m = 4 poäng.
  *
- * Ett enda 12-puttstest är ett litet stickprov – resultatsidan visar
- * därför en HCP-*range* snarare än en falskt exakt decimal. Ett stabilare,
- * mer precist tal fås genom det rullande snittet av de senaste 3–5 testerna
- * (se lib/sg-handicap.ts).
+ * Ett HCP-baserat resultat efter ett enda test är fortfarande ett relativt
+ * litet stickprov – resultatsidan visar därför en HCP-*range* snarare än
+ * en falskt exakt decimal. Ett stabilare, mer precist tal fås genom det
+ * rullande snittet av de senaste 3–5 testerna (se lib/sg-handicap.ts).
  */
 
 export type Direction = "12" | "3" | "6" | "9";
@@ -32,26 +37,34 @@ export type ShortPuttDistance = (typeof SHORT_PUTT_DISTANCES)[number];
 /** Poäng för en satt putt, per avstånd. */
 export const POINTS_BY_DISTANCE: Record<ShortPuttDistance, number> = { 1: 2, 2: 3, 3: 4 };
 
-export const SHORT_PUTT_TOTAL = DIRECTIONS.length * SHORT_PUTT_DISTANCES.length; // 12
+export const SHORT_PUTT_ROUNDS = 2;
+export const SHORT_PUTT_TOTAL = DIRECTIONS.length * SHORT_PUTT_DISTANCES.length * SHORT_PUTT_ROUNDS; // 24
 export const MAX_POINTS =
-  DIRECTIONS.length * SHORT_PUTT_DISTANCES.reduce((a, d) => a + POINTS_BY_DISTANCE[d], 0); // 36
+  DIRECTIONS.length *
+  SHORT_PUTT_ROUNDS *
+  SHORT_PUTT_DISTANCES.reduce((a, d) => a + POINTS_BY_DISTANCE[d], 0); // 72
+
+export type GreenType = "flat" | "sloped";
 
 export type ShortPutt = {
   direction: Direction;
   distance: ShortPuttDistance;
+  round: 1 | 2;
   holed: boolean;
   /** 1-baserat index i spelordning */
   index: number;
 };
 
-/** Tom serie i spelordning: riktning för riktning, 1 → 2 → 3 m inom varje. */
+/** Tom serie i spelordning: varv för varv, riktning för riktning, 1 → 2 → 3 m inom varje. */
 export function emptyShortPutts(): ShortPutt[] {
   const putts: ShortPutt[] = [];
   let index = 1;
-  for (const { key } of DIRECTIONS) {
-    for (const distance of SHORT_PUTT_DISTANCES) {
-      putts.push({ direction: key, distance, holed: false, index });
-      index += 1;
+  for (let round = 1; round <= SHORT_PUTT_ROUNDS; round += 1) {
+    for (const { key } of DIRECTIONS) {
+      for (const distance of SHORT_PUTT_DISTANCES) {
+        putts.push({ direction: key, distance, round: round as 1 | 2, holed: false, index });
+        index += 1;
+      }
     }
   }
   return putts;
@@ -61,11 +74,12 @@ export type ShortPuttSession = {
   id: string;
   date: string;
   putts: ShortPutt[];
+  greenType: GreenType;
   /** antal isatta puttar */
   holed: number;
   /** andel isatta puttar, % */
   pct: number;
-  /** viktad poäng, 0–36 */
+  /** viktad poäng, 0–MAX_POINTS */
   points: number;
   /** Short Putting Score 0–100, härlett ur points/MAX_POINTS */
   score: number;
@@ -137,7 +151,7 @@ export type ShortPuttResult = {
   analysis: string;
 };
 
-export function computeShortPuttResult(putts: ShortPutt[]): ShortPuttResult {
+export function computeShortPuttResult(putts: ShortPutt[], greenType?: GreenType): ShortPuttResult {
   const count = putts.length;
   const holed = putts.filter((p) => p.holed).length;
   const pct = count ? (holed / count) * 100 : 0;
@@ -156,7 +170,7 @@ export function computeShortPuttResult(putts: ShortPutt[]): ShortPuttResult {
     Math.round(Math.min(36, handicap + 2.5)),
   ];
 
-  const analysis = buildAnalysis(byDistance, byDirection, bestDirection, worstDirection);
+  const analysis = buildAnalysis(byDistance, byDirection, bestDirection, worstDirection, greenType);
 
   return {
     holed,
@@ -179,6 +193,7 @@ function buildAnalysis(
   byDirection: ShortPuttDirectionStat[],
   best?: ShortPuttDirectionStat,
   worst?: ShortPuttDirectionStat,
+  greenType?: GreenType,
 ): string {
   if (!byDistance.some((d) => d.count > 0)) return "Genomför testet för att få din analys.";
 
@@ -205,9 +220,15 @@ function buildAnalysis(
       .filter((d) => d.pct <= worst.pct + 5)
       .map((d) => d.label.toLowerCase());
     const list = missDirections.length > 1 ? missDirections.join(" och ") : missDirections[0];
-    parts.push(
-      `Missarna kommer främst från ${list}, vilket kan tyda på att sidlutande eller svårlästa puttar begränsar resultatet.`,
-    );
+    if (greenType === "flat") {
+      parts.push(
+        `Missarna kommer främst från ${list}. Eftersom hålet var rakt tyder det snarare på en teknisk snedhet i startlinjen än greenläsning.`,
+      );
+    } else {
+      parts.push(
+        `Missarna kommer främst från ${list}, vilket kan tyda på att sidlutningen på det hålet begränsar resultatet.`,
+      );
+    }
   } else if (best && best.pct === 100 && worst && worst.direction !== best.direction) {
     parts.push(`Starkast från ${best.label.toLowerCase()}.`);
   }
@@ -219,7 +240,7 @@ function buildAnalysis(
  * Lagring
  * ---------------------------------------------------------------------- */
 
-const KEY = "golf-shortputt-sessions-v2";
+const KEY = "golf-shortputt-sessions-v3";
 
 export function loadShortPuttSessions(): ShortPuttSession[] {
   if (typeof window === "undefined") return [];
@@ -232,12 +253,17 @@ export function loadShortPuttSessions(): ShortPuttSession[] {
   }
 }
 
-export function saveShortPuttSession(putts: ShortPutt[], notes?: string): ShortPuttSession {
+export function saveShortPuttSession(
+  putts: ShortPutt[],
+  greenType: GreenType,
+  notes?: string,
+): ShortPuttSession {
   const result = computeShortPuttResult(putts);
   const record: ShortPuttSession = {
     id: crypto.randomUUID(),
     date: new Date().toISOString(),
     putts,
+    greenType,
     holed: result.holed,
     pct: result.pct,
     points: result.points,

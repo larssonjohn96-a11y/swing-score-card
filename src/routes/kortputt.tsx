@@ -1,13 +1,15 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Check, X } from "lucide-react";
+import { ArrowLeft, Check, Mountain, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   DIRECTIONS,
+  SHORT_PUTT_ROUNDS,
   SHORT_PUTT_TOTAL,
   computeShortPuttResult,
   emptyShortPutts,
   loadShortPuttSessions,
   saveShortPuttSession,
+  type GreenType,
   type ShortPutt,
 } from "@/lib/shortputt";
 import { PuttingPositionDiagram } from "@/components/shortputt-visuals";
@@ -16,28 +18,30 @@ import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 export const Route = createFileRoute("/kortputt")({
   head: () => ({
     meta: [
-      { title: "Short Putting Test – 12 puttar från 1–3 m | SG4" },
+      { title: "Short Putting Test – 24 puttar från 1–3 m | SG4" },
       {
         name: "description",
         content:
-          "Short Putting Test: 12 puttar från fyra riktningar (klockan 12/3/6/9) på 1, 2 och 3 meter. Viktad score, HCP-uppskattning och analys per riktning.",
+          "Short Putting Test: 24 puttar (2 varv) från fyra riktningar (klockan 12/3/6/9) på 1, 2 och 3 meter. Viktad score, HCP-uppskattning och analys per riktning.",
       },
     ],
   }),
   component: ShortPuttPage,
 });
 
-type Phase = "test" | "result";
+type Phase = "setup" | "test" | "result";
+
+const PUTTS_PER_ROUND = SHORT_PUTT_TOTAL / SHORT_PUTT_ROUNDS;
 
 function ShortPuttPage() {
   const navigate = useNavigate();
-  const [phase, setPhase] = useState<Phase>("test");
+  const [phase, setPhase] = useState<Phase>("setup");
+  const [greenType, setGreenType] = useState<GreenType>("flat");
   const [putts, setPutts] = useState<ShortPutt[]>(emptyShortPutts);
   const [index, setIndex] = useState(0);
   const [notes, setNotes] = useState("");
   const [saved, setSaved] = useState(false);
   const [prevScore, setPrevScore] = useState<number | null>(null);
-  /** Kort visuell bekräftelse (grön/röd) innan man går vidare till nästa putt. */
   const [flash, setFlash] = useState<"made" | "missed" | null>(null);
 
   useHideBottomNav(phase === "test");
@@ -47,6 +51,11 @@ function ShortPuttPage() {
     const last = sessions[sessions.length - 1];
     setPrevScore(last ? last.score : null);
   }, []);
+
+  function startTest(type: GreenType) {
+    setGreenType(type);
+    setPhase("test");
+  }
 
   function commit(made: boolean) {
     if (flash) return;
@@ -68,7 +77,7 @@ function ShortPuttPage() {
   }
 
   function save() {
-    saveShortPuttSession(putts, notes);
+    saveShortPuttSession(putts, greenType, notes);
     setNotes("");
     setSaved(true);
   }
@@ -77,8 +86,64 @@ function ShortPuttPage() {
     setSaved(false);
     setPutts(emptyShortPutts());
     setIndex(0);
-    setPhase("test");
     setFlash(null);
+    setPhase("setup");
+  }
+
+  if (phase === "setup") {
+    return (
+      <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-16 pt-8">
+        <header className="flex items-end justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
+              Innan du börjar
+            </p>
+            <h1 className="text-4xl leading-none">Short Putting Test</h1>
+          </div>
+          <Link
+            to="/kategori/$slug"
+            params={{ slug: "puttning" }}
+            className="rounded-full border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Avbryt
+          </Link>
+        </header>
+
+        <div className="mt-8 flex justify-center">
+          <span className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+            <Mountain className="h-8 w-8 text-primary" />
+          </span>
+        </div>
+        <h2 className="mt-4 text-center text-2xl leading-tight">
+          Är hålet du puttar mot rakt eller lutande?
+        </h2>
+        <p className="mt-2 text-center text-sm text-muted-foreground">
+          Avgör om missar beror på teknik eller greenläsning, och gör resultatet jämförbart över
+          tid.
+        </p>
+
+        <div className="mt-6 space-y-3">
+          <button
+            onClick={() => startTest("flat")}
+            className="w-full rounded-2xl border-2 border-border bg-card p-4 text-left transition-colors hover:border-primary"
+          >
+            <p className="font-[family-name:var(--font-display)] text-2xl leading-none">Rakt</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Ingen tydlig lutning – testar främst startlinje och teknik.
+            </p>
+          </button>
+          <button
+            onClick={() => startTest("sloped")}
+            className="w-full rounded-2xl border-2 border-border bg-card p-4 text-left transition-colors hover:border-primary"
+          >
+            <p className="font-[family-name:var(--font-display)] text-2xl leading-none">Lutande</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Tydlig lutning – testar även greenläsning och fartkontroll.
+            </p>
+          </button>
+        </div>
+      </main>
+    );
   }
 
   if (phase === "test") {
@@ -112,11 +177,30 @@ function ShortPuttPage() {
             </span>
             <span className="text-muted-foreground">{pct} %</span>
           </div>
-          <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-muted">
-            <div
-              className="h-full rounded-full bg-primary transition-all"
-              style={{ width: `${pct}%` }}
-            />
+          <div className="mt-1.5 flex gap-2">
+            {[1, 2].map((round) => {
+              const filledInRound = Math.min(
+                PUTTS_PER_ROUND,
+                Math.max(0, index - (round - 1) * PUTTS_PER_ROUND),
+              );
+              return (
+                <div key={round} className="flex-1">
+                  <div className="h-2 overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-primary transition-all"
+                      style={{ width: `${(filledInRound / PUTTS_PER_ROUND) * 100}%` }}
+                    />
+                  </div>
+                  <p
+                    className={`mt-0.5 text-[10px] uppercase tracking-[0.2em] ${
+                      current.round === round ? "text-foreground" : "text-muted-foreground"
+                    }`}
+                  >
+                    Varv {round}
+                  </p>
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -175,7 +259,7 @@ function ShortPuttPage() {
     );
   }
 
-  const result = computeShortPuttResult(putts);
+  const result = computeShortPuttResult(putts, greenType);
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-16 pt-10">
@@ -196,6 +280,10 @@ function ShortPuttPage() {
         </p>
         <p className="mt-1 text-xs text-muted-foreground">
           Ett enda test räcker inte för ett exakt tal – blir stabilare efter fler tester.
+        </p>
+        <p className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">
+          <Mountain className="h-3.5 w-3.5" />
+          {greenType === "sloped" ? "Lutande green" : "Rak green"}
         </p>
         {prevScore !== null && (
           <p
@@ -219,7 +307,7 @@ function ShortPuttPage() {
         <div className="rounded-2xl border border-border bg-card p-3">
           <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">Poäng</p>
           <p className="mt-1 font-[family-name:var(--font-display)] text-2xl leading-none">
-            {result.points}/36
+            {result.points}/72
           </p>
         </div>
       </div>
@@ -284,7 +372,7 @@ function ShortPuttPage() {
         id="notes"
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
-        placeholder="Green, lutning, känsla…"
+        placeholder="Green, känsla…"
         className="mt-2 w-full rounded-2xl border border-input bg-background px-4 py-3 text-foreground outline-none focus:border-primary"
       />
 

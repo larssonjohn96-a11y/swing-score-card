@@ -33,8 +33,8 @@ export function ShortPuttingLanding({ lastResultLabel }: { lastResultLabel?: str
       <p className="mt-6 text-xs uppercase tracking-[0.3em] text-flag">Puttning</p>
       <h1 className="mt-2 text-5xl leading-none">Short Putting Test</h1>
       <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-        Slå 12 puttar från fyra riktningar runt hålet och se exakt hur säker du är på korta puttar –
-        och om det är avstånd eller sidled som kostar dig flest slag.
+        Slå 24 puttar (2 varv) från fyra riktningar runt hålet och se exakt hur säker du är på korta
+        puttar – och om det är avstånd eller sidled som kostar dig flest slag.
       </p>
 
       <section className="mt-8">
@@ -66,10 +66,12 @@ export function ShortPuttingLanding({ lastResultLabel }: { lastResultLabel?: str
           Så går testet till
         </p>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          Fyra startlinjer runt hålet – klockan 12, 3, 6 och 9 – med en putt från vardera 1, 2 och 3
-          meter. Totalt 12 puttar. Du registrerar bara Satt eller Missad efter varje putt. En satt
-          putt från 1 m ger 2 poäng, från 2 m 3 poäng och från 3 m 4 poäng, eftersom en miss från
-          nära håll väger tyngre än en miss från längre bort.
+          Innan du börjar väljer du om hålet du puttar mot är rakt eller lutande, så resultatet går
+          att jämföra rättvist över tid. Sedan: fyra startlinjer runt hålet – klockan 12, 3, 6 och 9
+          – med en putt från vardera 1, 2 och 3 meter, i två varv. Totalt 24 puttar. Du registrerar
+          bara Satt eller Missad efter varje putt. En satt putt från 1 m ger 2 poäng, från 2 m 3
+          poäng och från 3 m 4 poäng, eftersom en miss från nära håll väger tyngre än en miss från
+          längre bort.
         </p>
       </section>
 
@@ -84,7 +86,7 @@ export function ShortPuttingLanding({ lastResultLabel }: { lastResultLabel?: str
         Starta Short Putting Test
         <ArrowRight className="h-5 w-5" />
       </Link>
-      <p className="mt-3 text-center text-xs text-muted-foreground">Tar ca 5 minuter</p>
+      <p className="mt-3 text-center text-xs text-muted-foreground">Tar ca 8 minuter</p>
     </main>
   );
 }
