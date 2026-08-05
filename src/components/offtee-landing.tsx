@@ -42,7 +42,7 @@ export function OffTeeLanding({ lastResultLabel }: { lastResultLabel?: string })
         <TeeHero />
       </div>
 
-      <p className="mt-6 text-xs uppercase tracking-[0.3em] text-flag">Driving</p>
+      <p className="mt-6 text-xs uppercase tracking-[0.3em] text-flag">Off the Tee</p>
       <h1 className="mt-2 text-5xl leading-none">Off the Tee Test</h1>
       <p className="mt-4 text-base leading-relaxed text-muted-foreground">
         Slå 12 drives mot samma fairway och få en uppskattning av din Driving Handicap baserat på

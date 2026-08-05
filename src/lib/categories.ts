@@ -33,7 +33,7 @@ export type Category = {
 export const CATEGORIES: Category[] = [
   {
     slug: "driving",
-    title: "Driving",
+    title: "Off the Tee",
     subtitle: "Utslag",
     description: "Längd, hastighet och träffsäkerhet från tee.",
     tests: [

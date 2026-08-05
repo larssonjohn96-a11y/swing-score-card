@@ -79,7 +79,7 @@ export function computeRatings(): CategoryRating[] {
   }
   const driving: CategoryRating = {
     slug: "driving",
-    title: "Driving",
+    title: "Off the Tee",
     hasTests: true,
     rating: drivingRating,
     detail: drivingDetail,

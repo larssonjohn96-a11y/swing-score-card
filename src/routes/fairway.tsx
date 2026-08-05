@@ -76,10 +76,7 @@ function FairwayPage() {
     setSessions(loadFairwaySessions());
   }, []);
 
-  const target = useMemo(
-    () => (unit === "yds" ? TOUR_LEVEL.carryYds : TOUR_LEVEL.carryM),
-    [unit],
-  );
+  const target = useMemo(() => (unit === "yds" ? TOUR_LEVEL.carryYds : TOUR_LEVEL.carryM), [unit]);
 
   const drives: FairwayDrive[] = useMemo(
     () =>
@@ -135,7 +132,7 @@ function FairwayPage() {
       <header className="flex items-end justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
-            Driving · Banspel
+            Off the Tee · Banspel
           </p>
           <h1 className="text-4xl leading-none">Fairway challenge</h1>
         </div>
@@ -294,8 +291,16 @@ function FairwayPage() {
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData} margin={{ top: 5, right: 8, bottom: 0, left: -20 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-              <XAxis dataKey="label" tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
-              <YAxis tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" domain={[0, 100]} />
+              <XAxis
+                dataKey="label"
+                tick={{ fontSize: 11 }}
+                stroke="var(--color-muted-foreground)"
+              />
+              <YAxis
+                tick={{ fontSize: 11 }}
+                stroke="var(--color-muted-foreground)"
+                domain={[0, 100]}
+              />
               <Tooltip
                 contentStyle={{
                   background: "var(--color-card)",
@@ -334,7 +339,12 @@ function FairwayPage() {
                 strokeWidth={3}
                 connectNulls
                 isAnimationActive={false}
-                dot={{ r: 4, fill: "var(--color-primary)", stroke: "var(--color-card)", strokeWidth: 2 }}
+                dot={{
+                  r: 4,
+                  fill: "var(--color-primary)",
+                  stroke: "var(--color-card)",
+                  strokeWidth: 2,
+                }}
                 activeDot={{ r: 6 }}
               />
               <Line
@@ -345,7 +355,12 @@ function FairwayPage() {
                 strokeWidth={3}
                 connectNulls
                 isAnimationActive={false}
-                dot={{ r: 4, fill: "var(--color-flag)", stroke: "var(--color-card)", strokeWidth: 2 }}
+                dot={{
+                  r: 4,
+                  fill: "var(--color-flag)",
+                  stroke: "var(--color-card)",
+                  strokeWidth: 2,
+                }}
                 activeDot={{ r: 6 }}
               />
             </LineChart>
@@ -396,8 +411,8 @@ function FairwayPage() {
           <li>• Out: −5 p, ingen längdpoäng – precis som ett pliktslag på banan.</li>
         </ul>
         <p className="mt-3">
-          Längdpoängen räknas mot PGA Tour-nivåns carry-mål ({target} {unit}).
-          Alla tio i fairway på målavståndet ger 100 poäng.
+          Längdpoängen räknas mot PGA Tour-nivåns carry-mål ({target} {unit}). Alla tio i fairway på
+          målavståndet ger 100 poäng.
         </p>
       </section>
     </main>

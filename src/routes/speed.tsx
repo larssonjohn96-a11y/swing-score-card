@@ -107,7 +107,7 @@ function SpeedPage() {
       <header className="flex items-end justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
-            Driving · Speed
+            Off the Tee · Speed
           </p>
           <h1 className="text-4xl leading-none">Speed test</h1>
         </div>
@@ -145,8 +145,8 @@ function SpeedPage() {
         {stats.count ? (
           <p>
             Snitt ball {stats.avgBall.toFixed(1)} mph
-            {stats.avgClub ? ` · snitt club ${stats.avgClub.toFixed(1)} mph` : ""} ·{" "}
-            {stats.count} mätning{stats.count === 1 ? "" : "ar"}
+            {stats.avgClub ? ` · snitt club ${stats.avgClub.toFixed(1)} mph` : ""} · {stats.count}{" "}
+            mätning{stats.count === 1 ? "" : "ar"}
           </p>
         ) : (
           <p>Logga din första mätning för att börja tracka utvecklingen.</p>
@@ -216,16 +216,24 @@ function SpeedPage() {
           title="Utveckling över tid"
           footer={
             <p className="text-xs text-muted-foreground">
-              Streckade linjer: PGA Tour-snitt och tourens long hitters. Tryck på grafen
-              för helskärm.
+              Streckade linjer: PGA Tour-snitt och tourens long hitters. Tryck på grafen för
+              helskärm.
             </p>
           }
         >
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData} margin={{ top: 5, right: 8, bottom: 0, left: -20 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-              <XAxis dataKey="label" tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
-              <YAxis tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" domain={["auto", "auto"]} />
+              <XAxis
+                dataKey="label"
+                tick={{ fontSize: 11 }}
+                stroke="var(--color-muted-foreground)"
+              />
+              <YAxis
+                tick={{ fontSize: 11 }}
+                stroke="var(--color-muted-foreground)"
+                domain={["auto", "auto"]}
+              />
               <Tooltip
                 contentStyle={{
                   background: "var(--color-card)",
@@ -272,7 +280,12 @@ function SpeedPage() {
                 strokeWidth={3}
                 connectNulls
                 isAnimationActive={false}
-                dot={{ r: 4, fill: "var(--color-primary)", stroke: "var(--color-card)", strokeWidth: 2 }}
+                dot={{
+                  r: 4,
+                  fill: "var(--color-primary)",
+                  stroke: "var(--color-card)",
+                  strokeWidth: 2,
+                }}
                 activeDot={{ r: 6 }}
               />
               {hasClub ? (
@@ -284,7 +297,12 @@ function SpeedPage() {
                   strokeWidth={3}
                   connectNulls
                   isAnimationActive={false}
-                  dot={{ r: 4, fill: "var(--color-flag)", stroke: "var(--color-card)", strokeWidth: 2 }}
+                  dot={{
+                    r: 4,
+                    fill: "var(--color-flag)",
+                    stroke: "var(--color-card)",
+                    strokeWidth: 2,
+                  }}
                   activeDot={{ r: 6 }}
                 />
               ) : null}
@@ -292,7 +310,6 @@ function SpeedPage() {
           </ResponsiveContainer>
         </ChartCard>
       ) : null}
-
 
       {entries.length ? (
         <section className="mt-6">

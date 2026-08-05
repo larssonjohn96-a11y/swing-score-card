@@ -40,7 +40,7 @@ export const TRAINING_PLAN: {
 }[] = [
   {
     slug: "driving",
-    title: "Driving",
+    title: "Off the Tee",
     focus: "Fart, träffbild och kontroll på fairwayträffar.",
     drills: [
       {
@@ -76,7 +76,6 @@ export const TRAINING_PLAN: {
         time: "20 min",
       },
     ],
-
   },
   {
     slug: "around-the-green",

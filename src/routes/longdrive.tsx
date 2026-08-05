@@ -1,6 +1,15 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  ReferenceLine,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import {
   LONG_DRIVE_ATTEMPTS,
   deleteLongDriveSession,
@@ -75,7 +84,6 @@ function LongDrivePage() {
     });
   }, [chartUnit]);
 
-
   const parsed = values.map((v) => {
     const n = Number(v.replace(",", "."));
     return v.trim() && Number.isFinite(n) && n > 0 ? n : undefined;
@@ -111,7 +119,7 @@ function LongDrivePage() {
       <header className="flex items-end justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
-            Driving · Carry
+            Off the Tee · Carry
           </p>
           <h1 className="text-4xl leading-none">Long drive</h1>
         </div>
@@ -228,16 +236,24 @@ function LongDrivePage() {
           title="Utveckling över tid"
           footer={
             <p className="text-xs text-muted-foreground">
-              Streckade linjer: PGA Tour-snitt och tourens long hitters. Tryck på grafen
-              för helskärm.
+              Streckade linjer: PGA Tour-snitt och tourens long hitters. Tryck på grafen för
+              helskärm.
             </p>
           }
         >
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData} margin={{ top: 5, right: 8, bottom: 0, left: -20 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-              <XAxis dataKey="label" tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
-              <YAxis tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" domain={["auto", "auto"]} />
+              <XAxis
+                dataKey="label"
+                tick={{ fontSize: 11 }}
+                stroke="var(--color-muted-foreground)"
+              />
+              <YAxis
+                tick={{ fontSize: 11 }}
+                stroke="var(--color-muted-foreground)"
+                domain={["auto", "auto"]}
+              />
               <Tooltip
                 contentStyle={{
                   background: "var(--color-card)",
@@ -268,7 +284,12 @@ function LongDrivePage() {
                 strokeWidth={3}
                 connectNulls
                 isAnimationActive={false}
-                dot={{ r: 4, fill: "var(--color-primary)", strokeWidth: 2, stroke: "var(--color-card)" }}
+                dot={{
+                  r: 4,
+                  fill: "var(--color-primary)",
+                  strokeWidth: 2,
+                  stroke: "var(--color-card)",
+                }}
                 activeDot={{ r: 6 }}
               />
               <Line
@@ -279,14 +300,18 @@ function LongDrivePage() {
                 strokeWidth={3}
                 connectNulls
                 isAnimationActive={false}
-                dot={{ r: 4, fill: "var(--color-flag)", strokeWidth: 2, stroke: "var(--color-card)" }}
+                dot={{
+                  r: 4,
+                  fill: "var(--color-flag)",
+                  strokeWidth: 2,
+                  stroke: "var(--color-card)",
+                }}
                 activeDot={{ r: 6 }}
               />
             </LineChart>
           </ResponsiveContainer>
         </ChartCard>
       ) : null}
-
 
       {sessions.length ? (
         <section className="mt-6">
@@ -299,8 +324,8 @@ function LongDrivePage() {
               >
                 <div>
                   <p className="text-foreground">
-                    Längsta {sessionBest(s).toFixed(0)} {s.unit} · snitt{" "}
-                    {sessionAvg(s).toFixed(1)} {s.unit}
+                    Längsta {sessionBest(s).toFixed(0)} {s.unit} · snitt {sessionAvg(s).toFixed(1)}{" "}
+                    {s.unit}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {fmtDate(s.date)} · {s.carries.map((c) => c.toFixed(0)).join(" / ")}

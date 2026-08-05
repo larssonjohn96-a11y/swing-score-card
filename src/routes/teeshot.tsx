@@ -26,7 +26,6 @@ import {
   teeHitRate,
   teeLengthMissDirection,
   teeMissBreakdown,
-
   teeLengthRate,
   teeStats,
   teeTotalPoints,
@@ -140,7 +139,7 @@ function TeeShotPage() {
       <header className="flex items-end justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
-            Driving · Utan driver
+            Off the Tee · Utan driver
           </p>
           <h1 className="text-4xl leading-none">Landningsytor från tee</h1>
         </div>
@@ -358,10 +357,7 @@ function TeeShotPage() {
               const miss = teeMissBreakdown(s.shots ?? []);
               const dir = teeLengthMissDirection(s.shots ?? []);
               return (
-                <div
-                  key={s.id}
-                  className="rounded-2xl border border-border bg-card px-4 py-3"
-                >
+                <div key={s.id} className="rounded-2xl border border-border bg-card px-4 py-3">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-foreground">
@@ -401,12 +397,13 @@ function TeeShotPage() {
                       </div>
                     </div>
                   ) : (
-                    <p className="mt-3 text-xs text-muted-foreground">Inga missar – allt inom mål.</p>
+                    <p className="mt-3 text-xs text-muted-foreground">
+                      Inga missar – allt inom mål.
+                    </p>
                   )}
                 </div>
               );
             })}
-
           </div>
         </section>
       ) : null}
@@ -414,11 +411,14 @@ function TeeShotPage() {
       <section className="mt-8 rounded-2xl border border-border bg-card/60 p-4 text-sm text-muted-foreground">
         <h2 className="text-base text-foreground">Så funkar testet</h2>
         <p className="mt-2">
-          Tre stationer: {TEE_ZONES.map((z) => `${z.label} (${z.min}–${z.max} m)`).join(", ")}. Varje
-          station spelas {TEE_ROUNDS} gånger, totalt {TEE_SHOTS} slag. Alla klubbor utom driver är tillåtna.
+          Tre stationer: {TEE_ZONES.map((z) => `${z.label} (${z.min}–${z.max} m)`).join(", ")}.
+          Varje station spelas {TEE_ROUNDS} gånger, totalt {TEE_SHOTS} slag. Alla klubbor utom
+          driver är tillåtna.
         </p>
         <ul className="mt-3 space-y-1">
-          <li>• Godkänd sidobredd: {TEE_WIDTH_M} m (±{TEE_HALF_WIDTH_M} m från mittlinjen).</li>
+          <li>
+            • Godkänd sidobredd: {TEE_WIDTH_M} m (±{TEE_HALF_WIDTH_M} m från mittlinjen).
+          </li>
           <li>• Inom både längdspann och bredd = 1 poäng, annars 0.</li>
           <li>• Maxpoäng {TEE_SHOTS}.</li>
         </ul>
