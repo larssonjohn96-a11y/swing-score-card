@@ -20,10 +20,17 @@ export type LagPuttSession = {
   pct: number;
   /** snittavstånd kvar i meter */
   avgLeft: number;
+  /** punktskattning av Lagputt-HCP, ur godkänd-procenten */
+  handicap: number;
   notes?: string;
 };
 
-const KEY = "golf-lagputt-sessions-v1";
+/** Samma generella rating→handicap-omvandling som används för Around the Green m.fl. */
+function ratingToHandicap(pct: number): number {
+  return Math.max(-4, Math.min(36, 30 - pct * 0.34));
+}
+
+const KEY = "golf-lagputt-sessions-v2";
 
 export function emptyLagPutts(): LagPutt[] {
   return LAG_PUTT_DISTANCES.map((distance) => ({ distance, left: 0 }));
@@ -51,13 +58,15 @@ export function loadLagPuttSessions(): LagPuttSession[] {
 
 export function saveLagPuttSession(putts: LagPutt[], notes?: string): LagPuttSession {
   const approved = putts.filter(isApproved).length;
+  const pct = putts.length ? (approved / putts.length) * 100 : 0;
   const record: LagPuttSession = {
     id: crypto.randomUUID(),
     date: new Date().toISOString(),
     putts,
     approved,
-    pct: putts.length ? (approved / putts.length) * 100 : 0,
+    pct,
     avgLeft: mean(putts.map((p) => p.left)),
+    handicap: ratingToHandicap(pct),
     notes: notes?.trim() || undefined,
   };
   window.localStorage.setItem(KEY, JSON.stringify([...loadLagPuttSessions(), record]));

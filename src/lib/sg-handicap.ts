@@ -9,6 +9,7 @@ import { loadPrecisionSessions, type PrecisionSession } from "@/lib/precision-st
 import { loadOffTeeSessions, type OffTeeSession } from "@/lib/offtee-store";
 import { loadBunkerSessions } from "@/lib/bunker";
 import { loadShortPuttSessions } from "@/lib/shortputt";
+import { loadLagPuttSessions } from "@/lib/lagputt";
 import { precisionResult, groupScores } from "@/lib/precision";
 import { offTeeResult, analyseOffTee } from "@/lib/offtee";
 import { TOUR_LEVEL } from "@/lib/levels";
@@ -54,6 +55,17 @@ export const CATEGORY_LABELS: Record<CategorySlug, string> = {
 /** Generisk omvandling av en 0–100-rating (högre = bättre) till ett handicap-liknande tal. */
 function ratingToHandicap(rating: number): number {
   return Math.max(-4, Math.min(36, 30 - rating * 0.34));
+}
+
+/**
+ * Totalt Putting HCP = Short Putting Test (1–3 m) viktat 60 % + Lagputt
+ * (8–18 m) viktat 40 %. Korta, avgörande puttar väger tyngre än
+ * distanskänsla på långputtar, men båda räknas in. Om bara en av dem har
+ * data används den ensam.
+ */
+function combinePuttingHandicap(shortHcp?: number, lagHcp?: number): number | undefined {
+  if (shortHcp !== undefined && lagHcp !== undefined) return shortHcp * 0.6 + lagHcp * 0.4;
+  return shortHcp ?? lagHcp;
 }
 
 /**
@@ -119,6 +131,30 @@ function upTo<T extends { date: string }>(items: T[], asOf?: Date): T[] {
   return byDateAsc(items).filter((i) => i.date <= cutoff);
 }
 
+/** Kombinerad HCP-tidsserie: varje test-tillfälle (kort- eller lagputt) med senast kända
+ *  HCP från BÅDA testtyperna vid den tidpunkten, viktade ihop till ett totalt Putting HCP. */
+function combinedPuttingSeries(asOf?: Date): { date: string; handicap: number }[] {
+  const shortEvents = upTo(loadShortPuttSessions(), asOf).map((s) => ({
+    date: s.date,
+    kind: "short" as const,
+    handicap: s.handicap,
+  }));
+  const lagEvents = upTo(loadLagPuttSessions(), asOf).map((s) => ({
+    date: s.date,
+    kind: "lag" as const,
+    handicap: s.handicap,
+  }));
+  const events = byDateAsc([...shortEvents, ...lagEvents]);
+
+  let lastShort: number | undefined;
+  let lastLag: number | undefined;
+  return events.map((e) => {
+    if (e.kind === "short") lastShort = e.handicap;
+    else lastLag = e.handicap;
+    return { date: e.date, handicap: combinePuttingHandicap(lastShort, lastLag) ?? e.handicap };
+  });
+}
+
 /**
  * Kategori-HCP, antingen just nu (utan argument) eller som de såg ut vid en
  * viss tidpunkt (asOf) – det senare används för att bygga utvecklingsgrafer
@@ -162,13 +198,15 @@ export function computeCategoryHandicaps(asOf?: Date): CategoryHandicap[] {
     latestScore: undefined,
   };
 
-  const puttHcps = putt.map((s) => ratingToHandicap(s.score));
+  const puttingSeries = combinedPuttingSeries(asOf);
+  const puttingHcps = puttingSeries.map((p) => p.handicap);
+  const lagCount = upTo(loadLagPuttSessions(), asOf).length;
   const putting: CategoryHandicap = {
     slug: "puttning",
     title: CATEGORY_LABELS.puttning,
-    count: putt.length,
-    handicap: puttHcps.length ? puttHcps[puttHcps.length - 1] : undefined,
-    trend: trendOf(puttHcps),
+    count: putt.length + lagCount,
+    handicap: puttingHcps.length ? puttingHcps[puttingHcps.length - 1] : undefined,
+    trend: trendOf(puttingHcps),
     latestScore: putt.length ? putt[putt.length - 1].score : undefined,
   };
 
@@ -338,6 +376,7 @@ function sessionDates(periodDays: number | null): string[] {
     ...loadOffTeeSessions().map((s) => s.date),
     ...loadBunkerSessions().map((s) => s.date),
     ...loadShortPuttSessions().map((s) => s.date),
+    ...loadLagPuttSessions().map((s) => s.date),
   ];
   const cutoff = periodDays ? Date.now() - periodDays * 24 * 60 * 60 * 1000 : undefined;
   const filtered = cutoff ? all.filter((d) => new Date(d).getTime() >= cutoff) : all;
@@ -401,7 +440,7 @@ export function computeHistory(filter?: CategorySlug, limit = 200): HistoryEntry
   const offtee = loadOffTeeSessions();
   const bunker = loadBunkerSessions();
   const putt = loadShortPuttSessions();
-  const puttHcps = putt.map((s) => ratingToHandicap(s.score));
+  const lag = loadLagPuttSessions();
 
   const all: HistoryEntry[] = [
     ...precision.map((s) => ({
@@ -434,15 +473,25 @@ export function computeHistory(filter?: CategorySlug, limit = 200): HistoryEntry
       handicap: undefined,
       to: { slug: "around-the-green", test: "bunker" },
     })),
-    ...putt.map((s, i) => ({
+    ...putt.map((s) => ({
       key: `putt-${s.id}`,
       categorySlug: "puttning" as const,
       title: "Short Putting Test",
       date: s.date,
       score: s.score,
       scoreUnit: "/100",
-      handicap: puttHcps[i],
+      handicap: s.handicap,
       to: { slug: "puttning", test: "kortputt" },
+    })),
+    ...lag.map((s) => ({
+      key: `lag-${s.id}`,
+      categorySlug: "puttning" as const,
+      title: "Lagputt",
+      date: s.date,
+      score: Math.round(s.pct),
+      scoreUnit: "%",
+      handicap: s.handicap,
+      to: { slug: "puttning", test: "lagputt" },
     })),
   ];
 
@@ -509,8 +558,6 @@ export function computeLatestTests(limit = 3): LatestTest[] {
   const offtee = loadOffTeeSessions();
   const putt = loadShortPuttSessions();
 
-  const puttHcps = putt.map((s) => ratingToHandicap(s.score));
-
   const all: LatestTest[] = [
     ...precision.map((s, i, arr) => ({
       key: `approach-${s.id}`,
@@ -531,14 +578,14 @@ export function computeLatestTests(limit = 3): LatestTest[] {
       handicap: s.handicap,
       trend: i > 0 ? Math.round((s.handicap - arr[i - 1].handicap) * 10) / 10 : undefined,
     })),
-    ...putt.map((s, i) => ({
+    ...putt.map((s, i, arr) => ({
       key: `putt-${s.id}`,
       title: "Putting",
       date: s.date,
       score: s.score,
       scoreUnit: "/100",
-      handicap: puttHcps[i],
-      trend: i > 0 ? Math.round((puttHcps[i] - puttHcps[i - 1]) * 10) / 10 : undefined,
+      handicap: s.handicap,
+      trend: i > 0 ? Math.round((s.handicap - arr[i - 1].handicap) * 10) / 10 : undefined,
     })),
   ];
 
@@ -711,6 +758,8 @@ function aroundGreenDetailData(): CategoryDetailData {
 function puttingDetailData(): CategoryDetailData {
   const sessions = loadShortPuttSessions();
   const last = sessions[sessions.length - 1];
+  const lagSessions = loadLagPuttSessions();
+  const lastLag = lagSessions[lagSessions.length - 1];
   const heatmap = computePuttingHeatmap();
   let strength: string | undefined;
   let limitation: string | undefined;
@@ -718,14 +767,24 @@ function puttingDetailData(): CategoryDetailData {
     strength = [...heatmap].sort((a, b) => b.score - a.score)[0].label;
     limitation = [...heatmap].sort((a, b) => a.score - b.score)[0].label;
   }
-  const keyMetrics = last
-    ? [
-        { label: "Senaste score", value: `${last.score}/100` },
-        { label: "Senaste träffprocent", value: `${Math.round(last.pct)} %` },
-      ]
+  const keyMetrics = [
+    ...(last
+      ? [
+          { label: "Short Putting Score", value: `${last.score}/100` },
+          { label: "Short Putting HCP", value: hcpLabel(last.handicap) },
+        ]
+      : []),
+    ...(lastLag
+      ? [
+          { label: "Lagputt godkända", value: `${Math.round(lastLag.pct)} %` },
+          { label: "Lagputt HCP", value: hcpLabel(lastLag.handicap) },
+        ]
+      : []),
+  ];
+  const strengths = strength ? [`Stark på ${strength} i Short Putting Test.`] : [];
+  const improvements = limitation
+    ? [`${limitation} har lägst träffprocent i Short Putting Test just nu.`]
     : [];
-  const strengths = strength ? [`Stark på ${strength}.`] : [];
-  const improvements = limitation ? [`${limitation} har lägst träffprocent just nu.`] : [];
   return { strength, limitation, keyMetrics, strengths, improvements, heatmap };
 }
 
@@ -790,15 +849,11 @@ function categorySessionSeries(): Record<CategorySlug, CategorySessionPoint[]> {
     date: s.date,
     handicap: ratingToHandicap((TOUR_LEVEL.bunkerFeet / s.avgFeet) * 100),
   }));
-  const putt = loadShortPuttSessions().map((s) => ({
-    date: s.date,
-    handicap: ratingToHandicap(s.score),
-  }));
   return {
     approach: byDateAsc(precision),
     driving: byDateAsc(offtee),
     "around-the-green": byDateAsc(bunker),
-    puttning: byDateAsc(putt),
+    puttning: byDateAsc(combinedPuttingSeries()),
   };
 }
 

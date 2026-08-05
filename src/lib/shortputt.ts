@@ -83,6 +83,8 @@ export type ShortPuttSession = {
   points: number;
   /** Short Putting Score 0–100, härlett ur points/MAX_POINTS */
   score: number;
+  /** punktskattning av Short Putting HCP (1–3 m) */
+  handicap: number;
   notes?: string;
 };
 
@@ -130,7 +132,7 @@ function weightedPoints(putts: ShortPutt[]): number {
 }
 
 /** Handicap-punktskattning ur Short Putting Score, samma princip som övriga tester. */
-function handicapFromScore(score: number): number {
+export function handicapFromScore(score: number): number {
   return Math.max(-4, Math.min(36, 30 - score * 0.34));
 }
 
@@ -249,7 +251,7 @@ export function puttingLevelLabel(score: number): string {
  * Lagring
  * ---------------------------------------------------------------------- */
 
-const KEY = "golf-shortputt-sessions-v3";
+const KEY = "golf-shortputt-sessions-v4";
 
 export function loadShortPuttSessions(): ShortPuttSession[] {
   if (typeof window === "undefined") return [];
@@ -277,6 +279,7 @@ export function saveShortPuttSession(
     pct: result.pct,
     points: result.points,
     score: result.score,
+    handicap: result.handicap,
     notes: notes?.trim() || undefined,
   };
   window.localStorage.setItem(KEY, JSON.stringify([...loadShortPuttSessions(), record]));
