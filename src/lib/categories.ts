@@ -12,6 +12,7 @@ export type CategoryTest = {
     | "/pitch"
     | "/chip"
     | "/kortputt"
+    | "/short-putting-test"
     | "/tornado"
     | "/lagputt";
 
@@ -126,7 +127,7 @@ export const CATEGORIES: Category[] = [
     description: "Tester för längdkänsla och korta puttar.",
     tests: [
       {
-        to: "/kortputt",
+        to: "/short-putting-test",
         number: "14",
         title: "Short Putting Test",
         subtitle: "12 puttar – 4 riktningar × 1–3 m",
