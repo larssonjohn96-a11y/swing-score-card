@@ -4,18 +4,15 @@ import {
   categoriesToImprove,
   computeCategoryHandicaps,
   computeEstimatedHandicap,
-  computeHistory,
   computeRatingChange,
   computeRatingTimeline,
   loadRealHandicap,
   ratingFromHandicap,
   type CategoryHandicap,
-  type HistoryEntry,
   type RatingPoint,
 } from "@/lib/sg-handicap";
 import {
   CategoryStatsSection,
-  HistoryPanel,
   OverviewCard,
   RadarCard,
   TrendChartsCard,
@@ -28,7 +25,7 @@ export const Route = createFileRoute("/utveckling")({
       {
         name: "description",
         content:
-          "Se hur ditt spel utvecklas över tid: jämförelseanalys, stats per kategori och full testhistorik i ett analyscenter.",
+          "Se hur ditt spel utvecklas över tid: jämförelseanalys och stats per kategori i ett analyscenter.",
       },
     ],
   }),
@@ -43,7 +40,6 @@ type Data = {
   totalHandicap: number | undefined;
   totalRating: number | undefined;
   change30d: number | undefined;
-  history: HistoryEntry[];
 };
 
 function loadData(): Data {
@@ -56,7 +52,6 @@ function loadData(): Data {
     totalHandicap: total,
     totalRating: total !== undefined ? ratingFromHandicap(total) : undefined,
     change30d: computeRatingChange(30),
-    history: computeHistory(),
   };
 }
 
@@ -102,8 +97,6 @@ function UtvecklingPage() {
           <CategoryStatsSection />
 
           <TrendChartsCard points={timeline} period={period} onPeriodChange={setPeriod} />
-
-          <HistoryPanel entries={data.history} />
 
           {(() => {
             const improve = categoriesToImprove(data.cats, 1);
