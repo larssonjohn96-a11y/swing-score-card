@@ -1,51 +1,116 @@
 "use client";
 
+import { useState } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
-import { Home, ListChecks, TrendingUp, User } from "lucide-react";
+import { Home, ListChecks, Plus, TrendingUp, User } from "lucide-react";
 import { useBottomNavVisibility } from "@/lib/bottom-nav-visibility";
+import { CATEGORIES } from "@/lib/categories";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
-const TABS = [
+const LEFT_TABS = [
   { to: "/", label: "Hem", icon: Home, exact: true },
   { to: "/tester", label: "Tester", icon: ListChecks, exact: false },
+] as const;
+
+const RIGHT_TABS = [
   { to: "/utveckling", label: "Utveckling", icon: TrendingUp, exact: false },
   { to: "/konto", label: "Profil", icon: User, exact: false },
 ] as const;
 
+function NavLink({
+  tab,
+  active,
+}: {
+  tab: { to: string; label: string; icon: typeof Home };
+  active: boolean;
+}) {
+  return (
+    <Link to={tab.to} className="flex flex-1 flex-col items-center gap-1 py-2 active:scale-95">
+      <span
+        className={`flex h-8 w-9 items-center justify-center rounded-xl transition-colors ${
+          active ? "bg-primary/15 text-primary" : "text-muted-foreground"
+        }`}
+      >
+        <tab.icon className="h-5 w-5" />
+      </span>
+      <span
+        className={`text-[10px] font-medium uppercase tracking-wide transition-colors ${
+          active ? "text-primary" : "text-muted-foreground"
+        }`}
+      >
+        {tab.label}
+      </span>
+    </Link>
+  );
+}
+
 export function BottomNav() {
   const { hidden } = useBottomNavVisibility();
   const { pathname } = useLocation();
+  const [open, setOpen] = useState(false);
 
   if (hidden) return null;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 h-16 border-t border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
-      <div className="mx-auto flex h-full w-full max-w-md items-center px-2">
-        {TABS.map((tab) => {
-          const active = tab.exact ? pathname === tab.to : pathname.startsWith(tab.to);
-          return (
-            <Link
+    <>
+      <nav className="fixed bottom-0 left-0 right-0 z-40 h-16 border-t border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+        <div className="mx-auto flex h-full w-full max-w-md items-center px-2">
+          {LEFT_TABS.map((tab) => (
+            <NavLink
               key={tab.to}
-              to={tab.to}
-              className="flex flex-1 flex-col items-center gap-1 py-2 active:scale-95"
+              tab={tab}
+              active={tab.exact ? pathname === tab.to : pathname.startsWith(tab.to)}
+            />
+          ))}
+
+          <div className="flex flex-1 justify-center">
+            <button
+              type="button"
+              onClick={() => setOpen(true)}
+              aria-label="Starta test"
+              className="flex h-12 w-12 -translate-y-4 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform active:scale-95"
             >
-              <span
-                className={`flex h-8 w-9 items-center justify-center rounded-xl transition-colors ${
-                  active ? "bg-primary/15 text-primary" : "text-muted-foreground"
-                }`}
+              <Plus className="h-6 w-6" />
+            </button>
+          </div>
+
+          {RIGHT_TABS.map((tab) => (
+            <NavLink
+              key={tab.to}
+              tab={tab}
+              active={tab.exact ? pathname === tab.to : pathname.startsWith(tab.to)}
+            />
+          ))}
+        </div>
+      </nav>
+
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto rounded-t-3xl">
+          <SheetHeader>
+            <SheetTitle className="text-left text-2xl">Starta test</SheetTitle>
+          </SheetHeader>
+          <div className="mt-4 space-y-3 pb-6">
+            {CATEGORIES.map((c) => (
+              <Link
+                key={c.slug}
+                to="/kategori/$slug"
+                params={{ slug: c.slug }}
+                onClick={() => setOpen(false)}
+                className="block rounded-2xl border border-border bg-card p-4 transition-colors hover:border-primary"
               >
-                <tab.icon className="h-5 w-5" />
-              </span>
-              <span
-                className={`text-[10px] font-medium uppercase tracking-wide transition-colors ${
-                  active ? "text-primary" : "text-muted-foreground"
-                }`}
-              >
-                {tab.label}
-              </span>
-            </Link>
-          );
-        })}
-      </div>
-    </nav>
+                <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                  {c.subtitle}
+                </p>
+                <h3 className="mt-0.5 text-2xl leading-none">{c.title}</h3>
+                <p className="mt-1.5 text-xs text-muted-foreground">{c.description}</p>
+                <p className="mt-2 text-[11px] uppercase tracking-[0.2em] text-flag">
+                  {c.tests.length > 0 ? `${c.tests.length} test` : "Kommer snart"}
+                </p>
+              </Link>
+            ))}
+          </div>
+        </SheetContent>
+      </Sheet>
+    </>
   );
 }
