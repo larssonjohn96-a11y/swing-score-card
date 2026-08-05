@@ -8,6 +8,7 @@ import {
   computeShortPuttResult,
   emptyShortPutts,
   loadShortPuttSessions,
+  puttingLevelLabel,
   saveShortPuttSession,
   type GreenType,
   type ShortPutt,
@@ -275,6 +276,9 @@ function ShortPuttPage() {
           {result.score}
           <span className="ml-1 text-2xl text-muted-foreground">/100</span>
         </p>
+        <p className="mt-2 inline-flex items-center rounded-full bg-flag/10 px-3 py-1 text-sm font-semibold text-flag">
+          {puttingLevelLabel(result.score)}
+        </p>
         <p className="mt-3 text-sm text-muted-foreground">
           Uppskattad Short Putting HCP: {result.handicapRange[0]}–{result.handicapRange[1]}
         </p>
@@ -305,7 +309,9 @@ function ShortPuttPage() {
           </p>
         </div>
         <div className="rounded-2xl border border-border bg-card p-3">
-          <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">Poäng</p>
+          <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
+            Totalpoäng
+          </p>
           <p className="mt-1 font-[family-name:var(--font-display)] text-2xl leading-none">
             {result.points}/72
           </p>
@@ -339,28 +345,20 @@ function ShortPuttPage() {
               </div>
             ))}
           </div>
-          {(result.bestDirection || result.worstDirection) && (
-            <div className="mt-3 space-y-0.5 text-xs text-muted-foreground">
-              {result.bestDirection && (
-                <p>
-                  Bästa riktning:{" "}
-                  <span className="text-foreground">{result.bestDirection.label}</span>
-                </p>
-              )}
-              {result.worstDirection && (
-                <p>
-                  Svagaste riktning:{" "}
-                  <span className="text-foreground">{result.worstDirection.label}</span>
-                </p>
-              )}
-            </div>
+          {result.worstDirection && (
+            <p className="mt-3 text-xs text-muted-foreground">
+              Svagaste riktning:{" "}
+              <span className="text-foreground">{result.worstDirection.label}</span>
+            </p>
           )}
         </div>
       )}
 
       {result.analysis && (
-        <div className="mt-4 rounded-2xl border border-border bg-card/60 p-4">
-          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Analys</p>
+        <div className="mt-4 rounded-2xl border border-primary/30 bg-primary/[0.06] p-4">
+          <p className="text-xs uppercase tracking-[0.2em] text-primary">
+            Rekommenderat träningsfokus
+          </p>
           <p className="mt-1.5 text-sm leading-relaxed">{result.analysis}</p>
         </div>
       )}

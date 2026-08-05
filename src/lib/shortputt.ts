@@ -236,6 +236,15 @@ function buildAnalysis(
   return parts.join(" ");
 }
 
+/** Kort, lättillgängligt nivåord som komplement till HCP-intervallet. */
+export function puttingLevelLabel(score: number): string {
+  if (score >= 85) return "Elitnivå";
+  if (score >= 70) return "Stark nivå";
+  if (score >= 50) return "Bra nivå";
+  if (score >= 30) return "Grundnivå";
+  return "Nybörjarnivå";
+}
+
 /* -------------------------------------------------------------------------
  * Lagring
  * ---------------------------------------------------------------------- */
