@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import {
   categoriesToImprove,
   computeCategoryHandicaps,
-  computeCategoryStats,
   computeEstimatedHandicap,
   computeHistory,
   computeRatingChange,
@@ -11,7 +10,6 @@ import {
   loadRealHandicap,
   ratingFromHandicap,
   type CategoryHandicap,
-  type CategoryStat,
   type HistoryEntry,
   type RatingPoint,
 } from "@/lib/sg-handicap";
@@ -45,7 +43,6 @@ type Data = {
   totalHandicap: number | undefined;
   totalRating: number | undefined;
   change30d: number | undefined;
-  categoryStats: CategoryStat[];
   history: HistoryEntry[];
 };
 
@@ -59,7 +56,6 @@ function loadData(): Data {
     totalHandicap: total,
     totalRating: total !== undefined ? ratingFromHandicap(total) : undefined,
     change30d: computeRatingChange(30),
-    categoryStats: computeCategoryStats(cats),
     history: computeHistory(),
   };
 }
@@ -103,7 +99,7 @@ function UtvecklingPage() {
 
           <RadarCard cats={data.cats} totalHandicap={data.totalHandicap} />
 
-          <CategoryStatsSection stats={data.categoryStats} />
+          <CategoryStatsSection />
 
           <TrendChartsCard points={timeline} period={period} onPeriodChange={setPeriod} />
 

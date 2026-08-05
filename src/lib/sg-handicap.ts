@@ -739,31 +739,6 @@ function categoryDetailData(slug: CategorySlug): CategoryDetailData {
   }
 }
 
-/** Kompakta, klickbara kategori-kort för Utvecklingssidan. */
-export type CategoryStat = {
-  slug: CategorySlug;
-  title: string;
-  score: number;
-  /** poäng, positivt = förbättring, ungefärlig omräkning av handicap-trenden */
-  trend?: number;
-  strength?: string;
-  limitation?: string;
-};
-
-export function computeCategoryStats(cats: CategoryHandicap[]): CategoryStat[] {
-  return cats.map((c) => {
-    const detail = categoryDetailData(c.slug);
-    return {
-      slug: c.slug,
-      title: c.title,
-      score: c.handicap !== undefined ? ratingFromHandicap(c.handicap) : 0,
-      trend: c.trend !== undefined ? Math.round((-c.trend * 100) / 48) : undefined,
-      strength: detail.strength,
-      limitation: detail.limitation,
-    };
-  });
-}
-
 /** Full detaljvy för en kategori: /utveckling/$slug. */
 export type CategoryDetail = {
   slug: CategorySlug;
@@ -794,4 +769,122 @@ export function computeCategoryDetail(slug: CategorySlug): CategoryDetail {
     heatmap: detail.heatmap,
     history: computeHistory(slug, 50),
   };
+}
+
+/* -------------------------------------------------------------------------
+ * Kategorikort med rullande HCP-snitt (för "Stats per kategori")
+ * ---------------------------------------------------------------------- */
+
+type CategorySessionPoint = { date: string; handicap: number };
+
+/** Varje kategoris sessioner omvandlade till {date, handicap}, kronologisk ordning. */
+function categorySessionSeries(): Record<CategorySlug, CategorySessionPoint[]> {
+  const precision = loadPrecisionSessions()
+    .filter((s): s is PrecisionSession & { handicap: number } => typeof s.handicap === "number")
+    .map((s) => ({ date: s.date, handicap: s.handicap }));
+  const offtee = loadOffTeeSessions().map((s) => ({ date: s.date, handicap: s.handicap }));
+  const bunker = loadBunkerSessions().map((s) => ({
+    date: s.date,
+    handicap: ratingToHandicap((TOUR_LEVEL.bunkerFeet / s.avgFeet) * 100),
+  }));
+  const putt = loadShortPuttSessions().map((s) => ({
+    date: s.date,
+    handicap: ratingToHandicap(s.pct),
+  }));
+  return {
+    approach: byDateAsc(precision),
+    driving: byDateAsc(offtee),
+    "around-the-green": byDateAsc(bunker),
+    puttning: byDateAsc(putt),
+  };
+}
+
+/** Rullande snitt av de senaste `window` (3–5) värdena. */
+function rollingAverage(values: number[], window = 5): number | undefined {
+  if (!values.length) return undefined;
+  const slice = values.slice(-Math.min(window, values.length));
+  return slice.reduce((a, b) => a + b, 0) / slice.length;
+}
+
+function rollingAverageAsOf(
+  points: CategorySessionPoint[],
+  asOf: Date | undefined,
+  window = 5,
+): number | undefined {
+  const filtered = asOf ? points.filter((p) => p.date <= asOf.toISOString()) : points;
+  return rollingAverage(
+    filtered.map((p) => p.handicap),
+    window,
+  );
+}
+
+export type CategoryCardStat = {
+  slug: CategorySlug;
+  title: string;
+  hasData: boolean;
+  /** rullande snitt av de senaste 3–5 testerna, aldrig ett enskilt test eller 0 vid tomt data */
+  estHcp?: number;
+  /** förändring i estHcp över vald period; negativt = förbättring (lägre HCP) */
+  change?: number;
+  strongest?: string;
+  improve?: string;
+};
+
+/** De fyra klickbara kategorikorten – rullande HCP-snitt, förändring över `periodDays`. */
+export function computeCategoryCardStats(periodDays: number): CategoryCardStat[] {
+  const series = categorySessionSeries();
+  return (Object.keys(CATEGORY_LABELS) as CategorySlug[]).map((slug) => {
+    const title = CATEGORY_LABELS[slug];
+    const points = series[slug];
+    if (!points.length) return { slug, title, hasData: false };
+
+    const estHcp = rollingAverage(points.map((p) => p.handicap));
+    const cutoff = new Date(Date.now() - periodDays * 24 * 60 * 60 * 1000);
+    const pastEst = rollingAverageAsOf(points, cutoff);
+    const change =
+      estHcp !== undefined && pastEst !== undefined
+        ? Math.round((estHcp - pastEst) * 10) / 10
+        : undefined;
+    const detail = categoryDetailData(slug);
+
+    return {
+      slug,
+      title,
+      hasData: true,
+      estHcp: estHcp !== undefined ? Math.round(estHcp * 10) / 10 : undefined,
+      change,
+      strongest: detail.strength,
+      improve: detail.limitation,
+    };
+  });
+}
+
+/** En punkt i HCP-över-tid-grafen: rullande snitt (linje) + enskilt testresultat (punkt). */
+export type HcpTimelinePoint = {
+  date: string;
+  rolling?: number;
+  raw?: number;
+};
+
+/** HCP över tid för en kategori – rullande snitt som linje, varje test som egen datapunkt. */
+export function computeCategoryHcpTimeline(
+  slug: CategorySlug,
+  periodDays: number | null,
+): HcpTimelinePoint[] {
+  const points = categorySessionSeries()[slug];
+  if (!points.length) return [];
+
+  const withRolling = points.map((p, i) => {
+    const window = points.slice(Math.max(0, i - 4), i + 1).map((x) => x.handicap);
+    const rolling = window.reduce((a, b) => a + b, 0) / window.length;
+    return {
+      date: p.date.slice(0, 10),
+      raw: Math.round(p.handicap * 10) / 10,
+      rolling: Math.round(rolling * 10) / 10,
+    };
+  });
+
+  if (!periodDays) return withRolling;
+  const cutoff = Date.now() - periodDays * 24 * 60 * 60 * 1000;
+  return withRolling.filter((p) => new Date(p.date).getTime() >= cutoff);
 }
