@@ -50,6 +50,7 @@ type Period = 30 | 90 | 365 | null;
 
 type Data = {
   cats: CategoryHandicap[];
+  totalHandicap: number | undefined;
   totalRating: number | undefined;
   change30d: number | undefined;
   skillGaps: SkillGap[];
@@ -65,6 +66,7 @@ function loadData(): Data {
   const total = computeEstimatedHandicap(cats);
   return {
     cats,
+    totalHandicap: total,
     totalRating: total !== undefined ? ratingFromHandicap(total) : undefined,
     change30d: computeRatingChange(30),
     skillGaps: computeSkillGaps(cats),
@@ -108,7 +110,7 @@ function UtvecklingPage() {
         <div className="mt-6">
           <OverviewCard totalRating={data.totalRating} change30d={data.change30d} />
 
-          <RadarCard cats={data.cats} />
+          <RadarCard cats={data.cats} totalHandicap={data.totalHandicap} />
 
           <SkillGapCard gaps={data.skillGaps} />
 

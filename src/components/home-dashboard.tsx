@@ -1,8 +1,16 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, Pencil, TrendingDown, TrendingUp, Check } from "lucide-react";
-import type { CategoryHandicap, LatestTest, Opportunity } from "@/lib/sg-handicap";
+import {
+  hcpLabel,
+  ratingFromHandicap,
+  type CategoryHandicap,
+  type LatestTest,
+  type Opportunity,
+} from "@/lib/sg-handicap";
+import { CATEGORIES } from "@/lib/categories";
 
+/** Rating (0–100) eller andra icke-handicap-tal. Handicap-tal ska alltid formatteras med hcpLabel. */
 function fmt(n: number): string {
   return n.toFixed(1).replace(".", ",");
 }
@@ -49,7 +57,7 @@ export function RealHandicapCard({
       ? estimated < real
         ? "Du spelar just nu bättre än ditt officiella handicap."
         : estimated > real
-          ? `Din nuvarande nivå motsvarar cirka HCP ${fmt(estimated)}.`
+          ? `Din nuvarande nivå motsvarar cirka HCP ${hcpLabel(estimated)}.`
           : "Din nivå matchar ditt officiella handicap just nu."
       : undefined;
 
@@ -97,7 +105,7 @@ export function RealHandicapCard({
         </div>
       ) : (
         <p className="mt-1 font-[family-name:var(--font-display)] text-6xl leading-none">
-          {real !== null ? fmt(real) : "–"}
+          {real !== null ? hcpLabel(real) : "–"}
         </p>
       )}
 
@@ -106,7 +114,7 @@ export function RealHandicapCard({
           Estimated SG Handicap
         </p>
         <p className="font-[family-name:var(--font-display)] text-2xl leading-none text-flag">
-          {estimated !== undefined ? fmt(estimated) : "–"}
+          {estimated !== undefined ? hcpLabel(estimated) : "–"}
         </p>
       </div>
 
@@ -139,7 +147,7 @@ export function DevelopmentCard({
         <div>
           <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">Real HCP</p>
           <p className="mt-0.5 font-[family-name:var(--font-display)] text-3xl leading-none">
-            {real !== null ? fmt(real) : "–"}
+            {real !== null ? hcpLabel(real) : "–"}
           </p>
         </div>
         <div>
@@ -147,7 +155,7 @@ export function DevelopmentCard({
             Estimated HCP
           </p>
           <p className="mt-0.5 font-[family-name:var(--font-display)] text-3xl leading-none text-flag">
-            {estimated !== undefined ? fmt(estimated) : "–"}
+            {estimated !== undefined ? hcpLabel(estimated) : "–"}
           </p>
         </div>
       </div>
@@ -176,20 +184,20 @@ export function CategoryGrid({ cats }: { cats: CategoryHandicap[] }) {
             {c.handicap !== undefined ? (
               <>
                 <p className="mt-1 font-[family-name:var(--font-display)] text-2xl leading-none">
-                  HCP {fmt(c.handicap)}
+                  HCP {hcpLabel(c.handicap)}
                 </p>
                 <div className="mt-2 flex items-center justify-between">
                   <Trend value={c.trend} />
                   {c.latestScore !== undefined && (
                     <span className="text-[11px] text-muted-foreground">
-                      SG {Math.round(c.latestScore)}
+                      Score {Math.round(c.latestScore)}
                     </span>
                   )}
                 </div>
                 <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
                   <div
                     className="h-full rounded-full bg-primary"
-                    style={{ width: `${Math.max(4, Math.min(100, (36 - c.handicap) * 2.6))}%` }}
+                    style={{ width: `${Math.max(4, ratingFromHandicap(c.handicap))}%` }}
                   />
                 </div>
               </>
@@ -229,6 +237,40 @@ export function OpportunityCard({ opportunity }: { opportunity: Opportunity | un
   );
 }
 
+/* -------------------------------------------------------------------- Tester */
+
+export function CategoryTestList() {
+  return (
+    <section className="mt-6">
+      <div className="flex items-baseline justify-between">
+        <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Alla tester</p>
+        <Link to="/tester" className="text-xs font-medium text-flag">
+          Se alla
+        </Link>
+      </div>
+      <div className="mt-3 space-y-3">
+        {CATEGORIES.map((c) => (
+          <Link
+            key={c.slug}
+            to="/kategori/$slug"
+            params={{ slug: c.slug }}
+            className="block rounded-3xl border border-border bg-card p-5 shadow-[var(--shadow-glow)] transition-colors hover:border-primary"
+          >
+            <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
+              {c.subtitle}
+            </p>
+            <h2 className="mt-1 text-3xl leading-none">{c.title}</h2>
+            <p className="mt-2 text-sm text-muted-foreground">{c.description}</p>
+            <p className="mt-3 text-xs uppercase tracking-[0.2em] text-flag">
+              {c.tests.length > 0 ? `${c.tests.length} test` : "Kommer snart"}
+            </p>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 /* -------------------------------------------------------------- Senaste tester */
 
 export function LatestTestsCard({ tests }: { tests: LatestTest[] }) {
@@ -250,7 +292,9 @@ export function LatestTestsCard({ tests }: { tests: LatestTest[] }) {
             <div>
               <p className="font-semibold">{t.title}</p>
               {t.handicap !== undefined && (
-                <p className="text-xs text-muted-foreground">Estimated HCP {fmt(t.handicap)}</p>
+                <p className="text-xs text-muted-foreground">
+                  Estimated HCP {hcpLabel(t.handicap)}
+                </p>
               )}
             </div>
             <div className="flex items-center gap-3">
@@ -304,26 +348,26 @@ export function GoalCard({
             Officiellt
           </p>
           <p className="mt-0.5 font-[family-name:var(--font-display)] text-2xl leading-none">
-            {real !== null ? fmt(real) : "–"}
+            {real !== null ? hcpLabel(real) : "–"}
           </p>
         </div>
         <div>
           <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">Estimated</p>
           <p className="mt-0.5 font-[family-name:var(--font-display)] text-2xl leading-none text-flag">
-            {estimated !== undefined ? fmt(estimated) : "–"}
+            {estimated !== undefined ? hcpLabel(estimated) : "–"}
           </p>
         </div>
         <div>
           <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">Mål</p>
           <p className="mt-0.5 font-[family-name:var(--font-display)] text-2xl leading-none text-primary">
-            {fmt(target)}
+            {hcpLabel(target)}
           </p>
         </div>
       </div>
       {improveCats.length > 0 && (
         <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
           Du behöver förbättra främst {improveCats.map((c) => c.title).join(" och ")} för att nå HCP{" "}
-          {fmt(target)}.
+          {hcpLabel(target)}.
         </p>
       )}
     </section>

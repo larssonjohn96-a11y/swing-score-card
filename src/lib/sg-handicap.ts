@@ -72,6 +72,21 @@ export const SCRATCH_HANDICAP = 0;
 /** Ungefärlig elit-/Tour-nivå, samma ankare som Off the Tee Test använder för PGA Tour-snittet. */
 export const ELITE_HANDICAP = -6;
 
+/** Handicap formaterat enligt golfkonvention: plus-handicap visas med '+', aldrig '-'. */
+export function hcpLabel(hcp: number): string {
+  const v = Math.abs(hcp).toFixed(1).replace(".", ",");
+  return hcp < 0 ? `+${v}` : v;
+}
+
+/** Jämförelsenivåer för spindeldiagrammet – handicap, inte spelare. */
+export const BENCHMARK_LEVELS: { label: string; hcp: number }[] = [
+  { label: "30", hcp: 30 },
+  { label: "20", hcp: 20 },
+  { label: "10", hcp: 10 },
+  { label: "0", hcp: SCRATCH_HANDICAP },
+  { label: "Tour", hcp: ELITE_HANDICAP },
+];
+
 /** Trend = senaste värdet minus värdet i början av de senaste n testen. Negativt = förbättring. */
 function trendOf(values: number[], n = 5): number | undefined {
   if (values.length < 2) return undefined;

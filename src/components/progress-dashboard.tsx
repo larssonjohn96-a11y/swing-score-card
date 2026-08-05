@@ -27,9 +27,10 @@ import type {
   StrokesLost,
 } from "@/lib/sg-handicap";
 import {
+  BENCHMARK_LEVELS,
   CATEGORY_LABELS,
-  ELITE_HANDICAP,
   SCRATCH_HANDICAP,
+  hcpLabel,
   ratingFromHandicap,
 } from "@/lib/sg-handicap";
 
@@ -89,77 +90,68 @@ export function OverviewCard({
 
 /* ---------------------------------------------------------- Spindeldiagram */
 
-export function RadarCard({ cats }: { cats: CategoryHandicap[] }) {
-  const [showScratch, setShowScratch] = useState(true);
-  const [showElite, setShowElite] = useState(false);
+export function RadarCard({
+  cats,
+  totalHandicap,
+}: {
+  cats: CategoryHandicap[];
+  totalHandicap: number | undefined;
+}) {
+  const [benchmark, setBenchmark] = useState<number>(SCRATCH_HANDICAP);
 
-  const data = cats.map((c) => ({
-    subject: c.title,
-    spelare: c.handicap !== undefined ? ratingFromHandicap(c.handicap) : 0,
-    scratch: ratingFromHandicap(SCRATCH_HANDICAP),
-    elit: ratingFromHandicap(ELITE_HANDICAP),
-  }));
+  const data = [
+    ...cats.map((c) => ({
+      subject: `HCP: ${c.title}`,
+      spelare: c.handicap !== undefined ? ratingFromHandicap(c.handicap) : 0,
+      benchmark: ratingFromHandicap(benchmark),
+    })),
+    {
+      subject: "HCP: Totalt",
+      spelare: totalHandicap !== undefined ? ratingFromHandicap(totalHandicap) : 0,
+      benchmark: ratingFromHandicap(benchmark),
+    },
+  ];
 
   return (
     <section className="mt-6">
       <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Spindeldiagram</p>
+      <p className="mt-1 text-xs text-muted-foreground">Jämför mot handicapnivå</p>
       <div className="mt-3 flex flex-wrap gap-2">
-        <Chip active label="Min nivå" swatch="bg-primary" onClick={() => {}} disabled />
-        <Chip
-          active={showScratch}
-          label="Scratch"
-          swatch="bg-flag"
-          onClick={() => setShowScratch((v) => !v)}
-        />
-        <Chip
-          active={showElite}
-          label="Elit"
-          swatch="bg-chart-4"
-          onClick={() => setShowElite((v) => !v)}
-        />
-        <Chip
-          active={false}
-          label="Vänner (kommer snart)"
-          swatch="bg-muted"
-          onClick={() => {}}
-          disabled
-        />
+        {BENCHMARK_LEVELS.map((lvl) => (
+          <Chip
+            key={lvl.label}
+            active={benchmark === lvl.hcp}
+            label={lvl.label}
+            swatch="bg-flag"
+            onClick={() => setBenchmark(lvl.hcp)}
+          />
+        ))}
       </div>
-      <div className="mt-4 h-72 w-full rounded-3xl border border-border bg-card p-2">
+      <div className="mt-4 h-80 w-full rounded-3xl border border-border bg-card p-3">
         <ResponsiveContainer width="100%" height="100%">
-          <RadarChart data={data} outerRadius="72%">
+          <RadarChart data={data} outerRadius="68%">
             <PolarGrid stroke="var(--border)" />
             <PolarAngleAxis
               dataKey="subject"
-              tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
+              tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
             />
             <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
-            {showScratch && (
-              <Radar
-                name="Scratch"
-                dataKey="scratch"
-                stroke="var(--flag)"
-                fill="var(--flag)"
-                fillOpacity={0.05}
-                strokeDasharray="4 3"
-              />
-            )}
-            {showElite && (
-              <Radar
-                name="Elit"
-                dataKey="elit"
-                stroke="var(--chart-4)"
-                fill="var(--chart-4)"
-                fillOpacity={0.05}
-                strokeDasharray="4 3"
-              />
-            )}
+            <Radar
+              name={`HCP ${BENCHMARK_LEVELS.find((l) => l.hcp === benchmark)?.label ?? benchmark}`}
+              dataKey="benchmark"
+              stroke="var(--flag)"
+              fill="var(--flag)"
+              fillOpacity={0.12}
+              strokeDasharray="4 3"
+              strokeWidth={2}
+            />
             <Radar
               name="Din nivå"
               dataKey="spelare"
               stroke="var(--primary)"
               fill="var(--primary)"
-              fillOpacity={0.25}
+              fillOpacity={0.3}
+              strokeWidth={2}
             />
             <Tooltip
               contentStyle={{
@@ -198,7 +190,7 @@ function Chip({
         active ? "border-primary text-foreground" : "border-border text-muted-foreground"
       } ${disabled ? "opacity-50" : ""}`}
     >
-      <span className={`h-2 w-2 rounded-full ${swatch}`} />
+      {active && <span className={`h-2 w-2 rounded-full ${swatch}`} />}
       {label}
     </button>
   );

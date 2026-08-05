@@ -19,6 +19,7 @@ import {
 } from "@/lib/sg-handicap";
 import {
   CategoryGrid,
+  CategoryTestList,
   DevelopmentCard,
   GoalCard,
   LatestTestsCard,
@@ -26,6 +27,7 @@ import {
   RealHandicapCard,
   SmartInsightCard,
 } from "@/components/home-dashboard";
+import { RadarCard } from "@/components/progress-dashboard";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -132,7 +134,9 @@ function Home() {
             estimatedTrend={data.estimatedTrend}
           />
           <CategoryGrid cats={data.cats} />
+          <RadarCard cats={data.cats} totalHandicap={data.estimated} />
           <OpportunityCard opportunity={data.opportunity} />
+          <CategoryTestList />
           <LatestTestsCard tests={data.latestTests} />
           <SmartInsightCard insight={data.insight} />
           <GoalCard
