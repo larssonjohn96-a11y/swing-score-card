@@ -28,7 +28,19 @@
   --color-green-surface: var(--green-surface);
   --color-rough: var(--rough);
   --color-sand: var(--sand);
+  --color-tier-bronze: var(--tier-bronze);
+  --color-tier-bronze-deep: var(--tier-bronze-deep);
+  --color-tier-silver: var(--tier-silver);
+  --color-tier-silver-deep: var(--tier-silver-deep);
+  --color-tier-gold: var(--tier-gold);
+  --color-tier-gold-deep: var(--tier-gold-deep);
+  --color-tier-elite: var(--tier-elite);
+  --color-tier-elite-deep: var(--tier-elite-deep);
+  --color-tier-icon: var(--tier-icon);
+  --color-tier-icon-deep: var(--tier-icon-deep);
+  --color-card-ink: var(--card-ink);
   --shadow-glow: 0 0 0 1px var(--border), 0 18px 40px -20px oklch(0 0 0 / 0.8);
+
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
