@@ -219,9 +219,9 @@ export type OffTeeResult = {
   lateralSpread: number;
 };
 
-const DISTANCE_WEIGHT = 0.5;
-const WAYWARD_WEIGHT = 0.3;
-const EVENNESS_WEIGHT = 0.2;
+const DISTANCE_WEIGHT = 0.55;
+const WAYWARD_WEIGHT = 0.35;
+const EVENNESS_WEIGHT = 0.1;
 
 export function offTeeResult(shots: TeeShot[]): OffTeeResult {
   const filled = shots.filter((s) => s.filled);
