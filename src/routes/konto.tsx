@@ -122,20 +122,22 @@ function AccountPage() {
       ) : user ? (
         <>
           <section className="mt-6 space-y-4 rounded-3xl border border-border bg-card p-5">
-          <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Inloggad som</p>
-            <p className="font-[family-name:var(--font-display)] text-3xl text-primary">
-              {displayName ?? user.email}
-            </p>
-            <p className="text-xs text-muted-foreground">{user.email}</p>
-          </div>
-          <NameForm currentName={displayName} userId={user.id} />
-          <button
-            onClick={signOut}
-            className="w-full rounded-2xl border border-border py-3 text-sm text-muted-foreground"
-          >
-            Logga ut
-          </button>
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                Inloggad som
+              </p>
+              <p className="font-[family-name:var(--font-display)] text-3xl text-primary">
+                {displayName ?? user.email}
+              </p>
+              <p className="text-xs text-muted-foreground">{user.email}</p>
+            </div>
+            <NameForm currentName={displayName} userId={user.id} />
+            <button
+              onClick={signOut}
+              className="w-full rounded-2xl border border-border py-3 text-sm text-muted-foreground"
+            >
+              Logga ut
+            </button>
           </section>
           <RatingCardSection playerName={displayName ?? user.email?.split("@")[0] ?? "Spelare"} />
         </>

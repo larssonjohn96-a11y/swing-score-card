@@ -108,7 +108,9 @@ function PlayerCard({
       <div className="flex items-start justify-between">
         <div className="text-center">
           <p className="font-display text-5xl leading-none">{data.rating}</p>
-          <p className={`mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] ${style.accent}`}>
+          <p
+            className={`mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] ${style.accent}`}
+          >
             {data.tier.label}
           </p>
           <TierIcon className={`mx-auto mt-3 h-6 w-6 ${style.accent}`} strokeWidth={1.5} />
@@ -185,9 +187,7 @@ function TierLegend({ current }: { current: CardTier["key"] }) {
           return (
             <li
               key={tier.key}
-              className={`flex gap-3 rounded-2xl p-3 ${
-                tier.key === current ? "bg-secondary" : ""
-              }`}
+              className={`flex gap-3 rounded-2xl p-3 ${tier.key === current ? "bg-secondary" : ""}`}
             >
               <Icon className={`mt-0.5 h-5 w-5 shrink-0 ${style.accent}`} strokeWidth={1.5} />
               <div>
