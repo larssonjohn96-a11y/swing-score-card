@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { TrendingDown, TrendingUp } from "lucide-react";
 import {
   CartesianGrid,
+  LabelList,
   Line,
   LineChart,
   PolarAngleAxis,
@@ -103,11 +104,13 @@ export function RadarCard({
     ...cats.map((c) => ({
       subject: `HCP: ${c.title}`,
       spelare: c.handicap !== undefined ? ratingFromHandicap(c.handicap) : 0,
+      spelareHcp: c.handicap !== undefined ? hcpLabel(c.handicap) : "–",
       benchmark: ratingFromHandicap(benchmark),
     })),
     {
       subject: "HCP: Totalt",
       spelare: totalHandicap !== undefined ? ratingFromHandicap(totalHandicap) : 0,
+      spelareHcp: totalHandicap !== undefined ? hcpLabel(totalHandicap) : "–",
       benchmark: ratingFromHandicap(benchmark),
     },
   ];
@@ -115,13 +118,15 @@ export function RadarCard({
   return (
     <section className="mt-6">
       <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Jämförelseanalys</p>
-      <p className="mt-1 text-xs text-muted-foreground">Jämför mot handicapnivå</p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Din nivå per kategori jämfört med en vald handicapnivå
+      </p>
       <div className="mt-3 flex flex-wrap gap-2">
         {BENCHMARK_LEVELS.map((lvl) => (
           <Chip
             key={lvl.label}
             active={benchmark === lvl.hcp}
-            label={lvl.label}
+            label={lvl.label === "Tour" ? "Tour" : `HCP ${lvl.label}`}
             swatch="bg-chart-3"
             onClick={() => setBenchmark(lvl.hcp)}
           />
@@ -129,7 +134,7 @@ export function RadarCard({
       </div>
       <div className="mt-4 h-80 w-full rounded-3xl border border-border bg-card p-3">
         <ResponsiveContainer width="100%" height="100%">
-          <RadarChart data={data} outerRadius="68%">
+          <RadarChart data={data} outerRadius="62%">
             <PolarGrid stroke="var(--border)" />
             <PolarAngleAxis
               dataKey="subject"
@@ -153,7 +158,14 @@ export function RadarCard({
               fillOpacity={0.3}
               strokeWidth={2}
               dot={{ r: 4, fill: "var(--chart-4)", stroke: "var(--card)", strokeWidth: 1 }}
-            />
+            >
+              <LabelList
+                dataKey="spelareHcp"
+                position="outside"
+                offset={10}
+                style={{ fontSize: 11, fontWeight: 700, fill: "var(--chart-4)" }}
+              />
+            </Radar>
             <Tooltip
               contentStyle={{
                 background: "var(--card)",
@@ -168,11 +180,13 @@ export function RadarCard({
       <div className="mt-3 flex justify-center gap-4 text-[11px] text-muted-foreground">
         <span className="flex items-center gap-1.5">
           <span className="h-2.5 w-2.5 rounded-full bg-chart-4" />
-          Din nivå
+          Din nivå (siffror = ditt HCP)
         </span>
         <span className="flex items-center gap-1.5">
           <span className="h-2.5 w-2.5 rounded-full bg-chart-3" />
-          HCP {BENCHMARK_LEVELS.find((l) => l.hcp === benchmark)?.label ?? benchmark}
+          {BENCHMARK_LEVELS.find((l) => l.hcp === benchmark)?.label === "Tour"
+            ? "Tour"
+            : `HCP ${BENCHMARK_LEVELS.find((l) => l.hcp === benchmark)?.label ?? benchmark}`}
         </span>
       </div>
     </section>

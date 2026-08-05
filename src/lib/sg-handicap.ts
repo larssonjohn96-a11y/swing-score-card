@@ -84,6 +84,7 @@ export const BENCHMARK_LEVELS: { label: string; hcp: number }[] = [
   { label: "20", hcp: 20 },
   { label: "10", hcp: 10 },
   { label: "0", hcp: SCRATCH_HANDICAP },
+  { label: "+3", hcp: -3 },
   { label: "Tour", hcp: ELITE_HANDICAP },
 ];
 
