@@ -10,6 +10,7 @@ import {
   saveShortPuttSession,
   type ShortPutt,
 } from "@/lib/shortputt";
+import { PuttingPositionDiagram } from "@/components/shortputt-visuals";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 
 export const Route = createFileRoute("/kortputt")({
@@ -119,8 +120,15 @@ function ShortPuttPage() {
           </div>
         </div>
 
+        <div className="mt-4 rounded-3xl border border-border bg-card p-3">
+          <PuttingPositionDiagram
+            activeDirection={current.direction}
+            activeDistance={current.distance}
+          />
+        </div>
+
         <div
-          className={`mt-6 rounded-3xl border-2 p-8 text-center shadow-[var(--shadow-glow)] transition-colors duration-200 ${
+          className={`mt-4 rounded-3xl border-2 p-6 text-center shadow-[var(--shadow-glow)] transition-colors duration-200 ${
             flash === "made"
               ? "border-primary bg-primary/15"
               : flash === "missed"
