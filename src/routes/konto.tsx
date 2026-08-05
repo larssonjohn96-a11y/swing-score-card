@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { syncLocalSessions } from "@/lib/cloud";
+import { RatingCardSection } from "@/components/rating-card";
 
 export const Route = createFileRoute("/konto")({
   head: () => ({
@@ -119,7 +120,8 @@ function AccountPage() {
       {loading ? (
         <p className="mt-10 text-center text-sm text-muted-foreground">Laddar …</p>
       ) : user ? (
-        <section className="mt-6 space-y-4 rounded-3xl border border-border bg-card p-5">
+        <>
+          <section className="mt-6 space-y-4 rounded-3xl border border-border bg-card p-5">
           <div>
             <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Inloggad som</p>
             <p className="font-[family-name:var(--font-display)] text-3xl text-primary">
@@ -134,7 +136,9 @@ function AccountPage() {
           >
             Logga ut
           </button>
-        </section>
+          </section>
+          <RatingCardSection playerName={displayName ?? user.email?.split("@")[0] ?? "Spelare"} />
+        </>
       ) : (
         <>
           <div className="mt-6 grid grid-cols-2 gap-2 rounded-2xl border border-border bg-card p-1">
