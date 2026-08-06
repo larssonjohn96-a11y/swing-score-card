@@ -10,6 +10,7 @@ import { loadOffTeeSessions, type OffTeeSession } from "@/lib/offtee-store";
 import { loadBunkerSessions } from "@/lib/bunker";
 import { loadShortPuttSessions } from "@/lib/shortputt";
 import { loadLagPuttSessions } from "@/lib/lagputt";
+import { loadSpeedSessions } from "@/lib/speed";
 import { precisionResult, groupScores } from "@/lib/precision";
 import { offTeeResult, analyseOffTee } from "@/lib/offtee";
 import { TOUR_LEVEL } from "@/lib/levels";
@@ -36,13 +37,14 @@ export function saveRealHandicap(value: number) {
  * Kategori-HCP
  * ---------------------------------------------------------------------- */
 
-export type CategorySlug = "approach" | "driving" | "around-the-green" | "puttning";
+export type CategorySlug = "approach" | "driving" | "around-the-green" | "puttning" | "speed";
 
 export const CATEGORY_WEIGHTS: Record<CategorySlug, number> = {
-  approach: 0.4,
-  driving: 0.3,
+  approach: 0.35,
+  driving: 0.25,
   puttning: 0.2,
   "around-the-green": 0.1,
+  speed: 0.1,
 };
 
 export const CATEGORY_LABELS: Record<CategorySlug, string> = {
@@ -50,6 +52,7 @@ export const CATEGORY_LABELS: Record<CategorySlug, string> = {
   driving: "Off the Tee",
   "around-the-green": "Around Green",
   puttning: "Putting",
+  speed: "Speed",
 };
 
 /** Generisk omvandling av en 0–100-rating (högre = bättre) till ett handicap-liknande tal. */
@@ -210,7 +213,18 @@ export function computeCategoryHandicaps(asOf?: Date): CategoryHandicap[] {
     latestScore: putt.length ? putt[putt.length - 1].score : undefined,
   };
 
-  return [approach, driving, aroundGreen, putting];
+  const speedSessions = upTo(loadSpeedSessions(), asOf);
+  const speedHcps = speedSessions.map((s) => s.handicap);
+  const speed: CategoryHandicap = {
+    slug: "speed",
+    title: CATEGORY_LABELS.speed,
+    count: speedSessions.length,
+    handicap: speedHcps.length ? speedHcps[speedHcps.length - 1] : undefined,
+    trend: trendOf(speedHcps),
+    latestScore: speedSessions.length ? speedSessions[speedSessions.length - 1].score : undefined,
+  };
+
+  return [approach, driving, aroundGreen, putting, speed];
 }
 
 /** Viktat snitt av kategori-HCP som finns data för – Estimated SG Handicap. */
@@ -365,6 +379,7 @@ export type RatingPoint = {
   driving?: number;
   aroundGreen?: number;
   putting?: number;
+  speed?: number;
 };
 
 const day = (iso: string) => (iso.length > 10 ? iso.slice(0, 10) : iso);
@@ -377,6 +392,7 @@ function sessionDates(periodDays: number | null): string[] {
     ...loadBunkerSessions().map((s) => s.date),
     ...loadShortPuttSessions().map((s) => s.date),
     ...loadLagPuttSessions().map((s) => s.date),
+    ...loadSpeedSessions().map((s) => s.date),
   ];
   const cutoff = periodDays ? Date.now() - periodDays * 24 * 60 * 60 * 1000 : undefined;
   const filtered = cutoff ? all.filter((d) => new Date(d).getTime() >= cutoff) : all;
@@ -405,6 +421,7 @@ export function computeRatingTimeline(periodDays: number | null): RatingPoint[] 
           ? ratingFromHandicap(find("around-the-green")!)
           : undefined,
       putting: find("puttning") !== undefined ? ratingFromHandicap(find("puttning")!) : undefined,
+      speed: find("speed") !== undefined ? ratingFromHandicap(find("speed")!) : undefined,
     };
   });
 }
@@ -492,6 +509,16 @@ export function computeHistory(filter?: CategorySlug, limit = 200): HistoryEntry
       scoreUnit: "%",
       handicap: s.handicap,
       to: { slug: "puttning", test: "lagputt" },
+    })),
+    ...loadSpeedSessions().map((s) => ({
+      key: `speed-${s.id}`,
+      categorySlug: "speed" as const,
+      title: "Speed Test",
+      date: s.date,
+      score: s.score,
+      scoreUnit: "/100",
+      handicap: s.handicap,
+      to: { slug: "driving", test: "speed" },
     })),
   ];
 
@@ -788,6 +815,40 @@ function puttingDetailData(): CategoryDetailData {
   return { strength, limitation, keyMetrics, strengths, improvements, heatmap };
 }
 
+function speedDetailData(): CategoryDetailData {
+  const sessions = loadSpeedSessions();
+  const last = sessions[sessions.length - 1];
+  if (!last) return { keyMetrics: [], strengths: [], improvements: [], heatmap: [] };
+
+  const keyMetrics = [
+    { label: "Snitt ball speed", value: `${last.avgBallSpeed.toFixed(1)} mph` },
+    { label: "Topp ball speed", value: `${last.topBallSpeed.toFixed(1)} mph` },
+    { label: "Speed HCP", value: hcpLabel(last.handicap) },
+    ...(last.avgClubSpeed !== undefined
+      ? [{ label: "Snitt clubhead", value: `${last.avgClubSpeed.toFixed(1)} mph` }]
+      : []),
+  ];
+
+  const spread = last.topBallSpeed - last.avgBallSpeed;
+  const strengths =
+    spread < 6 ? [`Jämn ball speed mellan slagen (±${spread.toFixed(0)} mph).`] : [];
+  const improvements =
+    spread >= 6
+      ? [
+          `Stor variation mellan slagen (${spread.toFixed(0)} mph topp mot snitt) – jobba på konsekvent kontakt.`,
+        ]
+      : [];
+
+  return {
+    strength: strengths[0],
+    limitation: improvements[0],
+    keyMetrics,
+    strengths,
+    improvements,
+    heatmap: [],
+  };
+}
+
 function categoryDetailData(slug: CategorySlug): CategoryDetailData {
   switch (slug) {
     case "approach":
@@ -798,6 +859,8 @@ function categoryDetailData(slug: CategorySlug): CategoryDetailData {
       return aroundGreenDetailData();
     case "puttning":
       return puttingDetailData();
+    case "speed":
+      return speedDetailData();
   }
 }
 
@@ -849,11 +912,13 @@ function categorySessionSeries(): Record<CategorySlug, CategorySessionPoint[]> {
     date: s.date,
     handicap: ratingToHandicap((TOUR_LEVEL.bunkerFeet / s.avgFeet) * 100),
   }));
+  const speed = loadSpeedSessions().map((s) => ({ date: s.date, handicap: s.handicap }));
   return {
     approach: byDateAsc(precision),
     driving: byDateAsc(offtee),
     "around-the-green": byDateAsc(bunker),
     puttning: byDateAsc(combinedPuttingSeries()),
+    speed: byDateAsc(speed),
   };
 }
 

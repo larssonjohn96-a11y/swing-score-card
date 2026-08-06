@@ -6,11 +6,13 @@
  * sammanhang för att tolka resultatet rätt. Sedan slås 6 drives. Ball
  * speed är obligatoriskt, club head speed valfritt per slag.
  *
- * Speed HCP är kalibrerat mot verklig Trackman-data (ball speed, driver,
- * herrar) sammanställd av Golf Korea / Trackman Golf Report:
- *   Tour-snitt ≈ 168 mph, Scratch (HCP 0) ≈ 161 mph, HCP 5 ≈ 147 mph,
- *   HCP 10 ≈ 138 mph, HCP 15 ≈ 133 mph, HCP 18 ≈ 131 mph.
- * Extrapolerat linjärt i båda ändar för plus-handicap och höga handicap.
+ * Speed HCP är kalibrerat mot ball speed-data sammanställd från flera
+ * källor (Shot Scope, Arccos och Trackman amatördatabaser, samt Trackmans
+ * egen Tour-statistik), herrar:
+ *   PGA Tour-snitt ≈ 171 mph, Scratch (HCP 0) ≈ 161 mph, HCP 5 ≈ 150 mph,
+ *   HCP 10 ≈ 140 mph, HCP 15 ≈ 133 mph, HCP 20 ≈ 126 mph, HCP 25+ ≈ 117 mph.
+ * Extrapolerat linjärt i båda ändar för plus-handicap och höga handicap
+ * (ingen publik data täcker de ytterligheterna).
  */
 
 export type MeasurementContext = "simulator" | "range";
@@ -70,21 +72,48 @@ function interpolate(input: number, anchors: Anchor[]): number {
   return last.hcp;
 }
 
-/** Ball speed (mph) → handicap, kalibrerat mot Trackman-data (se filkommentar). */
+/** Ball speed (mph) → handicap, kalibrerat mot flerkällsdata (se filkommentar). */
 const BALL_SPEED_ANCHORS: Anchor[] = [
-  { hcp: -8, value: 172 },
-  { hcp: -6, value: 168 },
+  { hcp: -8, value: 174 },
+  { hcp: -6, value: 171 },
   { hcp: 0, value: 161 },
-  { hcp: 5, value: 147 },
-  { hcp: 10, value: 138 },
+  { hcp: 5, value: 150 },
+  { hcp: 10, value: 140 },
   { hcp: 15, value: 133 },
-  { hcp: 18, value: 131 },
-  { hcp: 30, value: 122 },
-  { hcp: 40, value: 115 },
+  { hcp: 20, value: 126 },
+  { hcp: 25, value: 117 },
+  { hcp: 36, value: 97 },
+  { hcp: 40, value: 90 },
 ];
 
 export function handicapFromBallSpeed(avgBallSpeed: number): number {
   return Math.max(-8, Math.min(40, interpolate(avgBallSpeed, BALL_SPEED_ANCHORS)));
+}
+
+/** Förväntad smash factor vid en given handicapnivå, samma källor som ball speed-tabellen. */
+const SMASH_ANCHORS: { hcp: number; value: number }[] = [
+  { hcp: -6, value: 1.49 },
+  { hcp: 0, value: 1.47 },
+  { hcp: 5, value: 1.46 },
+  { hcp: 10, value: 1.44 },
+  { hcp: 15, value: 1.43 },
+  { hcp: 20, value: 1.41 },
+  { hcp: 25, value: 1.39 },
+];
+
+function expectedSmash(hcp: number): number {
+  const sorted = [...SMASH_ANCHORS].sort((a, b) => a.hcp - b.hcp);
+  if (hcp <= sorted[0].hcp) return sorted[0].value;
+  if (hcp >= sorted[sorted.length - 1].hcp) return sorted[sorted.length - 1].value;
+  for (let i = 0; i < sorted.length - 1; i += 1) {
+    const a = sorted[i];
+    const b = sorted[i + 1];
+    if (hcp >= a.hcp && hcp <= b.hcp) {
+      const t = (hcp - a.hcp) / (b.hcp - a.hcp);
+      return a.value + t * (b.value - a.value);
+    }
+  }
+  return sorted[sorted.length - 1].value;
 }
 
 /** Handicap → 0–100 score, samma skala (-8..40) som Off the Tee Test. */
@@ -141,7 +170,7 @@ export function computeSpeedResult(shots: SpeedShot[]): SpeedResult {
   const handicap = count ? handicapFromBallSpeed(avgBallSpeed) : 0;
   const score = count ? scoreFromHandicap(handicap) : 0;
 
-  const analysis = buildAnalysis(avgBallSpeed, topBallSpeed, avgSmash);
+  const analysis = buildAnalysis(avgBallSpeed, topBallSpeed, avgSmash, handicap);
 
   return {
     count,
@@ -156,7 +185,7 @@ export function computeSpeedResult(shots: SpeedShot[]): SpeedResult {
   };
 }
 
-function buildAnalysis(avg: number, top: number, smash?: number): string {
+function buildAnalysis(avg: number, top: number, smash: number | undefined, hcp: number): string {
   if (!avg) return "Genomför testet för att få din analys.";
   const parts: string[] = [];
   const spread = top - avg;
@@ -168,16 +197,17 @@ function buildAnalysis(avg: number, top: number, smash?: number): string {
     parts.push(`Jämn nivå mellan slagen, bara ${spread.toFixed(0)} mph mellan snitt och topp.`);
   }
   if (smash !== undefined) {
-    if (smash >= 1.48) {
+    const expected = expectedSmash(hcp);
+    if (smash >= expected + 0.02) {
       parts.push(
-        `Smash factor ${smash.toFixed(2)} är mycket bra – du får ut nästan max energi ur svinghastigheten.`,
+        `Smash factor ${smash.toFixed(2)} är bättre än snittet för din nivå (~${expected.toFixed(2)}) – du får ut mer bollhastighet än förväntat ur svinghastigheten.`,
       );
-    } else if (smash < 1.4) {
+    } else if (smash <= expected - 0.02) {
       parts.push(
-        `Smash factor ${smash.toFixed(2)} är lågt – bättre träffkvalitet (center-träff) kan ge mer bollhastighet utan att svinga hårdare.`,
+        `Smash factor ${smash.toFixed(2)} ligger under snittet för din nivå (~${expected.toFixed(2)}) – bättre center-träff kan ge mer bollhastighet utan att svinga hårdare.`,
       );
     } else {
-      parts.push(`Smash factor ${smash.toFixed(2)} är en solid nivå för din svinghastighet.`);
+      parts.push(`Smash factor ${smash.toFixed(2)} matchar ungefär snittet för din nivå.`);
     }
   }
   return parts.join(" ");

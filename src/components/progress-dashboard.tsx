@@ -264,6 +264,14 @@ function HcpTrend({ change, periodLabel }: { change?: number; periodLabel: strin
   );
 }
 
+const NO_DATA_LINK: Record<CategorySlug, { to: string; params?: Record<string, string> }> = {
+  approach: { to: "/kategori/$slug", params: { slug: "approach" } },
+  driving: { to: "/kategori/$slug", params: { slug: "driving" } },
+  "around-the-green": { to: "/kategori/$slug", params: { slug: "around-the-green" } },
+  puttning: { to: "/kategori/$slug", params: { slug: "puttning" } },
+  speed: { to: "/speed-test" },
+};
+
 export function CategoryStatsSection() {
   const [period, setPeriod] = useState<number>(90);
   const [activeCategory, setActiveCategory] = useState<CategorySlug>("approach");
@@ -313,8 +321,8 @@ export function CategoryStatsSection() {
         {cards.map((c) => (
           <Link
             key={c.slug}
-            to={c.hasData ? "/utveckling/$slug" : "/kategori/$slug"}
-            params={{ slug: c.slug }}
+            to={c.hasData ? "/utveckling/$slug" : NO_DATA_LINK[c.slug].to}
+            params={c.hasData ? { slug: c.slug } : NO_DATA_LINK[c.slug].params}
             className="block rounded-2xl border border-border bg-card p-4 transition-colors hover:border-primary"
           >
             <p className="font-[family-name:var(--font-display)] text-2xl leading-none">

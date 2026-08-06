@@ -29,6 +29,7 @@ const TIMELINE_KEY: Record<CategorySlug, keyof RatingPoint> = {
   driving: "driving",
   "around-the-green": "aroundGreen",
   puttning: "putting",
+  speed: "speed",
 };
 
 export const Route = createFileRoute("/utveckling/$slug")({
