@@ -46,7 +46,7 @@ function SpeedPage() {
   const [ballSpeed, setBallSpeedRaw] = useState(DEFAULT_BALL_SPEED);
   const [clubSpeedEnabled, setClubSpeedEnabled] = useState(false);
   const [clubSpeed, setClubSpeed] = useState(0);
-  const [notes, setNotes] = useState("");
+  
   const [saved, setSaved] = useState(false);
   const [prevScore, setPrevScore] = useState<number | null>(null);
 
@@ -76,17 +76,19 @@ function SpeedPage() {
   }
 
   function commit() {
-    setShots((p) =>
-      p.map((s, i) =>
-        i === index ? { ...s, ballSpeed, clubSpeed: clubSpeedEnabled ? clubSpeed : undefined } : s,
-      ),
+    const updated = shots.map((s, i) =>
+      i === index ? { ...s, ballSpeed, clubSpeed: clubSpeedEnabled ? clubSpeed : undefined } : s,
     );
+    setShots(updated);
     lastBallSpeedRef.current = ballSpeed;
     lastClubSpeedRef.current = clubSpeed;
     lastClubEnabledRef.current = clubSpeedEnabled;
 
     const next = index + 1;
     if (next >= SPEED_TOTAL_SHOTS) {
+      // Testet sparas automatiskt när sista slaget är registrerat.
+      saveSpeedSession(updated, context, device);
+      setSaved(true);
       setPhase("result");
     } else {
       setIndex(next);
@@ -113,11 +115,6 @@ function SpeedPage() {
     setClubSpeed(s.clubSpeed ?? lastClubSpeedRef.current);
   }
 
-  function save() {
-    saveSpeedSession(shots, context, device, notes);
-    setNotes("");
-    setSaved(true);
-  }
 
   function restart() {
     setSaved(false);
@@ -386,30 +383,13 @@ function SpeedPage() {
         </div>
       )}
 
-      <label htmlFor="notes" className="mt-5 block text-sm text-muted-foreground">
-        Anteckning (valfritt)
-      </label>
-      <input
-        id="notes"
-        value={notes}
-        onChange={(e) => setNotes(e.target.value)}
-        placeholder="Uppvärmning, känsla…"
-        className="mt-2 w-full rounded-2xl border border-input bg-background px-4 py-3 text-foreground outline-none focus:border-primary"
-      />
-
       <div className="mt-6 flex gap-3">
-        {saved ? (
+        {saved && (
           <div className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-primary bg-primary/10 py-4 text-base font-semibold text-primary">
             <Check className="h-5 w-5" /> Testet sparat
           </div>
-        ) : (
-          <button
-            onClick={save}
-            className="flex-1 rounded-2xl bg-primary py-4 font-[family-name:var(--font-display)] text-2xl text-primary-foreground"
-          >
-            Spara
-          </button>
         )}
+
         <button
           onClick={restart}
           className="flex-1 rounded-2xl border border-border py-4 font-[family-name:var(--font-display)] text-2xl text-muted-foreground"

@@ -14,12 +14,14 @@ import {
 } from "@/lib/sg-handicap";
 import {
   CategoryGrid,
+  HighScoreCard,
   CategoryTestList,
   DevelopmentCard,
   OpportunityCard,
   RealHandicapCard,
 } from "@/components/home-dashboard";
 import { RadarCard } from "@/components/progress-dashboard";
+import { topScores, type Highlight } from "@/lib/highlights";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -48,6 +50,7 @@ type HomeData = {
   estimated: number | undefined;
   estimatedTrend: number | undefined;
   opportunity: Opportunity | undefined;
+  highlights: Highlight[];
 };
 
 function loadHomeData(): HomeData {
@@ -59,6 +62,7 @@ function loadHomeData(): HomeData {
     estimated: computeEstimatedHandicap(cats),
     estimatedTrend: computeEstimatedTrend(cats),
     opportunity: computeBiggestOpportunity(cats),
+    highlights: topScores(),
   };
 }
 
@@ -113,6 +117,7 @@ function Home() {
             estimated={data.estimated}
             estimatedTrend={data.estimatedTrend}
           />
+          <HighScoreCard highlights={data.highlights} />
           <CategoryGrid cats={data.cats} />
           <RadarCard cats={data.cats} totalHandicap={data.estimated} />
           <OpportunityCard opportunity={data.opportunity} />

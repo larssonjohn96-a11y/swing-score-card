@@ -8,6 +8,7 @@ import {
   type Opportunity,
 } from "@/lib/sg-handicap";
 import { CATEGORIES } from "@/lib/categories";
+import type { Highlight } from "@/lib/highlights";
 
 /** Rating (0–100) eller andra icke-handicap-tal. Handicap-tal ska alltid formatteras med hcpLabel. */
 function fmt(n: number): string {
@@ -219,7 +220,35 @@ export function OpportunityCard({ opportunity }: { opportunity: Opportunity | un
   );
 }
 
+/* ---------------------------------------------------------------- High score */
+
+export function HighScoreCard({ highlights }: { highlights: Highlight[] }) {
+  return (
+    <section className="mt-6">
+      <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">High score</p>
+      <div className="mt-3 grid grid-cols-3 gap-2">
+        {highlights.map((h) => (
+          <div key={h.key} className="rounded-2xl border border-border bg-card p-3">
+            <p className="text-[11px] uppercase leading-tight tracking-[0.12em] text-muted-foreground">
+              {h.label}
+            </p>
+            {h.value !== undefined ? (
+              <p className="mt-1 font-[family-name:var(--font-display)] text-2xl leading-none text-flag">
+                {h.value.toFixed(h.decimals).replace(".", ",")}
+                <span className="ml-1 text-xs text-muted-foreground">{h.unit}</span>
+              </p>
+            ) : (
+              <p className="mt-1 text-sm text-muted-foreground">–</p>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 /* -------------------------------------------------------------------- Tester */
+
 
 export function CategoryTestList() {
   return (
