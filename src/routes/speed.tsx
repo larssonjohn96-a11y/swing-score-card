@@ -76,17 +76,19 @@ function SpeedPage() {
   }
 
   function commit() {
-    setShots((p) =>
-      p.map((s, i) =>
-        i === index ? { ...s, ballSpeed, clubSpeed: clubSpeedEnabled ? clubSpeed : undefined } : s,
-      ),
+    const updated = shots.map((s, i) =>
+      i === index ? { ...s, ballSpeed, clubSpeed: clubSpeedEnabled ? clubSpeed : undefined } : s,
     );
+    setShots(updated);
     lastBallSpeedRef.current = ballSpeed;
     lastClubSpeedRef.current = clubSpeed;
     lastClubEnabledRef.current = clubSpeedEnabled;
 
     const next = index + 1;
     if (next >= SPEED_TOTAL_SHOTS) {
+      // Testet sparas automatiskt när sista slaget är registrerat.
+      saveSpeedSession(updated, context, device);
+      setSaved(true);
       setPhase("result");
     } else {
       setIndex(next);
@@ -113,11 +115,6 @@ function SpeedPage() {
     setClubSpeed(s.clubSpeed ?? lastClubSpeedRef.current);
   }
 
-  function save() {
-    saveSpeedSession(shots, context, device, notes);
-    setNotes("");
-    setSaved(true);
-  }
 
   function restart() {
     setSaved(false);
