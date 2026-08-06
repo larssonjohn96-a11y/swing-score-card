@@ -8,6 +8,7 @@ import {
   type Opportunity,
 } from "@/lib/sg-handicap";
 import { CATEGORIES } from "@/lib/categories";
+import type { Highlight } from "@/lib/highlights";
 
 /** Rating (0–100) eller andra icke-handicap-tal. Handicap-tal ska alltid formatteras med hcpLabel. */
 function fmt(n: number): string {
