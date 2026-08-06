@@ -1,6 +1,6 @@
 import { CATEGORIES } from "@/lib/categories";
 import { loadBunkerSessions } from "@/lib/bunker";
-import { loadSpeedEntries } from "@/lib/speed";
+import { loadSpeedSessions } from "@/lib/speed";
 import { loadLongDriveSessions, sessionBest } from "@/lib/longdrive";
 import { loadPrecisionSessions } from "@/lib/precision-store";
 import { loadOffTeeSessions } from "@/lib/offtee-store";
@@ -27,7 +27,7 @@ export function computeRatings(): CategoryRating[] {
   const level: Level = TOUR_LEVEL;
   const precision = loadPrecisionSessions();
   const bunker = loadBunkerSessions();
-  const speed = loadSpeedEntries();
+  const speed = loadSpeedSessions();
   const longdrive = loadLongDriveSessions();
 
   // Approach: Approach Score 0–100 (redan normaliserad)
@@ -61,7 +61,7 @@ export function computeRatings(): CategoryRating[] {
   // Driving: Off the Tee Score i första hand, annars ball speed, annars carry
   const offtee = loadOffTeeSessions();
   const offteeAvg = lastAvg(offtee.map((s) => s.score));
-  const ballAvg = lastAvg(speed.map((e) => e.ballSpeed));
+  const ballAvg = lastAvg(speed.map((e) => e.avgBallSpeed));
   const ldLast = longdrive.length ? longdrive[longdrive.length - 1] : undefined;
   const carryBest = ldLast ? sessionBest(ldLast) : undefined;
   const carryTarget = ldLast?.unit === "yds" ? level.carryYds : level.carryM;

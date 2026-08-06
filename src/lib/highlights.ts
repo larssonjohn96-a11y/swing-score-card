@@ -1,4 +1,4 @@
-import { loadSpeedEntries } from "@/lib/speed";
+import { loadSpeedSessions } from "@/lib/speed";
 import { loadLongDriveSessions, sessionBest } from "@/lib/longdrive";
 import { loadPrecisionSessions } from "@/lib/precision-store";
 
@@ -13,14 +13,12 @@ export type Highlight = {
 
 /** Bästa noteringar från alla sparade pass. */
 export function topScores(): Highlight[] {
-  const speed = loadSpeedEntries();
+  const speed = loadSpeedSessions();
   const longdrive = loadLongDriveSessions();
   const precision = loadPrecisionSessions();
 
-  const bestBall = speed.length ? Math.max(...speed.map((e) => e.ballSpeed)) : undefined;
-  const bestCarry = longdrive.length
-    ? Math.max(...longdrive.map(sessionBest))
-    : undefined;
+  const bestBall = speed.length ? Math.max(...speed.map((e) => e.topBallSpeed)) : undefined;
+  const bestCarry = longdrive.length ? Math.max(...longdrive.map(sessionBest)) : undefined;
   const carryUnit = longdrive.length ? longdrive[longdrive.length - 1].unit : "m";
   const bestProximity = precision.length
     ? Math.min(...precision.map((s) => s.avgProximity))

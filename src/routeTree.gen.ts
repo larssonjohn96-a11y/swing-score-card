@@ -27,6 +27,7 @@ import { Route as PrecisionHistorikRouteImport } from './routes/precision-histor
 import { Route as ShortPuttingTestRouteImport } from './routes/short-putting-test'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SpeedRouteImport } from './routes/speed'
+import { Route as SpeedTestRouteImport } from './routes/speed-test'
 import { Route as TeeshotRouteImport } from './routes/teeshot'
 import { Route as TesterRouteImport } from './routes/tester'
 import { Route as TornadoRouteImport } from './routes/tornado'
@@ -128,6 +129,11 @@ const SpeedRoute = SpeedRouteImport.update({
   path: '/speed',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SpeedTestRoute = SpeedTestRouteImport.update({
+  id: '/speed-test',
+  path: '/speed-test',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TeeshotRoute = TeeshotRouteImport.update({
   id: '/teeshot',
   path: '/teeshot',
@@ -198,6 +204,7 @@ export interface FileRoutesByFullPath {
   '/short-putting-test': typeof ShortPuttingTestRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
+  '/speed-test': typeof SpeedTestRoute
   '/teeshot': typeof TeeshotRoute
   '/tester': typeof TesterRoute
   '/tornado': typeof TornadoRoute
@@ -228,6 +235,7 @@ export interface FileRoutesByTo {
   '/short-putting-test': typeof ShortPuttingTestRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
+  '/speed-test': typeof SpeedTestRoute
   '/teeshot': typeof TeeshotRoute
   '/tester': typeof TesterRoute
   '/tornado': typeof TornadoRoute
@@ -259,6 +267,7 @@ export interface FileRoutesById {
   '/short-putting-test': typeof ShortPuttingTestRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
+  '/speed-test': typeof SpeedTestRoute
   '/teeshot': typeof TeeshotRoute
   '/tester': typeof TesterRoute
   '/tornado': typeof TornadoRoute
@@ -291,6 +300,7 @@ export interface FileRouteTypes {
     | '/short-putting-test'
     | '/sitemap.xml'
     | '/speed'
+    | '/speed-test'
     | '/teeshot'
     | '/tester'
     | '/tornado'
@@ -321,6 +331,7 @@ export interface FileRouteTypes {
     | '/short-putting-test'
     | '/sitemap.xml'
     | '/speed'
+    | '/speed-test'
     | '/teeshot'
     | '/tester'
     | '/tornado'
@@ -351,6 +362,7 @@ export interface FileRouteTypes {
     | '/short-putting-test'
     | '/sitemap.xml'
     | '/speed'
+    | '/speed-test'
     | '/teeshot'
     | '/tester'
     | '/tornado'
@@ -382,6 +394,7 @@ export interface RootRouteChildren {
   ShortPuttingTestRoute: typeof ShortPuttingTestRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SpeedRoute: typeof SpeedRoute
+  SpeedTestRoute: typeof SpeedTestRoute
   TeeshotRoute: typeof TeeshotRoute
   TesterRoute: typeof TesterRoute
   TornadoRoute: typeof TornadoRoute
@@ -520,6 +533,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SpeedRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/speed-test': {
+      id: '/speed-test'
+      path: '/speed-test'
+      fullPath: '/speed-test'
+      preLoaderRoute: typeof SpeedTestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/teeshot': {
       id: '/teeshot'
       path: '/teeshot'
@@ -636,6 +656,7 @@ const rootRouteChildren: RootRouteChildren = {
   ShortPuttingTestRoute: ShortPuttingTestRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SpeedRoute: SpeedRoute,
+  SpeedTestRoute: SpeedTestRoute,
   TeeshotRoute: TeeshotRoute,
   TesterRoute: TesterRoute,
   TornadoRoute: TornadoRoute,

@@ -2,6 +2,7 @@ export type CategoryTest = {
   to:
     | "/bunker"
     | "/speed"
+    | "/speed-test"
     | "/longdrive"
     | "/fairway"
     | "/teeshot"
@@ -39,15 +40,15 @@ export const CATEGORIES: Category[] = [
     description: "Längd, hastighet och träffsäkerhet från tee.",
     tests: [
       {
-        to: "/speed",
+        to: "/speed-test",
         number: "4",
-        title: "Speed test",
-        subtitle: "Ball speed & club head speed",
+        title: "Speed Test",
+        subtitle: "6 drives – ball speed & Speed HCP",
         bullets: [
-          "Logga bollhastighet i mph, club head speed valfritt.",
-          "Datum på x-axeln så du ser progress över tid.",
+          "Ball speed obligatoriskt, club head speed valfritt per slag.",
+          "Speed HCP kalibrerat mot verklig Trackman-data.",
         ],
-        result: "RESULTAT: MPH ÖVER TID + SMASH FACTOR",
+        result: "RESULTAT: SPEED HCP + SMASH FACTOR",
       },
       {
         to: "/offtee-test",

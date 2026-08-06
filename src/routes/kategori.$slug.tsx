@@ -2,7 +2,7 @@ import { Link, createFileRoute, notFound } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { findCategory, CATEGORIES, type Category, type CategoryTest } from "@/lib/categories";
 import { loadBunkerSessions } from "@/lib/bunker";
-import { loadSpeedEntries } from "@/lib/speed";
+import { loadSpeedSessions } from "@/lib/speed";
 import { loadLongDriveSessions, sessionBest } from "@/lib/longdrive";
 import { loadFairwaySessions, fairwayHitRate } from "@/lib/fairway";
 import { loadPrecisionSessions } from "@/lib/precision-store";
@@ -59,7 +59,7 @@ function CategoryPage() {
 
   useEffect(() => {
     const d = loadBunkerSessions();
-    const sp = loadSpeedEntries();
+    const sp = loadSpeedSessions();
     const ld = loadLongDriveSessions();
     const fw = loadFairwaySessions();
     const precision = loadPrecisionSessions();
@@ -73,8 +73,8 @@ function CategoryPage() {
       "/longdrive": ld.length
         ? `Senast ${sessionBest(ld[ld.length - 1]).toFixed(0)} ${ld[ld.length - 1].unit} längsta carry`
         : undefined,
-      "/speed": sp.length
-        ? `Senast ${sp[sp.length - 1].ballSpeed.toFixed(1)} mph ball speed`
+      "/speed-test": sp.length
+        ? `Senast ${sp[sp.length - 1].avgBallSpeed.toFixed(1)} mph ball speed`
         : undefined,
       "/bunker": d.length ? `Senast ${d[d.length - 1].avgFeet.toFixed(1)} fot i snitt` : undefined,
       "/approach":

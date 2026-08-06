@@ -1,6 +1,6 @@
 import { CATEGORIES, type CategoryTest } from "@/lib/categories";
 import { loadBunkerSessions } from "@/lib/bunker";
-import { loadSpeedEntries } from "@/lib/speed";
+import { loadSpeedSessions } from "@/lib/speed";
 import { loadLongDriveSessions, sessionBest } from "@/lib/longdrive";
 import { loadFairwaySessions } from "@/lib/fairway";
 import { loadTeeSessions } from "@/lib/teeshot";
@@ -39,7 +39,7 @@ const byDate = (a: ProgressPoint, b: ProgressPoint) => a.date.localeCompare(b.da
 export const PROGRESS_TESTS: ProgressTest[] = [
   {
     id: "speed",
-    title: "Speed test",
+    title: "Speed Test",
     categorySlug: "driving",
     to: "/speed",
     metric: "Ball speed",
@@ -47,8 +47,8 @@ export const PROGRESS_TESTS: ProgressTest[] = [
     higherIsBetter: true,
     decimals: 1,
     load: () =>
-      loadSpeedEntries()
-        .map((e) => ({ date: day(e.date), value: e.ballSpeed }))
+      loadSpeedSessions()
+        .map((s) => ({ date: day(s.date), value: s.avgBallSpeed }))
         .sort(byDate),
   },
   {

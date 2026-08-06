@@ -11,12 +11,11 @@ import {
   ratingFromHandicap,
   type CategoryHandicap,
 } from "@/lib/sg-handicap";
-import { loadSpeedEntries, speedStats } from "@/lib/speed";
+import { loadSpeedSessions } from "@/lib/speed";
 import { loadPrecisionSessions } from "@/lib/precision-store";
 import { loadOffTeeSessions } from "@/lib/offtee-store";
 import { loadBunkerSessions } from "@/lib/bunker";
 import { loadShortPuttSessions } from "@/lib/shortputt";
-import { TOUR_LEVEL } from "@/lib/levels";
 
 export type CardTier = {
   key: "bronze" | "silver" | "gold" | "elite" | "icon";
@@ -91,13 +90,12 @@ function consistencyRating(): number | undefined {
   return clamp(values.slice(-5).reduce((a, b) => a + b, 0) / Math.min(5, values.length));
 }
 
-/** Speed: bästa bollhastighet relativt PGA Tour-snittet. */
+/** Speed: senaste Speed Test-resultatet, omvandlat till samma 0–100-skala som övriga kort. */
 function speedRating(): number | undefined {
-  const entries = loadSpeedEntries();
-  if (!entries.length) return undefined;
-  const { bestBall } = speedStats(entries);
-  if (!bestBall) return undefined;
-  return clamp(50 + (bestBall - TOUR_LEVEL.ballSpeed * 0.75) * 1.15);
+  const sessions = loadSpeedSessions();
+  if (!sessions.length) return undefined;
+  const last = sessions[sessions.length - 1];
+  return clamp(ratingFromHandicap(last.handicap));
 }
 
 export type RatingCardData = {
@@ -138,7 +136,7 @@ export function computeRatingCard(realHandicap: number | null): RatingCardData {
     ...loadOffTeeSessions().map((s) => s.date),
     ...loadBunkerSessions().map((s) => s.date),
     ...loadShortPuttSessions().map((s) => s.date),
-    ...loadSpeedEntries().map((s) => s.date),
+    ...loadSpeedSessions().map((s) => s.date),
   ].sort();
 
   return {

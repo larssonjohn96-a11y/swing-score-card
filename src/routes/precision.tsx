@@ -1,5 +1,14 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, ArrowRight, Check, Minus, Plus, X } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Minus,
+  Plus,
+  X,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
   PRECISION_TARGETS,
@@ -219,25 +228,28 @@ function TestScreen({
         />
 
         <div className="rounded-2xl border border-border bg-card p-3">
-          <div className="flex items-center justify-between">
-            <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Sidled</p>
-            <div className="flex overflow-hidden rounded-full border border-border text-[11px] font-semibold">
-              {[
-                { v: -1 as const, label: "Vänster" },
-                { v: 1 as const, label: "Höger" },
-              ].map((o) => (
-                <button
-                  key={o.label}
-                  type="button"
-                  onClick={() => setSide(o.v)}
-                  className={`px-3 py-1 transition-colors ${
-                    side === o.v ? "bg-primary text-primary-foreground" : "text-muted-foreground"
-                  }`}
-                >
-                  {o.label}
-                </button>
-              ))}
-            </div>
+          <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Sidled</p>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            {[
+              { v: -1 as const, label: "Vänster", Icon: ChevronLeft },
+              { v: 1 as const, label: "Höger", Icon: ChevronRight },
+            ].map((o) => (
+              <button
+                key={o.label}
+                type="button"
+                onClick={() => setSide(o.v)}
+                aria-pressed={side === o.v}
+                className={`flex items-center justify-center gap-1.5 rounded-xl border-2 py-2.5 text-sm font-semibold transition-colors ${
+                  side === o.v
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-transparent text-foreground active:bg-muted"
+                }`}
+              >
+                {o.v === -1 && <o.Icon className="h-4 w-4" />}
+                {o.label}
+                {o.v === 1 && <o.Icon className="h-4 w-4" />}
+              </button>
+            ))}
           </div>
 
           <SidledValue value={offset} onChange={setOffset} />

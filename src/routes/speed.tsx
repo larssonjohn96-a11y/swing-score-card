@@ -1,367 +1,430 @@
-import { Link, createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
+import { ArrowLeft, Check, Gauge, Radar, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import {
-  CartesianGrid,
-  Line,
-  LineChart,
-  ReferenceLine,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-import {
-  deleteSpeedEntry,
-  loadSpeedEntries,
-  saveSpeedEntry,
-  smashFactor,
-  speedStats,
-  todayISO,
-  type SpeedEntry,
+  RANGE_DEVICES,
+  SIMULATOR_DEVICES,
+  SPEED_TOTAL_SHOTS,
+  computeSpeedResult,
+  emptySpeedShots,
+  handicapLabel,
+  loadSpeedSessions,
+  saveSpeedSession,
+  speedLevelLabel,
+  type Device,
+  type MeasurementContext,
+  type SpeedShot,
 } from "@/lib/speed";
-import { TOUR, TOUR_TOP5 } from "@/lib/benchmarks";
-import { LEVELS } from "@/lib/levels";
-import { ChartCard } from "@/components/chart-card";
+import { TeeNumberField } from "@/components/offtee-visuals";
+import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 
 export const Route = createFileRoute("/speed")({
   head: () => ({
     meta: [
-      { title: "Speed test – ball speed & club head speed i mph" },
+      { title: "Speed Test – 6 drives | SG4" },
       {
         name: "description",
         content:
-          "Logga bollhastighet i mph och valfritt klubbhuvudshastighet. Se utvecklingen över tid med datum på x-axeln och smash factor.",
+          "Speed Test: 6 drives, ball speed och valfri club head speed. Speed HCP och analys mätt i simulator eller på range.",
       },
-      { property: "og:title", content: "Speed test – ball speed & club head speed" },
-      {
-        property: "og:description",
-        content: "Tracka ball speed i mph över tid, med valfri club head speed och smash factor.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: SpeedPage,
 });
 
-function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString("sv-SE", { day: "numeric", month: "short" });
-}
+type Phase = "setup" | "test" | "result";
+
+const DEFAULT_BALL_SPEED = 140;
 
 function SpeedPage() {
-  const [entries, setEntries] = useState<SpeedEntry[]>([]);
-  const [date, setDate] = useState(todayISO());
-  const [ball, setBall] = useState("");
-  const [club, setClub] = useState("");
-  const [note, setNote] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const [phase, setPhase] = useState<Phase>("setup");
+  const [context, setContext] = useState<MeasurementContext>("simulator");
+  const [device, setDevice] = useState<Device>(SIMULATOR_DEVICES[0]);
+  const [shots, setShots] = useState<SpeedShot[]>(emptySpeedShots);
+  const [index, setIndex] = useState(0);
+  const [ballSpeed, setBallSpeedRaw] = useState(DEFAULT_BALL_SPEED);
+  const [clubSpeedEnabled, setClubSpeedEnabled] = useState(false);
+  const [clubSpeed, setClubSpeed] = useState(0);
+  const [notes, setNotes] = useState("");
+  const [saved, setSaved] = useState(false);
+  const [prevScore, setPrevScore] = useState<number | null>(null);
+
+  const lastBallSpeedRef = useRef(DEFAULT_BALL_SPEED);
+  const lastClubSpeedRef = useRef(0);
+  const lastClubEnabledRef = useRef(false);
+
+  useHideBottomNav(phase === "test");
 
   useEffect(() => {
-    setEntries(loadSpeedEntries());
+    const sessions = loadSpeedSessions();
+    const last = sessions[sessions.length - 1];
+    setPrevScore(last ? last.score : null);
   }, []);
 
-  const stats = useMemo(() => speedStats(entries), [entries]);
-  const chartData = useMemo(
-    () =>
-      entries.map((e) => ({
-        label: fmtDate(e.date),
-        ball: e.ballSpeed,
-        club: e.clubSpeed ?? null,
-      })),
-    [entries],
-  );
-  const hasClub = entries.some((e) => typeof e.clubSpeed === "number");
-
-  function num(value: string) {
-    const n = Number(value.replace(",", "."));
-    return Number.isFinite(n) && n > 0 ? n : undefined;
+  function setBallSpeed(n: number) {
+    setBallSpeedRaw(n);
   }
 
-  function submit() {
-    const ballSpeed = num(ball);
-    if (!ballSpeed) {
-      setError("Fyll i bollhastighet i mph.");
-      return;
-    }
-    const clubSpeed = club.trim() ? num(club) : undefined;
-    if (club.trim() && !clubSpeed) {
-      setError("Klubbhastigheten måste vara ett tal.");
-      return;
-    }
-    setError(null);
-    setEntries(
-      saveSpeedEntry({
-        date: date || todayISO(),
-        ballSpeed,
-        clubSpeed,
-        note: note.trim() || undefined,
-      }),
+  function pickContext(c: MeasurementContext) {
+    setContext(c);
+    setDevice(c === "simulator" ? SIMULATOR_DEVICES[0] : RANGE_DEVICES[0]);
+  }
+
+  function startTest() {
+    setPhase("test");
+  }
+
+  function commit() {
+    setShots((p) =>
+      p.map((s, i) =>
+        i === index ? { ...s, ballSpeed, clubSpeed: clubSpeedEnabled ? clubSpeed : undefined } : s,
+      ),
     );
-    setBall("");
-    setClub("");
-    setNote("");
+    lastBallSpeedRef.current = ballSpeed;
+    lastClubSpeedRef.current = clubSpeed;
+    lastClubEnabledRef.current = clubSpeedEnabled;
+
+    const next = index + 1;
+    if (next >= SPEED_TOTAL_SHOTS) {
+      setPhase("result");
+    } else {
+      setIndex(next);
+      const nextShot = shots[next];
+      if (nextShot.ballSpeed > 0) {
+        setBallSpeedRaw(nextShot.ballSpeed);
+        setClubSpeedEnabled(typeof nextShot.clubSpeed === "number");
+        setClubSpeed(nextShot.clubSpeed ?? lastClubSpeedRef.current);
+      } else {
+        setBallSpeedRaw(lastBallSpeedRef.current);
+        setClubSpeedEnabled(lastClubEnabledRef.current);
+        setClubSpeed(lastClubSpeedRef.current);
+      }
+    }
   }
 
-  return (
-    <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-16 pt-8">
-      <header className="flex items-end justify-between">
-        <div>
-          <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
-            Off the Tee · Speed
-          </p>
-          <h1 className="text-4xl leading-none">Speed test</h1>
+  function back() {
+    if (index === 0) return;
+    const i = index - 1;
+    setIndex(i);
+    const s = shots[i];
+    setBallSpeedRaw(s.ballSpeed || lastBallSpeedRef.current);
+    setClubSpeedEnabled(typeof s.clubSpeed === "number");
+    setClubSpeed(s.clubSpeed ?? lastClubSpeedRef.current);
+  }
+
+  function save() {
+    saveSpeedSession(shots, context, device, notes);
+    setNotes("");
+    setSaved(true);
+  }
+
+  function restart() {
+    setSaved(false);
+    setShots(emptySpeedShots());
+    setIndex(0);
+    setBallSpeedRaw(DEFAULT_BALL_SPEED);
+    setClubSpeedEnabled(false);
+    setClubSpeed(0);
+    lastBallSpeedRef.current = DEFAULT_BALL_SPEED;
+    lastClubSpeedRef.current = 0;
+    lastClubEnabledRef.current = false;
+    setPhase("setup");
+  }
+
+  if (phase === "setup") {
+    const devices = context === "simulator" ? SIMULATOR_DEVICES : RANGE_DEVICES;
+    return (
+      <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-16 pt-8">
+        <header className="flex items-end justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
+              Innan du börjar
+            </p>
+            <h1 className="text-4xl leading-none">Speed Test</h1>
+          </div>
+          <Link
+            to="/kategori/$slug"
+            params={{ slug: "driving" }}
+            className="rounded-full border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Avbryt
+          </Link>
+        </header>
+
+        <div className="mt-8 flex justify-center">
+          <span className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+            <Radar className="h-8 w-8 text-primary" />
+          </span>
         </div>
-        <Link
-          to="/kategori/$slug"
-          params={{ slug: "driving" }}
-          className="rounded-full border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-        >
-          Tillbaka
-        </Link>
-      </header>
+        <h2 className="mt-4 text-center text-2xl leading-tight">Var mäter du?</h2>
+        <p className="mt-2 text-center text-sm text-muted-foreground">
+          Olika system mäter olika högt – vi visar det med resultatet så du kan jämföra rättvist.
+        </p>
 
-      <section className="mt-6 grid grid-cols-2 gap-3">
-        <div className="rounded-3xl border border-border bg-card p-5 text-center shadow-[var(--shadow-glow)]">
-          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Bästa ball</p>
-          <p className="font-[family-name:var(--font-display)] text-5xl leading-none text-flag">
-            {stats.bestBall ? stats.bestBall.toFixed(1) : "–"}
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            mph · tour {TOUR.ballSpeed} · topp 5 {TOUR_TOP5.ballSpeed}
-          </p>
+        <div className="mt-6 grid grid-cols-2 gap-3">
+          <button
+            onClick={() => pickContext("simulator")}
+            className={`rounded-2xl border-2 p-4 text-left transition-colors ${
+              context === "simulator" ? "border-primary bg-primary/10" : "border-border bg-card"
+            }`}
+          >
+            <p className="font-[family-name:var(--font-display)] text-xl leading-none">Simulator</p>
+          </button>
+          <button
+            onClick={() => pickContext("range")}
+            className={`rounded-2xl border-2 p-4 text-left transition-colors ${
+              context === "range" ? "border-primary bg-primary/10" : "border-border bg-card"
+            }`}
+          >
+            <p className="font-[family-name:var(--font-display)] text-xl leading-none">Range</p>
+          </button>
         </div>
-        <div className="rounded-3xl border border-border bg-card p-5 text-center">
-          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Bästa club</p>
-          <p className="font-[family-name:var(--font-display)] text-5xl leading-none">
-            {stats.bestClub ? stats.bestClub.toFixed(1) : "–"}
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            mph · tour {TOUR.clubSpeed} · topp 5 {TOUR_TOP5.clubSpeed}
-          </p>
+
+        <p className="mt-6 text-xs uppercase tracking-[0.2em] text-muted-foreground">
+          Vilken maskin?
+        </p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {devices.map((d) => (
+            <button
+              key={d}
+              onClick={() => setDevice(d)}
+              className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
+                device === d
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border text-muted-foreground"
+              }`}
+            >
+              {d}
+            </button>
+          ))}
         </div>
-      </section>
-
-      <section className="mt-4 rounded-2xl border border-border bg-card/60 p-4 text-sm text-muted-foreground">
-        {stats.count ? (
-          <p>
-            Snitt ball {stats.avgBall.toFixed(1)} mph
-            {stats.avgClub ? ` · snitt club ${stats.avgClub.toFixed(1)} mph` : ""} · {stats.count}{" "}
-            mätning{stats.count === 1 ? "" : "ar"}
-          </p>
-        ) : (
-          <p>Logga din första mätning för att börja tracka utvecklingen.</p>
-        )}
-      </section>
-
-      <section className="mt-6 rounded-3xl border border-border bg-card p-5">
-        <h2 className="text-2xl">Ny mätning</h2>
-        <label htmlFor="date" className="mt-4 block text-sm text-muted-foreground">
-          Datum
-        </label>
-        <input
-          id="date"
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          className="mt-1 w-full rounded-2xl border border-input bg-background px-4 py-3 text-foreground outline-none focus:border-primary"
-        />
-
-        <label htmlFor="ball" className="mt-4 block text-sm text-muted-foreground">
-          Ball speed (mph)
-        </label>
-        <input
-          id="ball"
-          inputMode="decimal"
-          value={ball}
-          onChange={(e) => setBall(e.target.value)}
-          placeholder="0"
-          className="mt-1 w-full rounded-2xl border border-input bg-background px-4 py-4 text-center font-[family-name:var(--font-display)] text-5xl text-foreground outline-none focus:border-primary"
-        />
-
-        <label htmlFor="club" className="mt-4 block text-sm text-muted-foreground">
-          Club head speed (mph) – valfritt
-        </label>
-        <input
-          id="club"
-          inputMode="decimal"
-          value={club}
-          onChange={(e) => setClub(e.target.value)}
-          placeholder="–"
-          className="mt-1 w-full rounded-2xl border border-input bg-background px-4 py-4 text-center font-[family-name:var(--font-display)] text-4xl text-foreground outline-none focus:border-primary"
-        />
-
-        <label htmlFor="note" className="mt-4 block text-sm text-muted-foreground">
-          Anteckning – valfritt
-        </label>
-        <input
-          id="note"
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          placeholder="Driver, range, vind..."
-          className="mt-1 w-full rounded-2xl border border-input bg-background px-4 py-3 text-foreground outline-none focus:border-primary"
-        />
-
-        {error ? <p className="mt-3 text-sm text-destructive">{error}</p> : null}
 
         <button
-          onClick={submit}
-          className="mt-5 w-full rounded-2xl bg-primary py-4 font-[family-name:var(--font-display)] text-2xl text-primary-foreground"
+          onClick={startTest}
+          className="mt-8 w-full rounded-2xl bg-primary py-5 font-[family-name:var(--font-display)] text-2xl text-primary-foreground"
         >
-          Spara mätning
+          Starta Speed Test
         </button>
-      </section>
+      </main>
+    );
+  }
 
-      {entries.length > 1 ? (
-        <ChartCard
-          title="Utveckling över tid"
-          footer={
-            <p className="text-xs text-muted-foreground">
-              Streckade linjer: PGA Tour-snitt och tourens long hitters. Tryck på grafen för
-              helskärm.
-            </p>
-          }
-        >
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData} margin={{ top: 5, right: 8, bottom: 0, left: -20 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-              <XAxis
-                dataKey="label"
-                tick={{ fontSize: 11 }}
-                stroke="var(--color-muted-foreground)"
-              />
-              <YAxis
-                tick={{ fontSize: 11 }}
-                stroke="var(--color-muted-foreground)"
-                domain={["auto", "auto"]}
-              />
-              <Tooltip
-                contentStyle={{
-                  background: "var(--color-card)",
-                  border: "1px solid var(--color-border)",
-                  borderRadius: 12,
-                  fontSize: 12,
-                }}
-              />
-              {LEVELS.map((l) => (
-                <ReferenceLine
-                  key={`ball-${l.key}`}
-                  y={l.ballSpeed}
-                  stroke="var(--color-flag)"
-                  strokeDasharray="5 5"
-                  label={{
-                    value: `${l.label} ${l.ballSpeed}`,
-                    position: "insideTopRight",
-                    fontSize: 10,
-                    fill: "var(--color-muted-foreground)",
-                  }}
-                />
-              ))}
-              {hasClub
-                ? LEVELS.map((l) => (
-                    <ReferenceLine
-                      key={`club-${l.key}`}
-                      y={l.clubSpeed}
-                      stroke="var(--color-muted-foreground)"
-                      strokeDasharray="2 6"
-                      label={{
-                        value: `CHS ${l.label} ${l.clubSpeed}`,
-                        position: "insideBottomLeft",
-                        fontSize: 10,
-                        fill: "var(--color-muted-foreground)",
-                      }}
-                    />
-                  ))
-                : null}
-              <Line
-                type="monotone"
-                dataKey="ball"
-                name="Ball speed"
-                stroke="var(--color-primary)"
-                strokeWidth={3}
-                connectNulls
-                isAnimationActive={false}
-                dot={{
-                  r: 4,
-                  fill: "var(--color-primary)",
-                  stroke: "var(--color-card)",
-                  strokeWidth: 2,
-                }}
-                activeDot={{ r: 6 }}
-              />
-              {hasClub ? (
-                <Line
-                  type="monotone"
-                  dataKey="club"
-                  name="Club head speed"
-                  stroke="var(--color-flag)"
-                  strokeWidth={3}
-                  connectNulls
-                  isAnimationActive={false}
-                  dot={{
-                    r: 4,
-                    fill: "var(--color-flag)",
-                    stroke: "var(--color-card)",
-                    strokeWidth: 2,
-                  }}
-                  activeDot={{ r: 6 }}
-                />
-              ) : null}
-            </LineChart>
-          </ResponsiveContainer>
-        </ChartCard>
-      ) : null}
+  if (phase === "test") {
+    const pct = Math.round((index / SPEED_TOTAL_SHOTS) * 100);
 
-      {entries.length ? (
-        <section className="mt-6">
-          <h2 className="text-sm uppercase tracking-[0.25em] text-muted-foreground">Mätningar</h2>
-          <div className="mt-3 space-y-2">
-            {[...entries].reverse().map((e) => {
-              const smash = smashFactor(e);
-              return (
-                <div
-                  key={e.id}
-                  className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3 text-sm"
-                >
-                  <div>
-                    <p className="text-foreground">
-                      {e.ballSpeed.toFixed(1)} mph ball
-                      {e.clubSpeed ? ` · ${e.clubSpeed.toFixed(1)} mph club` : ""}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {fmtDate(e.date)}
-                      {smash ? ` · smash ${smash.toFixed(2)}` : ""}
-                      {e.note ? ` · ${e.note}` : ""}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setEntries(deleteSpeedEntry(e.id))}
-                    className="text-xs text-muted-foreground underline"
-                  >
-                    Ta bort
-                  </button>
-                </div>
-              );
-            })}
+    return (
+      <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-44 pt-4">
+        <div className="flex items-center justify-between">
+          <button
+            onClick={back}
+            disabled={index === 0}
+            aria-label="Föregående slag"
+            className="rounded-full border border-border p-2 text-muted-foreground disabled:opacity-30"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => navigate({ to: "/kategori/$slug", params: { slug: "driving" } })}
+            className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <X className="h-3.5 w-3.5" /> Avbryt test
+          </button>
+        </div>
+
+        <div className="mt-3">
+          <div className="flex items-baseline justify-between text-sm">
+            <span className="font-semibold">
+              Slag {index + 1} <span className="text-muted-foreground">av {SPEED_TOTAL_SHOTS}</span>
+            </span>
+            <span className="text-muted-foreground">{pct} %</span>
           </div>
-        </section>
-      ) : null}
+          <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-primary transition-all"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+        </div>
 
-      <section className="mt-8 rounded-2xl border border-border bg-card/60 p-4 text-sm text-muted-foreground">
-        <h2 className="text-base text-foreground">Så funkar testet</h2>
-        <p className="mt-2">
-          Mät bollhastigheten i mph med launch monitor eller radar. Fyll gärna i klubbhuvudets
-          hastighet också – då räknas smash factor ut automatiskt (ball ÷ club). Logga en mätning
-          per tillfälle och följ kurvan över tid.
+        <p className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">
+          <Gauge className="h-3.5 w-3.5" />
+          {context === "simulator" ? "Simulator" : "Range"} · {device}
         </p>
-        <p className="mt-3">
-          PGA Tour-snitt med driver: {TOUR.ballSpeed} mph ball speed, {TOUR.clubSpeed} mph club head
-          speed och smash factor {TOUR.smashFactor}. Linjerna i grafen visar tournivån.
+
+        <div className="mt-4 space-y-2">
+          <TeeNumberField label="Ball speed" value={ballSpeed} onChange={setBallSpeed} unit="mph" />
+
+          <div className="rounded-2xl border border-border bg-card p-3">
+            <div className="flex items-center justify-between">
+              <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                Club head speed
+              </p>
+              <button
+                type="button"
+                onClick={() => setClubSpeedEnabled((v) => !v)}
+                className={`rounded-full px-3 py-1 text-[11px] font-semibold transition-colors ${
+                  clubSpeedEnabled
+                    ? "bg-primary text-primary-foreground"
+                    : "border border-border text-muted-foreground"
+                }`}
+              >
+                {clubSpeedEnabled ? "Anges" : "Valfritt – av"}
+              </button>
+            </div>
+            {clubSpeedEnabled && (
+              <div className="mt-2">
+                <TeeNumberField
+                  label=""
+                  value={clubSpeed}
+                  onChange={setClubSpeed}
+                  unit="mph"
+                  steps={[-5, -1, 1, 5]}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/95 px-6 pb-6 pt-3 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+          <p className="mb-3 text-center text-sm leading-snug text-muted-foreground">
+            Slaget hade <span className="font-semibold text-foreground">{ballSpeed} mph</span> ball
+            speed
+            {clubSpeedEnabled ? (
+              <>
+                {" "}
+                och <span className="font-semibold text-foreground">{clubSpeed} mph</span> club head
+                speed
+              </>
+            ) : null}
+            .
+          </p>
+          <button
+            onClick={commit}
+            className="mx-auto flex w-full max-w-md items-center justify-center gap-2 rounded-2xl bg-primary py-4 font-[family-name:var(--font-display)] text-2xl text-primary-foreground"
+          >
+            {index + 1 === SPEED_TOTAL_SHOTS ? "Avsluta test" : "Nästa slag"}
+          </button>
+        </div>
+      </main>
+    );
+  }
+
+  const result = computeSpeedResult(shots);
+
+  return (
+    <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-16 pt-10">
+      <p className="mb-6 flex items-center justify-center gap-1 text-xs text-primary">
+        <Check className="h-4 w-4" /> Testet är klart
+      </p>
+
+      <div className="rounded-3xl border border-border bg-card p-6 text-center shadow-[var(--shadow-glow)]">
+        <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Speed HCP</p>
+        <p className="mt-1 font-[family-name:var(--font-display)] text-7xl leading-none text-primary">
+          {handicapLabel(result.handicap)}
         </p>
-        <p className="mt-3">
-          Snitt för tourens fem längsta slagare (long hitters): {TOUR_TOP5.ballSpeed} mph ball speed
-          och {TOUR_TOP5.clubSpeed} mph club head speed.
+        <p className="mt-2 inline-flex items-center rounded-full bg-flag/10 px-3 py-1 text-sm font-semibold text-flag">
+          {speedLevelLabel(result.score)}
         </p>
-      </section>
+        <p className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">
+          <Gauge className="h-3.5 w-3.5" />
+          {context === "simulator" ? "Simulator" : "Range"} · {device}
+        </p>
+        {prevScore !== null && (
+          <p
+            className={`mt-2 text-sm ${result.score - prevScore >= 0 ? "text-primary" : "text-destructive"}`}
+          >
+            {result.score - prevScore > 0 ? "+" : ""}
+            {result.score - prevScore} sedan förra testet
+          </p>
+        )}
+      </div>
+
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        <div className="rounded-2xl border border-border bg-card p-3">
+          <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
+            Snitt ball speed
+          </p>
+          <p className="mt-1 font-[family-name:var(--font-display)] text-2xl leading-none">
+            {result.avgBallSpeed.toFixed(1)} <span className="text-sm">mph</span>
+          </p>
+        </div>
+        <div className="rounded-2xl border border-border bg-card p-3">
+          <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
+            Topp ball speed
+          </p>
+          <p className="mt-1 font-[family-name:var(--font-display)] text-2xl leading-none">
+            {result.topBallSpeed.toFixed(1)} <span className="text-sm">mph</span>
+          </p>
+        </div>
+        {result.avgClubSpeed !== undefined && (
+          <div className="rounded-2xl border border-border bg-card p-3">
+            <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
+              Snitt clubhead
+            </p>
+            <p className="mt-1 font-[family-name:var(--font-display)] text-2xl leading-none">
+              {result.avgClubSpeed.toFixed(1)} <span className="text-sm">mph</span>
+            </p>
+          </div>
+        )}
+        {result.avgSmash !== undefined && (
+          <div className="rounded-2xl border border-border bg-card p-3">
+            <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
+              Smash factor
+            </p>
+            <p className="mt-1 font-[family-name:var(--font-display)] text-2xl leading-none">
+              {result.avgSmash.toFixed(2)}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {result.analysis && (
+        <div className="mt-4 rounded-2xl border border-primary/30 bg-primary/[0.06] p-4">
+          <p className="text-xs uppercase tracking-[0.2em] text-primary">Analys</p>
+          <p className="mt-1.5 text-sm leading-relaxed">{result.analysis}</p>
+        </div>
+      )}
+
+      <label htmlFor="notes" className="mt-5 block text-sm text-muted-foreground">
+        Anteckning (valfritt)
+      </label>
+      <input
+        id="notes"
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        placeholder="Uppvärmning, känsla…"
+        className="mt-2 w-full rounded-2xl border border-input bg-background px-4 py-3 text-foreground outline-none focus:border-primary"
+      />
+
+      <div className="mt-6 flex gap-3">
+        {saved ? (
+          <div className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-primary bg-primary/10 py-4 text-base font-semibold text-primary">
+            <Check className="h-5 w-5" /> Testet sparat
+          </div>
+        ) : (
+          <button
+            onClick={save}
+            className="flex-1 rounded-2xl bg-primary py-4 font-[family-name:var(--font-display)] text-2xl text-primary-foreground"
+          >
+            Spara
+          </button>
+        )}
+        <button
+          onClick={restart}
+          className="flex-1 rounded-2xl border border-border py-4 font-[family-name:var(--font-display)] text-2xl text-muted-foreground"
+        >
+          Nytt test
+        </button>
+      </div>
+
+      <Link
+        to="/kategori/$slug"
+        params={{ slug: "driving" }}
+        className="mt-4 block text-center text-sm text-muted-foreground underline-offset-4 hover:underline"
+      >
+        Tillbaka till Off the Tee
+      </Link>
     </main>
   );
 }
