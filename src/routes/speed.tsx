@@ -46,7 +46,7 @@ function SpeedPage() {
   const [ballSpeed, setBallSpeedRaw] = useState(DEFAULT_BALL_SPEED);
   const [clubSpeedEnabled, setClubSpeedEnabled] = useState(false);
   const [clubSpeed, setClubSpeed] = useState(0);
-  const [notes, setNotes] = useState("");
+  
   const [saved, setSaved] = useState(false);
   const [prevScore, setPrevScore] = useState<number | null>(null);
 
