@@ -20,8 +20,8 @@ import { flagForCountry } from "@/lib/countries";
  */
 const SHIELD_PATH =
   "M 0.5 0.02 C 0.36 0.02 0.32 0.09 0.18 0.09 C 0.06 0.09 0.02 0.14 0.02 0.20 " +
-  "L 0.02 0.82 C 0.02 0.90 0.10 0.95 0.22 0.97 C 0.34 0.99 0.42 1.0 0.5 1.0 " +
-  "C 0.58 1.0 0.66 0.99 0.78 0.97 C 0.90 0.95 0.98 0.90 0.98 0.82 " +
+  "L 0.02 0.78 C 0.02 0.86 0.05 0.90 0.10 0.93 L 0.5 1.0 L 0.90 0.93 " +
+  "C 0.95 0.90 0.98 0.86 0.98 0.78 " +
   "L 0.98 0.20 C 0.98 0.14 0.94 0.09 0.82 0.09 C 0.68 0.09 0.64 0.02 0.5 0.02 Z";
 
 const TIER_STYLES: Record<
@@ -137,7 +137,7 @@ export function PlayerCard({
   }
 
   return (
-    <div className="relative mx-auto" style={{ maxWidth: 260 }}>
+    <div className="relative mx-auto" style={{ maxWidth: 320 }}>
       {/* Delad sköld-klippbana, definieras en gång och återanvänds på ram + innehåll. */}
       <svg width="0" height="0" className="absolute">
         <defs>
@@ -152,10 +152,10 @@ export function PlayerCard({
         style={{ clipPath: "url(#sg4-shield)" }}
       >
         <div
-          className="flex flex-col items-center bg-[#f7f2e4] px-5 pb-6 pt-9 text-[#2b2213]"
+          className="flex flex-col items-center bg-[#f7f2e4] px-5 pb-10 pt-9 text-[#2b2213]"
           style={{ clipPath: "url(#sg4-shield)" }}
         >
-          <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl bg-[#2b2213]/10">
+          <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-2xl bg-[#2b2213]/10">
             {profile.photo ? (
               <img
                 src={profile.photo}
@@ -163,7 +163,7 @@ export function PlayerCard({
                 className="h-full w-full object-cover"
               />
             ) : (
-              <User className="h-10 w-10 opacity-60" strokeWidth={1.2} />
+              <User className="h-12 w-12 opacity-60" strokeWidth={1.2} />
             )}
           </div>
           <p className="mt-3 flex items-center gap-1.5 font-display text-xl uppercase tracking-[0.1em]">
@@ -225,7 +225,7 @@ export function PlayerCard({
                   </button>
                 </div>
               ) : (
-                <p className="mt-0.5 font-display text-4xl leading-none">
+                <p className="mt-0.5 font-display text-5xl leading-none">
                   {data.real !== null ? hcpLabel(data.real) : "–"}
                 </p>
               )}
@@ -249,22 +249,13 @@ export function PlayerCard({
             </p>
           </div>
 
-          <div className="mt-3 w-full space-y-1.5 border-t border-[#2b2213]/15 pt-2.5">
+          <div className="mt-3 w-full space-y-1.5 border-t border-[#2b2213]/15 pt-2.5 pb-1">
             {data.stats.map((s) => (
               <div key={s.key} className="flex items-center justify-between text-xs">
                 <span className="opacity-70">{s.label}</span>
                 <span className="font-display text-base leading-none">{s.value ?? "–"}</span>
               </div>
             ))}
-          </div>
-
-          <div className="mt-3 flex w-full items-center justify-between border-t border-[#2b2213]/15 pt-2.5 text-[9px] uppercase tracking-[0.15em] opacity-60">
-            <span>{data.testCount} tester</span>
-            <span>
-              {data.lastUpdated
-                ? `Uppd. ${new Date(data.lastUpdated).toLocaleDateString("sv-SE")}`
-                : "Inga tester än"}
-            </span>
           </div>
         </div>
       </div>
