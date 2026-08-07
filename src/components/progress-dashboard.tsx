@@ -120,6 +120,9 @@ type CompareTarget = { label: string; hcp: number; isFriend?: boolean };
 
 const DEFAULT_TARGET: CompareTarget = { label: "0", hcp: BENCHMARK_LEVELS[3].hcp };
 
+/** Alltid synliga genvägar, en delmängd av BENCHMARK_LEVELS. */
+const QUICK_LEVELS = BENCHMARK_LEVELS.filter((l) => ["20", "10", "0", "Tour"].includes(l.label));
+
 export function RadarCard({
   cats,
   totalHandicap,
@@ -181,6 +184,23 @@ export function RadarCard({
                 : `HCP ${target.label}`}
           </p>
         </button>
+      </div>
+
+      <div className="mt-4 flex justify-center gap-2">
+        {QUICK_LEVELS.map((l) => (
+          <button
+            key={l.label}
+            type="button"
+            onClick={() => setTarget({ label: l.label, hcp: l.hcp })}
+            className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+              !target.isFriend && target.hcp === l.hcp
+                ? "border-chart-3 bg-chart-3 text-background"
+                : "border-border text-muted-foreground"
+            }`}
+          >
+            {l.label === "Tour" ? "Tour" : `HCP ${l.label}`}
+          </button>
+        ))}
       </div>
 
       <p className="mt-4 text-center text-xs uppercase tracking-[0.25em] text-muted-foreground">
