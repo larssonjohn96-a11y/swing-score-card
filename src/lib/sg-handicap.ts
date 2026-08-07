@@ -7,14 +7,13 @@
  */
 import { loadPrecisionSessions, type PrecisionSession } from "@/lib/precision-store";
 import { loadOffTeeSessions, type OffTeeSession } from "@/lib/offtee-store";
-import { loadBunkerSessions } from "@/lib/bunker";
+import { computeBunkerResult, loadBunkerSessions } from "@/lib/bunker";
 import { loadShortPuttSessions } from "@/lib/shortputt";
 import { loadLagPuttSessions } from "@/lib/lagputt";
 import { loadSpeedSessions } from "@/lib/speed";
 import { loadShortGameSessions } from "@/lib/shortgame";
 import { precisionResult, groupScores } from "@/lib/precision";
 import { offTeeResult, analyseOffTee } from "@/lib/offtee";
-import { TOUR_LEVEL } from "@/lib/levels";
 
 /* -------------------------------------------------------------------------
  * Verkligt Handicap – manuellt satt och redigerbart av spelaren
@@ -179,7 +178,7 @@ function combinedAroundGreenSeries(asOf?: Date): { date: string; handicap: numbe
   const bunkerEvents = upTo(loadBunkerSessions(), asOf).map((s) => ({
     date: s.date,
     kind: "bunker" as const,
-    handicap: ratingToHandicap((TOUR_LEVEL.bunkerFeet / s.avgFeet) * 100),
+    handicap: s.handicap,
   }));
   const events = byDateAsc([...nearEvents, ...bunkerEvents]);
 
@@ -548,9 +547,9 @@ export function computeHistory(filter?: CategorySlug, limit = 200): HistoryEntry
       categorySlug: "around-the-green" as const,
       title: "Bunkerslag",
       date: s.date,
-      score: Math.round(s.avgFeet * 10) / 10,
-      scoreUnit: " fot",
-      handicap: undefined,
+      score: s.score,
+      scoreUnit: "/100",
+      handicap: s.handicap,
       to: { slug: "around-the-green", test: "bunker" },
     })),
     ...putt.map((s) => ({
@@ -812,21 +811,7 @@ function aroundGreenDetailData(): CategoryDetailData {
   const lastNear = nearSessions[nearSessions.length - 1];
   const bunkerSessions = loadBunkerSessions();
   const lastBunker = bunkerSessions[bunkerSessions.length - 1];
-
-  const allBunkerShots = bunkerSessions.flatMap((s) => s.shots);
-  const byLie = new Map<string, { sum: number; count: number }>();
-  for (const s of allBunkerShots) {
-    const cur = byLie.get(s.lie) ?? { sum: 0, count: 0 };
-    cur.sum += s.feet;
-    cur.count += 1;
-    byLie.set(s.lie, cur);
-  }
-  const lieStats = [...byLie.entries()].map(([lie, { sum, count }]) => ({
-    lie,
-    avg: sum / count,
-  }));
-  const bestLie = lieStats.length ? [...lieStats].sort((a, b) => a.avg - b.avg)[0] : undefined;
-  const worstLie = lieStats.length ? [...lieStats].sort((a, b) => b.avg - a.avg)[0] : undefined;
+  const lastBunkerResult = lastBunker ? computeBunkerResult(lastBunker.shots) : undefined;
 
   const keyMetrics = [
     ...(lastNear
@@ -836,7 +821,10 @@ function aroundGreenDetailData(): CategoryDetailData {
         ]
       : []),
     ...(lastBunker
-      ? [{ label: "Bunker senaste snitt", value: `${lastBunker.avgFeet.toFixed(1)} fot` }]
+      ? [
+          { label: "Bunker HCP", value: hcpLabel(lastBunker.handicap) },
+          { label: "Bunker snitt från hål", value: `${lastBunker.avgProximity.toFixed(2)} m` },
+        ]
       : []),
   ];
 
@@ -851,14 +839,12 @@ function aroundGreenDetailData(): CategoryDetailData {
       `Snitt ${lastNear.avgProximity.toFixed(2)} m från hål i Närspelstestet – störst chans att sänka HCP snabbt.`,
     );
   }
-  if (bestLie)
-    strengths.push(
-      `Bäst från ${bestLie.lie.toLowerCase()} i bunker (snitt ${bestLie.avg.toFixed(1)} fot).`,
-    );
-  if (worstLie)
-    improvements.push(
-      `${worstLie.lie} är svårast i bunker (snitt ${worstLie.avg.toFixed(1)} fot).`,
-    );
+  if (lastBunkerResult?.bestLie) {
+    strengths.push(`Bäst från ${lastBunkerResult.bestLie.toLowerCase()} i bunker.`);
+  }
+  if (lastBunkerResult?.worstLie) {
+    improvements.push(`${lastBunkerResult.worstLie} är svårast i bunker.`);
+  }
 
   return {
     strength: strengths[0],

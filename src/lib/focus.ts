@@ -45,17 +45,17 @@ export function computeRatings(): CategoryRating[] {
         : `Snitt ${approachAvg.toFixed(0)} av 100`,
   };
 
-  // Around the green: snittfot i bunker, lägre är bättre
-  const bunkerAvg = lastAvg(bunker.map((s) => s.avgFeet));
+  // Around the green: bunker HCP, lägre är bättre
+  const bunkerAvg = lastAvg(bunker.map((s) => s.handicap));
   const atg: CategoryRating = {
     slug: "around-the-green",
     title: "Around the green",
     hasTests: true,
-    rating: bunkerAvg === undefined ? undefined : clamp((level.bunkerFeet / bunkerAvg) * 100),
+    rating: bunkerAvg === undefined ? undefined : clamp(50 - bunkerAvg),
     detail:
       bunkerAvg === undefined
         ? "Kör bunkertestet för att få en nivå."
-        : `Snitt ${bunkerAvg.toFixed(1)} fot (${level.label} ${level.bunkerFeet} fot)`,
+        : `Bunker HCP ${bunkerAvg.toFixed(1)}`,
   };
 
   // Driving: Off the Tee Score i första hand, annars ball speed, annars carry

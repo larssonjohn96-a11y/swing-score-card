@@ -1,187 +1,229 @@
-import { Link, createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { pushBunkerSession } from "@/lib/cloud";
+import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
+import { ArrowLeft, ArrowRight, Check, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import {
-  BUNKER_LIES,
-  FAILED_PENALTY,
+  BUNKER_INTERVALS,
+  BUNKER_TOTAL_SHOTS,
+  computeBunkerResult,
+  emptyBunkerShots,
+  loadBunkerSessions,
   saveBunkerSession,
+  type BunkerIntervalKey,
   type BunkerShot,
 } from "@/lib/bunker";
+import { BunkerReport } from "@/components/bunker-report";
+import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 
 export const Route = createFileRoute("/bunker")({
   head: () => ({
     meta: [
-      { title: "Bunkerslag – 6 olika lägen | Golfträning" },
+      { title: "Bunkerslag – 6 slag | SG4" },
       {
         name: "description",
         content:
-          "Bunkertestet: 1 boll från 6 olika lägen. Mät avståndet till hålet i fot och följ ditt snitt över tid.",
-      },
-      { property: "og:title", content: "Bunkerslag – 6 olika lägen" },
-      {
-        property: "og:description",
-        content: "1 boll från varje läge, mät avståndet till hålet i fot.",
+          "Bunkerslag: 6 slag från de sex vanligaste bunkerlägena. Registrera hur nära hålet bollen stannar och få ditt Bunker HCP.",
       },
     ],
   }),
   component: BunkerPage,
 });
 
-const EMPTY: BunkerShot[] = BUNKER_LIES.map((lie) => ({ lie, feet: 0, out: true }));
+type Phase = "test" | "result";
 
 function BunkerPage() {
-  const [shots, setShots] = useState<BunkerShot[]>(EMPTY);
+  const navigate = useNavigate();
+  const [phase, setPhase] = useState<Phase>("test");
+  const [shots, setShots] = useState<BunkerShot[]>(emptyBunkerShots);
   const [index, setIndex] = useState(0);
-  const [feet, setFeet] = useState("");
-  const [done, setDone] = useState(false);
+  const [interval, setInterval] = useState<BunkerIntervalKey | null>(null);
+  const [saved, setSaved] = useState(false);
+  const [prevScore, setPrevScore] = useState<number | null>(null);
+  const savedRef = useRef(false);
 
-  const total = shots
-    .slice(0, done ? shots.length : index)
-    .reduce((a, s) => a + (s.out ? s.feet : FAILED_PENALTY), 0);
+  const current = shots[Math.min(index, BUNKER_TOTAL_SHOTS - 1)];
 
-  function commit(out: boolean) {
-    const value = out ? Math.max(0, Number(feet.replace(",", ".")) || 0) : FAILED_PENALTY;
-    const next = [...shots];
-    next[index] = { lie: BUNKER_LIES[index], feet: value, out };
-    setShots(next);
-    setFeet("");
-    if (index + 1 >= BUNKER_LIES.length) {
-      void pushBunkerSession(saveBunkerSession(next));
-      setDone(true);
+  useHideBottomNav(phase === "test");
+
+  function start() {
+    const sessions = loadBunkerSessions();
+    const last = sessions[sessions.length - 1];
+    setPrevScore(last ? last.score : null);
+    setShots(emptyBunkerShots());
+    setIndex(0);
+    setInterval(null);
+    setSaved(false);
+    savedRef.current = false;
+    setPhase("test");
+  }
+
+  useEffect(() => {
+    start();
+  }, []);
+
+  function commit() {
+    if (!interval) return;
+    setShots((p) => p.map((s, i) => (i === index ? { ...s, interval } : s)));
+
+    const next = index + 1;
+    if (next >= BUNKER_TOTAL_SHOTS) {
+      setPhase("result");
     } else {
-      setIndex(index + 1);
+      setIndex(next);
+      const nextShot = shots[next];
+      setInterval(nextShot.interval ?? null);
     }
   }
 
-  function reset() {
-    setShots(EMPTY);
-    setIndex(0);
-    setFeet("");
-    setDone(false);
+  function back() {
+    if (index === 0) return;
+    const i = index - 1;
+    setIndex(i);
+    const s = shots[i];
+    setInterval(s.interval ?? null);
   }
 
-  return (
-    <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-16 pt-8">
-      <header className="flex items-end justify-between">
-        <div>
-          <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
-            Test 2 · 6 lägen
-          </p>
-          <h1 className="text-4xl leading-none">Bunkerslag</h1>
+  // Testet sparas automatiskt så fort resultatet visas, som Närspelstest.
+  useEffect(() => {
+    if (phase === "result" && !savedRef.current) {
+      savedRef.current = true;
+      saveBunkerSession(shots);
+      setSaved(true);
+    }
+  }, [phase, shots]);
+
+  if (phase === "test") {
+    const pct = Math.round((index / BUNKER_TOTAL_SHOTS) * 100);
+    const selectedInterval = BUNKER_INTERVALS.find((iv) => iv.key === interval);
+
+    return (
+      <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-52 pt-4">
+        <div className="flex items-center justify-between">
+          <button
+            onClick={back}
+            disabled={index === 0}
+            aria-label="Föregående slag"
+            className="rounded-full border border-border p-2 text-muted-foreground disabled:opacity-30"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() =>
+              navigate({ to: "/kategori/$slug", params: { slug: "around-the-green" } })
+            }
+            className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <X className="h-3.5 w-3.5" /> Avbryt test
+          </button>
         </div>
-        <Link
-          to="/"
-          className="rounded-full border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-        >
-          Tillbaka
-        </Link>
-      </header>
 
-      <section className="mt-6 rounded-3xl border border-border bg-card p-6 text-center shadow-[var(--shadow-glow)]">
-        <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
-          {done ? "Snitt per slag" : "Total hittills"}
-        </p>
-        <p className="font-[family-name:var(--font-display)] text-7xl leading-none text-flag">
-          {done ? (total / BUNKER_LIES.length).toFixed(1) : total}
-          <span className="ml-2 text-2xl text-muted-foreground">fot</span>
-        </p>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {done ? `Totalt ${total} fot på 6 slag` : `Läge ${index + 1} av ${BUNKER_LIES.length}`}
-        </p>
-      </section>
-
-      {done ? (
-        <section className="mt-6 rounded-3xl border border-border bg-card p-6">
-          <h2 className="text-2xl">Testet är klart</h2>
-          <div className="mt-3 space-y-2 text-sm">
-            {shots.map((s) => (
-              <div key={s.lie} className="flex justify-between border-b border-border pb-1">
-                <span className="text-muted-foreground">{s.lie}</span>
-                <span>{s.out ? `${s.feet} fot` : `Ur bunkern misslyckades (${FAILED_PENALTY})`}</span>
-              </div>
-            ))}
+        <div className="mt-3">
+          <div className="flex items-baseline justify-between text-sm">
+            <span className="font-semibold">
+              Slag {index + 1}{" "}
+              <span className="text-muted-foreground">av {BUNKER_TOTAL_SHOTS}</span>
+            </span>
+            <span className="text-muted-foreground">{pct} %</span>
           </div>
-          <div className="mt-6 flex gap-3">
-            <button
-              onClick={reset}
-              className="flex-1 rounded-2xl bg-primary py-4 font-[family-name:var(--font-display)] text-2xl text-primary-foreground"
-            >
-              Nytt test
-            </button>
-            <Link
-              to="/framsteg"
-              className="flex-1 rounded-2xl border border-border py-4 text-center font-[family-name:var(--font-display)] text-2xl text-muted-foreground"
-            >
-              Framsteg
-            </Link>
+          <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-primary transition-all"
+              style={{ width: `${pct}%` }}
+            />
           </div>
-        </section>
-      ) : (
-        <section className="mt-6 rounded-3xl border border-border bg-card p-6">
-          <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Läge</p>
-          <h2 className="text-3xl leading-tight">{BUNKER_LIES[index]}</h2>
-          <label
-            htmlFor="feet"
-            className="mt-5 block text-sm text-muted-foreground"
-          >
-            Avstånd till hålet (fot)
-          </label>
-          <input
-            id="feet"
-            inputMode="decimal"
-            value={feet}
-            onChange={(e) => setFeet(e.target.value)}
-            placeholder="0"
-            className="mt-2 w-full rounded-2xl border border-input bg-background px-4 py-5 text-center font-[family-name:var(--font-display)] text-5xl text-foreground outline-none focus:border-primary"
-          />
-          <button
-            onClick={() => commit(true)}
-            className="mt-4 w-full rounded-2xl bg-primary py-4 font-[family-name:var(--font-display)] text-2xl text-primary-foreground"
-          >
-            Registrera slag
-          </button>
-          <button
-            onClick={() => commit(false)}
-            className="mt-3 w-full rounded-2xl border border-border py-3 text-sm text-muted-foreground"
-          >
-            Kom inte ur bunkern (+{FAILED_PENALTY} fot)
-          </button>
-        </section>
-      )}
+        </div>
 
-      <section className="mt-6">
-        <h2 className="text-sm uppercase tracking-[0.25em] text-muted-foreground">Alla lägen</h2>
-        <div className="mt-3 space-y-2">
-          {BUNKER_LIES.map((lie, i) => {
-            const played = done || i < index;
-            return (
-              <div
-                key={lie}
-                className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-sm ${
-                  !done && i === index
-                    ? "border-primary bg-primary/15"
-                    : "border-border bg-card text-muted-foreground"
+        <div className="mt-6 rounded-3xl border-2 border-border bg-card p-6 text-center shadow-[var(--shadow-glow)]">
+          <p className="text-[11px] uppercase tracking-[0.3em] text-muted-foreground">Läge</p>
+          <p className="mt-1 font-[family-name:var(--font-display)] text-3xl leading-tight text-flag">
+            {current.lie}
+          </p>
+        </div>
+
+        <div className="mt-5 rounded-2xl border border-border bg-card p-3">
+          <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+            Hur nära hålet stannade bollen?
+          </p>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            {BUNKER_INTERVALS.map((iv) => (
+              <button
+                key={iv.key}
+                type="button"
+                onClick={() => setInterval(iv.key)}
+                aria-pressed={interval === iv.key}
+                className={`rounded-xl border-2 py-3.5 text-sm font-semibold leading-tight transition-colors ${
+                  interval === iv.key
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : iv.key === "not-out"
+                      ? "border-destructive/50 bg-transparent text-destructive active:bg-destructive/10"
+                      : "border-border bg-transparent text-foreground active:bg-muted"
                 }`}
               >
-                <span>
-                  {i + 1}. {lie}
-                </span>
-                <span>
-                  {played ? (shots[i].out ? `${shots[i].feet} fot` : "Ej ur") : "–"}
-                </span>
-              </div>
-            );
-          })}
+                {iv.label}
+              </button>
+            ))}
+          </div>
         </div>
-      </section>
 
-      <section className="mt-8 rounded-2xl border border-border bg-card/60 p-4 text-sm text-muted-foreground">
-        <h2 className="text-base text-foreground">Så funkar testet</h2>
-        <p className="mt-2">
-          Varierande avstånd och lägen i bunkern. Slå 1 boll från varje position och mät avståndet
-          till hålet i fot. Lägre snitt är bättre.
-        </p>
-      </section>
+        <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/95 px-6 pb-6 pt-3 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+          <p className="mb-3 text-center text-sm leading-snug text-muted-foreground">
+            {selectedInterval ? (
+              selectedInterval.key === "not-out" ? (
+                "Registrerat: kom inte upp ur bunkern."
+              ) : (
+                <>
+                  Slaget stannade{" "}
+                  <span className="font-semibold text-foreground">
+                    {selectedInterval.label.toLowerCase()}
+                  </span>{" "}
+                  från hålet.
+                </>
+              )
+            ) : (
+              "Välj hur nära hålet bollen stannade."
+            )}
+          </p>
+          <button
+            onClick={commit}
+            disabled={!interval}
+            className="mx-auto flex w-full max-w-md items-center justify-center gap-2 rounded-2xl bg-primary py-4 font-[family-name:var(--font-display)] text-2xl text-primary-foreground disabled:opacity-40"
+          >
+            {index + 1 === BUNKER_TOTAL_SHOTS ? "Avsluta test" : "Nästa slag"}
+            <ArrowRight className="h-5 w-5" />
+          </button>
+        </div>
+      </main>
+    );
+  }
+
+  const result = computeBunkerResult(shots);
+
+  return (
+    <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-16 pt-10">
+      <p className="mb-6 flex items-center justify-center gap-1 text-xs text-primary">
+        <Check className="h-4 w-4" /> Testet är klart
+      </p>
+
+      <BunkerReport shots={shots} result={result} prevScore={prevScore} />
+
+      <div className="mt-6 flex gap-3">
+        <div className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-primary bg-primary/10 py-4 text-base font-semibold text-primary">
+          <Check className="h-5 w-5" /> {saved ? "Testet sparat" : "Sparar…"}
+        </div>
+        <button
+          onClick={start}
+          className="flex-1 rounded-2xl border border-border py-4 font-[family-name:var(--font-display)] text-2xl text-muted-foreground"
+        >
+          Nytt test
+        </button>
+      </div>
+
+      <Link
+        to="/kategori/$slug"
+        params={{ slug: "around-the-green" }}
+        className="mt-4 block text-center text-sm text-muted-foreground underline-offset-4 hover:underline"
+      >
+        Tillbaka till Around the Green
+      </Link>
     </main>
   );
 }

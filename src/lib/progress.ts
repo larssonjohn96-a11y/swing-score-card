@@ -127,13 +127,13 @@ export const PROGRESS_TESTS: ProgressTest[] = [
     title: "Bunkerslag",
     categorySlug: "around-the-green",
     to: "/bunker",
-    metric: "Snitt till hål",
-    unit: "fot",
+    metric: "Snitt från hål",
+    unit: "m",
     higherIsBetter: false,
-    decimals: 1,
+    decimals: 2,
     load: () =>
       loadBunkerSessions()
-        .map((s) => ({ date: day(s.date), value: s.avgFeet }))
+        .map((s) => ({ date: day(s.date), value: s.avgProximity }))
         .sort(byDate),
   },
   {

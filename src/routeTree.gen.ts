@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApproachRouteImport } from './routes/approach'
 import { Route as BunkerRouteImport } from './routes/bunker'
+import { Route as BunkerTestRouteImport } from './routes/bunker-test'
 import { Route as ChipRouteImport } from './routes/chip'
 import { Route as CombineRouteImport } from './routes/combine'
 import { Route as FairwayRouteImport } from './routes/fairway'
@@ -54,6 +55,11 @@ const ApproachRoute = ApproachRouteImport.update({
 const BunkerRoute = BunkerRouteImport.update({
   id: '/bunker',
   path: '/bunker',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BunkerTestRoute = BunkerTestRouteImport.update({
+  id: '/bunker-test',
+  path: '/bunker-test',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ChipRoute = ChipRouteImport.update({
@@ -201,6 +207,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/approach': typeof ApproachRoute
   '/bunker': typeof BunkerRoute
+  '/bunker-test': typeof BunkerTestRoute
   '/chip': typeof ChipRoute
   '/combine': typeof CombineRoute
   '/fairway': typeof FairwayRoute
@@ -234,6 +241,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/approach': typeof ApproachRoute
   '/bunker': typeof BunkerRoute
+  '/bunker-test': typeof BunkerTestRoute
   '/chip': typeof ChipRoute
   '/combine': typeof CombineRoute
   '/fairway': typeof FairwayRoute
@@ -268,6 +276,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/approach': typeof ApproachRoute
   '/bunker': typeof BunkerRoute
+  '/bunker-test': typeof BunkerTestRoute
   '/chip': typeof ChipRoute
   '/combine': typeof CombineRoute
   '/fairway': typeof FairwayRoute
@@ -303,6 +312,7 @@ export interface FileRouteTypes {
     | '/'
     | '/approach'
     | '/bunker'
+    | '/bunker-test'
     | '/chip'
     | '/combine'
     | '/fairway'
@@ -336,6 +346,7 @@ export interface FileRouteTypes {
     | '/'
     | '/approach'
     | '/bunker'
+    | '/bunker-test'
     | '/chip'
     | '/combine'
     | '/fairway'
@@ -369,6 +380,7 @@ export interface FileRouteTypes {
     | '/'
     | '/approach'
     | '/bunker'
+    | '/bunker-test'
     | '/chip'
     | '/combine'
     | '/fairway'
@@ -403,6 +415,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ApproachRoute: typeof ApproachRoute
   BunkerRoute: typeof BunkerRoute
+  BunkerTestRoute: typeof BunkerTestRoute
   ChipRoute: typeof ChipRoute
   CombineRoute: typeof CombineRoute
   FairwayRoute: typeof FairwayRoute
@@ -452,6 +465,13 @@ declare module '@tanstack/react-router' {
       path: '/bunker'
       fullPath: '/bunker'
       preLoaderRoute: typeof BunkerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bunker-test': {
+      id: '/bunker-test'
+      path: '/bunker-test'
+      fullPath: '/bunker-test'
+      preLoaderRoute: typeof BunkerTestRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/chip': {
@@ -681,6 +701,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ApproachRoute: ApproachRoute,
   BunkerRoute: BunkerRoute,
+  BunkerTestRoute: BunkerTestRoute,
   ChipRoute: ChipRoute,
   CombineRoute: CombineRoute,
   FairwayRoute: FairwayRoute,

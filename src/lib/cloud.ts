@@ -11,12 +11,16 @@ export type BunkerRow = {
 };
 
 function bunkerRow(userId: string, s: BunkerSession) {
+  // Molntabellen/leaderboarden (bunker_sessions, bunker_leaderboard-RPC) är
+  // byggd kring fot – testet mäter numera i meter via intervall, så vi
+  // konverterar här istället för att kräva en schemaändring i databasen.
+  const avgFeet = s.avgProximity * 3.28084;
   return {
     id: s.id,
     user_id: userId,
     played_at: s.date,
-    total_feet: s.totalFeet,
-    avg_feet: s.avgFeet,
+    total_feet: Math.round(avgFeet * s.shots.length * 10) / 10,
+    avg_feet: Math.round(avgFeet * 10) / 10,
     shots: s.shots,
   };
 }

@@ -1,6 +1,7 @@
 export type CategoryTest = {
   to:
     | "/bunker"
+    | "/bunker-test"
     | "/speed"
     | "/speed-test"
     | "/longdrive"
@@ -92,12 +93,15 @@ export const CATEGORIES: Category[] = [
     description: "Chip, pitch och bunkerslag runt greenen.",
     tests: [
       {
-        to: "/bunker",
+        to: "/bunker-test",
         number: "3",
         title: "Bunkerslag",
-        subtitle: "6 olika lägen",
-        bullets: ["Varierande avstånd och lägen.", "1 boll från varje position."],
-        result: "RESULTAT: MÄT AVSTÅNDET TILL HÅLET I FOT",
+        subtitle: "6 slag – ett per bunkerläge",
+        bullets: [
+          "Plant läge, uppförslut, nedförslut och tre svårare lägen.",
+          "Registrera avstånd som ett intervall, eller att du inte kom upp.",
+        ],
+        result: "RESULTAT: BUNKER HCP + SPRIDNINGSBILD",
       },
       {
         to: "/narspel-test",

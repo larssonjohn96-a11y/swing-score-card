@@ -12,6 +12,8 @@ import { GreenHero } from "@/components/precision-visuals";
 import { TeeHero } from "@/components/offtee-visuals";
 import { PuttingHero } from "@/components/shortputt-visuals";
 import { SpeedHero } from "@/components/speed-visuals";
+import { ShortGameHero } from "@/components/shortgame-visuals";
+import { BunkerHero } from "@/components/bunker-visuals";
 
 /** Liten hero-thumbnail per test, samma illustration som testets egen landningssida. */
 const TEST_THUMBNAILS: Partial<Record<CategoryTest["to"], () => React.ReactNode>> = {
@@ -19,6 +21,8 @@ const TEST_THUMBNAILS: Partial<Record<CategoryTest["to"], () => React.ReactNode>
   "/offtee-test": () => <TeeHero className="h-16 w-16" />,
   "/short-putting-test": () => <PuttingHero className="h-16 w-16" />,
   "/speed-test": () => <SpeedHero className="h-16 w-16" />,
+  "/narspel-test": () => <ShortGameHero className="h-16 w-16" />,
+  "/bunker-test": () => <BunkerHero className="h-16 w-16" />,
 };
 
 export const Route = createFileRoute("/kategori/$slug")({
@@ -89,7 +93,9 @@ function CategoryPage() {
       "/speed-test": sp.length
         ? `Senast ${sp[sp.length - 1].avgBallSpeed.toFixed(1)} mph ball speed`
         : undefined,
-      "/bunker": d.length ? `Senast ${d[d.length - 1].avgFeet.toFixed(1)} fot i snitt` : undefined,
+      "/bunker-test": d.length
+        ? `Senast ${d[d.length - 1].avgProximity.toFixed(2)} m i snitt`
+        : undefined,
       "/approach":
         lastPrecision?.score !== undefined
           ? `Senast ${lastPrecision.score.toFixed(0)} / 100`
