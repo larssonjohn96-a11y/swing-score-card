@@ -95,7 +95,7 @@ export function ApproachLanding({ lastResultLabel }: { lastResultLabel?: string 
         Starta Approach Test
         <ArrowRight className="h-5 w-5" />
       </Link>
-      <p className="mt-3 text-center text-xs text-muted-foreground">Tar ca 10 minuter</p>
+      <p className="mt-3 text-center text-xs text-muted-foreground">Tar ca 15 minuter</p>
     </main>
   );
 }
