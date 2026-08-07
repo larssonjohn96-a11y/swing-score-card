@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { FAIRWAY, type OffTeeResult } from "@/lib/offtee";
 
 /** Hero: top-down-vy av en fairway med tee och spridda utslag. */
-export function TeeHero() {
+export function TeeHero({ className = "h-44 w-full" }: { className?: string }) {
   const hits = [
     [150, 60],
     [136, 74],
@@ -17,7 +17,7 @@ export function TeeHero() {
       viewBox="0 0 300 190"
       role="img"
       aria-label="Illustration av en fairway ovanifrån med tee längst ner och spridda utslag"
-      className="h-44 w-full"
+      className={className}
     >
       <path d="M150 186 L96 6 Q150 -14 204 6 Z" className="fill-fairway" />
       <path

@@ -1,11 +1,11 @@
 /** Hero: launch monitor-vy med en boll som lämnar klubban och hastighetsstreck. */
-export function SpeedHero() {
+export function SpeedHero({ className = "h-44 w-full" }: { className?: string }) {
   return (
     <svg
       viewBox="0 0 300 190"
       role="img"
       aria-label="Illustration av en golfboll som slås iväg med hastighetsstreck"
-      className="h-44 w-full"
+      className={className}
     >
       <rect x="20" y="130" width="260" height="12" rx="6" className="fill-rough" />
       <circle cx="70" cy="132" r="5" className="fill-foreground/70" />

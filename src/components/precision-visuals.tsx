@@ -12,7 +12,7 @@ import {
 } from "@/lib/precision";
 
 /** Hero: top-down-vy av en green med flagga, slaglinje och spridda träffar. */
-export function GreenHero() {
+export function GreenHero({ className = "h-44 w-full" }: { className?: string }) {
   const hits = [
     [148, 96],
     [178, 118],
@@ -28,7 +28,7 @@ export function GreenHero() {
       viewBox="0 0 300 190"
       role="img"
       aria-label="Illustration av en green ovanifrån med flagga i mitten och spridda inspel runt hålet"
-      className="h-44 w-full"
+      className={className}
     >
       <ellipse cx="150" cy="100" rx="118" ry="74" className="fill-primary/15" />
       <ellipse cx="150" cy="100" rx="86" ry="54" className="fill-primary/25" />

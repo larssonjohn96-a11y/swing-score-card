@@ -1,7 +1,7 @@
 import type { Direction, ShortPuttDirectionStat, ShortPuttDistance } from "@/lib/shortputt";
 
 /** Hero: top-down-vy av en green med fyra startlinjer (klockan 12/3/6/9) runt hålet. */
-export function PuttingHero() {
+export function PuttingHero({ className = "h-44 w-full" }: { className?: string }) {
   const c = 150;
   const cy = 95;
   return (
@@ -9,7 +9,7 @@ export function PuttingHero() {
       viewBox="0 0 300 190"
       role="img"
       aria-label="Illustration av en green ovanifrån med fyra startlinjer runt hålet"
-      className="h-44 w-full"
+      className={className}
     >
       <circle cx={c} cy={cy} r="82" className="fill-fairway" />
       <circle
