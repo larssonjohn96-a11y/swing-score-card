@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, Pencil, TrendingDown, TrendingUp, Check, User } from "lucide-react";
+import { ArrowRight, Pencil, TrendingDown, TrendingUp, Check } from "lucide-react";
 import {
   computeCategoryHcpTimeline,
   hcpLabel,
@@ -10,7 +10,6 @@ import {
 } from "@/lib/sg-handicap";
 import { CATEGORIES } from "@/lib/categories";
 import type { Highlight } from "@/lib/highlights";
-import { loadCardProfile } from "@/lib/rating-card";
 
 /** Rating (0–100) eller andra icke-handicap-tal. Handicap-tal ska alltid formatteras med hcpLabel. */
 function fmt(n: number): string {
@@ -36,20 +35,15 @@ function Trend({ value }: { value?: number }) {
 
 /* --------------------------------------------------------- Verkligt HCP */
 
-/* ---------------------------------------------------------- Spelarkort-intro */
+/* ---------------------------------------------------------- Real HCP-redigering */
 
-export function PlayerIntroCard({
-  name,
+export function RealHandicapEditRow({
   real,
-  estimated,
   onSave,
 }: {
-  name: string;
   real: number | null;
-  estimated: number | undefined;
   onSave: (value: number) => void;
 }) {
-  const profile = loadCardProfile();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(real !== null ? String(real) : "");
 
@@ -60,76 +54,48 @@ export function PlayerIntroCard({
   }
 
   return (
-    <section className="rounded-3xl border border-border bg-card p-5 shadow-[var(--shadow-glow)]">
-      <div className="flex items-center gap-4">
-        <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10">
-          {profile.photo ? (
-            <img src={profile.photo} alt="" className="h-full w-full object-cover" />
-          ) : (
-            <User className="h-8 w-8 text-primary" strokeWidth={1.5} />
-          )}
+    <div className="mt-3 flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-2.5">
+      <p className="text-xs text-muted-foreground">
+        Real HCP:{" "}
+        <span className="font-semibold text-foreground">
+          {real !== null ? hcpLabel(real) : "Ej satt"}
+        </span>
+      </p>
+      {editing ? (
+        <div className="flex items-center gap-1.5">
+          <input
+            type="number"
+            inputMode="decimal"
+            step="0.1"
+            autoFocus
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && save()}
+            className="w-16 rounded-lg border border-border bg-transparent px-2 py-0.5 text-sm outline-none focus:border-primary"
+          />
+          <button
+            type="button"
+            onClick={save}
+            aria-label="Spara"
+            className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground"
+          >
+            <Check className="h-3 w-3" />
+          </button>
         </div>
-        <div className="min-w-0">
-          <p className="truncate text-2xl leading-tight">{name}</p>
-          {profile.club && <p className="truncate text-sm text-muted-foreground">{profile.club}</p>}
-        </div>
-      </div>
-
-      <div className="mt-4 grid grid-cols-2 gap-2 border-t border-border pt-4">
-        <div>
-          <div className="flex items-center gap-1.5">
-            <p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground">
-              Real HCP
-            </p>
-            {!editing && (
-              <button
-                type="button"
-                onClick={() => {
-                  setDraft(real !== null ? String(real) : "");
-                  setEditing(true);
-                }}
-                aria-label="Redigera verkligt handicap"
-                className="text-muted-foreground transition-colors hover:text-foreground"
-              >
-                <Pencil className="h-3 w-3" />
-              </button>
-            )}
-          </div>
-          {editing ? (
-            <div className="mt-1 flex items-center gap-1.5">
-              <input
-                type="number"
-                inputMode="decimal"
-                step="0.1"
-                autoFocus
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && save()}
-                className="w-16 rounded-lg border border-border bg-transparent px-2 py-0.5 font-[family-name:var(--font-display)] text-xl leading-none outline-none focus:border-primary"
-              />
-              <button
-                type="button"
-                onClick={save}
-                aria-label="Spara"
-                className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground"
-              >
-                <Check className="h-3 w-3" />
-              </button>
-            </div>
-          ) : (
-            <p className="font-[family-name:var(--font-display)] text-2xl leading-none">
-              {real !== null ? hcpLabel(real) : "–"}
-            </p>
-          )}
-        </div>
-        <div>
-          <p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground">Est. HCP</p>
-          <p className="font-[family-name:var(--font-display)] text-2xl leading-none text-flag">
-            {estimated !== undefined ? hcpLabel(estimated) : "–"}
-          </p>
-        </div>
-      </div>
-    </section>
+      ) : (
+        <button
+          type="button"
+          onClick={() => {
+            setDraft(real !== null ? String(real) : "");
+            setEditing(true);
+          }}
+          aria-label="Redigera verkligt handicap"
+          className="text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <Pencil className="h-3.5 w-3.5" />
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -348,32 +314,44 @@ export function CategoryGrid({ cats }: { cats: CategoryHandicap[] }) {
   );
 }
 
-/** Liten trendkurva (senaste 90 dagarna) istället för en statisk stapel – samma höjd som förut. */
+/** Liten, mjukt kurvad trendkurva (senaste 90 dagarna) med en pil som visar riktning på slutet. */
 function Sparkline({ values }: { values: number[] }) {
   const w = 100;
   const h = 24;
   const min = Math.min(...values);
   const max = Math.max(...values);
   const span = max - min || 1;
-  const points = values
-    .map((v, i) => {
-      const x = (i / (values.length - 1)) * w;
-      const y = h - ((v - min) / span) * (h - 4) - 2;
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    })
-    .join(" ");
-  const rising = values[values.length - 1] >= values[0];
+  const pts = values.map((v, i) => ({
+    x: (i / (values.length - 1)) * w,
+    y: h - ((v - min) / span) * (h - 6) - 3,
+  }));
+
+  // Mjuk kurva genom punkterna via kubiska bezier-segment (kontrollpunkter vid mittpunkten i x).
+  let d = `M ${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)}`;
+  for (let i = 0; i < pts.length - 1; i += 1) {
+    const p0 = pts[i];
+    const p1 = pts[i + 1];
+    const midX = ((p0.x + p1.x) / 2).toFixed(1);
+    d += ` C ${midX} ${p0.y.toFixed(1)}, ${midX} ${p1.y.toFixed(1)}, ${p1.x.toFixed(1)} ${p1.y.toFixed(1)}`;
+  }
+
+  const last = pts[pts.length - 1];
+  const prev = pts[pts.length - 2];
+  const angle = (Math.atan2(last.y - prev.y, last.x - prev.x) * 180) / Math.PI;
+  const rising = last.y <= prev.y;
+  const tone = rising ? "stroke-primary" : "stroke-destructive";
+  const toneFill = rising ? "fill-primary" : "fill-destructive";
 
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="h-full w-full" preserveAspectRatio="none">
-      <polyline
-        points={points}
-        fill="none"
-        className={rising ? "stroke-primary" : "stroke-destructive"}
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+    <svg
+      viewBox={`0 0 ${w} ${h}`}
+      className="h-full w-full overflow-visible"
+      preserveAspectRatio="none"
+    >
+      <path d={d} fill="none" className={tone} strokeWidth="2" strokeLinecap="round" />
+      <g transform={`translate(${last.x} ${last.y}) rotate(${angle})`}>
+        <path d="M0,-3.2 L5.5,0 L0,3.2 Z" className={toneFill} />
+      </g>
     </svg>
   );
 }

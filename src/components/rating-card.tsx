@@ -89,7 +89,7 @@ export function RatingCardSection({ playerName }: { playerName: string }) {
   );
 }
 
-function PlayerCard({
+export function PlayerCard({
   data,
   profile,
   playerName,
@@ -129,8 +129,16 @@ function PlayerCard({
         </div>
 
         <div className="space-y-2 text-center text-[10px] font-semibold uppercase tracking-[0.15em]">
-          {profile.country ? <p>{profile.country}</p> : null}
-          {profile.club ? <p className="opacity-80">{profile.club}</p> : null}
+          {profile.country ? (
+            <p>
+              Land: <span className="opacity-80">{profile.country}</span>
+            </p>
+          ) : null}
+          {profile.club ? (
+            <p>
+              Hemmaklubb: <span className="opacity-80">{profile.club}</span>
+            </p>
+          ) : null}
           {profile.ageClass ? <p className="opacity-80">{profile.ageClass}</p> : null}
         </div>
       </div>

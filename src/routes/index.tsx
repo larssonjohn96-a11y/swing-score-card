@@ -16,8 +16,10 @@ import {
   CategoryGrid,
   HighScoreCard,
   OpportunityCard,
-  PlayerIntroCard,
+  RealHandicapEditRow,
 } from "@/components/home-dashboard";
+import { PlayerCard } from "@/components/rating-card";
+import { computeRatingCard, loadCardProfile, type RatingCardData } from "@/lib/rating-card";
 import { RadarCard } from "@/components/progress-dashboard";
 import { topScores, type Highlight } from "@/lib/highlights";
 
@@ -48,6 +50,7 @@ type HomeData = {
   estimated: number | undefined;
   opportunity: Opportunity | undefined;
   highlights: Highlight[];
+  card: RatingCardData;
 };
 
 function loadHomeData(): HomeData {
@@ -59,6 +62,7 @@ function loadHomeData(): HomeData {
     estimated: computeEstimatedHandicap(cats),
     opportunity: computeBiggestOpportunity(cats),
     highlights: topScores(),
+    card: computeRatingCard(real),
   };
 }
 
@@ -94,12 +98,13 @@ function Home() {
 
       {data && (
         <div className="mt-4">
-          <PlayerIntroCard
-            name={displayName ?? "Golfspelare"}
-            real={data.real}
-            estimated={data.estimated}
-            onSave={handleSaveHandicap}
+          <PlayerCard
+            data={data.card}
+            profile={loadCardProfile()}
+            playerName={displayName ?? "Golfspelare"}
           />
+          <RealHandicapEditRow real={data.real} onSave={handleSaveHandicap} />
+
           <RadarCard cats={data.cats} totalHandicap={data.estimated} />
           <CategoryGrid cats={data.cats} />
           <HighScoreCard highlights={data.highlights} />
