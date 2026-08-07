@@ -154,13 +154,22 @@ const RING_STYLE: Record<number, string> = {
 
 const nf = (n: number, d = 1) => n.toFixed(d).replace(".", ",");
 
-/** Färg per misstyp så spridningen går att läsa direkt. */
-function shotTone(s: PrecisionShot): string {
-  const p = proximity(s);
-  if (p < 5) return "fill-primary";
-  if (Math.abs(s.offline) > Math.abs(lengthError(s))) return "fill-chart-4";
-  return "fill-flag";
+type ShotDirection = "long" | "short" | "left" | "right";
+
+/** Vilken riktning som dominerar missen – längd eller sidled, och åt vilket håll. */
+function shotDirection(s: PrecisionShot): ShotDirection {
+  const len = lengthError(s);
+  if (Math.abs(len) >= Math.abs(s.offline)) return len >= 0 ? "long" : "short";
+  return s.offline < 0 ? "left" : "right";
 }
+
+/** Färg per riktning, samma språk som en klassisk spridningskarta (image 1). */
+const DIRECTION_FILL: Record<ShotDirection, string> = {
+  long: "fill-chart-4/70",
+  short: "fill-chart-4",
+  left: "fill-destructive",
+  right: "fill-sand",
+};
 
 /**
  * Top-down-vy av en smal, djup green med fairway och bunkrar. Fast skala
@@ -169,6 +178,21 @@ function shotTone(s: PrecisionShot): string {
 export function DispersionGreen({ shots }: { shots: PrecisionShot[] }) {
   const filled = shots.filter((s) => s.filled);
   const stats = dispersionStats(shots);
+
+  const offlineVals = filled.map((s) => s.offline);
+  const lengthVals = filled.map((s) => lengthError(s));
+  const meanOf = (vals: number[]) =>
+    vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
+  const stdOf = (vals: number[], mean: number) =>
+    vals.length ? Math.sqrt(vals.reduce((a, v) => a + (v - mean) ** 2, 0) / vals.length) : 0;
+  const meanOffline = meanOf(offlineVals);
+  const meanLength = meanOf(lengthVals);
+  const ellipse = {
+    cx: meanOffline,
+    cy: meanLength,
+    rx: Math.max(2, stdOf(offlineVals, meanOffline) * 1.6),
+    ry: Math.max(2, stdOf(lengthVals, meanLength) * 1.6),
+  };
 
   const size = 320;
   const c = size / 2;
@@ -229,32 +253,65 @@ export function DispersionGreen({ shots }: { shots: PrecisionShot[] }) {
             />
           ))}
 
-          {/* Bunkrar runt greenen */}
-          <ellipse
-            cx={px(-13.5)}
-            cy={py(-8)}
-            rx={m(5.5)}
-            ry={m(3)}
-            transform={`rotate(-28 ${px(-13.5)} ${py(-8)})`}
-            className="fill-sand"
-          />
-          <ellipse
-            cx={px(13.5)}
-            cy={py(-6)}
-            rx={m(5)}
-            ry={m(3.2)}
-            transform={`rotate(30 ${px(13.5)} ${py(-6)})`}
-            className="fill-sand"
-          />
-          <ellipse
-            cx={px(12)}
-            cy={py(13)}
-            rx={m(4.6)}
-            ry={m(2.8)}
-            transform={`rotate(-20 ${px(12)} ${py(13)})`}
-            className="fill-sand"
-          />
-          <ellipse cx={px(-4)} cy={py(21)} rx={m(6)} ry={m(2.6)} className="fill-sand" />
+          {/* Bunkrar runt greenen – två överlappande ellipser ger en mer organisk, njurformad kant */}
+          <g className="fill-sand">
+            <ellipse
+              cx={px(-13.5)}
+              cy={py(-8)}
+              rx={m(5.5)}
+              ry={m(3)}
+              transform={`rotate(-28 ${px(-13.5)} ${py(-8)})`}
+            />
+            <ellipse
+              cx={px(-16.5)}
+              cy={py(-5.5)}
+              rx={m(3.4)}
+              ry={m(2.1)}
+              transform={`rotate(-10 ${px(-16.5)} ${py(-5.5)})`}
+            />
+          </g>
+          <g className="fill-sand">
+            <ellipse
+              cx={px(13.5)}
+              cy={py(-6)}
+              rx={m(5)}
+              ry={m(3.2)}
+              transform={`rotate(30 ${px(13.5)} ${py(-6)})`}
+            />
+            <ellipse
+              cx={px(16.2)}
+              cy={py(-3)}
+              rx={m(3)}
+              ry={m(2)}
+              transform={`rotate(50 ${px(16.2)} ${py(-3)})`}
+            />
+          </g>
+          <g className="fill-sand">
+            <ellipse
+              cx={px(12)}
+              cy={py(13)}
+              rx={m(4.6)}
+              ry={m(2.8)}
+              transform={`rotate(-20 ${px(12)} ${py(13)})`}
+            />
+            <ellipse cx={px(15)} cy={py(15.5)} rx={m(2.6)} ry={m(1.8)} />
+          </g>
+          <g className="fill-sand">
+            <ellipse cx={px(-4)} cy={py(21)} rx={m(6)} ry={m(2.6)} />
+            <ellipse cx={px(-8.5)} cy={py(22.5)} rx={m(2.8)} ry={m(1.7)} />
+          </g>
+
+          {/* Träd i hörnen för lite mer verklighetskänsla */}
+          {[
+            [-38, 36],
+            [-33, 38],
+            [37, 37],
+            [33, 34],
+            [-37, -36],
+            [38, -35],
+          ].map(([x, z], i) => (
+            <circle key={i} cx={px(x)} cy={py(z)} r={m(3.2)} className="fill-rough" opacity="0.9" />
+          ))}
 
           {/* Smal, djup green */}
           <ellipse
@@ -306,7 +363,7 @@ export function DispersionGreen({ shots }: { shots: PrecisionShot[] }) {
             </g>
           ))}
 
-          {/* Slag */}
+          {/* Slag, färgkodade efter riktning (LONG/SHORT/LEFT/RIGHT) */}
           {filled.map((s) => {
             const p = proximity(s);
             const clamped = p > DISPERSION_RANGE;
@@ -317,13 +374,35 @@ export function DispersionGreen({ shots }: { shots: PrecisionShot[] }) {
                 cx={px(s.offline * k)}
                 cy={py(lengthError(s) * k)}
                 r="4.5"
-                className={shotTone(s)}
+                className={DIRECTION_FILL[shotDirection(s)]}
                 opacity={clamped ? 0.5 : 0.95}
                 stroke="black"
                 strokeOpacity="0.25"
               />
             );
           })}
+
+          {/* Spridningsellips + snittpunkt (stjärna) runt träffbilden */}
+          {filled.length >= 3 && (
+            <>
+              <ellipse
+                cx={px(ellipse.cx)}
+                cy={py(ellipse.cy)}
+                rx={m(ellipse.rx)}
+                ry={m(ellipse.ry)}
+                fill="none"
+                className="stroke-chart-5"
+                strokeWidth="2"
+                strokeDasharray="1 0"
+                opacity="0.85"
+              />
+              <path
+                d={starPath(px(ellipse.cx), py(ellipse.cy), 7, 3)}
+                className="fill-chart-5 stroke-background"
+                strokeWidth="0.75"
+              />
+            </>
+          )}
 
           {/* Flagga – kort stång så 5-metersringen syns */}
           <line x1={c} y1={c} x2={c} y2={c - 15} className="stroke-foreground" strokeWidth="1.5" />
@@ -347,12 +426,48 @@ export function DispersionGreen({ shots }: { shots: PrecisionShot[] }) {
           fill="none"
           className="stroke-border"
         />
+
+        {/* Riktningsetiketter runt kartan */}
+        <text
+          x={c}
+          y="14"
+          textAnchor="middle"
+          className="fill-chart-4 text-[10px] font-bold uppercase tracking-wide"
+        >
+          Long
+        </text>
+        <text
+          x={c}
+          y={size - 8}
+          textAnchor="middle"
+          className="fill-chart-4 text-[10px] font-bold uppercase tracking-wide"
+        >
+          Short
+        </text>
+        <text
+          x="10"
+          y={c + 3}
+          textAnchor="start"
+          className="fill-destructive text-[10px] font-bold uppercase tracking-wide"
+        >
+          Left
+        </text>
+        <text
+          x={size - 10}
+          y={c + 3}
+          textAnchor="end"
+          className="fill-sand text-[10px] font-bold uppercase tracking-wide"
+        >
+          Right
+        </text>
       </svg>
 
       <div className="mt-3 flex flex-wrap justify-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
-        <Legend className="bg-primary" text="Inom 5 m" />
-        <Legend className="bg-flag" text="Längdmiss" />
-        <Legend className="bg-chart-4" text="Sidledsmiss" />
+        <Legend className="bg-chart-4/70" text="Långt" />
+        <Legend className="bg-chart-4" text="Kort" />
+        <Legend className="bg-destructive" text="Vänster" />
+        <Legend className="bg-sand" text="Höger" />
+        <Legend className="bg-chart-5" text="Spridningsellips" />
       </div>
       <p className="mt-2 text-center text-xs text-muted-foreground">
         Fast skala 80 × 80 m · uppåt = långt, nedåt = kort
@@ -377,4 +492,17 @@ function Legend({ className, text }: { className: string; text: string }) {
       {text}
     </span>
   );
+}
+
+/** SVG path för en enkel 5-uddig stjärna, använd som snittpunktsmarkör i spridningsellipsen. */
+function starPath(cx: number, cy: number, outerR: number, innerR: number): string {
+  const points: string[] = [];
+  for (let i = 0; i < 10; i += 1) {
+    const r = i % 2 === 0 ? outerR : innerR;
+    const angle = (Math.PI / 5) * i - Math.PI / 2;
+    const x = cx + r * Math.cos(angle);
+    const y = cy + r * Math.sin(angle);
+    points.push(`${i === 0 ? "M" : "L"}${x.toFixed(2)} ${y.toFixed(2)}`);
+  }
+  return `${points.join(" ")} Z`;
 }
