@@ -242,14 +242,17 @@ export function PlayerCard({
             )}
           </div>
 
-          <div className="mt-3 flex items-center justify-center gap-2 border-t border-[#2b2213]/15 pt-2.5">
-            <TierIcon className={`h-3.5 w-3.5 ${style.accent}`} strokeWidth={1.5} />
-            <p className="text-[11px] font-semibold uppercase tracking-[0.15em] opacity-70">
-              Rating {data.rating} · {data.tier.label}
-            </p>
+          <div className="mt-3 flex flex-col items-center border-t border-[#2b2213]/15 pt-3">
+            <div className="flex items-center gap-1.5">
+              <TierIcon className={`h-4 w-4 ${style.accent}`} strokeWidth={1.5} />
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] opacity-60">
+                Rating · {data.tier.label}
+              </p>
+            </div>
+            <p className="font-display text-6xl leading-none">{data.rating}</p>
           </div>
 
-          <div className="mt-3 w-full space-y-1.5 border-t border-[#2b2213]/15 pt-2.5 pb-1">
+          <div className="mt-3 w-[80%] space-y-2 border-t border-[#2b2213]/15 pt-3 pb-1">
             {data.stats.map((s) => (
               <div key={s.key} className="flex items-center justify-between text-xs">
                 <span className="opacity-70">{s.label}</span>
