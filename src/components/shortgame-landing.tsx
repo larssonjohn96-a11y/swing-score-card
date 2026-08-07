@@ -55,9 +55,10 @@ export function ShortGameLanding({ lastResultLabel }: { lastResultLabel?: string
           Så går testet till
         </p>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          6 slag mot 8, 10, 12, 15, 18 och 20 meter – lie spelar ingen roll. Du väljer själv teknik
-          och registrerar sedan bara hur nära hålet bollen stannade, som ett intervall (t.ex. "1–1,5
-          m"). Ingen exakt mätning behövs. Putter är inte tillåten.
+          6 slag mot 8, 10, 12, 15, 18 och 20 meter – lie spelar ingen roll och du väljer helt fritt
+          om du chippar, pitchar eller tar en wedge. Du registrerar bara hur nära hålet bollen
+          stannade, som ett intervall (t.ex. "1–1,5 m"). Ingen exakt mätning behövs. Putter är inte
+          tillåten.
         </p>
       </section>
 

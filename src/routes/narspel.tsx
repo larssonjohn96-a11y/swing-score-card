@@ -1,17 +1,15 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, Check, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   INTERVALS,
   SHORTGAME_TOTAL_SHOTS,
-  TECHNIQUES,
   computeShortGameResult,
   emptyShortGameShots,
   loadShortGameSessions,
   saveShortGameSession,
   type IntervalKey,
   type ShortGameShot,
-  type Technique,
 } from "@/lib/shortgame";
 import { ShortGameReport } from "@/components/shortgame-report";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
@@ -37,12 +35,10 @@ function ShortGamePage() {
   const [phase, setPhase] = useState<Phase>("test");
   const [shots, setShots] = useState<ShortGameShot[]>(emptyShortGameShots);
   const [index, setIndex] = useState(0);
-  const [technique, setTechnique] = useState<Technique>("chip");
   const [interval, setInterval] = useState<IntervalKey | null>(null);
   const [notes, setNotes] = useState("");
   const [saved, setSaved] = useState(false);
   const [prevScore, setPrevScore] = useState<number | null>(null);
-  const lastTechniqueRef = useRef<Technique>("chip");
 
   const current = shots[Math.min(index, SHORTGAME_TOTAL_SHOTS - 1)];
 
@@ -54,7 +50,6 @@ function ShortGamePage() {
     setPrevScore(last ? last.score : null);
     setShots(emptyShortGameShots());
     setIndex(0);
-    setTechnique(lastTechniqueRef.current);
     setInterval(null);
     setSaved(false);
     setPhase("test");
@@ -66,8 +61,7 @@ function ShortGamePage() {
 
   function commit() {
     if (!interval) return;
-    lastTechniqueRef.current = technique;
-    setShots((p) => p.map((s, i) => (i === index ? { ...s, technique, interval } : s)));
+    setShots((p) => p.map((s, i) => (i === index ? { ...s, interval } : s)));
 
     const next = index + 1;
     if (next >= SHORTGAME_TOTAL_SHOTS) {
@@ -75,7 +69,6 @@ function ShortGamePage() {
     } else {
       setIndex(next);
       const nextShot = shots[next];
-      setTechnique(nextShot.technique ?? lastTechniqueRef.current);
       setInterval(nextShot.interval ?? null);
     }
   }
@@ -85,7 +78,6 @@ function ShortGamePage() {
     const i = index - 1;
     setIndex(i);
     const s = shots[i];
-    setTechnique(s.technique ?? lastTechniqueRef.current);
     setInterval(s.interval ?? null);
   }
 
@@ -139,27 +131,6 @@ function ShortGamePage() {
         </div>
 
         <div className="mt-5 rounded-2xl border border-border bg-card p-3">
-          <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Teknik</p>
-          <div className="mt-2 grid grid-cols-2 gap-2">
-            {TECHNIQUES.map((t) => (
-              <button
-                key={t.key}
-                type="button"
-                onClick={() => setTechnique(t.key)}
-                aria-pressed={technique === t.key}
-                className={`rounded-xl border-2 py-2.5 text-sm font-semibold transition-colors ${
-                  technique === t.key
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border bg-transparent text-foreground active:bg-muted"
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-3 rounded-2xl border border-border bg-card p-3">
           <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
             Hur nära hålet stannade bollen?
           </p>
