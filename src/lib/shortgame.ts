@@ -30,32 +30,17 @@ export const TECHNIQUES: { key: Technique; label: string }[] = [
 ];
 
 export type IntervalKey =
-  | "holed"
-  | "0-25cm"
-  | "25-50cm"
-  | "50cm-1m"
-  | "1-1.5m"
-  | "1.5-2m"
-  | "2-2.5m"
-  | "2.5-3m"
-  | "3-4m"
-  | "4-5m"
-  | "5-7m"
-  | "7m+";
+  "holed" | "0-50cm" | "50cm-1m" | "1-2m" | "2-3m" | "3-4m" | "4-6m" | "6m+";
 
 export const INTERVALS: { key: IntervalKey; label: string; midpoint: number }[] = [
   { key: "holed", label: "Holed", midpoint: 0 },
-  { key: "0-25cm", label: "0–25 cm", midpoint: 0.125 },
-  { key: "25-50cm", label: "25–50 cm", midpoint: 0.375 },
+  { key: "0-50cm", label: "0–50 cm", midpoint: 0.25 },
   { key: "50cm-1m", label: "50 cm–1 m", midpoint: 0.75 },
-  { key: "1-1.5m", label: "1–1,5 m", midpoint: 1.25 },
-  { key: "1.5-2m", label: "1,5–2 m", midpoint: 1.75 },
-  { key: "2-2.5m", label: "2–2,5 m", midpoint: 2.25 },
-  { key: "2.5-3m", label: "2,5–3 m", midpoint: 2.75 },
+  { key: "1-2m", label: "1–2 m", midpoint: 1.5 },
+  { key: "2-3m", label: "2–3 m", midpoint: 2.5 },
   { key: "3-4m", label: "3–4 m", midpoint: 3.5 },
-  { key: "4-5m", label: "4–5 m", midpoint: 4.5 },
-  { key: "5-7m", label: "5–7 m", midpoint: 6 },
-  { key: "7m+", label: "7+ m", midpoint: 8 },
+  { key: "4-6m", label: "4–6 m", midpoint: 5 },
+  { key: "6m+", label: "6+ m", midpoint: 7 },
 ];
 
 const INTERVAL_MIDPOINT: Record<IntervalKey, number> = Object.fromEntries(
@@ -107,10 +92,11 @@ const PROXIMITY_ANCHORS: Anchor[] = [
   { hcp: 20, value: 5.6 },
   { hcp: 25, value: 6.3 },
   { hcp: 36, value: 8.0 },
+  { hcp: 54, value: 10.8 },
 ];
 
 export function handicapFromProximity(avgProximityM: number): number {
-  return Math.max(-8, Math.min(40, interpolate(avgProximityM, PROXIMITY_ANCHORS)));
+  return Math.max(-8, Math.min(54, interpolate(avgProximityM, PROXIMITY_ANCHORS)));
 }
 
 function scoreFromHandicap(hcp: number): number {
@@ -140,7 +126,7 @@ export type ShortGameResult = {
   avgProximity: number;
   handicap: number;
   score: number;
-  within25cm: number;
+  within50cm: number;
   within1m: number;
   within2m: number;
   holed: number;
@@ -159,7 +145,7 @@ export function computeShortGameResult(shots: ShortGameShot[]): ShortGameResult 
   const handicap = count ? handicapFromProximity(avgProximity) : 0;
   const score = count ? scoreFromHandicap(handicap) : 0;
 
-  const within25cm = proximities.filter((p) => p <= 0.25).length;
+  const within50cm = proximities.filter((p) => p <= 0.5).length;
   const within1m = proximities.filter((p) => p <= 1).length;
   const within2m = proximities.filter((p) => p <= 2).length;
   const holed = proximities.filter((p) => p === 0).length;
@@ -172,7 +158,7 @@ export function computeShortGameResult(shots: ShortGameShot[]): ShortGameResult 
     avgProximity: Math.round(avgProximity * 100) / 100,
     handicap,
     score,
-    within25cm,
+    within50cm,
     within1m,
     within2m,
     holed,

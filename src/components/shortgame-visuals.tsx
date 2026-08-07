@@ -1,4 +1,4 @@
-import type { ShortGameShot } from "@/lib/shortgame";
+import { SHORTGAME_DISTANCES, type ShortGameShot } from "@/lib/shortgame";
 import { INTERVALS } from "@/lib/shortgame";
 
 /** Hero: top-down-vy av en green med flagga och chip-/pitch-slag som landar från olika håll. */
@@ -67,7 +67,7 @@ export function ShortGameDispersion({ shots }: { shots: ShortGameShot[] }) {
   const size = 260;
   const c = size / 2;
   const maxRadius = c - 24;
-  const maxProximity = 8; // "7+ m"-intervallets mittvärde
+  const maxProximity = 7; // "6+ m"-intervallets mittvärde
 
   const played = shots.filter((s) => s.interval);
   const angleStep = (2 * Math.PI) / Math.max(1, played.length);
@@ -113,6 +113,91 @@ export function ShortGameDispersion({ shots }: { shots: ShortGameShot[] }) {
         );
       })}
       <circle cx={c} cy={c} r="4" className="fill-foreground" />
+    </svg>
+  );
+}
+
+/**
+ * Visar aktuellt slags måldistans på en linjär skala mellan testets kortaste
+ * och längsta avstånd (8–20 m), med en boll placerad vid rätt punkt och
+ * hålet i ena änden – samma princip som Short Putting Tests positionsbild,
+ * fast för avstånd istället för klockposition.
+ */
+export function ShortGamePositionDiagram({ distance }: { distance: number }) {
+  const w = 300;
+  const h = 130;
+  const min = SHORTGAME_DISTANCES[0];
+  const max = SHORTGAME_DISTANCES[SHORTGAME_DISTANCES.length - 1];
+  const trackX1 = 40;
+  const trackX2 = w - 40;
+  const y = h / 2;
+
+  const xFor = (d: number) => trackX1 + ((d - min) / (max - min)) * (trackX2 - trackX1);
+
+  return (
+    <svg
+      viewBox={`0 0 ${w} ${h}`}
+      className="h-28 w-full"
+      role="img"
+      aria-label={`Måldistans: ${distance} meter från hål`}
+    >
+      <line
+        x1={trackX1}
+        y1={y}
+        x2={trackX2}
+        y2={y}
+        className="stroke-rough"
+        strokeWidth="6"
+        strokeLinecap="round"
+      />
+
+      {SHORTGAME_DISTANCES.map((d) => (
+        <circle
+          key={d}
+          cx={xFor(d)}
+          cy={y}
+          r={d === distance ? 9 : 4}
+          className={
+            d === distance
+              ? "fill-destructive stroke-destructive"
+              : "fill-background stroke-foreground/50"
+          }
+          strokeWidth={d === distance ? 2 : 1.2}
+        />
+      ))}
+
+      {SHORTGAME_DISTANCES.map((d) => (
+        <text
+          key={`label-${d}`}
+          x={xFor(d)}
+          y={y + 26}
+          textAnchor="middle"
+          className={`text-[10px] ${d === distance ? "fill-destructive font-bold" : "fill-muted-foreground"}`}
+        >
+          {d}m
+        </text>
+      ))}
+
+      <circle cx={trackX2 + 14} cy={y} r="7" className="fill-foreground" />
+      <circle
+        cx={trackX2 + 14}
+        cy={y}
+        r="7"
+        className="fill-none stroke-background"
+        strokeWidth="1.5"
+      />
+      <line
+        x1={trackX2 + 14}
+        y1={y - 6}
+        x2={trackX2 + 14}
+        y2={y - 22}
+        className="stroke-foreground"
+        strokeWidth="1.5"
+      />
+      <path
+        d={`M${trackX2 + 14} ${y - 22} L${trackX2 + 26} ${y - 18} L${trackX2 + 14} ${y - 14} Z`}
+        className="fill-flag"
+      />
     </svg>
   );
 }

@@ -11,6 +11,7 @@ import {
   type IntervalKey,
   type ShortGameShot,
 } from "@/lib/shortgame";
+import { ShortGamePositionDiagram } from "@/components/shortgame-visuals";
 import { ShortGameReport } from "@/components/shortgame-report";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 
@@ -122,7 +123,11 @@ function ShortGamePage() {
           </div>
         </div>
 
-        <div className="mt-4 text-center">
+        <div className="mt-4 rounded-2xl border border-border bg-card p-3">
+          <ShortGamePositionDiagram distance={current.distanceTarget} />
+        </div>
+
+        <div className="mt-3 text-center">
           <p className="text-[11px] uppercase tracking-[0.3em] text-muted-foreground">Avstånd</p>
           <p className="mt-0.5 font-[family-name:var(--font-display)] text-6xl leading-none text-flag">
             {current.distanceTarget}
@@ -134,14 +139,14 @@ function ShortGamePage() {
           <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
             Hur nära hålet stannade bollen?
           </p>
-          <div className="mt-2 grid grid-cols-3 gap-1.5">
+          <div className="mt-2 grid grid-cols-2 gap-2">
             {INTERVALS.map((iv) => (
               <button
                 key={iv.key}
                 type="button"
                 onClick={() => setInterval(iv.key)}
                 aria-pressed={interval === iv.key}
-                className={`rounded-xl border-2 py-2 text-[11px] font-semibold leading-tight transition-colors ${
+                className={`rounded-xl border-2 py-3.5 text-sm font-semibold leading-tight transition-colors ${
                   interval === iv.key
                     ? "border-primary bg-primary text-primary-foreground"
                     : "border-border bg-transparent text-foreground active:bg-muted"

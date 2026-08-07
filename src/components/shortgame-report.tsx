@@ -81,9 +81,9 @@ export function ShortGameReport({
         <div className="mt-3 grid grid-cols-3 gap-2 text-center">
           <div>
             <p className="font-[family-name:var(--font-display)] text-2xl leading-none">
-              {result.within25cm}/{result.count}
+              {result.within50cm}/{result.count}
             </p>
-            <p className="mt-1 text-[11px] text-muted-foreground">inom 25 cm</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">inom 50 cm</p>
           </div>
           <div>
             <p className="font-[family-name:var(--font-display)] text-2xl leading-none">
