@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
+import { ArrowRight } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { ThemeToggle } from "@/components/theme-toggle";
 import {
   computeBiggestOpportunity,
   computeCategoryHandicaps,
   computeEstimatedHandicap,
-  computeEstimatedTrend,
   loadRealHandicap,
   saveRealHandicap,
   type CategoryHandicap,
@@ -15,10 +15,8 @@ import {
 import {
   CategoryGrid,
   HighScoreCard,
-  CategoryTestList,
-  DevelopmentCard,
   OpportunityCard,
-  RealHandicapCard,
+  PlayerIntroCard,
 } from "@/components/home-dashboard";
 import { RadarCard } from "@/components/progress-dashboard";
 import { topScores, type Highlight } from "@/lib/highlights";
@@ -48,7 +46,6 @@ type HomeData = {
   real: number | null;
   cats: CategoryHandicap[];
   estimated: number | undefined;
-  estimatedTrend: number | undefined;
   opportunity: Opportunity | undefined;
   highlights: Highlight[];
 };
@@ -60,7 +57,6 @@ function loadHomeData(): HomeData {
     real,
     cats,
     estimated: computeEstimatedHandicap(cats),
-    estimatedTrend: computeEstimatedTrend(cats),
     opportunity: computeBiggestOpportunity(cats),
     highlights: topScores(),
   };
@@ -80,20 +76,11 @@ function Home() {
   }
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-28 pt-10">
-      <header className="flex items-start justify-between gap-4">
-        <div>
-          <span className="font-display text-4xl leading-none tracking-wide text-foreground">
-            SG4
-          </span>
-          <p className="mt-2 max-w-[15rem] text-lg font-semibold leading-snug">
-            Mät. Förbättra. Sänk ditt handicap.
-          </p>
-          <p className="mt-2 max-w-[16rem] text-sm leading-relaxed text-muted-foreground">
-            SG4 analyserar ditt spel och visar exakt vilka delar som kostar flest slag, så att du
-            kan träna smartare och sänka ditt handicap.
-          </p>
-        </div>
+    <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-28 pt-6">
+      <div className="flex items-center justify-between">
+        <span className="font-display text-2xl leading-none tracking-wide text-foreground">
+          SG4
+        </span>
         <div className="flex shrink-0 items-center gap-2">
           <ThemeToggle />
           <Link
@@ -103,25 +90,28 @@ function Home() {
             {displayName ?? (user ? "Konto" : "Logga in")}
           </Link>
         </div>
-      </header>
+      </div>
 
       {data && (
-        <div className="mt-6">
-          <RealHandicapCard
+        <div className="mt-4">
+          <PlayerIntroCard
+            name={displayName ?? "Golfspelare"}
             real={data.real}
             estimated={data.estimated}
             onSave={handleSaveHandicap}
           />
-          <DevelopmentCard
-            real={data.real}
-            estimated={data.estimated}
-            estimatedTrend={data.estimatedTrend}
-          />
-          <HighScoreCard highlights={data.highlights} />
-          <CategoryGrid cats={data.cats} />
           <RadarCard cats={data.cats} totalHandicap={data.estimated} />
+          <CategoryGrid cats={data.cats} />
+          <HighScoreCard highlights={data.highlights} />
           <OpportunityCard opportunity={data.opportunity} />
-          <CategoryTestList />
+
+          <Link
+            to="/tester"
+            className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-5 font-[family-name:var(--font-display)] text-2xl text-primary-foreground"
+          >
+            Gör ett test
+            <ArrowRight className="h-5 w-5" />
+          </Link>
         </div>
       )}
 

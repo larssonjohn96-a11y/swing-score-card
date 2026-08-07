@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Pencil, TrendingDown, TrendingUp, Check } from "lucide-react";
+import { Pencil, TrendingDown, TrendingUp, Check, User } from "lucide-react";
 import {
   hcpLabel,
   ratingFromHandicap,
@@ -9,6 +9,7 @@ import {
 } from "@/lib/sg-handicap";
 import { CATEGORIES } from "@/lib/categories";
 import type { Highlight } from "@/lib/highlights";
+import { loadCardProfile } from "@/lib/rating-card";
 
 /** Rating (0–100) eller andra icke-handicap-tal. Handicap-tal ska alltid formatteras med hcpLabel. */
 function fmt(n: number): string {
@@ -33,6 +34,103 @@ function Trend({ value }: { value?: number }) {
 }
 
 /* --------------------------------------------------------- Verkligt HCP */
+
+/* ---------------------------------------------------------- Spelarkort-intro */
+
+export function PlayerIntroCard({
+  name,
+  real,
+  estimated,
+  onSave,
+}: {
+  name: string;
+  real: number | null;
+  estimated: number | undefined;
+  onSave: (value: number) => void;
+}) {
+  const profile = loadCardProfile();
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(real !== null ? String(real) : "");
+
+  function save() {
+    const n = Number(draft.replace(",", "."));
+    if (Number.isFinite(n)) onSave(Math.round(n * 10) / 10);
+    setEditing(false);
+  }
+
+  return (
+    <section className="rounded-3xl border border-border bg-card p-5 shadow-[var(--shadow-glow)]">
+      <div className="flex items-center gap-4">
+        <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10">
+          {profile.photo ? (
+            <img src={profile.photo} alt="" className="h-full w-full object-cover" />
+          ) : (
+            <User className="h-8 w-8 text-primary" strokeWidth={1.5} />
+          )}
+        </div>
+        <div className="min-w-0">
+          <p className="truncate text-2xl leading-tight">{name}</p>
+          {profile.club && <p className="truncate text-sm text-muted-foreground">{profile.club}</p>}
+        </div>
+      </div>
+
+      <div className="mt-4 grid grid-cols-2 gap-2 border-t border-border pt-4">
+        <div>
+          <div className="flex items-center gap-1.5">
+            <p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground">
+              Real HCP
+            </p>
+            {!editing && (
+              <button
+                type="button"
+                onClick={() => {
+                  setDraft(real !== null ? String(real) : "");
+                  setEditing(true);
+                }}
+                aria-label="Redigera verkligt handicap"
+                className="text-muted-foreground transition-colors hover:text-foreground"
+              >
+                <Pencil className="h-3 w-3" />
+              </button>
+            )}
+          </div>
+          {editing ? (
+            <div className="mt-1 flex items-center gap-1.5">
+              <input
+                type="number"
+                inputMode="decimal"
+                step="0.1"
+                autoFocus
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && save()}
+                className="w-16 rounded-lg border border-border bg-transparent px-2 py-0.5 font-[family-name:var(--font-display)] text-xl leading-none outline-none focus:border-primary"
+              />
+              <button
+                type="button"
+                onClick={save}
+                aria-label="Spara"
+                className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground"
+              >
+                <Check className="h-3 w-3" />
+              </button>
+            </div>
+          ) : (
+            <p className="font-[family-name:var(--font-display)] text-2xl leading-none">
+              {real !== null ? hcpLabel(real) : "–"}
+            </p>
+          )}
+        </div>
+        <div>
+          <p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground">Est. HCP</p>
+          <p className="font-[family-name:var(--font-display)] text-2xl leading-none text-flag">
+            {estimated !== undefined ? hcpLabel(estimated) : "–"}
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 export function RealHandicapCard({
   real,
@@ -248,7 +346,6 @@ export function HighScoreCard({ highlights }: { highlights: Highlight[] }) {
 }
 
 /* -------------------------------------------------------------------- Tester */
-
 
 export function CategoryTestList() {
   return (
