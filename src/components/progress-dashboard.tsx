@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { TrendingDown, TrendingUp } from "lucide-react";
+import { Plus, Search, TrendingDown, TrendingUp, User, X } from "lucide-react";
 import {
   CartesianGrid,
   ComposedChart,
@@ -18,6 +18,9 @@ import {
   YAxis,
 } from "recharts";
 import { ChartCard } from "@/components/chart-card";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { loadCardProfile } from "@/lib/rating-card";
+import { addFriend, loadFriends, removeFriend, type Friend } from "@/lib/friends";
 import type {
   CategoryCardStat,
   CategoryHandicap,
@@ -30,7 +33,6 @@ import type {
 import {
   BENCHMARK_LEVELS,
   CATEGORY_LABELS,
-  SCRATCH_HANDICAP,
   computeCategoryCardStats,
   computeCategoryHcpTimeline,
   hcpLabel,
@@ -114,6 +116,10 @@ export function OverviewCard({
 
 /* -------------------------------------------------------- Jämförelseanalys */
 
+type CompareTarget = { label: string; hcp: number; isFriend?: boolean };
+
+const DEFAULT_TARGET: CompareTarget = { label: "0", hcp: BENCHMARK_LEVELS[3].hcp };
+
 export function RadarCard({
   cats,
   totalHandicap,
@@ -121,38 +127,66 @@ export function RadarCard({
   cats: CategoryHandicap[];
   totalHandicap: number | undefined;
 }) {
-  const [benchmark, setBenchmark] = useState<number>(SCRATCH_HANDICAP);
+  const [target, setTarget] = useState<CompareTarget>(DEFAULT_TARGET);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [friends, setFriends] = useState<Friend[]>([]);
+
+  useEffect(() => setFriends(loadFriends()), []);
+
+  const profile = loadCardProfile();
 
   const data = [
     ...cats.map((c) => ({
       subject: `HCP: ${c.title}`,
       spelare: c.handicap !== undefined ? ratingFromHandicap(c.handicap) : 0,
-      benchmark: ratingFromHandicap(benchmark),
+      target: ratingFromHandicap(target.hcp),
     })),
     {
       subject: "HCP: Totalt",
       spelare: totalHandicap !== undefined ? ratingFromHandicap(totalHandicap) : 0,
-      benchmark: ratingFromHandicap(benchmark),
+      target: ratingFromHandicap(target.hcp),
     },
   ];
 
   return (
     <section className="mt-6">
-      <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Jämförelseanalys</p>
-      <p className="mt-1 text-xs text-muted-foreground">
-        Din nivå per kategori jämfört med en vald handicapnivå
-      </p>
-      <div className="mt-3 flex flex-wrap gap-2">
-        {BENCHMARK_LEVELS.map((lvl) => (
-          <Chip
-            key={lvl.label}
-            active={benchmark === lvl.hcp}
-            label={lvl.label === "Tour" ? "Tour" : `HCP ${lvl.label}`}
-            swatch="bg-chart-3"
-            onClick={() => setBenchmark(lvl.hcp)}
-          />
-        ))}
+      <div className="flex items-center justify-center gap-6">
+        <div className="flex flex-col items-center gap-1.5">
+          <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-2 border-chart-4 bg-primary/10">
+            {profile.photo ? (
+              <img src={profile.photo} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <User className="h-7 w-7 text-chart-4" strokeWidth={1.5} />
+            )}
+          </div>
+          <p className="text-xs font-semibold">Du</p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setPickerOpen(true)}
+          className="flex flex-col items-center gap-1.5"
+        >
+          <span className="relative flex h-16 w-16 items-center justify-center rounded-full border-2 border-dashed border-chart-3 bg-chart-3/10">
+            <User className="h-7 w-7 text-chart-3" strokeWidth={1.5} />
+            <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-chart-3 text-background">
+              <Plus className="h-3.5 w-3.5" />
+            </span>
+          </span>
+          <p className="max-w-[5rem] truncate text-xs font-semibold text-muted-foreground">
+            {target.isFriend
+              ? target.label
+              : target.label === "Tour"
+                ? "Tour"
+                : `HCP ${target.label}`}
+          </p>
+        </button>
       </div>
+
+      <p className="mt-4 text-center text-xs uppercase tracking-[0.25em] text-muted-foreground">
+        Jämförelseanalys
+      </p>
+
       <div className="mt-4 h-80 w-full rounded-3xl border border-border bg-card p-3">
         <ResponsiveContainer width="100%" height="100%">
           <RadarChart data={data} outerRadius="68%">
@@ -163,8 +197,8 @@ export function RadarCard({
             />
             <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
             <Radar
-              name={`HCP ${BENCHMARK_LEVELS.find((l) => l.hcp === benchmark)?.label ?? benchmark}`}
-              dataKey="benchmark"
+              name={target.isFriend ? target.label : `HCP ${target.label}`}
+              dataKey="target"
               stroke="var(--chart-3)"
               fill="var(--chart-3)"
               fillOpacity={0.15}
@@ -198,40 +232,198 @@ export function RadarCard({
         </span>
         <span className="flex items-center gap-1.5">
           <span className="h-2.5 w-2.5 rounded-full bg-chart-3" />
-          {BENCHMARK_LEVELS.find((l) => l.hcp === benchmark)?.label === "Tour"
-            ? "Tour"
-            : `HCP ${BENCHMARK_LEVELS.find((l) => l.hcp === benchmark)?.label ?? benchmark}`}
+          {target.isFriend ? target.label : `HCP ${target.label}`}
         </span>
       </div>
+
+      <p className="mt-4 text-center text-sm text-muted-foreground">
+        Vill du jämföra med andra spelare?
+      </p>
+      <button
+        type="button"
+        onClick={() => setPickerOpen(true)}
+        className="mx-auto mt-2 flex items-center gap-1.5 rounded-full border border-border px-5 py-2.5 text-sm font-semibold transition-colors hover:border-primary"
+      >
+        Jämför
+        <span aria-hidden>›</span>
+      </button>
+
+      <SelectPlayerSheet
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        friends={friends}
+        onPick={setTarget}
+        onFriendsChange={setFriends}
+      />
     </section>
   );
 }
 
-function Chip({
-  active,
-  label,
-  swatch,
-  onClick,
-  disabled,
+function SelectPlayerSheet({
+  open,
+  onOpenChange,
+  friends,
+  onPick,
+  onFriendsChange,
 }: {
-  active: boolean;
-  label: string;
-  swatch: string;
-  onClick: () => void;
-  disabled?: boolean;
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  friends: Friend[];
+  onPick: (t: CompareTarget) => void;
+  onFriendsChange: (f: Friend[]) => void;
 }) {
+  const [query, setQuery] = useState("");
+  const [addingFriend, setAddingFriend] = useState(false);
+  const [friendName, setFriendName] = useState("");
+  const [friendHcp, setFriendHcp] = useState("");
+
+  const q = query.trim().toLowerCase();
+  const levels = BENCHMARK_LEVELS.filter(
+    (l) => !q || l.label.toLowerCase().includes(q) || `hcp ${l.label}`.includes(q),
+  );
+  const filteredFriends = friends.filter((f) => !q || f.name.toLowerCase().includes(q));
+
+  function pickLevel(l: (typeof BENCHMARK_LEVELS)[number]) {
+    onPick({ label: l.label, hcp: l.hcp });
+    onOpenChange(false);
+  }
+
+  function pickFriend(f: Friend) {
+    onPick({ label: f.name, hcp: f.handicap, isFriend: true });
+    onOpenChange(false);
+  }
+
+  function saveFriend() {
+    const hcp = Number(friendHcp.replace(",", "."));
+    if (!friendName.trim() || !Number.isFinite(hcp)) return;
+    onFriendsChange(addFriend(friendName, hcp));
+    setFriendName("");
+    setFriendHcp("");
+    setAddingFriend(false);
+  }
+
+  function deleteFriend(id: string) {
+    onFriendsChange(removeFriend(id));
+  }
+
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
-        active ? "border-primary text-foreground" : "border-border text-muted-foreground"
-      } ${disabled ? "opacity-50" : ""}`}
-    >
-      {active && <span className={`h-2 w-2 rounded-full ${swatch}`} />}
-      {label}
-    </button>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto rounded-t-3xl">
+        <SheetHeader>
+          <SheetTitle className="text-left text-2xl">Select Player</SheetTitle>
+        </SheetHeader>
+
+        <div className="relative mt-4">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Sök filter…"
+            className="w-full rounded-2xl border border-input bg-background py-3 pl-10 pr-4 text-foreground outline-none focus:border-primary"
+          />
+        </div>
+
+        <p className="mt-5 text-xs uppercase tracking-[0.2em] text-muted-foreground">
+          Handicapnivåer
+        </p>
+        <div className="mt-2 space-y-1">
+          {levels.map((l) => (
+            <button
+              key={l.label}
+              onClick={() => pickLevel(l)}
+              className="flex w-full items-center justify-between rounded-2xl px-3 py-3 text-left transition-colors hover:bg-muted"
+            >
+              <span className="font-medium">{l.label === "Tour" ? "Tour" : `HCP ${l.label}`}</span>
+            </button>
+          ))}
+          {!levels.length && (
+            <p className="px-3 py-2 text-sm text-muted-foreground">Inga träffar.</p>
+          )}
+        </div>
+
+        <p className="mt-5 text-xs uppercase tracking-[0.2em] text-muted-foreground">
+          Dina kompisar
+        </p>
+        <div className="mt-2 space-y-1">
+          {filteredFriends.map((f) => (
+            <div
+              key={f.id}
+              className="flex items-center justify-between rounded-2xl px-3 py-2 transition-colors hover:bg-muted"
+            >
+              <button
+                onClick={() => pickFriend(f)}
+                className="flex flex-1 items-center gap-3 text-left"
+              >
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-chart-3/10">
+                  <User className="h-4 w-4 text-chart-3" />
+                </span>
+                <span>
+                  <span className="block font-medium">{f.name}</span>
+                  <span className="block text-xs text-muted-foreground">
+                    HCP {hcpLabel(f.handicap)}
+                  </span>
+                </span>
+              </button>
+              <button
+                onClick={() => deleteFriend(f.id)}
+                aria-label={`Ta bort ${f.name}`}
+                className="p-2 text-muted-foreground hover:text-destructive"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ))}
+          {!friends.length && (
+            <p className="px-3 py-2 text-sm text-muted-foreground">Inga kompisar tillagda än.</p>
+          )}
+        </div>
+
+        {addingFriend ? (
+          <div className="mt-3 space-y-2 rounded-2xl border border-border p-4">
+            <input
+              value={friendName}
+              onChange={(e) => setFriendName(e.target.value)}
+              placeholder="Namn"
+              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+            />
+            <input
+              value={friendHcp}
+              onChange={(e) => setFriendHcp(e.target.value)}
+              inputMode="decimal"
+              placeholder="Handicap, t.ex. 14,8"
+              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={saveFriend}
+                className="flex-1 rounded-xl bg-primary py-2 text-sm font-semibold text-primary-foreground"
+              >
+                Spara
+              </button>
+              <button
+                onClick={() => setAddingFriend(false)}
+                className="flex-1 rounded-xl border border-border py-2 text-sm text-muted-foreground"
+              >
+                Avbryt
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={() => setAddingFriend(true)}
+            className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-2xl border border-dashed border-border py-3 text-sm font-semibold text-muted-foreground transition-colors hover:border-primary hover:text-foreground"
+          >
+            <Plus className="h-4 w-4" />
+            Lägg till kompis
+          </button>
+        )}
+
+        <p className="mt-4 pb-2 text-center text-xs text-muted-foreground">
+          Appen har ingen spelarkatalog ännu, så du lägger till kompisar manuellt – deras handicap
+          jämförs på samma sätt som en fast HCP-nivå.
+        </p>
+      </SheetContent>
+    </Sheet>
   );
 }
 
