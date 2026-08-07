@@ -307,12 +307,16 @@ export function OpportunityCard({ opportunity }: { opportunity: Opportunity | un
   if (!opportunity) return null;
   return (
     <section className="mt-6 rounded-3xl border border-primary/40 bg-primary/[0.06] p-5">
-      <p className="text-xs uppercase tracking-[0.25em] text-primary">Rekommenderat fokus</p>
+      <p className="text-xs uppercase tracking-[0.25em] text-primary">
+        {opportunity.reason === "missing" ? "Genomför ett test" : "Rekommenderat fokus"}
+      </p>
       <p className="mt-2 font-[family-name:var(--font-display)] text-3xl leading-none">
         {opportunity.title}
       </p>
       <p className="mt-2 text-sm text-muted-foreground">
-        Kategorin som just nu ger mest att vinna på att träna vidare.
+        {opportunity.reason === "missing"
+          ? "Du har inte gjort något test i den här kategorin ännu – börja här för en komplett bild."
+          : "Kategorin som just nu ger mest att vinna på att träna vidare."}
       </p>
     </section>
   );

@@ -255,9 +255,21 @@ export type Opportunity = {
   handicap: number;
   /** ungefärlig sänkning av totalhandicap vid 10 % förbättring i kategorin */
   impact: number;
+  /** "missing" = kategorin saknar helt test/score ännu, "lowest" = lägst score bland fullständigt testade kategorier */
+  reason: "missing" | "lowest";
 };
 
 export function computeBiggestOpportunity(cats: CategoryHandicap[]): Opportunity | undefined {
+  // Prioritera kategorier utan ett enda test – viktigare att fylla luckor än att
+  // finslipa en kategori man redan har data för.
+  const missing = cats.filter((c) => c.count === 0);
+  if (missing.length) {
+    const pick = [...missing].sort(
+      (a, b) => CATEGORY_WEIGHTS[b.slug] - CATEGORY_WEIGHTS[a.slug],
+    )[0];
+    return { slug: pick.slug, title: pick.title, handicap: 0, impact: 0, reason: "missing" };
+  }
+
   const available = cats.filter((c) => c.handicap !== undefined && c.handicap > -3.5);
   if (!available.length) return undefined;
   const scored = available
@@ -268,7 +280,7 @@ export function computeBiggestOpportunity(cats: CategoryHandicap[]): Opportunity
     0.1,
     Math.round(best.handicap! * 0.1 * CATEGORY_WEIGHTS[best.slug] * 10) / 10,
   );
-  return { slug: best.slug, title: best.title, handicap: best.handicap!, impact };
+  return { slug: best.slug, title: best.title, handicap: best.handicap!, impact, reason: "lowest" };
 }
 
 /* -------------------------------------------------------------------------
