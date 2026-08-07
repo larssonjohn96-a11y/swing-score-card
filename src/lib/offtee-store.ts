@@ -3,6 +3,7 @@
  * Separerad från testlogik/beräkningar (src/lib/offtee.ts) och UI.
  */
 import { offTeeResult, type TeeShot } from "@/lib/offtee";
+import type { Device, MeasurementContext } from "@/lib/speed";
 
 export type OffTeeSession = {
   id: string;
@@ -15,6 +16,9 @@ export type OffTeeSession = {
   avgTotal: number;
   fairwayHitPct: number;
   note?: string;
+  /** var mätningen gjordes, valt innan testet startar */
+  context?: MeasurementContext;
+  device?: Device;
 };
 
 const KEY = "golf-offtee-sessions-v1";
@@ -37,7 +41,12 @@ function persist(sessions: OffTeeSession[]) {
   return sorted;
 }
 
-export function saveOffTeeSession(shots: TeeShot[], note?: string): OffTeeSession {
+export function saveOffTeeSession(
+  shots: TeeShot[],
+  context?: MeasurementContext,
+  device?: Device,
+  note?: string,
+): OffTeeSession {
   const r = offTeeResult(shots);
   const session: OffTeeSession = {
     id: crypto.randomUUID(),
@@ -48,6 +57,8 @@ export function saveOffTeeSession(shots: TeeShot[], note?: string): OffTeeSessio
     avgTotal: r.avgTotal,
     fairwayHitPct: r.fairwayHitPct,
     note: note?.trim() || undefined,
+    context,
+    device,
   };
   persist([...loadOffTeeSessions(), session]);
   return session;

@@ -1,4 +1,4 @@
-import { CheckCircle2, Target, Trophy, type LucideIcon } from "lucide-react";
+import { CheckCircle2, Gauge, Target, Trophy, type LucideIcon } from "lucide-react";
 import {
   PGA_TOUR_AVERAGE_METERS,
   AVERAGE_GOLFER_METERS,
@@ -7,6 +7,7 @@ import {
   scoreBand,
   type OffTeeResult,
 } from "@/lib/offtee";
+import type { Device, MeasurementContext } from "@/lib/speed";
 import { TeeDispersion } from "@/components/offtee-visuals";
 
 const GRADE_TEXT: Record<string, string> = { good: "text-primary", poor: "text-destructive" };
@@ -17,10 +18,14 @@ export function OffTeeReport({
   result,
   prevScore,
   compact = false,
+  context,
+  device,
 }: {
   result: OffTeeResult;
   prevScore?: number | null;
   compact?: boolean;
+  context?: MeasurementContext;
+  device?: Device;
 }) {
   const analysis = analyseOffTee(result);
   const band = scoreBand(result.score);
@@ -45,6 +50,12 @@ export function OffTeeReport({
           <span aria-hidden>{band.emoji}</span>
           {band.label}
         </p>
+        {device && (
+          <p className="mx-auto mt-2 inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">
+            <Gauge className="h-3.5 w-3.5" />
+            {context === "simulator" ? "Simulator" : "Range"} · {device}
+          </p>
+        )}
         {delta !== null && (
           <p className={`mt-2 text-sm ${delta >= 0 ? "text-primary" : "text-destructive"}`}>
             {delta > 0 ? "+" : ""}
