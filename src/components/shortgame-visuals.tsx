@@ -63,6 +63,13 @@ export function ShortGameHero({ className = "h-44 w-full" }: { className?: strin
  * en egen, fast vinkel runt hålet – avståndet från centrum är det som
  * faktiskt representerar resultatet.
  */
+function dispersionTone(proximity: number): string {
+  if (proximity <= 1) return "fill-primary";
+  if (proximity <= 2) return "fill-chart-4";
+  if (proximity <= 3) return "fill-sand";
+  return "fill-destructive";
+}
+
 export function ShortGameDispersion({ shots }: { shots: ShortGameShot[] }) {
   const size = 260;
   const c = size / 2;
@@ -99,14 +106,13 @@ export function ShortGameDispersion({ shots }: { shots: ShortGameShot[] }) {
         const angle = i * angleStep - Math.PI / 2;
         const x = c + r * Math.cos(angle);
         const y = c + r * Math.sin(angle);
-        const good = proximity <= 2;
         return (
           <circle
             key={s.index}
             cx={x}
             cy={y}
             r="6"
-            className={good ? "fill-primary" : "fill-destructive"}
+            className={dispersionTone(proximity)}
             stroke="black"
             strokeOpacity="0.25"
           />
@@ -132,7 +138,7 @@ export function ShortGamePositionDiagram({ distance }: { distance: number }) {
   const trackX2 = w - 40;
   const y = h / 2;
 
-  const xFor = (d: number) => trackX1 + ((d - min) / (max - min)) * (trackX2 - trackX1);
+  const xFor = (d: number) => trackX1 + ((max - d) / (max - min)) * (trackX2 - trackX1);
 
   return (
     <svg

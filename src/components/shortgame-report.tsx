@@ -64,14 +64,22 @@ export function ShortGameReport({
         <div className="mt-3">
           <ShortGameDispersion shots={shots} />
         </div>
-        <div className="mt-3 flex justify-center gap-4 text-[11px] text-muted-foreground">
+        <div className="mt-3 flex flex-wrap justify-center gap-x-4 gap-y-1.5 text-[11px] text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <span className="h-2.5 w-2.5 rounded-full bg-primary" />
+            Inom 1 m
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-full bg-chart-4" />
             Inom 2 m
           </span>
           <span className="flex items-center gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-full bg-sand" />
+            Inom 3 m
+          </span>
+          <span className="flex items-center gap-1.5">
             <span className="h-2.5 w-2.5 rounded-full bg-destructive" />
-            Över 2 m
+            Utanför 3 m
           </span>
         </div>
       </div>

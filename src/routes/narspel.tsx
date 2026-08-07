@@ -1,6 +1,6 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, Check, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   INTERVALS,
   SHORTGAME_TOTAL_SHOTS,
@@ -37,9 +37,9 @@ function ShortGamePage() {
   const [shots, setShots] = useState<ShortGameShot[]>(emptyShortGameShots);
   const [index, setIndex] = useState(0);
   const [interval, setInterval] = useState<IntervalKey | null>(null);
-  const [notes, setNotes] = useState("");
   const [saved, setSaved] = useState(false);
   const [prevScore, setPrevScore] = useState<number | null>(null);
+  const savedRef = useRef(false);
 
   const current = shots[Math.min(index, SHORTGAME_TOTAL_SHOTS - 1)];
 
@@ -53,6 +53,7 @@ function ShortGamePage() {
     setIndex(0);
     setInterval(null);
     setSaved(false);
+    savedRef.current = false;
     setPhase("test");
   }
 
@@ -81,6 +82,16 @@ function ShortGamePage() {
     const s = shots[i];
     setInterval(s.interval ?? null);
   }
+
+  // Testet sparas automatiskt så fort resultatet visas – ingen anteckning eller
+  // manuell Spara-knapp behövs.
+  useEffect(() => {
+    if (phase === "result" && !savedRef.current) {
+      savedRef.current = true;
+      saveShortGameSession(shots);
+      setSaved(true);
+    }
+  }, [phase, shots]);
 
   if (phase === "test") {
     const pct = Math.round((index / SHORTGAME_TOTAL_SHOTS) * 100);
@@ -187,12 +198,6 @@ function ShortGamePage() {
 
   const result = computeShortGameResult(shots);
 
-  function save() {
-    saveShortGameSession(shots, notes);
-    setNotes("");
-    setSaved(true);
-  }
-
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-16 pt-10">
       <p className="mb-6 flex items-center justify-center gap-1 text-xs text-primary">
@@ -201,30 +206,10 @@ function ShortGamePage() {
 
       <ShortGameReport shots={shots} result={result} prevScore={prevScore} />
 
-      <label htmlFor="notes" className="mt-5 block text-sm text-muted-foreground">
-        Anteckning (valfritt)
-      </label>
-      <input
-        id="notes"
-        value={notes}
-        onChange={(e) => setNotes(e.target.value)}
-        placeholder="Green, känsla…"
-        className="mt-2 w-full rounded-2xl border border-input bg-background px-4 py-3 text-foreground outline-none focus:border-primary"
-      />
-
       <div className="mt-6 flex gap-3">
-        {saved ? (
-          <div className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-primary bg-primary/10 py-4 text-base font-semibold text-primary">
-            <Check className="h-5 w-5" /> Testet sparat
-          </div>
-        ) : (
-          <button
-            onClick={save}
-            className="flex-1 rounded-2xl bg-primary py-4 font-[family-name:var(--font-display)] text-2xl text-primary-foreground"
-          >
-            Spara
-          </button>
-        )}
+        <div className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-primary bg-primary/10 py-4 text-base font-semibold text-primary">
+          <Check className="h-5 w-5" /> {saved ? "Testet sparat" : "Sparar…"}
+        </div>
         <button
           onClick={start}
           className="flex-1 rounded-2xl border border-border py-4 font-[family-name:var(--font-display)] text-2xl text-muted-foreground"
