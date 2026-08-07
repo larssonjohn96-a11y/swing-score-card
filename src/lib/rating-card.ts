@@ -1,9 +1,10 @@
 /**
  * Rating Card – spelarkort i tv-spelsstil.
  *
- * Räknar fram en totalrating 0–99, kortnivå (Brons → Icon) och sex
- * delbetyg (SPD, DRV, APP, SGM, PUT, CON) utifrån befintlig testdata.
- * Profilfälten (hemmaklubb, land, åldersklass, bild) sparas lokalt.
+ * Räknar fram en totalrating 0–99, kortnivå (Brons → Icon) och fem
+ * delbetyg (Speed, Driving, Approach, Around the Green, Putting)
+ * utifrån befintlig testdata. Profilfälten (hemmaklubb, land,
+ * åldersklass, bild) sparas lokalt.
  */
 import {
   computeCategoryHandicaps,
@@ -68,7 +69,7 @@ export function tierForHandicap(hcp: number | undefined): CardTier {
 }
 
 export type CardStat = {
-  key: "SPD" | "DRV" | "APP" | "SGM" | "PUT" | "CON";
+  key: "speed" | "driving" | "approach" | "around-the-green" | "puttning";
   label: string;
   value?: number;
 };
@@ -78,16 +79,6 @@ const clamp = (n: number) => Math.max(1, Math.min(99, Math.round(n)));
 function catRating(cats: CategoryHandicap[], slug: CategoryHandicap["slug"]) {
   const hcp = cats.find((c) => c.slug === slug)?.handicap;
   return hcp === undefined ? undefined : clamp(ratingFromHandicap(hcp));
-}
-
-/** Konsistens: hur jämna de senaste testerna varit. */
-function consistencyRating(): number | undefined {
-  const precision = loadPrecisionSessions();
-  const values = precision
-    .map((s) => s.consistency)
-    .filter((v): v is number => typeof v === "number");
-  if (!values.length) return undefined;
-  return clamp(values.slice(-5).reduce((a, b) => a + b, 0) / Math.min(5, values.length));
 }
 
 /** Speed: senaste Speed Test-resultatet, omvandlat till samma 0–100-skala som övriga kort. */
@@ -103,6 +94,10 @@ export type RatingCardData = {
   tier: CardTier;
   stats: CardStat[];
   handicap?: number;
+  /** verkligt (manuellt satt) handicap, om det finns */
+  real: number | null;
+  /** uppskattat handicap ur testresultaten */
+  estimated?: number;
   /** true om handicapet är manuellt satt (verifierat), annars uppskattat */
   verified: boolean;
   testCount: number;
@@ -115,12 +110,15 @@ export function computeRatingCard(realHandicap: number | null): RatingCardData {
   const handicap = realHandicap ?? estimated;
 
   const stats: CardStat[] = [
-    { key: "SPD", label: "SPD", value: speedRating() },
-    { key: "DRV", label: "DRV", value: catRating(cats, "driving") },
-    { key: "APP", label: "APP", value: catRating(cats, "approach") },
-    { key: "SGM", label: "SGM", value: catRating(cats, "around-the-green") },
-    { key: "PUT", label: "PUT", value: catRating(cats, "puttning") },
-    { key: "CON", label: "CON", value: consistencyRating() },
+    { key: "speed", label: "Speed", value: speedRating() },
+    { key: "driving", label: "Driving", value: catRating(cats, "driving") },
+    { key: "approach", label: "Approach", value: catRating(cats, "approach") },
+    {
+      key: "around-the-green",
+      label: "Around the Green",
+      value: catRating(cats, "around-the-green"),
+    },
+    { key: "puttning", label: "Putting", value: catRating(cats, "puttning") },
   ];
 
   const known = stats.map((s) => s.value).filter((v): v is number => v !== undefined);
@@ -144,6 +142,8 @@ export function computeRatingCard(realHandicap: number | null): RatingCardData {
     tier: tierForHandicap(handicap),
     stats,
     handicap,
+    real: realHandicap,
+    estimated,
     verified: realHandicap !== null,
     testCount: dates.length,
     lastUpdated: dates[dates.length - 1],

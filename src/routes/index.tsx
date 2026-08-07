@@ -12,12 +12,7 @@ import {
   type CategoryHandicap,
   type Opportunity,
 } from "@/lib/sg-handicap";
-import {
-  CategoryGrid,
-  HighScoreCard,
-  OpportunityCard,
-  RealHandicapEditRow,
-} from "@/components/home-dashboard";
+import { CategoryGrid, HighScoreCard, OpportunityCard } from "@/components/home-dashboard";
 import { PlayerCard } from "@/components/rating-card";
 import { computeRatingCard, loadCardProfile, type RatingCardData } from "@/lib/rating-card";
 import { RadarCard } from "@/components/progress-dashboard";
@@ -102,10 +97,12 @@ function Home() {
             data={data.card}
             profile={loadCardProfile()}
             playerName={displayName ?? "Golfspelare"}
+            onSaveHandicap={handleSaveHandicap}
           />
-          <RealHandicapEditRow real={data.real} onSave={handleSaveHandicap} />
 
-          <RadarCard cats={data.cats} totalHandicap={data.estimated} />
+          <div className="mt-10">
+            <RadarCard cats={data.cats} totalHandicap={data.estimated} />
+          </div>
           <CategoryGrid cats={data.cats} />
           <HighScoreCard highlights={data.highlights} />
           <OpportunityCard opportunity={data.opportunity} />
