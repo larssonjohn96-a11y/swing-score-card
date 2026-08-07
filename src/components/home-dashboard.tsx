@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, Pencil, TrendingDown, TrendingUp, Check, User } from "lucide-react";
 import {
+  computeCategoryHcpTimeline,
   hcpLabel,
   ratingFromHandicap,
   type CategoryHandicap,
@@ -270,34 +271,110 @@ export function DevelopmentCard({
 /* --------------------------------------------------------- Kategori-HCP */
 
 export function CategoryGrid({ cats }: { cats: CategoryHandicap[] }) {
+  const [sparklines, setSparklines] = useState<Record<string, number[]>>({});
+
+  useEffect(() => {
+    const next: Record<string, number[]> = {};
+    for (const c of cats) {
+      const points = computeCategoryHcpTimeline(c.slug, 90);
+      next[c.slug] = points.map((p) => ratingFromHandicap(p.rolling ?? p.raw ?? 0));
+    }
+    setSparklines(next);
+  }, [cats]);
+
   return (
     <section className="mt-6">
       <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Kategori-HCP</p>
       <div className="mt-3 grid grid-cols-2 gap-2">
-        {cats.map((c) => (
-          <div key={c.slug} className="rounded-2xl border border-border bg-card p-3">
-            <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
-              {c.title}
-            </p>
-            {c.handicap !== undefined ? (
-              <>
-                <p className="mt-1 font-[family-name:var(--font-display)] text-2xl leading-none">
-                  HCP {hcpLabel(c.handicap)}
-                </p>
-                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
-                  <div
-                    className="h-full rounded-full bg-primary"
-                    style={{ width: `${Math.max(4, ratingFromHandicap(c.handicap))}%` }}
-                  />
-                </div>
-              </>
-            ) : (
-              <p className="mt-1 text-sm text-muted-foreground">Inget test ännu</p>
-            )}
-          </div>
-        ))}
+        {cats.map((c) => {
+          const points = sparklines[c.slug] ?? [];
+          const content = (
+            <>
+              <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
+                {c.title}
+              </p>
+              {c.handicap !== undefined ? (
+                <>
+                  <p className="mt-1 font-[family-name:var(--font-display)] text-2xl leading-none">
+                    HCP {hcpLabel(c.handicap)}
+                  </p>
+                  <div className="mt-2 h-6">
+                    {points.length >= 2 ? (
+                      <Sparkline values={points} />
+                    ) : (
+                      <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                        <div
+                          className="h-full rounded-full bg-primary"
+                          style={{ width: `${Math.max(4, ratingFromHandicap(c.handicap))}%` }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="mt-1 text-sm font-medium text-primary">Gör ett test</p>
+                  <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                    Inget test ännu
+                    <ArrowRight className="h-3 w-3" />
+                  </p>
+                </>
+              )}
+            </>
+          );
+
+          if (c.handicap === undefined) {
+            const link = CATEGORY_LINK[c.slug];
+            return (
+              <Link
+                key={c.slug}
+                to={link.to}
+                params={link.params}
+                className="block rounded-2xl border border-border bg-card p-3 transition-colors hover:border-primary"
+              >
+                {content}
+              </Link>
+            );
+          }
+
+          return (
+            <div key={c.slug} className="rounded-2xl border border-border bg-card p-3">
+              {content}
+            </div>
+          );
+        })}
       </div>
     </section>
+  );
+}
+
+/** Liten trendkurva (senaste 90 dagarna) istället för en statisk stapel – samma höjd som förut. */
+function Sparkline({ values }: { values: number[] }) {
+  const w = 100;
+  const h = 24;
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const span = max - min || 1;
+  const points = values
+    .map((v, i) => {
+      const x = (i / (values.length - 1)) * w;
+      const y = h - ((v - min) / span) * (h - 4) - 2;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(" ");
+  const rising = values[values.length - 1] >= values[0];
+
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} className="h-full w-full" preserveAspectRatio="none">
+      <polyline
+        points={points}
+        fill="none"
+        className={rising ? "stroke-primary" : "stroke-destructive"}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }
 
