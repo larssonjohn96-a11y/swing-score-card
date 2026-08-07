@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Pencil, TrendingDown, TrendingUp, Check, User } from "lucide-react";
+import { ArrowRight, Pencil, TrendingDown, TrendingUp, Check, User } from "lucide-react";
 import {
   hcpLabel,
   ratingFromHandicap,
@@ -303,8 +303,20 @@ export function CategoryGrid({ cats }: { cats: CategoryHandicap[] }) {
 
 /* --------------------------------------------------- Din största möjlighet */
 
+const CATEGORY_LINK: Record<
+  CategoryHandicap["slug"],
+  { to: string; params?: Record<string, string> }
+> = {
+  approach: { to: "/kategori/$slug", params: { slug: "approach" } },
+  driving: { to: "/kategori/$slug", params: { slug: "driving" } },
+  "around-the-green": { to: "/kategori/$slug", params: { slug: "around-the-green" } },
+  puttning: { to: "/kategori/$slug", params: { slug: "puttning" } },
+  speed: { to: "/speed-test" },
+};
+
 export function OpportunityCard({ opportunity }: { opportunity: Opportunity | undefined }) {
   if (!opportunity) return null;
+  const link = CATEGORY_LINK[opportunity.slug];
   return (
     <section className="mt-6 rounded-3xl border border-primary/40 bg-primary/[0.06] p-5">
       <p className="text-xs uppercase tracking-[0.25em] text-primary">
@@ -318,6 +330,14 @@ export function OpportunityCard({ opportunity }: { opportunity: Opportunity | un
           ? "Du har inte gjort något test i den här kategorin ännu – börja här för en komplett bild."
           : "Kategorin som just nu ger mest att vinna på att träna vidare."}
       </p>
+      <Link
+        to={link.to}
+        params={link.params}
+        className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+      >
+        Till {opportunity.title}
+        <ArrowRight className="h-4 w-4" />
+      </Link>
     </section>
   );
 }
