@@ -5,8 +5,10 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  Gauge,
   Minus,
   Plus,
+  Radar,
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -17,6 +19,12 @@ import {
   type PrecisionShot,
 } from "@/lib/precision";
 import { loadPrecisionSessions, savePrecisionSession } from "@/lib/precision-store";
+import {
+  RANGE_DEVICES,
+  SIMULATOR_DEVICES,
+  type Device,
+  type MeasurementContext,
+} from "@/lib/speed";
 import { NumberField } from "@/components/precision-visuals";
 import { PrecisionReport } from "@/components/precision-report";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
@@ -42,11 +50,13 @@ export const Route = createFileRoute("/precision")({
   component: PrecisionPage,
 });
 
-type Phase = "test" | "result";
+type Phase = "setup" | "test" | "result";
 
 function PrecisionPage() {
   const navigate = useNavigate();
-  const [phase, setPhase] = useState<Phase>("test");
+  const [phase, setPhase] = useState<Phase>("setup");
+  const [context, setContext] = useState<MeasurementContext>("range");
+  const [device, setDevice] = useState<Device>(RANGE_DEVICES[0]);
   const [shots, setShots] = useState<PrecisionShot[]>(emptyPrecisionShots);
   const [index, setIndex] = useState(0);
   const [carry, setCarry] = useState<number>(PRECISION_TARGETS[0]);
@@ -58,6 +68,11 @@ function PrecisionPage() {
   const current = shots[Math.min(index, PRECISION_TOTAL_SHOTS - 1)];
 
   useHideBottomNav(phase === "test");
+
+  function pickContext(c: MeasurementContext) {
+    setContext(c);
+    setDevice(c === "simulator" ? SIMULATOR_DEVICES[0] : RANGE_DEVICES[0]);
+  }
 
   function start() {
     const sessions = loadPrecisionSessions();
@@ -71,12 +86,6 @@ function PrecisionPage() {
     savedRef.current = false;
     setPhase("test");
   }
-
-  // Testet startar direkt i "test"-fasen – /kategori/approach är numera den
-  // utförliga landningssidan man ser innan man kommer hit.
-  useEffect(() => {
-    start();
-  }, []);
 
   function commit() {
     const offline = side * offset;
@@ -104,9 +113,92 @@ function PrecisionPage() {
   useEffect(() => {
     if (phase === "result" && !savedRef.current) {
       savedRef.current = true;
-      savePrecisionSession(shots);
+      savePrecisionSession(shots, context, device);
     }
-  }, [phase, shots]);
+  }, [phase, shots, context, device]);
+
+  if (phase === "setup") {
+    const devices = context === "simulator" ? SIMULATOR_DEVICES : RANGE_DEVICES;
+    return (
+      <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-16 pt-8">
+        <header className="flex items-end justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
+              Innan du börjar
+            </p>
+            <h1 className="text-4xl leading-none">Approach Test</h1>
+          </div>
+          <Link
+            to="/kategori/$slug"
+            params={{ slug: "approach" }}
+            className="rounded-full border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Avbryt
+          </Link>
+        </header>
+
+        <div className="mt-8 flex justify-center">
+          <span className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+            <Radar className="h-8 w-8 text-primary" />
+          </span>
+        </div>
+        <h2 className="mt-4 text-center text-2xl leading-tight">Var mäter du?</h2>
+        <p className="mt-2 text-center text-sm text-muted-foreground">
+          Olika system mäter olika högt – vi visar det med resultatet så du kan jämföra rättvist.
+        </p>
+
+        <div className="mt-6 grid grid-cols-2 gap-3">
+          <button
+            onClick={() => pickContext("simulator")}
+            className={`rounded-2xl border-2 p-4 text-left transition-colors ${
+              context === "simulator" ? "border-primary bg-primary/10" : "border-border bg-card"
+            }`}
+          >
+            <p className="font-[family-name:var(--font-display)] text-xl leading-none">Simulator</p>
+          </button>
+          <button
+            onClick={() => pickContext("range")}
+            className={`rounded-2xl border-2 p-4 text-left transition-colors ${
+              context === "range" ? "border-primary bg-primary/10" : "border-border bg-card"
+            }`}
+          >
+            <p className="font-[family-name:var(--font-display)] text-xl leading-none">Range</p>
+          </button>
+        </div>
+
+        <p className="mt-6 text-xs uppercase tracking-[0.2em] text-muted-foreground">
+          Vilken maskin?
+        </p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {devices.map((d) => (
+            <button
+              key={d}
+              onClick={() => setDevice(d)}
+              className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
+                device === d
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border text-muted-foreground"
+              }`}
+            >
+              {d}
+            </button>
+          ))}
+        </div>
+
+        <p className="mt-4 flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
+          <Gauge className="h-3.5 w-3.5" />
+          Du kör testet på {context === "simulator" ? "simulator" : "range"} med {device}
+        </p>
+
+        <button
+          onClick={start}
+          className="mt-6 w-full rounded-2xl bg-primary py-5 font-[family-name:var(--font-display)] text-2xl text-primary-foreground"
+        >
+          Starta Approach Test
+        </button>
+      </main>
+    );
+  }
 
   if (phase === "test")
     return (
@@ -124,7 +216,15 @@ function PrecisionPage() {
         onAbort={() => navigate({ to: "/kategori/$slug", params: { slug: "approach" } })}
       />
     );
-  return <ResultScreen shots={shots} prevScore={prevScore} onRestart={start} />;
+  return (
+    <ResultScreen
+      shots={shots}
+      prevScore={prevScore}
+      onRestart={start}
+      context={context}
+      device={device}
+    />
+  );
 }
 
 /* ----------------------------------------------------------------- test */
@@ -355,10 +455,14 @@ function ResultScreen({
   shots,
   prevScore,
   onRestart,
+  context,
+  device,
 }: {
   shots: PrecisionShot[];
   prevScore: number | null;
   onRestart: () => void;
+  context: MeasurementContext;
+  device: Device;
 }) {
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-16 pt-10">
@@ -366,7 +470,7 @@ function ResultScreen({
         <Check className="h-4 w-4" /> Testet är sparat
       </p>
 
-      <PrecisionReport shots={shots} prevScore={prevScore} />
+      <PrecisionReport shots={shots} prevScore={prevScore} context={context} device={device} />
 
       <div className="mt-10 flex gap-3">
         <button

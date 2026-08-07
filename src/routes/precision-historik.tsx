@@ -124,8 +124,7 @@ function PrecisionHistoryPage() {
               className={`mt-1 text-sm ${overview.changePct >= 0 ? "text-primary" : "text-destructive"}`}
             >
               {overview.changePct > 0 ? "+" : ""}
-              {overview.changePct} % utveckling · est. handicap{" "}
-              {handicapLabel(overview.lastHcp)}
+              {overview.changePct} % utveckling · est. handicap {handicapLabel(overview.lastHcp)}
             </p>
           </section>
 
@@ -232,7 +231,12 @@ function PrecisionHistoryPage() {
                     </button>
                     {isOpen ? (
                       <div className="border-t border-border px-5 py-6">
-                        <PrecisionReport shots={s.shots} compact />
+                        <PrecisionReport
+                          shots={s.shots}
+                          compact
+                          context={s.context}
+                          device={s.device}
+                        />
                       </div>
                     ) : null}
                   </div>

@@ -8,6 +8,7 @@ import {
   type PrecisionShot,
   type PrecisionSummary,
 } from "@/lib/precision";
+import type { Device, MeasurementContext } from "@/lib/speed";
 
 export type PrecisionSession = {
   id: string;
@@ -22,6 +23,9 @@ export type PrecisionSession = {
   handicap?: number;
   avgProximityPct?: number;
   note?: string;
+  /** var mätningen gjordes, valt innan testet startar */
+  context?: MeasurementContext;
+  device?: Device;
 };
 
 const KEY = "golf-precision-sessions-v1";
@@ -44,7 +48,12 @@ function persist(sessions: PrecisionSession[]) {
   return sorted;
 }
 
-export function savePrecisionSession(shots: PrecisionShot[], note?: string): PrecisionSession {
+export function savePrecisionSession(
+  shots: PrecisionShot[],
+  context?: MeasurementContext,
+  device?: Device,
+  note?: string,
+): PrecisionSession {
   const s: PrecisionSummary = summarize(shots);
   const r = precisionResult(shots);
   const session: PrecisionSession = {
@@ -58,6 +67,8 @@ export function savePrecisionSession(shots: PrecisionShot[], note?: string): Pre
     handicap: r.handicap,
     avgProximityPct: r.avgProximityPct,
     note: note?.trim() || undefined,
+    context,
+    device,
   };
   persist([...loadPrecisionSessions(), session]);
   return session;

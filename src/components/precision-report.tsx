@@ -1,4 +1,4 @@
-import { CheckCircle2, Target, Trophy, type LucideIcon } from "lucide-react";
+import { CheckCircle2, Gauge, Target, Trophy, type LucideIcon } from "lucide-react";
 import {
   analysePrecision,
   groupScores,
@@ -8,6 +8,7 @@ import {
   scoreBand,
   type PrecisionShot,
 } from "@/lib/precision";
+import type { Device, MeasurementContext } from "@/lib/speed";
 import { DispersionGreen } from "@/components/precision-visuals";
 
 const GRADE_TEXT: Record<string, string> = {
@@ -24,10 +25,14 @@ export function PrecisionReport({
   shots,
   prevScore,
   compact = false,
+  context,
+  device,
 }: {
   shots: PrecisionShot[];
   prevScore?: number | null;
   compact?: boolean;
+  context?: MeasurementContext;
+  device?: Device;
 }) {
   const result = precisionResult(shots);
   const analysis = analysePrecision(shots, result);
@@ -53,6 +58,12 @@ export function PrecisionReport({
           <span aria-hidden>{band.emoji}</span>
           {band.label}
         </p>
+        {device && (
+          <p className="mx-auto mt-2 inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">
+            <Gauge className="h-3.5 w-3.5" />
+            {context === "simulator" ? "Simulator" : "Range"} · {device}
+          </p>
+        )}
         {delta !== null && (
           <p className={`mt-2 text-sm ${delta >= 0 ? "text-primary" : "text-destructive"}`}>
             {delta > 0 ? "+" : ""}
