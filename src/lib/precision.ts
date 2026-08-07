@@ -179,6 +179,12 @@ export function handicapFromPct(pct: number): number {
   return Math.max(-6, Math.min(36, Math.round((pct - 6.7) * 2.2 * 10) / 10));
 }
 
+/** Samma skattning, men utgår direkt från en 0–100-score (t.ex. per avståndszon). */
+export function handicapFromScore(score: number): number {
+  const pct = 3 + (100 - score) / 6;
+  return handicapFromPct(pct);
+}
+
 /** Handicap som text, t.ex. "+2,4" för plushandicap. */
 export function handicapLabel(hcp: number): string {
   const v = Math.abs(hcp).toFixed(1).replace(".", ",");
@@ -491,22 +497,17 @@ export function groupScores(result: PrecisionResult): GroupScore[] {
       (t) => t.count > 0 && t.target >= g.min && t.target <= g.max,
     );
     const shots = inGroup.reduce((a, t) => a + t.count, 0);
-    const pct = shots
-      ? inGroup.reduce((a, t) => a + t.avgPct * t.count, 0) / shots
-      : 0;
+    const pct = shots ? inGroup.reduce((a, t) => a + t.avgPct * t.count, 0) / shots : 0;
     return {
       label: g.label,
       min: g.min,
       max: g.max,
       count: shots,
       score: shots ? scoreFromPct(pct) : 0,
-      avgProximity: shots
-        ? inGroup.reduce((a, t) => a + t.avgProximity * t.count, 0) / shots
-        : 0,
+      avgProximity: shots ? inGroup.reduce((a, t) => a + t.avgProximity * t.count, 0) / shots : 0,
     };
   });
 }
-
 
 /* -------------------------------------------------------------------------
  * Spridningsanalys – fast skala i meter
@@ -567,4 +568,3 @@ export function dispersionStats(shots: PrecisionShot[]): DispersionStats {
     missLong: filled.filter((s) => lengthError(s) > 1).length,
   };
 }
-

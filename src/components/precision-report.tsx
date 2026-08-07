@@ -2,6 +2,7 @@ import { CheckCircle2, Target, Trophy, type LucideIcon } from "lucide-react";
 import {
   analysePrecision,
   groupScores,
+  handicapFromScore,
   handicapLabel,
   precisionResult,
   scoreBand,
@@ -84,6 +85,9 @@ export function PrecisionReport({
                 >
                   {g.count ? g.score : "–"}
                 </span>
+                <span className="w-16 shrink-0 text-right text-xs text-muted-foreground">
+                  {g.count ? `HCP ${handicapLabel(handicapFromScore(g.score))}` : "–"}
+                </span>
               </div>
             );
           })}
@@ -118,7 +122,6 @@ export function PrecisionReport({
     </div>
   );
 }
-
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
@@ -163,4 +166,3 @@ function Block({
     </div>
   );
 }
-
