@@ -11,6 +11,7 @@ import { loadBunkerSessions } from "@/lib/bunker";
 import { loadShortPuttSessions } from "@/lib/shortputt";
 import { loadLagPuttSessions } from "@/lib/lagputt";
 import { loadSpeedSessions } from "@/lib/speed";
+import { loadShortGameSessions } from "@/lib/shortgame";
 import { precisionResult, groupScores } from "@/lib/precision";
 import { offTeeResult, analyseOffTee } from "@/lib/offtee";
 import { TOUR_LEVEL } from "@/lib/levels";
@@ -69,6 +70,16 @@ function ratingToHandicap(rating: number): number {
 function combinePuttingHandicap(shortHcp?: number, lagHcp?: number): number | undefined {
   if (shortHcp !== undefined && lagHcp !== undefined) return shortHcp * 0.6 + lagHcp * 0.4;
   return shortHcp ?? lagHcp;
+}
+
+/**
+ * Around the Green = Närspelstest (65 %) + Bunkerslag (35 %). Närspelstestet
+ * väger tyngre eftersom det är ett fullständigt 6-slagstest över flera
+ * avstånd, medan bunkerslag är ett smalare kompletterande delmoment.
+ */
+function combineAroundGreenHandicap(nearHcp?: number, bunkerHcp?: number): number | undefined {
+  if (nearHcp !== undefined && bunkerHcp !== undefined) return nearHcp * 0.65 + bunkerHcp * 0.35;
+  return nearHcp ?? bunkerHcp;
 }
 
 /**
@@ -158,6 +169,32 @@ function combinedPuttingSeries(asOf?: Date): { date: string; handicap: number }[
   });
 }
 
+/** Samma princip som combinedPuttingSeries, men för Around the Green (Närspel + Bunker). */
+function combinedAroundGreenSeries(asOf?: Date): { date: string; handicap: number }[] {
+  const nearEvents = upTo(loadShortGameSessions(), asOf).map((s) => ({
+    date: s.date,
+    kind: "near" as const,
+    handicap: s.handicap,
+  }));
+  const bunkerEvents = upTo(loadBunkerSessions(), asOf).map((s) => ({
+    date: s.date,
+    kind: "bunker" as const,
+    handicap: ratingToHandicap((TOUR_LEVEL.bunkerFeet / s.avgFeet) * 100),
+  }));
+  const events = byDateAsc([...nearEvents, ...bunkerEvents]);
+
+  let lastNear: number | undefined;
+  let lastBunker: number | undefined;
+  return events.map((e) => {
+    if (e.kind === "near") lastNear = e.handicap;
+    else lastBunker = e.handicap;
+    return {
+      date: e.date,
+      handicap: combineAroundGreenHandicap(lastNear, lastBunker) ?? e.handicap,
+    };
+  });
+}
+
 /**
  * Kategori-HCP, antingen just nu (utan argument) eller som de såg ut vid en
  * viss tidpunkt (asOf) – det senare används för att bygga utvecklingsgrafer
@@ -191,14 +228,16 @@ export function computeCategoryHandicaps(asOf?: Date): CategoryHandicap[] {
     latestScore: offtee.length ? offtee[offtee.length - 1].score : undefined,
   };
 
-  const bunkerHcps = bunker.map((s) => ratingToHandicap((TOUR_LEVEL.bunkerFeet / s.avgFeet) * 100));
+  const aroundGreenSeries = combinedAroundGreenSeries(asOf);
+  const aroundGreenHcps = aroundGreenSeries.map((p) => p.handicap);
+  const nearCount = upTo(loadShortGameSessions(), asOf).length;
   const aroundGreen: CategoryHandicap = {
     slug: "around-the-green",
     title: CATEGORY_LABELS["around-the-green"],
-    count: bunker.length,
-    handicap: bunkerHcps.length ? bunkerHcps[bunkerHcps.length - 1] : undefined,
-    trend: trendOf(bunkerHcps),
-    latestScore: undefined,
+    count: bunker.length + nearCount,
+    handicap: aroundGreenHcps.length ? aroundGreenHcps[aroundGreenHcps.length - 1] : undefined,
+    trend: trendOf(aroundGreenHcps),
+    latestScore: nearCount ? upTo(loadShortGameSessions(), asOf).at(-1)?.score : undefined,
   };
 
   const puttingSeries = combinedPuttingSeries(asOf);
@@ -402,6 +441,7 @@ function sessionDates(periodDays: number | null): string[] {
     ...loadPrecisionSessions().map((s) => s.date),
     ...loadOffTeeSessions().map((s) => s.date),
     ...loadBunkerSessions().map((s) => s.date),
+    ...loadShortGameSessions().map((s) => s.date),
     ...loadShortPuttSessions().map((s) => s.date),
     ...loadLagPuttSessions().map((s) => s.date),
     ...loadSpeedSessions().map((s) => s.date),
@@ -468,6 +508,7 @@ export function computeHistory(filter?: CategorySlug, limit = 200): HistoryEntry
   const precision = loadPrecisionSessions();
   const offtee = loadOffTeeSessions();
   const bunker = loadBunkerSessions();
+  const near = loadShortGameSessions();
   const putt = loadShortPuttSessions();
   const lag = loadLagPuttSessions();
 
@@ -491,6 +532,16 @@ export function computeHistory(filter?: CategorySlug, limit = 200): HistoryEntry
       scoreUnit: "/100",
       handicap: s.handicap,
       to: { slug: "driving", test: "offtee" },
+    })),
+    ...near.map((s) => ({
+      key: `near-${s.id}`,
+      categorySlug: "around-the-green" as const,
+      title: "Närspelstest",
+      date: s.date,
+      score: s.score,
+      scoreUnit: "/100",
+      handicap: s.handicap,
+      to: { slug: "around-the-green", test: "narspel" },
     })),
     ...bunker.map((s) => ({
       key: `bunker-${s.id}`,
@@ -757,12 +808,14 @@ function drivingDetailData(): CategoryDetailData {
 }
 
 function aroundGreenDetailData(): CategoryDetailData {
-  const sessions = loadBunkerSessions();
-  const last = sessions[sessions.length - 1];
-  if (!last) return { keyMetrics: [], strengths: [], improvements: [], heatmap: [] };
-  const allShots = sessions.flatMap((s) => s.shots);
+  const nearSessions = loadShortGameSessions();
+  const lastNear = nearSessions[nearSessions.length - 1];
+  const bunkerSessions = loadBunkerSessions();
+  const lastBunker = bunkerSessions[bunkerSessions.length - 1];
+
+  const allBunkerShots = bunkerSessions.flatMap((s) => s.shots);
   const byLie = new Map<string, { sum: number; count: number }>();
-  for (const s of allShots) {
+  for (const s of allBunkerShots) {
     const cur = byLie.get(s.lie) ?? { sum: 0, count: 0 };
     cur.sum += s.feet;
     cur.count += 1;
@@ -772,21 +825,44 @@ function aroundGreenDetailData(): CategoryDetailData {
     lie,
     avg: sum / count,
   }));
-  const best = lieStats.length ? [...lieStats].sort((a, b) => a.avg - b.avg)[0] : undefined;
-  const worst = lieStats.length ? [...lieStats].sort((a, b) => b.avg - a.avg)[0] : undefined;
+  const bestLie = lieStats.length ? [...lieStats].sort((a, b) => a.avg - b.avg)[0] : undefined;
+  const worstLie = lieStats.length ? [...lieStats].sort((a, b) => b.avg - a.avg)[0] : undefined;
+
   const keyMetrics = [
-    { label: "Senaste snitt", value: `${last.avgFeet.toFixed(1)} fot` },
-    { label: "Antal slag senaste test", value: `${last.shots.length}` },
+    ...(lastNear
+      ? [
+          { label: "Närspel HCP", value: hcpLabel(lastNear.handicap) },
+          { label: "Snitt från hål", value: `${lastNear.avgProximity.toFixed(2)} m` },
+        ]
+      : []),
+    ...(lastBunker
+      ? [{ label: "Bunker senaste snitt", value: `${lastBunker.avgFeet.toFixed(1)} fot` }]
+      : []),
   ];
-  const strengths = best
-    ? [`Bäst från ${best.lie.toLowerCase()} (snitt ${best.avg.toFixed(1)} fot).`]
-    : [];
-  const improvements = worst
-    ? [`${worst.lie} är svårast (snitt ${worst.avg.toFixed(1)} fot).`]
-    : [];
+
+  const strengths: string[] = [];
+  const improvements: string[] = [];
+  if (lastNear && lastNear.avgProximity <= 1.5) {
+    strengths.push(
+      `Stark närspelskontroll – snitt ${lastNear.avgProximity.toFixed(2)} m från hål i Närspelstestet.`,
+    );
+  } else if (lastNear) {
+    improvements.push(
+      `Snitt ${lastNear.avgProximity.toFixed(2)} m från hål i Närspelstestet – störst chans att sänka HCP snabbt.`,
+    );
+  }
+  if (bestLie)
+    strengths.push(
+      `Bäst från ${bestLie.lie.toLowerCase()} i bunker (snitt ${bestLie.avg.toFixed(1)} fot).`,
+    );
+  if (worstLie)
+    improvements.push(
+      `${worstLie.lie} är svårast i bunker (snitt ${worstLie.avg.toFixed(1)} fot).`,
+    );
+
   return {
-    strength: best?.lie,
-    limitation: worst?.lie,
+    strength: strengths[0],
+    limitation: improvements[0],
     keyMetrics,
     strengths,
     improvements,
@@ -920,15 +996,11 @@ function categorySessionSeries(): Record<CategorySlug, CategorySessionPoint[]> {
     .filter((s): s is PrecisionSession & { handicap: number } => typeof s.handicap === "number")
     .map((s) => ({ date: s.date, handicap: s.handicap }));
   const offtee = loadOffTeeSessions().map((s) => ({ date: s.date, handicap: s.handicap }));
-  const bunker = loadBunkerSessions().map((s) => ({
-    date: s.date,
-    handicap: ratingToHandicap((TOUR_LEVEL.bunkerFeet / s.avgFeet) * 100),
-  }));
   const speed = loadSpeedSessions().map((s) => ({ date: s.date, handicap: s.handicap }));
   return {
     approach: byDateAsc(precision),
     driving: byDateAsc(offtee),
-    "around-the-green": byDateAsc(bunker),
+    "around-the-green": byDateAsc(combinedAroundGreenSeries()),
     puttning: byDateAsc(combinedPuttingSeries()),
     speed: byDateAsc(speed),
   };

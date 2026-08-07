@@ -9,6 +9,7 @@ import { loadOffTeeSessions } from "@/lib/offtee-store";
 
 import { loadPitchSessions } from "@/lib/pitch";
 import { loadChipSessions } from "@/lib/chip";
+import { loadShortGameSessions } from "@/lib/shortgame";
 import { loadShortPuttSessions } from "@/lib/shortputt";
 import { loadLagPuttSessions } from "@/lib/lagputt";
 import { loadTornadoSessions } from "@/lib/tornado";
@@ -161,6 +162,20 @@ export const PROGRESS_TESTS: ProgressTest[] = [
     load: () =>
       loadChipSessions()
         .map((s) => ({ date: day(s.date), value: s.avgFeet }))
+        .sort(byDate),
+  },
+  {
+    id: "narspel",
+    title: "Närspelstest",
+    categorySlug: "around-the-green",
+    to: "/narspel",
+    metric: "Snitt från hål",
+    unit: "m",
+    higherIsBetter: false,
+    decimals: 2,
+    load: () =>
+      loadShortGameSessions()
+        .map((s) => ({ date: day(s.date), value: s.avgProximity }))
         .sort(byDate),
   },
   {

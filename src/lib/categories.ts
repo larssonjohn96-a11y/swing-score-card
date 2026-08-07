@@ -12,6 +12,8 @@ export type CategoryTest = {
     | "/offtee"
     | "/pitch"
     | "/chip"
+    | "/narspel"
+    | "/narspel-test"
     | "/kortputt"
     | "/short-putting-test"
     | "/tornado"
@@ -98,26 +100,15 @@ export const CATEGORIES: Category[] = [
         result: "RESULTAT: MÄT AVSTÅNDET TILL HÅLET I FOT",
       },
       {
-        to: "/pitch",
+        to: "/narspel-test",
         number: "12",
-        title: "Pitch",
-        subtitle: "6 slag – 8 till 18 m",
+        title: "Närspelstest",
+        subtitle: "6 slag – 8 till 20 meter, fri teknik",
         bullets: [
-          "Sex pitchar från 8, 12, 16, 10, 14 och 18 meter.",
-          "Mät avståndet till hålet i meter.",
+          "Chip, pitch eller wedge – du väljer teknik, resultatet räknas.",
+          "Registrera hur nära hålet bollen stannade som ett intervall.",
         ],
-        result: "RESULTAT: MÄT AVSTÅNDET TILL HÅLET I METER",
-      },
-      {
-        to: "/chip",
-        number: "13",
-        title: "Chippar",
-        subtitle: "6 slag – 8 till 18 m",
-        bullets: [
-          "Sex chippar från 8, 12, 16, 10, 14 och 18 meter.",
-          "Mät avståndet till hålet i fot.",
-        ],
-        result: "RESULTAT: MÄT AVSTÅNDET TILL HÅLET I FOT",
+        result: "RESULTAT: NÄRSPEL HCP + SPRIDNINGSBILD",
       },
     ],
   },

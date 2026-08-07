@@ -19,6 +19,8 @@ import { Route as KontoRouteImport } from './routes/konto'
 import { Route as KortputtRouteImport } from './routes/kortputt'
 import { Route as LagputtRouteImport } from './routes/lagputt'
 import { Route as LongdriveRouteImport } from './routes/longdrive'
+import { Route as NarspelRouteImport } from './routes/narspel'
+import { Route as NarspelTestRouteImport } from './routes/narspel-test'
 import { Route as OffteeRouteImport } from './routes/offtee'
 import { Route as OffteeTestRouteImport } from './routes/offtee-test'
 import { Route as PitchRouteImport } from './routes/pitch'
@@ -87,6 +89,16 @@ const LagputtRoute = LagputtRouteImport.update({
 const LongdriveRoute = LongdriveRouteImport.update({
   id: '/longdrive',
   path: '/longdrive',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NarspelRoute = NarspelRouteImport.update({
+  id: '/narspel',
+  path: '/narspel',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NarspelTestRoute = NarspelTestRouteImport.update({
+  id: '/narspel-test',
+  path: '/narspel-test',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OffteeRoute = OffteeRouteImport.update({
@@ -196,6 +208,8 @@ export interface FileRoutesByFullPath {
   '/kortputt': typeof KortputtRoute
   '/lagputt': typeof LagputtRoute
   '/longdrive': typeof LongdriveRoute
+  '/narspel': typeof NarspelRoute
+  '/narspel-test': typeof NarspelTestRoute
   '/offtee': typeof OffteeRoute
   '/offtee-test': typeof OffteeTestRoute
   '/pitch': typeof PitchRoute
@@ -227,6 +241,8 @@ export interface FileRoutesByTo {
   '/kortputt': typeof KortputtRoute
   '/lagputt': typeof LagputtRoute
   '/longdrive': typeof LongdriveRoute
+  '/narspel': typeof NarspelRoute
+  '/narspel-test': typeof NarspelTestRoute
   '/offtee': typeof OffteeRoute
   '/offtee-test': typeof OffteeTestRoute
   '/pitch': typeof PitchRoute
@@ -259,6 +275,8 @@ export interface FileRoutesById {
   '/kortputt': typeof KortputtRoute
   '/lagputt': typeof LagputtRoute
   '/longdrive': typeof LongdriveRoute
+  '/narspel': typeof NarspelRoute
+  '/narspel-test': typeof NarspelTestRoute
   '/offtee': typeof OffteeRoute
   '/offtee-test': typeof OffteeTestRoute
   '/pitch': typeof PitchRoute
@@ -292,6 +310,8 @@ export interface FileRouteTypes {
     | '/kortputt'
     | '/lagputt'
     | '/longdrive'
+    | '/narspel'
+    | '/narspel-test'
     | '/offtee'
     | '/offtee-test'
     | '/pitch'
@@ -323,6 +343,8 @@ export interface FileRouteTypes {
     | '/kortputt'
     | '/lagputt'
     | '/longdrive'
+    | '/narspel'
+    | '/narspel-test'
     | '/offtee'
     | '/offtee-test'
     | '/pitch'
@@ -354,6 +376,8 @@ export interface FileRouteTypes {
     | '/kortputt'
     | '/lagputt'
     | '/longdrive'
+    | '/narspel'
+    | '/narspel-test'
     | '/offtee'
     | '/offtee-test'
     | '/pitch'
@@ -386,6 +410,8 @@ export interface RootRouteChildren {
   KortputtRoute: typeof KortputtRoute
   LagputtRoute: typeof LagputtRoute
   LongdriveRoute: typeof LongdriveRoute
+  NarspelRoute: typeof NarspelRoute
+  NarspelTestRoute: typeof NarspelTestRoute
   OffteeRoute: typeof OffteeRoute
   OffteeTestRoute: typeof OffteeTestRoute
   PitchRoute: typeof PitchRoute
@@ -475,6 +501,20 @@ declare module '@tanstack/react-router' {
       path: '/longdrive'
       fullPath: '/longdrive'
       preLoaderRoute: typeof LongdriveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/narspel': {
+      id: '/narspel'
+      path: '/narspel'
+      fullPath: '/narspel'
+      preLoaderRoute: typeof NarspelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/narspel-test': {
+      id: '/narspel-test'
+      path: '/narspel-test'
+      fullPath: '/narspel-test'
+      preLoaderRoute: typeof NarspelTestRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/offtee': {
@@ -648,6 +688,8 @@ const rootRouteChildren: RootRouteChildren = {
   KortputtRoute: KortputtRoute,
   LagputtRoute: LagputtRoute,
   LongdriveRoute: LongdriveRoute,
+  NarspelRoute: NarspelRoute,
+  NarspelTestRoute: NarspelTestRoute,
   OffteeRoute: OffteeRoute,
   OffteeTestRoute: OffteeTestRoute,
   PitchRoute: PitchRoute,
