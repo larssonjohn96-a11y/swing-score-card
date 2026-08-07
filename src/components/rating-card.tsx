@@ -10,6 +10,19 @@ import {
   type RatingCardData,
 } from "@/lib/rating-card";
 import { hcpLabel, loadRealHandicap, saveRealHandicap } from "@/lib/sg-handicap";
+import { flagForCountry } from "@/lib/countries";
+
+/**
+ * Sköldformad kortkontur (som ett samlarkort), definierad i objectBoundingBox-
+ * enheter (0–1) så samma path funkar oavsett kortets faktiska pixelstorlek.
+ * Används både på ramen (tier-färgad) och innehållsytan (pärmfärgad), där
+ * innehållsytan är något mindre (via padding) för att skapa ram-effekten.
+ */
+const SHIELD_PATH =
+  "M 0.5 0.02 C 0.36 0.02 0.32 0.09 0.18 0.09 C 0.06 0.09 0.02 0.14 0.02 0.20 " +
+  "L 0.02 0.82 C 0.02 0.90 0.10 0.95 0.22 0.97 C 0.34 0.99 0.42 1.0 0.5 1.0 " +
+  "C 0.58 1.0 0.66 0.99 0.78 0.97 C 0.90 0.95 0.98 0.90 0.98 0.82 " +
+  "L 0.98 0.20 C 0.98 0.14 0.94 0.09 0.82 0.09 C 0.68 0.09 0.64 0.02 0.5 0.02 Z";
 
 const TIER_STYLES: Record<
   CardTier["key"],
@@ -115,6 +128,7 @@ export function PlayerCard({
   const TierIcon = style.icon;
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(data.real !== null ? String(data.real) : "");
+  const flag = flagForCountry(profile.country);
 
   function save() {
     const n = Number(draft.replace(",", "."));
@@ -123,122 +137,138 @@ export function PlayerCard({
   }
 
   return (
-    <article
-      className={`relative overflow-hidden rounded-[1.75rem] border-2 bg-gradient-to-b p-5 text-card-ink shadow-glow ${style.shell} ${style.ring}`}
-    >
-      <div className="flex flex-col items-center text-center">
-        <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-2xl bg-card-ink/10">
-          {profile.photo ? (
-            <img
-              src={profile.photo}
-              alt={`Profilbild för ${playerName}`}
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <User className="h-12 w-12 opacity-70" strokeWidth={1.2} />
-          )}
-        </div>
-        <p className="mt-3 font-display text-2xl uppercase tracking-[0.12em]">{playerName}</p>
-        {profile.club && (
-          <p className="mt-0.5 text-xs font-semibold uppercase tracking-[0.15em] opacity-80">
-            Hemmaklubb: {profile.club}
-          </p>
-        )}
-        {(profile.country || profile.ageClass) && (
-          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.15em] opacity-70">
-            {[profile.country ? `Land: ${profile.country}` : null, profile.ageClass]
-              .filter(Boolean)
-              .join(" · ")}
-          </p>
-        )}
-      </div>
-
-      <div className={`mt-4 flex items-center justify-center gap-8 border-t pt-4 ${style.ring}`}>
-        <div className="text-center">
-          <div className="flex items-center justify-center gap-1.5">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] opacity-70">
-              Real HCP
-            </p>
-            {onSaveHandicap && !editing && (
-              <button
-                type="button"
-                onClick={() => {
-                  setDraft(data.real !== null ? String(data.real) : "");
-                  setEditing(true);
-                }}
-                aria-label="Redigera verkligt handicap"
-                className="opacity-70 transition-opacity hover:opacity-100"
-              >
-                <Pencil className="h-3 w-3" />
-              </button>
-            )}
-          </div>
-          {editing ? (
-            <div className="mt-1 flex items-center justify-center gap-1.5">
-              <input
-                type="number"
-                inputMode="decimal"
-                step="0.1"
-                autoFocus
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && save()}
-                className="w-20 rounded-lg border border-card-ink/30 bg-transparent px-2 py-0.5 text-center font-display text-3xl leading-none text-card-ink outline-none focus:border-card-ink"
-              />
-              <button
-                type="button"
-                onClick={save}
-                aria-label="Spara"
-                className={`flex h-7 w-7 items-center justify-center rounded-full ${style.accent} bg-card-ink/10`}
-              >
-                <Check className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          ) : (
-            <p className="mt-0.5 font-display text-5xl leading-none">
-              {data.real !== null ? hcpLabel(data.real) : "–"}
-            </p>
-          )}
-        </div>
-        {data.estimated !== undefined && (
-          <div className="text-center">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] opacity-70">
-              Est. HCP
-            </p>
-            <p className="mt-0.5 font-display text-2xl leading-none opacity-80">
-              {hcpLabel(data.estimated)}
-            </p>
-          </div>
-        )}
-      </div>
-
-      <div className={`mt-4 flex items-center justify-center gap-2 border-t pt-3 ${style.ring}`}>
-        <TierIcon className={`h-4 w-4 ${style.accent}`} strokeWidth={1.5} />
-        <p className="text-xs font-semibold uppercase tracking-[0.15em] opacity-80">
-          Rating {data.rating} · {data.tier.label}
-        </p>
-      </div>
-
-      <div className={`mt-4 space-y-2 border-t pt-3 ${style.ring}`}>
-        {data.stats.map((s) => (
-          <div key={s.key} className="flex items-center justify-between text-sm">
-            <span className="opacity-80">{s.label}</span>
-            <span className="font-display text-lg leading-none">{s.value ?? "–"}</span>
-          </div>
-        ))}
-      </div>
+    <div className="relative mx-auto" style={{ maxWidth: 260 }}>
+      {/* Delad sköld-klippbana, definieras en gång och återanvänds på ram + innehåll. */}
+      <svg width="0" height="0" className="absolute">
+        <defs>
+          <clipPath id="sg4-shield" clipPathUnits="objectBoundingBox">
+            <path d={SHIELD_PATH} />
+          </clipPath>
+        </defs>
+      </svg>
 
       <div
-        className={`mt-4 flex items-center justify-between border-t pt-3 text-[10px] uppercase tracking-[0.15em] opacity-80 ${style.ring}`}
+        className={`bg-gradient-to-b p-[7px] shadow-glow ${style.shell}`}
+        style={{ clipPath: "url(#sg4-shield)" }}
       >
-        <span>{data.testCount} tester</span>
-        <span>
-          {data.lastUpdated
-            ? `Senast uppd. ${new Date(data.lastUpdated).toLocaleDateString("sv-SE")}`
-            : "Inga tester än"}
-        </span>
+        <div
+          className="flex flex-col items-center bg-[#f7f2e4] px-5 pb-6 pt-9 text-[#2b2213]"
+          style={{ clipPath: "url(#sg4-shield)" }}
+        >
+          <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl bg-[#2b2213]/10">
+            {profile.photo ? (
+              <img
+                src={profile.photo}
+                alt={`Profilbild för ${playerName}`}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <User className="h-10 w-10 opacity-60" strokeWidth={1.2} />
+            )}
+          </div>
+          <p className="mt-3 flex items-center gap-1.5 font-display text-xl uppercase tracking-[0.1em]">
+            {flag && <span aria-hidden>{flag}</span>}
+            {playerName}
+          </p>
+          {profile.club && (
+            <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-[0.15em] opacity-70">
+              Hemmaklubb: {profile.club}
+            </p>
+          )}
+          {(profile.country || profile.ageClass) && (
+            <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.15em] opacity-60">
+              {[profile.country ? `Land: ${profile.country}` : null, profile.ageClass]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+          )}
+
+          <div className="mt-3 flex items-center justify-center gap-6 border-t border-[#2b2213]/15 pt-3">
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-1.5">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.2em] opacity-60">
+                  Real HCP
+                </p>
+                {onSaveHandicap && !editing && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDraft(data.real !== null ? String(data.real) : "");
+                      setEditing(true);
+                    }}
+                    aria-label="Redigera verkligt handicap"
+                    className="opacity-60 transition-opacity hover:opacity-100"
+                  >
+                    <Pencil className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+              {editing ? (
+                <div className="mt-1 flex items-center justify-center gap-1.5">
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    step="0.1"
+                    autoFocus
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && save()}
+                    className="w-16 rounded-lg border border-[#2b2213]/30 bg-transparent px-2 py-0.5 text-center font-display text-2xl leading-none outline-none focus:border-[#2b2213]"
+                  />
+                  <button
+                    type="button"
+                    onClick={save}
+                    aria-label="Spara"
+                    className={`flex h-6 w-6 items-center justify-center rounded-full ${style.accent} bg-[#2b2213]/10`}
+                  >
+                    <Check className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <p className="mt-0.5 font-display text-4xl leading-none">
+                  {data.real !== null ? hcpLabel(data.real) : "–"}
+                </p>
+              )}
+            </div>
+            {data.estimated !== undefined && (
+              <div className="text-center">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.2em] opacity-60">
+                  Est. HCP
+                </p>
+                <p className="mt-0.5 font-display text-xl leading-none opacity-70">
+                  {hcpLabel(data.estimated)}
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div className="mt-3 flex items-center justify-center gap-2 border-t border-[#2b2213]/15 pt-2.5">
+            <TierIcon className={`h-3.5 w-3.5 ${style.accent}`} strokeWidth={1.5} />
+            <p className="text-[11px] font-semibold uppercase tracking-[0.15em] opacity-70">
+              Rating {data.rating} · {data.tier.label}
+            </p>
+          </div>
+
+          <div className="mt-3 w-full space-y-1.5 border-t border-[#2b2213]/15 pt-2.5">
+            {data.stats.map((s) => (
+              <div key={s.key} className="flex items-center justify-between text-xs">
+                <span className="opacity-70">{s.label}</span>
+                <span className="font-display text-base leading-none">{s.value ?? "–"}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-3 flex w-full items-center justify-between border-t border-[#2b2213]/15 pt-2.5 text-[9px] uppercase tracking-[0.15em] opacity-60">
+            <span>{data.testCount} tester</span>
+            <span>
+              {data.lastUpdated
+                ? `Uppd. ${new Date(data.lastUpdated).toLocaleDateString("sv-SE")}`
+                : "Inga tester än"}
+            </span>
+          </div>
+        </div>
       </div>
-    </article>
+    </div>
   );
 }
 
