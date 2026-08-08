@@ -117,6 +117,14 @@ function StoryModal({ onClose }: { onClose: () => void }) {
 
       <div key={index} className="relative flex flex-1 flex-col overflow-hidden px-6 pb-8 pt-10">
         <ActiveSlide onCta={handleCta} />
+        {index === 0 && (
+          <span
+            className="animate-in fade-in pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/30 duration-500"
+            style={{ animationDelay: "900ms", animationFillMode: "both" }}
+          >
+            <ChevronRight className="h-7 w-7 animate-pulse" strokeWidth={1.5} />
+          </span>
+        )}
       </div>
 
       {/* Osynliga tryckzoner: vänster = föregående, höger = nästa */}
@@ -181,14 +189,6 @@ function Slide1Test() {
 
       <p className="animate-in fade-in mt-6 text-xs font-semibold uppercase tracking-[0.25em] text-white/40 delay-500 duration-500">
         Samma tester. Varje gång.
-      </p>
-
-      <p
-        className="animate-in fade-in mt-8 flex items-center gap-1.5 text-xs font-medium text-white/40 duration-500"
-        style={{ animationDelay: "900ms", animationFillMode: "both" }}
-      >
-        Tryck höger för att fortsätta
-        <ChevronRight className="h-3.5 w-3.5 animate-pulse" />
       </p>
     </div>
   );
