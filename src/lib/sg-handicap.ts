@@ -1032,7 +1032,10 @@ export function computeCategoryCardStats(periodDays: number): CategoryCardStat[]
     const points = series[slug];
     if (!points.length) return { slug, title, hasData: false };
 
-    const estHcp = rollingAverage(points.map((p) => p.handicap));
+    // Samma värde som computeCategoryHandicaps() (startsidan, detaljsidan): senaste
+    // enskilda testets HCP – inte ett rullande snitt – så samma kategori alltid
+    // visar samma siffra oavsett var i appen man tittar.
+    const estHcp = points[points.length - 1].handicap;
     const cutoff = new Date(Date.now() - periodDays * 24 * 60 * 60 * 1000);
     const pastEst = rollingAverageAsOf(points, cutoff);
     const change =
