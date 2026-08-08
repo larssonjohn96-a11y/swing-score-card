@@ -13,6 +13,8 @@ export type OpenProfile = {
   subtitle?: string;
   hcp: number;
   categoryHcp: Record<CategorySlug, number>;
+  /** initialer som visas som en enkel "profilbild" tills ett riktigt foto finns */
+  initials: string;
   /** blå bock, som en verifierad profil på sociala medier */
   verified?: boolean;
   /** guldram + guld bock istället för blå – för framtida betalprofiler */
@@ -32,6 +34,7 @@ export const OPEN_PROFILES: OpenProfile[] = [
       puttning: 5.5,
       speed: 2,
     },
+    initials: "PS",
     verified: true,
   },
 ];

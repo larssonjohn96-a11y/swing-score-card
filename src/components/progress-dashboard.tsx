@@ -129,6 +129,10 @@ type CompareTarget = {
   isFriend?: boolean;
   /** för riktiga vänner: exakt HCP per kategori istället för samma tal på alla axlar */
   categoryHcp?: Partial<Record<CategorySlug, number>>;
+  avatarUrl?: string;
+  initials?: string;
+  verified?: boolean;
+  premium?: boolean;
 };
 
 const DEFAULT_TARGET: CompareTarget = {
@@ -192,11 +196,34 @@ export function RadarCard({
           onClick={() => setPickerOpen(true)}
           className="flex flex-col items-center gap-1.5"
         >
-          <span className="relative flex h-16 w-16 items-center justify-center rounded-full border-2 border-dashed border-chart-3 bg-chart-3/10">
-            <User className="h-7 w-7 text-chart-3" strokeWidth={1.5} />
-            <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-chart-3 text-background">
-              <Plus className="h-3.5 w-3.5" />
-            </span>
+          <span
+            className={`relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-2 ${
+              target.premium ? "border-[#d4af37]" : "border-chart-3"
+            } ${target.avatarUrl || target.initials ? "bg-chart-3/5" : "bg-chart-3/10"}`}
+          >
+            {target.avatarUrl ? (
+              <img src={target.avatarUrl} alt="" className="h-full w-full object-cover" />
+            ) : target.initials ? (
+              <span className="font-[family-name:var(--font-display)] text-xl text-chart-3">
+                {target.initials}
+              </span>
+            ) : (
+              <User className="h-7 w-7 text-chart-3" strokeWidth={1.5} />
+            )}
+            {target.verified || target.premium ? (
+              <BadgeCheck
+                className={`absolute -bottom-0.5 -right-0.5 h-6 w-6 rounded-full bg-background ${
+                  target.premium ? "text-[#d4af37]" : "text-chart-4"
+                }`}
+                fill="currentColor"
+                stroke="var(--background)"
+                strokeWidth={2}
+              />
+            ) : (
+              <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-chart-3 text-background">
+                <Plus className="h-3.5 w-3.5" />
+              </span>
+            )}
           </span>
           <p className="max-w-[5rem] truncate text-xs font-semibold text-muted-foreground">
             {target.isFriend
@@ -402,6 +429,7 @@ function SelectPlayerSheet({
       hcp: snap.estHcp ?? snap.realHcp ?? 18,
       isFriend: true,
       categoryHcp: snap.categoryHcp,
+      avatarUrl: f.other.avatarUrl ?? undefined,
     });
     onOpenChange(false);
   }
@@ -412,12 +440,21 @@ function SelectPlayerSheet({
       hcp: p.estHcp ?? p.realHcp ?? 18,
       isFriend: true,
       categoryHcp: p.categoryHcp,
+      avatarUrl: p.avatarUrl ?? undefined,
     });
     onOpenChange(false);
   }
 
   function pickOpenProfile(p: OpenProfile) {
-    onPick({ label: p.name, hcp: p.hcp, isFriend: true, categoryHcp: p.categoryHcp });
+    onPick({
+      label: p.name,
+      hcp: p.hcp,
+      isFriend: true,
+      categoryHcp: p.categoryHcp,
+      initials: p.initials,
+      verified: p.verified,
+      premium: p.premium,
+    });
     onOpenChange(false);
   }
 
