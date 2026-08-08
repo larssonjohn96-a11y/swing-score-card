@@ -164,6 +164,54 @@ export async function pushPlayerSnapshot(): Promise<void> {
   });
 }
 
+/**
+ * Öppna referensprofiler ("kändisprofiler") som vem som helst inloggad kan
+ * jämföra sig mot, utan vänförfrågan. Opt-in per rad – ingen är publik som
+ * standard. Ingen adminyta för att skapa dem finns ännu; att markera en
+ * profil som publik görs idag genom att den kontots ägare själv kör
+ * setOwnSnapshotPublic(true), eller manuellt i databasen.
+ */
+export async function listPublicSnapshots(): Promise<
+  (PlayerSnapshot & { displayName: string; avatarUrl: string | null })[]
+> {
+  const { data, error } = await supabase
+    .from("player_snapshots")
+    .select("*, profiles!inner(display_name, avatar_url)")
+    .eq("is_public", true);
+  if (error || !data) return [];
+  return data.map((d) => ({
+    userId: d.user_id,
+    rating: d.rating,
+    tierKey: d.tier_key,
+    realHcp: d.real_hcp,
+    estHcp: d.est_hcp,
+    categoryHcp: {
+      approach: d.approach_hcp ?? undefined,
+      driving: d.driving_hcp ?? undefined,
+      "around-the-green": d.around_green_hcp ?? undefined,
+      puttning: d.putting_hcp ?? undefined,
+      speed: d.speed_hcp ?? undefined,
+    },
+    testCount: d.test_count,
+    updatedAt: d.updated_at,
+    // @ts-expect-error -- joined via profiles!inner, not part of the base Row type
+    displayName: d.profiles?.display_name ?? "Okänd",
+    // @ts-expect-error -- joined via profiles!inner, not part of the base Row type
+    avatarUrl: d.profiles?.avatar_url ?? null,
+  }));
+}
+
+/** Gör (eller slutar göra) det egna spelarkortet synligt för alla inloggade, utan vänskap. */
+export async function setOwnSnapshotPublic(isPublic: boolean): Promise<boolean> {
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData.user) return false;
+  const { error } = await supabase
+    .from("player_snapshots")
+    .update({ is_public: isPublic })
+    .eq("user_id", userData.user.id);
+  return !error;
+}
+
 /** Hämtar en väns spelarkorts-ögonblicksbild. RLS ser till att det bara funkar för
  *  accepterade vänner (annars kommer raden inte tillbaka alls). */
 export async function fetchFriendSnapshot(userId: string): Promise<PlayerSnapshot | null> {

@@ -104,14 +104,50 @@ export function hcpLabel(hcp: number): string {
   return hcp < 0 ? `+${v}` : v;
 }
 
-/** Jämförelsenivåer för spindeldiagrammet – handicap, inte spelare. */
-export const BENCHMARK_LEVELS: { label: string; hcp: number }[] = [
-  { label: "30", hcp: 30 },
-  { label: "20", hcp: 20 },
-  { label: "10", hcp: 10 },
-  { label: "0", hcp: SCRATCH_HANDICAP },
-  { label: "+3", hcp: -3 },
-  { label: "Tour", hcp: ELITE_HANDICAP },
+/**
+ * Jämförelsenivåer för spindeldiagrammet – handicap, inte spelare.
+ *
+ * categoryHcp ger en realistisk, ojämn profil per nivå istället för samma
+ * platta tal på alla axlar: tour-spelare särskiljer sig mest i längd/fart,
+ * medan scratch-spelare är förhållandevis balanserade. Grundat på samma
+ * kalibreringsdata som redan används för respektive tests egna HCP-skalor
+ * i den här filen – en rimlig uppskattning, inte en exakt mätning.
+ */
+export const BENCHMARK_LEVELS: {
+  label: string;
+  hcp: number;
+  categoryHcp: Record<CategorySlug, number>;
+}[] = [
+  {
+    label: "30",
+    hcp: 30,
+    categoryHcp: { approach: 28, driving: 26, "around-the-green": 32, puttning: 30, speed: 28 },
+  },
+  {
+    label: "20",
+    hcp: 20,
+    categoryHcp: { approach: 19, driving: 17, "around-the-green": 21, puttning: 19, speed: 18 },
+  },
+  {
+    label: "10",
+    hcp: 10,
+    categoryHcp: { approach: 9, driving: 8, "around-the-green": 10, puttning: 9, speed: 9 },
+  },
+  {
+    label: "0",
+    hcp: SCRATCH_HANDICAP,
+    categoryHcp: { approach: 0, driving: -1, "around-the-green": 1, puttning: 0, speed: 0 },
+  },
+  {
+    label: "+3",
+    hcp: -3,
+    categoryHcp: { approach: -3, driving: -4, "around-the-green": -2, puttning: -3, speed: -4 },
+  },
+  {
+    label: "Tour",
+    hcp: ELITE_HANDICAP,
+    categoryHcp: { approach: -6, driving: -7, "around-the-green": -5, puttning: -6, speed: -8 },
+  },
 ];
 
 /** Trend = senaste värdet minus värdet i början av de senaste n testen. Negativt = förbättring. */

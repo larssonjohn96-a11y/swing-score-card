@@ -104,6 +104,7 @@ export type Database = {
           around_green_hcp: number | null;
           driving_hcp: number | null;
           est_hcp: number | null;
+          is_public: boolean;
           putting_hcp: number | null;
           rating: number;
           real_hcp: number | null;
@@ -118,6 +119,7 @@ export type Database = {
           around_green_hcp?: number | null;
           driving_hcp?: number | null;
           est_hcp?: number | null;
+          is_public?: boolean;
           putting_hcp?: number | null;
           rating: number;
           real_hcp?: number | null;
@@ -132,6 +134,7 @@ export type Database = {
           around_green_hcp?: number | null;
           driving_hcp?: number | null;
           est_hcp?: number | null;
+          is_public?: boolean;
           putting_hcp?: number | null;
           rating?: number;
           real_hcp?: number | null;

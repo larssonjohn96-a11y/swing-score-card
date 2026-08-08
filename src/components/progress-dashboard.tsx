@@ -23,6 +23,7 @@ import { useAuth } from "@/hooks/use-auth";
 import {
   fetchFriendSnapshot,
   listFriendships,
+  listPublicSnapshots,
   removeFriendship,
   respondToFriendRequest,
   searchProfiles,
@@ -129,7 +130,11 @@ type CompareTarget = {
   categoryHcp?: Partial<Record<CategorySlug, number>>;
 };
 
-const DEFAULT_TARGET: CompareTarget = { label: "0", hcp: BENCHMARK_LEVELS[3].hcp };
+const DEFAULT_TARGET: CompareTarget = {
+  label: "0",
+  hcp: BENCHMARK_LEVELS[3].hcp,
+  categoryHcp: BENCHMARK_LEVELS[3].categoryHcp,
+};
 
 /** Alltid synliga genvägar, en delmängd av BENCHMARK_LEVELS. */
 const QUICK_LEVELS = BENCHMARK_LEVELS.filter((l) => ["20", "10", "0", "Tour"].includes(l.label));
@@ -207,7 +212,7 @@ export function RadarCard({
           <button
             key={l.label}
             type="button"
-            onClick={() => setTarget({ label: l.label, hcp: l.hcp })}
+            onClick={() => setTarget({ label: l.label, hcp: l.hcp, categoryHcp: l.categoryHcp })}
             className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
               !target.isFriend && target.hcp === l.hcp
                 ? "border-chart-3 bg-chart-3 text-background"
@@ -317,6 +322,9 @@ function SelectPlayerSheet({
   const [accepted, setAccepted] = useState<Friendship[]>([]);
   const [incoming, setIncoming] = useState<Friendship[]>([]);
   const [outgoing, setOutgoing] = useState<Friendship[]>([]);
+  const [publicProfiles, setPublicProfiles] = useState<
+    Awaited<ReturnType<typeof listPublicSnapshots>>
+  >([]);
   const [searchResults, setSearchResults] = useState<Profile[]>([]);
   const [searching, setSearching] = useState(false);
   const [sentTo, setSentTo] = useState<Set<string>>(new Set());
@@ -328,6 +336,7 @@ function SelectPlayerSheet({
       setIncoming(r.incoming);
       setOutgoing(r.outgoing);
     });
+    void listPublicSnapshots().then(setPublicProfiles);
   }, [user]);
 
   useEffect(() => {
@@ -363,6 +372,16 @@ function SelectPlayerSheet({
     onOpenChange(false);
   }
 
+  function pickPublicProfile(p: Awaited<ReturnType<typeof listPublicSnapshots>>[number]) {
+    onPick({
+      label: p.displayName,
+      hcp: p.estHcp ?? p.realHcp ?? 18,
+      isFriend: true,
+      categoryHcp: p.categoryHcp,
+    });
+    onOpenChange(false);
+  }
+
   async function handleSendRequest(profileId: string) {
     const ok = await sendFriendRequest(profileId);
     if (ok) setSentTo((prev) => new Set(prev).add(profileId));
@@ -380,7 +399,7 @@ function SelectPlayerSheet({
   const filteredFriends = friends.filter((f) => !q || f.name.toLowerCase().includes(q));
 
   function pickLevel(l: (typeof BENCHMARK_LEVELS)[number]) {
-    onPick({ label: l.label, hcp: l.hcp });
+    onPick({ label: l.label, hcp: l.hcp, categoryHcp: l.categoryHcp });
     onOpenChange(false);
   }
 
@@ -436,6 +455,32 @@ function SelectPlayerSheet({
             <p className="px-3 py-2 text-sm text-muted-foreground">Inga träffar.</p>
           )}
         </div>
+
+        {user && publicProfiles.length > 0 && (
+          <>
+            <p className="mt-5 text-xs uppercase tracking-[0.2em] text-muted-foreground">
+              Öppna profiler
+            </p>
+            <div className="mt-2 space-y-1">
+              {publicProfiles.map((p) => (
+                <button
+                  key={p.userId}
+                  onClick={() => pickPublicProfile(p)}
+                  className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-left transition-colors hover:bg-muted"
+                >
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-sand/15">
+                    {p.avatarUrl ? (
+                      <img src={p.avatarUrl} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <User className="h-4 w-4 text-sand" />
+                    )}
+                  </span>
+                  <span className="font-medium">{p.displayName}</span>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
 
         {user ? (
           <>
