@@ -3,7 +3,6 @@ import { Link } from "@tanstack/react-router";
 import { Plus, Search, TrendingDown, TrendingUp, User, X } from "lucide-react";
 import {
   CartesianGrid,
-  ComposedChart,
   Line,
   LineChart,
   PolarAngleAxis,
@@ -12,7 +11,6 @@ import {
   Radar,
   RadarChart,
   ResponsiveContainer,
-  Scatter,
   Tooltip,
   XAxis,
   YAxis,
@@ -25,7 +23,6 @@ import type {
   CategoryCardStat,
   CategoryHandicap,
   CategorySlug,
-  HcpTimelinePoint,
   HeatmapZone,
   HistoryEntry,
   RatingPoint,
@@ -34,14 +31,9 @@ import {
   BENCHMARK_LEVELS,
   CATEGORY_LABELS,
   computeCategoryCardStats,
-  computeCategoryHcpTimeline,
   hcpLabel,
   ratingFromHandicap,
 } from "@/lib/sg-handicap";
-
-function fmt1(n: number): string {
-  return n.toFixed(1).replace(".", ",");
-}
 
 /** Trend där HÖGRE är bättre (rating), till skillnad från home-dashboardens handicap-trend. */
 function RatingTrend({ value }: { value?: number }) {
@@ -449,33 +441,6 @@ function SelectPlayerSheet({
 
 /* ---------------------------------------------------- Kategori-stats (klickbara) */
 
-const CARD_PERIODS = [
-  { label: "30 dagar", days: 30 },
-  { label: "90 dagar", days: 90 },
-  { label: "12 månader", days: 365 },
-] as const;
-
-const CATEGORY_TABS: CategorySlug[] = ["approach", "driving", "around-the-green", "puttning"];
-
-/** Trend för RÅTT HCP (inte rating): lägre är alltid bättre, till skillnad från RatingTrend. */
-function HcpTrend({ change, periodLabel }: { change?: number; periodLabel: string }) {
-  if (change === undefined || Math.abs(change) < 0.05) {
-    return <p className="mt-1 text-xs text-muted-foreground">Ingen förändring {periodLabel}</p>;
-  }
-  const improving = change < 0;
-  const Icon = improving ? TrendingDown : TrendingUp;
-  return (
-    <p
-      className={`mt-1 flex items-center gap-1 text-xs font-semibold ${
-        improving ? "text-primary" : "text-destructive"
-      }`}
-    >
-      <Icon className="h-3.5 w-3.5" />
-      {fmt1(Math.abs(change))} HCP {periodLabel}
-    </p>
-  );
-}
-
 const NO_DATA_LINK: Record<CategorySlug, { to: string; params?: Record<string, string> }> = {
   approach: { to: "/kategori/$slug", params: { slug: "approach" } },
   driving: { to: "/kategori/$slug", params: { slug: "driving" } },
@@ -484,52 +449,29 @@ const NO_DATA_LINK: Record<CategorySlug, { to: string; params?: Record<string, s
   speed: { to: "/speed-test" },
 };
 
+/** Kort, ettordig svensk beskrivning per kategori. */
+const CATEGORY_ONEWORD: Record<CategorySlug, string> = {
+  approach: "Inspel",
+  driving: "Utslag",
+  "around-the-green": "Närspel",
+  puttning: "Putt",
+  speed: "Fart",
+};
+
 export function CategoryStatsSection() {
-  const [period, setPeriod] = useState<number>(90);
-  const [activeCategory, setActiveCategory] = useState<CategorySlug>("approach");
   const [cards, setCards] = useState<CategoryCardStat[]>([]);
-  const [timeline, setTimeline] = useState<HcpTimelinePoint[]>([]);
 
   useEffect(() => {
-    setCards(computeCategoryCardStats(period));
-  }, [period]);
-
-  useEffect(() => {
-    setTimeline(computeCategoryHcpTimeline(activeCategory, period === 365 ? null : period));
-  }, [activeCategory, period]);
-
-  const periodLabel =
-    period === 30
-      ? "senaste 30 dagarna"
-      : period === 90
-        ? "senaste 90 dagarna"
-        : "senaste 12 månaderna";
+    setCards(computeCategoryCardStats(90));
+  }, []);
 
   return (
     <section className="mt-6">
-      <div className="flex items-baseline justify-between">
-        <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
-          Stats per kategori
-        </p>
-      </div>
-      <div className="mt-2 flex gap-1.5 overflow-x-auto pb-1">
-        {CARD_PERIODS.map((p) => (
-          <button
-            key={p.days}
-            type="button"
-            onClick={() => setPeriod(p.days)}
-            className={`shrink-0 rounded-full px-3 py-1 text-[11px] font-medium transition-colors ${
-              period === p.days
-                ? "bg-foreground text-background"
-                : "border border-border text-muted-foreground"
-            }`}
-          >
-            {p.label}
-          </button>
-        ))}
-      </div>
+      <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
+        Stats per kategori
+      </p>
 
-      <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+      <div className="mt-3 grid grid-cols-2 gap-2">
         {cards.map((c) => (
           <Link
             key={c.slug}
@@ -537,106 +479,26 @@ export function CategoryStatsSection() {
             params={c.hasData ? { slug: c.slug } : NO_DATA_LINK[c.slug].params}
             className="block rounded-2xl border border-border bg-card p-4 transition-colors hover:border-primary"
           >
-            <p className="font-[family-name:var(--font-display)] text-2xl leading-none">
-              {c.title}
-            </p>
+            <p className="font-[family-name:var(--font-display)] text-xl leading-none">{c.title}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">{CATEGORY_ONEWORD[c.slug]}</p>
             {c.hasData ? (
               <>
-                <p className="mt-2 text-sm text-muted-foreground">
+                <p className="mt-3 text-sm text-muted-foreground">
                   Est. HCP{" "}
                   <span className="font-[family-name:var(--font-display)] text-xl text-flag">
                     {c.estHcp !== undefined ? hcpLabel(c.estHcp) : "–"}
                   </span>
                 </p>
-                <HcpTrend change={c.change} periodLabel={periodLabel} />
-                <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
-                  {c.strongest && (
-                    <p>
-                      Starkast: <span className="text-foreground">{c.strongest}</span>
-                    </p>
-                  )}
-                  {c.improve && (
-                    <p>
-                      Förbättra: <span className="text-foreground">{c.improve}</span>
-                    </p>
-                  )}
-                </div>
                 <p className="mt-3 text-xs font-semibold text-flag">Visa analys →</p>
               </>
             ) : (
               <>
-                <p className="mt-2 text-sm text-muted-foreground">Inget test genomfört ännu.</p>
+                <p className="mt-3 text-sm text-muted-foreground">Inget test genomfört ännu.</p>
                 <p className="mt-3 text-xs font-semibold text-flag">Genomför ett test →</p>
               </>
             )}
           </Link>
         ))}
-      </div>
-
-      <div className="mt-4">
-        <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
-          Uppskattad HCP över tid
-        </p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Rullande snitt av de senaste 3–5 testerna · lägre HCP = bättre
-        </p>
-        <div className="mt-2 flex gap-1.5 overflow-x-auto pb-1">
-          {CATEGORY_TABS.map((slug) => (
-            <button
-              key={slug}
-              type="button"
-              onClick={() => setActiveCategory(slug)}
-              className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
-                activeCategory === slug
-                  ? "bg-primary text-primary-foreground"
-                  : "border border-border text-muted-foreground"
-              }`}
-            >
-              {CATEGORY_LABELS[slug]}
-            </button>
-          ))}
-        </div>
-        <ChartCard title={`${CATEGORY_LABELS[activeCategory]} – HCP över tid`}>
-          {timeline.length < 2 ? (
-            <p className="py-10 text-center text-sm text-muted-foreground">
-              Kör minst två tester i den här kategorin för att se en graf.
-            </p>
-          ) : (
-            <div className="h-56 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart
-                  data={timeline}
-                  margin={{ top: 10, right: 10, bottom: 0, left: -20 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                  <XAxis dataKey="date" tick={{ fontSize: 10 }} stroke="var(--muted-foreground)" />
-                  <YAxis
-                    tick={{ fontSize: 10 }}
-                    stroke="var(--muted-foreground)"
-                    domain={["auto", "auto"]}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      background: "var(--card)",
-                      border: "1px solid var(--border)",
-                      borderRadius: 12,
-                      fontSize: 12,
-                    }}
-                  />
-                  <Scatter dataKey="raw" name="Enskilt test" fill="var(--chart-3)" />
-                  <Line
-                    type="monotone"
-                    dataKey="rolling"
-                    name="Rullande snitt"
-                    stroke="var(--primary)"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                </ComposedChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </ChartCard>
       </div>
     </section>
   );
@@ -693,6 +555,7 @@ const METRICS = [
   { key: "driving", label: "Off the Tee", color: "var(--chart-4)" },
   { key: "aroundGreen", label: "Around Green", color: "var(--sand)" },
   { key: "putting", label: "Putting", color: "var(--destructive)" },
+  { key: "speed", label: "Speed", color: "var(--chart-3)" },
 ] as const;
 
 export function TrendChartsCard({
