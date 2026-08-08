@@ -33,8 +33,8 @@ export const APPROACH_STORY: TestStoryConfig = {
     progression: ["12,1", "9,8", "7,4"],
     caption: "Se vilken HCP-nivå ditt approachspel motsvarar.",
   },
-  ctaLabel: "Starta testet",
-  ctaTo: "/precision",
+  ctaLabel: "Gå till testet",
+  ctaTo: "/approach",
 };
 
 export const OFFTEE_STORY: TestStoryConfig = {
@@ -62,8 +62,8 @@ export const OFFTEE_STORY: TestStoryConfig = {
     progression: ["14,3", "11,6", "9,1"],
     caption: "Se vilken HCP-nivå ditt spel från tee motsvarar.",
   },
-  ctaLabel: "Starta testet",
-  ctaTo: "/offtee",
+  ctaLabel: "Gå till testet",
+  ctaTo: "/offtee-test",
 };
 
 export const SPEED_STORY: TestStoryConfig = {
@@ -91,8 +91,8 @@ export const SPEED_STORY: TestStoryConfig = {
     progression: ["18,4", "14,7", "11,0"],
     caption: "Se vilken HCP-nivå din bollhastighet motsvarar.",
   },
-  ctaLabel: "Starta testet",
-  ctaTo: "/speed",
+  ctaLabel: "Gå till testet",
+  ctaTo: "/speed-test",
 };
 
 export const SHORTGAME_STORY: TestStoryConfig = {
@@ -120,8 +120,8 @@ export const SHORTGAME_STORY: TestStoryConfig = {
     progression: ["13,5", "10,9", "8,2"],
     caption: "Se vilken HCP-nivå ditt närspel motsvarar.",
   },
-  ctaLabel: "Starta testet",
-  ctaTo: "/narspel",
+  ctaLabel: "Gå till testet",
+  ctaTo: "/narspel-test",
 };
 
 export const BUNKER_STORY: TestStoryConfig = {
@@ -148,8 +148,8 @@ export const BUNKER_STORY: TestStoryConfig = {
     progression: ["19,2", "16,4", "13,6"],
     caption: "Se vilken HCP-nivå dina bunkerslag motsvarar.",
   },
-  ctaLabel: "Starta testet",
-  ctaTo: "/bunker",
+  ctaLabel: "Gå till testet",
+  ctaTo: "/bunker-test",
 };
 
 export const SHORTPUTT_STORY: TestStoryConfig = {
@@ -176,8 +176,8 @@ export const SHORTPUTT_STORY: TestStoryConfig = {
     progression: ["8,0", "6,2", "4,5"],
     caption: "Se vilken HCP-nivå din kortputtning motsvarar.",
   },
-  ctaLabel: "Starta testet",
-  ctaTo: "/kortputt",
+  ctaLabel: "Gå till testet",
+  ctaTo: "/short-putting-test",
 };
 
 export const LAGPUTT_STORY: TestStoryConfig = {
@@ -205,6 +205,6 @@ export const LAGPUTT_STORY: TestStoryConfig = {
     progression: ["58%", "71%", "83%"],
     caption: "Räknas ihop med Short Putting Test till ditt totala Putting HCP.",
   },
-  ctaLabel: "Starta testet",
+  ctaLabel: "Gå till testet",
   ctaTo: "/lagputt",
 };
