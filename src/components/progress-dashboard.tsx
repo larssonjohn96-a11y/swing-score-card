@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Plus, Search, TrendingDown, TrendingUp, User, X } from "lucide-react";
+import { BadgeCheck, Plus, Search, TrendingDown, TrendingUp, User, X } from "lucide-react";
 import {
   CartesianGrid,
   Line,
@@ -31,6 +31,7 @@ import {
   type Friendship,
   type Profile,
 } from "@/lib/friends-cloud";
+import { searchOpenProfiles, type OpenProfile } from "@/lib/open-profiles";
 import { Sparkline } from "@/components/home-dashboard";
 import type {
   CategoryCardStat,
@@ -300,6 +301,39 @@ export function RadarCard({
   );
 }
 
+/** Avatar med valfri verifierad (blå) eller premium (guld) bock, som på sociala medier. */
+function BadgedAvatar({
+  verified,
+  premium,
+  tone = "sand",
+}: {
+  verified?: boolean;
+  premium?: boolean;
+  tone?: "sand" | "primary";
+}) {
+  return (
+    <span className="relative flex h-9 w-9 shrink-0 items-center justify-center">
+      <span
+        className={`flex h-9 w-9 items-center justify-center overflow-hidden rounded-full ${
+          premium ? "ring-2 ring-[#d4af37]" : tone === "primary" ? "bg-primary/10" : "bg-sand/15"
+        }`}
+      >
+        <User className={`h-4 w-4 ${tone === "primary" ? "text-primary" : "text-sand"}`} />
+      </span>
+      {(verified || premium) && (
+        <BadgeCheck
+          className={`absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full bg-background ${
+            premium ? "text-[#d4af37]" : "text-chart-4"
+          }`}
+          fill="currentColor"
+          stroke="var(--background)"
+          strokeWidth={2}
+        />
+      )}
+    </span>
+  );
+}
+
 function SelectPlayerSheet({
   open,
   onOpenChange,
@@ -382,6 +416,11 @@ function SelectPlayerSheet({
     onOpenChange(false);
   }
 
+  function pickOpenProfile(p: OpenProfile) {
+    onPick({ label: p.name, hcp: p.hcp, isFriend: true, categoryHcp: p.categoryHcp });
+    onOpenChange(false);
+  }
+
   async function handleSendRequest(profileId: string) {
     const ok = await sendFriendRequest(profileId);
     if (ok) setSentTo((prev) => new Set(prev).add(profileId));
@@ -397,6 +436,7 @@ function SelectPlayerSheet({
     (l) => !q || l.label.toLowerCase().includes(q) || `hcp ${l.label}`.includes(q),
   );
   const filteredFriends = friends.filter((f) => !q || f.name.toLowerCase().includes(q));
+  const openProfiles = searchOpenProfiles(query);
 
   function pickLevel(l: (typeof BENCHMARK_LEVELS)[number]) {
     onPick({ label: l.label, hcp: l.hcp, categoryHcp: l.categoryHcp });
@@ -456,30 +496,57 @@ function SelectPlayerSheet({
           )}
         </div>
 
+        <p className="mt-5 text-xs uppercase tracking-[0.2em] text-muted-foreground">
+          Öppna profiler
+        </p>
+        <div className="mt-2 space-y-1">
+          {openProfiles.map((p) => (
+            <button
+              key={p.id}
+              onClick={() => pickOpenProfile(p)}
+              className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-left transition-colors hover:bg-muted"
+            >
+              <BadgedAvatar verified={p.verified} premium={p.premium} />
+              <span>
+                <span className="flex items-center gap-1 font-medium">
+                  {p.name}
+                  {p.premium && (
+                    <span className="rounded-full bg-[#d4af37]/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[#d4af37]">
+                      Premium
+                    </span>
+                  )}
+                </span>
+                <span className="block text-xs text-muted-foreground">
+                  HCP {hcpLabel(p.hcp)}
+                  {p.subtitle ? ` · ${p.subtitle}` : ""}
+                </span>
+              </span>
+            </button>
+          ))}
+          {!openProfiles.length && (
+            <p className="px-3 py-2 text-sm text-muted-foreground">Inga träffar.</p>
+          )}
+        </div>
+
         {user && publicProfiles.length > 0 && (
-          <>
-            <p className="mt-5 text-xs uppercase tracking-[0.2em] text-muted-foreground">
-              Öppna profiler
-            </p>
-            <div className="mt-2 space-y-1">
-              {publicProfiles.map((p) => (
-                <button
-                  key={p.userId}
-                  onClick={() => pickPublicProfile(p)}
-                  className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-left transition-colors hover:bg-muted"
-                >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-sand/15">
-                    {p.avatarUrl ? (
-                      <img src={p.avatarUrl} alt="" className="h-full w-full object-cover" />
-                    ) : (
-                      <User className="h-4 w-4 text-sand" />
-                    )}
-                  </span>
-                  <span className="font-medium">{p.displayName}</span>
-                </button>
-              ))}
-            </div>
-          </>
+          <div className="mt-2 space-y-1">
+            {publicProfiles.map((p) => (
+              <button
+                key={p.userId}
+                onClick={() => pickPublicProfile(p)}
+                className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-left transition-colors hover:bg-muted"
+              >
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-sand/15">
+                  {p.avatarUrl ? (
+                    <img src={p.avatarUrl} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <User className="h-4 w-4 text-sand" />
+                  )}
+                </span>
+                <span className="font-medium">{p.displayName}</span>
+              </button>
+            ))}
+          </div>
         )}
 
         {user ? (
