@@ -1,4 +1,6 @@
-/** Lagputt – 6 puttar från 8–18 m. Allt inom 1 m från hålet är godkänt. */
+/** Lagputt – 6 puttar från 8–18 m, i slumpad ordning varje test. Allt inom
+ *  1 m från hålet är godkänt. Spelaren uppmanas gå en annan riktning från
+ *  hålet för varje putt, så testet inte blir en enda upprepad linje. */
 export const LAG_PUTT_DISTANCES = [8, 10, 12, 14, 16, 18] as const;
 /** Godkänt-gräns i meter */
 export const LAG_OK_LIMIT = 1;
@@ -32,8 +34,18 @@ function ratingToHandicap(pct: number): number {
 
 const KEY = "golf-lagputt-sessions-v2";
 
+function shuffled<T>(arr: readonly T[]): T[] {
+  const copy = [...arr];
+  for (let i = copy.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+/** Ny, slumpad ordning på de sex avstånden varje gång testet startas om. */
 export function emptyLagPutts(): LagPutt[] {
-  return LAG_PUTT_DISTANCES.map((distance) => ({ distance, left: 0 }));
+  return shuffled(LAG_PUTT_DISTANCES).map((distance) => ({ distance, left: 0 }));
 }
 
 export function mean(values: number[]): number {

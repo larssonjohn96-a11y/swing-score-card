@@ -139,7 +139,7 @@ export const CATEGORIES: Category[] = [
         title: "Lagputt",
         subtitle: "6 puttar – 8 till 18 m",
         bullets: [
-          "En putt från 8, 10, 12, 14, 16 och 18 meter.",
+          "8, 10, 12, 14, 16 och 18 meter, i slumpad ordning varje test.",
           "Allt inom 1 meter från hålet är godkänt.",
         ],
         result: "RESULTAT: ANDEL GODKÄNDA + SNITT KVAR",
