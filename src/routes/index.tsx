@@ -18,6 +18,7 @@ import { computeRatingCard, loadCardProfile, type RatingCardData } from "@/lib/r
 import { RadarCard } from "@/components/progress-dashboard";
 import { topScores, type Highlight } from "@/lib/highlights";
 import { pushPlayerSnapshot } from "@/lib/friends-cloud";
+import { AppStoryLauncher } from "@/components/app-story";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -93,6 +94,8 @@ function Home() {
           </Link>
         </div>
       </div>
+
+      <AppStoryLauncher hasResults={Boolean(data?.cats.some((c) => c.count > 0))} />
 
       {data && (
         <div className="mt-4">
