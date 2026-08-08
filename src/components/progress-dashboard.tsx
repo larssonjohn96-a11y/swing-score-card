@@ -196,20 +196,22 @@ export function RadarCard({
           onClick={() => setPickerOpen(true)}
           className="flex flex-col items-center gap-1.5"
         >
-          <span
-            className={`relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-2 ${
-              target.premium ? "border-[#d4af37]" : "border-chart-3"
-            } ${target.avatarUrl || target.initials ? "bg-chart-3/5" : "bg-chart-3/10"}`}
-          >
-            {target.avatarUrl ? (
-              <img src={target.avatarUrl} alt="" className="h-full w-full object-cover" />
-            ) : target.initials ? (
-              <span className="font-[family-name:var(--font-display)] text-xl text-chart-3">
-                {target.initials}
-              </span>
-            ) : (
-              <User className="h-7 w-7 text-chart-3" strokeWidth={1.5} />
-            )}
+          <span className="relative flex h-16 w-16 items-center justify-center">
+            <span
+              className={`flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-2 ${
+                target.premium ? "border-[#d4af37]" : "border-chart-3"
+              } ${target.avatarUrl || target.initials ? "bg-chart-3/5" : "bg-chart-3/10"}`}
+            >
+              {target.avatarUrl ? (
+                <img src={target.avatarUrl} alt="" className="h-full w-full object-cover" />
+              ) : target.initials ? (
+                <span className="font-[family-name:var(--font-display)] text-xl text-chart-3">
+                  {target.initials}
+                </span>
+              ) : (
+                <User className="h-7 w-7 text-chart-3" strokeWidth={1.5} />
+              )}
+            </span>
             {target.verified || target.premium ? (
               <BadgeCheck
                 className={`absolute -bottom-0.5 -right-0.5 h-6 w-6 rounded-full bg-background ${
