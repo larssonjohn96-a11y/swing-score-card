@@ -12,7 +12,13 @@ import {
   type CategoryHandicap,
   type Opportunity,
 } from "@/lib/sg-handicap";
-import { CategoryGrid, HighScoreCard, OpportunityCard } from "@/components/home-dashboard";
+import {
+  CategoryGrid,
+  HighScoreCard,
+  OpportunityCard,
+  BiggestGapCard,
+} from "@/components/home-dashboard";
+import { useSubscription } from "@/lib/subscription";
 import { PlayerCard } from "@/components/rating-card";
 import { computeRatingCard, loadCardProfile, type RatingCardData } from "@/lib/rating-card";
 import { RadarCard } from "@/components/progress-dashboard";
@@ -66,6 +72,7 @@ function loadHomeData(): HomeData {
 function Home() {
   const { user, displayName } = useAuth();
   const [data, setData] = useState<HomeData | null>(null);
+  const { isPlus } = useSubscription();
 
   useEffect(() => {
     setData(loadHomeData());
@@ -124,6 +131,7 @@ function Home() {
           <CategoryGrid cats={data.cats} />
           <HighScoreCard highlights={data.highlights} />
           <OpportunityCard opportunity={data.opportunity} />
+          <BiggestGapCard cats={data.cats} isPlus={isPlus} />
 
           <Link
             to="/tester"

@@ -10,6 +10,7 @@ import {
 } from "@/lib/sg-handicap";
 import { CATEGORIES } from "@/lib/categories";
 import type { Highlight } from "@/lib/highlights";
+import { PremiumLock } from "@/components/premium-lock";
 
 /** Rating (0–100) eller andra icke-handicap-tal. Handicap-tal ska alltid formatteras med hcpLabel. */
 function fmt(n: number): string {
@@ -335,6 +336,58 @@ export function OpportunityCard({ opportunity }: { opportunity: Opportunity | un
         <ArrowRight className="h-4 w-4" />
       </Link>
     </section>
+  );
+}
+
+/** SG4+: exakt gap-analys – vilken kategori ligger längst efter din övriga nivå, och hur mycket. */
+export function BiggestGapCard({ cats, isPlus }: { cats: CategoryHandicap[]; isPlus: boolean }) {
+  const withData = cats.filter((c) => c.handicap !== undefined);
+  if (withData.length < 2) return null;
+
+  const worst = [...withData].sort((a, b) => b.handicap! - a.handicap!)[0];
+  const others = withData.filter((c) => c.slug !== worst.slug);
+  const othersAvg = others.reduce((sum, c) => sum + c.handicap!, 0) / others.length;
+  const gap = Math.round((worst.handicap! - othersAvg) * 10) / 10;
+
+  if (gap <= 0.2) return null;
+
+  const body = (
+    <section className="rounded-3xl border border-border bg-card p-5">
+      <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
+        Ditt största utvecklingsområde
+      </p>
+      <p className="mt-2 font-[family-name:var(--font-display)] text-3xl leading-none">
+        {worst.title}
+      </p>
+      <p className="mt-1 text-sm text-muted-foreground">HCP {hcpLabel(worst.handicap!)}</p>
+      <div className="mt-3 flex items-center gap-4 border-t border-border pt-3">
+        <div>
+          <p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground">
+            Övrig spelprofil
+          </p>
+          <p className="font-[family-name:var(--font-display)] text-xl leading-none">
+            HCP {hcpLabel(Math.round(othersAvg * 10) / 10)}
+          </p>
+        </div>
+        <div>
+          <p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground">Gap</p>
+          <p className="font-[family-name:var(--font-display)] text-xl leading-none text-destructive">
+            {gap}
+          </p>
+        </div>
+      </div>
+      <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+        {worst.title} är just nu den del av ditt spel som ligger längst efter din övriga nivå.
+      </p>
+    </section>
+  );
+
+  if (isPlus) return body;
+
+  return (
+    <div className="mt-6">
+      <PremiumLock label="Se hela gap-analysen">{body}</PremiumLock>
+    </div>
   );
 }
 

@@ -14,6 +14,8 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { THEME_SCRIPT } from "../lib/theme";
 import { BottomNav } from "@/components/bottom-nav";
 import { BottomNavVisibilityProvider } from "@/lib/bottom-nav-visibility";
+import { SubscriptionProvider } from "@/lib/subscription";
+import { DevPlanSwitcher } from "@/components/dev-plan-switcher";
 
 function NotFoundComponent() {
   return (
@@ -83,16 +85,31 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "SG4 – Testa hela ditt spel och sänk ditt handicap" },
       {
         name: "description",
-        content: "SG4 mäter ditt spel i fyra kategorier: driving, approach, around the green och puttning. Kör testerna, följ utvecklingen och få personliga träningsprogram.",
+        content:
+          "SG4 mäter ditt spel i fyra kategorier: driving, approach, around the green och puttning. Kör testerna, följ utvecklingen och få personliga träningsprogram.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:title", content: "SG4 – Testa hela ditt spel" },
       { name: "twitter:title", content: "SG4 – Testa hela ditt spel" },
-      { property: "og:description", content: "Mät, följ och förbättra ditt golfspel från utslag till putt med SG4." },
-      { name: "twitter:description", content: "Mät, följ och förbättra ditt golfspel från utslag till putt med SG4." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/fd1440f1-021b-448e-b236-f00665931288/id-preview-6339d7c2--e6eaffe8-9d53-49c7-8353-659215697a59.lovable.app-1785048898778.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/fd1440f1-021b-448e-b236-f00665931288/id-preview-6339d7c2--e6eaffe8-9d53-49c7-8353-659215697a59.lovable.app-1785048898778.png" },
+      {
+        property: "og:description",
+        content: "Mät, följ och förbättra ditt golfspel från utslag till putt med SG4.",
+      },
+      {
+        name: "twitter:description",
+        content: "Mät, följ och förbättra ditt golfspel från utslag till putt med SG4.",
+      },
+      {
+        property: "og:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/fd1440f1-021b-448e-b236-f00665931288/id-preview-6339d7c2--e6eaffe8-9d53-49c7-8353-659215697a59.lovable.app-1785048898778.png",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/fd1440f1-021b-448e-b236-f00665931288/id-preview-6339d7c2--e6eaffe8-9d53-49c7-8353-659215697a59.lovable.app-1785048898778.png",
+      },
     ],
     links: [
       {
@@ -135,13 +152,16 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <BottomNavVisibilityProvider>
-        <div className="relative min-h-screen pb-20">
-          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-          <Outlet />
-          <BottomNav />
-        </div>
-      </BottomNavVisibilityProvider>
+      <SubscriptionProvider>
+        <BottomNavVisibilityProvider>
+          <div className="relative min-h-screen pb-20">
+            {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+            <Outlet />
+            <BottomNav />
+            <DevPlanSwitcher />
+          </div>
+        </BottomNavVisibilityProvider>
+      </SubscriptionProvider>
     </QueryClientProvider>
   );
 }

@@ -12,6 +12,8 @@ import {
 import { ArrowLeft, CheckCircle2, Target, Trophy } from "lucide-react";
 import { ChartCard } from "@/components/chart-card";
 import { HeatmapCard, HistoryPanel } from "@/components/progress-dashboard";
+import { PremiumLockLine } from "@/components/premium-lock";
+import { useSubscription } from "@/lib/subscription";
 import {
   CATEGORY_LABELS,
   computeCategoryDetail,
@@ -80,6 +82,7 @@ function CategoryDetailPage() {
   const { slug } = Route.useLoaderData() as { slug: CategorySlug };
   const [detail, setDetail] = useState<CategoryDetail | null>(null);
   const [timeline, setTimeline] = useState<RatingPoint[]>([]);
+  const { canViewFullHistory } = useSubscription();
 
   useEffect(() => {
     setDetail(computeCategoryDetail(slug));
@@ -142,7 +145,11 @@ function CategoryDetailPage() {
         <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
           Utveckling över tid
         </p>
-        <p className="mt-1 text-xs text-muted-foreground">Varje genomfört test, i tidsordning.</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {canViewFullHistory
+            ? "Varje genomfört test, i tidsordning."
+            : "Dina 3 senaste tester. SG4+ visar hela historiken."}
+        </p>
         <ChartCard title={`${detail.title} över tid`}>
           {chartData.length < 2 ? (
             <p className="py-10 text-center text-sm text-muted-foreground">
@@ -151,7 +158,10 @@ function CategoryDetailPage() {
           ) : (
             <div className="h-56 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData} margin={{ top: 10, right: 10, bottom: 0, left: -20 }}>
+                <LineChart
+                  data={canViewFullHistory ? chartData : chartData.slice(-3)}
+                  margin={{ top: 10, right: 10, bottom: 0, left: -20 }}
+                >
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                   <XAxis dataKey="date" tick={{ fontSize: 10 }} stroke="var(--muted-foreground)" />
                   <YAxis
@@ -180,6 +190,11 @@ function CategoryDetailPage() {
             </div>
           )}
         </ChartCard>
+        {!canViewFullHistory && chartData.length > 3 && (
+          <div className="mt-3">
+            <PremiumLockLine label={`Se alla ${chartData.length} tester`} />
+          </div>
+        )}
       </section>
 
       {/* Nyckeltal */}
@@ -267,7 +282,12 @@ function CategoryDetailPage() {
       )}
 
       {/* Testhistorik */}
-      <HistoryPanel entries={history} />
+      <HistoryPanel entries={history} limit={canViewFullHistory ? undefined : 3} />
+      {!canViewFullHistory && history.length > 3 && (
+        <div className="mt-2">
+          <PremiumLockLine label={`Se alla ${history.length} tester i historiken`} />
+        </div>
+      )}
     </main>
   );
 }

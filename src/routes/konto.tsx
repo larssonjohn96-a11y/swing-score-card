@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { syncLocalSessions } from "@/lib/cloud";
 import { RatingCardSection } from "@/components/rating-card";
+import { DeveloperPreviewPanel } from "@/components/dev-plan-switcher";
 
 export const Route = createFileRoute("/konto")({
   head: () => ({
@@ -207,6 +208,8 @@ function AccountPage() {
           </p>
         </>
       )}
+
+      <DeveloperPreviewPanel />
     </main>
   );
 }
