@@ -32,6 +32,18 @@ const TIMELINE_KEY: Record<CategorySlug, keyof RatingPoint> = {
   speed: "speed",
 };
 
+/** Kort, kategorispecifik förklaring av vad detaljsidan visar. */
+const CATEGORY_INTRO: Record<CategorySlug, string> = {
+  approach:
+    "Din förmåga att spela inspel mot green och sätta upp lätta puttar – från 55 till 165 meter.",
+  driving:
+    "Din förmåga att slå långa, precisa och konsekventa drives från tee, samt din rena bollhastighet.",
+  "around-the-green":
+    "Din förmåga att komma nära hålet i närspel och ur bunker – allt inom cirka 20 meter från green.",
+  puttning: "Din träffsäkerhet på korta puttar och distanskontroll på längre lagputtar.",
+  speed: "Din bollhastighet och kraftöverföring från driver, oavsett teknik.",
+};
+
 export const Route = createFileRoute("/utveckling/$slug")({
   loader: ({ params }) => {
     if (!VALID_SLUGS.includes(params.slug as CategorySlug)) throw notFound();
@@ -89,41 +101,48 @@ function CategoryDetailPage() {
         <ArrowLeft className="h-4 w-4" />
       </Link>
 
-      <p className="mt-4 text-xs uppercase tracking-[0.3em] text-muted-foreground">Kategori</p>
+      <p className="mt-4 text-xs uppercase tracking-[0.3em] text-flag">Detaljerad analys</p>
       <h1 className="mt-1 text-4xl leading-none">{detail.title}</h1>
+      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{CATEGORY_INTRO[slug]}</p>
 
-      <div className="mt-4 grid grid-cols-3 gap-3">
-        <div className="rounded-2xl border border-border bg-card p-3 text-center">
-          <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">Score</p>
-          <p className="mt-0.5 font-[family-name:var(--font-display)] text-2xl leading-none">
-            {detail.score}
-          </p>
+      <section className="mt-6 rounded-3xl border border-border bg-card p-6 text-center shadow-[var(--shadow-glow)]">
+        <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
+          {detail.title} HCP
+        </p>
+        <p className="mt-1 font-[family-name:var(--font-display)] text-7xl leading-none text-primary">
+          {detail.handicap !== undefined ? hcpLabel(detail.handicap) : "–"}
+        </p>
+        <div className="mt-4 flex items-center justify-center gap-6 border-t border-border pt-4">
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">Score</p>
+            <p className="mt-0.5 font-[family-name:var(--font-display)] text-2xl leading-none">
+              {detail.score}
+              <span className="text-sm text-muted-foreground">/100</span>
+            </p>
+          </div>
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">Trend</p>
+            <p
+              className={`mt-0.5 font-[family-name:var(--font-display)] text-2xl leading-none ${
+                detail.trend !== undefined && detail.trend < 0
+                  ? "text-primary"
+                  : detail.trend !== undefined && detail.trend > 0
+                    ? "text-destructive"
+                    : ""
+              }`}
+            >
+              {detail.trend !== undefined ? hcpLabel(detail.trend) : "–"}
+            </p>
+          </div>
         </div>
-        <div className="rounded-2xl border border-border bg-card p-3 text-center">
-          <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">HCP</p>
-          <p className="mt-0.5 font-[family-name:var(--font-display)] text-2xl leading-none text-flag">
-            {detail.handicap !== undefined ? hcpLabel(detail.handicap) : "–"}
-          </p>
-        </div>
-        <div className="rounded-2xl border border-border bg-card p-3 text-center">
-          <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">Trend</p>
-          <p
-            className={`mt-0.5 font-[family-name:var(--font-display)] text-2xl leading-none ${
-              detail.trend !== undefined && detail.trend < 0
-                ? "text-primary"
-                : detail.trend !== undefined && detail.trend > 0
-                  ? "text-destructive"
-                  : ""
-            }`}
-          >
-            {detail.trend !== undefined ? hcpLabel(detail.trend) : "–"}
-          </p>
-        </div>
-      </div>
+      </section>
 
       {/* Trend */}
       <section className="mt-6">
-        <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Trend</p>
+        <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
+          Utveckling över tid
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">Varje genomfört test, i tidsordning.</p>
         <ChartCard title={`${detail.title} över tid`}>
           {chartData.length < 2 ? (
             <p className="py-10 text-center text-sm text-muted-foreground">
@@ -185,7 +204,12 @@ function CategoryDetailPage() {
       {/* Heatmap */}
       {detail.heatmap.length > 0 && (
         <section className="mt-6">
-          <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Heatmap</p>
+          <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
+            Starka och svaga avstånd
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Snitt av dina senaste 5 tester · grönt är starkt, rött behöver mest träning.
+          </p>
           <div className="mt-3">
             <HeatmapCard
               title={slug === "puttning" ? "Träffprocent per avstånd" : "Score per avstånd"}

@@ -599,8 +599,9 @@ export type HeatmapZone = {
 };
 
 /** Approach: score per avståndszon (50–165 m), aggregerat över alla sessioner. */
+/** Approach: score per avståndszon, snitt av de senaste 5 testerna. */
 export function computeApproachHeatmap(): HeatmapZone[] {
-  const sessions = loadPrecisionSessions();
+  const sessions = loadPrecisionSessions().slice(-5);
   const allShots = sessions.flatMap((s) => s.shots);
   if (!allShots.length) return [];
   const result = precisionResult(allShots);
@@ -609,9 +610,9 @@ export function computeApproachHeatmap(): HeatmapZone[] {
     .map((g) => ({ label: g.label, score: g.score, count: g.count }));
 }
 
-/** Short Putting Test: träffprocent per avstånd (1 / 2 / 3 m), aggregerat. */
+/** Short Putting Test: träffprocent per avstånd (1 / 2 / 3 m), snitt av de senaste 5 testerna. */
 export function computePuttingHeatmap(): HeatmapZone[] {
-  const sessions = loadShortPuttSessions();
+  const sessions = loadShortPuttSessions().slice(-5);
   const allPutts = sessions.flatMap((s) => s.putts);
   if (!allPutts.length) return [];
   const distances = [1, 2, 3];

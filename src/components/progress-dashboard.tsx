@@ -512,6 +512,12 @@ function heatColor(score: number): string {
   return "bg-destructive/15 text-destructive border-destructive/30";
 }
 
+function heatBar(score: number): string {
+  if (score >= 70) return "bg-primary";
+  if (score >= 45) return "bg-flag";
+  return "bg-destructive";
+}
+
 export function HeatmapCard({
   title,
   zones,
@@ -522,17 +528,30 @@ export function HeatmapCard({
   unit?: string;
 }) {
   if (!zones.length) return null;
+  const best = [...zones].sort((a, b) => b.score - a.score)[0];
+  const worst = [...zones].sort((a, b) => a.score - b.score)[0];
   return (
     <div className="rounded-2xl border border-border bg-card p-3">
       <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">{title}</p>
       <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
         {zones.map((z) => (
-          <div key={z.label} className={`rounded-xl border p-2 text-center ${heatColor(z.score)}`}>
-            <p className="text-[11px] font-medium opacity-80">{z.label}</p>
+          <div key={z.label} className={`rounded-xl border p-2 ${heatColor(z.score)}`}>
+            <p className="flex items-center gap-1 text-[11px] font-medium opacity-80">
+              {z.label}
+              {z.label === best.label && z.score !== worst.score && (
+                <span aria-label="Starkast">🏆</span>
+              )}
+            </p>
             <p className="font-[family-name:var(--font-display)] text-xl leading-none">
               {Math.round(z.score)}
               {unit}
             </p>
+            <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-background/60">
+              <div
+                className={`h-full rounded-full ${heatBar(z.score)}`}
+                style={{ width: `${Math.max(4, Math.min(100, z.score))}%` }}
+              />
+            </div>
           </div>
         ))}
       </div>
