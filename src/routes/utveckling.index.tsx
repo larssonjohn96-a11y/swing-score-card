@@ -18,7 +18,7 @@ import {
   TrendChartsCard,
 } from "@/components/progress-dashboard";
 
-export const Route = createFileRoute("/utveckling")({
+export const Route = createFileRoute("/utveckling/")({
   head: () => ({
     meta: [
       { title: "Utveckling – ditt analyscenter | SG4" },
