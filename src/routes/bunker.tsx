@@ -133,9 +133,9 @@ function BunkerPage() {
         </div>
 
         <div className="mt-6 rounded-3xl border-2 border-border bg-card p-6 text-center shadow-[var(--shadow-glow)]">
-          <p className="text-[11px] uppercase tracking-[0.3em] text-muted-foreground">Läge</p>
-          <p className="mt-1 font-[family-name:var(--font-display)] text-3xl leading-tight text-flag">
-            {current.lie}
+          <p className="text-[11px] uppercase tracking-[0.3em] text-muted-foreground">Bunkerslag</p>
+          <p className="mt-1 font-[family-name:var(--font-display)] text-6xl leading-none text-flag">
+            {current.index}
           </p>
         </div>
 

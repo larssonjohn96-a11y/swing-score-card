@@ -5,7 +5,7 @@ import { BunkerHero } from "@/components/bunker-visuals";
 const VALUE_ITEMS = [
   { icon: Target, label: "Snittavstånd från hål" },
   { icon: Gauge, label: "Bunker HCP" },
-  { icon: AlertTriangle, label: "Svagaste bunkerläge" },
+  { icon: AlertTriangle, label: "Andel slag du kommer upp" },
 ];
 
 /**
@@ -30,8 +30,8 @@ export function BunkerLanding({ lastResultLabel }: { lastResultLabel?: string })
       <p className="mt-6 text-xs uppercase tracking-[0.3em] text-flag">Around the Green</p>
       <h1 className="mt-2 text-5xl leading-none">Bunkerslag</h1>
       <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-        Mäter hur nära hålet du får bollen från de sex vanligaste bunkerlägena – och hur ofta du
-        faktiskt kommer upp ur sanden.
+        Mäter hur nära hålet du får bollen från bunker – och hur ofta du faktiskt kommer upp ur
+        sanden.
       </p>
 
       <section className="mt-8">
@@ -53,9 +53,8 @@ export function BunkerLanding({ lastResultLabel }: { lastResultLabel?: string })
           Så går testet till
         </p>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          6 slag, ett från vardera plant läge, uppförslut, nedförslut, boll över fötterna, boll
-          under fötterna och nedgrävt (plugged) läge. Du registrerar bara hur nära hålet bollen
-          stannade, som ett intervall – eller att du inte kom upp ur bunkern.
+          6 likvärdiga bunkerslag – lägg upp bollen på nytt inför varje slag. Du registrerar bara
+          hur nära hålet bollen stannade, som ett intervall – eller att du inte kom upp ur bunkern.
         </p>
       </section>
 

@@ -7,7 +7,7 @@
  */
 import { loadPrecisionSessions, type PrecisionSession } from "@/lib/precision-store";
 import { loadOffTeeSessions, type OffTeeSession } from "@/lib/offtee-store";
-import { computeBunkerResult, loadBunkerSessions } from "@/lib/bunker";
+import { loadBunkerSessions } from "@/lib/bunker";
 import { loadShortPuttSessions } from "@/lib/shortputt";
 import { loadLagPuttSessions } from "@/lib/lagputt";
 import { loadSpeedSessions } from "@/lib/speed";
@@ -811,7 +811,6 @@ function aroundGreenDetailData(): CategoryDetailData {
   const lastNear = nearSessions[nearSessions.length - 1];
   const bunkerSessions = loadBunkerSessions();
   const lastBunker = bunkerSessions[bunkerSessions.length - 1];
-  const lastBunkerResult = lastBunker ? computeBunkerResult(lastBunker.shots) : undefined;
 
   const keyMetrics = [
     ...(lastNear
@@ -839,11 +838,12 @@ function aroundGreenDetailData(): CategoryDetailData {
       `Snitt ${lastNear.avgProximity.toFixed(2)} m från hål i Närspelstestet – störst chans att sänka HCP snabbt.`,
     );
   }
-  if (lastBunkerResult?.bestLie) {
-    strengths.push(`Bäst från ${lastBunkerResult.bestLie.toLowerCase()} i bunker.`);
-  }
-  if (lastBunkerResult?.worstLie) {
-    improvements.push(`${lastBunkerResult.worstLie} är svårast i bunker.`);
+  if (lastBunker && lastBunker.avgProximity <= 2) {
+    strengths.push(`Stabilt ur bunkern – snitt ${lastBunker.avgProximity.toFixed(2)} m från hål.`);
+  } else if (lastBunker) {
+    improvements.push(
+      `Bunker snitt ${lastBunker.avgProximity.toFixed(2)} m från hål – ett tydligt förbättringsområde.`,
+    );
   }
 
   return {

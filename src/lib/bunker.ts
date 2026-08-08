@@ -3,9 +3,8 @@
  * avstånd-från-hål registrerat som intervall (återanvänder samma
  * intervallskala som Närspelstest) istället för att skriva in exakta fot.
  *
- * Varje slag testas från ett eget läge – de sex vanligaste bunkerlägena –
- * så testet täcker in de situationer som faktiskt skiljer sig mest i
- * svårighetsgrad, snarare än att bara upprepa samma läge sex gånger.
+ * Sex likvärdiga bunkerslag – inget separat läge att välja, bollen läggs
+ * bara upp på nytt i bunkern inför varje slag.
  *
  * Ett extra alternativ, "Kom inte upp ur bunker", täcker det vanligaste
  * misslyckandet och straffas som ett långt avstånd i beräkningen.
@@ -20,15 +19,6 @@ import {
   type IntervalKey as ShortGameIntervalKey,
 } from "@/lib/shortgame";
 
-export const BUNKER_LIES = [
-  "Plant läge",
-  "Uppförslut",
-  "Nedförslut",
-  "Boll över fötterna",
-  "Boll under fötterna",
-  "Nedgrävd (plugged)",
-] as const;
-
 export type BunkerIntervalKey = ShortGameIntervalKey | "not-out";
 
 /** Samma avståndsintervall som Närspelstest, plus "Kom inte upp ur bunker". */
@@ -41,16 +31,15 @@ const INTERVAL_MIDPOINT: Record<BunkerIntervalKey, number> = Object.fromEntries(
   BUNKER_INTERVALS.map((i) => [i.key, i.midpoint]),
 ) as Record<BunkerIntervalKey, number>;
 
-export const BUNKER_TOTAL_SHOTS = BUNKER_LIES.length; // 6
+export const BUNKER_TOTAL_SHOTS = 6;
 
 export type BunkerShot = {
   index: number;
-  lie: (typeof BUNKER_LIES)[number];
   interval?: BunkerIntervalKey;
 };
 
 export function emptyBunkerShots(): BunkerShot[] {
-  return BUNKER_LIES.map((lie, i) => ({ index: i + 1, lie }));
+  return Array.from({ length: BUNKER_TOTAL_SHOTS }, (_, i) => ({ index: i + 1 }));
 }
 
 /* -------------------------------------------------------------------------
@@ -119,8 +108,6 @@ export type BunkerResult = {
   score: number;
   notOutCount: number;
   within2m: number;
-  bestLie?: string;
-  worstLie?: string;
   analysis: string;
 };
 
@@ -138,24 +125,7 @@ export function computeBunkerResult(shots: BunkerShot[]): BunkerResult {
   const notOutCount = played.filter((s) => s.interval === "not-out").length;
   const within2m = proximities.filter((p) => p <= 2).length;
 
-  const byLie = new Map<string, number[]>();
-  for (const s of played) {
-    const arr = byLie.get(s.lie) ?? [];
-    arr.push(INTERVAL_MIDPOINT[s.interval]);
-    byLie.set(s.lie, arr);
-  }
-  const lieAverages = [...byLie.entries()].map(([lie, vals]) => ({
-    lie,
-    avg: vals.reduce((a, b) => a + b, 0) / vals.length,
-  }));
-  const bestLie = lieAverages.length
-    ? [...lieAverages].sort((a, b) => a.avg - b.avg)[0].lie
-    : undefined;
-  const worstLie = lieAverages.length
-    ? [...lieAverages].sort((a, b) => b.avg - a.avg)[0].lie
-    : undefined;
-
-  const analysis = buildAnalysis(avgProximity, notOutCount, worstLie, count);
+  const analysis = buildAnalysis(avgProximity, notOutCount, count);
 
   return {
     count,
@@ -164,30 +134,19 @@ export function computeBunkerResult(shots: BunkerShot[]): BunkerResult {
     score,
     notOutCount,
     within2m,
-    bestLie,
-    worstLie,
     analysis,
   };
 }
 
-function buildAnalysis(
-  avg: number,
-  notOutCount: number,
-  worstLie: string | undefined,
-  count: number,
-): string {
+function buildAnalysis(avg: number, notOutCount: number, count: number): string {
   if (!count) return "Genomför testet för att få din analys.";
   if (notOutCount > 0) {
-    return `${notOutCount} av ${count} slag kom inte upp ur bunkern – att säkra utslaget är första prioritet innan proximity ens blir relevant.${
-      worstLie ? ` ${worstLie} var svårast.` : ""
-    }`;
+    return `${notOutCount} av ${count} slag kom inte upp ur bunkern – att säkra utslaget är första prioritet innan proximity ens blir relevant.`;
   }
   if (avg <= 2) {
     return `Stark bunkerkontroll – snitt ${avg.toFixed(2)} m från hål, alla slag kom upp.`;
   }
-  return `Snitt ${avg.toFixed(2)} m från hål.${
-    worstLie ? ` ${worstLie} kostar mest just nu – öva särskilt på det läget.` : ""
-  }`;
+  return `Snitt ${avg.toFixed(2)} m från hål – jobba på att få bollen närmre hålet med jämnare svinglängd.`;
 }
 
 /* -------------------------------------------------------------------------
@@ -203,7 +162,7 @@ export type BunkerSession = {
   score: number;
 };
 
-const KEY = "golf-bunker-sessions-v2";
+const KEY = "golf-bunker-sessions-v3";
 
 export function loadBunkerSessions(): BunkerSession[] {
   if (typeof window === "undefined") return [];

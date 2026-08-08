@@ -96,9 +96,9 @@ export const CATEGORIES: Category[] = [
         to: "/bunker-test",
         number: "3",
         title: "Bunkerslag",
-        subtitle: "6 slag – ett per bunkerläge",
+        subtitle: "6 likvärdiga bunkerslag",
         bullets: [
-          "Plant läge, uppförslut, nedförslut och tre svårare lägen.",
+          "Ingen läges- eller teknikval – bara resultatet räknas.",
           "Registrera avstånd som ett intervall, eller att du inte kom upp.",
         ],
         result: "RESULTAT: BUNKER HCP + SPRIDNINGSBILD",

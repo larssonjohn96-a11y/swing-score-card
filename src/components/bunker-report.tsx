@@ -145,24 +145,6 @@ export function BunkerReport({
         </div>
       </div>
 
-      {(result.bestLie || result.worstLie) && (
-        <div className="rounded-3xl border border-border bg-card p-5">
-          <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Per läge</p>
-          <div className="mt-3 space-y-0.5 text-sm text-muted-foreground">
-            {result.bestLie && (
-              <p>
-                Bäst: <span className="text-foreground">{result.bestLie}</span>
-              </p>
-            )}
-            {result.worstLie && (
-              <p>
-                Svagast: <span className="text-foreground">{result.worstLie}</span>
-              </p>
-            )}
-          </div>
-        </div>
-      )}
-
       {result.analysis && (
         <div className="rounded-2xl border border-primary/30 bg-primary/[0.06] p-4">
           <p className="text-xs uppercase tracking-[0.2em] text-primary">Analys</p>
