@@ -46,7 +46,7 @@ function SpeedPage() {
   const [ballSpeed, setBallSpeedRaw] = useState(DEFAULT_BALL_SPEED);
   const [clubSpeedEnabled, setClubSpeedEnabled] = useState(false);
   const [clubSpeed, setClubSpeed] = useState(0);
-  
+
   const [saved, setSaved] = useState(false);
   const [prevScore, setPrevScore] = useState<number | null>(null);
 
@@ -54,7 +54,7 @@ function SpeedPage() {
   const lastClubSpeedRef = useRef(0);
   const lastClubEnabledRef = useRef(false);
 
-  useHideBottomNav(phase === "test");
+  useHideBottomNav(phase === "test" || phase === "result");
 
   useEffect(() => {
     const sessions = loadSpeedSessions();
@@ -114,7 +114,6 @@ function SpeedPage() {
     setClubSpeedEnabled(typeof s.clubSpeed === "number");
     setClubSpeed(s.clubSpeed ?? lastClubSpeedRef.current);
   }
-
 
   function restart() {
     setSaved(false);
@@ -405,6 +404,21 @@ function SpeedPage() {
       >
         Tillbaka till Off the Tee
       </Link>
+
+      <div className="mt-3 flex gap-3">
+        <Link
+          to="/"
+          className="flex-1 rounded-2xl border border-border py-3 text-center text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
+        >
+          Startsida
+        </Link>
+        <Link
+          to="/utveckling"
+          className="flex-1 rounded-2xl border border-border py-3 text-center text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
+        >
+          Utveckling
+        </Link>
+      </div>
     </main>
   );
 }

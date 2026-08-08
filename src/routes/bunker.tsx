@@ -42,7 +42,7 @@ function BunkerPage() {
 
   const current = shots[Math.min(index, BUNKER_TOTAL_SHOTS - 1)];
 
-  useHideBottomNav(phase === "test");
+  useHideBottomNav(phase === "test" || phase === "result");
 
   function start() {
     const sessions = loadBunkerSessions();
@@ -224,6 +224,21 @@ function BunkerPage() {
       >
         Tillbaka till Around the Green
       </Link>
+
+      <div className="mt-3 flex gap-3">
+        <Link
+          to="/"
+          className="flex-1 rounded-2xl border border-border py-3 text-center text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
+        >
+          Startsida
+        </Link>
+        <Link
+          to="/utveckling"
+          className="flex-1 rounded-2xl border border-border py-3 text-center text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
+        >
+          Utveckling
+        </Link>
+      </div>
     </main>
   );
 }

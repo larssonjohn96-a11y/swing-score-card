@@ -51,7 +51,7 @@ function ShortPuttPage() {
   const [aboutOpen, setAboutOpen] = useState(false);
   const [hcpInfoOpen, setHcpInfoOpen] = useState(false);
 
-  useHideBottomNav(phase === "test");
+  useHideBottomNav(phase === "test" || phase === "result");
 
   useEffect(() => {
     const sessions = loadShortPuttSessions();
@@ -498,6 +498,21 @@ function ShortPuttPage() {
       >
         Tillbaka till Puttning
       </Link>
+
+      <div className="mt-3 flex gap-3">
+        <Link
+          to="/"
+          className="flex-1 rounded-2xl border border-border py-3 text-center text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
+        >
+          Startsida
+        </Link>
+        <Link
+          to="/utveckling"
+          className="flex-1 rounded-2xl border border-border py-3 text-center text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
+        >
+          Utveckling
+        </Link>
+      </div>
     </main>
   );
 }

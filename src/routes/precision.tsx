@@ -67,7 +67,7 @@ function PrecisionPage() {
 
   const current = shots[Math.min(index, PRECISION_TOTAL_SHOTS - 1)];
 
-  useHideBottomNav(phase === "test");
+  useHideBottomNav(phase === "test" || phase === "result");
 
   function pickContext(c: MeasurementContext) {
     setContext(c);
@@ -484,6 +484,21 @@ function ResultScreen({
           className="flex-1 rounded-2xl border border-border py-4 text-center font-[family-name:var(--font-display)] text-2xl text-muted-foreground"
         >
           Historik
+        </Link>
+      </div>
+
+      <div className="mt-3 flex gap-3">
+        <Link
+          to="/"
+          className="flex-1 rounded-2xl border border-border py-3 text-center text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
+        >
+          Startsida
+        </Link>
+        <Link
+          to="/utveckling"
+          className="flex-1 rounded-2xl border border-border py-3 text-center text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
+        >
+          Utveckling
         </Link>
       </div>
     </main>
