@@ -95,6 +95,18 @@ function Home() {
         </div>
       </div>
 
+      <div className="mt-6">
+        <h1 className="font-[family-name:var(--font-display)] text-3xl leading-none tracking-wide">
+          LÄR KÄNNA DITT SPEL
+        </h1>
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+          Mät ditt spel. Se vad du gör bäst, vad du behöver förbättra och hur du står dig mot andra.
+        </p>
+        <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.3em] text-muted-foreground/60">
+          Testa · Utvecklas · Jämför
+        </p>
+      </div>
+
       <AppStoryLauncher />
 
       {data && (

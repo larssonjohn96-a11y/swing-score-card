@@ -30,18 +30,11 @@ export function AppStoryLauncher() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="mt-4 flex w-full items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 text-left transition-colors hover:border-primary"
+        className="mt-4 flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
       >
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
-          <Info className="h-4 w-4 text-primary" />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block text-sm font-semibold leading-tight">Hur fungerar appen?</span>
-          <span className="block text-xs text-muted-foreground">
-            Hitta dina styrkor, följ din utveckling och jämför din nivå
-          </span>
-        </span>
-        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+        <Info className="h-3.5 w-3.5" />
+        Ny här? Se hur SG4 fungerar
+        <ChevronRight className="h-3.5 w-3.5" />
       </button>
 
       {open && <StoryModal onClose={() => setOpen(false)} />}
