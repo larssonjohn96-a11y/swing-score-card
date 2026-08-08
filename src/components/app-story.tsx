@@ -1,6 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowRight, ChevronRight, Flag, Info, Target, TrendingDown, Users, X } from "lucide-react";
+import {
+  ArrowRight,
+  ChevronRight,
+  CircleDot,
+  Flag,
+  Info,
+  Rocket,
+  Target,
+  TrendingDown,
+  Users,
+  X,
+} from "lucide-react";
 import { PolarAngleAxis, PolarGrid, Radar, RadarChart, ResponsiveContainer } from "recharts";
 
 const SLIDE_COUNT = 5;
@@ -11,7 +22,7 @@ const SLIDE_COUNT = 5;
  * rör aldrig användarens riktiga resultat. Rutan finns alltid kvar så man
  * kan öppna presentationen igen när som helst.
  */
-export function AppStoryLauncher({ hasResults }: { hasResults: boolean }) {
+export function AppStoryLauncher() {
   const [open, setOpen] = useState(false);
 
   return (
@@ -33,12 +44,12 @@ export function AppStoryLauncher({ hasResults }: { hasResults: boolean }) {
         <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
       </button>
 
-      {open && <StoryModal hasResults={hasResults} onClose={() => setOpen(false)} />}
+      {open && <StoryModal onClose={() => setOpen(false)} />}
     </>
   );
 }
 
-function StoryModal({ hasResults, onClose }: { hasResults: boolean; onClose: () => void }) {
+function StoryModal({ onClose }: { onClose: () => void }) {
   const [index, setIndex] = useState(0);
   const navigate = useNavigate();
   const touchStartX = useRef<number | null>(null);
@@ -64,7 +75,7 @@ function StoryModal({ hasResults, onClose }: { hasResults: boolean; onClose: () 
 
   function handleCta() {
     onClose();
-    navigate({ to: hasResults ? "/utveckling" : "/tester" });
+    navigate({ to: "/tester" });
   }
 
   function onTouchStart(e: React.TouchEvent) {
@@ -112,7 +123,7 @@ function StoryModal({ hasResults, onClose }: { hasResults: boolean; onClose: () 
       </button>
 
       <div key={index} className="relative flex flex-1 flex-col overflow-hidden px-6 pb-8 pt-10">
-        <ActiveSlide onCta={handleCta} hasResults={hasResults} />
+        <ActiveSlide onCta={handleCta} />
       </div>
 
       {/* Osynliga tryckzoner: vänster = föregående, höger = nästa */}
@@ -135,15 +146,15 @@ function StoryModal({ hasResults, onClose }: { hasResults: boolean; onClose: () 
   );
 }
 
-type SlideProps = { onCta: () => void; hasResults: boolean };
+type SlideProps = { onCta: () => void };
 
 /* ---------------------------------------------------------------- Slide 1 */
 
 const SLIDE1_CATEGORIES = [
-  { label: "Off the Tee", icon: Flag },
+  { label: "Off the Tee", icon: Rocket },
   { label: "Approach", icon: Target },
   { label: "Around the Green", icon: Flag },
-  { label: "Putting", icon: Target },
+  { label: "Putting", icon: CircleDot },
 ];
 
 function Slide1Test() {
@@ -158,7 +169,7 @@ function Slide1Test() {
         DITT SPEL
       </h2>
       <p className="animate-in fade-in slide-in-from-bottom-4 mt-4 max-w-xs text-base leading-relaxed text-white/70 delay-200 duration-500">
-        Gör 7 enkla tester som mäter de viktigaste delarna av ditt golfspel.
+        7 enkla tester utformade för att mäta det som faktiskt avgör din prestation på banan.
       </p>
 
       <div className="animate-in fade-in zoom-in-95 mt-8 grid w-full max-w-xs grid-cols-2 gap-2.5 delay-300 duration-500">
@@ -177,6 +188,14 @@ function Slide1Test() {
 
       <p className="animate-in fade-in mt-6 text-xs font-semibold uppercase tracking-[0.25em] text-white/40 delay-500 duration-500">
         Samma tester. Varje gång.
+      </p>
+
+      <p
+        className="animate-in fade-in mt-8 flex items-center gap-1.5 text-xs font-medium text-white/40 duration-500"
+        style={{ animationDelay: "900ms", animationFillMode: "both" }}
+      >
+        Tryck höger för att fortsätta
+        <ChevronRight className="h-3.5 w-3.5 animate-pulse" />
       </p>
     </div>
   );
@@ -376,7 +395,7 @@ function Slide4Track() {
 
 /* ---------------------------------------------------------------- Slide 5 */
 
-function Slide5Compare({ onCta, hasResults }: SlideProps) {
+function Slide5Compare({ onCta }: SlideProps) {
   return (
     <div className="flex flex-1 flex-col items-center justify-center text-center">
       <h2 className="animate-in fade-in slide-in-from-bottom-4 font-[family-name:var(--font-display)] text-3xl leading-[1.05] duration-500">
@@ -444,7 +463,7 @@ function Slide5Compare({ onCta, hasResults }: SlideProps) {
         className="animate-in fade-in slide-in-from-bottom-2 mt-6 flex items-center gap-2 rounded-2xl bg-primary px-8 py-4 font-[family-name:var(--font-display)] text-xl text-primary-foreground duration-500"
         style={{ animationDelay: "900ms", animationFillMode: "both" }}
       >
-        {hasResults ? "Se mina tester" : "Starta ett test"}
+        Gör ett test
         <ArrowRight className="h-5 w-5" />
       </button>
     </div>

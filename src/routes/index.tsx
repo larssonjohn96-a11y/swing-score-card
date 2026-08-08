@@ -95,7 +95,7 @@ function Home() {
         </div>
       </div>
 
-      <AppStoryLauncher hasResults={Boolean(data?.cats.some((c) => c.count > 0))} />
+      <AppStoryLauncher />
 
       {data && (
         <div className="mt-4">
