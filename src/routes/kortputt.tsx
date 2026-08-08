@@ -3,7 +3,7 @@ import { ArrowLeft, Check, CheckCircle2, Info, Mountain, Target, X } from "lucid
 import { useEffect, useState } from "react";
 import {
   DIRECTIONS,
-  SHORT_PUTT_ROUNDS,
+  MAX_POINTS,
   SHORT_PUTT_TOTAL,
   computeShortPuttResult,
   emptyShortPutts,
@@ -24,11 +24,11 @@ import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 export const Route = createFileRoute("/kortputt")({
   head: () => ({
     meta: [
-      { title: "Short Putting Test – 24 puttar från 1–3 m | SG4" },
+      { title: "Short Putting Test – 12 puttar från 1–3 m | SG4" },
       {
         name: "description",
         content:
-          "Short Putting Test: 24 puttar (2 varv) från fyra riktningar (klockan 12/3/6/9) på 1, 2 och 3 meter. Short Putting HCP, score och analys per riktning.",
+          "Short Putting Test: 12 puttar från fyra riktningar (klockan 12/3/6/9) på 1, 2 och 3 meter. Short Putting HCP, score och analys per riktning.",
       },
     ],
   }),
@@ -36,9 +36,6 @@ export const Route = createFileRoute("/kortputt")({
 });
 
 type Phase = "setup" | "test" | "result";
-
-const PUTTS_PER_ROUND = SHORT_PUTT_TOTAL / SHORT_PUTT_ROUNDS;
-const MAX_POINTS = 72;
 
 function ShortPuttPage() {
   const navigate = useNavigate();
@@ -189,30 +186,11 @@ function ShortPuttPage() {
             </span>
             <span className="text-muted-foreground">{pct} %</span>
           </div>
-          <div className="mt-1.5 flex gap-2">
-            {[1, 2].map((round) => {
-              const filledInRound = Math.min(
-                PUTTS_PER_ROUND,
-                Math.max(0, index - (round - 1) * PUTTS_PER_ROUND),
-              );
-              return (
-                <div key={round} className="flex-1">
-                  <div className="h-2 overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full rounded-full bg-primary transition-all"
-                      style={{ width: `${(filledInRound / PUTTS_PER_ROUND) * 100}%` }}
-                    />
-                  </div>
-                  <p
-                    className={`mt-0.5 text-[10px] uppercase tracking-[0.2em] ${
-                      current.round === round ? "text-foreground" : "text-muted-foreground"
-                    }`}
-                  >
-                    Varv {round}
-                  </p>
-                </div>
-              );
-            })}
+          <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-primary transition-all"
+              style={{ width: `${pct}%` }}
+            />
           </div>
         </div>
 
@@ -333,8 +311,8 @@ function ShortPuttPage() {
 
       {aboutOpen && (
         <p className="mt-3 rounded-2xl border border-border bg-card/60 p-3 text-xs leading-relaxed text-muted-foreground">
-          24 puttar (2 varv) från fyra riktningar – klockan 12, 3, 6 och 9 – på 1, 2 och 3 meter.
-          Satta puttar viktas efter avstånd eftersom en miss från nära håll väger tyngre. Green:{" "}
+          12 puttar från fyra riktningar – klockan 12, 3, 6 och 9 – på 1, 2 och 3 meter. Satta
+          puttar viktas efter avstånd eftersom en miss från nära håll väger tyngre. Green:{" "}
           {greenType === "sloped" ? "lutande" : "rak"}.
         </p>
       )}

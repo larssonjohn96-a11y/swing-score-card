@@ -31,7 +31,7 @@ export const Route = createFileRoute("/offtee")({
       {
         name: "description",
         content:
-          "12 drives mot samma fairway – Driving Handicap baserat på längd, precision och jämnhet.",
+          "6 drives mot samma fairway – Driving Handicap baserat på längd, precision och jämnhet.",
       },
     ],
   }),

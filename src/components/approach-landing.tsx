@@ -64,16 +64,6 @@ export function ApproachLanding({ lastResultLabel }: { lastResultLabel?: string 
         </div>
       </section>
 
-      <section className="mt-8 rounded-3xl border border-border bg-card p-5">
-        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-          Vem passar testet för
-        </p>
-        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          Dig som vill skärpa precisionen mot green, skapa fler birdiechanser och förstå exakt var
-          dina inspel brister – kort, långt, till vänster eller höger.
-        </p>
-      </section>
-
       <section className="mt-8">
         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
           Så går testet till

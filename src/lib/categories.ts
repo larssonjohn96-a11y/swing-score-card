@@ -57,7 +57,7 @@ export const CATEGORIES: Category[] = [
         to: "/offtee-test",
         number: "18",
         title: "Off the Tee Test",
-        subtitle: "12 drives mot samma fairway",
+        subtitle: "6 drives mot samma fairway",
         bullets: [
           "Bara carry, totalt avstånd och sidled per slag – ingen klubba.",
           "Driving Handicap kalibrerat mot verklig speldata.",
@@ -126,7 +126,7 @@ export const CATEGORIES: Category[] = [
         to: "/short-putting-test",
         number: "14",
         title: "Short Putting Test",
-        subtitle: "24 korta puttar – 1 till 3 meter",
+        subtitle: "12 korta puttar – 1 till 3 meter",
         bullets: [
           "Mäter hur säkert du sätter korta, avgörande puttar.",
           "Score 0–100 och ett uppskattat handicap.",

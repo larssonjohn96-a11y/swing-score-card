@@ -37,8 +37,8 @@ export type ShortPuttDistance = (typeof SHORT_PUTT_DISTANCES)[number];
 /** Poäng för en satt putt, per avstånd. */
 export const POINTS_BY_DISTANCE: Record<ShortPuttDistance, number> = { 1: 2, 2: 3, 3: 4 };
 
-export const SHORT_PUTT_ROUNDS = 2;
-export const SHORT_PUTT_TOTAL = DIRECTIONS.length * SHORT_PUTT_DISTANCES.length * SHORT_PUTT_ROUNDS; // 24
+export const SHORT_PUTT_ROUNDS = 1;
+export const SHORT_PUTT_TOTAL = DIRECTIONS.length * SHORT_PUTT_DISTANCES.length * SHORT_PUTT_ROUNDS; // 12
 export const MAX_POINTS =
   DIRECTIONS.length *
   SHORT_PUTT_ROUNDS *

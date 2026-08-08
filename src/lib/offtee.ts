@@ -1,7 +1,7 @@
 /**
  * Off the Tee Test – testlogik och beräkningar.
  *
- * Standardiserat test: 12 drives mot samma fairway. Spelaren matar bara in
+ * Standardiserat test: 6 drives mot samma fairway. Spelaren matar bara in
  * tre tal per slag – carry, totalt avstånd och sidled från mitten. Ingen
  * klubba, inga varierande hål. Driving Handicap byggs av tre delar –
  * längd, wayward-andel (OB) och konsekvens – där längd och wayward-andel
@@ -18,7 +18,7 @@
  * Alla beräkningar nedan är rena funktioner utan UI eller lagring.
  */
 
-/** Standardiserad fairway – samma för alla 12 slag. */
+/** Standardiserad fairway – samma för alla 6 slag. */
 export const FAIRWAY = {
   /** halva fairwaybredden i meter (≈ 32 m fairway totalt) */
   halfWidth: 16,
@@ -26,7 +26,7 @@ export const FAIRWAY = {
   roughDepth: 12,
 };
 
-export const OFFTEE_TOTAL_SHOTS = 12;
+export const OFFTEE_TOTAL_SHOTS = 6;
 
 /** Rådata för ett slag. */
 export type TeeShotInput = {

@@ -56,8 +56,8 @@ export function ShortPuttingLanding({ lastResultLabel }: { lastResultLabel?: str
           Så går testet till
         </p>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          24 puttar från fyra riktningar runt hålet, i två varv. Du registrerar bara Satt eller
-          Missad efter varje putt. Detaljerna visas när du startar.
+          12 puttar från fyra riktningar runt hålet. Du registrerar bara Satt eller Missad efter
+          varje putt. Detaljerna visas när du startar.
         </p>
       </section>
 

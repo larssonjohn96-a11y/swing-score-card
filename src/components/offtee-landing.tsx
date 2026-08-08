@@ -45,7 +45,7 @@ export function OffTeeLanding({ lastResultLabel }: { lastResultLabel?: string })
       <p className="mt-6 text-xs uppercase tracking-[0.3em] text-flag">Off the Tee</p>
       <h1 className="mt-2 text-5xl leading-none">Off the Tee Test</h1>
       <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-        Slå 12 drives mot samma fairway och få en uppskattning av din Driving Handicap baserat på
+        Slå 6 drives mot samma fairway och få en uppskattning av din Driving Handicap baserat på
         längd, precision och jämnhet.
       </p>
 
@@ -63,22 +63,12 @@ export function OffTeeLanding({ lastResultLabel }: { lastResultLabel?: string })
         </div>
       </section>
 
-      <section className="mt-8 rounded-3xl border border-border bg-card p-5">
-        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-          Vem passar testet för
-        </p>
-        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          Dig som vill slå längre utan att offra träffsäkerheten, hålla fler bollar i spel och få en
-          verklighetsförankrad bild av var din drivinghandicap ligger idag.
-        </p>
-      </section>
-
       <section className="mt-8">
         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
           Så går testet till
         </p>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          12 drives mot samma standardiserade fairway. Bara tre tal per slag – carry, totalt avstånd
+          6 drives mot samma standardiserade fairway. Bara tre tal per slag – carry, totalt avstånd
           och sidled från mitten. Ingen klubba att välja. Din Driving Handicap byggs sedan av längd,
           hur ofta du håller bollen i spel (Out of Bounds) och hur jämn du är slag för slag.
         </p>
