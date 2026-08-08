@@ -27,7 +27,7 @@ export function AppStoryLauncher({ hasResults }: { hasResults: boolean }) {
         <span className="min-w-0 flex-1">
           <span className="block text-sm font-semibold leading-tight">Hur fungerar appen?</span>
           <span className="block text-xs text-muted-foreground">
-            Förstå ditt spel på 20 sekunder
+            Hitta dina styrkor, följ din utveckling och jämför din nivå
           </span>
         </span>
         <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
