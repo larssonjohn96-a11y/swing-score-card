@@ -17,6 +17,7 @@ import { PlayerCard } from "@/components/rating-card";
 import { computeRatingCard, loadCardProfile, type RatingCardData } from "@/lib/rating-card";
 import { RadarCard } from "@/components/progress-dashboard";
 import { topScores, type Highlight } from "@/lib/highlights";
+import { pushPlayerSnapshot } from "@/lib/friends-cloud";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -67,11 +68,13 @@ function Home() {
 
   useEffect(() => {
     setData(loadHomeData());
-  }, []);
+    if (user) void pushPlayerSnapshot();
+  }, [user]);
 
   function handleSaveHandicap(value: number) {
     saveRealHandicap(value);
     setData(loadHomeData());
+    if (user) void pushPlayerSnapshot();
   }
 
   return (

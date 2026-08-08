@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Plus, Search, TrendingDown, TrendingUp, User, X } from "lucide-react";
 import {
@@ -19,6 +19,17 @@ import { ChartCard } from "@/components/chart-card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { loadCardProfile } from "@/lib/rating-card";
 import { addFriend, loadFriends, removeFriend, type Friend } from "@/lib/friends";
+import { useAuth } from "@/hooks/use-auth";
+import {
+  fetchFriendSnapshot,
+  listFriendships,
+  removeFriendship,
+  respondToFriendRequest,
+  searchProfiles,
+  sendFriendRequest,
+  type Friendship,
+  type Profile,
+} from "@/lib/friends-cloud";
 import { Sparkline } from "@/components/home-dashboard";
 import type {
   CategoryCardStat,
@@ -110,7 +121,13 @@ export function OverviewCard({
 
 /* -------------------------------------------------------- Jämförelseanalys */
 
-type CompareTarget = { label: string; hcp: number; isFriend?: boolean };
+type CompareTarget = {
+  label: string;
+  hcp: number;
+  isFriend?: boolean;
+  /** för riktiga vänner: exakt HCP per kategori istället för samma tal på alla axlar */
+  categoryHcp?: Partial<Record<CategorySlug, number>>;
+};
 
 const DEFAULT_TARGET: CompareTarget = { label: "0", hcp: BENCHMARK_LEVELS[3].hcp };
 
@@ -132,16 +149,21 @@ export function RadarCard({
 
   const profile = loadCardProfile();
 
+  const targetFor = (slug?: CategorySlug) => {
+    const exact = slug && target.categoryHcp?.[slug];
+    return ratingFromHandicap(exact ?? target.hcp);
+  };
+
   const data = [
     ...cats.map((c) => ({
       subject: `HCP: ${c.title}`,
       spelare: c.handicap !== undefined ? ratingFromHandicap(c.handicap) : 0,
-      target: ratingFromHandicap(target.hcp),
+      target: targetFor(c.slug),
     })),
     {
       subject: "HCP: Totalt",
       spelare: totalHandicap !== undefined ? ratingFromHandicap(totalHandicap) : 0,
-      target: ratingFromHandicap(target.hcp),
+      target: targetFor(undefined),
     },
   ];
 
@@ -291,6 +313,66 @@ function SelectPlayerSheet({
   const [friendName, setFriendName] = useState("");
   const [friendHcp, setFriendHcp] = useState("");
 
+  const { user } = useAuth();
+  const [accepted, setAccepted] = useState<Friendship[]>([]);
+  const [incoming, setIncoming] = useState<Friendship[]>([]);
+  const [outgoing, setOutgoing] = useState<Friendship[]>([]);
+  const [searchResults, setSearchResults] = useState<Profile[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [sentTo, setSentTo] = useState<Set<string>>(new Set());
+
+  const refreshFriendships = useCallback(() => {
+    if (!user) return;
+    void listFriendships().then((r) => {
+      setAccepted(r.accepted);
+      setIncoming(r.incoming);
+      setOutgoing(r.outgoing);
+    });
+  }, [user]);
+
+  useEffect(() => {
+    if (open) refreshFriendships();
+  }, [open, refreshFriendships]);
+
+  useEffect(() => {
+    if (!open || !user) return;
+    const q = query.trim();
+    if (q.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+    setSearching(true);
+    const t = window.setTimeout(() => {
+      void searchProfiles(q).then((r) => {
+        setSearchResults(r);
+        setSearching(false);
+      });
+    }, 300);
+    return () => window.clearTimeout(t);
+  }, [query, open, user]);
+
+  async function pickRealFriend(f: Friendship) {
+    const snap = await fetchFriendSnapshot(f.other.id);
+    if (!snap) return;
+    onPick({
+      label: f.other.displayName,
+      hcp: snap.estHcp ?? snap.realHcp ?? 18,
+      isFriend: true,
+      categoryHcp: snap.categoryHcp,
+    });
+    onOpenChange(false);
+  }
+
+  async function handleSendRequest(profileId: string) {
+    const ok = await sendFriendRequest(profileId);
+    if (ok) setSentTo((prev) => new Set(prev).add(profileId));
+  }
+
+  async function handleRespond(id: string, accept: boolean) {
+    await respondToFriendRequest(id, accept);
+    refreshFriendships();
+  }
+
   const q = query.trim().toLowerCase();
   const levels = BENCHMARK_LEVELS.filter(
     (l) => !q || l.label.toLowerCase().includes(q) || `hcp ${l.label}`.includes(q),
@@ -355,8 +437,126 @@ function SelectPlayerSheet({
           )}
         </div>
 
+        {user ? (
+          <>
+            <p className="mt-5 text-xs uppercase tracking-[0.2em] text-muted-foreground">
+              Riktiga vänner
+            </p>
+
+            {incoming.length > 0 && (
+              <div className="mt-2 space-y-1.5">
+                {incoming.map((f) => (
+                  <div
+                    key={f.id}
+                    className="flex items-center justify-between rounded-2xl border border-primary/30 bg-primary/5 px-3 py-2"
+                  >
+                    <span className="text-sm font-medium">{f.other.displayName}</span>
+                    <div className="flex gap-1.5">
+                      <button
+                        onClick={() => handleRespond(f.id, true)}
+                        className="rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground"
+                      >
+                        Acceptera
+                      </button>
+                      <button
+                        onClick={() => handleRespond(f.id, false)}
+                        className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground"
+                      >
+                        Avböj
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="mt-2 space-y-1">
+              {accepted.map((f) => (
+                <div
+                  key={f.id}
+                  className="flex items-center justify-between rounded-2xl px-3 py-2 transition-colors hover:bg-muted"
+                >
+                  <button
+                    onClick={() => pickRealFriend(f)}
+                    className="flex flex-1 items-center gap-3 text-left"
+                  >
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10">
+                      {f.other.avatarUrl ? (
+                        <img
+                          src={f.other.avatarUrl}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <User className="h-4 w-4 text-primary" />
+                      )}
+                    </span>
+                    <span className="font-medium">{f.other.displayName}</span>
+                  </button>
+                  <button
+                    onClick={async () => {
+                      await removeFriendship(f.id);
+                      refreshFriendships();
+                    }}
+                    aria-label={`Ta bort ${f.other.displayName}`}
+                    className="p-2 text-muted-foreground hover:text-destructive"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+              {outgoing.map((f) => (
+                <p key={f.id} className="px-3 py-2 text-xs text-muted-foreground">
+                  Förfrågan skickad till {f.other.displayName} – väntar på svar
+                </p>
+              ))}
+              {!accepted.length && !outgoing.length && !incoming.length && (
+                <p className="px-3 py-2 text-sm text-muted-foreground">
+                  Inga vänner än – sök efter namn ovan för att skicka en förfrågan.
+                </p>
+              )}
+            </div>
+
+            {query.trim().length >= 2 && (
+              <div className="mt-2 space-y-1 border-t border-border pt-2">
+                {searching && <p className="px-3 py-1 text-xs text-muted-foreground">Söker…</p>}
+                {searchResults
+                  .filter(
+                    (p) =>
+                      !accepted.some((f) => f.other.id === p.id) &&
+                      !outgoing.some((f) => f.other.id === p.id),
+                  )
+                  .map((p) => (
+                    <div
+                      key={p.id}
+                      className="flex items-center justify-between rounded-2xl px-3 py-2"
+                    >
+                      <span className="text-sm">{p.displayName}</span>
+                      <button
+                        onClick={() => handleSendRequest(p.id)}
+                        disabled={sentTo.has(p.id)}
+                        className="rounded-full border border-border px-3 py-1 text-xs font-medium text-muted-foreground disabled:opacity-50"
+                      >
+                        {sentTo.has(p.id) ? "Skickad" : "Lägg till"}
+                      </button>
+                    </div>
+                  ))}
+                {!searching && !searchResults.length && (
+                  <p className="px-3 py-1 text-xs text-muted-foreground">
+                    Ingen hittad med det namnet.
+                  </p>
+                )}
+              </div>
+            )}
+          </>
+        ) : (
+          <p className="mt-5 rounded-2xl border border-border bg-card/60 p-3 text-xs text-muted-foreground">
+            Logga in för att söka efter och jämföra dig mot riktiga vänner som använder appen.
+          </p>
+        )}
+
         <p className="mt-5 text-xs uppercase tracking-[0.2em] text-muted-foreground">
-          Dina kompisar
+          Manuellt tillagda
         </p>
         <div className="mt-2 space-y-1">
           {filteredFriends.map((f) => (
