@@ -256,7 +256,7 @@ export function CategoryGrid({ cats }: { cats: CategoryHandicap[] }) {
 }
 
 /** Liten, mjukt kurvad trendkurva (senaste 90 dagarna) med en pil som visar riktning på slutet. */
-function Sparkline({ values }: { values: number[] }) {
+export function Sparkline({ values }: { values: number[] }) {
   const w = 100;
   const h = 24;
   const min = Math.min(...values);

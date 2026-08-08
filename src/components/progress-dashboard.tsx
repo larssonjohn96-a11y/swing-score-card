@@ -19,6 +19,7 @@ import { ChartCard } from "@/components/chart-card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { loadCardProfile } from "@/lib/rating-card";
 import { addFriend, loadFriends, removeFriend, type Friend } from "@/lib/friends";
+import { Sparkline } from "@/components/home-dashboard";
 import type {
   CategoryCardStat,
   CategoryHandicap,
@@ -31,6 +32,7 @@ import {
   BENCHMARK_LEVELS,
   CATEGORY_LABELS,
   computeCategoryCardStats,
+  computeCategoryHcpTimeline,
   hcpLabel,
   ratingFromHandicap,
 } from "@/lib/sg-handicap";
@@ -449,20 +451,19 @@ const NO_DATA_LINK: Record<CategorySlug, { to: string; params?: Record<string, s
   speed: { to: "/speed-test" },
 };
 
-/** Kort, ettordig svensk beskrivning per kategori. */
-const CATEGORY_ONEWORD: Record<CategorySlug, string> = {
-  approach: "Inspel",
-  driving: "Utslag",
-  "around-the-green": "Närspel",
-  puttning: "Putt",
-  speed: "Fart",
-};
-
 export function CategoryStatsSection() {
   const [cards, setCards] = useState<CategoryCardStat[]>([]);
+  const [sparklines, setSparklines] = useState<Record<string, number[]>>({});
 
   useEffect(() => {
-    setCards(computeCategoryCardStats(90));
+    const stats = computeCategoryCardStats(90);
+    setCards(stats);
+    const next: Record<string, number[]> = {};
+    for (const c of stats) {
+      const points = computeCategoryHcpTimeline(c.slug, 90);
+      next[c.slug] = points.map((p) => ratingFromHandicap(p.rolling ?? p.raw ?? 0));
+    }
+    setSparklines(next);
   }, []);
 
   return (
@@ -472,33 +473,58 @@ export function CategoryStatsSection() {
       </p>
 
       <div className="mt-3 grid grid-cols-2 gap-2">
-        {cards.map((c) => (
-          <Link
-            key={c.slug}
-            to={c.hasData ? "/utveckling/$slug" : NO_DATA_LINK[c.slug].to}
-            params={c.hasData ? { slug: c.slug } : NO_DATA_LINK[c.slug].params}
-            className="block rounded-2xl border border-border bg-card p-4 transition-colors hover:border-primary"
-          >
-            <p className="font-[family-name:var(--font-display)] text-xl leading-none">{c.title}</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">{CATEGORY_ONEWORD[c.slug]}</p>
-            {c.hasData ? (
-              <>
-                <p className="mt-3 text-sm text-muted-foreground">
-                  Est. HCP{" "}
-                  <span className="font-[family-name:var(--font-display)] text-xl text-flag">
-                    {c.estHcp !== undefined ? hcpLabel(c.estHcp) : "–"}
-                  </span>
-                </p>
-                <p className="mt-3 text-xs font-semibold text-flag">Visa analys →</p>
-              </>
-            ) : (
-              <>
-                <p className="mt-3 text-sm text-muted-foreground">Inget test genomfört ännu.</p>
-                <p className="mt-3 text-xs font-semibold text-flag">Genomför ett test →</p>
-              </>
-            )}
-          </Link>
-        ))}
+        {cards.map((c) => {
+          const points = sparklines[c.slug] ?? [];
+          return (
+            <div key={c.slug} className="rounded-2xl border border-border bg-card p-3">
+              <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
+                {c.title}
+              </p>
+              {c.hasData ? (
+                <>
+                  <p className="mt-1 font-[family-name:var(--font-display)] text-2xl leading-none">
+                    HCP {c.estHcp !== undefined ? hcpLabel(c.estHcp) : "–"}
+                  </p>
+                  <div className="mt-2 h-6">
+                    {points.length >= 2 ? (
+                      <Sparkline values={points} />
+                    ) : (
+                      <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                        <div
+                          className="h-full rounded-full bg-primary"
+                          style={{
+                            width: `${Math.max(4, c.estHcp !== undefined ? ratingFromHandicap(c.estHcp) : 4)}%`,
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                  <Link
+                    to="/utveckling/$slug"
+                    params={{ slug: c.slug }}
+                    className="mt-3 block rounded-xl bg-primary py-2 text-center text-xs font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+                  >
+                    Visa analys
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <p className="mt-1 text-sm font-medium text-primary">Gör ett test</p>
+                  <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                    Inget test ännu
+                  </p>
+                  <Link
+                    to={NO_DATA_LINK[c.slug].to}
+                    params={NO_DATA_LINK[c.slug].params}
+                    className="mt-3 block rounded-xl border border-border py-2 text-center text-xs font-semibold text-foreground transition-colors hover:border-primary"
+                  >
+                    Genomför ett test
+                  </Link>
+                </>
+              )}
+            </div>
+          );
+        })}
       </div>
     </section>
   );
