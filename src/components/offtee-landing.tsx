@@ -11,6 +11,8 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { TeeHero } from "@/components/offtee-visuals";
+import { TestHowItWorksLink } from "@/components/test-story";
+import { OFFTEE_STORY } from "@/lib/test-story-content";
 
 const VALUE_ITEMS = [
   { icon: Target, label: "Off the Tee Score 0–100" },
@@ -48,6 +50,8 @@ export function OffTeeLanding({ lastResultLabel }: { lastResultLabel?: string })
         Slå 6 drives mot samma fairway och få en uppskattning av din Driving Handicap baserat på
         längd, precision och jämnhet.
       </p>
+
+      <TestHowItWorksLink config={OFFTEE_STORY} />
 
       <section className="mt-8">
         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">

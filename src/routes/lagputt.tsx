@@ -12,6 +12,8 @@ import {
   type LagPutt,
 } from "@/lib/lagputt";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
+import { TestHowItWorksLink } from "@/components/test-story";
+import { LAGPUTT_STORY } from "@/lib/test-story-content";
 
 export const Route = createFileRoute("/lagputt")({
   head: () => ({
@@ -96,6 +98,8 @@ function LagPuttPage() {
             <X className="h-3.5 w-3.5" /> Avbryt test
           </button>
         </div>
+
+        {index === 0 && <TestHowItWorksLink config={LAGPUTT_STORY} />}
 
         <div className="mt-3">
           <div className="flex items-baseline justify-between text-sm">

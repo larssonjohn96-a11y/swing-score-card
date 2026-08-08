@@ -1,6 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { AlertTriangle, ArrowLeft, ArrowRight, Gauge, Target } from "lucide-react";
 import { BunkerHero } from "@/components/bunker-visuals";
+import { TestHowItWorksLink } from "@/components/test-story";
+import { BUNKER_STORY } from "@/lib/test-story-content";
 
 const VALUE_ITEMS = [
   { icon: Target, label: "Snittavstånd från hål" },
@@ -33,6 +35,8 @@ export function BunkerLanding({ lastResultLabel }: { lastResultLabel?: string })
         Mäter hur nära hålet du får bollen från bunker – och hur ofta du faktiskt kommer upp ur
         sanden.
       </p>
+
+      <TestHowItWorksLink config={BUNKER_STORY} />
 
       <section className="mt-8">
         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">

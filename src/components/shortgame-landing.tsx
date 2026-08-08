@@ -1,6 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, Gauge, Target, TrendingUp, Wand2 } from "lucide-react";
 import { ShortGameHero } from "@/components/shortgame-visuals";
+import { TestHowItWorksLink } from "@/components/test-story";
+import { SHORTGAME_STORY } from "@/lib/test-story-content";
 
 const VALUE_ITEMS = [
   { icon: Target, label: "Snitt- och totalavstånd från hål" },
@@ -35,6 +37,8 @@ export function ShortGameLanding({ lastResultLabel }: { lastResultLabel?: string
         Mäter hur nära hålet du får bollen från 8 till 20 meter – oavsett om du chippar, pitchar
         eller väljer wedge. Det är resultatet som räknas, inte tekniken.
       </p>
+
+      <TestHowItWorksLink config={SHORTGAME_STORY} />
 
       <section className="mt-8">
         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">

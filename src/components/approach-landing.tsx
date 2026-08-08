@@ -11,6 +11,8 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { GreenHero } from "@/components/precision-visuals";
+import { TestHowItWorksLink } from "@/components/test-story";
+import { APPROACH_STORY } from "@/lib/test-story-content";
 
 const VALUE_ITEMS = [
   { icon: Target, label: "Approach Score 0–100" },
@@ -49,6 +51,8 @@ export function ApproachLanding({ lastResultLabel }: { lastResultLabel?: string 
         Se exakt hur nära flaggan du landar – avstånd för avstånd. Testet avslöjar mönstren bakom
         dina inspel och vad som avgör hur många birdiechanser du skapar.
       </p>
+
+      <TestHowItWorksLink config={APPROACH_STORY} />
 
       <section className="mt-8">
         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">

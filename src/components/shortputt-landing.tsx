@@ -1,6 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { AlertTriangle, ArrowLeft, ArrowRight, Compass, Ruler, Target } from "lucide-react";
 import { PuttingHero } from "@/components/shortputt-visuals";
+import { TestHowItWorksLink } from "@/components/test-story";
+import { SHORTPUTT_STORY } from "@/lib/test-story-content";
 
 const MEASURES = [
   { icon: Target, label: "Precision på 1–3 meter" },
@@ -36,6 +38,8 @@ export function ShortPuttingLanding({ lastResultLabel }: { lastResultLabel?: str
         Mäter din precision på korta puttar – 1 till 3 meter – och visar exakt var du tappar slag.
         Korta puttar avgör många scorer, så testet hjälper dig hitta rätt träningsfokus.
       </p>
+
+      <TestHowItWorksLink config={SHORTPUTT_STORY} />
 
       <section className="mt-8">
         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">

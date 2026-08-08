@@ -1,6 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, Gauge, Radar, Target, TrendingUp, Zap } from "lucide-react";
 import { SpeedHero } from "@/components/speed-visuals";
+import { TestHowItWorksLink } from "@/components/test-story";
+import { SPEED_STORY } from "@/lib/test-story-content";
 
 const VALUE_ITEMS = [
   { icon: Zap, label: "Snitt- och toppfart" },
@@ -35,6 +37,8 @@ export function SpeedLanding({ lastResultLabel }: { lastResultLabel?: string }) 
         Mäter din bollhastighet över 6 drives och visar var du ligger jämfört med andra
         handicapnivåer. Fart är den enskilt största faktorn bakom längd från tee.
       </p>
+
+      <TestHowItWorksLink config={SPEED_STORY} />
 
       <section className="mt-8">
         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
