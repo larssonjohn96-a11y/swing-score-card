@@ -95,40 +95,43 @@ function StoryModal({ onClose }: { onClose: () => void }) {
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
-      <div className="flex gap-1.5 px-4 pt-4">
-        {Array.from({ length: SLIDE_COUNT }).map((_, i) => (
-          <div key={i} className="h-1 flex-1 overflow-hidden rounded-full bg-white/20">
-            <div
-              className="h-full rounded-full bg-white transition-all duration-300"
-              style={{ width: i <= index ? "100%" : "0%" }}
-            />
-          </div>
-        ))}
+      <div className="relative mx-auto flex w-full max-w-md flex-1 flex-col">
+        <div className="flex gap-1.5 px-4 pt-4">
+          {Array.from({ length: SLIDE_COUNT }).map((_, i) => (
+            <div key={i} className="h-1 flex-1 overflow-hidden rounded-full bg-white/20">
+              <div
+                className="h-full rounded-full bg-white transition-all duration-300"
+                style={{ width: i <= index ? "100%" : "0%" }}
+              />
+            </div>
+          ))}
+        </div>
+
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Stäng"
+          className="absolute right-4 top-6 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white"
+        >
+          <X className="h-5 w-5" />
+        </button>
+
+        <div key={index} className="relative flex flex-1 flex-col overflow-hidden px-6 pb-8 pt-10">
+          <ActiveSlide onCta={handleCta} />
+          {index === 0 && (
+            <span
+              className="animate-in fade-in pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/30 duration-500"
+              style={{ animationDelay: "900ms", animationFillMode: "both" }}
+            >
+              <ChevronRight className="h-7 w-7 animate-pulse" strokeWidth={1.5} />
+            </span>
+          )}
+        </div>
       </div>
 
-      <button
-        type="button"
-        onClick={onClose}
-        aria-label="Stäng"
-        className="absolute right-4 top-6 flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white"
-      >
-        <X className="h-5 w-5" />
-      </button>
-
-      <div key={index} className="relative flex flex-1 flex-col overflow-hidden px-6 pb-8 pt-10">
-        <ActiveSlide onCta={handleCta} />
-        {index === 0 && (
-          <span
-            className="animate-in fade-in pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/30 duration-500"
-            style={{ animationDelay: "900ms", animationFillMode: "both" }}
-          >
-            <ChevronRight className="h-7 w-7 animate-pulse" strokeWidth={1.5} />
-          </span>
-        )}
-      </div>
-
-      {/* Osynliga tryckzoner: vänster = föregående, höger = nästa */}
-      <div className="pointer-events-none absolute inset-0 top-16 flex">
+      {/* Osynliga tryckzoner: vänster = föregående, höger = nästa. top-20 lämnar
+          gott om marginal under kryssknappen så de aldrig kan täcka den. */}
+      <div className="pointer-events-none absolute inset-0 top-20 flex">
         <button
           type="button"
           onClick={prev}
