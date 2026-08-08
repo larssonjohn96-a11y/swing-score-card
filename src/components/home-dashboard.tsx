@@ -240,9 +240,14 @@ export function CategoryGrid({ cats }: { cats: CategoryHandicap[] }) {
           }
 
           return (
-            <div key={c.slug} className="rounded-2xl border border-border bg-card p-3">
+            <Link
+              key={c.slug}
+              to="/utveckling/$slug"
+              params={{ slug: c.slug }}
+              className="block rounded-2xl border border-border bg-card p-3 transition-colors hover:border-primary"
+            >
               {content}
-            </div>
+            </Link>
           );
         })}
       </div>
