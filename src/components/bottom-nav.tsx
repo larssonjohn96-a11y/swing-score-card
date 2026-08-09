@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
-import { Home, ListChecks, Plus, TrendingUp, User } from "lucide-react";
+import { Home, ListChecks, Plus, Trophy, TrendingUp, User } from "lucide-react";
 import { useBottomNavVisibility } from "@/lib/bottom-nav-visibility";
 import { CATEGORIES } from "@/lib/categories";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { computeAchievements, computeMilestones, countUncollected } from "@/lib/trophy-room";
 
 const LEFT_TABS = [
   { to: "/", label: "Hem", icon: Home, exact: true },
@@ -14,24 +15,32 @@ const LEFT_TABS = [
 
 const RIGHT_TABS = [
   { to: "/utveckling", label: "Utveckling", icon: TrendingUp, exact: false },
+  { to: "/trophy", label: "Trophy", icon: Trophy, exact: false },
   { to: "/konto", label: "Profil", icon: User, exact: false },
 ] as const;
 
 function NavLink({
   tab,
   active,
+  badge,
 }: {
   tab: { to: string; label: string; icon: typeof Home };
   active: boolean;
+  badge?: number;
 }) {
   return (
     <Link to={tab.to} className="flex flex-1 flex-col items-center gap-1 py-2 active:scale-95">
       <span
-        className={`flex h-8 w-9 items-center justify-center rounded-xl transition-colors ${
+        className={`relative flex h-8 w-9 items-center justify-center rounded-xl transition-colors ${
           active ? "bg-primary/15 text-primary" : "text-muted-foreground"
         }`}
       >
         <tab.icon className="h-5 w-5" />
+        {Boolean(badge) && (
+          <span className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-flag px-1 text-[9px] font-bold text-background">
+            {badge}
+          </span>
+        )}
       </span>
       <span
         className={`text-[10px] font-medium uppercase tracking-wide transition-colors ${
@@ -48,6 +57,12 @@ export function BottomNav() {
   const { hidden } = useBottomNavVisibility();
   const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
+  const [trophyBadge, setTrophyBadge] = useState(0);
+
+  useEffect(() => {
+    const count = countUncollected(computeMilestones()) + countUncollected(computeAchievements());
+    setTrophyBadge(count);
+  }, [pathname]);
 
   if (hidden) return null;
 
@@ -79,6 +94,7 @@ export function BottomNav() {
               key={tab.to}
               tab={tab}
               active={tab.exact ? pathname === tab.to : pathname.startsWith(tab.to)}
+              badge={tab.to === "/trophy" ? trophyBadge : undefined}
             />
           ))}
         </div>
