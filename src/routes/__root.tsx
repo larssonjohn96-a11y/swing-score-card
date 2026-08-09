@@ -150,6 +150,7 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const { show, dismiss } = useSplash();
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -161,6 +162,7 @@ function RootComponent() {
             <BottomNav />
             <DevPlanSwitcher />
           </div>
+          {show && <SplashScreen onDismiss={dismiss} />}
         </BottomNavVisibilityProvider>
       </SubscriptionProvider>
     </QueryClientProvider>
