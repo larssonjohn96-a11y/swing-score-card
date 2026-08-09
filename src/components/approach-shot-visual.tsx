@@ -107,7 +107,11 @@ export function ApproachShotVisual({
     };
   };
   const ball = bezier(progress);
-  const ballVisible = flying && progress < 1;
+  // Bollen visas hela flygningen, men tonas mjukt bort under sista biten
+  // (istället för att abrupt försvinna vid progress===1) så den "landar"
+  // istället för att flimra bort.
+  const ballOpacity = flying ? (progress > 0.9 ? Math.max(0, (1 - progress) / 0.1) : 1) : 0;
+  const ballVisible = flying;
 
   return (
     <div className="relative rounded-2xl bg-primary/[0.04] px-2 py-1.5">
@@ -252,7 +256,8 @@ export function ApproachShotVisual({
           />
         )}
 
-        {/* Vit golfboll, animerad steg-för-steg via React-state längs en Bézier-båge */}
+        {/* Vit golfboll, animerad steg-för-steg via React-state längs en Bézier-båge,
+            tonas mjukt bort i slutet istället för att abrupt försvinna */}
         {ballVisible && (
           <circle
             cx={ball.x}
@@ -260,6 +265,7 @@ export function ApproachShotVisual({
             r="5.5"
             className="fill-white stroke-foreground/40"
             strokeWidth="1"
+            opacity={ballOpacity}
           />
         )}
 

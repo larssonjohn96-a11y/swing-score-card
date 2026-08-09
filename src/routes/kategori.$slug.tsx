@@ -115,12 +115,7 @@ function CategoryPage() {
         </Link>
       </header>
 
-      {category.slug === "approach" ? (
-        <div className="mt-3 flex items-center justify-between gap-3">
-          <p className="text-xs text-muted-foreground">1 test</p>
-          <ApproachLoopIllustration className="h-16 w-24" />
-        </div>
-      ) : (
+      {category.slug !== "approach" && (
         <p className="mt-3 text-sm text-muted-foreground">{category.description}</p>
       )}
 
