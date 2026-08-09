@@ -330,7 +330,7 @@ function TestScreen({
         setFlying(false);
         onCommit();
       },
-      isPerfect ? 900 : 600,
+      isPerfect ? 1350 : 700,
     );
   }
 

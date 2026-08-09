@@ -55,7 +55,13 @@ export function ApproachShotVisual({
   // landningspunkt som annars skulle hamna exakt på flaggan ändå.
   const isPerfect = diff === 0 && offset === 0;
   const flightEnd = isPerfect ? flag : { x: landingX, y: landingY };
-  const flightPath = `M${startPoint.x} ${startPoint.y} L${flightEnd.x} ${flightEnd.y}`;
+  // Mjuk båge (som ett riktigt golfslag) istället för en rak linje: kontrollpunkten
+  // lyfts upp proportionellt mot hur långt bollen ska flyga.
+  const flightDist = Math.hypot(flightEnd.x - startPoint.x, flightEnd.y - startPoint.y);
+  const flightArcHeight = Math.min(60, Math.max(24, flightDist * 0.35));
+  const flightMidX = (startPoint.x + flightEnd.x) / 2;
+  const flightMidY = (startPoint.y + flightEnd.y) / 2 - flightArcHeight;
+  const flightPath = `M${startPoint.x} ${startPoint.y} Q${flightMidX} ${flightMidY} ${flightEnd.x} ${flightEnd.y}`;
 
   return (
     <div className="rounded-2xl bg-primary/[0.04] px-2 py-1.5">
@@ -150,19 +156,25 @@ export function ApproachShotVisual({
           {target} m
         </text>
 
-        {/* Aktuellt slags landningspunkt – bara efter att något justerats, dold under flygningen */}
-        {touched && !flying && (
+        {/* Aktuellt slags landningspunkt – målet bollen flyger mot, kvar synlig under hela flygningen */}
+        {(touched || flying) && !isPerfect && (
           <circle cx={landingX} cy={landingY} r="7" className="fill-destructive" />
         )}
 
-        {/* Boll som flyger från startpunkten till landningen/koppen när slaget registreras */}
+        {/* Vit golfboll som flyger i en mjuk båge från startpunkten till landningen/koppen */}
         {flying && (
-          <circle r="6" className="fill-destructive">
-            <animateMotion path={flightPath} dur="0.55s" fill="freeze" calcMode="linear" />
+          <circle r="5.5" className="fill-white stroke-foreground/40" strokeWidth="1">
+            <animateMotion
+              path={flightPath}
+              dur="0.65s"
+              fill="freeze"
+              calcMode="spline"
+              keySplines="0.3 0 0.7 1"
+            />
           </circle>
         )}
 
-        {flying && isPerfect && <ConfettiBurstSvg cx={flag.x} cy={flag.y} />}
+        {flying && isPerfect && <ConfettiBurstSvg cx={flag.x} cy={flag.y} base={0.65} />}
       </svg>
 
       {flying && isPerfect && (
@@ -175,23 +187,45 @@ export function ApproachShotVisual({
 }
 
 /** Mycket kort, diskret SVG-konfetti kring koppen för ett perfekt slag. */
-function ConfettiBurstSvg({ cx, cy }: { cx: number; cy: number }) {
-  const pieces = Array.from({ length: 10 }, (_, i) => {
-    const angle = (i / 10) * Math.PI * 2;
-    const dist = 22 + (i % 3) * 6;
+/** Kort "fyrverkeri": en expanderande blixtring plus konfettibitar, timade
+ *  till precis när bollen landar i koppen (base = bollens flygtid). */
+function ConfettiBurstSvg({ cx, cy, base = 0 }: { cx: number; cy: number; base?: number }) {
+  const pieces = Array.from({ length: 12 }, (_, i) => {
+    const angle = (i / 12) * Math.PI * 2;
+    const dist = 24 + (i % 3) * 8;
     const colors = ["var(--primary)", "var(--flag)", "var(--sand)", "var(--chart-4)"];
     return {
       id: i,
       x: cx + Math.cos(angle) * dist,
       y: cy + Math.sin(angle) * dist,
       color: colors[i % colors.length],
-      delay: (i % 4) * 0.03,
+      delay: base + (i % 4) * 0.02,
       rot: (angle * 180) / Math.PI,
     };
   });
 
   return (
     <g>
+      {/* Blixt: en snabbt expanderande, tonande ring – själva "fyrverkeriet" */}
+      <circle cx={cx} cy={cy} r="2" fill="none" className="stroke-flag" strokeWidth="2" opacity="0">
+        <animate
+          attributeName="r"
+          values="2;26"
+          dur="0.45s"
+          begin={`${base}s`}
+          fill="freeze"
+          calcMode="linear"
+        />
+        <animate
+          attributeName="opacity"
+          values="0;0.8;0"
+          keyTimes="0;0.25;1"
+          dur="0.45s"
+          begin={`${base}s`}
+          fill="freeze"
+        />
+      </circle>
+
       {pieces.map((p) => (
         <rect
           key={p.id}
