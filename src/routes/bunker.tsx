@@ -6,6 +6,7 @@ import {
   BUNKER_TOTAL_SHOTS,
   computeBunkerResult,
   emptyBunkerShots,
+  handicapLabel,
   loadBunkerSessions,
   saveBunkerSession,
   type BunkerIntervalKey,
@@ -13,6 +14,8 @@ import {
 } from "@/lib/bunker";
 import { BunkerReport } from "@/components/bunker-report";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
+import { TestResultProcessing, TestResultReveal, type RevealState } from "@/components/test-reveal";
+import { computeRevealState } from "@/lib/test-reveal-helpers";
 
 export const Route = createFileRoute("/bunker")({
   head: () => ({
@@ -28,7 +31,15 @@ export const Route = createFileRoute("/bunker")({
   component: BunkerPage,
 });
 
-type Phase = "test" | "result";
+type Phase = "test" | "processing" | "reveal" | "result";
+
+type RevealData = {
+  state: RevealState;
+  hcpLabel: string;
+  previousHcpLabel?: string;
+  deltaLabel?: string;
+  isRetest: boolean;
+};
 
 function BunkerPage() {
   const navigate = useNavigate();
@@ -38,11 +49,11 @@ function BunkerPage() {
   const [interval, setInterval] = useState<BunkerIntervalKey | null>(null);
   const [saved, setSaved] = useState(false);
   const [prevScore, setPrevScore] = useState<number | null>(null);
-  const savedRef = useRef(false);
+  const [reveal, setReveal] = useState<RevealData | null>(null);
 
   const current = shots[Math.min(index, BUNKER_TOTAL_SHOTS - 1)];
 
-  useHideBottomNav(phase === "test" || phase === "result");
+  useHideBottomNav(true);
 
   function start() {
     const sessions = loadBunkerSessions();
@@ -52,7 +63,7 @@ function BunkerPage() {
     setIndex(0);
     setInterval(null);
     setSaved(false);
-    savedRef.current = false;
+    setReveal(null);
     setPhase("test");
   }
 
@@ -62,11 +73,25 @@ function BunkerPage() {
 
   function commit() {
     if (!interval) return;
-    setShots((p) => p.map((s, i) => (i === index ? { ...s, interval } : s)));
+    const updatedShots = shots.map((s, i) => (i === index ? { ...s, interval } : s));
+    setShots(updatedShots);
 
     const next = index + 1;
     if (next >= BUNKER_TOTAL_SHOTS) {
-      setPhase("result");
+      const previousSessions = loadBunkerSessions();
+      const previousHcps = previousSessions.map((s) => s.handicap);
+      const savedSession = saveBunkerSession(updatedShots);
+      setSaved(true);
+      const derived = computeRevealState(previousHcps, savedSession.handicap);
+      setReveal({
+        state: derived.state,
+        hcpLabel: handicapLabel(savedSession.handicap),
+        previousHcpLabel:
+          derived.previousHcp !== undefined ? handicapLabel(derived.previousHcp) : undefined,
+        deltaLabel: derived.deltaLabel,
+        isRetest: previousSessions.length > 0,
+      });
+      setPhase("processing");
     } else {
       setIndex(next);
       const nextShot = shots[next];
@@ -81,15 +106,6 @@ function BunkerPage() {
     const s = shots[i];
     setInterval(s.interval ?? null);
   }
-
-  // Testet sparas automatiskt så fort resultatet visas, som Närspelstest.
-  useEffect(() => {
-    if (phase === "result" && !savedRef.current) {
-      savedRef.current = true;
-      saveBunkerSession(shots);
-      setSaved(true);
-    }
-  }, [phase, shots]);
 
   if (phase === "test") {
     const pct = Math.round((index / BUNKER_TOTAL_SHOTS) * 100);
@@ -192,6 +208,31 @@ function BunkerPage() {
           </button>
         </div>
       </main>
+    );
+  }
+
+  if (phase === "processing" && reveal) {
+    return (
+      <TestResultProcessing
+        testLabel="Bunker"
+        secondaryLabel={`${BUNKER_TOTAL_SHOTS} / ${BUNKER_TOTAL_SHOTS} slag`}
+        isRetest={reveal.isRetest}
+        onDone={() => setPhase("reveal")}
+      />
+    );
+  }
+
+  if (phase === "reveal" && reveal) {
+    return (
+      <TestResultReveal
+        testLabel="Bunker"
+        value={reveal.hcpLabel}
+        previousValue={reveal.previousHcpLabel}
+        deltaLabel={reveal.deltaLabel}
+        state={reveal.state}
+        profileUpdated
+        onContinue={() => setPhase("result")}
+      />
     );
   }
 

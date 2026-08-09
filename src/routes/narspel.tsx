@@ -6,6 +6,7 @@ import {
   SHORTGAME_TOTAL_SHOTS,
   computeShortGameResult,
   emptyShortGameShots,
+  handicapLabel,
   loadShortGameSessions,
   saveShortGameSession,
   type IntervalKey,
@@ -14,6 +15,8 @@ import {
 import { ShortGamePositionDiagram } from "@/components/shortgame-visuals";
 import { ShortGameReport } from "@/components/shortgame-report";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
+import { TestResultProcessing, TestResultReveal, type RevealState } from "@/components/test-reveal";
+import { computeRevealState } from "@/lib/test-reveal-helpers";
 
 export const Route = createFileRoute("/narspel")({
   head: () => ({
@@ -29,7 +32,15 @@ export const Route = createFileRoute("/narspel")({
   component: ShortGamePage,
 });
 
-type Phase = "test" | "result";
+type Phase = "test" | "processing" | "reveal" | "result";
+
+type RevealData = {
+  state: RevealState;
+  hcpLabel: string;
+  previousHcpLabel?: string;
+  deltaLabel?: string;
+  isRetest: boolean;
+};
 
 function ShortGamePage() {
   const navigate = useNavigate();
@@ -39,11 +50,11 @@ function ShortGamePage() {
   const [interval, setInterval] = useState<IntervalKey | null>(null);
   const [saved, setSaved] = useState(false);
   const [prevScore, setPrevScore] = useState<number | null>(null);
-  const savedRef = useRef(false);
+  const [reveal, setReveal] = useState<RevealData | null>(null);
 
   const current = shots[Math.min(index, SHORTGAME_TOTAL_SHOTS - 1)];
 
-  useHideBottomNav(phase === "test" || phase === "result");
+  useHideBottomNav(true);
 
   function start() {
     const sessions = loadShortGameSessions();
@@ -53,7 +64,7 @@ function ShortGamePage() {
     setIndex(0);
     setInterval(null);
     setSaved(false);
-    savedRef.current = false;
+    setReveal(null);
     setPhase("test");
   }
 
@@ -63,11 +74,25 @@ function ShortGamePage() {
 
   function commit() {
     if (!interval) return;
-    setShots((p) => p.map((s, i) => (i === index ? { ...s, interval } : s)));
+    const updatedShots = shots.map((s, i) => (i === index ? { ...s, interval } : s));
+    setShots(updatedShots);
 
     const next = index + 1;
     if (next >= SHORTGAME_TOTAL_SHOTS) {
-      setPhase("result");
+      const previousSessions = loadShortGameSessions();
+      const previousHcps = previousSessions.map((s) => s.handicap);
+      const savedSession = saveShortGameSession(updatedShots);
+      setSaved(true);
+      const derived = computeRevealState(previousHcps, savedSession.handicap);
+      setReveal({
+        state: derived.state,
+        hcpLabel: handicapLabel(savedSession.handicap),
+        previousHcpLabel:
+          derived.previousHcp !== undefined ? handicapLabel(derived.previousHcp) : undefined,
+        deltaLabel: derived.deltaLabel,
+        isRetest: previousSessions.length > 0,
+      });
+      setPhase("processing");
     } else {
       setIndex(next);
       const nextShot = shots[next];
@@ -82,16 +107,6 @@ function ShortGamePage() {
     const s = shots[i];
     setInterval(s.interval ?? null);
   }
-
-  // Testet sparas automatiskt så fort resultatet visas – ingen anteckning eller
-  // manuell Spara-knapp behövs.
-  useEffect(() => {
-    if (phase === "result" && !savedRef.current) {
-      savedRef.current = true;
-      saveShortGameSession(shots);
-      setSaved(true);
-    }
-  }, [phase, shots]);
 
   if (phase === "test") {
     const pct = Math.round((index / SHORTGAME_TOTAL_SHOTS) * 100);
@@ -193,6 +208,31 @@ function ShortGamePage() {
           </button>
         </div>
       </main>
+    );
+  }
+
+  if (phase === "processing" && reveal) {
+    return (
+      <TestResultProcessing
+        testLabel="Närspel"
+        secondaryLabel={`${SHORTGAME_TOTAL_SHOTS} / ${SHORTGAME_TOTAL_SHOTS} slag`}
+        isRetest={reveal.isRetest}
+        onDone={() => setPhase("reveal")}
+      />
+    );
+  }
+
+  if (phase === "reveal" && reveal) {
+    return (
+      <TestResultReveal
+        testLabel="Närspel"
+        value={reveal.hcpLabel}
+        previousValue={reveal.previousHcpLabel}
+        deltaLabel={reveal.deltaLabel}
+        state={reveal.state}
+        profileUpdated
+        onContinue={() => setPhase("result")}
+      />
     );
   }
 

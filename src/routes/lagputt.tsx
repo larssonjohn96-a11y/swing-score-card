@@ -14,6 +14,9 @@ import {
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 import { TestHowItWorksLink } from "@/components/test-story";
 import { LAGPUTT_STORY } from "@/lib/test-story-content";
+import { hcpLabel } from "@/lib/sg-handicap";
+import { TestResultProcessing, TestResultReveal, type RevealState } from "@/components/test-reveal";
+import { computeRevealState } from "@/lib/test-reveal-helpers";
 
 export const Route = createFileRoute("/lagputt")({
   head: () => ({
@@ -29,7 +32,15 @@ export const Route = createFileRoute("/lagputt")({
   component: LagPuttPage,
 });
 
-type Phase = "test" | "result";
+type Phase = "test" | "processing" | "reveal" | "result";
+
+type RevealData = {
+  state: RevealState;
+  hcpLabel: string;
+  previousHcpLabel?: string;
+  deltaLabel?: string;
+  isRetest: boolean;
+};
 
 const TOTAL = LAG_PUTT_DISTANCES.length; // 6
 
@@ -39,13 +50,12 @@ function LagPuttPage() {
   const [putts, setPutts] = useState<LagPutt[]>(emptyLagPutts);
   const [index, setIndex] = useState(0);
   const [value, setValue] = useState("");
-  const [notes, setNotes] = useState("");
-  const [saved, setSaved] = useState(false);
   const [prevPct, setPrevPct] = useState<number | null>(null);
+  const [reveal, setReveal] = useState<RevealData | null>(null);
 
   const current = putts[Math.min(index, TOTAL - 1)];
 
-  useHideBottomNav(phase === "test" || phase === "result");
+  useHideBottomNav(true);
 
   function start() {
     const sessions = loadLagPuttSessions();
@@ -54,7 +64,7 @@ function LagPuttPage() {
     setPutts(emptyLagPutts());
     setIndex(0);
     setValue("");
-    setSaved(false);
+    setReveal(null);
     setPhase("test");
   }
 
@@ -64,11 +74,27 @@ function LagPuttPage() {
 
   function commit() {
     const num = Math.max(0, Number(value.replace(",", ".")) || 0);
-    setPutts((p) => p.map((putt, i) => (i === index ? { ...putt, left: num } : putt)));
+    const updatedPutts = putts.map((putt, i) => (i === index ? { ...putt, left: num } : putt));
+    setPutts(updatedPutts);
     setValue("");
     const next = index + 1;
-    if (next >= TOTAL) setPhase("result");
-    else setIndex(next);
+    if (next >= TOTAL) {
+      const previousSessions = loadLagPuttSessions();
+      const previousHcps = previousSessions.map((s) => s.handicap);
+      const saved = saveLagPuttSession(updatedPutts);
+      const derived = computeRevealState(previousHcps, saved.handicap);
+      setReveal({
+        state: derived.state,
+        hcpLabel: hcpLabel(saved.handicap),
+        previousHcpLabel:
+          derived.previousHcp !== undefined ? hcpLabel(derived.previousHcp) : undefined,
+        deltaLabel: derived.deltaLabel,
+        isRetest: previousSessions.length > 0,
+      });
+      setPhase("processing");
+    } else {
+      setIndex(next);
+    }
   }
 
   function back() {
@@ -155,15 +181,34 @@ function LagPuttPage() {
     );
   }
 
+  if (phase === "processing" && reveal) {
+    return (
+      <TestResultProcessing
+        testLabel="Lagputt"
+        secondaryLabel={`${TOTAL} / ${TOTAL} puttar`}
+        isRetest={reveal.isRetest}
+        onDone={() => setPhase("reveal")}
+      />
+    );
+  }
+
+  if (phase === "reveal" && reveal) {
+    return (
+      <TestResultReveal
+        testLabel="Lagputt"
+        value={reveal.hcpLabel}
+        previousValue={reveal.previousHcpLabel}
+        deltaLabel={reveal.deltaLabel}
+        state={reveal.state}
+        profileUpdated
+        onContinue={() => setPhase("result")}
+      />
+    );
+  }
+
   const approved = putts.filter(isApproved).length;
   const pct = putts.length ? (approved / putts.length) * 100 : 0;
   const avgLeft = mean(putts.map((p) => p.left));
-
-  function save() {
-    saveLagPuttSession(putts, notes);
-    setNotes("");
-    setSaved(true);
-  }
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-16 pt-10">
@@ -209,30 +254,10 @@ function LagPuttPage() {
         </div>
       </section>
 
-      <label htmlFor="notes" className="mt-5 block text-sm text-muted-foreground">
-        Anteckning (valfritt)
-      </label>
-      <input
-        id="notes"
-        value={notes}
-        onChange={(e) => setNotes(e.target.value)}
-        placeholder="Greenfart, lutning, känsla…"
-        className="mt-2 w-full rounded-2xl border border-input bg-background px-4 py-3 text-foreground outline-none focus:border-primary"
-      />
-
       <div className="mt-6 flex gap-3">
-        {saved ? (
-          <div className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-primary bg-primary/10 py-4 text-base font-semibold text-primary">
-            <Check className="h-5 w-5" /> Testet sparat
-          </div>
-        ) : (
-          <button
-            onClick={save}
-            className="flex-1 rounded-2xl bg-primary py-4 font-[family-name:var(--font-display)] text-2xl text-primary-foreground"
-          >
-            Spara
-          </button>
-        )}
+        <div className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-primary bg-primary/10 py-4 text-base font-semibold text-primary">
+          <Check className="h-5 w-5" /> Testet sparat
+        </div>
         <button
           onClick={start}
           className="flex-1 rounded-2xl border border-border py-4 font-[family-name:var(--font-display)] text-2xl text-muted-foreground"

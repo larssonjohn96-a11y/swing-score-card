@@ -17,6 +17,8 @@ import {
 } from "@/lib/speed";
 import { TeeNumberField } from "@/components/offtee-visuals";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
+import { TestResultProcessing, TestResultReveal, type RevealState } from "@/components/test-reveal";
+import { computeRevealState } from "@/lib/test-reveal-helpers";
 
 export const Route = createFileRoute("/speed")({
   head: () => ({
@@ -32,7 +34,15 @@ export const Route = createFileRoute("/speed")({
   component: SpeedPage,
 });
 
-type Phase = "setup" | "test" | "result";
+type Phase = "setup" | "test" | "processing" | "reveal" | "result";
+
+type RevealData = {
+  state: RevealState;
+  hcpLabel: string;
+  previousHcpLabel?: string;
+  deltaLabel?: string;
+  isRetest: boolean;
+};
 
 const DEFAULT_BALL_SPEED = 140;
 
@@ -49,12 +59,13 @@ function SpeedPage() {
 
   const [saved, setSaved] = useState(false);
   const [prevScore, setPrevScore] = useState<number | null>(null);
+  const [reveal, setReveal] = useState<RevealData | null>(null);
 
   const lastBallSpeedRef = useRef(DEFAULT_BALL_SPEED);
   const lastClubSpeedRef = useRef(0);
   const lastClubEnabledRef = useRef(false);
 
-  useHideBottomNav(phase === "test" || phase === "result");
+  useHideBottomNav(phase !== "setup");
 
   useEffect(() => {
     const sessions = loadSpeedSessions();
@@ -86,10 +97,20 @@ function SpeedPage() {
 
     const next = index + 1;
     if (next >= SPEED_TOTAL_SHOTS) {
-      // Testet sparas automatiskt när sista slaget är registrerat.
-      saveSpeedSession(updated, context, device);
+      const previousSessions = loadSpeedSessions();
+      const previousHcps = previousSessions.map((s) => s.handicap);
+      const savedSession = saveSpeedSession(updated, context, device);
       setSaved(true);
-      setPhase("result");
+      const derived = computeRevealState(previousHcps, savedSession.handicap);
+      setReveal({
+        state: derived.state,
+        hcpLabel: handicapLabel(savedSession.handicap),
+        previousHcpLabel:
+          derived.previousHcp !== undefined ? handicapLabel(derived.previousHcp) : undefined,
+        deltaLabel: derived.deltaLabel,
+        isRetest: previousSessions.length > 0,
+      });
+      setPhase("processing");
     } else {
       setIndex(next);
       const nextShot = shots[next];
@@ -125,6 +146,7 @@ function SpeedPage() {
     lastBallSpeedRef.current = DEFAULT_BALL_SPEED;
     lastClubSpeedRef.current = 0;
     lastClubEnabledRef.current = false;
+    setReveal(null);
     setPhase("setup");
   }
 
@@ -303,6 +325,31 @@ function SpeedPage() {
           </button>
         </div>
       </main>
+    );
+  }
+
+  if (phase === "processing" && reveal) {
+    return (
+      <TestResultProcessing
+        testLabel="Speed"
+        secondaryLabel={`${SPEED_TOTAL_SHOTS} / ${SPEED_TOTAL_SHOTS} slag`}
+        isRetest={reveal.isRetest}
+        onDone={() => setPhase("reveal")}
+      />
+    );
+  }
+
+  if (phase === "reveal" && reveal) {
+    return (
+      <TestResultReveal
+        testLabel="Speed"
+        value={reveal.hcpLabel}
+        previousValue={reveal.previousHcpLabel}
+        deltaLabel={reveal.deltaLabel}
+        state={reveal.state}
+        profileUpdated
+        onContinue={() => setPhase("result")}
+      />
     );
   }
 

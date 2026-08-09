@@ -16,6 +16,7 @@ import {
   PRECISION_TARGETS,
   PRECISION_TOTAL_SHOTS,
   emptyPrecisionShots,
+  handicapLabel,
   type PrecisionShot,
 } from "@/lib/precision";
 import { loadPrecisionSessions, savePrecisionSession } from "@/lib/precision-store";
@@ -28,6 +29,8 @@ import {
 import { NumberField } from "@/components/precision-visuals";
 import { PrecisionReport } from "@/components/precision-report";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
+import { TestResultProcessing, TestResultReveal, type RevealState } from "@/components/test-reveal";
+import { computeRevealState } from "@/lib/test-reveal-helpers";
 
 export const Route = createFileRoute("/precision")({
   head: () => ({
@@ -50,7 +53,15 @@ export const Route = createFileRoute("/precision")({
   component: PrecisionPage,
 });
 
-type Phase = "setup" | "test" | "result";
+type Phase = "setup" | "test" | "processing" | "reveal" | "result";
+
+type RevealData = {
+  state: RevealState;
+  hcpLabel: string;
+  previousHcpLabel?: string;
+  deltaLabel?: string;
+  isRetest: boolean;
+};
 
 function PrecisionPage() {
   const navigate = useNavigate();
@@ -63,11 +74,11 @@ function PrecisionPage() {
   const [side, setSide] = useState<-1 | 1>(1);
   const [offset, setOffset] = useState(0);
   const [prevScore, setPrevScore] = useState<number | null>(null);
-  const savedRef = useRef(false);
+  const [reveal, setReveal] = useState<RevealData | null>(null);
 
   const current = shots[Math.min(index, PRECISION_TOTAL_SHOTS - 1)];
 
-  useHideBottomNav(phase === "test" || phase === "result");
+  useHideBottomNav(phase !== "setup");
 
   function pickContext(c: MeasurementContext) {
     setContext(c);
@@ -83,19 +94,37 @@ function PrecisionPage() {
     setCarry(PRECISION_TARGETS[0]);
     setSide(1);
     setOffset(0);
-    savedRef.current = false;
+    setReveal(null);
     setPhase("test");
   }
 
   function commit() {
     const offline = side * offset;
     const next = index + 1;
-    setShots((p) => p.map((s, i) => (i === index ? { ...s, carry, offline, filled: true } : s)));
+    const updatedShots = shots.map((s, i) =>
+      i === index ? { ...s, carry, offline, filled: true } : s,
+    );
+    setShots(updatedShots);
+
     if (next >= PRECISION_TOTAL_SHOTS) {
-      setPhase("result");
+      const previousSessions = loadPrecisionSessions();
+      const previousHcps = previousSessions
+        .map((s) => s.handicap)
+        .filter((v): v is number => typeof v === "number");
+      const saved = savePrecisionSession(updatedShots, context, device);
+      const derived = computeRevealState(previousHcps, saved.handicap ?? 0);
+      setReveal({
+        state: derived.state,
+        hcpLabel: handicapLabel(saved.handicap ?? 0),
+        previousHcpLabel:
+          derived.previousHcp !== undefined ? handicapLabel(derived.previousHcp) : undefined,
+        deltaLabel: derived.deltaLabel,
+        isRetest: previousSessions.length > 0,
+      });
+      setPhase("processing");
     } else {
       setIndex(next);
-      setCarry(shots[next].target);
+      setCarry(updatedShots[next].target);
       setSide(1);
       setOffset(0);
     }
@@ -109,13 +138,6 @@ function PrecisionPage() {
     setSide(shots[i].offline < 0 ? -1 : 1);
     setOffset(Math.abs(shots[i].offline));
   }
-
-  useEffect(() => {
-    if (phase === "result" && !savedRef.current) {
-      savedRef.current = true;
-      savePrecisionSession(shots, context, device);
-    }
-  }, [phase, shots, context, device]);
 
   if (phase === "setup") {
     const devices = context === "simulator" ? SIMULATOR_DEVICES : RANGE_DEVICES;
@@ -216,6 +238,31 @@ function PrecisionPage() {
         onAbort={() => navigate({ to: "/kategori/$slug", params: { slug: "approach" } })}
       />
     );
+  if (phase === "processing" && reveal) {
+    return (
+      <TestResultProcessing
+        testLabel="Approach"
+        secondaryLabel={`${PRECISION_TOTAL_SHOTS} / ${PRECISION_TOTAL_SHOTS} slag`}
+        isRetest={reveal.isRetest}
+        onDone={() => setPhase("reveal")}
+      />
+    );
+  }
+
+  if (phase === "reveal" && reveal) {
+    return (
+      <TestResultReveal
+        testLabel="Approach"
+        value={reveal.hcpLabel}
+        previousValue={reveal.previousHcpLabel}
+        deltaLabel={reveal.deltaLabel}
+        state={reveal.state}
+        profileUpdated
+        onContinue={() => setPhase("result")}
+      />
+    );
+  }
+
   return (
     <ResultScreen
       shots={shots}

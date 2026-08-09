@@ -20,6 +20,8 @@ import {
   ScoreRing,
 } from "@/components/shortputt-visuals";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
+import { TestResultProcessing, TestResultReveal, type RevealState } from "@/components/test-reveal";
+import { computeRevealState } from "@/lib/test-reveal-helpers";
 
 export const Route = createFileRoute("/kortputt")({
   head: () => ({
@@ -35,7 +37,15 @@ export const Route = createFileRoute("/kortputt")({
   component: ShortPuttPage,
 });
 
-type Phase = "setup" | "test" | "result";
+type Phase = "setup" | "test" | "processing" | "reveal" | "result";
+
+type RevealData = {
+  state: RevealState;
+  hcpLabel: string;
+  previousHcpLabel?: string;
+  deltaLabel?: string;
+  isRetest: boolean;
+};
 
 function ShortPuttPage() {
   const navigate = useNavigate();
@@ -43,15 +53,14 @@ function ShortPuttPage() {
   const [greenType, setGreenType] = useState<GreenType>("flat");
   const [putts, setPutts] = useState<ShortPutt[]>(emptyShortPutts);
   const [index, setIndex] = useState(0);
-  const [notes, setNotes] = useState("");
-  const [saved, setSaved] = useState(false);
   const [prevScore, setPrevScore] = useState<number | null>(null);
   const [flash, setFlash] = useState<"made" | "missed" | null>(null);
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [hcpInfoOpen, setHcpInfoOpen] = useState(false);
+  const [reveal, setReveal] = useState<RevealData | null>(null);
 
-  useHideBottomNav(phase === "test" || phase === "result");
+  useHideBottomNav(phase !== "setup");
 
   useEffect(() => {
     const sessions = loadShortPuttSessions();
@@ -62,6 +71,7 @@ function ShortPuttPage() {
   function startTest(type: GreenType) {
     setGreenType(type);
     setStartedAt(Date.now());
+    setReveal(null);
     setPhase("test");
   }
 
@@ -69,10 +79,24 @@ function ShortPuttPage() {
     if (flash) return;
     setFlash(made ? "made" : "missed");
     window.setTimeout(() => {
-      setPutts((p) => p.map((putt, i) => (i === index ? { ...putt, holed: made } : putt)));
+      const updatedPutts = putts.map((putt, i) => (i === index ? { ...putt, holed: made } : putt));
+      setPutts(updatedPutts);
       setFlash(null);
       if (index + 1 >= SHORT_PUTT_TOTAL) {
-        setPhase("result");
+        const previousSessions = loadShortPuttSessions();
+        const previousHcps = previousSessions.map((s) => s.handicap);
+        const result = computeShortPuttResult(updatedPutts, greenType);
+        saveShortPuttSession(updatedPutts, greenType);
+        const derived = computeRevealState(previousHcps, result.handicap);
+        setReveal({
+          state: derived.state,
+          hcpLabel: hcpLabel(result.handicap),
+          previousHcpLabel:
+            derived.previousHcp !== undefined ? hcpLabel(derived.previousHcp) : undefined,
+          deltaLabel: derived.deltaLabel,
+          isRetest: previousSessions.length > 0,
+        });
+        setPhase("processing");
       } else {
         setIndex(index + 1);
       }
@@ -84,18 +108,12 @@ function ShortPuttPage() {
     setIndex(index - 1);
   }
 
-  function save() {
-    saveShortPuttSession(putts, greenType, notes);
-    setNotes("");
-    setSaved(true);
-  }
-
   function restart() {
-    setSaved(false);
     setPutts(emptyShortPutts());
     setIndex(0);
     setFlash(null);
     setStartedAt(null);
+    setReveal(null);
     setPhase("setup");
   }
 
@@ -246,6 +264,31 @@ function ShortPuttPage() {
           </button>
         </div>
       </main>
+    );
+  }
+
+  if (phase === "processing" && reveal) {
+    return (
+      <TestResultProcessing
+        testLabel="Putting"
+        secondaryLabel={`${SHORT_PUTT_TOTAL} / ${SHORT_PUTT_TOTAL} puttar`}
+        isRetest={reveal.isRetest}
+        onDone={() => setPhase("reveal")}
+      />
+    );
+  }
+
+  if (phase === "reveal" && reveal) {
+    return (
+      <TestResultReveal
+        testLabel="Putting"
+        value={reveal.hcpLabel}
+        previousValue={reveal.previousHcpLabel}
+        deltaLabel={reveal.deltaLabel}
+        state={reveal.state}
+        profileUpdated
+        onContinue={() => setPhase("result")}
+      />
     );
   }
 
@@ -459,30 +502,10 @@ function ShortPuttPage() {
         </div>
       )}
 
-      <label htmlFor="notes" className="mt-5 block text-sm text-muted-foreground">
-        Anteckning (valfritt)
-      </label>
-      <input
-        id="notes"
-        value={notes}
-        onChange={(e) => setNotes(e.target.value)}
-        placeholder="Lägg till anteckning…"
-        className="mt-2 w-full rounded-2xl border border-input bg-background px-4 py-3 text-foreground outline-none focus:border-primary"
-      />
-
       <div className="mt-6 flex gap-3">
-        {saved ? (
-          <div className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-primary bg-primary/10 py-4 text-base font-semibold text-primary">
-            <Check className="h-5 w-5" /> Testet sparat
-          </div>
-        ) : (
-          <button
-            onClick={save}
-            className="flex-1 rounded-2xl bg-primary py-4 font-[family-name:var(--font-display)] text-2xl text-primary-foreground"
-          >
-            Spara resultat
-          </button>
-        )}
+        <div className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-primary bg-primary/10 py-4 text-base font-semibold text-primary">
+          <Check className="h-5 w-5" /> Testet sparat
+        </div>
         <button
           onClick={restart}
           className="flex-1 rounded-2xl border border-border py-4 font-[family-name:var(--font-display)] text-2xl text-muted-foreground"

@@ -12,7 +12,13 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { OFFTEE_TOTAL_SHOTS, emptyTeeShots, offTeeResult, type TeeShot } from "@/lib/offtee";
+import {
+  OFFTEE_TOTAL_SHOTS,
+  emptyTeeShots,
+  handicapLabel,
+  offTeeResult,
+  type TeeShot,
+} from "@/lib/offtee";
 import { loadOffTeeSessions, saveOffTeeSession } from "@/lib/offtee-store";
 import {
   RANGE_DEVICES,
@@ -23,6 +29,8 @@ import {
 import { FairwaySpec, TeeNumberField } from "@/components/offtee-visuals";
 import { OffTeeReport } from "@/components/offtee-report";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
+import { TestResultProcessing, TestResultReveal, type RevealState } from "@/components/test-reveal";
+import { computeRevealState } from "@/lib/test-reveal-helpers";
 
 export const Route = createFileRoute("/offtee")({
   head: () => ({
@@ -38,7 +46,15 @@ export const Route = createFileRoute("/offtee")({
   component: OffTeePage,
 });
 
-type Phase = "setup" | "test" | "result";
+type Phase = "setup" | "test" | "processing" | "reveal" | "result";
+
+type RevealData = {
+  state: RevealState;
+  hcpLabel: string;
+  previousHcpLabel?: string;
+  deltaLabel?: string;
+  isRetest: boolean;
+};
 
 /** Förval för första slaget: 200 m carry, +10 % rull = 220 m totalt. */
 const DEFAULT_CARRY = 200;
@@ -62,7 +78,7 @@ function OffTeePage() {
   const [side, setSide] = useState<-1 | 1>(1);
   const [offset, setOffset] = useState(0);
   const [prevScore, setPrevScore] = useState<number | null>(null);
-  const savedRef = useRef(false);
+  const [reveal, setReveal] = useState<RevealData | null>(null);
 
   // Kom ihåg carry och rull-förhållandet (totalt / carry) mellan slagen, så
   // spelaren slipper skriva in samma värden på nytt varje gång.
@@ -73,7 +89,7 @@ function OffTeePage() {
 
   const current = shots[Math.min(index, OFFTEE_TOTAL_SHOTS - 1)];
 
-  useHideBottomNav(phase === "test" || phase === "result");
+  useHideBottomNav(phase !== "setup");
 
   function pickContext(c: MeasurementContext) {
     setContext(c);
@@ -107,16 +123,17 @@ function OffTeePage() {
     setTotalRaw(Math.round(DEFAULT_CARRY * DEFAULT_ROLL_RATIO));
     setSide(1);
     setOffset(0);
-    savedRef.current = false;
+    setReveal(null);
     setPhase("test");
   }
 
   function commit() {
     const offline = side * offset;
     const next = index + 1;
-    setShots((p) =>
-      p.map((s, i) => (i === index ? { ...s, carry, total, offline, filled: true } : s)),
+    const updatedShots = shots.map((s, i) =>
+      i === index ? { ...s, carry, total, offline, filled: true } : s,
     );
+    setShots(updatedShots);
 
     // Uppdatera det ihågkomna rull-förhållandet och riktningen från slaget som just registrerades.
     if (carry > 0) {
@@ -125,7 +142,19 @@ function OffTeePage() {
     lastSideRef.current = side;
 
     if (next >= OFFTEE_TOTAL_SHOTS) {
-      setPhase("result");
+      const previousSessions = loadOffTeeSessions();
+      const previousHcps = previousSessions.map((s) => s.handicap);
+      const saved = saveOffTeeSession(updatedShots, context, device);
+      const derived = computeRevealState(previousHcps, saved.handicap);
+      setReveal({
+        state: derived.state,
+        hcpLabel: handicapLabel(saved.handicap),
+        previousHcpLabel:
+          derived.previousHcp !== undefined ? handicapLabel(derived.previousHcp) : undefined,
+        deltaLabel: derived.deltaLabel,
+        isRetest: previousSessions.length > 0,
+      });
+      setPhase("processing");
     } else {
       setIndex(next);
       totalTouchedRef.current = false;
@@ -162,13 +191,6 @@ function OffTeePage() {
     setSide(s.offline < 0 ? -1 : 1);
     setOffset(Math.abs(s.offline));
   }
-
-  useEffect(() => {
-    if (phase === "result" && !savedRef.current) {
-      savedRef.current = true;
-      saveOffTeeSession(shots, context, device);
-    }
-  }, [phase, shots, context, device]);
 
   if (phase === "setup") {
     const devices = context === "simulator" ? SIMULATOR_DEVICES : RANGE_DEVICES;
@@ -271,6 +293,31 @@ function OffTeePage() {
         onAbort={() => navigate({ to: "/kategori/$slug", params: { slug: "driving" } })}
       />
     );
+  if (phase === "processing" && reveal) {
+    return (
+      <TestResultProcessing
+        testLabel="Off the Tee"
+        secondaryLabel={`${OFFTEE_TOTAL_SHOTS} / ${OFFTEE_TOTAL_SHOTS} slag`}
+        isRetest={reveal.isRetest}
+        onDone={() => setPhase("reveal")}
+      />
+    );
+  }
+
+  if (phase === "reveal" && reveal) {
+    return (
+      <TestResultReveal
+        testLabel="Off the Tee"
+        value={reveal.hcpLabel}
+        previousValue={reveal.previousHcpLabel}
+        deltaLabel={reveal.deltaLabel}
+        state={reveal.state}
+        profileUpdated
+        onContinue={() => setPhase("result")}
+      />
+    );
+  }
+
   return (
     <ResultScreen
       shots={shots}
