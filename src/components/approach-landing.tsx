@@ -1,37 +1,17 @@
 import { Link } from "@tanstack/react-router";
-import {
-  AlertTriangle,
-  ArrowLeft,
-  ArrowRight,
-  Compass,
-  Gauge,
-  Map,
-  Sparkles,
-  Target,
-  TrendingUp,
-} from "lucide-react";
-import { GreenHero } from "@/components/precision-visuals";
-import { TestHowItWorksLink } from "@/components/test-story";
-import { APPROACH_STORY } from "@/lib/test-story-content";
-
-const VALUE_ITEMS = [
-  { icon: Target, label: "Approach Score 0–100" },
-  { icon: Gauge, label: "Uppskattad handicapnivå" },
-  { icon: Map, label: "Spridningskarta" },
-  { icon: Sparkles, label: "Personlig analys" },
-  { icon: TrendingUp, label: "Identifierade styrkor" },
-  { icon: Compass, label: "Förbättringsområden" },
-  { icon: AlertTriangle, label: "Upptäckta missmönster" },
-];
+import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ApproachLoopIllustration } from "@/components/approach-loop-illustration";
+import { ApproachStoryLink } from "@/components/approach-story";
 
 /**
- * Utförlig landningssida för ett specifikt test (Approach Test), nådd via
- * ett kompakt kort på kategorisidan. Stor hero, kort värdeladdad ingress,
- * värdet först – tekniska detaljer längre ned.
+ * Approach-landningssidans PILOT-version: kraftigt förenklad, ingen
+ * "Efter testet får du"/"Så går testet till"-sektion, CTA:n synlig utan
+ * scroll. Se dokumentet 'Uppdatera ENDAST Approach / Inspelstestet' – detta
+ * mönster gäller bara Approach tills vidare, inte de andra sex testerna.
  */
-export function ApproachLanding({ lastResultLabel }: { lastResultLabel?: string }) {
+export function ApproachLanding() {
   return (
-    <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-16 pt-6">
+    <main className="mx-auto flex min-h-screen w-full max-w-md flex-col px-6 pb-10 pt-6">
       <Link
         to="/kategori/$slug"
         params={{ slug: "approach" }}
@@ -41,55 +21,27 @@ export function ApproachLanding({ lastResultLabel }: { lastResultLabel?: string 
         <ArrowLeft className="h-4 w-4" />
       </Link>
 
-      <div className="mt-4">
-        <GreenHero />
+      <div className="mt-2">
+        <ApproachLoopIllustration />
       </div>
 
-      <p className="mt-6 text-xs uppercase tracking-[0.3em] text-flag">Approach</p>
-      <h1 className="mt-2 text-5xl leading-none">Approach Test</h1>
+      <p className="mt-4 text-xs uppercase tracking-[0.3em] text-flag">Approach</p>
+      <h1 className="mt-1 text-5xl leading-none">Inspelstest</h1>
       <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-        Se exakt hur nära flaggan du landar – avstånd för avstånd. Testet avslöjar mönstren bakom
-        dina inspel och vad som avgör hur många birdiechanser du skapar.
+        Testa precisionen i dina inspel från 55–165 meter och se vilken nivå de håller.
       </p>
 
-      <TestHowItWorksLink config={APPROACH_STORY} />
+      <div className="flex-1" />
 
-      <section className="mt-8">
-        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-          Efter testet får du
-        </p>
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          {VALUE_ITEMS.map(({ icon: Icon, label }) => (
-            <div key={label} className="rounded-2xl border border-border bg-card p-3">
-              <Icon className="h-5 w-5 text-flag" />
-              <p className="mt-2 text-sm font-medium leading-tight">{label}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="mt-8">
-        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-          Så går testet till
-        </p>
-        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          18 slag från 9 avstånd mellan 55 och 165 meter, två slag per avstånd. Efter varje slag
-          registrerar du carry och sidled – resultatet räknas fram när alla slag är klara.
-        </p>
-      </section>
-
-      {lastResultLabel ? (
-        <p className="mt-6 text-center text-xs text-muted-foreground">{lastResultLabel}</p>
-      ) : null}
+      <ApproachStoryLink />
 
       <Link
         to="/precision"
         className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-5 font-[family-name:var(--font-display)] text-2xl text-primary-foreground"
       >
-        Starta Approach Test
+        Starta inspelstest
         <ArrowRight className="h-5 w-5" />
       </Link>
-      <p className="mt-3 text-center text-xs text-muted-foreground">Tar ca 15 minuter</p>
     </main>
   );
 }

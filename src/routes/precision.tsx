@@ -16,7 +16,6 @@ import {
   PRECISION_TARGETS,
   PRECISION_TOTAL_SHOTS,
   emptyPrecisionShots,
-  handicapLabel,
   type PrecisionShot,
 } from "@/lib/precision";
 import { loadPrecisionSessions, savePrecisionSession } from "@/lib/precision-store";
@@ -29,8 +28,7 @@ import {
 import { NumberField } from "@/components/precision-visuals";
 import { PrecisionReport } from "@/components/precision-report";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
-import { TestResultProcessing, TestResultReveal, type RevealState } from "@/components/test-reveal";
-import { computeRevealState } from "@/lib/test-reveal-helpers";
+import { ApproachProcessing } from "@/components/approach-processing";
 
 export const Route = createFileRoute("/precision")({
   head: () => ({
@@ -53,15 +51,7 @@ export const Route = createFileRoute("/precision")({
   component: PrecisionPage,
 });
 
-type Phase = "setup" | "test" | "processing" | "reveal" | "result";
-
-type RevealData = {
-  state: RevealState;
-  hcpLabel: string;
-  previousHcpLabel?: string;
-  deltaLabel?: string;
-  isRetest: boolean;
-};
+type Phase = "setup" | "test" | "processing" | "result";
 
 function PrecisionPage() {
   const navigate = useNavigate();
@@ -74,7 +64,6 @@ function PrecisionPage() {
   const [side, setSide] = useState<-1 | 1>(1);
   const [offset, setOffset] = useState(0);
   const [prevScore, setPrevScore] = useState<number | null>(null);
-  const [reveal, setReveal] = useState<RevealData | null>(null);
 
   const current = shots[Math.min(index, PRECISION_TOTAL_SHOTS - 1)];
 
@@ -94,7 +83,6 @@ function PrecisionPage() {
     setCarry(PRECISION_TARGETS[0]);
     setSide(1);
     setOffset(0);
-    setReveal(null);
     setPhase("test");
   }
 
@@ -107,20 +95,11 @@ function PrecisionPage() {
     setShots(updatedShots);
 
     if (next >= PRECISION_TOTAL_SHOTS) {
-      const previousSessions = loadPrecisionSessions();
-      const previousHcps = previousSessions
-        .map((s) => s.handicap)
-        .filter((v): v is number => typeof v === "number");
-      const saved = savePrecisionSession(updatedShots, context, device);
-      const derived = computeRevealState(previousHcps, saved.handicap ?? 0);
-      setReveal({
-        state: derived.state,
-        hcpLabel: handicapLabel(saved.handicap ?? 0),
-        previousHcpLabel:
-          derived.previousHcp !== undefined ? handicapLabel(derived.previousHcp) : undefined,
-        deltaLabel: derived.deltaLabel,
-        isRetest: previousSessions.length > 0,
-      });
+      // Beräkningen (allt synkron JS) är klar direkt – processing-skärmen
+      // spelar ändå ut sin egen sekvens innan den visar CTA:n, se
+      // ApproachProcessing. Sparas direkt så resultatet garanterat finns
+      // klart innan användaren kan trycka "Se mitt resultat".
+      savePrecisionSession(updatedShots, context, device);
       setPhase("processing");
     } else {
       setIndex(next);
@@ -238,27 +217,12 @@ function PrecisionPage() {
         onAbort={() => navigate({ to: "/kategori/$slug", params: { slug: "approach" } })}
       />
     );
-  if (phase === "processing" && reveal) {
+  if (phase === "processing") {
     return (
-      <TestResultProcessing
-        testLabel="Approach"
-        secondaryLabel={`${PRECISION_TOTAL_SHOTS} / ${PRECISION_TOTAL_SHOTS} slag`}
-        isRetest={reveal.isRetest}
-        onDone={() => setPhase("reveal")}
-      />
-    );
-  }
-
-  if (phase === "reveal" && reveal) {
-    return (
-      <TestResultReveal
-        testLabel="Approach"
-        value={reveal.hcpLabel}
-        previousValue={reveal.previousHcpLabel}
-        deltaLabel={reveal.deltaLabel}
-        state={reveal.state}
-        profileUpdated
-        onContinue={() => setPhase("result")}
+      <ApproachProcessing
+        totalShots={PRECISION_TOTAL_SHOTS}
+        resultReady
+        onSeeResult={() => setPhase("result")}
       />
     );
   }
