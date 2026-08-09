@@ -26,21 +26,24 @@ import { hcpLabel, loadRealHandicap, saveRealHandicap } from "@/lib/sg-handicap"
 import { flagForCountry } from "@/lib/countries";
 
 /**
- * Enkel, mjukt avrundad kortkontur med en subtil spets längst ned – en
- * förenklad, kompaktare släkting till den tidigare sköldformen. Definierad
- * i objectBoundingBox-enheter (0–1) så samma path funkar oavsett storlek.
+ * Sköldform med utsvängda "axlar" upptill och en mjuk spets nedtill –
+ * som ett klassiskt emblem/spelarkort. Definierad i objectBoundingBox-
+ * enheter (0–1) så samma path funkar oavsett storlek.
  */
 const CARD_PATH =
-  "M 0.06 0.20 " +
-  "C 0.06 0.08 0.24 0 0.5 0 " +
-  "C 0.76 0 0.94 0.08 0.94 0.20 " +
-  "L 0.94 0.72 " +
-  "C 0.94 0.82 0.88 0.89 0.79 0.93 " +
-  "L 0.53 0.995 " +
-  "C 0.51 1.0 0.49 1.0 0.47 0.995 " +
-  "L 0.21 0.93 " +
-  "C 0.12 0.89 0.06 0.82 0.06 0.72 " +
+  "M 0.5 0.015 " +
+  "C 0.62 0.055, 0.78 0.085, 0.985 0.09 " +
+  "C 0.93 0.16, 0.90 0.22, 0.90 0.30 " +
+  "L 0.90 0.70 " +
+  "C 0.90 0.78, 0.93 0.84, 0.985 0.91 " +
+  "C 0.78 0.915, 0.62 0.945, 0.5 0.985 " +
+  "C 0.38 0.945, 0.22 0.915, 0.015 0.91 " +
+  "C 0.07 0.84, 0.10 0.78, 0.10 0.70 " +
+  "L 0.10 0.30 " +
+  "C 0.10 0.22, 0.07 0.16, 0.015 0.09 " +
+  "C 0.22 0.085, 0.38 0.055, 0.5 0.015 " +
   "Z";
+
 
 const TIER_STYLES: Record<
   CardTier["key"],
@@ -203,9 +206,10 @@ export function PlayerCard({
         <div className="bg-background p-[2.5px]" style={{ clipPath: "url(#sg4-card-shape)" }}>
           <div className="bg-tier-gold p-[2px]" style={{ clipPath: "url(#sg4-card-shape)" }}>
             <div
-              className="flex flex-col items-center bg-card px-6 pb-8 pt-7 shadow-sm"
+              className="flex flex-col items-center bg-card px-7 pb-16 pt-12 shadow-sm"
               style={{ clipPath: "url(#sg4-card-shape)" }}
             >
+
               <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10">
                 {profile.photo ? (
                   <img
@@ -252,15 +256,15 @@ export function PlayerCard({
 
               <div className="mt-5 w-full border-t border-border" />
 
-              <div className="mt-4 grid w-full grid-cols-5 gap-1.5">
+              <div className="mt-4 grid w-full grid-cols-5 divide-x divide-border">
                 {data.stats.map((s) => {
                   const meta = STAT_META[s.key];
                   const Icon = meta.icon;
                   const barTone = s.key === "around-the-green" ? "bg-tier-gold" : "bg-primary";
                   const pct = s.value ? Math.max(4, Math.min(100, s.value)) : 0;
                   return (
-                    <div key={s.key} className="flex flex-col items-center gap-1">
-                      <Icon className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
+                    <div key={s.key} className="flex flex-col items-center gap-1 px-1">
+                      <Icon className="h-4 w-4 text-primary" strokeWidth={1.5} />
                       <p className="text-center text-[7px] font-semibold uppercase leading-tight tracking-wide text-muted-foreground">
                         {meta.short}
                       </p>
@@ -281,6 +285,7 @@ export function PlayerCard({
                   );
                 })}
               </div>
+
             </div>
           </div>
         </div>
