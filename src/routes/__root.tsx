@@ -16,6 +16,7 @@ import { BottomNav } from "@/components/bottom-nav";
 import { BottomNavVisibilityProvider } from "@/lib/bottom-nav-visibility";
 import { SubscriptionProvider } from "@/lib/subscription";
 import { DevPlanSwitcher } from "@/components/dev-plan-switcher";
+import { SplashScreen, useSplash } from "@/components/splash-screen";
 
 function NotFoundComponent() {
   return (
@@ -149,6 +150,7 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const { show, dismiss } = useSplash();
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -160,6 +162,7 @@ function RootComponent() {
             <BottomNav />
             <DevPlanSwitcher />
           </div>
+          {show && <SplashScreen onDismiss={dismiss} />}
         </BottomNavVisibilityProvider>
       </SubscriptionProvider>
     </QueryClientProvider>
