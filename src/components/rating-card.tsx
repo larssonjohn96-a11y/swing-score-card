@@ -206,9 +206,10 @@ export function PlayerCard({
         <div className="bg-background p-[2.5px]" style={{ clipPath: "url(#sg4-card-shape)" }}>
           <div className="bg-tier-gold p-[2px]" style={{ clipPath: "url(#sg4-card-shape)" }}>
             <div
-              className="flex flex-col items-center bg-card px-6 pb-8 pt-7 shadow-sm"
+              className="flex flex-col items-center bg-card px-7 pb-16 pt-12 shadow-sm"
               style={{ clipPath: "url(#sg4-card-shape)" }}
             >
+
               <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10">
                 {profile.photo ? (
                   <img
