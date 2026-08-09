@@ -1,3 +1,5 @@
+import { useEffect, useRef, useState } from "react";
+
 /**
  * Visuell representation av ett enskilt approach-slag under själva testet
  * (pilot, endast Approach).
@@ -12,8 +14,11 @@
  * Innan spelaren justerat något visas startpositionen som en RÖD punkt med
  * måldistansen bredvid. Så fort Längd/Sidled justeras byter den punkten till
  * en diskret vit/ljusgrå markering (försvinner aldrig, distansen visas kvar),
- * och en ny röd punkt visar var slaget faktiskt landade – uppdaterad i
- * realtid utifrån diff/sidled, utan några extra streck eller hjälplinjer.
+ * och en ny röd punkt visar var slaget faktiskt landade.
+ *
+ * Boll-animationen och konfettin drivs av requestAnimationFrame/React-state
+ * respektive rena CSS-keyframes, istället för SVG SMIL (<animate>/
+ * <animateMotion>) som visade sig inte spela upp pålitligt i alla miljöer.
  */
 export function ApproachShotVisual({
   target,
@@ -45,26 +50,59 @@ export function ApproachShotVisual({
   const clampedDiff = Math.max(-40, Math.min(40, diff));
   const clampedOffset = Math.max(-30, Math.min(30, offset));
 
-  // KORT/LÅNGT: alltid horisontellt längs spellinjen.
   const landingX = flag.x + clampedDiff * PX_PER_M_LEN;
-  // VÄNSTER (side=-1) flyttar uppåt (mindre y), HÖGER (side=1) flyttar nedåt.
   const landingY = flag.y + side * clampedOffset * PX_PER_M_SIDE;
 
-  // Perfekt slag: ingen justering av varken längd eller sidled – bollen ska
-  // flyga rakt i koppen (flaggan) med lite konfetti, istället för till en
-  // landningspunkt som annars skulle hamna exakt på flaggan ändå.
   const isPerfect = diff === 0 && offset === 0;
   const flightEnd = isPerfect ? flag : { x: landingX, y: landingY };
-  // Mjuk båge (som ett riktigt golfslag) istället för en rak linje: kontrollpunkten
-  // lyfts upp proportionellt mot hur långt bollen ska flyga.
+
+  const FLIGHT_MS = 650;
+  const [progress, setProgress] = useState(0); // 0–1 under flygningen
+  const [showConfetti, setShowConfetti] = useState(false);
+  const rafRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!flying) {
+      setProgress(0);
+      setShowConfetti(false);
+      return;
+    }
+    const start = performance.now();
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / FLIGHT_MS);
+      setProgress(t);
+      if (t < 1) {
+        rafRef.current = requestAnimationFrame(tick);
+      } else if (isPerfect) {
+        setShowConfetti(true);
+      }
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => {
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [flying]);
+
+  // Kvadratisk Bézier – mjuk båge som ett riktigt golfslag, inte en rak linje.
   const flightDist = Math.hypot(flightEnd.x - startPoint.x, flightEnd.y - startPoint.y);
-  const flightArcHeight = Math.min(60, Math.max(24, flightDist * 0.35));
-  const flightMidX = (startPoint.x + flightEnd.x) / 2;
-  const flightMidY = (startPoint.y + flightEnd.y) / 2 - flightArcHeight;
-  const flightPath = `M${startPoint.x} ${startPoint.y} Q${flightMidX} ${flightMidY} ${flightEnd.x} ${flightEnd.y}`;
+  const arcHeight = Math.min(60, Math.max(24, flightDist * 0.35));
+  const ctrl = {
+    x: (startPoint.x + flightEnd.x) / 2,
+    y: (startPoint.y + flightEnd.y) / 2 - arcHeight,
+  };
+  const bezier = (t: number) => {
+    const mt = 1 - t;
+    return {
+      x: mt * mt * startPoint.x + 2 * mt * t * ctrl.x + t * t * flightEnd.x,
+      y: mt * mt * startPoint.y + 2 * mt * t * ctrl.y + t * t * flightEnd.y,
+    };
+  };
+  const ball = bezier(progress);
+  const ballVisible = flying && progress < 1;
 
   return (
-    <div className="rounded-2xl bg-primary/[0.04] px-2 py-1.5">
+    <div className="relative rounded-2xl bg-primary/[0.04] px-2 py-1.5">
       <svg
         viewBox={`0 0 ${w} ${h}`}
         className="h-32 w-full"
@@ -156,28 +194,26 @@ export function ApproachShotVisual({
           {target} m
         </text>
 
-        {/* Aktuellt slags landningspunkt – målet bollen flyger mot, kvar synlig under hela flygningen */}
+        {/* Aktuellt slags landningspunkt – målet bollen flyger mot, synlig hela tiden */}
         {(touched || flying) && !isPerfect && (
           <circle cx={landingX} cy={landingY} r="7" className="fill-destructive" />
         )}
 
-        {/* Vit golfboll som flyger i en mjuk båge från startpunkten till landningen/koppen */}
-        {flying && (
-          <circle r="5.5" className="fill-white stroke-foreground/40" strokeWidth="1">
-            <animateMotion
-              path={flightPath}
-              dur="0.65s"
-              fill="freeze"
-              calcMode="spline"
-              keySplines="0.3 0 0.7 1"
-            />
-          </circle>
+        {/* Vit golfboll, animerad steg-för-steg via React-state längs en Bézier-båge */}
+        {ballVisible && (
+          <circle
+            cx={ball.x}
+            cy={ball.y}
+            r="5.5"
+            className="fill-white stroke-foreground/40"
+            strokeWidth="1"
+          />
         )}
 
-        {flying && isPerfect && <ConfettiBurstSvg cx={flag.x} cy={flag.y} base={0.65} />}
+        {showConfetti && <ConfettiBurstSvg cx={flag.x} cy={flag.y} />}
       </svg>
 
-      {flying && isPerfect && (
+      {flying && isPerfect && progress > 0.15 && (
         <p className="animate-in fade-in zoom-in-95 -mt-1 text-center text-xs font-bold uppercase tracking-[0.2em] text-primary duration-300">
           Perfect shot
         </p>
@@ -186,46 +222,51 @@ export function ApproachShotVisual({
   );
 }
 
-/** Mycket kort, diskret SVG-konfetti kring koppen för ett perfekt slag. */
-/** Kort "fyrverkeri": en expanderande blixtring plus konfettibitar, timade
- *  till precis när bollen landar i koppen (base = bollens flygtid). */
-function ConfettiBurstSvg({ cx, cy, base = 0 }: { cx: number; cy: number; base?: number }) {
+const CONFETTI_COLORS = ["var(--primary)", "var(--flag)", "var(--sand)", "var(--chart-4)"];
+
+/** Kort "fyrverkeri" (blixtring + konfettibitar) med rena CSS-keyframes –
+ *  pålitligare över webbläsare/webviews än SVG SMIL. */
+function ConfettiBurstSvg({ cx, cy }: { cx: number; cy: number }) {
   const pieces = Array.from({ length: 12 }, (_, i) => {
     const angle = (i / 12) * Math.PI * 2;
     const dist = 24 + (i % 3) * 8;
-    const colors = ["var(--primary)", "var(--flag)", "var(--sand)", "var(--chart-4)"];
     return {
       id: i,
-      x: cx + Math.cos(angle) * dist,
-      y: cy + Math.sin(angle) * dist,
-      color: colors[i % colors.length],
-      delay: base + (i % 4) * 0.02,
-      rot: (angle * 180) / Math.PI,
+      dx: Math.cos(angle) * dist,
+      dy: Math.sin(angle) * dist,
+      color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+      delay: (i % 4) * 20,
     };
   });
 
   return (
     <g>
-      {/* Blixt: en snabbt expanderande, tonande ring – själva "fyrverkeriet" */}
-      <circle cx={cx} cy={cy} r="2" fill="none" className="stroke-flag" strokeWidth="2" opacity="0">
-        <animate
-          attributeName="r"
-          values="2;26"
-          dur="0.45s"
-          begin={`${base}s`}
-          fill="freeze"
-          calcMode="linear"
-        />
-        <animate
-          attributeName="opacity"
-          values="0;0.8;0"
-          keyTimes="0;0.25;1"
-          dur="0.45s"
-          begin={`${base}s`}
-          fill="freeze"
-        />
-      </circle>
-
+      <style>{`
+        @keyframes sg4-firework-ring {
+          0% { transform: scale(0.15); opacity: 0.9; }
+          100% { transform: scale(1); opacity: 0; }
+        }
+        @keyframes sg4-firework-piece {
+          0% { transform: translate(0px, 0px); opacity: 0; }
+          15% { opacity: 1; }
+          100% { transform: translate(var(--dx), var(--dy)); opacity: 0; }
+        }
+      `}</style>
+      <circle
+        cx={cx}
+        cy={cy}
+        r="26"
+        fill="none"
+        className="stroke-flag"
+        strokeWidth="2"
+        style={
+          {
+            transformBox: "fill-box",
+            transformOrigin: "center",
+            animation: "sg4-firework-ring 0.45s ease-out forwards",
+          } as React.CSSProperties
+        }
+      />
       {pieces.map((p) => (
         <rect
           key={p.id}
@@ -234,34 +275,17 @@ function ConfettiBurstSvg({ cx, cy, base = 0 }: { cx: number; cy: number; base?:
           width="4"
           height="2"
           fill={p.color}
-          opacity="0"
-          transform={`rotate(${p.rot} ${cx} ${cy})`}
-        >
-          <animate
-            attributeName="x"
-            values={`${cx - 2};${p.x - 2}`}
-            dur="0.5s"
-            begin={`${p.delay}s`}
-            fill="freeze"
-            calcMode="linear"
-          />
-          <animate
-            attributeName="y"
-            values={`${cy - 1};${p.y - 1}`}
-            dur="0.5s"
-            begin={`${p.delay}s`}
-            fill="freeze"
-            calcMode="linear"
-          />
-          <animate
-            attributeName="opacity"
-            values="0;1;1;0"
-            keyTimes="0;0.1;0.7;1"
-            dur="0.6s"
-            begin={`${p.delay}s`}
-            fill="freeze"
-          />
-        </rect>
+          style={
+            {
+              transformBox: "fill-box",
+              transformOrigin: "center",
+              animation: "sg4-firework-piece 0.55s ease-out forwards",
+              animationDelay: `${p.delay}ms`,
+              "--dx": `${p.dx}px`,
+              "--dy": `${p.dy}px`,
+            } as React.CSSProperties
+          }
+        />
       ))}
     </g>
   );
