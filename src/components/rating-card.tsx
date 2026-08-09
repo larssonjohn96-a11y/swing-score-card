@@ -256,15 +256,15 @@ export function PlayerCard({
 
               <div className="mt-5 w-full border-t border-border" />
 
-              <div className="mt-4 grid w-full grid-cols-5 gap-1.5">
+              <div className="mt-4 grid w-full grid-cols-5 divide-x divide-border">
                 {data.stats.map((s) => {
                   const meta = STAT_META[s.key];
                   const Icon = meta.icon;
                   const barTone = s.key === "around-the-green" ? "bg-tier-gold" : "bg-primary";
                   const pct = s.value ? Math.max(4, Math.min(100, s.value)) : 0;
                   return (
-                    <div key={s.key} className="flex flex-col items-center gap-1">
-                      <Icon className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
+                    <div key={s.key} className="flex flex-col items-center gap-1 px-1">
+                      <Icon className="h-4 w-4 text-primary" strokeWidth={1.5} />
                       <p className="text-center text-[7px] font-semibold uppercase leading-tight tracking-wide text-muted-foreground">
                         {meta.short}
                       </p>
@@ -285,6 +285,7 @@ export function PlayerCard({
                   );
                 })}
               </div>
+
             </div>
           </div>
         </div>
