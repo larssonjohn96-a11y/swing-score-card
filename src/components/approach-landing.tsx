@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { ApproachLoopIllustration } from "@/components/approach-loop-illustration";
 import { ApproachStoryLink } from "@/components/approach-story";
+import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 
 /**
  * Approach-landningssidans PILOT-version: kraftigt förenklad, ingen
@@ -10,6 +11,8 @@ import { ApproachStoryLink } from "@/components/approach-story";
  * mönster gäller bara Approach tills vidare, inte de andra sex testerna.
  */
 export function ApproachLanding() {
+  useHideBottomNav(true);
+
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-md flex-col px-6 pb-10 pt-6">
       <Link
@@ -30,8 +33,6 @@ export function ApproachLanding() {
       <p className="mt-4 text-base leading-relaxed text-muted-foreground">
         Testa precisionen i dina inspel från 55–165 meter och se vilken nivå de håller.
       </p>
-
-      <div className="flex-1" />
 
       <ApproachStoryLink />
 
