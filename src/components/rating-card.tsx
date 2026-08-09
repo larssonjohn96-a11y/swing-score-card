@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
 import {
   Award,
   Check,
-  ChevronRight,
   Crown,
   Flag,
   Gauge,
@@ -33,10 +31,16 @@ import { flagForCountry } from "@/lib/countries";
  * i objectBoundingBox-enheter (0–1) så samma path funkar oavsett storlek.
  */
 const CARD_PATH =
-  "M 0.06 0 L 0.94 0 C 0.973 0 1 0.03 1 0.065 " +
-  "L 1 0.86 C 1 0.90 0.98 0.93 0.95 0.945 L 0.52 0.99 C 0.51 1.0 0.49 1.0 0.48 0.99 " +
-  "L 0.05 0.945 C 0.02 0.93 0 0.90 0 0.86 " +
-  "L 0 0.065 C 0 0.03 0.027 0 0.06 0 Z";
+  "M 0.06 0.20 " +
+  "C 0.06 0.08 0.24 0 0.5 0 " +
+  "C 0.76 0 0.94 0.08 0.94 0.20 " +
+  "L 0.94 0.72 " +
+  "C 0.94 0.82 0.88 0.89 0.79 0.93 " +
+  "L 0.53 0.995 " +
+  "C 0.51 1.0 0.49 1.0 0.47 0.995 " +
+  "L 0.21 0.93 " +
+  "C 0.12 0.89 0.06 0.82 0.06 0.72 " +
+  "Z";
 
 const TIER_STYLES: Record<
   CardTier["key"],
@@ -82,6 +86,40 @@ const STAT_META: Record<CardStat["key"], { short: string; icon: typeof Zap }> = 
   puttning: { short: "PUTTING", icon: Gauge },
 };
 
+/** Enkel, stiliserad lagerkransgren – gyllene ornament som flankerar SG4 Rating. */
+function LaurelBranch({ flip = false }: { flip?: boolean }) {
+  const leaves = [0, 1, 2, 3, 4, 5];
+  return (
+    <svg
+      width="34"
+      height="76"
+      viewBox="0 0 34 76"
+      className={`text-tier-gold ${flip ? "-scale-x-100" : ""}`}
+      aria-hidden
+    >
+      <path d="M28 4 C 18 16, 14 40, 20 72" fill="none" stroke="currentColor" strokeWidth="1.5" />
+      {leaves.map((i) => {
+        const t = i / (leaves.length - 1);
+        const y = 8 + t * 60;
+        const x = 27 - t * 9;
+        const angle = -35 - t * 15;
+        return (
+          <ellipse
+            key={i}
+            cx={x}
+            cy={y}
+            rx="7"
+            ry="3.2"
+            fill="currentColor"
+            opacity={0.55 + t * 0.35}
+            transform={`rotate(${angle} ${x} ${y})`}
+          />
+        );
+      })}
+    </svg>
+  );
+}
+
 export function RatingCardSection({ playerName }: { playerName: string }) {
   const [data, setData] = useState<RatingCardData | null>(null);
   const [profile, setProfile] = useState<CardProfile>({});
@@ -120,7 +158,7 @@ export function RatingCardSection({ playerName }: { playerName: string }) {
         </button>
       </div>
 
-      <PlayerCard data={data} profile={profile} playerName={playerName} linkToDetail={false} />
+      <PlayerCard data={data} profile={profile} playerName={playerName} />
 
       <PlayerCardDetails data={data} onSaveHandicap={saveHandicap} />
 
@@ -142,20 +180,16 @@ export function PlayerCard({
   data,
   profile,
   playerName,
-  linkToDetail = true,
 }: {
   data: RatingCardData;
   profile: CardProfile;
   playerName: string;
-  /** Om sant (default): hela kortet är en länk till detaljvyn (/konto). */
-  linkToDetail?: boolean;
 }) {
   const style = TIER_STYLES[data.tier.key];
-  const TierIcon = style.icon;
   const flag = flagForCountry(profile.country);
 
-  const card = (
-    <div className="relative mx-auto w-full" style={{ maxWidth: 360 }}>
+  return (
+    <div className="relative mx-auto w-full pb-4" style={{ maxWidth: 340 }}>
       <svg width="0" height="0" className="absolute">
         <defs>
           <clipPath id="sg4-card-shape" clipPathUnits="objectBoundingBox">
@@ -164,78 +198,101 @@ export function PlayerCard({
         </defs>
       </svg>
 
-      <div
-        className={`border bg-card px-5 pb-6 pt-4 shadow-sm transition-colors ${style.border}`}
-        style={{ clipPath: "url(#sg4-card-shape)" }}
-      >
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted">
-            {profile.photo ? (
-              <img
-                src={profile.photo}
-                alt={`Profilbild för ${playerName}`}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <User className="h-5 w-5 text-muted-foreground" strokeWidth={1.5} />
-            )}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="flex items-center gap-1 truncate font-[family-name:var(--font-display)] text-lg leading-none">
-              {flag && <span aria-hidden>{flag}</span>}
-              {playerName}
-            </p>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              HCP {data.real !== null ? hcpLabel(data.real) : hcpLabel(data.estimated ?? 0)}
-            </p>
-          </div>
-          {linkToDetail && <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />}
-        </div>
-
-        <div className="mt-3 border-t border-border pt-3 text-center">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground">
-            SG4 Rating
-          </p>
-          <p className="font-[family-name:var(--font-display)] text-6xl leading-none text-primary">
-            {data.rating}
-          </p>
-          {data.playerType && (
-            <p
-              className={`mt-1 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide ${style.bg} ${style.accent}`}
+      {/* Dubbel guldram: yttre linje, litet mellanrum, inre linje, sedan kortets innehåll. */}
+      <div className="bg-tier-gold p-[3px]" style={{ clipPath: "url(#sg4-card-shape)" }}>
+        <div className="bg-background p-[2.5px]" style={{ clipPath: "url(#sg4-card-shape)" }}>
+          <div className="bg-tier-gold p-[2px]" style={{ clipPath: "url(#sg4-card-shape)" }}>
+            <div
+              className="flex flex-col items-center bg-card px-6 pb-8 pt-7 shadow-sm"
+              style={{ clipPath: "url(#sg4-card-shape)" }}
             >
-              <TierIcon className="h-3 w-3" strokeWidth={2} />
-              {data.playerType}
-            </p>
-          )}
-        </div>
-
-        <div className="mt-3 grid grid-cols-5 gap-1 border-t border-border pt-3">
-          {data.stats.map((s) => {
-            const meta = STAT_META[s.key];
-            const Icon = meta.icon;
-            return (
-              <div key={s.key} className="flex flex-col items-center gap-0.5">
-                <Icon className="h-3 w-3 text-muted-foreground" strokeWidth={1.5} />
-                <p className="font-[family-name:var(--font-display)] text-xl leading-none">
-                  {s.value ?? "–"}
-                </p>
-                <p className="text-center text-[7px] font-semibold uppercase leading-tight tracking-wide text-muted-foreground">
-                  {meta.short}
-                </p>
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10">
+                {profile.photo ? (
+                  <img
+                    src={profile.photo}
+                    alt={`Profilbild för ${playerName}`}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <User className="h-8 w-8 text-primary/60" strokeWidth={1.3} />
+                )}
               </div>
-            );
-          })}
+
+              <p className="mt-3 flex items-center gap-1.5 font-[family-name:var(--font-display)] text-2xl uppercase leading-none tracking-wide">
+                {flag && <span aria-hidden>{flag}</span>}
+                {playerName}
+              </p>
+              <p className="mt-1 font-[family-name:var(--font-display)] text-lg leading-none text-primary">
+                HCP {data.real !== null ? hcpLabel(data.real) : hcpLabel(data.estimated ?? 0)}
+              </p>
+
+              <div className="mt-4 w-full border-t border-border" />
+
+              <div className="mt-4 flex items-center justify-center gap-1">
+                <LaurelBranch />
+                <div className="text-center">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+                    SG4 Rating
+                  </p>
+                  <p className="font-[family-name:var(--font-display)] text-7xl leading-none text-primary">
+                    {data.rating}
+                  </p>
+                </div>
+                <LaurelBranch flip />
+              </div>
+
+              {data.playerType && (
+                <p
+                  className={`mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${style.bg} ${style.accent}`}
+                >
+                  <Star className="h-3.5 w-3.5" strokeWidth={2} />
+                  {data.playerType}
+                </p>
+              )}
+
+              <div className="mt-5 w-full border-t border-border" />
+
+              <div className="mt-4 grid w-full grid-cols-5 gap-1.5">
+                {data.stats.map((s) => {
+                  const meta = STAT_META[s.key];
+                  const Icon = meta.icon;
+                  const barTone = s.key === "around-the-green" ? "bg-tier-gold" : "bg-primary";
+                  const pct = s.value ? Math.max(4, Math.min(100, s.value)) : 0;
+                  return (
+                    <div key={s.key} className="flex flex-col items-center gap-1">
+                      <Icon className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
+                      <p className="text-center text-[7px] font-semibold uppercase leading-tight tracking-wide text-muted-foreground">
+                        {meta.short}
+                      </p>
+                      <p
+                        className={`font-[family-name:var(--font-display)] text-2xl leading-none ${
+                          s.key === "around-the-green" ? "text-tier-gold" : "text-primary"
+                        }`}
+                      >
+                        {s.value ?? "–"}
+                      </p>
+                      <div className="h-[3px] w-full overflow-hidden rounded-full bg-muted">
+                        <div
+                          className={`h-full rounded-full ${barTone}`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Litet "S"-emblem som ett sigill vid kortets spets. */}
+      <div className="absolute bottom-0 left-1/2 flex h-7 w-7 -translate-x-1/2 translate-y-1/2 items-center justify-center rounded-lg bg-primary shadow-sm">
+        <span className="font-[family-name:var(--font-display)] text-sm text-primary-foreground">
+          S
+        </span>
+      </div>
     </div>
-  );
-
-  if (!linkToDetail) return card;
-
-  return (
-    <Link to="/konto" className="block transition-opacity active:opacity-80">
-      {card}
-    </Link>
   );
 }
 
