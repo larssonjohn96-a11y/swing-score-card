@@ -26,21 +26,24 @@ import { hcpLabel, loadRealHandicap, saveRealHandicap } from "@/lib/sg-handicap"
 import { flagForCountry } from "@/lib/countries";
 
 /**
- * Enkel, mjukt avrundad kortkontur med en subtil spets längst ned – en
- * förenklad, kompaktare släkting till den tidigare sköldformen. Definierad
- * i objectBoundingBox-enheter (0–1) så samma path funkar oavsett storlek.
+ * Sköldform med utsvängda "axlar" upptill och en mjuk spets nedtill –
+ * som ett klassiskt emblem/spelarkort. Definierad i objectBoundingBox-
+ * enheter (0–1) så samma path funkar oavsett storlek.
  */
 const CARD_PATH =
-  "M 0.06 0.20 " +
-  "C 0.06 0.08 0.24 0 0.5 0 " +
-  "C 0.76 0 0.94 0.08 0.94 0.20 " +
-  "L 0.94 0.72 " +
-  "C 0.94 0.82 0.88 0.89 0.79 0.93 " +
-  "L 0.53 0.995 " +
-  "C 0.51 1.0 0.49 1.0 0.47 0.995 " +
-  "L 0.21 0.93 " +
-  "C 0.12 0.89 0.06 0.82 0.06 0.72 " +
+  "M 0.5 0.015 " +
+  "C 0.62 0.055, 0.78 0.085, 0.985 0.09 " +
+  "C 0.93 0.16, 0.90 0.22, 0.90 0.30 " +
+  "L 0.90 0.70 " +
+  "C 0.90 0.78, 0.93 0.84, 0.985 0.91 " +
+  "C 0.78 0.915, 0.62 0.945, 0.5 0.985 " +
+  "C 0.38 0.945, 0.22 0.915, 0.015 0.91 " +
+  "C 0.07 0.84, 0.10 0.78, 0.10 0.70 " +
+  "L 0.10 0.30 " +
+  "C 0.10 0.22, 0.07 0.16, 0.015 0.09 " +
+  "C 0.22 0.085, 0.38 0.055, 0.5 0.015 " +
   "Z";
+
 
 const TIER_STYLES: Record<
   CardTier["key"],
