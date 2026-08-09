@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { PRECISION_TARGETS } from "@/lib/precision";
 
 /**
  * Visuell representation av ett enskilt approach-slag under själva testet
@@ -42,8 +43,23 @@ export function ApproachShotVisual({
 }) {
   const w = 460;
   const h = 150;
-  const flag = { x: 300, y: 75 };
-  const startPoint = { x: 62, y: flag.y };
+  const flag = { x: 340, y: 75 };
+
+  // Distansskalan: alla 9 avstånden som en rad punkter, samma princip som
+  // positionsdiagrammen i Närspelstest/Short Putting Test. Bara den
+  // aktuella punkten (index för "target") är röd/vit med sin etikett –
+  // övriga är små, grå, utan text. Den aktuella punktens position blir
+  // också startpunkten bollen flyger ifrån.
+  const trackY = flag.y;
+  const trackX1 = 20;
+  const trackX2 = 214;
+  const currentIndex = Math.max(
+    0,
+    PRECISION_TARGETS.indexOf(target as (typeof PRECISION_TARGETS)[number]),
+  );
+  const trackXFor = (i: number) =>
+    trackX1 + (i / (PRECISION_TARGETS.length - 1)) * (trackX2 - trackX1);
+  const startPoint = { x: trackXFor(currentIndex), y: trackY };
 
   const PX_PER_M_LEN = 3.4;
   const PX_PER_M_SIDE = 3.4;
@@ -158,9 +174,9 @@ export function ApproachShotVisual({
           `}</style>
         )}
 
-        {/* Diskret spellinje: startpunkt genom flaggan, längs KORT/LÅNGT-axeln */}
+        {/* Diskret spellinje: hela distansskalan genom flaggan, längs KORT/LÅNGT-axeln */}
         <line
-          x1={startPoint.x}
+          x1={trackX1}
           y1={flag.y}
           x2={w - 14}
           y2={flag.y}
@@ -169,9 +185,23 @@ export function ApproachShotVisual({
           strokeDasharray="2 4"
         />
 
+        {/* Övriga åtta avstånd i testet: små grå punkter utan etikett – bara
+            den aktuella (röd/vit nedan) visar sin distans. */}
+        {PRECISION_TARGETS.map((t, i) =>
+          i === currentIndex ? null : (
+            <circle
+              key={t}
+              cx={trackXFor(i)}
+              cy={trackY}
+              r="3"
+              className="fill-muted-foreground/30"
+            />
+          ),
+        )}
+
         {/* Axeletiketter */}
         <text
-          x={flag.x - 60}
+          x={flag.x - 96}
           y={flag.y + 5}
           textAnchor="end"
           className="fill-muted-foreground text-[9px] font-semibold uppercase tracking-wide"
