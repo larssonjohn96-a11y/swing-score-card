@@ -33,6 +33,8 @@ export function ApproachCelebration({ pr }: { pr: ApproachPRResult }) {
   const bothPR = Boolean(pr.hcpPR && pr.scorePR);
   const hcpDelta = pr.hcpPR ? Math.round((pr.hcpPR.previousBest - pr.hcpPR.newHcp) * 10) / 10 : 0;
   const scoreDelta = pr.scorePR ? Math.round(pr.scorePR.newScore - pr.scorePR.previousBest) : 0;
+  const hcpTied = pr.hcpPR ? Math.abs(hcpDelta) < 0.05 : false;
+  const scoreTied = pr.scorePR ? Math.abs(scoreDelta) < 0.5 : false;
   const settled = phase === "settled";
 
   return (
@@ -50,10 +52,16 @@ export function ApproachCelebration({ pr }: { pr: ApproachPRResult }) {
           }`}
         >
           {pr.hcpPR && !pr.scorePR
-            ? "Nytt personbästa"
+            ? hcpTied
+              ? "Delat personbästa"
+              : "Nytt personbästa"
             : !pr.hcpPR && pr.scorePR
-              ? "New high score"
-              : "Nytt personbästa"}
+              ? scoreTied
+                ? "Delad högsta poäng"
+                : "New high score"
+              : hcpTied && scoreTied
+                ? "Delat personbästa"
+                : "Nytt personbästa"}
         </p>
 
         {pr.hcpPR && (
@@ -69,9 +77,15 @@ export function ApproachCelebration({ pr }: { pr: ApproachPRResult }) {
               {settled ? `HCP ${hcpLabel(pr.hcpPR.newHcp)}` : hcpLabel(pr.hcpPR.newHcp)}
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
-              {settled ? "Personbästa · " : "Tidigare bästa "}
-              {hcpLabel(pr.hcpPR.previousBest)}
-              <span className="ml-1 font-semibold text-primary">↓{hcpDelta}</span>
+              {hcpTied ? (
+                <>{settled ? "Matchar ditt personbästa" : "Matchar ditt tidigare bästa"}</>
+              ) : (
+                <>
+                  {settled ? "Personbästa · " : "Tidigare bästa "}
+                  {hcpLabel(pr.hcpPR.previousBest)}
+                  <span className="ml-1 font-semibold text-primary">↓{hcpDelta}</span>
+                </>
+              )}
             </p>
           </>
         )}
@@ -85,8 +99,14 @@ export function ApproachCelebration({ pr }: { pr: ApproachPRResult }) {
               {pr.scorePR.newScore.toFixed(0)}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Tidigare bästa {pr.scorePR.previousBest.toFixed(0)}
-              <span className="ml-1 font-semibold text-primary">+{scoreDelta}</span>
+              {scoreTied ? (
+                "Matchar din tidigare högsta poäng"
+              ) : (
+                <>
+                  Tidigare bästa {pr.scorePR.previousBest.toFixed(0)}
+                  <span className="ml-1 font-semibold text-primary">+{scoreDelta}</span>
+                </>
+              )}
             </p>
           </div>
         )}

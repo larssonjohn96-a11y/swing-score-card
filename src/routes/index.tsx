@@ -8,7 +8,6 @@ import {
   computeCategoryHandicaps,
   computeEstimatedHandicap,
   loadRealHandicap,
-  saveRealHandicap,
   type CategoryHandicap,
   type Opportunity,
 } from "@/lib/sg-handicap";
@@ -71,12 +70,6 @@ function Home() {
     if (user) void pushPlayerSnapshot();
   }, [user]);
 
-  function handleSaveHandicap(value: number) {
-    saveRealHandicap(value);
-    setData(loadHomeData());
-    if (user) void pushPlayerSnapshot();
-  }
-
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-28 pt-6">
       <div className="flex items-center justify-between">
@@ -114,7 +107,6 @@ function Home() {
             data={data.card}
             profile={loadCardProfile()}
             playerName={displayName ?? "Golfspelare"}
-            onSaveHandicap={handleSaveHandicap}
           />
 
           <div className="mt-10">

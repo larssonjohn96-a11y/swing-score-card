@@ -1,11 +1,26 @@
 import { useEffect, useState } from "react";
-import { Award, Check, Crown, Flag, Medal, Pencil, Shield, Star, User } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import {
+  Award,
+  Check,
+  ChevronRight,
+  Crown,
+  Flag,
+  Gauge,
+  Medal,
+  Pencil,
+  Shield,
+  Star,
+  User,
+  Zap,
+} from "lucide-react";
 import {
   CARD_TIERS,
   computeRatingCard,
   loadCardProfile,
   saveCardProfile,
   type CardProfile,
+  type CardStat,
   type CardTier,
   type RatingCardData,
 } from "@/lib/rating-card";
@@ -13,51 +28,58 @@ import { hcpLabel, loadRealHandicap, saveRealHandicap } from "@/lib/sg-handicap"
 import { flagForCountry } from "@/lib/countries";
 
 /**
- * Sköldformad kortkontur (som ett samlarkort), definierad i objectBoundingBox-
- * enheter (0–1) så samma path funkar oavsett kortets faktiska pixelstorlek.
- * Används både på ramen (tier-färgad) och innehållsytan (pärmfärgad), där
- * innehållsytan är något mindre (via padding) för att skapa ram-effekten.
+ * Enkel, mjukt avrundad kortkontur med en subtil spets längst ned – en
+ * förenklad, kompaktare släkting till den tidigare sköldformen. Definierad
+ * i objectBoundingBox-enheter (0–1) så samma path funkar oavsett storlek.
  */
-const SHIELD_PATH =
-  "M 0.5 0.02 C 0.36 0.02 0.32 0.09 0.18 0.09 C 0.06 0.09 0.02 0.14 0.02 0.20 " +
-  "L 0.02 0.78 C 0.02 0.86 0.05 0.90 0.10 0.93 L 0.5 1.0 L 0.90 0.93 " +
-  "C 0.95 0.90 0.98 0.86 0.98 0.78 " +
-  "L 0.98 0.20 C 0.98 0.14 0.94 0.09 0.82 0.09 C 0.68 0.09 0.64 0.02 0.5 0.02 Z";
+const CARD_PATH =
+  "M 0.06 0 L 0.94 0 C 0.973 0 1 0.03 1 0.065 " +
+  "L 1 0.86 C 1 0.90 0.98 0.93 0.95 0.945 L 0.52 0.99 C 0.51 1.0 0.49 1.0 0.48 0.99 " +
+  "L 0.05 0.945 C 0.02 0.93 0 0.90 0 0.86 " +
+  "L 0 0.065 C 0 0.03 0.027 0 0.06 0 Z";
 
 const TIER_STYLES: Record<
   CardTier["key"],
-  { shell: string; accent: string; ring: string; icon: typeof Medal }
+  { accent: string; border: string; bg: string; icon: typeof Medal }
 > = {
   bronze: {
-    shell: "from-tier-bronze-deep via-tier-bronze-deep to-tier-bronze/40",
     accent: "text-tier-bronze",
-    ring: "border-tier-bronze/60",
+    border: "border-tier-bronze/50",
+    bg: "bg-tier-bronze/10",
     icon: Shield,
   },
   silver: {
-    shell: "from-tier-silver-deep via-tier-silver-deep to-tier-silver/30",
     accent: "text-tier-silver",
-    ring: "border-tier-silver/60",
+    border: "border-tier-silver/50",
+    bg: "bg-tier-silver/10",
     icon: Shield,
   },
   gold: {
-    shell: "from-tier-gold-deep via-tier-gold-deep to-tier-gold/40",
     accent: "text-tier-gold",
-    ring: "border-tier-gold/60",
+    border: "border-tier-gold/60",
+    bg: "bg-tier-gold/10",
     icon: Medal,
   },
   elite: {
-    shell: "from-tier-elite-deep via-tier-elite-deep to-tier-elite/40",
     accent: "text-tier-elite",
-    ring: "border-tier-elite/60",
+    border: "border-tier-elite/60",
+    bg: "bg-tier-elite/10",
     icon: Star,
   },
   icon: {
-    shell: "from-tier-icon-deep via-tier-icon-deep to-tier-icon/40",
     accent: "text-tier-icon",
-    ring: "border-tier-icon/60",
+    border: "border-tier-icon/60",
+    bg: "bg-tier-icon/10",
     icon: Crown,
   },
+};
+
+const STAT_META: Record<CardStat["key"], { short: string; icon: typeof Zap }> = {
+  speed: { short: "SPEED", icon: Zap },
+  driving: { short: "DRIVING", icon: Flag },
+  approach: { short: "APPROACH", icon: Gauge },
+  "around-the-green": { short: "AROUND GREEN", icon: Flag },
+  puttning: { short: "PUTTING", icon: Gauge },
 };
 
 export function RatingCardSection({ playerName }: { playerName: string }) {
@@ -98,12 +120,9 @@ export function RatingCardSection({ playerName }: { playerName: string }) {
         </button>
       </div>
 
-      <PlayerCard
-        data={data}
-        profile={profile}
-        playerName={playerName}
-        onSaveHandicap={saveHandicap}
-      />
+      <PlayerCard data={data} profile={profile} playerName={playerName} linkToDetail={false} />
+
+      <PlayerCardDetails data={data} onSaveHandicap={saveHandicap} />
 
       {editing ? <ProfileForm profile={profile} onSave={save} /> : null}
 
@@ -112,50 +131,45 @@ export function RatingCardSection({ playerName }: { playerName: string }) {
   );
 }
 
+/**
+ * Kompakt spelarkort – FIFA-inspirerat men mycket mindre och luftigare än
+ * tidigare version. Kommunicerar bara fyra saker: vem, vilken nivå (SG4
+ * Rating), vilken typ av spelare, och var spelaren är stark/svag (5
+ * kategorier i en rad). Real/Est HCP och annan detalj lever i detaljvyn
+ * (PlayerCardDetails), inte på kortet självt.
+ */
 export function PlayerCard({
   data,
   profile,
   playerName,
-  onSaveHandicap,
+  linkToDetail = true,
 }: {
   data: RatingCardData;
   profile: CardProfile;
   playerName: string;
-  /** Om satt: gör Real HCP redigerbar direkt i kortet (pennikon bredvid talet). */
-  onSaveHandicap?: (value: number) => void;
+  /** Om sant (default): hela kortet är en länk till detaljvyn (/konto). */
+  linkToDetail?: boolean;
 }) {
   const style = TIER_STYLES[data.tier.key];
   const TierIcon = style.icon;
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(data.real !== null ? String(data.real) : "");
   const flag = flagForCountry(profile.country);
 
-  function save() {
-    const n = Number(draft.replace(",", "."));
-    if (Number.isFinite(n)) onSaveHandicap?.(Math.round(n * 10) / 10);
-    setEditing(false);
-  }
-
-  return (
-    <div className="relative mx-auto" style={{ maxWidth: 320 }}>
-      {/* Delad sköld-klippbana, definieras en gång och återanvänds på ram + innehåll. */}
+  const card = (
+    <div className="relative mx-auto w-full" style={{ maxWidth: 360 }}>
       <svg width="0" height="0" className="absolute">
         <defs>
-          <clipPath id="sg4-shield" clipPathUnits="objectBoundingBox">
-            <path d={SHIELD_PATH} />
+          <clipPath id="sg4-card-shape" clipPathUnits="objectBoundingBox">
+            <path d={CARD_PATH} />
           </clipPath>
         </defs>
       </svg>
 
       <div
-        className={`bg-gradient-to-b p-[7px] shadow-glow ${style.shell}`}
-        style={{ clipPath: "url(#sg4-shield)" }}
+        className={`border bg-card px-5 pb-6 pt-4 shadow-sm transition-colors ${style.border}`}
+        style={{ clipPath: "url(#sg4-card-shape)" }}
       >
-        <div
-          className="flex flex-col items-center bg-[#f7f2e4] px-5 pb-10 pt-9 text-[#2b2213]"
-          style={{ clipPath: "url(#sg4-shield)" }}
-        >
-          <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-2xl bg-[#2b2213]/10">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted">
             {profile.photo ? (
               <img
                 src={profile.photo}
@@ -163,104 +177,141 @@ export function PlayerCard({
                 className="h-full w-full object-cover"
               />
             ) : (
-              <User className="h-12 w-12 opacity-60" strokeWidth={1.2} />
+              <User className="h-5 w-5 text-muted-foreground" strokeWidth={1.5} />
             )}
           </div>
-          <p className="mt-3 flex items-center gap-1.5 font-display text-xl uppercase tracking-[0.1em]">
-            {flag && <span aria-hidden>{flag}</span>}
-            {playerName}
-          </p>
-          {profile.club && (
-            <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-[0.15em] opacity-70">
-              Hemmaklubb: {profile.club}
+          <div className="min-w-0 flex-1">
+            <p className="flex items-center gap-1 truncate font-[family-name:var(--font-display)] text-lg leading-none">
+              {flag && <span aria-hidden>{flag}</span>}
+              {playerName}
             </p>
-          )}
-          {(profile.country || profile.ageClass) && (
-            <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.15em] opacity-60">
-              {[profile.country ? `Land: ${profile.country}` : null, profile.ageClass]
-                .filter(Boolean)
-                .join(" · ")}
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              HCP {data.real !== null ? hcpLabel(data.real) : hcpLabel(data.estimated ?? 0)}
             </p>
-          )}
-
-          <div className="mt-3 flex items-center justify-center gap-6 border-t border-[#2b2213]/15 pt-3">
-            <div className="text-center">
-              <div className="flex items-center justify-center gap-1.5">
-                <p className="text-[9px] font-semibold uppercase tracking-[0.2em] opacity-60">
-                  Real HCP
-                </p>
-                {onSaveHandicap && !editing && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDraft(data.real !== null ? String(data.real) : "");
-                      setEditing(true);
-                    }}
-                    aria-label="Redigera verkligt handicap"
-                    className="opacity-60 transition-opacity hover:opacity-100"
-                  >
-                    <Pencil className="h-3 w-3" />
-                  </button>
-                )}
-              </div>
-              {editing ? (
-                <div className="mt-1 flex items-center justify-center gap-1.5">
-                  <input
-                    type="number"
-                    inputMode="decimal"
-                    step="0.1"
-                    autoFocus
-                    value={draft}
-                    onChange={(e) => setDraft(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && save()}
-                    className="w-16 rounded-lg border border-[#2b2213]/30 bg-transparent px-2 py-0.5 text-center font-display text-2xl leading-none outline-none focus:border-[#2b2213]"
-                  />
-                  <button
-                    type="button"
-                    onClick={save}
-                    aria-label="Spara"
-                    className={`flex h-6 w-6 items-center justify-center rounded-full ${style.accent} bg-[#2b2213]/10`}
-                  >
-                    <Check className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              ) : (
-                <p className="mt-0.5 font-display text-5xl leading-none">
-                  {data.real !== null ? hcpLabel(data.real) : "–"}
-                </p>
-              )}
-            </div>
-            {data.estimated !== undefined && (
-              <div className="text-center">
-                <p className="text-[9px] font-semibold uppercase tracking-[0.2em] opacity-60">
-                  Est. HCP
-                </p>
-                <p className="mt-0.5 font-display text-xl leading-none opacity-70">
-                  {hcpLabel(data.estimated)}
-                </p>
-              </div>
-            )}
           </div>
-
-          <div className="mt-3 flex flex-col items-center border-t border-[#2b2213]/15 pt-3">
-            <div className="flex items-center gap-1.5">
-              <TierIcon className={`h-4 w-4 ${style.accent}`} strokeWidth={1.5} />
-              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] opacity-60">
-                Rating · {data.tier.label}
-              </p>
-            </div>
-            <p className="font-display text-6xl leading-none">{data.rating}</p>
-          </div>
-
-          <div className="mt-3 w-[80%] space-y-2 border-t border-[#2b2213]/15 pt-3 pb-1">
-            {data.stats.map((s) => (
-              <div key={s.key} className="flex items-center justify-between text-xs">
-                <span className="opacity-70">{s.label}</span>
-                <span className="font-display text-base leading-none">{s.value ?? "–"}</span>
-              </div>
-            ))}
-          </div>
+          {linkToDetail && <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />}
         </div>
+
+        <div className="mt-3 border-t border-border pt-3 text-center">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground">
+            SG4 Rating
+          </p>
+          <p className="font-[family-name:var(--font-display)] text-6xl leading-none text-primary">
+            {data.rating}
+          </p>
+          {data.playerType && (
+            <p
+              className={`mt-1 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide ${style.bg} ${style.accent}`}
+            >
+              <TierIcon className="h-3 w-3" strokeWidth={2} />
+              {data.playerType}
+            </p>
+          )}
+        </div>
+
+        <div className="mt-3 grid grid-cols-5 gap-1 border-t border-border pt-3">
+          {data.stats.map((s) => {
+            const meta = STAT_META[s.key];
+            const Icon = meta.icon;
+            return (
+              <div key={s.key} className="flex flex-col items-center gap-0.5">
+                <Icon className="h-3 w-3 text-muted-foreground" strokeWidth={1.5} />
+                <p className="font-[family-name:var(--font-display)] text-xl leading-none">
+                  {s.value ?? "–"}
+                </p>
+                <p className="text-center text-[7px] font-semibold uppercase leading-tight tracking-wide text-muted-foreground">
+                  {meta.short}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+
+  if (!linkToDetail) return card;
+
+  return (
+    <Link to="/konto" className="block transition-opacity active:opacity-80">
+      {card}
+    </Link>
+  );
+}
+
+/** Detaljraderna som tidigare låg inne i kortet – Real/Est HCP m.m. – nu en
+ *  egen sektion under det kompakta kortet, bara på detaljvyn (/konto). */
+function PlayerCardDetails({
+  data,
+  onSaveHandicap,
+}: {
+  data: RatingCardData;
+  onSaveHandicap: (value: number) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(data.real !== null ? String(data.real) : "");
+
+  function save() {
+    const n = Number(draft.replace(",", "."));
+    if (Number.isFinite(n)) onSaveHandicap(Math.round(n * 10) / 10);
+    setEditing(false);
+  }
+
+  return (
+    <div className="rounded-3xl border border-border bg-card p-4">
+      <div className="flex items-center justify-between py-1.5">
+        <p className="text-xs text-muted-foreground">Official HCP</p>
+        {editing ? (
+          <div className="flex items-center gap-1.5">
+            <input
+              type="number"
+              inputMode="decimal"
+              step="0.1"
+              autoFocus
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && save()}
+              className="w-16 rounded-lg border border-border bg-background px-2 py-0.5 text-right font-[family-name:var(--font-display)] text-base leading-none outline-none focus:border-primary"
+            />
+            <button
+              type="button"
+              onClick={save}
+              aria-label="Spara"
+              className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary"
+            >
+              <Check className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => {
+              setDraft(data.real !== null ? String(data.real) : "");
+              setEditing(true);
+            }}
+            className="flex items-center gap-1.5 font-[family-name:var(--font-display)] text-base"
+          >
+            {data.real !== null ? hcpLabel(data.real) : "–"}
+            <Pencil className="h-3 w-3 text-muted-foreground" />
+          </button>
+        )}
+      </div>
+      <div className="flex items-center justify-between border-t border-border py-1.5">
+        <p className="text-xs text-muted-foreground">SG4 HCP (est.)</p>
+        <p className="font-[family-name:var(--font-display)] text-base">
+          {data.estimated !== undefined ? hcpLabel(data.estimated) : "–"}
+        </p>
+      </div>
+      <div className="flex items-center justify-between border-t border-border py-1.5">
+        <p className="text-xs text-muted-foreground">Senaste test</p>
+        <p className="text-sm">
+          {data.lastUpdated
+            ? new Date(data.lastUpdated).toLocaleDateString("sv-SE", {
+                day: "2-digit",
+                month: "short",
+              })
+            : "–"}
+        </p>
       </div>
     </div>
   );

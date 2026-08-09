@@ -122,19 +122,21 @@ function PrecisionPage() {
       const saved = savePrecisionSession(updatedShots, context, device);
 
       const isFirstTest = previousSessions.length === 0;
-      // Exakt samma värde som tidigare rekord räknas INTE som nytt PR.
+      // Ett resultat som MATCHAR (delar) tidigare rekord räknas nu också
+      // som PR, inte bara ett som slår det – bara ett sämre resultat är
+      // inget PR.
       const hcpPR =
         !isFirstTest &&
         typeof saved.handicap === "number" &&
         previousBestHcp !== undefined &&
-        saved.handicap < previousBestHcp - 0.05
+        saved.handicap <= previousBestHcp + 0.05
           ? { newHcp: saved.handicap, previousBest: previousBestHcp }
           : undefined;
       const scorePR =
         !isFirstTest &&
         typeof saved.score === "number" &&
         previousBestScore !== undefined &&
-        saved.score > previousBestScore + 0.05
+        saved.score >= previousBestScore - 0.05
           ? { newScore: saved.score, previousBest: previousBestScore }
           : undefined;
       setPr({ isFirstTest, hcpPR, scorePR });

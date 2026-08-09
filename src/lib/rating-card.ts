@@ -102,7 +102,25 @@ export type RatingCardData = {
   verified: boolean;
   testCount: number;
   lastUpdated?: string;
+  /** spelartyp, härledd ur vilken kategori som sticker ut mest relativt övriga */
+  playerType?: string;
 };
+
+/** Härleder en kort "spelartyp" ur vilken av de fem kategorierna som är starkast
+ *  relativt spelarens egna snitt – inte bara högst i absoluta tal. */
+function derivePlayerType(stats: CardStat[]): string | undefined {
+  const known = stats.filter((s): s is CardStat & { value: number } => s.value !== undefined);
+  if (known.length < 2) return undefined;
+  const strongest = [...known].sort((a, b) => b.value - a.value)[0];
+  const LABELS: Record<CardStat["key"], string> = {
+    speed: "Ball Striker",
+    driving: "Ball Striker",
+    approach: "Iron Player",
+    "around-the-green": "Short Game Wizard",
+    puttning: "Putting Ace",
+  };
+  return LABELS[strongest.key];
+}
 
 export function computeRatingCard(realHandicap: number | null): RatingCardData {
   const cats = computeCategoryHandicaps();
@@ -147,6 +165,7 @@ export function computeRatingCard(realHandicap: number | null): RatingCardData {
     verified: realHandicap !== null,
     testCount: dates.length,
     lastUpdated: dates[dates.length - 1],
+    playerType: derivePlayerType(stats),
   };
 }
 
