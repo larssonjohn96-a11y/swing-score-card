@@ -51,14 +51,17 @@ export function ApproachShotVisual({
   // övriga är små, grå, utan text. Den aktuella punktens position blir
   // också startpunkten bollen flyger ifrån.
   const trackY = flag.y;
-  const trackX1 = 20;
-  const trackX2 = 214;
+  const trackX1 = 38;
+  const trackX2 = 202;
   const currentIndex = Math.max(
     0,
     PRECISION_TARGETS.indexOf(target as (typeof PRECISION_TARGETS)[number]),
   );
+  // Omvänd mappning: kortast avstånd (55 m) ligger närmast flaggan (trackX2),
+  // längst avstånd (165 m) ligger längst bort (trackX1) – matchar att man i
+  // verkligheten står närmare green ju kortare inspelet är.
   const trackXFor = (i: number) =>
-    trackX1 + (i / (PRECISION_TARGETS.length - 1)) * (trackX2 - trackX1);
+    trackX2 - (i / (PRECISION_TARGETS.length - 1)) * (trackX2 - trackX1);
   const startPoint = { x: trackXFor(currentIndex), y: trackY };
 
   const PX_PER_M_LEN = 3.4;
