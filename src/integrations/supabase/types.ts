@@ -181,7 +181,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      are_friends: { Args: { _a: string; _b: string }; Returns: boolean }
       bunker_leaderboard: {
         Args: never
         Returns: {
