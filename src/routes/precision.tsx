@@ -1,17 +1,5 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  Gauge,
-  Minus,
-  Plus,
-  Radar,
-  Trophy,
-  X,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Gauge, Minus, Plus, Radar, Trophy, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
   PRECISION_TARGETS,
@@ -26,7 +14,7 @@ import {
   type Device,
   type MeasurementContext,
 } from "@/lib/speed";
-import { NumberField } from "@/components/precision-visuals";
+import { ApproachShotVisual } from "@/components/approach-shot-visual";
 import { PrecisionReport } from "@/components/precision-report";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 import { ApproachProcessing } from "@/components/approach-processing";
@@ -369,49 +357,88 @@ function TestScreen({
         </div>
       </div>
 
-      <div className="mt-4 text-center">
-        <p className="text-[11px] uppercase tracking-[0.3em] text-muted-foreground">Måldistans</p>
-        <p className="mt-0.5 font-[family-name:var(--font-display)] text-6xl leading-none text-flag">
-          {current.target}
-          <span className="ml-2 text-lg text-muted-foreground">m</span>
-        </p>
+      <div className="mt-4">
+        <ApproachShotVisual
+          target={current.target}
+          diff={diff}
+          offset={offset}
+          side={side}
+          touched={diff !== 0 || offset !== 0}
+        />
       </div>
 
-      <div className="mt-4 space-y-2">
-        <NumberField
-          label="Carry"
-          value={carry}
-          onChange={setCarry}
-          unit="m"
-          hint={diff === 0 ? "på måldistans" : `${diff > 0 ? "+" : ""}${diff} m`}
-        />
+      <div className="mt-3 grid grid-cols-3 divide-x divide-border rounded-3xl border border-border bg-card">
+        <div className="flex flex-col items-center justify-center px-2 py-3">
+          <p className="text-center text-[9px] uppercase leading-tight tracking-[0.15em] text-muted-foreground">
+            Avstånd till flagga
+          </p>
+          <p className="mt-1 font-[family-name:var(--font-display)] text-3xl leading-none">
+            {current.target}
+            <span className="text-sm text-muted-foreground">m</span>
+          </p>
+        </div>
 
-        <div className="rounded-2xl border border-border bg-card p-3">
-          <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Sidled</p>
-          <div className="mt-2 grid grid-cols-2 gap-2">
-            {[
-              { v: -1 as const, label: "Vänster", Icon: ChevronLeft },
-              { v: 1 as const, label: "Höger", Icon: ChevronRight },
-            ].map((o) => (
-              <button
-                key={o.label}
-                type="button"
-                onClick={() => setSide(o.v)}
-                aria-pressed={side === o.v}
-                className={`flex items-center justify-center gap-1.5 rounded-xl border-2 py-2.5 text-sm font-semibold transition-colors ${
-                  side === o.v
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border bg-transparent text-foreground active:bg-muted"
-                }`}
-              >
-                {o.v === -1 && <o.Icon className="h-4 w-4" />}
-                {o.label}
-                {o.v === 1 && <o.Icon className="h-4 w-4" />}
-              </button>
-            ))}
+        <div className="flex flex-col items-center justify-center px-2 py-3">
+          <p className="text-[9px] uppercase tracking-[0.15em] text-muted-foreground">Längd</p>
+          <div className="mt-1 flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setCarry(Math.max(0, carry - 1))}
+              aria-label="Minska längd"
+              className="flex h-6 w-6 items-center justify-center rounded-full border border-border active:bg-muted"
+            >
+              <Minus className="h-3 w-3" />
+            </button>
+            <p className="font-[family-name:var(--font-display)] text-3xl leading-none">
+              {diff > 0 ? "+" : ""}
+              {diff}
+              <span className="text-sm text-muted-foreground">m</span>
+            </p>
+            <button
+              type="button"
+              onClick={() => setCarry(carry + 1)}
+              aria-label="Öka längd"
+              className="flex h-6 w-6 items-center justify-center rounded-full border border-border active:bg-muted"
+            >
+              <Plus className="h-3 w-3" />
+            </button>
           </div>
+          <p className="mt-0.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+            {diff === 0 ? "På måldistans" : diff < 0 ? "Kort" : "Långt"}
+          </p>
+        </div>
 
-          <SidledValue value={offset} onChange={setOffset} />
+        <div className="flex flex-col items-center justify-center px-2 py-3">
+          <p className="text-[9px] uppercase tracking-[0.15em] text-muted-foreground">Sidled</p>
+          <div className="mt-1 flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setOffset(Math.max(0, offset - 1))}
+              aria-label="Minska sidled"
+              className="flex h-6 w-6 items-center justify-center rounded-full border border-border active:bg-muted"
+            >
+              <Minus className="h-3 w-3" />
+            </button>
+            <p className="font-[family-name:var(--font-display)] text-3xl leading-none">
+              {offset}
+              <span className="text-sm text-muted-foreground">m</span>
+            </p>
+            <button
+              type="button"
+              onClick={() => setOffset(offset + 1)}
+              aria-label="Öka sidled"
+              className="flex h-6 w-6 items-center justify-center rounded-full border border-border active:bg-muted"
+            >
+              <Plus className="h-3 w-3" />
+            </button>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSide(side === -1 ? 1 : -1)}
+            className="mt-0.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-muted-foreground underline-offset-2 hover:underline"
+          >
+            {offset === 0 ? "Rakt" : side < 0 ? "Vänster" : "Höger"}
+          </button>
         </div>
       </div>
 
@@ -446,68 +473,6 @@ function TestScreen({
 
 /** Kompakt sifferstepper för sidled – delar visuell stil med NumberField
  *  men utan egen etikett/hint, eftersom Sidled-kortet redan har en rubrik. */
-function SidledValue({ value, onChange }: { value: number; onChange: (n: number) => void }) {
-  const set = (n: number) => onChange(Math.max(0, Math.round(n)));
-  const atMin = value <= 0;
-
-  const [flash, setFlash] = useState(false);
-  const prevValue = useRef(value);
-  useEffect(() => {
-    if (prevValue.current !== value) {
-      prevValue.current = value;
-      setFlash(true);
-      const t = setTimeout(() => setFlash(false), 260);
-      return () => clearTimeout(t);
-    }
-  }, [value]);
-
-  return (
-    <div>
-      <div className="mt-1.5 flex items-center gap-2">
-        <button
-          type="button"
-          onClick={() => set(value - 1)}
-          disabled={atMin}
-          aria-label="Minska sidled"
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border active:bg-muted disabled:opacity-30 disabled:active:bg-transparent"
-        >
-          <Minus className="h-4 w-4" />
-        </button>
-        <div className="flex flex-1 items-baseline justify-center gap-1">
-          <span
-            className={`font-[family-name:var(--font-display)] text-4xl leading-none transition-[color,transform] duration-200 ${
-              flash ? "scale-110 text-flag" : "scale-100 text-foreground"
-            }`}
-          >
-            {value}
-          </span>
-          <span className="text-sm text-muted-foreground">m</span>
-        </div>
-        <button
-          type="button"
-          onClick={() => set(value + 1)}
-          aria-label="Öka sidled"
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border active:bg-muted"
-        >
-          <Plus className="h-4 w-4" />
-        </button>
-      </div>
-      <div className="mt-2 grid grid-cols-2 gap-1.5">
-        {[1, 5].map((d) => (
-          <button
-            key={d}
-            type="button"
-            onClick={() => set(value + d)}
-            className="rounded-lg border border-border py-1.5 text-xs font-semibold text-muted-foreground active:bg-muted"
-          >
-            +{d}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 /* --------------------------------------------------------------- result */
 
 function ResultScreen({
