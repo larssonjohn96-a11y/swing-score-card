@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ArrowRight, Check } from "lucide-react";
 
-const STEPS = ["Summerar ditt test", "Jämför med HCP-nivåer", "Beräknar din Approach-nivå"];
+const STEPS = ["Testet sammanställt", "Jämfört med HCP-nivåer", "Approach-nivå beräknad"];
 
 /**
  * Approach-pilotens egen variant av "Beräknar din nivå" – medvetet en egen
@@ -50,8 +50,15 @@ export function ApproachProcessing({
       <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/40">
         {totalShots} / {totalShots} slag
       </p>
-      <h1 className="mt-3 text-center font-[family-name:var(--font-display)] text-3xl leading-tight transition-all duration-500">
-        {showResultCta ? "DIN NIVÅ ÄR KLAR" : "BERÄKNAR DIN NIVÅ"}
+      <h1 className="mt-3 flex items-center justify-center gap-2 text-center font-[family-name:var(--font-display)] text-3xl leading-tight transition-all duration-500">
+        {showResultCta ? (
+          <>
+            RESULTATET ÄR KLART
+            <Check className="h-6 w-6 text-primary" />
+          </>
+        ) : (
+          "BERÄKNAR DIN NIVÅ"
+        )}
       </h1>
 
       <div className="mt-10 w-full max-w-xs space-y-3">

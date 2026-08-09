@@ -144,9 +144,6 @@ function PrecisionPage() {
           </span>
         </div>
         <h2 className="mt-4 text-center text-2xl leading-tight">Var mäter du?</h2>
-        <p className="mt-2 text-center text-sm text-muted-foreground">
-          Olika system mäter olika högt – vi visar det med resultatet så du kan jämföra rättvist.
-        </p>
 
         <div className="mt-6 grid grid-cols-2 gap-3">
           <button

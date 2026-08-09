@@ -18,7 +18,7 @@ export function ApproachStoryLink() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="mt-4 flex w-full items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 text-left transition-colors hover:border-primary"
+        className="mt-10 flex w-full items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 text-left transition-colors hover:border-primary"
       >
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
           <Info className="h-4 w-4 text-primary" />
@@ -40,7 +40,7 @@ function ApproachStoryModal({ onClose }: { onClose: () => void }) {
 
   function handleCta() {
     onClose();
-    navigate({ to: "/precision" });
+    navigate({ to: "/approach" });
   }
 
   const slides = [Slide1, Slide2, Slide3, () => <Slide4 onCta={handleCta} />];
