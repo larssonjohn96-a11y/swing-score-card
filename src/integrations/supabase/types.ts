@@ -77,18 +77,99 @@ export type Database = {
         }
         Relationships: []
       }
+      friendships: {
+        Row: {
+          addressee_id: string
+          created_at: string
+          id: string
+          requester_id: string
+          responded_at: string | null
+          status: string
+        }
+        Insert: {
+          addressee_id: string
+          created_at?: string
+          id?: string
+          requester_id: string
+          responded_at?: string | null
+          status?: string
+        }
+        Update: {
+          addressee_id?: string
+          created_at?: string
+          id?: string
+          requester_id?: string
+          responded_at?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
+      player_snapshots: {
+        Row: {
+          approach_hcp: number | null
+          around_green_hcp: number | null
+          created_at: string
+          driving_hcp: number | null
+          est_hcp: number | null
+          is_public: boolean
+          putting_hcp: number | null
+          rating: number
+          real_hcp: number | null
+          speed_hcp: number | null
+          test_count: number
+          tier_key: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          approach_hcp?: number | null
+          around_green_hcp?: number | null
+          created_at?: string
+          driving_hcp?: number | null
+          est_hcp?: number | null
+          is_public?: boolean
+          putting_hcp?: number | null
+          rating?: number
+          real_hcp?: number | null
+          speed_hcp?: number | null
+          test_count?: number
+          tier_key?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          approach_hcp?: number | null
+          around_green_hcp?: number | null
+          created_at?: string
+          driving_hcp?: number | null
+          est_hcp?: number | null
+          is_public?: boolean
+          putting_hcp?: number | null
+          rating?: number
+          real_hcp?: number | null
+          speed_hcp?: number | null
+          test_count?: number
+          tier_key?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
+          avatar_url: string | null
           created_at: string
           display_name: string
           id: string
         }
         Insert: {
+          avatar_url?: string | null
           created_at?: string
           display_name: string
           id: string
         }
         Update: {
+          avatar_url?: string | null
           created_at?: string
           display_name?: string
           id?: string
@@ -100,6 +181,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      are_friends: { Args: { _a: string; _b: string }; Returns: boolean }
       bunker_leaderboard: {
         Args: never
         Returns: {
