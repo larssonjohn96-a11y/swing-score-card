@@ -55,16 +55,22 @@ export function ApproachShotVisual({
 
   const isPerfect = diff === 0 && offset === 0;
   const flightEnd = isPerfect ? flag : { x: landingX, y: landingY };
+  // Verklig landningsdistans i meter (Pythagoras), inte pixlar – avgör
+  // vilken av de tre nivåerna (normal/birdie/perfekt) som gäller.
+  const landingDistanceM = Math.sqrt(diff * diff + offset * offset);
+  const isBirdieRange = !isPerfect && landingDistanceM <= 4;
 
   const FLIGHT_MS = 650;
   const [progress, setProgress] = useState(0); // 0–1 under flygningen
   const [showConfetti, setShowConfetti] = useState(false);
+  const [showBirdie, setShowBirdie] = useState(false);
   const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!flying) {
       setProgress(0);
       setShowConfetti(false);
+      setShowBirdie(false);
       return;
     }
     const start = performance.now();
@@ -75,6 +81,8 @@ export function ApproachShotVisual({
         rafRef.current = requestAnimationFrame(tick);
       } else if (isPerfect) {
         setShowConfetti(true);
+      } else if (isBirdieRange) {
+        setShowBirdie(true);
       }
     };
     rafRef.current = requestAnimationFrame(tick);
@@ -113,7 +121,38 @@ export function ApproachShotVisual({
         <ellipse cx={flag.x} cy={flag.y} rx="72" ry="60" className="fill-primary/10" />
         <ellipse cx={flag.x} cy={flag.y} rx="52" ry="44" className="fill-primary/16" />
         <ellipse cx={flag.x} cy={flag.y} rx="32" ry="27" className="fill-primary/24" />
-        <ellipse cx={flag.x} cy={flag.y} rx="14" ry="12" className="fill-primary/34" />
+        <ellipse
+          cx={flag.x}
+          cy={flag.y}
+          rx="14"
+          ry="12"
+          className="fill-primary/34"
+          style={
+            showBirdie
+              ? ({
+                  transformBox: "fill-box",
+                  transformOrigin: "center",
+                  animation: "sg4-birdie-ring-pulse 1.3s ease-out 1",
+                } as React.CSSProperties)
+              : undefined
+          }
+        />
+        {showBirdie && (
+          <style>{`
+            @keyframes sg4-birdie-ring-pulse {
+              0% { transform: scale(1); filter: brightness(1); }
+              25% { transform: scale(1.35); filter: brightness(1.6); }
+              55% { transform: scale(1.1); filter: brightness(1.25); }
+              100% { transform: scale(1); filter: brightness(1); }
+            }
+            @keyframes sg4-birdie-dot-pop {
+              0% { transform: scale(1); }
+              30% { transform: scale(1.6); }
+              60% { transform: scale(0.9); }
+              100% { transform: scale(1); }
+            }
+          `}</style>
+        )}
 
         {/* Diskret spellinje: startpunkt genom flaggan, längs KORT/LÅNGT-axeln */}
         <line
@@ -196,7 +235,21 @@ export function ApproachShotVisual({
 
         {/* Aktuellt slags landningspunkt – målet bollen flyger mot, synlig hela tiden */}
         {(touched || flying) && !isPerfect && (
-          <circle cx={landingX} cy={landingY} r="7" className="fill-destructive" />
+          <circle
+            cx={landingX}
+            cy={landingY}
+            r="7"
+            className="fill-destructive"
+            style={
+              showBirdie
+                ? ({
+                    transformBox: "fill-box",
+                    transformOrigin: "center",
+                    animation: "sg4-birdie-dot-pop 0.5s ease-out 1",
+                  } as React.CSSProperties)
+                : undefined
+            }
+          />
         )}
 
         {/* Vit golfboll, animerad steg-för-steg via React-state längs en Bézier-båge */}
@@ -216,6 +269,11 @@ export function ApproachShotVisual({
       {flying && isPerfect && progress > 0.15 && (
         <p className="animate-in fade-in zoom-in-95 -mt-1 text-center text-xs font-bold uppercase tracking-[0.2em] text-primary duration-300">
           Perfect shot
+        </p>
+      )}
+      {showBirdie && (
+        <p className="animate-in fade-in zoom-in-95 -mt-1 text-center text-xs font-bold uppercase tracking-[0.2em] text-tier-gold duration-300">
+          Birdie läge
         </p>
       )}
     </div>

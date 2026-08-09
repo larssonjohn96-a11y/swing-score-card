@@ -319,19 +319,19 @@ function TestScreen({
   const diff = carry - current.target;
   const perRound = PRECISION_TOTAL_SHOTS / 2;
   const isPerfect = diff === 0 && offset === 0;
+  const landingDistanceM = Math.sqrt(diff * diff + offset * offset);
+  const isBirdieRange = !isPerfect && landingDistanceM <= 4;
 
   const [flying, setFlying] = useState(false);
 
   function handleCommitClick() {
     if (flying) return;
     setFlying(true);
-    window.setTimeout(
-      () => {
-        setFlying(false);
-        onCommit();
-      },
-      isPerfect ? 1350 : 700,
-    );
+    const delay = isPerfect ? 1350 : isBirdieRange ? 1950 : 700;
+    window.setTimeout(() => {
+      setFlying(false);
+      onCommit();
+    }, delay);
   }
 
   return (
