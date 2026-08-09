@@ -125,6 +125,27 @@ function CategoryPage() {
         ) : (
           category.tests.map((t: CategoryTest) => {
             const thumb = TEST_THUMBNAILS[t.to];
+
+            if (t.to === "/approach") {
+              return (
+                <Link
+                  key={t.to}
+                  to={t.to}
+                  className="block rounded-3xl border border-border bg-card p-5 shadow-[var(--shadow-glow)] transition-colors hover:border-primary"
+                >
+                  <div className="flex h-32 w-full items-center justify-center overflow-hidden rounded-2xl bg-primary/5">
+                    <ApproachLoopIllustration className="h-32 w-full" />
+                  </div>
+                  <p className="mt-4 text-xs uppercase tracking-[0.3em] text-flag">Approach</p>
+                  <h2 className="mt-1 text-3xl leading-none">Inspelstest</h2>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{t.subtitle}</p>
+                  {last[t.to] ? (
+                    <p className="mt-2 text-xs text-muted-foreground">{last[t.to]}</p>
+                  ) : null}
+                </Link>
+              );
+            }
+
             return (
               <Link
                 key={t.to}
