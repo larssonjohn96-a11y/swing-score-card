@@ -318,6 +318,21 @@ function TestScreen({
   const pct = Math.round((done / PRECISION_TOTAL_SHOTS) * 100);
   const diff = carry - current.target;
   const perRound = PRECISION_TOTAL_SHOTS / 2;
+  const isPerfect = diff === 0 && offset === 0;
+
+  const [flying, setFlying] = useState(false);
+
+  function handleCommitClick() {
+    if (flying) return;
+    setFlying(true);
+    window.setTimeout(
+      () => {
+        setFlying(false);
+        onCommit();
+      },
+      isPerfect ? 900 : 600,
+    );
+  }
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-md flex-col px-6 pb-32 pt-3">
@@ -377,6 +392,7 @@ function TestScreen({
           offset={offset}
           side={side}
           touched={diff !== 0 || offset !== 0}
+          flying={flying}
         />
       </div>
 
@@ -446,8 +462,9 @@ function TestScreen({
           .
         </p>
         <button
-          onClick={onCommit}
-          className="mx-auto flex w-full max-w-md items-center justify-center gap-2 rounded-2xl bg-primary py-3.5 font-[family-name:var(--font-display)] text-xl text-primary-foreground"
+          onClick={handleCommitClick}
+          disabled={flying}
+          className="mx-auto flex w-full max-w-md items-center justify-center gap-2 rounded-2xl bg-primary py-3.5 font-[family-name:var(--font-display)] text-xl text-primary-foreground disabled:opacity-70"
         >
           {index + 1 === PRECISION_TOTAL_SHOTS ? "Avsluta test" : "Nästa slag"}
           <ArrowRight className="h-5 w-5" />

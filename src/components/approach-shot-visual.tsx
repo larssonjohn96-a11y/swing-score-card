@@ -21,6 +21,7 @@ export function ApproachShotVisual({
   offset,
   side,
   touched,
+  flying = false,
 }: {
   /** måldistans i meter */
   target: number;
@@ -31,6 +32,8 @@ export function ApproachShotVisual({
   side: -1 | 1;
   /** false = ingen justering gjord än denna gång, visa neutral startpunkt */
   touched: boolean;
+  /** true under den korta boll-flyger-animationen precis innan nästa slag */
+  flying?: boolean;
 }) {
   const w = 460;
   const h = 150;
@@ -46,6 +49,13 @@ export function ApproachShotVisual({
   const landingX = flag.x + clampedDiff * PX_PER_M_LEN;
   // VÄNSTER (side=-1) flyttar uppåt (mindre y), HÖGER (side=1) flyttar nedåt.
   const landingY = flag.y + side * clampedOffset * PX_PER_M_SIDE;
+
+  // Perfekt slag: ingen justering av varken längd eller sidled – bollen ska
+  // flyga rakt i koppen (flaggan) med lite konfetti, istället för till en
+  // landningspunkt som annars skulle hamna exakt på flaggan ändå.
+  const isPerfect = diff === 0 && offset === 0;
+  const flightEnd = isPerfect ? flag : { x: landingX, y: landingY };
+  const flightPath = `M${startPoint.x} ${startPoint.y} L${flightEnd.x} ${flightEnd.y}`;
 
   return (
     <div className="rounded-2xl bg-primary/[0.04] px-2 py-1.5">
@@ -125,9 +135,11 @@ export function ApproachShotVisual({
         <circle
           cx={startPoint.x}
           cy={startPoint.y}
-          r={touched ? 5 : 7}
-          className={touched ? "fill-background stroke-muted-foreground/50" : "fill-destructive"}
-          strokeWidth={touched ? 1.5 : 0}
+          r={touched || flying ? 5 : 7}
+          className={
+            touched || flying ? "fill-background stroke-muted-foreground/50" : "fill-destructive"
+          }
+          strokeWidth={touched || flying ? 1.5 : 0}
         />
         <text
           x={startPoint.x}
@@ -138,9 +150,85 @@ export function ApproachShotVisual({
           {target} m
         </text>
 
-        {/* Aktuellt slags landningspunkt – bara efter att något justerats */}
-        {touched && <circle cx={landingX} cy={landingY} r="7" className="fill-destructive" />}
+        {/* Aktuellt slags landningspunkt – bara efter att något justerats, dold under flygningen */}
+        {touched && !flying && (
+          <circle cx={landingX} cy={landingY} r="7" className="fill-destructive" />
+        )}
+
+        {/* Boll som flyger från startpunkten till landningen/koppen när slaget registreras */}
+        {flying && (
+          <circle r="6" className="fill-destructive">
+            <animateMotion path={flightPath} dur="0.55s" fill="freeze" calcMode="linear" />
+          </circle>
+        )}
+
+        {flying && isPerfect && <ConfettiBurstSvg cx={flag.x} cy={flag.y} />}
       </svg>
+
+      {flying && isPerfect && (
+        <p className="animate-in fade-in zoom-in-95 -mt-1 text-center text-xs font-bold uppercase tracking-[0.2em] text-primary duration-300">
+          Perfect shot
+        </p>
+      )}
     </div>
+  );
+}
+
+/** Mycket kort, diskret SVG-konfetti kring koppen för ett perfekt slag. */
+function ConfettiBurstSvg({ cx, cy }: { cx: number; cy: number }) {
+  const pieces = Array.from({ length: 10 }, (_, i) => {
+    const angle = (i / 10) * Math.PI * 2;
+    const dist = 22 + (i % 3) * 6;
+    const colors = ["var(--primary)", "var(--flag)", "var(--sand)", "var(--chart-4)"];
+    return {
+      id: i,
+      x: cx + Math.cos(angle) * dist,
+      y: cy + Math.sin(angle) * dist,
+      color: colors[i % colors.length],
+      delay: (i % 4) * 0.03,
+      rot: (angle * 180) / Math.PI,
+    };
+  });
+
+  return (
+    <g>
+      {pieces.map((p) => (
+        <rect
+          key={p.id}
+          x={cx - 2}
+          y={cy - 1}
+          width="4"
+          height="2"
+          fill={p.color}
+          opacity="0"
+          transform={`rotate(${p.rot} ${cx} ${cy})`}
+        >
+          <animate
+            attributeName="x"
+            values={`${cx - 2};${p.x - 2}`}
+            dur="0.5s"
+            begin={`${p.delay}s`}
+            fill="freeze"
+            calcMode="linear"
+          />
+          <animate
+            attributeName="y"
+            values={`${cy - 1};${p.y - 1}`}
+            dur="0.5s"
+            begin={`${p.delay}s`}
+            fill="freeze"
+            calcMode="linear"
+          />
+          <animate
+            attributeName="opacity"
+            values="0;1;1;0"
+            keyTimes="0;0.1;0.7;1"
+            dur="0.6s"
+            begin={`${p.delay}s`}
+            fill="freeze"
+          />
+        </rect>
+      ))}
+    </g>
   );
 }
