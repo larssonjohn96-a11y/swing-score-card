@@ -6,9 +6,7 @@ import { loadBunkerSessions } from "@/lib/bunker";
 import { loadSpeedSessions } from "@/lib/speed";
 import { loadLongDriveSessions, sessionBest } from "@/lib/longdrive";
 import { loadFairwaySessions, fairwayHitRate } from "@/lib/fairway";
-import { loadPrecisionSessions } from "@/lib/precision-store";
 import { loadOffTeeSessions } from "@/lib/offtee-store";
-import { GreenHero } from "@/components/precision-visuals";
 import { TeeHero } from "@/components/offtee-visuals";
 import { PuttingHero } from "@/components/shortputt-visuals";
 import { SpeedHero } from "@/components/speed-visuals";
@@ -16,8 +14,10 @@ import { ShortGameHero } from "@/components/shortgame-visuals";
 import { BunkerHero } from "@/components/bunker-visuals";
 
 /** Liten hero-thumbnail per test, samma illustration som testets egen landningssida. */
+import { ApproachLoopIllustration } from "@/components/approach-loop-illustration";
+
 const TEST_THUMBNAILS: Partial<Record<CategoryTest["to"], () => React.ReactNode>> = {
-  "/approach": () => <GreenHero className="h-16 w-16" />,
+  "/approach": () => <ApproachLoopIllustration className="h-16 w-16" />,
   "/offtee-test": () => <TeeHero className="h-16 w-16" />,
   "/short-putting-test": () => <PuttingHero className="h-16 w-16" />,
   "/speed-test": () => <SpeedHero className="h-16 w-16" />,
@@ -79,8 +79,6 @@ function CategoryPage() {
     const sp = loadSpeedSessions();
     const ld = loadLongDriveSessions();
     const fw = loadFairwaySessions();
-    const precision = loadPrecisionSessions();
-    const lastPrecision = precision[precision.length - 1];
     const offtee = loadOffTeeSessions();
     const lastOfftee = offtee[offtee.length - 1];
     setLast({
@@ -96,10 +94,6 @@ function CategoryPage() {
       "/bunker-test": d.length
         ? `Senast ${d[d.length - 1].avgProximity.toFixed(2)} m i snitt`
         : undefined,
-      "/approach":
-        lastPrecision?.score !== undefined
-          ? `Senast ${lastPrecision.score.toFixed(0)} / 100`
-          : undefined,
       "/offtee-test": lastOfftee ? `Senast ${lastOfftee.score.toFixed(0)} / 100` : undefined,
     });
   }, []);
@@ -144,9 +138,11 @@ function CategoryPage() {
                   <div className="min-w-0 flex-1">
                     <h2 className="truncate text-2xl leading-none">{t.title}</h2>
                     <p className="mt-1 text-sm text-muted-foreground">{t.subtitle}</p>
-                    <p className="mt-2 text-[11px] uppercase tracking-[0.2em] text-flag">
-                      {t.result}
-                    </p>
+                    {t.result ? (
+                      <p className="mt-2 text-[11px] uppercase tracking-[0.2em] text-flag">
+                        {t.result}
+                      </p>
+                    ) : null}
                     {last[t.to] ? (
                       <p className="mt-1 text-xs text-muted-foreground">{last[t.to]}</p>
                     ) : null}

@@ -67,7 +67,7 @@ function PrecisionPage() {
 
   const current = shots[Math.min(index, PRECISION_TOTAL_SHOTS - 1)];
 
-  useHideBottomNav(phase !== "setup");
+  useHideBottomNav(true);
 
   function pickContext(c: MeasurementContext) {
     setContext(c);
