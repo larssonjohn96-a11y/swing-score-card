@@ -12,17 +12,11 @@ import {
   type CategoryHandicap,
   type Opportunity,
 } from "@/lib/sg-handicap";
-import {
-  CategoryGrid,
-  HighScoreCard,
-  OpportunityCard,
-  BiggestGapCard,
-} from "@/components/home-dashboard";
+import { OpportunityCard, BiggestGapCard } from "@/components/home-dashboard";
 import { useSubscription } from "@/lib/subscription";
 import { PlayerCard } from "@/components/rating-card";
 import { computeRatingCard, loadCardProfile, type RatingCardData } from "@/lib/rating-card";
 import { RadarCard } from "@/components/progress-dashboard";
-import { topScores, type Highlight } from "@/lib/highlights";
 import { pushPlayerSnapshot } from "@/lib/friends-cloud";
 import { AppStoryLauncher } from "@/components/app-story";
 
@@ -52,7 +46,6 @@ type HomeData = {
   cats: CategoryHandicap[];
   estimated: number | undefined;
   opportunity: Opportunity | undefined;
-  highlights: Highlight[];
   card: RatingCardData;
 };
 
@@ -64,7 +57,6 @@ function loadHomeData(): HomeData {
     cats,
     estimated: computeEstimatedHandicap(cats),
     opportunity: computeBiggestOpportunity(cats),
-    highlights: topScores(),
     card: computeRatingCard(real),
   };
 }
@@ -128,8 +120,6 @@ function Home() {
           <div className="mt-10">
             <RadarCard cats={data.cats} totalHandicap={data.estimated} />
           </div>
-          <CategoryGrid cats={data.cats} />
-          <HighScoreCard highlights={data.highlights} />
           <OpportunityCard opportunity={data.opportunity} />
           <BiggestGapCard cats={data.cats} isPlus={isPlus} />
 

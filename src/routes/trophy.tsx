@@ -11,6 +11,8 @@ import {
   type ProgressItem,
 } from "@/lib/trophy-room";
 import { hcpLabel } from "@/lib/sg-handicap";
+import { HighScoreCard } from "@/components/home-dashboard";
+import { topScores, type Highlight } from "@/lib/highlights";
 
 export const Route = createFileRoute("/trophy")({
   head: () => ({
@@ -29,11 +31,13 @@ function TrophyRoomPage() {
   const [records, setRecords] = useState<PersonalRecord[]>([]);
   const [milestones, setMilestones] = useState<ProgressItem[]>([]);
   const [achievements, setAchievements] = useState<ProgressItem[]>([]);
+  const [highlights, setHighlights] = useState<Highlight[]>([]);
 
   const refresh = () => {
     setRecords(computePersonalRecords());
     setMilestones(computeMilestones());
     setAchievements(computeAchievements());
+    setHighlights(topScores());
   };
 
   useEffect(refresh, []);
@@ -83,6 +87,8 @@ function TrophyRoomPage() {
           ))}
         </div>
       </section>
+
+      <HighScoreCard highlights={highlights} />
 
       <section className="mt-8">
         <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Milestones</p>
