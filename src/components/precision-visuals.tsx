@@ -85,7 +85,7 @@ export function NumberField({
   }, [value]);
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-3">
+    <div className="rounded-2xl border border-border bg-card p-2.5">
       <div className="flex items-baseline justify-between">
         <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">{label}</p>
         {hint ? <p className="text-[11px] text-muted-foreground">{hint}</p> : null}
@@ -96,7 +96,7 @@ export function NumberField({
           onClick={() => set(value - 1)}
           disabled={atMin}
           aria-label={`Minska ${label}`}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border active:bg-muted disabled:opacity-30 disabled:active:bg-transparent"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border active:bg-muted disabled:opacity-30 disabled:active:bg-transparent"
         >
           <Minus className="h-4 w-4" />
         </button>
@@ -108,7 +108,7 @@ export function NumberField({
             value={String(value)}
             onFocus={(e) => e.currentTarget.select()}
             onChange={(e) => set(Number(e.target.value) || 0)}
-            className={`w-full bg-transparent text-center font-[family-name:var(--font-display)] text-4xl leading-none outline-none transition-[color,transform] duration-200 ${
+            className={`w-full bg-transparent text-center font-[family-name:var(--font-display)] text-3xl leading-none outline-none transition-[color,transform] duration-200 ${
               flash ? "scale-110 text-flag" : "scale-100 text-foreground"
             }`}
           />
@@ -118,13 +118,13 @@ export function NumberField({
           type="button"
           onClick={() => set(value + 1)}
           aria-label={`Öka ${label}`}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border active:bg-muted"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border active:bg-muted"
         >
           <Plus className="h-4 w-4" />
         </button>
       </div>
       <div
-        className="mt-2 grid gap-1.5"
+        className="mt-1.5 grid gap-1.5"
         style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}
       >
         {steps.map((d) => {
@@ -135,7 +135,7 @@ export function NumberField({
               type="button"
               onClick={() => set(value + d)}
               disabled={disabled}
-              className="rounded-lg border border-border py-1.5 text-xs font-semibold text-muted-foreground active:bg-muted disabled:opacity-30 disabled:active:bg-transparent"
+              className="rounded-lg border border-border py-1 text-xs font-semibold text-muted-foreground active:bg-muted disabled:opacity-30 disabled:active:bg-transparent"
             >
               {d > 0 ? `+${d}` : d}
             </button>
