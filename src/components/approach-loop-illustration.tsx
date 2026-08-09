@@ -1,9 +1,10 @@
 /**
  * Loopande, stiliserad illustration för Approach-landningssidan (pilot).
  * Samma platta illustrationsspråk som GreenHero (precision-visuals.tsx),
- * men animerad: tre bollar flyger mot green från allt längre avstånd och
- * landar med gradvis sämre precision (grön → gul → röd), sedan börjar
- * loopen om. Ren SVG <animate>/<animateMotion>, ingen extra beroende.
+ * men animerad: tre landningspunkter tänds i sekvens mot green från allt
+ * längre avstånd, med gradvis sämre precision (grön → gul → röd), sedan
+ * börjar loopen om. Ingen flygande boll-prick – bara landningsmarkeringen
+ * tänds/släcks, så det aldrig kan se ut som en lös prick mitt i bilden.
  */
 export function ApproachLoopIllustration({ className = "h-48 w-full" }: { className?: string }) {
   const green = { cx: 210, cy: 95 };
@@ -53,25 +54,6 @@ export function ApproachLoopIllustration({ className = "h-48 w-full" }: { classN
               strokeWidth="1.5"
               strokeDasharray="3 4"
             />
-            <circle r="4" fill={s.tone}>
-              <animateMotion
-                path={path}
-                dur="1.1s"
-                begin={s.delay}
-                repeatCount="indefinite"
-                keyPoints="0;1;1"
-                keyTimes="0;1;1"
-                calcMode="linear"
-              />
-              <animate
-                attributeName="opacity"
-                values="0;1;1;1;0"
-                keyTimes="0;0.05;0.9;0.97;1"
-                dur="7.8s"
-                begin={s.delay}
-                repeatCount="indefinite"
-              />
-            </circle>
             <circle cx={lx} cy={ly} r="5" fill={s.tone} opacity="0">
               <animate
                 attributeName="opacity"

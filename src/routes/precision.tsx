@@ -9,6 +9,7 @@ import {
   Minus,
   Plus,
   Radar,
+  Trophy,
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -29,6 +30,8 @@ import { NumberField } from "@/components/precision-visuals";
 import { PrecisionReport } from "@/components/precision-report";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 import { ApproachProcessing } from "@/components/approach-processing";
+import { ApproachCelebration, type ApproachPRResult } from "@/components/approach-celebration";
+import { computeAchievements, type ProgressItem } from "@/lib/trophy-room";
 
 export const Route = createFileRoute("/precision")({
   head: () => ({
@@ -64,6 +67,8 @@ function PrecisionPage() {
   const [side, setSide] = useState<-1 | 1>(1);
   const [offset, setOffset] = useState(0);
   const [prevScore, setPrevScore] = useState<number | null>(null);
+  const [pr, setPr] = useState<ApproachPRResult | null>(null);
+  const [newAchievement, setNewAchievement] = useState<ProgressItem | null>(null);
 
   const current = shots[Math.min(index, PRECISION_TOTAL_SHOTS - 1)];
 
@@ -83,6 +88,8 @@ function PrecisionPage() {
     setCarry(PRECISION_TARGETS[0]);
     setSide(1);
     setOffset(0);
+    setPr(null);
+    setNewAchievement(null);
     setPhase("test");
   }
 
@@ -95,11 +102,51 @@ function PrecisionPage() {
     setShots(updatedShots);
 
     if (next >= PRECISION_TOTAL_SHOTS) {
+      // Jämför alltid mot historiken FÖRE det här testet inkluderas, annars
+      // riskerar det nya resultatet att jämföras mot sig självt.
+      const previousSessions = loadPrecisionSessions();
+      const previousHcps = previousSessions
+        .map((s) => s.handicap)
+        .filter((v): v is number => typeof v === "number");
+      const previousScores = previousSessions
+        .map((s) => s.score)
+        .filter((v): v is number => typeof v === "number");
+      const previousBestHcp = previousHcps.length ? Math.min(...previousHcps) : undefined;
+      const previousBestScore = previousScores.length ? Math.max(...previousScores) : undefined;
+      const achievementsBefore = computeAchievements();
+
       // Beräkningen (allt synkron JS) är klar direkt – processing-skärmen
       // spelar ändå ut sin egen sekvens innan den visar CTA:n, se
       // ApproachProcessing. Sparas direkt så resultatet garanterat finns
       // klart innan användaren kan trycka "Se mitt resultat".
-      savePrecisionSession(updatedShots, context, device);
+      const saved = savePrecisionSession(updatedShots, context, device);
+
+      const isFirstTest = previousSessions.length === 0;
+      // Exakt samma värde som tidigare rekord räknas INTE som nytt PR.
+      const hcpPR =
+        !isFirstTest &&
+        typeof saved.handicap === "number" &&
+        previousBestHcp !== undefined &&
+        saved.handicap < previousBestHcp - 0.05
+          ? { newHcp: saved.handicap, previousBest: previousBestHcp }
+          : undefined;
+      const scorePR =
+        !isFirstTest &&
+        typeof saved.score === "number" &&
+        previousBestScore !== undefined &&
+        saved.score > previousBestScore + 0.05
+          ? { newScore: saved.score, previousBest: previousBestScore }
+          : undefined;
+      setPr({ isFirstTest, hcpPR, scorePR });
+
+      const achievementsAfter = computeAchievements();
+      const justUnlocked = achievementsAfter.find(
+        (a) =>
+          a.status === "unlocked" &&
+          achievementsBefore.find((b) => b.id === a.id)?.status !== "unlocked",
+      );
+      setNewAchievement(justUnlocked ?? null);
+
       setPhase("processing");
     } else {
       setIndex(next);
@@ -231,6 +278,8 @@ function PrecisionPage() {
       onRestart={start}
       context={context}
       device={device}
+      pr={pr}
+      newAchievement={newAchievement}
     />
   );
 }
@@ -465,12 +514,16 @@ function ResultScreen({
   onRestart,
   context,
   device,
+  pr,
+  newAchievement,
 }: {
   shots: PrecisionShot[];
   prevScore: number | null;
   onRestart: () => void;
   context: MeasurementContext;
   device: Device;
+  pr: ApproachPRResult | null;
+  newAchievement: ProgressItem | null;
 }) {
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-16 pt-10">
@@ -478,7 +531,30 @@ function ResultScreen({
         <Check className="h-4 w-4" /> Testet är sparat
       </p>
 
+      {pr && <ApproachCelebration pr={pr} />}
+
       <PrecisionReport shots={shots} prevScore={prevScore} context={context} device={device} />
+
+      {newAchievement && (
+        <div className="mt-4 flex items-center gap-3 rounded-2xl border border-flag/40 bg-flag/5 p-4">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-flag/15 text-flag">
+            <Trophy className="h-5 w-5" strokeWidth={1.75} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] uppercase tracking-[0.2em] text-flag">Achievement unlocked</p>
+            <p className="mt-0.5 font-[family-name:var(--font-display)] text-lg leading-none">
+              {newAchievement.title.toUpperCase()}
+            </p>
+            <p className="mt-0.5 text-xs text-muted-foreground">{newAchievement.description}</p>
+          </div>
+          <Link
+            to="/trophy"
+            className="shrink-0 rounded-full border border-flag/40 px-3 py-1.5 text-xs font-semibold text-flag"
+          >
+            Trophy Room
+          </Link>
+        </div>
+      )}
 
       <div className="mt-10 flex gap-3">
         <button
