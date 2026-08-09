@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
-import { Home, ListChecks, Plus, Trophy, TrendingUp, User } from "lucide-react";
+import { Home, ListChecks, Plus, Trophy, TrendingUp } from "lucide-react";
 import { useBottomNavVisibility } from "@/lib/bottom-nav-visibility";
 import { CATEGORIES } from "@/lib/categories";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -16,7 +16,6 @@ const LEFT_TABS = [
 const RIGHT_TABS = [
   { to: "/utveckling", label: "Utveckling", icon: TrendingUp, exact: false },
   { to: "/trophy", label: "Trophy", icon: Trophy, exact: false },
-  { to: "/konto", label: "Profil", icon: User, exact: false },
 ] as const;
 
 function NavLink({
