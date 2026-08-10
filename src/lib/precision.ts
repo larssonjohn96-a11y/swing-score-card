@@ -568,3 +568,114 @@ export function dispersionStats(shots: PrecisionShot[]): DispersionStats {
     missLong: filled.filter((s) => lengthError(s) > 1).length,
   };
 }
+
+/* -------------------------------------------------------------------------
+ * Tolkning för resultatsidan (endast slutsatser som datan stödjer)
+ * ---------------------------------------------------------------------- */
+
+/** Inversen av handicapFromPct – vilken proximity-% en handicapnivå motsvarar. */
+export function pctForHandicap(hcp: number): number {
+  return hcp / 2.2 + 6.7;
+}
+
+/** Referensnivåer för den lilla jämförelsesektionen. */
+export const COMPARE_LEVELS = [0, 5, 10, 20] as const;
+
+export type DispersionVerdict = {
+  lengthControl: string;
+  side: string;
+  spread: string;
+};
+
+/**
+ * Tre korta tolkningar av spridningen. Saknas underlag för en slutsats
+ * returneras "Ingen tydlig tendens" i stället för ett påhittat mönster.
+ */
+export function dispersionVerdict(shots: PrecisionShot[]): DispersionVerdict {
+  const filled = shots.filter((s) => s.filled);
+  if (!filled.length) {
+    return { lengthControl: "–", side: "–", spread: "–" };
+  }
+  const absLength = mean(filled.map((s) => Math.abs(lengthError(s))));
+  const lengthControl =
+    absLength <= 5
+      ? "Mycket bra"
+      : absLength <= 8
+        ? "Bra"
+        : absLength <= 12
+          ? "Medel"
+          : "Utvecklingsområde";
+
+  const m = missPattern(shots);
+  const side = m.sideBias ? `Tendens ${m.sideBias}` : "Ingen tydlig tendens";
+
+  const pct = mean(filled.map(proximityPct));
+  const spread = `HCP ${handicapLabel(handicapFromPct(pct))}-nivå`;
+  return { lengthControl, side, spread };
+}
+
+export type PrecisionInsight = {
+  kind: "strength" | "improvement" | "pattern";
+  title: string;
+  text: string;
+};
+
+/**
+ * Max tre korta insikter: största styrka, största förbättringsområde och
+ * missmönster. 18 slag är ett litet underlag – saknas ett tydligt mönster
+ * skrivs det ut i stället för att en svaghet tvingas fram.
+ */
+export function precisionInsights(
+  shots: PrecisionShot[],
+  result: PrecisionResult = precisionResult(shots),
+): PrecisionInsight[] {
+  const filled = shots.filter((s) => s.filled);
+  if (!filled.length) return [];
+
+  const groups = groupScores(result).filter((g) => g.count > 0);
+  const best = [...groups].sort((a, b) => b.score - a.score)[0];
+  const worst = [...groups].sort((a, b) => a.score - b.score)[0];
+  const insights: PrecisionInsight[] = [];
+
+  if (best) {
+    insights.push({
+      kind: "strength",
+      title: `Starkast från ${best.label}`,
+      text: `Där håller du ${best.score}/100 och i snitt ${best.avgProximity.toFixed(1).replace(".", ",")} m till flaggan.`,
+    });
+  }
+
+  if (worst && best && worst.label !== best.label && best.score - worst.score >= 8) {
+    insights.push({
+      kind: "improvement",
+      title: `Du tappar mest från ${worst.label}`,
+      text: `${worst.score}/100 mot ${best.score}/100 på ditt bästa intervall – störst effekt att träna här.`,
+    });
+  }
+
+  const m = missPattern(shots);
+  if (m.lengthBias || m.sideBias) {
+    const parts: string[] = [];
+    if (m.lengthBias)
+      parts.push(
+        `${m.lengthBias === "kort" ? m.shortPct : m.longPct} % av slagen går ${m.lengthBias === "kort" ? "kort" : "långt"}`,
+      );
+    if (m.sideBias)
+      parts.push(
+        `${m.sideBias === "vänster" ? m.leftPct : m.rightPct} % missar ${m.sideBias === "vänster" ? "vänster" : "höger"}`,
+      );
+    insights.push({
+      kind: "pattern",
+      title: "Missmönster",
+      text: `${parts.join(" och ")}.`,
+    });
+  } else {
+    insights.push({
+      kind: "pattern",
+      title: "Ingen tydlig tendens",
+      text: "Missarna är relativt jämnt fördelade – inget systematiskt fel i det här testet.",
+    });
+  }
+
+  return insights.slice(0, 3);
+}
