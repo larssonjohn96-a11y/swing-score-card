@@ -1,23 +1,35 @@
-import { CheckCircle2, Gauge, Target, Trophy, type LucideIcon } from "lucide-react";
+import { AlertTriangle, Compass, Gauge, Target, Trophy, type LucideIcon } from "lucide-react";
 import {
-  analysePrecision,
+  COMPARE_LEVELS,
+  dispersionStats,
+  dispersionVerdict,
   groupScores,
   handicapFromScore,
   handicapLabel,
+  pctForHandicap,
+  precisionInsights,
   precisionResult,
   scoreBand,
+  type PrecisionInsight,
   type PrecisionShot,
 } from "@/lib/precision";
 import type { Device, MeasurementContext } from "@/lib/speed";
 import { DispersionGreen } from "@/components/precision-visuals";
 
-const GRADE_TEXT: Record<string, string> = {
-  good: "text-primary",
-  poor: "text-destructive",
-};
-const GRADE_SOFT: Record<string, string> = {
-  good: "bg-primary/10",
-  poor: "bg-destructive/10",
+const nf = (n: number, d = 1) => n.toFixed(d).replace(".", ",");
+
+const INSIGHT_STYLE: Record<
+  PrecisionInsight["kind"],
+  { icon: LucideIcon; label: string; text: string; bg: string }
+> = {
+  strength: { icon: Trophy, label: "Största styrka", text: "text-primary", bg: "bg-primary/10" },
+  improvement: {
+    icon: Target,
+    label: "Största förbättringsområde",
+    text: "text-destructive",
+    bg: "bg-destructive/10",
+  },
+  pattern: { icon: Compass, label: "Missmönster", text: "text-flag", bg: "bg-flag/10" },
 };
 
 /** Hela analysen för ett genomfört Approach Precision Test. */
@@ -35,50 +47,54 @@ export function PrecisionReport({
   device?: Device;
 }) {
   const result = precisionResult(shots);
-  const analysis = analysePrecision(shots, result);
   const groups = groupScores(result);
+  const withData = groups.filter((g) => g.count > 0);
+  const bestGroup = [...withData].sort((a, b) => b.score - a.score)[0];
   const band = scoreBand(result.score);
   const delta = typeof prevScore === "number" ? result.score - prevScore : null;
+  const stats = dispersionStats(shots);
+  const verdict = dispersionVerdict(shots);
+  const insights = precisionInsights(shots, result);
 
   return (
     <div className="space-y-10">
+      {/* 1. Huvudresultat – Approach HCP är det primära */}
       <section className="text-center">
-        <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-          Approach Precision Score
+        <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Approach HCP</p>
+        <p className="mt-1 font-[family-name:var(--font-display)] text-8xl leading-none text-primary">
+          {handicapLabel(result.handicap)}
         </p>
-        <p
-          className={`mt-2 font-[family-name:var(--font-display)] text-8xl leading-none ${band.text}`}
-        >
-          {result.score}
-          <span className="ml-1 text-2xl text-muted-foreground">/100</span>
-        </p>
-        <p
-          className={`mx-auto mt-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-semibold ${band.bg} ${band.text}`}
-        >
-          <span aria-hidden>{band.emoji}</span>
-          {band.label}
-        </p>
+        <div className="mt-3 flex items-center justify-center gap-2 text-sm">
+          <span className="text-muted-foreground">Approach Score</span>
+          <span className={`font-semibold ${band.text}`}>{result.score}/100</span>
+          <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${band.bg} ${band.text}`}>
+            {band.label}
+          </span>
+        </div>
+        {delta !== null && (
+          <p className={`mt-1 text-xs ${delta >= 0 ? "text-primary" : "text-destructive"}`}>
+            {delta > 0 ? "+" : ""}
+            {delta} poäng sedan förra testet
+          </p>
+        )}
         {device && (
-          <p className="mx-auto mt-2 inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">
+          <p className="mx-auto mt-3 inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">
             <Gauge className="h-3.5 w-3.5" />
             {context === "simulator" ? "Simulator" : "Range"} · {device}
           </p>
         )}
-        {delta !== null && (
-          <p className={`mt-2 text-sm ${delta >= 0 ? "text-primary" : "text-destructive"}`}>
-            {delta > 0 ? "+" : ""}
-            {delta} sedan förra testet
-          </p>
-        )}
+
+        {/* 2. De tre viktigaste nyckeltalen */}
         <div className="mt-6 grid grid-cols-3 gap-3">
-          <Stat label="Est. handicap" value={handicapLabel(result.handicap)} />
-          <Stat label="Score" value={`${result.score}`} />
-          <Stat label="Snitt från mål" value={`${result.avgProximity.toFixed(1)} m`} />
+          <Stat label="Snitt till flagg" value={`${nf(result.avgProximity)} m`} />
+          <Stat label="Greenträffar" value={`${stats.greens}/${stats.count}`} />
+          <Stat label="Bästa avstånd" value={bestGroup ? bestGroup.label.replace(" m", "") : "–"} />
         </div>
       </section>
 
+      {/* 3. Din nivå per avstånd */}
       <section>
-        <h2 className="font-display text-2xl leading-none">Score per avstånd</h2>
+        <h2 className="font-display text-2xl leading-none">Din nivå per avstånd</h2>
         <div className="mt-4 space-y-3">
           {groups.map((g) => {
             const b = scoreBand(g.score);
@@ -92,7 +108,7 @@ export function PrecisionReport({
                   />
                 </div>
                 <span
-                  className={`w-12 shrink-0 text-right text-sm font-semibold ${g.count ? b.text : "text-muted-foreground"}`}
+                  className={`w-10 shrink-0 text-right text-sm font-semibold ${g.count ? b.text : "text-muted-foreground"}`}
                 >
                   {g.count ? g.score : "–"}
                 </span>
@@ -105,24 +121,64 @@ export function PrecisionReport({
         </div>
       </section>
 
+      {/* 4. Spridningskarta + 5. kort tolkning */}
       <section>
         <h2 className="font-display text-2xl leading-none">Spridning</h2>
         <div className="mt-4 rounded-3xl border border-border bg-card p-4">
           <DispersionGreen shots={shots} />
+          <div className="mt-4 grid grid-cols-3 gap-2 border-t border-border pt-3">
+            <Verdict label="Längdkontroll" value={verdict.lengthControl} />
+            <Verdict label="Sidled" value={verdict.side} />
+            <Verdict label="Spridning" value={verdict.spread} />
+          </div>
         </div>
       </section>
 
-      <section className="space-y-5">
-        <h2 className="text-2xl font-extrabold uppercase tracking-tight">Analys</h2>
-        <Block title="Styrkor" items={analysis.strengths} tone="good" icon={Trophy} />
-        {analysis.improvements.length > 0 && (
-          <Block
-            title="Förbättringsområden"
-            items={analysis.improvements}
-            tone="poor"
-            icon={Target}
-          />
-        )}
+      {/* 6. SG4 Analys */}
+      {insights.length > 0 && (
+        <section>
+          <h2 className="font-display text-2xl leading-none">SG4 Analys</h2>
+          <div className="mt-4 space-y-3">
+            {insights.map((i) => {
+              const s = INSIGHT_STYLE[i.kind];
+              return (
+                <div
+                  key={i.title}
+                  className="flex items-start gap-3 rounded-[24px] border border-border bg-card p-4"
+                >
+                  <span
+                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${s.bg}`}
+                  >
+                    <s.icon className={`h-5 w-5 ${s.text}`} />
+                  </span>
+                  <div className="min-w-0">
+                    <p
+                      className={`text-[10px] font-bold uppercase tracking-[0.2em] ${s.text}`}
+                    >
+                      {i.kind === "pattern" ? "Missmönster" : s.label}
+                    </p>
+                    <p className="mt-0.5 text-[15px] font-semibold leading-snug">{i.title}</p>
+                    <p className="mt-0.5 text-sm leading-snug text-muted-foreground">{i.text}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* 7. Jämför din approach */}
+      <section>
+        <h2 className="font-display text-2xl leading-none">Jämför din approach</h2>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Snittavstånd till flaggan i procent av slaglängden.
+        </p>
+        <div className="mt-3 space-y-1.5 rounded-2xl border border-border bg-card p-4">
+          <CompareRow label="Du" value={result.avgProximityPct} highlight />
+          {COMPARE_LEVELS.map((h) => (
+            <CompareRow key={h} label={`HCP ${h}`} value={pctForHandicap(h)} />
+          ))}
+        </div>
       </section>
 
       {!compact && (
@@ -137,43 +193,52 @@ export function PrecisionReport({
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl border border-border bg-card p-3">
-      <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">{label}</p>
+      <p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground">{label}</p>
       <p className="mt-1 font-[family-name:var(--font-display)] text-2xl leading-none">{value}</p>
     </div>
   );
 }
 
-function Block({
-  title,
-  items,
-  tone,
-  icon: Icon,
-}: {
-  title: string;
-  items: string[];
-  tone: "good" | "poor";
-  icon: LucideIcon;
-}) {
+function Verdict({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[28px] border border-border bg-card p-5 shadow-sm">
-      <div className="flex items-center gap-3">
-        <span
-          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${GRADE_SOFT[tone]}`}
-        >
-          <Icon className={`h-5 w-5 ${GRADE_TEXT[tone]}`} />
-        </span>
-        <p className={`text-base font-extrabold uppercase tracking-wide ${GRADE_TEXT[tone]}`}>
-          {title}
-        </p>
-      </div>
-      <ul className="mt-4 space-y-4">
-        {items.map((t) => (
-          <li key={t} className="flex items-start gap-3 text-[15px] leading-snug">
-            <CheckCircle2 className={`mt-0.5 h-5 w-5 shrink-0 ${GRADE_TEXT[tone]}`} />
-            <span>{t}</span>
-          </li>
-        ))}
-      </ul>
+    <div className="text-center">
+      <p className="text-[9px] uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
+      <p className="mt-1 text-sm font-semibold leading-snug">{value}</p>
     </div>
   );
 }
+
+function CompareRow({
+  label,
+  value,
+  highlight = false,
+}: {
+  label: string;
+  value: number;
+  highlight?: boolean;
+}) {
+  const width = Math.max(4, Math.min(100, (value / 20) * 100));
+  return (
+    <div className="flex items-center gap-3">
+      <span
+        className={`w-12 shrink-0 text-xs ${highlight ? "font-bold text-primary" : "text-muted-foreground"}`}
+      >
+        {label}
+      </span>
+      <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
+        <div
+          className={`h-full rounded-full ${highlight ? "bg-primary" : "bg-muted-foreground/40"}`}
+          style={{ width: `${width}%` }}
+        />
+      </div>
+      <span
+        className={`w-12 shrink-0 text-right text-xs ${highlight ? "font-bold text-primary" : "text-muted-foreground"}`}
+      >
+        {nf(value)} %
+      </span>
+    </div>
+  );
+}
+
+/** Ikon vid fel/avsaknad av data – används inte i normalflödet. */
+export const MissingDataIcon = AlertTriangle;
