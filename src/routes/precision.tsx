@@ -70,6 +70,10 @@ function PrecisionPage() {
   const [prevScore, setPrevScore] = useState<number | null>(null);
   const [pr, setPr] = useState<ApproachPRResult | null>(null);
   const [newAchievement, setNewAchievement] = useState<ProgressItem | null>(null);
+  /** true när alla 18 slag registrerats men användaren ännu inte slutfört testet */
+  const [allRegistered, setAllRegistered] = useState(false);
+  /** bara ETT steg bakåt tillåts – spärras tills nästa slag sparats */
+  const [undoUsed, setUndoUsed] = useState(false);
 
   const current = shots[Math.min(index, PRECISION_TOTAL_SHOTS - 1)];
 
@@ -91,6 +95,8 @@ function PrecisionPage() {
     setOffset(0);
     setPr(null);
     setNewAchievement(null);
+    setAllRegistered(false);
+    setUndoUsed(false);
     setPhase("test");
   }
 
@@ -101,71 +107,94 @@ function PrecisionPage() {
       i === index ? { ...s, carry, offline, filled: true } : s,
     );
     setShots(updatedShots);
+    setUndoUsed(false);
 
     if (next >= PRECISION_TOTAL_SHOTS) {
-      // Jämför alltid mot historiken FÖRE det här testet inkluderas, annars
-      // riskerar det nya resultatet att jämföras mot sig självt.
-      const previousSessions = loadPrecisionSessions();
-      const previousHcps = previousSessions
-        .map((s) => s.handicap)
-        .filter((v): v is number => typeof v === "number");
-      const previousScores = previousSessions
-        .map((s) => s.score)
-        .filter((v): v is number => typeof v === "number");
-      const previousBestHcp = previousHcps.length ? Math.min(...previousHcps) : undefined;
-      const previousBestScore = previousScores.length ? Math.max(...previousScores) : undefined;
-      const achievementsBefore = computeAchievements();
-
-      // Beräkningen (allt synkron JS) är klar direkt – processing-skärmen
-      // spelar ändå ut sin egen sekvens innan den visar CTA:n, se
-      // ApproachProcessing. Sparas direkt så resultatet garanterat finns
-      // klart innan användaren kan trycka "Se mitt resultat".
-      const saved = savePrecisionSession(updatedShots, context, device);
-
-      const isFirstTest = previousSessions.length === 0;
-      // Ett resultat som MATCHAR (delar) tidigare rekord räknas nu också
-      // som PR, inte bara ett som slår det – bara ett sämre resultat är
-      // inget PR.
-      const hcpPR =
-        !isFirstTest &&
-        typeof saved.handicap === "number" &&
-        previousBestHcp !== undefined &&
-        saved.handicap <= previousBestHcp + 0.05
-          ? { newHcp: saved.handicap, previousBest: previousBestHcp }
-          : undefined;
-      const scorePR =
-        !isFirstTest &&
-        typeof saved.score === "number" &&
-        previousBestScore !== undefined &&
-        saved.score >= previousBestScore - 0.05
-          ? { newScore: saved.score, previousBest: previousBestScore }
-          : undefined;
-      setPr({ isFirstTest, hcpPR, scorePR });
-
-      const achievementsAfter = computeAchievements();
-      const justUnlocked = achievementsAfter.find(
-        (a) =>
-          a.status === "unlocked" &&
-          achievementsBefore.find((b) => b.id === a.id)?.status !== "unlocked",
-      );
-      setNewAchievement(justUnlocked ?? null);
-
-      setPhase("processing");
+      // Testet låses INTE här – användaren får en sista chans att ändra
+      // slag 18 innan analysen körs (se finalize).
+      setAllRegistered(true);
     } else {
+      // Om nästa slag redan är registrerat (användaren gick ett steg bakåt)
+      // förifylls dess tidigare värden istället för måldistansen.
+      const n = updatedShots[next];
       setIndex(next);
-      setCarry(updatedShots[next].target);
-      setSide(1);
-      setOffset(0);
+      setCarry(n.filled ? n.carry : n.target);
+      setSide(n.filled && n.offline < 0 ? -1 : 1);
+      setOffset(n.filled ? Math.abs(n.offline) : 0);
     }
   }
 
+  function finalize(finalShots: PrecisionShot[]) {
+    // Jämför alltid mot historiken FÖRE det här testet inkluderas, annars
+    // riskerar det nya resultatet att jämföras mot sig självt.
+    const previousSessions = loadPrecisionSessions();
+    const previousHcps = previousSessions
+      .map((s) => s.handicap)
+      .filter((v): v is number => typeof v === "number");
+    const previousScores = previousSessions
+      .map((s) => s.score)
+      .filter((v): v is number => typeof v === "number");
+    const previousBestHcp = previousHcps.length ? Math.min(...previousHcps) : undefined;
+    const previousBestScore = previousScores.length ? Math.max(...previousScores) : undefined;
+    const achievementsBefore = computeAchievements();
+
+    // Beräkningen (allt synkron JS) är klar direkt – processing-skärmen
+    // spelar ändå ut sin egen sekvens innan den visar CTA:n, se
+    // ApproachProcessing. Sparas direkt så resultatet garanterat finns
+    // klart innan användaren kan trycka "Se mitt resultat".
+    const saved = savePrecisionSession(finalShots, context, device);
+
+    const isFirstTest = previousSessions.length === 0;
+    // Ett resultat som MATCHAR (delar) tidigare rekord räknas nu också
+    // som PR, inte bara ett som slår det – bara ett sämre resultat är
+    // inget PR.
+    const hcpPR =
+      !isFirstTest &&
+      typeof saved.handicap === "number" &&
+      previousBestHcp !== undefined &&
+      saved.handicap <= previousBestHcp + 0.05
+        ? { newHcp: saved.handicap, previousBest: previousBestHcp }
+        : undefined;
+    const scorePR =
+      !isFirstTest &&
+      typeof saved.score === "number" &&
+      previousBestScore !== undefined &&
+      saved.score >= previousBestScore - 0.05
+        ? { newScore: saved.score, previousBest: previousBestScore }
+        : undefined;
+    setPr({ isFirstTest, hcpPR, scorePR });
+
+    const achievementsAfter = computeAchievements();
+    const justUnlocked = achievementsAfter.find(
+      (a) =>
+        a.status === "unlocked" &&
+        achievementsBefore.find((b) => b.id === a.id)?.status !== "unlocked",
+    );
+    setNewAchievement(justUnlocked ?? null);
+
+    setPhase("processing");
+  }
+
+  /** Ett steg bakåt till senast registrerade slag, med värdena förifyllda. */
   function back() {
-    if (index === 0) return;
+    if (allRegistered) {
+      // Slag 18 är registrerat men testet inte slutfört – ändra det slaget.
+      setAllRegistered(false);
+      const i = PRECISION_TOTAL_SHOTS - 1;
+      setIndex(i);
+      setCarry(shots[i].filled ? shots[i].carry : shots[i].target);
+      setSide(shots[i].offline < 0 ? -1 : 1);
+      setOffset(Math.abs(shots[i].offline));
+      setUndoUsed(true);
+      return;
+    }
+    if (index === 0 || undoUsed) return;
     const i = index - 1;
     setIndex(i);
     setCarry(shots[i].filled ? shots[i].carry : shots[i].target);
     setSide(shots[i].offline < 0 ? -1 : 1);
     setOffset(Math.abs(shots[i].offline));
+    setUndoUsed(true);
   }
 
   if (phase === "setup") {
@@ -261,6 +290,9 @@ function PrecisionPage() {
         setOffset={setOffset}
         onCommit={commit}
         onBack={back}
+        canUndo={allRegistered || (index > 0 && !undoUsed)}
+        allRegistered={allRegistered}
+        onFinalize={() => finalize(shots)}
         onAbort={() => navigate({ to: "/kategori/$slug", params: { slug: "approach" } })}
       />
     );
@@ -300,6 +332,9 @@ function TestScreen({
   setOffset,
   onCommit,
   onBack,
+  canUndo,
+  allRegistered,
+  onFinalize,
   onAbort,
 }: {
   current: PrecisionShot;
@@ -312,9 +347,14 @@ function TestScreen({
   setOffset: (n: number) => void;
   onCommit: () => void;
   onBack: () => void;
+  /** ett steg bakåt tillåtet just nu */
+  canUndo: boolean;
+  /** alla 18 slag registrerade – väntar på att användaren slutför testet */
+  allRegistered: boolean;
+  onFinalize: () => void;
   onAbort: () => void;
 }) {
-  const done = index;
+  const done = allRegistered ? PRECISION_TOTAL_SHOTS : index;
   const pct = Math.round((done / PRECISION_TOTAL_SHOTS) * 100);
   const diff = carry - current.target;
   const perRound = PRECISION_TOTAL_SHOTS / 2;
@@ -336,15 +376,7 @@ function TestScreen({
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-md flex-col px-6 pb-32 pt-3">
-      <div className="flex items-center justify-between">
-        <button
-          onClick={onBack}
-          disabled={index === 0}
-          aria-label="Föregående slag"
-          className="rounded-full border border-border p-2 text-muted-foreground disabled:opacity-30"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </button>
+      <div className="flex items-center justify-end">
         <button
           onClick={onAbort}
           className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
@@ -356,11 +388,30 @@ function TestScreen({
       <div className="mt-2">
         <div className="flex items-baseline justify-between text-sm">
           <span className="font-semibold">
-            Slag {index + 1}{" "}
-            <span className="text-muted-foreground">av {PRECISION_TOTAL_SHOTS}</span>
+            {allRegistered ? (
+              `${PRECISION_TOTAL_SHOTS}/${PRECISION_TOTAL_SHOTS} slag registrerade`
+            ) : (
+              <>
+                Slag {index + 1}{" "}
+                <span className="text-muted-foreground">av {PRECISION_TOTAL_SHOTS}</span>
+              </>
+            )}
           </span>
           <span className="text-muted-foreground">{pct} %</span>
         </div>
+
+        {canUndo && (
+          <button
+            type="button"
+            onClick={onBack}
+            disabled={flying}
+            className="mt-1 flex items-center gap-1 text-xs text-muted-foreground underline underline-offset-2 transition-colors hover:text-foreground disabled:opacity-40"
+          >
+            <ArrowLeft className="h-3 w-3" />
+            {allRegistered ? "Ändra senaste slag" : "Ändra föregående slag"}
+          </button>
+        )}
+
         <div className="mt-1 flex gap-2">
           {[1, 2].map((round) => {
             const filledInRound = Math.min(perRound, Math.max(0, done - (round - 1) * perRound));
@@ -404,7 +455,10 @@ function TestScreen({
         </p>
       </div>
 
-      <div className="mt-2 space-y-1.5">
+      <div
+        className={`mt-2 space-y-1.5 ${allRegistered ? "pointer-events-none opacity-50" : ""}`}
+        aria-hidden={allRegistered}
+      >
         <NumberField
           label="Carry"
           value={carry}
@@ -446,30 +500,44 @@ function TestScreen({
 
       <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/95 px-6 pb-5 pt-2.5 backdrop-blur supports-[backdrop-filter]:bg-background/80">
         <p className="mb-2 text-center text-xs leading-snug text-muted-foreground">
-          Slaget landade <span className="font-semibold text-foreground">{carry} m</span>
-          {offset === 0 ? (
-            " rakt på målet"
+          {allRegistered ? (
+            <>
+              Alla {PRECISION_TOTAL_SHOTS} slag är registrerade. Kontrollera senaste slaget innan du
+              slutför.
+            </>
           ) : (
             <>
-              {" "}
-              och{" "}
-              <span className="font-semibold text-foreground">
-                {offset} m {side < 0 ? "vänster" : "höger"}
-              </span>{" "}
-              om målet
+              Slaget landade <span className="font-semibold text-foreground">{carry} m</span>
+              {offset === 0 ? (
+                " rakt på målet"
+              ) : (
+                <>
+                  {" "}
+                  och{" "}
+                  <span className="font-semibold text-foreground">
+                    {offset} m {side < 0 ? "vänster" : "höger"}
+                  </span>{" "}
+                  om målet
+                </>
+              )}
+              .
             </>
           )}
-          .
         </p>
         <button
-          onClick={handleCommitClick}
+          onClick={allRegistered ? onFinalize : handleCommitClick}
           disabled={flying}
           className="mx-auto flex w-full max-w-md items-center justify-center gap-2 rounded-2xl bg-primary py-3.5 font-[family-name:var(--font-display)] text-xl text-primary-foreground disabled:opacity-70"
         >
-          {index + 1 === PRECISION_TOTAL_SHOTS ? "Avsluta test" : "Nästa slag"}
+          {allRegistered
+            ? "Slutför test"
+            : index + 1 === PRECISION_TOTAL_SHOTS
+              ? "Spara slag"
+              : "Nästa slag"}
           <ArrowRight className="h-5 w-5" />
         </button>
       </div>
+
     </main>
   );
 }

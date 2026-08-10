@@ -51,8 +51,8 @@ export function ApproachShotVisual({
   // övriga är små, grå, utan text. Den aktuella punktens position blir
   // också startpunkten bollen flyger ifrån.
   const trackY = flag.y;
-  const trackX1 = 38;
-  const trackX2 = 202;
+  const trackX1 = 118;
+  const trackX2 = 234;
   const currentIndex = Math.max(
     0,
     PRECISION_TARGETS.indexOf(target as (typeof PRECISION_TARGETS)[number]),
@@ -202,11 +202,12 @@ export function ApproachShotVisual({
           ),
         )}
 
-        {/* Axeletiketter */}
+        {/* Axeletiketter – "Kort" följer label-gruppen (prick + distans) så den
+            ligger på samma avstånd från flaggan som Långt/Vänster/Höger. */}
         <text
-          x={flag.x - 96}
-          y={flag.y + 5}
-          textAnchor="end"
+          x={startPoint.x}
+          y={flag.y - 14}
+          textAnchor="middle"
           className="fill-muted-foreground text-[9px] font-semibold uppercase tracking-wide"
         >
           ← Kort

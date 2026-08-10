@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowRight } from "lucide-react";
+
 
 const SPLASH_KEY = "sg4-splash-shown";
 
@@ -70,18 +70,6 @@ export function SplashScreen({ onDismiss }: { onDismiss: () => void }) {
           Testa · Utvecklas · Jämför
         </p>
       </div>
-
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          handleDismiss();
-        }}
-        className="absolute bottom-16 flex items-center gap-2 rounded-full border border-border bg-card/60 px-7 py-3 text-sm font-semibold uppercase tracking-widest text-foreground backdrop-blur-sm transition-transform active:scale-95"
-      >
-        Fortsätt
-        <ArrowRight className="h-4 w-4" />
-      </button>
     </div>
   );
 }
