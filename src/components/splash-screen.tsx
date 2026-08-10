@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowRight } from "lucide-react";
+
 
 const SPLASH_KEY = "sg4-splash-shown";
 
