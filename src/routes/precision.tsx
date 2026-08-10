@@ -437,16 +437,8 @@ function TestScreen({
         />
       </div>
 
-      <div className="mt-5 text-center">
-        <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Måldistans</p>
-        <p className="mt-1 font-[family-name:var(--font-display)] text-4xl leading-none text-flag">
-          {current.target}
-          <span className="ml-1.5 text-base text-muted-foreground">m</span>
-        </p>
-      </div>
-
       <div
-        className={`mt-2 space-y-1.5 ${allRegistered ? "pointer-events-none opacity-50" : ""}`}
+        className={`mt-4 space-y-1.5 ${allRegistered ? "pointer-events-none opacity-50" : ""}`}
         aria-hidden={allRegistered}
       >
         <NumberField

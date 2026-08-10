@@ -221,6 +221,26 @@ export function ApproachShotVisual({
           strokeWidth={touched || flying ? 1.5 : 0}
         />
 
+        {/* Måldistans, direkt till höger om startpunkten – inbyggd i kartan
+            istället för ett eget block under, för att hålla sidan kompakt. */}
+        <text
+          x={launchPoint.x + 16}
+          y={launchPoint.y - 4}
+          textAnchor="start"
+          className="fill-muted-foreground text-[7px] font-semibold uppercase tracking-wide"
+        >
+          Måldistans
+        </text>
+        <text
+          x={launchPoint.x + 16}
+          y={launchPoint.y + 12}
+          textAnchor="start"
+          className="fill-flag font-[family-name:var(--font-display)] text-[18px]"
+        >
+          {target}
+          <tspan className="fill-muted-foreground text-[10px]"> m</tspan>
+        </text>
+
         {/* Aktuellt slags landningspunkt – målet bollen flyger mot, synlig hela tiden */}
         {(touched || flying) && !isPerfect && (
           <circle
