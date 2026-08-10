@@ -46,7 +46,7 @@ type Data = {
 
 function loadData(): Data {
   const real = loadRealHandicap();
-  const cats = computeCategoryHandicaps();
+  const cats = computeCategoryHandicaps(undefined, real ?? undefined);
   const total = computeEstimatedHandicap(cats);
   return {
     real,

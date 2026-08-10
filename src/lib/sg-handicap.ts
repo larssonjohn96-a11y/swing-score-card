@@ -167,7 +167,50 @@ export type CategoryHandicap = {
   /** senaste score 0–100, om testtypen har ett sådant */
   latestScore?: number;
   count: number;
+  /** true = inget test gjort än, siffran är en uppskattning ur ditt satta HCP */
+  isBaseline?: boolean;
+  /** true = senaste testets råa förbättring var större än vad skyddsmekanismen
+   *  tillät slå igenom direkt (se applyHandicapCap) */
+  capped?: boolean;
 };
+
+/**
+ * WHS-inspirerad skyddsmekanism (soft cap / hard cap): en enskild session
+ * får inte ensam sänka en kategoris HCP mer än så här jämfört med de
+ * senaste sessionernas lägsta (bästa) värde:
+ *   ≤3.0 bättre  → slår igenom direkt
+ *   3.0–5.0 bättre → bara halva överskjutande delen slår igenom ("soft cap")
+ *   >5.0 bättre  → låst vid exakt 5.0 bättre än referensen ("hard cap")
+ * Skyddar mot att ett enstaka lyckträff- eller felmätt test ger ett
+ * orimligt hopp i den visade siffran, precis som riktiga WHS gör mot
+ * enstaka exceptionella golfrundor.
+ */
+function applyHandicapCap(rawHcps: number[]): { series: number[]; lastCapped: boolean } {
+  if (rawHcps.length === 0) return { series: [], lastCapped: false };
+  const series: number[] = [rawHcps[0]];
+  let lastCapped = false;
+
+  for (let i = 1; i < rawHcps.length; i++) {
+    const raw = rawHcps[i];
+    const referenceLow = Math.min(...series.slice(Math.max(0, i - 6), i));
+    const improvement = referenceLow - raw; // positivt = bättre än referensen
+    let value = raw;
+    let capped = false;
+
+    if (improvement > 5) {
+      value = referenceLow - 5;
+      capped = true;
+    } else if (improvement > 3) {
+      value = referenceLow - 3 - (improvement - 3) * 0.5;
+      capped = true;
+    }
+
+    series.push(Math.round(value * 10) / 10);
+    if (i === rawHcps.length - 1) lastCapped = capped;
+  }
+
+  return { series, lastCapped };
+}
 
 function byDateAsc<T extends { date: string }>(items: T[]): T[] {
   return [...items].sort((a, b) => a.date.localeCompare(b.date));
@@ -235,67 +278,104 @@ function combinedAroundGreenSeries(asOf?: Date): { date: string; handicap: numbe
  * viss tidpunkt (asOf) – det senare används för att bygga utvecklingsgrafer
  * och "senaste 30 dagarna"-jämförelser utan att behöva egen historisk lagring.
  */
-export function computeCategoryHandicaps(asOf?: Date): CategoryHandicap[] {
+/**
+ * @param baselineHandicap Om satt: kategorier utan ett enda test visar detta
+ * värde som en märkt uppskattning (isBaseline: true) istället för att sakna
+ * data helt. Lämna odefinierad för att bevara tidigare beteende där
+ * kategorier utan tester saknar handicap.
+ */
+export function computeCategoryHandicaps(
+  asOf?: Date,
+  baselineHandicap?: number,
+): CategoryHandicap[] {
   const precision = upTo(loadPrecisionSessions(), asOf);
   const offtee = upTo(loadOffTeeSessions(), asOf);
   const bunker = upTo(loadBunkerSessions(), asOf);
   const putt = upTo(loadShortPuttSessions(), asOf);
 
-  const approachHcps = precision
+  const baseline = (count: number): Pick<CategoryHandicap, "handicap" | "isBaseline"> =>
+    count === 0 && baselineHandicap !== undefined
+      ? { handicap: baselineHandicap, isBaseline: true }
+      : {};
+
+  const approachRaw = precision
     .map((s) => s.handicap)
     .filter((v): v is number => typeof v === "number");
+  const approachCap = applyHandicapCap(approachRaw);
   const approach: CategoryHandicap = {
     slug: "approach",
     title: CATEGORY_LABELS.approach,
     count: precision.length,
-    handicap: approachHcps.length ? approachHcps[approachHcps.length - 1] : undefined,
-    trend: trendOf(approachHcps),
+    handicap: approachCap.series.length
+      ? approachCap.series[approachCap.series.length - 1]
+      : undefined,
+    trend: trendOf(approachCap.series),
     latestScore: precision.length ? precision[precision.length - 1].score : undefined,
+    capped: approachCap.lastCapped,
+    ...baseline(precision.length),
   };
 
-  const offteeHcps = offtee.map((s) => s.handicap);
+  const offteeRaw = offtee.map((s) => s.handicap);
+  const offteeCap = applyHandicapCap(offteeRaw);
   const driving: CategoryHandicap = {
     slug: "driving",
     title: CATEGORY_LABELS.driving,
     count: offtee.length,
-    handicap: offteeHcps.length ? offteeHcps[offteeHcps.length - 1] : undefined,
-    trend: trendOf(offteeHcps),
+    handicap: offteeCap.series.length ? offteeCap.series[offteeCap.series.length - 1] : undefined,
+    trend: trendOf(offteeCap.series),
     latestScore: offtee.length ? offtee[offtee.length - 1].score : undefined,
+    capped: offteeCap.lastCapped,
+    ...baseline(offtee.length),
   };
 
   const aroundGreenSeries = combinedAroundGreenSeries(asOf);
-  const aroundGreenHcps = aroundGreenSeries.map((p) => p.handicap);
+  const aroundGreenRaw = aroundGreenSeries.map((p) => p.handicap);
+  const aroundGreenCap = applyHandicapCap(aroundGreenRaw);
   const nearCount = upTo(loadShortGameSessions(), asOf).length;
+  const aroundGreenCount = bunker.length + nearCount;
   const aroundGreen: CategoryHandicap = {
     slug: "around-the-green",
     title: CATEGORY_LABELS["around-the-green"],
-    count: bunker.length + nearCount,
-    handicap: aroundGreenHcps.length ? aroundGreenHcps[aroundGreenHcps.length - 1] : undefined,
-    trend: trendOf(aroundGreenHcps),
+    count: aroundGreenCount,
+    handicap: aroundGreenCap.series.length
+      ? aroundGreenCap.series[aroundGreenCap.series.length - 1]
+      : undefined,
+    trend: trendOf(aroundGreenCap.series),
     latestScore: nearCount ? upTo(loadShortGameSessions(), asOf).at(-1)?.score : undefined,
+    capped: aroundGreenCap.lastCapped,
+    ...baseline(aroundGreenCount),
   };
 
   const puttingSeries = combinedPuttingSeries(asOf);
-  const puttingHcps = puttingSeries.map((p) => p.handicap);
+  const puttingRaw = puttingSeries.map((p) => p.handicap);
+  const puttingCap = applyHandicapCap(puttingRaw);
   const lagCount = upTo(loadLagPuttSessions(), asOf).length;
+  const puttingCount = putt.length + lagCount;
   const putting: CategoryHandicap = {
     slug: "puttning",
     title: CATEGORY_LABELS.puttning,
-    count: putt.length + lagCount,
-    handicap: puttingHcps.length ? puttingHcps[puttingHcps.length - 1] : undefined,
-    trend: trendOf(puttingHcps),
+    count: puttingCount,
+    handicap: puttingCap.series.length
+      ? puttingCap.series[puttingCap.series.length - 1]
+      : undefined,
+    trend: trendOf(puttingCap.series),
     latestScore: putt.length ? putt[putt.length - 1].score : undefined,
+    capped: puttingCap.lastCapped,
+    ...baseline(puttingCount),
   };
 
   const speedSessions = upTo(loadSpeedSessions(), asOf);
-  const speedHcps = speedSessions.map((s) => s.handicap);
+  const speedRaw = speedSessions.map((s) => s.handicap);
+  const speedCap = applyHandicapCap(speedRaw);
   const speed: CategoryHandicap = {
     slug: "speed",
     title: CATEGORY_LABELS.speed,
     count: speedSessions.length,
-    handicap: speedHcps.length ? speedHcps[speedHcps.length - 1] : undefined,
-    trend: trendOf(speedHcps),
+    handicap: speedCap.series.length ? speedCap.series[speedCap.series.length - 1] : undefined,
+    trend: trendOf(speedCap.series),
     latestScore: speedSessions.length ? speedSessions[speedSessions.length - 1].score : undefined,
+    capped: speedCap.lastCapped,
+    ...baseline(speedSessions.length),
   };
 
   return [approach, driving, aroundGreen, putting, speed];
@@ -1052,26 +1132,38 @@ export type CategoryCardStat = {
   slug: CategorySlug;
   title: string;
   hasData: boolean;
-  /** rullande snitt av de senaste 3–5 testerna, aldrig ett enskilt test eller 0 vid tomt data */
+  /** senaste enskilda testets HCP (efter skyddsmekanismen), aldrig 0 vid tomt data */
   estHcp?: number;
   /** förändring i estHcp över vald period; negativt = förbättring (lägre HCP) */
   change?: number;
   strongest?: string;
   improve?: string;
+  /** true = inget test gjort än, siffran är en uppskattning ur ditt satta HCP */
+  isBaseline?: boolean;
+  /** true = senaste testets råa förbättring var större än vad skyddsmekanismen tillät */
+  capped?: boolean;
 };
 
 /** De fyra klickbara kategorikorten – rullande HCP-snitt, förändring över `periodDays`. */
-export function computeCategoryCardStats(periodDays: number): CategoryCardStat[] {
+export function computeCategoryCardStats(
+  periodDays: number,
+  baselineHandicap?: number,
+): CategoryCardStat[] {
   const series = categorySessionSeries();
   return (Object.keys(CATEGORY_LABELS) as CategorySlug[]).map((slug) => {
     const title = CATEGORY_LABELS[slug];
     const points = series[slug];
-    if (!points.length) return { slug, title, hasData: false };
+    if (!points.length) {
+      if (baselineHandicap === undefined) return { slug, title, hasData: false };
+      return { slug, title, hasData: true, estHcp: baselineHandicap, isBaseline: true };
+    }
 
     // Samma värde som computeCategoryHandicaps() (startsidan, detaljsidan): senaste
-    // enskilda testets HCP – inte ett rullande snitt – så samma kategori alltid
-    // visar samma siffra oavsett var i appen man tittar.
-    const estHcp = points[points.length - 1].handicap;
+    // enskilda testets HCP (efter skyddsmekanismen) – inte ett rullande snitt – så
+    // samma kategori alltid visar samma siffra oavsett var i appen man tittar.
+    const rawHcps = points.map((p) => p.handicap).filter((v): v is number => v !== undefined);
+    const { series: cappedSeries, lastCapped } = applyHandicapCap(rawHcps);
+    const estHcp = cappedSeries.length ? cappedSeries[cappedSeries.length - 1] : undefined;
     const cutoff = new Date(Date.now() - periodDays * 24 * 60 * 60 * 1000);
     const pastEst = rollingAverageAsOf(points, cutoff);
     const change =
@@ -1088,6 +1180,7 @@ export function computeCategoryCardStats(periodDays: number): CategoryCardStat[]
       change,
       strongest: detail.strength,
       improve: detail.limitation,
+      capped: lastCapped,
     };
   });
 }

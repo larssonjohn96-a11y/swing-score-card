@@ -123,7 +123,7 @@ function derivePlayerType(stats: CardStat[]): string | undefined {
 }
 
 export function computeRatingCard(realHandicap: number | null): RatingCardData {
-  const cats = computeCategoryHandicaps();
+  const cats = computeCategoryHandicaps(undefined, realHandicap ?? undefined);
   const estimated = computeEstimatedHandicap(cats);
   const handicap = realHandicap ?? estimated;
 

@@ -49,6 +49,7 @@ import {
   computeCategoryCardStats,
   computeCategoryHcpTimeline,
   hcpLabel,
+  loadRealHandicap,
   ratingFromHandicap,
 } from "@/lib/sg-handicap";
 
@@ -884,7 +885,7 @@ export function CategoryStatsSection() {
   const [sparklines, setSparklines] = useState<Record<string, number[]>>({});
 
   useEffect(() => {
-    const stats = computeCategoryCardStats(90);
+    const stats = computeCategoryCardStats(90, loadRealHandicap() ?? undefined);
     setCards(stats);
     const next: Record<string, number[]> = {};
     for (const c of stats) {
@@ -910,9 +911,19 @@ export function CategoryStatsSection() {
               </p>
               {c.hasData ? (
                 <>
-                  <p className="mt-1 font-[family-name:var(--font-display)] text-2xl leading-none">
+                  <p className="mt-1 flex items-baseline gap-1.5 font-[family-name:var(--font-display)] text-2xl leading-none">
                     HCP {c.estHcp !== undefined ? hcpLabel(c.estHcp) : "–"}
                   </p>
+                  {c.isBaseline && (
+                    <p className="mt-0.5 text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      Uppskattning · inget test än
+                    </p>
+                  )}
+                  {c.capped && !c.isBaseline && (
+                    <p className="mt-0.5 text-[9px] font-medium text-muted-foreground">
+                      Skyddad från stort hopp
+                    </p>
+                  )}
                   <div className="mt-2 h-6">
                     {points.length >= 2 ? (
                       <Sparkline values={points} />
