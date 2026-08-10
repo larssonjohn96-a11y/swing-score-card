@@ -452,7 +452,10 @@ function TestScreen({
         </p>
       </div>
 
-      <div className="mt-2 space-y-1.5">
+      <div
+        className={`mt-2 space-y-1.5 ${allRegistered ? "pointer-events-none opacity-50" : ""}`}
+        aria-hidden={allRegistered}
+      >
         <NumberField
           label="Carry"
           value={carry}
@@ -494,30 +497,44 @@ function TestScreen({
 
       <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/95 px-6 pb-5 pt-2.5 backdrop-blur supports-[backdrop-filter]:bg-background/80">
         <p className="mb-2 text-center text-xs leading-snug text-muted-foreground">
-          Slaget landade <span className="font-semibold text-foreground">{carry} m</span>
-          {offset === 0 ? (
-            " rakt på målet"
+          {allRegistered ? (
+            <>
+              Alla {PRECISION_TOTAL_SHOTS} slag är registrerade. Kontrollera senaste slaget innan du
+              slutför.
+            </>
           ) : (
             <>
-              {" "}
-              och{" "}
-              <span className="font-semibold text-foreground">
-                {offset} m {side < 0 ? "vänster" : "höger"}
-              </span>{" "}
-              om målet
+              Slaget landade <span className="font-semibold text-foreground">{carry} m</span>
+              {offset === 0 ? (
+                " rakt på målet"
+              ) : (
+                <>
+                  {" "}
+                  och{" "}
+                  <span className="font-semibold text-foreground">
+                    {offset} m {side < 0 ? "vänster" : "höger"}
+                  </span>{" "}
+                  om målet
+                </>
+              )}
+              .
             </>
           )}
-          .
         </p>
         <button
-          onClick={handleCommitClick}
+          onClick={allRegistered ? onFinalize : handleCommitClick}
           disabled={flying}
           className="mx-auto flex w-full max-w-md items-center justify-center gap-2 rounded-2xl bg-primary py-3.5 font-[family-name:var(--font-display)] text-xl text-primary-foreground disabled:opacity-70"
         >
-          {index + 1 === PRECISION_TOTAL_SHOTS ? "Avsluta test" : "Nästa slag"}
+          {allRegistered
+            ? "Slutför test"
+            : index + 1 === PRECISION_TOTAL_SHOTS
+              ? "Spara slag"
+              : "Nästa slag"}
           <ArrowRight className="h-5 w-5" />
         </button>
       </div>
+
     </main>
   );
 }
