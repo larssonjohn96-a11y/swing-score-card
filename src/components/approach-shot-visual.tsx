@@ -202,11 +202,12 @@ export function ApproachShotVisual({
           ),
         )}
 
-        {/* Axeletiketter */}
+        {/* Axeletiketter – "Kort" följer label-gruppen (prick + distans) så den
+            ligger på samma avstånd från flaggan som Långt/Vänster/Höger. */}
         <text
-          x={flag.x - 96}
-          y={flag.y + 5}
-          textAnchor="end"
+          x={startPoint.x}
+          y={flag.y - 14}
+          textAnchor="middle"
           className="fill-muted-foreground text-[9px] font-semibold uppercase tracking-wide"
         >
           ← Kort
