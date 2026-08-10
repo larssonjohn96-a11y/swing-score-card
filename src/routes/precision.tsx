@@ -176,7 +176,6 @@ function PrecisionPage() {
   function back() {
     if (allRegistered) {
       // Slag 18 är registrerat men testet inte slutfört – ändra det slaget.
-      setAllRegistered(true);
       setAllRegistered(false);
       const i = PRECISION_TOTAL_SHOTS - 1;
       setIndex(i);
