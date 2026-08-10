@@ -2,7 +2,6 @@ import { Minus, Plus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
   DISTANCE_RINGS,
-  DISTANCE_RINGS,
   GREEN_HALF_DEPTH,
   GREEN_HALF_WIDTH,
   dispersionStats,
