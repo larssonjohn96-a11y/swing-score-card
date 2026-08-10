@@ -1,4 +1,4 @@
-import { AlertTriangle, Compass, Gauge, Target, Trophy, type LucideIcon } from "lucide-react";
+import { Compass, Gauge, Target, Trophy, type LucideIcon } from "lucide-react";
 import {
   COMPARE_LEVELS,
   dispersionStats,
@@ -239,6 +239,3 @@ function CompareRow({
     </div>
   );
 }
-
-/** Ikon vid fel/avsaknad av data – används inte i normalflödet. */
-export const MissingDataIcon = AlertTriangle;
