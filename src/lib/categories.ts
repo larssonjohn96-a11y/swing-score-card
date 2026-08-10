@@ -47,7 +47,8 @@ export const CATEGORIES: Category[] = [
         to: "/speed-test",
         number: "4",
         title: "Speed Test",
-        subtitle: "6 drives – ball speed & Speed HCP",
+        subtitle:
+          "Bollhastighet är grunden för längd. Speed mäter din råkraft i slaget, helt separat från riktning och precision.",
         bullets: [
           "Ball speed obligatoriskt, club head speed valfritt per slag.",
           "Speed HCP kalibrerat mot verklig Trackman-data.",
@@ -58,7 +59,8 @@ export const CATEGORIES: Category[] = [
         to: "/offtee-test",
         number: "18",
         title: "Off the Tee Test",
-        subtitle: "6 drives mot samma fairway",
+        subtitle:
+          "Utslaget sätter tonen för hela hålet. Off the Tee mäter hur långt och hur rakt du slår från tee, och hur ofta du håller bollen i spel.",
         bullets: [
           "Bara carry, totalt avstånd och sidled per slag – ingen klubba.",
           "Driving Handicap kalibrerat mot verklig speldata.",
@@ -78,7 +80,8 @@ export const CATEGORIES: Category[] = [
         to: "/approach",
         number: "17",
         title: "Approach Test",
-        subtitle: "Testa precisionen i dina inspel från 55–165 meter och se vilken nivå de håller.",
+        subtitle:
+          "Inspel handlar om att kontrollera både längd och riktning för att sätta upp enkla puttar. Approach mäter hur nära flaggan du landar från 55 till 165 meter.",
         bullets: [
           "9 avstånd × 2 varv, registrera carry och sidled med knappar.",
           "Resultat visas först när alla slag är klara.",
@@ -97,7 +100,8 @@ export const CATEGORIES: Category[] = [
         to: "/bunker-test",
         number: "3",
         title: "Bunkerslag",
-        subtitle: "6 likvärdiga bunkerslag",
+        subtitle:
+          "Bunkerspel handlar om att komma upp ur sanden med kontroll och lämna bollen nära hålet – inte bara ta sig upp överhuvudtaget.",
         bullets: [
           "Ingen läges- eller teknikval – bara resultatet räknas.",
           "Registrera avstånd som ett intervall, eller att du inte kom upp.",
@@ -108,7 +112,8 @@ export const CATEGORIES: Category[] = [
         to: "/narspel-test",
         number: "12",
         title: "Närspelstest",
-        subtitle: "6 slag – 8 till 20 meter, fri teknik",
+        subtitle:
+          "Närspel är de halvlånga slagen strax utanför green. Tekniken är fri – chip, pitch eller wedge – men målet är alltid detsamma: nära flaggan.",
         bullets: [
           "Chip, pitch eller wedge – du väljer teknik, resultatet räknas.",
           "Registrera hur nära hålet bollen stannade som ett intervall.",
@@ -127,7 +132,8 @@ export const CATEGORIES: Category[] = [
         to: "/short-putting-test",
         number: "14",
         title: "Short Putting Test",
-        subtitle: "12 korta puttar – 1 till 3 meter",
+        subtitle:
+          "Korta puttar avgör poäng på en runda. Testet mäter hur ofta du sänker från de avstånd som statistiskt kostar flest slag.",
         bullets: [
           "Mäter hur säkert du sätter korta, avgörande puttar.",
           "Score 0–100 och ett uppskattat handicap.",
@@ -138,7 +144,8 @@ export const CATEGORIES: Category[] = [
         to: "/lagputt-test",
         number: "15",
         title: "Lagputt",
-        subtitle: "6 puttar – 8 till 18 m",
+        subtitle:
+          "Lag putting är långa puttar där målet är att kontrollera längden och lämna bollen så nära hålet som möjligt, snarare än att sänka direkt.",
         bullets: [
           "8, 10, 12, 14, 16 och 18 meter, i slumpad ordning varje test.",
           "Allt inom 1 meter från hålet är godkänt.",
