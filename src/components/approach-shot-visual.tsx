@@ -51,8 +51,8 @@ export function ApproachShotVisual({
   // övriga är små, grå, utan text. Den aktuella punktens position blir
   // också startpunkten bollen flyger ifrån.
   const trackY = flag.y;
-  const trackX1 = 38;
-  const trackX2 = 202;
+  const trackX1 = 118;
+  const trackX2 = 234;
   const currentIndex = Math.max(
     0,
     PRECISION_TARGETS.indexOf(target as (typeof PRECISION_TARGETS)[number]),
