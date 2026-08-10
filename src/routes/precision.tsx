@@ -329,6 +329,9 @@ function TestScreen({
   setOffset,
   onCommit,
   onBack,
+  canUndo,
+  allRegistered,
+  onFinalize,
   onAbort,
 }: {
   current: PrecisionShot;
@@ -341,9 +344,14 @@ function TestScreen({
   setOffset: (n: number) => void;
   onCommit: () => void;
   onBack: () => void;
+  /** ett steg bakåt tillåtet just nu */
+  canUndo: boolean;
+  /** alla 18 slag registrerade – väntar på att användaren slutför testet */
+  allRegistered: boolean;
+  onFinalize: () => void;
   onAbort: () => void;
 }) {
-  const done = index;
+  const done = allRegistered ? PRECISION_TOTAL_SHOTS : index;
   const pct = Math.round((done / PRECISION_TOTAL_SHOTS) * 100);
   const diff = carry - current.target;
   const perRound = PRECISION_TOTAL_SHOTS / 2;
@@ -365,15 +373,7 @@ function TestScreen({
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-md flex-col px-6 pb-32 pt-3">
-      <div className="flex items-center justify-between">
-        <button
-          onClick={onBack}
-          disabled={index === 0}
-          aria-label="Föregående slag"
-          className="rounded-full border border-border p-2 text-muted-foreground disabled:opacity-30"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </button>
+      <div className="flex items-center justify-end">
         <button
           onClick={onAbort}
           className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
@@ -385,11 +385,30 @@ function TestScreen({
       <div className="mt-2">
         <div className="flex items-baseline justify-between text-sm">
           <span className="font-semibold">
-            Slag {index + 1}{" "}
-            <span className="text-muted-foreground">av {PRECISION_TOTAL_SHOTS}</span>
+            {allRegistered ? (
+              `${PRECISION_TOTAL_SHOTS}/${PRECISION_TOTAL_SHOTS} slag registrerade`
+            ) : (
+              <>
+                Slag {index + 1}{" "}
+                <span className="text-muted-foreground">av {PRECISION_TOTAL_SHOTS}</span>
+              </>
+            )}
           </span>
           <span className="text-muted-foreground">{pct} %</span>
         </div>
+
+        {canUndo && (
+          <button
+            type="button"
+            onClick={onBack}
+            disabled={flying}
+            className="mt-1 flex items-center gap-1 text-xs text-muted-foreground underline underline-offset-2 transition-colors hover:text-foreground disabled:opacity-40"
+          >
+            <ArrowLeft className="h-3 w-3" />
+            {allRegistered ? "Ändra senaste slag" : "Ändra föregående slag"}
+          </button>
+        )}
+
         <div className="mt-1 flex gap-2">
           {[1, 2].map((round) => {
             const filledInRound = Math.min(perRound, Math.max(0, done - (round - 1) * perRound));
