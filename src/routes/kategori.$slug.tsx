@@ -12,17 +12,30 @@ import { PuttingHero } from "@/components/shortputt-visuals";
 import { SpeedHero } from "@/components/speed-visuals";
 import { ShortGameHero } from "@/components/shortgame-visuals";
 import { BunkerHero } from "@/components/bunker-visuals";
-
-/** Liten hero-thumbnail per test, samma illustration som testets egen landningssida. */
+import { LagPuttHero } from "@/components/lagputt-visuals";
 import { ApproachLoopIllustration } from "@/components/approach-loop-illustration";
 
+/** Samma stora bild + eyebrow + rubrik-format för alla tester, en
+ *  illustration per test – samma illustration som testets landningssida. */
 const TEST_THUMBNAILS: Partial<Record<CategoryTest["to"], () => React.ReactNode>> = {
-  "/approach": () => <ApproachLoopIllustration className="h-16 w-16" />,
-  "/offtee-test": () => <TeeHero className="h-16 w-16" />,
-  "/short-putting-test": () => <PuttingHero className="h-16 w-16" />,
-  "/speed-test": () => <SpeedHero className="h-16 w-16" />,
-  "/narspel-test": () => <ShortGameHero className="h-16 w-16" />,
-  "/bunker-test": () => <BunkerHero className="h-16 w-16" />,
+  "/approach": () => <ApproachLoopIllustration className="h-32 w-full" />,
+  "/offtee-test": () => <TeeHero className="h-32 w-full" />,
+  "/short-putting-test": () => <PuttingHero className="h-32 w-full" />,
+  "/speed-test": () => <SpeedHero className="h-32 w-full" />,
+  "/narspel-test": () => <ShortGameHero className="h-32 w-full" />,
+  "/bunker-test": () => <BunkerHero className="h-32 w-full" />,
+  "/lagputt-test": () => <LagPuttHero className="h-32 w-full" />,
+};
+
+/** Kortare, rensad rubrik i själva kortet – kategorin är redan eyebrow ovanför. */
+const CARD_TITLES: Partial<Record<CategoryTest["to"], string>> = {
+  "/approach": "Inspelstest",
+  "/offtee-test": "Off the Tee",
+  "/speed-test": "Speed",
+  "/bunker-test": "Bunkerslag",
+  "/narspel-test": "Närspelstest",
+  "/short-putting-test": "Short Putting",
+  "/lagputt-test": "Lag Putt",
 };
 
 export const Route = createFileRoute("/kategori/$slug")({
@@ -127,50 +140,25 @@ function CategoryPage() {
         ) : (
           category.tests.map((t: CategoryTest) => {
             const thumb = TEST_THUMBNAILS[t.to];
-
-            if (t.to === "/approach") {
-              return (
-                <Link
-                  key={t.to}
-                  to={t.to}
-                  className="block rounded-3xl border border-border bg-card p-5 shadow-[var(--shadow-glow)] transition-colors hover:border-primary"
-                >
-                  <div className="flex h-32 w-full items-center justify-center overflow-hidden rounded-2xl bg-primary/5">
-                    <ApproachLoopIllustration className="h-32 w-full" />
-                  </div>
-                  <p className="mt-4 text-xs uppercase tracking-[0.3em] text-flag">Approach</p>
-                  <h2 className="mt-1 text-3xl leading-none">Inspelstest</h2>
-                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{t.subtitle}</p>
-                  {last[t.to] ? (
-                    <p className="mt-2 text-xs text-muted-foreground">{last[t.to]}</p>
-                  ) : null}
-                </Link>
-              );
-            }
+            const title = CARD_TITLES[t.to] ?? t.title;
 
             return (
               <Link
                 key={t.to}
                 to={t.to}
-                className="block rounded-3xl border border-border bg-card p-4 shadow-[var(--shadow-glow)] transition-colors hover:border-primary"
+                className="block rounded-3xl border border-border bg-card p-5 shadow-[var(--shadow-glow)] transition-colors hover:border-primary"
               >
-                <div className="flex items-center gap-4">
-                  <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-primary/5">
-                    {thumb ? thumb() : <Target className="h-6 w-6 text-flag" />}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h2 className="truncate text-2xl leading-none">{t.title}</h2>
-                    <p className="mt-1 text-sm text-muted-foreground">{t.subtitle}</p>
-                    {t.result ? (
-                      <p className="mt-2 text-[11px] uppercase tracking-[0.2em] text-flag">
-                        {t.result}
-                      </p>
-                    ) : null}
-                    {last[t.to] ? (
-                      <p className="mt-1 text-xs text-muted-foreground">{last[t.to]}</p>
-                    ) : null}
-                  </div>
+                <div className="flex h-32 w-full items-center justify-center overflow-hidden rounded-2xl bg-primary/5">
+                  {thumb ? thumb() : <Target className="h-8 w-8 text-flag" />}
                 </div>
+                <p className="mt-4 text-xs uppercase tracking-[0.3em] text-flag">
+                  {category.title}
+                </p>
+                <h2 className="mt-1 text-3xl leading-none">{title}</h2>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{t.subtitle}</p>
+                {last[t.to] ? (
+                  <p className="mt-2 text-xs text-muted-foreground">{last[t.to]}</p>
+                ) : null}
               </Link>
             );
           })
