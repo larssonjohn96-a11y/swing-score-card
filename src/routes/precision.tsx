@@ -70,6 +70,10 @@ function PrecisionPage() {
   const [prevScore, setPrevScore] = useState<number | null>(null);
   const [pr, setPr] = useState<ApproachPRResult | null>(null);
   const [newAchievement, setNewAchievement] = useState<ProgressItem | null>(null);
+  /** true när alla 18 slag registrerats men användaren ännu inte slutfört testet */
+  const [allRegistered, setAllRegistered] = useState(false);
+  /** bara ETT steg bakåt tillåts – spärras tills nästa slag sparats */
+  const [undoUsed, setUndoUsed] = useState(false);
 
   const current = shots[Math.min(index, PRECISION_TOTAL_SHOTS - 1)];
 
