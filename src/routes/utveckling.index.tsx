@@ -17,6 +17,8 @@ import {
   RadarCard,
   TrendChartsCard,
 } from "@/components/progress-dashboard";
+import { computeAllPatterns, type PatternFact } from "@/lib/cross-test-patterns";
+import { Compass } from "lucide-react";
 
 export const Route = createFileRoute("/utveckling/")({
   head: () => ({
@@ -59,9 +61,11 @@ function UtvecklingPage() {
   const [data, setData] = useState<Data | null>(null);
   const [period, setPeriod] = useState<Period>(90);
   const [timeline, setTimeline] = useState<RatingPoint[]>([]);
+  const [patterns, setPatterns] = useState<PatternFact[]>([]);
 
   useEffect(() => {
     setData(loadData());
+    setPatterns(computeAllPatterns());
   }, []);
 
   useEffect(() => {
@@ -95,6 +99,34 @@ function UtvecklingPage() {
           <RadarCard cats={data.cats} totalHandicap={data.totalHandicap} />
 
           <CategoryStatsSection />
+
+          {patterns.length > 0 && (
+            <section className="mt-8">
+              <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
+                Ditt mönster
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Kopplingar mellan dina tester — ren fakta, ingen rådgivning.
+              </p>
+              <div className="mt-3 space-y-2">
+                {patterns.map((p) => (
+                  <div key={p.id} className="rounded-2xl border border-border bg-card p-4">
+                    <div className="flex items-start gap-3">
+                      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                        <Compass className="h-4 w-4" strokeWidth={1.75} />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold leading-tight">{p.title}</p>
+                        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                          {p.body}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           <TrendChartsCard points={timeline} period={period} onPeriodChange={setPeriod} />
 
