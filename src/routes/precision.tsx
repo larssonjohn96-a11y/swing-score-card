@@ -95,6 +95,8 @@ function PrecisionPage() {
     setOffset(0);
     setPr(null);
     setNewAchievement(null);
+    setAllRegistered(false);
+    setUndoUsed(false);
     setPhase("test");
   }
 
@@ -105,56 +107,12 @@ function PrecisionPage() {
       i === index ? { ...s, carry, offline, filled: true } : s,
     );
     setShots(updatedShots);
+    setUndoUsed(false);
 
     if (next >= PRECISION_TOTAL_SHOTS) {
-      // Jämför alltid mot historiken FÖRE det här testet inkluderas, annars
-      // riskerar det nya resultatet att jämföras mot sig självt.
-      const previousSessions = loadPrecisionSessions();
-      const previousHcps = previousSessions
-        .map((s) => s.handicap)
-        .filter((v): v is number => typeof v === "number");
-      const previousScores = previousSessions
-        .map((s) => s.score)
-        .filter((v): v is number => typeof v === "number");
-      const previousBestHcp = previousHcps.length ? Math.min(...previousHcps) : undefined;
-      const previousBestScore = previousScores.length ? Math.max(...previousScores) : undefined;
-      const achievementsBefore = computeAchievements();
-
-      // Beräkningen (allt synkron JS) är klar direkt – processing-skärmen
-      // spelar ändå ut sin egen sekvens innan den visar CTA:n, se
-      // ApproachProcessing. Sparas direkt så resultatet garanterat finns
-      // klart innan användaren kan trycka "Se mitt resultat".
-      const saved = savePrecisionSession(updatedShots, context, device);
-
-      const isFirstTest = previousSessions.length === 0;
-      // Ett resultat som MATCHAR (delar) tidigare rekord räknas nu också
-      // som PR, inte bara ett som slår det – bara ett sämre resultat är
-      // inget PR.
-      const hcpPR =
-        !isFirstTest &&
-        typeof saved.handicap === "number" &&
-        previousBestHcp !== undefined &&
-        saved.handicap <= previousBestHcp + 0.05
-          ? { newHcp: saved.handicap, previousBest: previousBestHcp }
-          : undefined;
-      const scorePR =
-        !isFirstTest &&
-        typeof saved.score === "number" &&
-        previousBestScore !== undefined &&
-        saved.score >= previousBestScore - 0.05
-          ? { newScore: saved.score, previousBest: previousBestScore }
-          : undefined;
-      setPr({ isFirstTest, hcpPR, scorePR });
-
-      const achievementsAfter = computeAchievements();
-      const justUnlocked = achievementsAfter.find(
-        (a) =>
-          a.status === "unlocked" &&
-          achievementsBefore.find((b) => b.id === a.id)?.status !== "unlocked",
-      );
-      setNewAchievement(justUnlocked ?? null);
-
-      setPhase("processing");
+      // Testet låses INTE här – användaren får en sista chans att ändra
+      // slag 18 innan analysen körs (se finalize).
+      setAllRegistered(true);
     } else {
       setIndex(next);
       setCarry(updatedShots[next].target);
@@ -163,13 +121,78 @@ function PrecisionPage() {
     }
   }
 
+  function finalize(finalShots: PrecisionShot[]) {
+    // Jämför alltid mot historiken FÖRE det här testet inkluderas, annars
+    // riskerar det nya resultatet att jämföras mot sig självt.
+    const previousSessions = loadPrecisionSessions();
+    const previousHcps = previousSessions
+      .map((s) => s.handicap)
+      .filter((v): v is number => typeof v === "number");
+    const previousScores = previousSessions
+      .map((s) => s.score)
+      .filter((v): v is number => typeof v === "number");
+    const previousBestHcp = previousHcps.length ? Math.min(...previousHcps) : undefined;
+    const previousBestScore = previousScores.length ? Math.max(...previousScores) : undefined;
+    const achievementsBefore = computeAchievements();
+
+    // Beräkningen (allt synkron JS) är klar direkt – processing-skärmen
+    // spelar ändå ut sin egen sekvens innan den visar CTA:n, se
+    // ApproachProcessing. Sparas direkt så resultatet garanterat finns
+    // klart innan användaren kan trycka "Se mitt resultat".
+    const saved = savePrecisionSession(finalShots, context, device);
+
+    const isFirstTest = previousSessions.length === 0;
+    // Ett resultat som MATCHAR (delar) tidigare rekord räknas nu också
+    // som PR, inte bara ett som slår det – bara ett sämre resultat är
+    // inget PR.
+    const hcpPR =
+      !isFirstTest &&
+      typeof saved.handicap === "number" &&
+      previousBestHcp !== undefined &&
+      saved.handicap <= previousBestHcp + 0.05
+        ? { newHcp: saved.handicap, previousBest: previousBestHcp }
+        : undefined;
+    const scorePR =
+      !isFirstTest &&
+      typeof saved.score === "number" &&
+      previousBestScore !== undefined &&
+      saved.score >= previousBestScore - 0.05
+        ? { newScore: saved.score, previousBest: previousBestScore }
+        : undefined;
+    setPr({ isFirstTest, hcpPR, scorePR });
+
+    const achievementsAfter = computeAchievements();
+    const justUnlocked = achievementsAfter.find(
+      (a) =>
+        a.status === "unlocked" &&
+        achievementsBefore.find((b) => b.id === a.id)?.status !== "unlocked",
+    );
+    setNewAchievement(justUnlocked ?? null);
+
+    setPhase("processing");
+  }
+
+  /** Ett steg bakåt till senast registrerade slag, med värdena förifyllda. */
   function back() {
-    if (index === 0) return;
+    if (allRegistered) {
+      // Slag 18 är registrerat men testet inte slutfört – ändra det slaget.
+      setAllRegistered(true);
+      setAllRegistered(false);
+      const i = PRECISION_TOTAL_SHOTS - 1;
+      setIndex(i);
+      setCarry(shots[i].filled ? shots[i].carry : shots[i].target);
+      setSide(shots[i].offline < 0 ? -1 : 1);
+      setOffset(Math.abs(shots[i].offline));
+      setUndoUsed(true);
+      return;
+    }
+    if (index === 0 || undoUsed) return;
     const i = index - 1;
     setIndex(i);
     setCarry(shots[i].filled ? shots[i].carry : shots[i].target);
     setSide(shots[i].offline < 0 ? -1 : 1);
     setOffset(Math.abs(shots[i].offline));
+    setUndoUsed(true);
   }
 
   if (phase === "setup") {
