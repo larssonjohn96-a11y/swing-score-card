@@ -114,10 +114,13 @@ function PrecisionPage() {
       // slag 18 innan analysen körs (se finalize).
       setAllRegistered(true);
     } else {
+      // Om nästa slag redan är registrerat (användaren gick ett steg bakåt)
+      // förifylls dess tidigare värden istället för måldistansen.
+      const n = updatedShots[next];
       setIndex(next);
-      setCarry(updatedShots[next].target);
-      setSide(1);
-      setOffset(0);
+      setCarry(n.filled ? n.carry : n.target);
+      setSide(n.filled && n.offline < 0 ? -1 : 1);
+      setOffset(n.filled ? Math.abs(n.offline) : 0);
     }
   }
 
