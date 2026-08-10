@@ -287,6 +287,9 @@ function PrecisionPage() {
         setOffset={setOffset}
         onCommit={commit}
         onBack={back}
+        canUndo={allRegistered || (index > 0 && !undoUsed)}
+        allRegistered={allRegistered}
+        onFinalize={() => finalize(shots)}
         onAbort={() => navigate({ to: "/kategori/$slug", params: { slug: "approach" } })}
       />
     );
