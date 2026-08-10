@@ -57,17 +57,18 @@ export function TestHowItWorksLink({ config }: { config: TestStoryConfig }) {
       <button
         type="button"
         onClick={handleOpen}
-        className="mt-3 flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+        className="mt-4 flex w-full items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 text-left transition-colors hover:border-primary"
       >
-        <Info className="h-3.5 w-3.5" />
-        {firstTime ? (
-          <span>
-            <span className="font-semibold text-foreground">Ny här?</span> Se hur testet fungerar
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
+          <Info className="h-4 w-4 text-primary" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-semibold leading-tight">
+            {firstTime ? "Första gången?" : "Så fungerar testet"}
           </span>
-        ) : (
-          "Så fungerar testet"
-        )}
-        <ChevronRight className="h-3.5 w-3.5" />
+          <span className="block text-xs text-muted-foreground">Se hur testet fungerar</span>
+        </span>
+        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
       </button>
 
       {open && <TestStoryModal config={config} onClose={() => setOpen(false)} />}

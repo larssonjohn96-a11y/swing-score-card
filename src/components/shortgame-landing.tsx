@@ -1,23 +1,15 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowLeft, ArrowRight, Gauge, Target, TrendingUp, Wand2 } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { ShortGameHero } from "@/components/shortgame-visuals";
 import { TestHowItWorksLink } from "@/components/test-story";
 import { SHORTGAME_STORY } from "@/lib/test-story-content";
+import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 
-const VALUE_ITEMS = [
-  { icon: Target, label: "Snitt- och totalavstånd från hål" },
-  { icon: Gauge, label: "Närspel HCP" },
-  { icon: TrendingUp, label: "Andel inom 25 cm / 1 m / 2 m" },
-  { icon: Wand2, label: "Fri teknik – chip, pitch eller wedge" },
-];
+export function ShortGameLanding() {
+  useHideBottomNav(true);
 
-/**
- * Landningssida för Närspelstest – ersätter Chip Test och Pitch Test.
- * Samma visuella språk som Approach Test/Off the Tee.
- */
-export function ShortGameLanding({ lastResultLabel }: { lastResultLabel?: string }) {
   return (
-    <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-16 pt-6">
+    <main className="mx-auto flex min-h-screen w-full max-w-md flex-col px-6 pb-10 pt-6">
       <Link
         to="/kategori/$slug"
         params={{ slug: "around-the-green" }}
@@ -27,48 +19,15 @@ export function ShortGameLanding({ lastResultLabel }: { lastResultLabel?: string
         <ArrowLeft className="h-4 w-4" />
       </Link>
 
-      <div className="mt-4">
+      <div className="mt-2">
         <ShortGameHero />
       </div>
 
-      <p className="mt-6 text-xs uppercase tracking-[0.3em] text-flag">Around the Green</p>
-      <h1 className="mt-2 text-5xl leading-none">Närspelstest</h1>
-      <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-        Mäter hur nära hålet du får bollen från 8 till 20 meter – oavsett om du chippar, pitchar
-        eller väljer wedge. Det är resultatet som räknas, inte tekniken.
-      </p>
+      <p className="mt-4 text-xs uppercase tracking-[0.3em] text-flag">Around the Green</p>
+      <h1 className="mt-1 text-5xl leading-none">Närspelstest</h1>
+      <p className="mt-4 text-base leading-relaxed text-muted-foreground">8–20 meter</p>
 
       <TestHowItWorksLink config={SHORTGAME_STORY} />
-
-      <section className="mt-8">
-        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-          Efter testet får du
-        </p>
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          {VALUE_ITEMS.map(({ icon: Icon, label }) => (
-            <div key={label} className="rounded-2xl border border-border bg-card p-3">
-              <Icon className="h-5 w-5 text-flag" />
-              <p className="mt-2 text-sm font-medium leading-tight">{label}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="mt-8">
-        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-          Så går testet till
-        </p>
-        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          6 slag mot 8, 10, 12, 15, 18 och 20 meter – lie spelar ingen roll och du väljer helt fritt
-          om du chippar, pitchar eller tar en wedge. Du registrerar bara hur nära hålet bollen
-          stannade, som ett intervall (t.ex. "1–1,5 m"). Ingen exakt mätning behövs. Putter är inte
-          tillåten.
-        </p>
-      </section>
-
-      {lastResultLabel ? (
-        <p className="mt-6 text-center text-xs text-muted-foreground">{lastResultLabel}</p>
-      ) : null}
 
       <Link
         to="/narspel"
@@ -77,7 +36,6 @@ export function ShortGameLanding({ lastResultLabel }: { lastResultLabel?: string
         Starta Närspelstest
         <ArrowRight className="h-5 w-5" />
       </Link>
-      <p className="mt-3 text-center text-xs text-muted-foreground">Tar ca 5 minuter</p>
     </main>
   );
 }

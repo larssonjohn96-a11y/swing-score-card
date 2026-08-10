@@ -19,6 +19,7 @@ import { Route as FairwayRouteImport } from './routes/fairway'
 import { Route as KontoRouteImport } from './routes/konto'
 import { Route as KortputtRouteImport } from './routes/kortputt'
 import { Route as LagputtRouteImport } from './routes/lagputt'
+import { Route as LagputtTestRouteImport } from './routes/lagputt-test'
 import { Route as LongdriveRouteImport } from './routes/longdrive'
 import { Route as NarspelRouteImport } from './routes/narspel'
 import { Route as NarspelTestRouteImport } from './routes/narspel-test'
@@ -92,6 +93,11 @@ const KortputtRoute = KortputtRouteImport.update({
 const LagputtRoute = LagputtRouteImport.update({
   id: '/lagputt',
   path: '/lagputt',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LagputtTestRoute = LagputtTestRouteImport.update({
+  id: '/lagputt-test',
+  path: '/lagputt-test',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LongdriveRoute = LongdriveRouteImport.update({
@@ -226,6 +232,7 @@ export interface FileRoutesByFullPath {
   '/konto': typeof KontoRoute
   '/kortputt': typeof KortputtRoute
   '/lagputt': typeof LagputtRoute
+  '/lagputt-test': typeof LagputtTestRoute
   '/longdrive': typeof LongdriveRoute
   '/narspel': typeof NarspelRoute
   '/narspel-test': typeof NarspelTestRoute
@@ -262,6 +269,7 @@ export interface FileRoutesByTo {
   '/konto': typeof KontoRoute
   '/kortputt': typeof KortputtRoute
   '/lagputt': typeof LagputtRoute
+  '/lagputt-test': typeof LagputtTestRoute
   '/longdrive': typeof LongdriveRoute
   '/narspel': typeof NarspelRoute
   '/narspel-test': typeof NarspelTestRoute
@@ -299,6 +307,7 @@ export interface FileRoutesById {
   '/konto': typeof KontoRoute
   '/kortputt': typeof KortputtRoute
   '/lagputt': typeof LagputtRoute
+  '/lagputt-test': typeof LagputtTestRoute
   '/longdrive': typeof LongdriveRoute
   '/narspel': typeof NarspelRoute
   '/narspel-test': typeof NarspelTestRoute
@@ -337,6 +346,7 @@ export interface FileRouteTypes {
     | '/konto'
     | '/kortputt'
     | '/lagputt'
+    | '/lagputt-test'
     | '/longdrive'
     | '/narspel'
     | '/narspel-test'
@@ -373,6 +383,7 @@ export interface FileRouteTypes {
     | '/konto'
     | '/kortputt'
     | '/lagputt'
+    | '/lagputt-test'
     | '/longdrive'
     | '/narspel'
     | '/narspel-test'
@@ -409,6 +420,7 @@ export interface FileRouteTypes {
     | '/konto'
     | '/kortputt'
     | '/lagputt'
+    | '/lagputt-test'
     | '/longdrive'
     | '/narspel'
     | '/narspel-test'
@@ -446,6 +458,7 @@ export interface RootRouteChildren {
   KontoRoute: typeof KontoRoute
   KortputtRoute: typeof KortputtRoute
   LagputtRoute: typeof LagputtRoute
+  LagputtTestRoute: typeof LagputtTestRoute
   LongdriveRoute: typeof LongdriveRoute
   NarspelRoute: typeof NarspelRoute
   NarspelTestRoute: typeof NarspelTestRoute
@@ -541,6 +554,13 @@ declare module '@tanstack/react-router' {
       path: '/lagputt'
       fullPath: '/lagputt'
       preLoaderRoute: typeof LagputtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lagputt-test': {
+      id: '/lagputt-test'
+      path: '/lagputt-test'
+      fullPath: '/lagputt-test'
+      preLoaderRoute: typeof LagputtTestRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/longdrive': {
@@ -737,6 +757,7 @@ const rootRouteChildren: RootRouteChildren = {
   KontoRoute: KontoRoute,
   KortputtRoute: KortputtRoute,
   LagputtRoute: LagputtRoute,
+  LagputtTestRoute: LagputtTestRoute,
   LongdriveRoute: LongdriveRoute,
   NarspelRoute: NarspelRoute,
   NarspelTestRoute: NarspelTestRoute,

@@ -1,18 +1,18 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight } from "lucide-react";
-import { BunkerHero } from "@/components/bunker-visuals";
+import { LagPuttHero } from "@/components/lagputt-visuals";
 import { TestHowItWorksLink } from "@/components/test-story";
-import { BUNKER_STORY } from "@/lib/test-story-content";
+import { LAGPUTT_STORY } from "@/lib/test-story-content";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 
-export function BunkerLanding() {
+export function LagPuttLanding() {
   useHideBottomNav(true);
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-md flex-col px-6 pb-10 pt-6">
       <Link
         to="/kategori/$slug"
-        params={{ slug: "around-the-green" }}
+        params={{ slug: "puttning" }}
         aria-label="Tillbaka"
         className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:text-foreground"
       >
@@ -20,20 +20,20 @@ export function BunkerLanding() {
       </Link>
 
       <div className="mt-2">
-        <BunkerHero />
+        <LagPuttHero />
       </div>
 
-      <p className="mt-4 text-xs uppercase tracking-[0.3em] text-flag">Around the Green</p>
-      <h1 className="mt-1 text-5xl leading-none">Bunkerslag</h1>
-      <p className="mt-4 text-base leading-relaxed text-muted-foreground">6 bunkerslag</p>
+      <p className="mt-4 text-xs uppercase tracking-[0.3em] text-flag">Puttning</p>
+      <h1 className="mt-1 text-5xl leading-none">Lag Putt</h1>
+      <p className="mt-4 text-base leading-relaxed text-muted-foreground">8–18 meter</p>
 
-      <TestHowItWorksLink config={BUNKER_STORY} />
+      <TestHowItWorksLink config={LAGPUTT_STORY} />
 
       <Link
-        to="/bunker"
+        to="/lagputt"
         className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-5 font-[family-name:var(--font-display)] text-2xl text-primary-foreground"
       >
-        Starta Bunkerslag
+        Starta Lag Putt
         <ArrowRight className="h-5 w-5" />
       </Link>
     </main>

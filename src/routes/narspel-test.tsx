@@ -1,6 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { handicapLabel, loadShortGameSessions } from "@/lib/shortgame";
 import { ShortGameLanding } from "@/components/shortgame-landing";
 
 export const Route = createFileRoute("/narspel-test")({
@@ -19,21 +17,5 @@ export const Route = createFileRoute("/narspel-test")({
       },
     ],
   }),
-  component: ShortGameTestLanding,
+  component: ShortGameLanding,
 });
-
-function ShortGameTestLanding() {
-  const [lastResultLabel, setLastResultLabel] = useState<string | undefined>(undefined);
-
-  useEffect(() => {
-    const sessions = loadShortGameSessions();
-    const last = sessions[sessions.length - 1];
-    setLastResultLabel(
-      last
-        ? `Ditt senaste resultat: HCP ${handicapLabel(last.handicap)} · ${last.avgProximity.toFixed(2)} m i snitt`
-        : undefined,
-    );
-  }, []);
-
-  return <ShortGameLanding lastResultLabel={lastResultLabel} />;
-}

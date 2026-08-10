@@ -1,36 +1,20 @@
 import { Link } from "@tanstack/react-router";
-import {
-  AlertTriangle,
-  ArrowLeft,
-  ArrowRight,
-  Compass,
-  Gauge,
-  Map,
-  Sparkles,
-  Target,
-  TrendingUp,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { TeeHero } from "@/components/offtee-visuals";
 import { TestHowItWorksLink } from "@/components/test-story";
 import { OFFTEE_STORY } from "@/lib/test-story-content";
-
-const VALUE_ITEMS = [
-  { icon: Target, label: "Off the Tee Score 0–100" },
-  { icon: Gauge, label: "Driving Handicap" },
-  { icon: Map, label: "Spridningskarta" },
-  { icon: Sparkles, label: "Längd jämfört med andra golfare" },
-  { icon: TrendingUp, label: "Out of Bounds (OB)" },
-  { icon: Compass, label: "Jämnhet" },
-  { icon: AlertTriangle, label: "Upptäckta missmönster" },
-];
+import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 
 /**
- * Utförlig landningssida för Off the Tee Test, nådd via ett kompakt kort på
- * kategorisidan. Samma visuella språk som Approach Test-landningen.
+ * Förenklad landningssida, samma format som Approach-pilotens: illustration,
+ * eyebrow + titel, kort beskrivning, "Första gången?"-kort, CTA. Ingen
+ * "Efter testet får du"/"Så går testet till"-sektion längre.
  */
-export function OffTeeLanding({ lastResultLabel }: { lastResultLabel?: string }) {
+export function OffTeeLanding() {
+  useHideBottomNav(true);
+
   return (
-    <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-16 pt-6">
+    <main className="mx-auto flex min-h-screen w-full max-w-md flex-col px-6 pb-10 pt-6">
       <Link
         to="/kategori/$slug"
         params={{ slug: "driving" }}
@@ -40,47 +24,15 @@ export function OffTeeLanding({ lastResultLabel }: { lastResultLabel?: string })
         <ArrowLeft className="h-4 w-4" />
       </Link>
 
-      <div className="mt-4">
+      <div className="mt-2">
         <TeeHero />
       </div>
 
-      <p className="mt-6 text-xs uppercase tracking-[0.3em] text-flag">Off the Tee</p>
-      <h1 className="mt-2 text-5xl leading-none">Off the Tee Test</h1>
-      <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-        Slå 6 drives mot samma fairway och få en uppskattning av din Driving Handicap baserat på
-        längd, precision och jämnhet.
-      </p>
+      <p className="mt-4 text-xs uppercase tracking-[0.3em] text-flag">Off the Tee</p>
+      <h1 className="mt-1 text-5xl leading-none">Off the Tee Test</h1>
+      <p className="mt-4 text-base leading-relaxed text-muted-foreground">6 drives</p>
 
       <TestHowItWorksLink config={OFFTEE_STORY} />
-
-      <section className="mt-8">
-        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-          Efter testet får du
-        </p>
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          {VALUE_ITEMS.map(({ icon: Icon, label }) => (
-            <div key={label} className="rounded-2xl border border-border bg-card p-3">
-              <Icon className="h-5 w-5 text-flag" />
-              <p className="mt-2 text-sm font-medium leading-tight">{label}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="mt-8">
-        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-          Så går testet till
-        </p>
-        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          6 drives mot samma standardiserade fairway. Bara tre tal per slag – carry, totalt avstånd
-          och sidled från mitten. Ingen klubba att välja. Din Driving Handicap byggs sedan av längd,
-          hur ofta du håller bollen i spel (Out of Bounds) och hur jämn du är slag för slag.
-        </p>
-      </section>
-
-      {lastResultLabel ? (
-        <p className="mt-6 text-center text-xs text-muted-foreground">{lastResultLabel}</p>
-      ) : null}
 
       <Link
         to="/offtee"
@@ -89,7 +41,6 @@ export function OffTeeLanding({ lastResultLabel }: { lastResultLabel?: string })
         Starta Off the Tee Test
         <ArrowRight className="h-5 w-5" />
       </Link>
-      <p className="mt-3 text-center text-xs text-muted-foreground">Tar ca 8–10 minuter</p>
     </main>
   );
 }

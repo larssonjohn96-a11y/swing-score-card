@@ -1,6 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { loadSpeedSessions } from "@/lib/speed";
 import { SpeedLanding } from "@/components/speed-landing";
 
 export const Route = createFileRoute("/speed-test")({
@@ -19,19 +17,5 @@ export const Route = createFileRoute("/speed-test")({
       },
     ],
   }),
-  component: SpeedTestLanding,
+  component: SpeedLanding,
 });
-
-function SpeedTestLanding() {
-  const [lastResultLabel, setLastResultLabel] = useState<string | undefined>(undefined);
-
-  useEffect(() => {
-    const sessions = loadSpeedSessions();
-    const last = sessions[sessions.length - 1];
-    setLastResultLabel(
-      last ? `Ditt senaste resultat: ${last.avgBallSpeed.toFixed(0)} mph i snitt` : undefined,
-    );
-  }, []);
-
-  return <SpeedLanding lastResultLabel={lastResultLabel} />;
-}

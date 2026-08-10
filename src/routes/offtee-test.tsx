@@ -1,6 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { loadOffTeeSessions } from "@/lib/offtee-store";
 import { OffTeeLanding } from "@/components/offtee-landing";
 
 export const Route = createFileRoute("/offtee-test")({
@@ -20,17 +18,5 @@ export const Route = createFileRoute("/offtee-test")({
       },
     ],
   }),
-  component: OffTeeTestLanding,
+  component: OffTeeLanding,
 });
-
-function OffTeeTestLanding() {
-  const [lastResultLabel, setLastResultLabel] = useState<string | undefined>(undefined);
-
-  useEffect(() => {
-    const sessions = loadOffTeeSessions();
-    const last = sessions[sessions.length - 1];
-    setLastResultLabel(last ? `Ditt senaste resultat: ${last.score.toFixed(0)} / 100` : undefined);
-  }, []);
-
-  return <OffTeeLanding lastResultLabel={lastResultLabel} />;
-}

@@ -18,7 +18,8 @@ export type CategoryTest = {
     | "/kortputt"
     | "/short-putting-test"
     | "/tornado"
-    | "/lagputt";
+    | "/lagputt"
+    | "/lagputt-test";
 
   number: string;
   title: string;
@@ -134,7 +135,7 @@ export const CATEGORIES: Category[] = [
         result: "RESULTAT: SCORE 0–100 + EST. HCP-INTERVALL",
       },
       {
-        to: "/lagputt",
+        to: "/lagputt-test",
         number: "15",
         title: "Lagputt",
         subtitle: "6 puttar – 8 till 18 m",

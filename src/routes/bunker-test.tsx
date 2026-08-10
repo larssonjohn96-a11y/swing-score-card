@@ -1,6 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { handicapLabel, loadBunkerSessions } from "@/lib/bunker";
 import { BunkerLanding } from "@/components/bunker-landing";
 
 export const Route = createFileRoute("/bunker-test")({
@@ -19,21 +17,5 @@ export const Route = createFileRoute("/bunker-test")({
       },
     ],
   }),
-  component: BunkerTestLanding,
+  component: BunkerLanding,
 });
-
-function BunkerTestLanding() {
-  const [lastResultLabel, setLastResultLabel] = useState<string | undefined>(undefined);
-
-  useEffect(() => {
-    const sessions = loadBunkerSessions();
-    const last = sessions[sessions.length - 1];
-    setLastResultLabel(
-      last
-        ? `Ditt senaste resultat: HCP ${handicapLabel(last.handicap)} · ${last.avgProximity.toFixed(2)} m i snitt`
-        : undefined,
-    );
-  }, []);
-
-  return <BunkerLanding lastResultLabel={lastResultLabel} />;
-}
