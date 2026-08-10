@@ -1,17 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { PRECISION_TARGETS } from "@/lib/precision";
 
 /**
  * Visuell representation av ett enskilt approach-slag under själva testet
  * (pilot, endast Approach).
  *
- * Fungerar som en enkel top-down-karta med flaggan i centrum. De fyra
- * riktningsetiketterna är FASTA delar av koordinatsystemet och flyttar sig
- * ALDRIG beroende på slagets utfall:
- *   ↑ LÅNG    – alltid högst upp
- *   ↓ KORT    – alltid längst ner
- *   ← VÄNSTER – alltid till vänster
- *   → HÖGER   – alltid till höger
+ * Fungerar som en enkel top-down-karta med flaggan i centrum. Tre fasta
+ * riktningsetiketter (↑ LÅNG, ← VÄNSTER, HÖGER →) rör sig ALDRIG beroende
+ * på slagets utfall. "Kort" har medvetet ingen egen etikett – den låg
+ * annars i vägen för slagpunkten vid korta slag; riktningen framgår ändå
+ * tydligt av att punkten rör sig nedåt.
  *
  * Endast landningspunkten (bollen/den röda punkten) rör sig:
  *   diff > 0 (långt)  → punkten flyttas uppåt
@@ -19,9 +16,9 @@ import { PRECISION_TARGETS } from "@/lib/precision";
  *   side "vänster"    → punkten flyttas åt vänster
  *   side "höger"      → punkten flyttas åt höger
  *
- * Distansskalan (vilket av de 9 testavstånden man är på) är en egen,
- * separat rad ovanför kartan – den beskriver testets framsteg, inte
- * slagets riktning, och ska inte blandas ihop med Kort/Långt-axeln.
+ * Visualiseringen innehåller medvetet inget annat än axeletiketter, green,
+ * flagga och slagpunkt – ingen distansskala eller annan konkurrerande
+ * grafik, för att hålla fokus på slagets riktning och utfall.
  *
  * Boll-animationen och konfettin drivs av requestAnimationFrame/React-state
  * respektive rena CSS-keyframes, istället för SVG SMIL (<animate>/
@@ -126,39 +123,23 @@ export function ApproachShotVisual({
   const ballOpacity = flying ? (progress > 0.9 ? Math.max(0, (1 - progress) / 0.1) : 1) : 0;
   const ballVisible = flying;
 
-  // Distansskalan: alla 9 avstånden, samma princip som positionsdiagrammen i
-  // Närspelstest/Short Putting Test – en helt separat rad ovanför kartan.
-  const currentIndex = Math.max(
-    0,
-    PRECISION_TARGETS.indexOf(target as (typeof PRECISION_TARGETS)[number]),
-  );
-
   return (
-    <div className="rounded-2xl bg-primary/[0.04] px-2 py-1.5">
-      <DistanceTrack currentIndex={currentIndex} target={target} />
-
+    <div className="rounded-2xl bg-primary/[0.04] px-2 py-2">
       <svg
         viewBox={`0 0 ${w} ${h}`}
-        className="mt-1 h-40 w-full"
+        className="h-44 w-full"
         role="img"
         aria-label="Slagvisualisering – top-down-karta"
       >
-        {/* Fasta axeletiketter – rör sig aldrig */}
+        {/* Fasta axeletiketter – rör sig aldrig. Kort är medvetet borttagen:
+            den låg annars i vägen för slagpunkten vid korta slag. */}
         <text
           x={flag.x}
-          y="12"
+          y="14"
           textAnchor="middle"
           className="fill-muted-foreground text-[9px] font-semibold uppercase tracking-wide"
         >
           ↑ Lång
-        </text>
-        <text
-          x={flag.x}
-          y={h - 3}
-          textAnchor="middle"
-          className="fill-muted-foreground text-[9px] font-semibold uppercase tracking-wide"
-        >
-          ↓ Kort
         </text>
         <text
           x="4"
@@ -178,14 +159,14 @@ export function ApproachShotVisual({
         </text>
 
         {/* Green: koncentriska, mjuka ringar kring flaggan */}
-        <ellipse cx={flag.x} cy={flag.y} rx="58" ry="50" className="fill-primary/10" />
-        <ellipse cx={flag.x} cy={flag.y} rx="42" ry="36" className="fill-primary/16" />
-        <ellipse cx={flag.x} cy={flag.y} rx="26" ry="22" className="fill-primary/24" />
+        <ellipse cx={flag.x} cy={flag.y} rx="70" ry="60" className="fill-primary/10" />
+        <ellipse cx={flag.x} cy={flag.y} rx="51" ry="44" className="fill-primary/16" />
+        <ellipse cx={flag.x} cy={flag.y} rx="32" ry="27" className="fill-primary/24" />
         <ellipse
           cx={flag.x}
           cy={flag.y}
-          rx="12"
-          ry="10"
+          rx="15"
+          ry="13"
           className="fill-primary/34"
           style={
             showBirdie
@@ -286,46 +267,6 @@ export function ApproachShotVisual({
         </p>
       )}
     </div>
-  );
-}
-
-/** Egen, liten rad: vilket av de 9 testavstånden man är på. Separat från
- *  Kort/Långt-axeln i kartan – det här är testets framsteg, inte slagets
- *  riktning. */
-function DistanceTrack({ currentIndex, target }: { currentIndex: number; target: number }) {
-  const w = 300;
-  const trackX1 = 20;
-  const trackX2 = w - 20;
-  const y = 9;
-  const trackXFor = (i: number) =>
-    trackX1 + (i / (PRECISION_TARGETS.length - 1)) * (trackX2 - trackX1);
-
-  return (
-    <svg viewBox={`0 0 ${w} 18`} className="h-4 w-full" role="img" aria-label="Testets framsteg">
-      <line
-        x1={trackX1}
-        y1={y}
-        x2={trackX2}
-        y2={y}
-        className="stroke-foreground/10"
-        strokeWidth="1"
-        strokeDasharray="2 4"
-      />
-      {PRECISION_TARGETS.map((t, i) =>
-        i === currentIndex ? null : (
-          <circle key={t} cx={trackXFor(i)} cy={y} r="2.5" className="fill-muted-foreground/30" />
-        ),
-      )}
-      <circle cx={trackXFor(currentIndex)} cy={y} r="4.5" className="fill-flag" />
-      <text
-        x={trackXFor(currentIndex)}
-        y={y - 6}
-        textAnchor="middle"
-        className="fill-foreground text-[8px] font-bold"
-      >
-        {target} m
-      </text>
-    </svg>
   );
 }
 

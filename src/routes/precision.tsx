@@ -357,7 +357,6 @@ function TestScreen({
   const done = allRegistered ? PRECISION_TOTAL_SHOTS : index;
   const pct = Math.round((done / PRECISION_TOTAL_SHOTS) * 100);
   const diff = carry - current.target;
-  const perRound = PRECISION_TOTAL_SHOTS / 2;
   const isPerfect = diff === 0 && offset === 0;
   const landingDistanceM = Math.sqrt(diff * diff + offset * offset);
   const isBirdieRange = !isPerfect && landingDistanceM <= 4;
@@ -385,7 +384,8 @@ function TestScreen({
         </button>
       </div>
 
-      <div className="mt-2">
+      {/* Testprogress – egen tydlig sektion, progressbaren alltid helt synlig */}
+      <div className="mt-5">
         <div className="flex items-baseline justify-between text-sm">
           <span className="font-semibold">
             {allRegistered ? (
@@ -399,44 +399,34 @@ function TestScreen({
           </span>
           <span className="text-muted-foreground">{pct} %</span>
         </div>
+        <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
+          <div
+            className="h-full rounded-full bg-primary transition-all"
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+        <div className="mt-2 flex items-center justify-between text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+          <span className={current.round === 1 ? "font-semibold text-foreground" : ""}>Varv 1</span>
+          <span className={current.round === 2 ? "font-semibold text-foreground" : ""}>Varv 2</span>
+        </div>
+      </div>
 
-        {canUndo && (
+      {/* Föregående slag – kompakt, sekundär, tydligt egen luft runt sig */}
+      {canUndo && (
+        <div className="mt-4">
           <button
             type="button"
             onClick={onBack}
             disabled={flying}
-            className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl border border-border py-2 text-xs font-semibold text-muted-foreground transition-colors active:bg-muted disabled:opacity-40"
+            className="flex items-center gap-1.5 rounded-full border border-border/70 px-3 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors active:bg-muted disabled:opacity-40"
           >
-            <Undo2 className="h-3.5 w-3.5" />
+            <Undo2 className="h-3 w-3" />
             {allRegistered ? "Ändra senaste slag" : "Föregående slag"}
           </button>
-        )}
-
-        <div className="mt-1 flex gap-2">
-          {[1, 2].map((round) => {
-            const filledInRound = Math.min(perRound, Math.max(0, done - (round - 1) * perRound));
-            return (
-              <div key={round} className="flex-1">
-                <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                  <div
-                    className="h-full rounded-full bg-primary transition-all"
-                    style={{ width: `${(filledInRound / perRound) * 100}%` }}
-                  />
-                </div>
-                <p
-                  className={`mt-0.5 text-[9px] uppercase tracking-[0.2em] ${
-                    current.round === round ? "text-foreground" : "text-muted-foreground"
-                  }`}
-                >
-                  Varv {round}
-                </p>
-              </div>
-            );
-          })}
         </div>
-      </div>
+      )}
 
-      <div className="mt-2">
+      <div className="mt-6">
         <ApproachShotVisual
           target={current.target}
           diff={diff}
@@ -447,9 +437,9 @@ function TestScreen({
         />
       </div>
 
-      <div className="mt-1.5 text-center">
+      <div className="mt-5 text-center">
         <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Måldistans</p>
-        <p className="mt-0.5 font-[family-name:var(--font-display)] text-4xl leading-none text-flag">
+        <p className="mt-1 font-[family-name:var(--font-display)] text-4xl leading-none text-flag">
           {current.target}
           <span className="ml-1.5 text-base text-muted-foreground">m</span>
         </p>
