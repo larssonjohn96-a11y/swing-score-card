@@ -1,6 +1,5 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
-  ArrowLeft,
   ArrowRight,
   Check,
   ChevronLeft,
@@ -10,6 +9,7 @@ import {
   Plus,
   Radar,
   Trophy,
+  Undo2,
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -336,15 +336,7 @@ function TestScreen({
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-md flex-col px-6 pb-32 pt-3">
-      <div className="flex items-center justify-between">
-        <button
-          onClick={onBack}
-          disabled={index === 0}
-          aria-label="Föregående slag"
-          className="rounded-full border border-border p-2 text-muted-foreground disabled:opacity-30"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </button>
+      <div className="flex items-center justify-end">
         <button
           onClick={onAbort}
           className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
@@ -384,6 +376,16 @@ function TestScreen({
           })}
         </div>
       </div>
+
+      {index > 0 && (
+        <button
+          onClick={onBack}
+          className="mt-2 flex items-center justify-center gap-1.5 rounded-xl border border-border py-2 text-xs font-semibold text-muted-foreground transition-colors active:bg-muted"
+        >
+          <Undo2 className="h-3.5 w-3.5" />
+          Föregående slag
+        </button>
+      )}
 
       <div className="mt-2">
         <ApproachShotVisual

@@ -5,17 +5,23 @@ import { PRECISION_TARGETS } from "@/lib/precision";
  * Visuell representation av ett enskilt approach-slag under själva testet
  * (pilot, endast Approach).
  *
- * Koordinatsystemet är roterat så spellinjen går horisontellt genom flaggan,
- * som alltid är centrum:
- *   KORT  = vänster om flaggan   (diff < 0 → x minskar)
- *   LÅNGT = höger om flaggan     (diff > 0 → x ökar)
- *   VÄNSTER (sidled) = ovanför flaggan  (side "vänster" → y minskar)
- *   HÖGER   (sidled) = nedanför flaggan (side "höger"   → y ökar)
+ * Fungerar som en enkel top-down-karta med flaggan i centrum. De fyra
+ * riktningsetiketterna är FASTA delar av koordinatsystemet och flyttar sig
+ * ALDRIG beroende på slagets utfall:
+ *   ↑ LÅNG    – alltid högst upp
+ *   ↓ KORT    – alltid längst ner
+ *   ← VÄNSTER – alltid till vänster
+ *   → HÖGER   – alltid till höger
  *
- * Innan spelaren justerat något visas startpositionen som en RÖD punkt med
- * måldistansen bredvid. Så fort Längd/Sidled justeras byter den punkten till
- * en diskret vit/ljusgrå markering (försvinner aldrig, distansen visas kvar),
- * och en ny röd punkt visar var slaget faktiskt landade.
+ * Endast landningspunkten (bollen/den röda punkten) rör sig:
+ *   diff > 0 (långt)  → punkten flyttas uppåt
+ *   diff < 0 (kort)   → punkten flyttas nedåt
+ *   side "vänster"    → punkten flyttas åt vänster
+ *   side "höger"      → punkten flyttas åt höger
+ *
+ * Distansskalan (vilket av de 9 testavstånden man är på) är en egen,
+ * separat rad ovanför kartan – den beskriver testets framsteg, inte
+ * slagets riktning, och ska inte blandas ihop med Kort/Långt-axeln.
  *
  * Boll-animationen och konfettin drivs av requestAnimationFrame/React-state
  * respektive rena CSS-keyframes, istället för SVG SMIL (<animate>/
@@ -41,36 +47,23 @@ export function ApproachShotVisual({
   /** true under den korta boll-flyger-animationen precis innan nästa slag */
   flying?: boolean;
 }) {
-  const w = 460;
-  const h = 150;
-  const flag = { x: 340, y: 75 };
+  const w = 300;
+  const h = 176;
+  const flag = { x: 150, y: 78 };
 
-  // Distansskalan: alla 9 avstånden som en rad punkter, samma princip som
-  // positionsdiagrammen i Närspelstest/Short Putting Test. Bara den
-  // aktuella punkten (index för "target") är röd/vit med sin etikett –
-  // övriga är små, grå, utan text. Den aktuella punktens position blir
-  // också startpunkten bollen flyger ifrån.
-  const trackY = flag.y;
-  const trackX1 = 38;
-  const trackX2 = 202;
-  const currentIndex = Math.max(
-    0,
-    PRECISION_TARGETS.indexOf(target as (typeof PRECISION_TARGETS)[number]),
-  );
-  // Omvänd mappning: kortast avstånd (55 m) ligger närmast flaggan (trackX2),
-  // längst avstånd (165 m) ligger längst bort (trackX1) – matchar att man i
-  // verkligheten står närmare green ju kortare inspelet är.
-  const trackXFor = (i: number) =>
-    trackX2 - (i / (PRECISION_TARGETS.length - 1)) * (trackX2 - trackX1);
-  const startPoint = { x: trackXFor(currentIndex), y: trackY };
+  // Startpunkten (spelarens position) ligger fast rakt under flaggan, på
+  // Kort-sidan av kartan – bollen flyger alltid uppåt/åt sidan därifrån.
+  const launchPoint = { x: flag.x, y: h - 14 };
 
-  const PX_PER_M_LEN = 3.4;
-  const PX_PER_M_SIDE = 3.4;
-  const clampedDiff = Math.max(-40, Math.min(40, diff));
-  const clampedOffset = Math.max(-30, Math.min(30, offset));
+  const PX_PER_M_LEN = 3.2;
+  const PX_PER_M_SIDE = 3.2;
+  const clampedDiff = Math.max(-30, Math.min(30, diff));
+  const clampedOffset = Math.max(-24, Math.min(24, offset));
 
-  const landingX = flag.x + clampedDiff * PX_PER_M_LEN;
-  const landingY = flag.y + side * clampedOffset * PX_PER_M_SIDE;
+  // ↑ Långt flyttar uppåt (mindre y), ↓ Kort flyttar nedåt (större y).
+  const landingY = flag.y - clampedDiff * PX_PER_M_LEN;
+  // Vänster flyttar åt vänster (mindre x), höger flyttar åt höger (större x).
+  const landingX = flag.x + side * clampedOffset * PX_PER_M_SIDE;
 
   const isPerfect = diff === 0 && offset === 0;
   const flightEnd = isPerfect ? flag : { x: landingX, y: landingY };
@@ -112,17 +105,18 @@ export function ApproachShotVisual({
   }, [flying]);
 
   // Kvadratisk Bézier – mjuk båge som ett riktigt golfslag, inte en rak linje.
-  const flightDist = Math.hypot(flightEnd.x - startPoint.x, flightEnd.y - startPoint.y);
-  const arcHeight = Math.min(60, Math.max(24, flightDist * 0.35));
+  const flightDist = Math.hypot(flightEnd.x - launchPoint.x, flightEnd.y - launchPoint.y);
+  const arcWidth =
+    Math.min(46, Math.max(16, flightDist * 0.3)) * (flightEnd.x >= launchPoint.x ? 1 : -1);
   const ctrl = {
-    x: (startPoint.x + flightEnd.x) / 2,
-    y: (startPoint.y + flightEnd.y) / 2 - arcHeight,
+    x: (launchPoint.x + flightEnd.x) / 2 + arcWidth,
+    y: (launchPoint.y + flightEnd.y) / 2,
   };
   const bezier = (t: number) => {
     const mt = 1 - t;
     return {
-      x: mt * mt * startPoint.x + 2 * mt * t * ctrl.x + t * t * flightEnd.x,
-      y: mt * mt * startPoint.y + 2 * mt * t * ctrl.y + t * t * flightEnd.y,
+      x: mt * mt * launchPoint.x + 2 * mt * t * ctrl.x + t * t * flightEnd.x,
+      y: mt * mt * launchPoint.y + 2 * mt * t * ctrl.y + t * t * flightEnd.y,
     };
   };
   const ball = bezier(progress);
@@ -132,23 +126,66 @@ export function ApproachShotVisual({
   const ballOpacity = flying ? (progress > 0.9 ? Math.max(0, (1 - progress) / 0.1) : 1) : 0;
   const ballVisible = flying;
 
+  // Distansskalan: alla 9 avstånden, samma princip som positionsdiagrammen i
+  // Närspelstest/Short Putting Test – en helt separat rad ovanför kartan.
+  const currentIndex = Math.max(
+    0,
+    PRECISION_TARGETS.indexOf(target as (typeof PRECISION_TARGETS)[number]),
+  );
+
   return (
-    <div className="relative rounded-2xl bg-primary/[0.04] px-2 py-1.5">
+    <div className="rounded-2xl bg-primary/[0.04] px-2 py-1.5">
+      <DistanceTrack currentIndex={currentIndex} target={target} />
+
       <svg
         viewBox={`0 0 ${w} ${h}`}
-        className="h-32 w-full"
+        className="mt-1 h-40 w-full"
         role="img"
-        aria-label="Slagvisualisering"
+        aria-label="Slagvisualisering – top-down-karta"
       >
+        {/* Fasta axeletiketter – rör sig aldrig */}
+        <text
+          x={flag.x}
+          y="12"
+          textAnchor="middle"
+          className="fill-muted-foreground text-[9px] font-semibold uppercase tracking-wide"
+        >
+          ↑ Lång
+        </text>
+        <text
+          x={flag.x}
+          y={h - 3}
+          textAnchor="middle"
+          className="fill-muted-foreground text-[9px] font-semibold uppercase tracking-wide"
+        >
+          ↓ Kort
+        </text>
+        <text
+          x="4"
+          y={flag.y + 3}
+          textAnchor="start"
+          className="fill-muted-foreground text-[9px] font-semibold uppercase tracking-wide"
+        >
+          ← Vänster
+        </text>
+        <text
+          x={w - 4}
+          y={flag.y + 3}
+          textAnchor="end"
+          className="fill-muted-foreground text-[9px] font-semibold uppercase tracking-wide"
+        >
+          Höger →
+        </text>
+
         {/* Green: koncentriska, mjuka ringar kring flaggan */}
-        <ellipse cx={flag.x} cy={flag.y} rx="72" ry="60" className="fill-primary/10" />
-        <ellipse cx={flag.x} cy={flag.y} rx="52" ry="44" className="fill-primary/16" />
-        <ellipse cx={flag.x} cy={flag.y} rx="32" ry="27" className="fill-primary/24" />
+        <ellipse cx={flag.x} cy={flag.y} rx="58" ry="50" className="fill-primary/10" />
+        <ellipse cx={flag.x} cy={flag.y} rx="42" ry="36" className="fill-primary/16" />
+        <ellipse cx={flag.x} cy={flag.y} rx="26" ry="22" className="fill-primary/24" />
         <ellipse
           cx={flag.x}
           cy={flag.y}
-          rx="14"
-          ry="12"
+          rx="12"
+          ry="10"
           className="fill-primary/34"
           style={
             showBirdie
@@ -177,98 +214,31 @@ export function ApproachShotVisual({
           `}</style>
         )}
 
-        {/* Diskret spellinje: hela distansskalan genom flaggan, längs KORT/LÅNGT-axeln */}
-        <line
-          x1={trackX1}
-          y1={flag.y}
-          x2={w - 14}
-          y2={flag.y}
-          className="stroke-foreground/15"
-          strokeWidth="1"
-          strokeDasharray="2 4"
-        />
-
-        {/* Övriga åtta avstånd i testet: små grå punkter utan etikett – bara
-            den aktuella (röd/vit nedan) visar sin distans. */}
-        {PRECISION_TARGETS.map((t, i) =>
-          i === currentIndex ? null : (
-            <circle
-              key={t}
-              cx={trackXFor(i)}
-              cy={trackY}
-              r="3"
-              className="fill-muted-foreground/30"
-            />
-          ),
-        )}
-
-        {/* Axeletiketter */}
-        <text
-          x={flag.x - 96}
-          y={flag.y + 5}
-          textAnchor="end"
-          className="fill-muted-foreground text-[9px] font-semibold uppercase tracking-wide"
-        >
-          ← Kort
-        </text>
-        <text
-          x={w - 14}
-          y={flag.y + 5}
-          textAnchor="end"
-          className="fill-muted-foreground text-[9px] font-semibold uppercase tracking-wide"
-        >
-          Långt →
-        </text>
-        <text
-          x={flag.x}
-          y="16"
-          textAnchor="middle"
-          className="fill-muted-foreground text-[9px] font-semibold uppercase tracking-wide"
-        >
-          ↑ Vänster
-        </text>
-        <text
-          x={flag.x}
-          y={h - 6}
-          textAnchor="middle"
-          className="fill-muted-foreground text-[9px] font-semibold uppercase tracking-wide"
-        >
-          ↓ Höger
-        </text>
-
         {/* Flagga */}
         <line
           x1={flag.x}
           y1={flag.y}
           x2={flag.x}
-          y2={flag.y - 40}
+          y2={flag.y - 34}
           className="stroke-foreground"
           strokeWidth="1.5"
         />
         <path
-          d={`M${flag.x} ${flag.y - 40} L${flag.x + 15} ${flag.y - 35} L${flag.x} ${flag.y - 30} Z`}
+          d={`M${flag.x} ${flag.y - 34} L${flag.x + 13} ${flag.y - 29.5} L${flag.x} ${flag.y - 25} Z`}
           className="fill-flag"
         />
         <circle cx={flag.x} cy={flag.y} r="2.5" className="fill-foreground" />
 
-        {/* Ursprunglig startposition: röd innan touched, diskret vit/ljusgrå därefter – försvinner aldrig */}
+        {/* Spelarens fasta position, rakt under flaggan på Kort-sidan */}
         <circle
-          cx={startPoint.x}
-          cy={startPoint.y}
+          cx={launchPoint.x}
+          cy={launchPoint.y}
           r={touched || flying ? 5 : 7}
           className={
             touched || flying ? "fill-background stroke-muted-foreground/50" : "fill-destructive"
           }
           strokeWidth={touched || flying ? 1.5 : 0}
         />
-        <text
-          x={startPoint.x}
-          y={startPoint.y + 22}
-          textAnchor="middle"
-          className="fill-foreground text-[11px] font-semibold"
-        >
-          {target} m
-        </text>
 
         {/* Aktuellt slags landningspunkt – målet bollen flyger mot, synlig hela tiden */}
         {(touched || flying) && !isPerfect && (
@@ -319,6 +289,46 @@ export function ApproachShotVisual({
   );
 }
 
+/** Egen, liten rad: vilket av de 9 testavstånden man är på. Separat från
+ *  Kort/Långt-axeln i kartan – det här är testets framsteg, inte slagets
+ *  riktning. */
+function DistanceTrack({ currentIndex, target }: { currentIndex: number; target: number }) {
+  const w = 300;
+  const trackX1 = 20;
+  const trackX2 = w - 20;
+  const y = 9;
+  const trackXFor = (i: number) =>
+    trackX1 + (i / (PRECISION_TARGETS.length - 1)) * (trackX2 - trackX1);
+
+  return (
+    <svg viewBox={`0 0 ${w} 18`} className="h-4 w-full" role="img" aria-label="Testets framsteg">
+      <line
+        x1={trackX1}
+        y1={y}
+        x2={trackX2}
+        y2={y}
+        className="stroke-foreground/10"
+        strokeWidth="1"
+        strokeDasharray="2 4"
+      />
+      {PRECISION_TARGETS.map((t, i) =>
+        i === currentIndex ? null : (
+          <circle key={t} cx={trackXFor(i)} cy={y} r="2.5" className="fill-muted-foreground/30" />
+        ),
+      )}
+      <circle cx={trackXFor(currentIndex)} cy={y} r="4.5" className="fill-flag" />
+      <text
+        x={trackXFor(currentIndex)}
+        y={y - 6}
+        textAnchor="middle"
+        className="fill-foreground text-[8px] font-bold"
+      >
+        {target} m
+      </text>
+    </svg>
+  );
+}
+
 const CONFETTI_COLORS = ["var(--primary)", "var(--flag)", "var(--sand)", "var(--chart-4)"];
 
 /** Kort "fyrverkeri" (blixtring + konfettibitar) med rena CSS-keyframes –
@@ -326,7 +336,7 @@ const CONFETTI_COLORS = ["var(--primary)", "var(--flag)", "var(--sand)", "var(--
 function ConfettiBurstSvg({ cx, cy }: { cx: number; cy: number }) {
   const pieces = Array.from({ length: 12 }, (_, i) => {
     const angle = (i / 12) * Math.PI * 2;
-    const dist = 24 + (i % 3) * 8;
+    const dist = 20 + (i % 3) * 7;
     return {
       id: i,
       dx: Math.cos(angle) * dist,
@@ -352,7 +362,7 @@ function ConfettiBurstSvg({ cx, cy }: { cx: number; cy: number }) {
       <circle
         cx={cx}
         cy={cy}
-        r="26"
+        r="22"
         fill="none"
         className="stroke-flag"
         strokeWidth="2"
