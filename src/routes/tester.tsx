@@ -1,5 +1,12 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
+import { ChevronRight } from "lucide-react";
 import { CATEGORIES } from "@/lib/categories";
+import {
+  ApproachCategoryIcon,
+  AroundGreenCategoryIcon,
+  DrivingCategoryIcon,
+  PuttingCategoryIcon,
+} from "@/components/category-icons";
 
 export const Route = createFileRoute("/tester")({
   head: () => ({
@@ -15,6 +22,13 @@ export const Route = createFileRoute("/tester")({
   component: TesterPage,
 });
 
+const CATEGORY_ICONS: Record<string, (props: { className?: string }) => React.ReactNode> = {
+  driving: DrivingCategoryIcon,
+  approach: ApproachCategoryIcon,
+  "around-the-green": AroundGreenCategoryIcon,
+  puttning: PuttingCategoryIcon,
+};
+
 function TesterPage() {
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-28 pt-10">
@@ -27,23 +41,34 @@ function TesterPage() {
       </header>
 
       <section className="mt-6 space-y-4">
-        {CATEGORIES.map((c) => (
-          <Link
-            key={c.slug}
-            to="/kategori/$slug"
-            params={{ slug: c.slug }}
-            className="block rounded-3xl border border-border bg-card p-5 shadow-[var(--shadow-glow)] transition-colors hover:border-primary"
-          >
-            <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
-              {c.subtitle}
-            </p>
-            <h2 className="mt-1 text-3xl leading-none">{c.title}</h2>
-            <p className="mt-2 text-sm text-muted-foreground">{c.description}</p>
-            <p className="mt-3 text-xs uppercase tracking-[0.2em] text-flag">
-              {c.tests.length > 0 ? `${c.tests.length} test` : "Kommer snart"}
-            </p>
-          </Link>
-        ))}
+        {CATEGORIES.map((c) => {
+          const Icon = CATEGORY_ICONS[c.slug];
+          return (
+            <Link
+              key={c.slug}
+              to="/kategori/$slug"
+              params={{ slug: c.slug }}
+              className="flex items-center gap-4 rounded-3xl border border-border bg-card p-4 shadow-[var(--shadow-glow)] transition-colors hover:border-primary"
+            >
+              <span className="shrink-0 overflow-hidden rounded-full">
+                {Icon ? <Icon className="h-14 w-14" /> : null}
+              </span>
+              <div className="min-w-0 flex-1">
+                <h2 className="text-2xl leading-none">{c.title}</h2>
+                <p className="mt-1 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                  {c.subtitle}
+                </p>
+                <p className="mt-1 text-sm leading-snug text-muted-foreground">{c.description}</p>
+                <p className="mt-1.5 text-xs font-semibold uppercase tracking-[0.15em] text-flag">
+                  {c.tests.length > 0
+                    ? `${c.tests.length} test${c.tests.length === 1 ? "" : "er"}`
+                    : "Kommer snart"}
+                </p>
+              </div>
+              <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+            </Link>
+          );
+        })}
       </section>
     </main>
   );

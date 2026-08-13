@@ -339,3 +339,58 @@ export function computeAchievements(): ProgressItem[] {
 export function countUncollected(items: ProgressItem[]): number {
   return items.filter((i) => i.status === "unlocked").length;
 }
+
+/* -------------------------------------------------------------------------
+ * Trofégrupper och tiers (rent UI-lager – klassificerar redan beräknade
+ * ProgressItem-id:n, ändrar ingenting i själva unlock-logiken ovan).
+ * ---------------------------------------------------------------------- */
+
+export type TrophyGroup = "progress" | "handicap" | "skill";
+export type TrophyTier = "bronze" | "silver" | "gold" | "platinum";
+
+export const TROPHY_GROUP_LABELS: Record<TrophyGroup, string> = {
+  progress: "Progress",
+  handicap: "Handicap",
+  skill: "Skill",
+};
+
+const TROPHY_META: Record<string, { group: TrophyGroup; tier: TrophyTier }> = {
+  "first-test": { group: "progress", tier: "bronze" },
+  "tests-5": { group: "progress", tier: "bronze" },
+  "tests-10": { group: "progress", tier: "silver" },
+  "tests-25": { group: "progress", tier: "silver" },
+  "tests-50": { group: "progress", tier: "gold" },
+  "tests-100": { group: "progress", tier: "platinum" },
+  "all-7": { group: "progress", tier: "gold" },
+  "full-profile": { group: "progress", tier: "bronze" },
+  "break-20": { group: "handicap", tier: "bronze" },
+  "break-10": { group: "handicap", tier: "silver" },
+  "break-5": { group: "handicap", tier: "gold" },
+  scratch: { group: "handicap", tier: "platinum" },
+  "plus-player": { group: "handicap", tier: "platinum" },
+  "hcp-better-5": { group: "skill", tier: "silver" },
+  "hcp-better-10": { group: "skill", tier: "gold" },
+  "all-round-20": { group: "skill", tier: "bronze" },
+  "all-round-10": { group: "skill", tier: "silver" },
+  "all-round-5": { group: "skill", tier: "gold" },
+};
+
+export type Trophy = ProgressItem & { group: TrophyGroup; tier: TrophyTier };
+
+/** Slår ihop Milestones + Achievements till en enda, klassificerad tröfélista. */
+export function computeAllTrophies(): Trophy[] {
+  const items = [...computeMilestones(), ...computeAchievements()];
+  return items.map((item) => ({
+    ...item,
+    group: TROPHY_META[item.id]?.group ?? "progress",
+    tier: TROPHY_META[item.id]?.tier ?? "bronze",
+  }));
+}
+
+export function groupTrophies(trophies: Trophy[]): Record<TrophyGroup, Trophy[]> {
+  return {
+    progress: trophies.filter((t) => t.group === "progress"),
+    handicap: trophies.filter((t) => t.group === "handicap"),
+    skill: trophies.filter((t) => t.group === "skill"),
+  };
+}
