@@ -35,14 +35,46 @@ export type LagPuttSession = {
   notes?: string;
 };
 
-/** Linjär mappning godkänd-procent → HCP, kalibrerad så att 0 % godkänt
- *  motsvarar WHS maxgräns (54,0) och 100 % godkänt motsvarar en elitnivå
- *  (+5, dvs HCP −5). Ett enskilt test är bara 6 puttar och därför ett litet
- *  stickprov – se combinedPuttingSeries i sg-handicap.ts som därför
- *  använder ett rullande snitt av de senaste testerna för det stabila
- *  kategori-HCP:et, snarare än att lita på ett enda testresultat. */
-export function ratingToHandicap(pct: number): number {
-  return Math.max(-5, Math.min(54, 54 - pct * 0.59));
+type Anchor = { hcp: number; value: number };
+
+function interpolate(input: number, anchors: Anchor[]): number {
+  const sorted = [...anchors].sort((a, b) => a.hcp - b.hcp);
+  const first = sorted[0];
+  const last = sorted[sorted.length - 1];
+  if (input <= first.value) return first.hcp;
+  if (input >= last.value) return last.hcp;
+  for (let i = 0; i < sorted.length - 1; i += 1) {
+    const a = sorted[i];
+    const b = sorted[i + 1];
+    if (input >= a.value && input <= b.value) {
+      const t = (input - a.value) / (b.value - a.value);
+      return a.hcp + t * (b.hcp - a.hcp);
+    }
+  }
+  return last.hcp;
+}
+
+/**
+ * Kontinuerlig mappning snittavstånd-kvar → HCP, kalibrerad för lagputt-
+ * distanser (8–18 m). Ersätter den tidigare binära "andel godkänd inom 1 m"-
+ * formeln, som gav 0 % (och därmed 54,0 i HCP) även om ALLA puttar landade
+ * fint på 1–2 m – en helt orimlig bottennotering för en faktiskt godkänd
+ * lagputt-prestation. Nu ger varje meter närmare hålet delpoäng, precis
+ * som proximity-baserade formler i Bunker/Around the Green.
+ */
+const PROXIMITY_ANCHORS: Anchor[] = [
+  { hcp: -5, value: 0 },
+  { hcp: 0, value: 0.4 },
+  { hcp: 8, value: 0.8 },
+  { hcp: 15, value: 1.3 },
+  { hcp: 25, value: 2.0 },
+  { hcp: 35, value: 3.0 },
+  { hcp: 48, value: 4.5 },
+  { hcp: 54, value: 6.0 },
+];
+
+export function handicapFromProximity(avgLeftM: number): number {
+  return Math.max(-5, Math.min(54, interpolate(avgLeftM, PROXIMITY_ANCHORS)));
 }
 
 const KEY = "golf-lagputt-sessions-v3";
@@ -88,14 +120,15 @@ export function loadLagPuttSessions(): LagPuttSession[] {
 export function saveLagPuttSession(putts: LagPutt[], notes?: string): LagPuttSession {
   const approved = putts.filter(isApproved).length;
   const pct = putts.length ? (approved / putts.length) * 100 : 0;
+  const avgLeft = mean(putts.map((p) => intervalMidpoint(p.interval)));
   const record: LagPuttSession = {
     id: crypto.randomUUID(),
     date: new Date().toISOString(),
     putts,
     approved,
     pct,
-    avgLeft: mean(putts.map((p) => intervalMidpoint(p.interval))),
-    handicap: ratingToHandicap(pct),
+    avgLeft,
+    handicap: handicapFromProximity(avgLeft),
     notes: notes?.trim() || undefined,
   };
   window.localStorage.setItem(KEY, JSON.stringify([...loadLagPuttSessions(), record]));
