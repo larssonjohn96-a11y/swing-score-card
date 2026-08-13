@@ -1,15 +1,23 @@
-/** Lagputt – 6 puttar från 8–18 m, i slumpad ordning varje test. Allt inom
- *  1 m från hålet är godkänt. Spelaren uppmanas gå en annan riktning från
- *  hålet för varje putt, så testet inte blir en enda upprepad linje. */
+import { INTERVALS, type IntervalKey } from "@/lib/shortgame";
+
+/** Lagputt – 6 puttar från 8–18 m, i slumpad ordning varje test. Registreras
+ *  som ett intervall (samma som Närspelstest/Bunkerslag) istället för att
+ *  skriva in exakt avstånd. Allt inom 1 m från hålet är godkänt. Spelaren
+ *  uppmanas gå en annan riktning från hålet för varje putt, så testet inte
+ *  blir en enda upprepad linje. */
 export const LAG_PUTT_DISTANCES = [8, 10, 12, 14, 16, 18] as const;
 /** Godkänt-gräns i meter */
 export const LAG_OK_LIMIT = 1;
 
+const INTERVAL_MIDPOINT: Record<IntervalKey, number> = Object.fromEntries(
+  INTERVALS.map((i) => [i.key, i.midpoint]),
+) as Record<IntervalKey, number>;
+
 export type LagPutt = {
   /** måldistans i meter */
   distance: number;
-  /** kvarvarande avstånd till hål i meter */
-  left: number;
+  /** registrerat intervall – kvar till hålet */
+  interval?: IntervalKey;
 };
 
 export type LagPuttSession = {
@@ -20,7 +28,7 @@ export type LagPuttSession = {
   approved: number;
   /** procent godkända */
   pct: number;
-  /** snittavstånd kvar i meter */
+  /** snittavstånd kvar i meter, ur intervallens mittpunkter */
   avgLeft: number;
   /** punktskattning av Lagputt-HCP, ur godkänd-procenten */
   handicap: number;
@@ -32,7 +40,7 @@ function ratingToHandicap(pct: number): number {
   return Math.max(-4, Math.min(36, 30 - pct * 0.34));
 }
 
-const KEY = "golf-lagputt-sessions-v2";
+const KEY = "golf-lagputt-sessions-v3";
 
 function shuffled<T>(arr: readonly T[]): T[] {
   const copy = [...arr];
@@ -45,7 +53,7 @@ function shuffled<T>(arr: readonly T[]): T[] {
 
 /** Ny, slumpad ordning på de sex avstånden varje gång testet startas om. */
 export function emptyLagPutts(): LagPutt[] {
-  return shuffled(LAG_PUTT_DISTANCES).map((distance) => ({ distance, left: 0 }));
+  return shuffled(LAG_PUTT_DISTANCES).map((distance) => ({ distance }));
 }
 
 export function mean(values: number[]): number {
@@ -53,8 +61,12 @@ export function mean(values: number[]): number {
   return values.reduce((a, b) => a + b, 0) / values.length;
 }
 
+export function intervalMidpoint(interval?: IntervalKey): number {
+  return interval ? INTERVAL_MIDPOINT[interval] : 0;
+}
+
 export function isApproved(putt: LagPutt): boolean {
-  return putt.left <= LAG_OK_LIMIT;
+  return intervalMidpoint(putt.interval) <= LAG_OK_LIMIT;
 }
 
 export function loadLagPuttSessions(): LagPuttSession[] {
@@ -77,7 +89,7 @@ export function saveLagPuttSession(putts: LagPutt[], notes?: string): LagPuttSes
     putts,
     approved,
     pct,
-    avgLeft: mean(putts.map((p) => p.left)),
+    avgLeft: mean(putts.map((p) => intervalMidpoint(p.interval))),
     handicap: ratingToHandicap(pct),
     notes: notes?.trim() || undefined,
   };
