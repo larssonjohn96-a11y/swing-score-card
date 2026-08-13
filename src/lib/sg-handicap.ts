@@ -65,11 +65,18 @@ function ratingToHandicap(rating: number): number {
  * (8–18 m) viktat 40 %. Korta, avgörande puttar väger tyngre än
  * distanskänsla på långputtar, men båda räknas in. Om bara en av dem har
  * data används den ensam.
+ *
+ * Lagputt-delen använder ett rullande snitt av de senaste 5 testerna,
+ * inte bara det senaste – ett enskilt lagputt-test är bara 6 puttar och
+ * därför ett litet, känsligt stickprov. Short Putting Test (12 puttar)
+ * bedöms som stort nog att lita på ensamt.
  */
 function combinePuttingHandicap(shortHcp?: number, lagHcp?: number): number | undefined {
   if (shortHcp !== undefined && lagHcp !== undefined) return shortHcp * 0.6 + lagHcp * 0.4;
   return shortHcp ?? lagHcp;
 }
+
+const LAG_PUTT_ROLLING_WINDOW = 5;
 
 /**
  * Around the Green = Närspelstest (65 %) + Bunkerslag (35 %). Närspelstestet
@@ -239,11 +246,18 @@ function combinedPuttingSeries(asOf?: Date): { date: string; handicap: number }[
   const events = byDateAsc([...shortEvents, ...lagEvents]);
 
   let lastShort: number | undefined;
-  let lastLag: number | undefined;
+  const lagWindow: number[] = [];
   return events.map((e) => {
-    if (e.kind === "short") lastShort = e.handicap;
-    else lastLag = e.handicap;
-    return { date: e.date, handicap: combinePuttingHandicap(lastShort, lastLag) ?? e.handicap };
+    if (e.kind === "short") {
+      lastShort = e.handicap;
+    } else {
+      lagWindow.push(e.handicap);
+      if (lagWindow.length > LAG_PUTT_ROLLING_WINDOW) lagWindow.shift();
+    }
+    const lagAvg = lagWindow.length
+      ? lagWindow.reduce((a, b) => a + b, 0) / lagWindow.length
+      : undefined;
+    return { date: e.date, handicap: combinePuttingHandicap(lastShort, lagAvg) ?? e.handicap };
   });
 }
 

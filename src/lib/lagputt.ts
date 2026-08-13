@@ -35,9 +35,14 @@ export type LagPuttSession = {
   notes?: string;
 };
 
-/** Samma generella rating→handicap-omvandling som används för Around the Green m.fl. */
-function ratingToHandicap(pct: number): number {
-  return Math.max(-4, Math.min(36, 30 - pct * 0.34));
+/** Linjär mappning godkänd-procent → HCP, kalibrerad så att 0 % godkänt
+ *  motsvarar WHS maxgräns (54,0) och 100 % godkänt motsvarar en elitnivå
+ *  (+5, dvs HCP −5). Ett enskilt test är bara 6 puttar och därför ett litet
+ *  stickprov – se combinedPuttingSeries i sg-handicap.ts som därför
+ *  använder ett rullande snitt av de senaste testerna för det stabila
+ *  kategori-HCP:et, snarare än att lita på ett enda testresultat. */
+export function ratingToHandicap(pct: number): number {
+  return Math.max(-5, Math.min(54, 54 - pct * 0.59));
 }
 
 const KEY = "golf-lagputt-sessions-v3";

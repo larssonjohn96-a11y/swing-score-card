@@ -9,6 +9,7 @@ import {
   loadLagPuttSessions,
   mean,
   intervalMidpoint,
+  ratingToHandicap,
   saveLagPuttSession,
   type LagPutt,
 } from "@/lib/lagputt";
@@ -256,7 +257,7 @@ function LagPuttReport({
   const approved = putts.filter(isApproved).length;
   const pct = putts.length ? (approved / putts.length) * 100 : 0;
   const avgLeft = mean(putts.map((p) => intervalMidpoint(p.interval)));
-  const handicap = Math.max(-4, Math.min(36, 30 - pct * 0.34));
+  const handicap = ratingToHandicap(pct);
   const sortedPutts = [...putts].sort((a, b) => a.distance - b.distance);
   const bestPutt = [...putts].sort(
     (a, b) => intervalMidpoint(a.interval) - intervalMidpoint(b.interval),
