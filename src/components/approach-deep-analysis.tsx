@@ -5,10 +5,10 @@ import {
   PRECISION_TARGETS,
   handicapFromPct,
   handicapLabel,
-  lengthError,
   missPattern,
   proximity,
   proximityPct,
+  scoreFromPct,
   type PrecisionShot,
 } from "@/lib/precision";
 
@@ -19,6 +19,20 @@ const PERIOD_OPTIONS: { key: Period; label: string }[] = [
   { key: 10, label: "Senaste 10" },
   { key: "all", label: "Alla tester" },
 ];
+
+/** Fast, kategorisk niofärgspalett – en färg per målavstånd, oberoende av
+ *  ljust/mörkt tema, samma princip som i referensbilderna. */
+const DISTANCE_COLORS: Record<number, string> = {
+  55: "#dc2626",
+  64: "#2563eb",
+  73: "#059669",
+  82: "#ea580c",
+  91: "#7c3aed",
+  110: "#0891b2",
+  128: "#ca8a04",
+  146: "#db2777",
+  165: "#4338ca",
+};
 
 /** Tre avståndsintervall som täcker alla nio testdistanser jämnt. */
 const DISTANCE_BUCKETS: { label: string; targets: readonly number[] }[] = [
@@ -68,6 +82,7 @@ function bestWorst(stats: ReturnType<typeof aggregateByTarget>) {
  */
 export function ApproachDeepAnalysis() {
   const [period, setPeriod] = useState<Period>(10);
+  const [selectedTarget, setSelectedTarget] = useState<number | null>(null);
 
   const shots = useMemo<PrecisionShot[]>(() => {
     const sessions = loadPrecisionSessions();
@@ -115,7 +130,10 @@ export function ApproachDeepAnalysis() {
           <button
             key={o.key}
             type="button"
-            onClick={() => setPeriod(o.key)}
+            onClick={() => {
+              setPeriod(o.key);
+              setSelectedTarget(null);
+            }}
             className={`flex-1 rounded-full border py-2 text-xs font-semibold transition-colors ${
               period === o.key
                 ? "border-primary bg-primary text-primary-foreground"
@@ -262,22 +280,13 @@ export function ApproachDeepAnalysis() {
         </div>
       </div>
 
-      {/* Spridningskarta med en ellips per avstånd */}
-      <div className="mt-4 rounded-3xl border border-border bg-card p-5">
-        <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
-          Spridning per avstånd
-        </p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Varje ellips visar din typiska spridning kring flaggan på det avståndet.
-        </p>
-        <div className="mt-3 grid grid-cols-3 gap-2">
-          {targetStats
-            .filter((t) => t.count > 0)
-            .map((t) => (
-              <DispersionMiniCard key={t.target} target={t.target} shots={t.shots} />
-            ))}
-        </div>
-      </div>
+      {/* Kombinerad spridningskarta – alla avstånd i en vy, färgkodade,
+          klickbara för att filtrera till ett enda avstånd. */}
+      <CombinedDispersionMap
+        targetStats={targetStats}
+        selectedTarget={selectedTarget}
+        onSelectTarget={setSelectedTarget}
+      />
     </section>
   );
 }
@@ -305,64 +314,205 @@ function InsightRow({
   );
 }
 
-/** Litet spridningskort: green + flagga i mitten, en ellips (± en std.avv.
- *  i längd/sidled) plus enskilda slagpunkter, för ETT målavstånd. */
-function DispersionMiniCard({ target, shots }: { target: number; shots: PrecisionShot[] }) {
-  const filled = shots;
-  const w = 100;
-  const h = 100;
-  const cx = 50;
-  const cy = 50;
-  const maxRangeM = 12; // meter som mappas till kortets kant
-  const scale = 38 / maxRangeM;
+/**
+ * En enda kombinerad spridningskarta: alla nio avstånden i samma vy,
+ * plottade efter slagens FAKTISKA carry (inte relativt sitt eget mål), så
+ * hela banan ses på en gång – samma princip som referensbilderna. Varje
+ * avstånd har en egen fast färg och en egen ellips (medel ± en std.avv. i
+ * carry/sidled). Klick på ett avstånd filtrerar till bara det avståndet
+ * och visar dess Score + HCP.
+ */
+function CombinedDispersionMap({
+  targetStats,
+  selectedTarget,
+  onSelectTarget,
+}: {
+  targetStats: ReturnType<typeof aggregateByTarget>;
+  selectedTarget: number | null;
+  onSelectTarget: (t: number | null) => void;
+}) {
+  const w = 300;
+  const h = 380;
+  const padTop = 24;
+  const padBottom = 24;
+  const minCarry = 40;
+  const maxCarry = 180;
 
-  const offlines = filled.map((s) => s.offline);
-  const lengths = filled.map((s) => lengthError(s));
-  const meanOff = offlines.reduce((a, b) => a + b, 0) / (offlines.length || 1);
-  const meanLen = lengths.reduce((a, b) => a + b, 0) / (lengths.length || 1);
-  const stdOff =
-    filled.length > 1
-      ? Math.sqrt(offlines.reduce((a, v) => a + (v - meanOff) ** 2, 0) / filled.length)
-      : 1.5;
-  const stdLen =
-    filled.length > 1
-      ? Math.sqrt(lengths.reduce((a, v) => a + (v - meanLen) ** 2, 0) / filled.length)
-      : 1.5;
+  const yFor = (carry: number) =>
+    h - padBottom - ((carry - minCarry) / (maxCarry - minCarry)) * (h - padTop - padBottom);
+  const xScale = 4.2; // px per meter sidled
+  const xFor = (offline: number) => w / 2 + offline * xScale;
 
-  const avgProx = filled.length ? filled.reduce((a, s) => a + proximity(s), 0) / filled.length : 0;
+  const gridLines = [60, 80, 100, 120, 140, 160];
+
+  const selected = targetStats.find((t) => t.target === selectedTarget);
+  const selectedScore =
+    selected && selected.count > 0
+      ? Math.round(
+          selected.shots.reduce((a, s) => a + scoreFromPct(proximityPct(s)), 0) / selected.count,
+        )
+      : undefined;
+  const selectedHcp =
+    selected && selected.count > 0
+      ? handicapFromPct(selected.shots.reduce((a, s) => a + proximityPct(s), 0) / selected.count)
+      : undefined;
 
   return (
-    <div className="rounded-2xl bg-primary/[0.04] p-2 text-center">
+    <div className="mt-4 rounded-3xl border border-border bg-card p-5">
+      <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Spridningskarta</p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Tryck på ett avstånd för att se bara de slagen – Score och HCP för just det avståndet.
+      </p>
+
+      {/* Avståndsväljare */}
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        {PRECISION_TARGETS.map((t) => {
+          const stat = targetStats.find((s) => s.target === t);
+          const hasData = (stat?.count ?? 0) > 0;
+          const isSelected = selectedTarget === t;
+          return (
+            <button
+              key={t}
+              type="button"
+              disabled={!hasData}
+              onClick={() => onSelectTarget(isSelected ? null : t)}
+              className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-all disabled:opacity-30"
+              style={{
+                borderColor: DISTANCE_COLORS[t],
+                backgroundColor: isSelected ? DISTANCE_COLORS[t] : "transparent",
+                color: isSelected ? "white" : DISTANCE_COLORS[t],
+              }}
+            >
+              <span
+                className="h-2 w-2 shrink-0 rounded-full"
+                style={{ backgroundColor: isSelected ? "white" : DISTANCE_COLORS[t] }}
+              />
+              {t}m
+            </button>
+          );
+        })}
+      </div>
+
+      {selected && selectedScore !== undefined && selectedHcp !== undefined && (
+        <div
+          className="mt-3 flex items-center justify-around rounded-2xl border p-3"
+          style={{
+            borderColor: DISTANCE_COLORS[selectedTarget ?? 0],
+            backgroundColor: `${DISTANCE_COLORS[selectedTarget ?? 0]}14`,
+          }}
+        >
+          <div className="text-center">
+            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+              {selectedTarget}m · Score
+            </p>
+            <p className="font-[family-name:var(--font-display)] text-2xl leading-none">
+              {selectedScore}
+            </p>
+          </div>
+          <div className="text-center">
+            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">HCP</p>
+            <p className="font-[family-name:var(--font-display)] text-2xl leading-none">
+              {handicapLabel(selectedHcp)}
+            </p>
+          </div>
+          <div className="text-center">
+            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Slag</p>
+            <p className="font-[family-name:var(--font-display)] text-2xl leading-none">
+              {selected.count}
+            </p>
+          </div>
+        </div>
+      )}
+
       <svg
         viewBox={`0 0 ${w} ${h}`}
-        className="h-20 w-full"
+        className="mt-4 h-[420px] w-full"
         role="img"
-        aria-label={`Spridning ${target} m`}
+        aria-label="Kombinerad spridningskarta för alla avstånd"
       >
-        <ellipse cx={cx} cy={cy} rx="40" ry="34" className="fill-primary/8" />
-        <ellipse
-          cx={cx - meanOff * scale}
-          cy={cy - meanLen * scale}
-          rx={Math.max(4, Math.min(38, stdOff * scale))}
-          ry={Math.max(4, Math.min(34, stdLen * scale))}
-          className="fill-primary/20 stroke-primary/40"
-          strokeWidth="1"
-        />
-        {filled.map((s, i) => (
-          <circle
-            key={i}
-            cx={Math.max(3, Math.min(w - 3, cx - s.offline * scale))}
-            cy={Math.max(3, Math.min(h - 3, cy - lengthError(s) * scale))}
-            r="2.5"
-            className="fill-flag"
-          />
+        {/* Avståndslinjer + etiketter */}
+        {gridLines.map((g) => (
+          <g key={g}>
+            <line
+              x1={16}
+              y1={yFor(g)}
+              x2={w - 16}
+              y2={yFor(g)}
+              className="stroke-foreground/10"
+              strokeWidth="1"
+            />
+            <text
+              x={10}
+              y={yFor(g) + 3}
+              textAnchor="end"
+              className="fill-muted-foreground text-[8px]"
+            >
+              {g}
+            </text>
+          </g>
         ))}
-        <circle cx={cx} cy={cy} r="2" className="fill-foreground" />
+        {/* Mittlinje */}
+        <line
+          x1={w / 2}
+          y1={padTop}
+          x2={w / 2}
+          y2={h - padBottom}
+          className="stroke-foreground/15"
+          strokeWidth="1"
+          strokeDasharray="3 4"
+        />
+
+        {targetStats
+          .filter((t) => t.count > 0)
+          .map((t) => {
+            const color = DISTANCE_COLORS[t.target];
+            const dimmed = selectedTarget !== null && selectedTarget !== t.target;
+            const offlines = t.shots.map((s) => s.offline);
+            const carries = t.shots.map((s) => s.carry);
+            const meanOff = offlines.reduce((a, b) => a + b, 0) / offlines.length;
+            const meanCarry = carries.reduce((a, b) => a + b, 0) / carries.length;
+            const stdOff =
+              t.count > 1
+                ? Math.sqrt(offlines.reduce((a, v) => a + (v - meanOff) ** 2, 0) / t.count)
+                : 1.5;
+            const stdCarry =
+              t.count > 1
+                ? Math.sqrt(carries.reduce((a, v) => a + (v - meanCarry) ** 2, 0) / t.count)
+                : 1.5;
+            const ellipseRy = Math.max(
+              5,
+              Math.min(60, (stdCarry / (maxCarry - minCarry)) * (h - padTop - padBottom)),
+            );
+            const ellipseRx = Math.max(5, Math.min(80, stdOff * xScale));
+
+            return (
+              <g key={t.target} opacity={dimmed ? 0.12 : 1} style={{ transition: "opacity 200ms" }}>
+                <ellipse
+                  cx={xFor(meanOff)}
+                  cy={yFor(meanCarry)}
+                  rx={ellipseRx}
+                  ry={ellipseRy}
+                  fill={color}
+                  fillOpacity={0.12}
+                  stroke={color}
+                  strokeOpacity={0.5}
+                  strokeWidth="1"
+                />
+                {t.shots.map((s, i) => (
+                  <circle
+                    key={i}
+                    cx={Math.max(8, Math.min(w - 8, xFor(s.offline)))}
+                    cy={Math.max(8, Math.min(h - 8, yFor(s.carry)))}
+                    r="4"
+                    fill={color}
+                    className="cursor-pointer"
+                    onClick={() => onSelectTarget(selectedTarget === t.target ? null : t.target)}
+                  />
+                ))}
+              </g>
+            );
+          })}
       </svg>
-      <p className="mt-1 text-[11px] font-semibold">{target} m</p>
-      <p className="text-[10px] text-muted-foreground">
-        {avgProx > 0 ? `${avgProx.toFixed(1)} m snitt` : "–"}
-      </p>
     </div>
   );
 }
