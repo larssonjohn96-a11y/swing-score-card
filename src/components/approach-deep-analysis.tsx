@@ -426,10 +426,28 @@ function CombinedDispersionMap({
 
       <svg
         viewBox={`0 0 ${w} ${h}`}
-        className="mt-4 h-[420px] w-full"
+        className="mt-4 h-[420px] w-full overflow-hidden rounded-2xl"
         role="img"
         aria-label="Kombinerad spridningskarta för alla avstånd"
       >
+        {/* Stiliserad fairway: omväxlande klipprandor + ett par bunkrar, i
+            SG4:s platta illustrationsstil – inget foto. */}
+        <rect x="0" y="0" width={w} height={h} className="fill-primary/10" />
+        {Array.from({ length: 12 }, (_, i) => i).map((i) => (
+          <rect
+            key={i}
+            x="0"
+            y={(i * h) / 12}
+            width={w}
+            height={h / 12}
+            className={i % 2 === 0 ? "fill-primary/[0.06]" : "fill-transparent"}
+          />
+        ))}
+        <ellipse cx={30} cy={h * 0.62} rx="26" ry="34" className="fill-sand/50" />
+        <ellipse cx={w - 30} cy={h * 0.62} rx="26" ry="34" className="fill-sand/50" />
+        <ellipse cx={26} cy={h * 0.18} rx="22" ry="28" className="fill-sand/40" />
+        <ellipse cx={w - 26} cy={h * 0.15} rx="20" ry="26" className="fill-sand/40" />
+
         {/* Avståndslinjer + etiketter */}
         {gridLines.map((g) => (
           <g key={g}>
@@ -466,24 +484,30 @@ function CombinedDispersionMap({
           .filter((t) => t.count > 0)
           .map((t) => {
             const color = DISTANCE_COLORS[t.target];
+            const isSelected = selectedTarget === t.target;
             const dimmed = selectedTarget !== null && selectedTarget !== t.target;
             const offlines = t.shots.map((s) => s.offline);
             const carries = t.shots.map((s) => s.carry);
             const meanOff = offlines.reduce((a, b) => a + b, 0) / offlines.length;
             const meanCarry = carries.reduce((a, b) => a + b, 0) / carries.length;
-            const stdOff =
-              t.count > 1
-                ? Math.sqrt(offlines.reduce((a, v) => a + (v - meanOff) ** 2, 0) / t.count)
-                : 1.5;
-            const stdCarry =
-              t.count > 1
-                ? Math.sqrt(carries.reduce((a, v) => a + (v - meanCarry) ** 2, 0) / t.count)
-                : 1.5;
+            // Ellipsen ska garanterat ringa in ALLA slag på avståndet – därför
+            // max absolut avvikelse från medel (inte std.avv., som statistiskt
+            // bara täcker ~68 % av punkterna), plus lite marginal för
+            // punkternas egen radie.
+            const maxOffDev = offlines.length
+              ? Math.max(...offlines.map((v) => Math.abs(v - meanOff)))
+              : 1.5;
+            const maxCarryDev = carries.length
+              ? Math.max(...carries.map((v) => Math.abs(v - meanCarry)))
+              : 1.5;
             const ellipseRy = Math.max(
-              5,
-              Math.min(60, (stdCarry / (maxCarry - minCarry)) * (h - padTop - padBottom)),
+              14,
+              Math.min(
+                90,
+                (maxCarryDev / (maxCarry - minCarry)) * (h - padTop - padBottom) * 1.15 + 8,
+              ),
             );
-            const ellipseRx = Math.max(5, Math.min(80, stdOff * xScale));
+            const ellipseRx = Math.max(14, Math.min(110, maxOffDev * xScale * 1.15 + 8));
 
             return (
               <g key={t.target} opacity={dimmed ? 0.12 : 1} style={{ transition: "opacity 200ms" }}>
@@ -493,18 +517,20 @@ function CombinedDispersionMap({
                   rx={ellipseRx}
                   ry={ellipseRy}
                   fill={color}
-                  fillOpacity={0.12}
-                  stroke={color}
-                  strokeOpacity={0.5}
-                  strokeWidth="1"
+                  fillOpacity={isSelected ? 0.1 : 0.06}
+                  stroke={isSelected ? "white" : color}
+                  strokeOpacity={isSelected ? 1 : 0.45}
+                  strokeWidth={isSelected ? 2.5 : 1}
                 />
                 {t.shots.map((s, i) => (
                   <circle
                     key={i}
                     cx={Math.max(8, Math.min(w - 8, xFor(s.offline)))}
                     cy={Math.max(8, Math.min(h - 8, yFor(s.carry)))}
-                    r="4"
+                    r={isSelected ? 5 : 4}
                     fill={color}
+                    stroke={isSelected ? "white" : "none"}
+                    strokeWidth={isSelected ? 1.5 : 0}
                     className="cursor-pointer"
                     onClick={() => onSelectTarget(selectedTarget === t.target ? null : t.target)}
                   />
