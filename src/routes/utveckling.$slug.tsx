@@ -12,6 +12,7 @@ import {
 import { ArrowLeft, CheckCircle2, Target, Trophy } from "lucide-react";
 import { ChartCard } from "@/components/chart-card";
 import { HeatmapCard, HistoryPanel } from "@/components/progress-dashboard";
+import { ApproachDeepAnalysis } from "@/components/approach-deep-analysis";
 import { PremiumLockLine } from "@/components/premium-lock";
 import { useSubscription } from "@/lib/subscription";
 import {
@@ -116,13 +117,15 @@ function CategoryDetailPage() {
           {detail.handicap !== undefined ? hcpLabel(detail.handicap) : "–"}
         </p>
         <div className="mt-4 flex items-center justify-center gap-6 border-t border-border pt-4">
-          <div>
-            <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">Score</p>
-            <p className="mt-0.5 font-[family-name:var(--font-display)] text-2xl leading-none">
-              {detail.score}
-              <span className="text-sm text-muted-foreground">/100</span>
-            </p>
-          </div>
+          {slug !== "approach" && (
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">Score</p>
+              <p className="mt-0.5 font-[family-name:var(--font-display)] text-2xl leading-none">
+                {detail.score}
+                <span className="text-sm text-muted-foreground">/100</span>
+              </p>
+            </div>
+          )}
           <div>
             <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">Trend</p>
             <p
@@ -139,6 +142,8 @@ function CategoryDetailPage() {
           </div>
         </div>
       </section>
+
+      {slug === "approach" && <ApproachDeepAnalysis />}
 
       {/* Trend */}
       <section className="mt-6">
@@ -198,7 +203,7 @@ function CategoryDetailPage() {
       </section>
 
       {/* Nyckeltal */}
-      {detail.keyMetrics.length > 0 && (
+      {slug !== "approach" && detail.keyMetrics.length > 0 && (
         <section className="mt-6">
           <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Nyckeltal</p>
           <div className="mt-3 grid grid-cols-2 gap-2">
@@ -217,7 +222,7 @@ function CategoryDetailPage() {
       )}
 
       {/* Heatmap */}
-      {detail.heatmap.length > 0 && (
+      {slug !== "approach" && detail.heatmap.length > 0 && (
         <section className="mt-6">
           <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
             Starka och svaga avstånd
@@ -236,7 +241,7 @@ function CategoryDetailPage() {
       )}
 
       {/* Styrkor / Förbättringsområden */}
-      {(detail.strengths.length > 0 || detail.improvements.length > 0) && (
+      {slug !== "approach" && (detail.strengths.length > 0 || detail.improvements.length > 0) && (
         <section className="mt-6 space-y-4">
           {detail.strengths.length > 0 && (
             <div className="rounded-[28px] border border-border bg-card p-5 shadow-sm">
