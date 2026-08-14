@@ -34,11 +34,14 @@ const DISTANCE_COLORS: Record<number, string> = {
   165: "#4338ca",
 };
 
-/** Tre avståndsintervall som täcker alla nio testdistanser jämnt. */
+/** Fem avståndsintervall (25 m breda) som täcker alla nio testdistanser –
+ *  samma granularitet som referensdiagrammet. */
 const DISTANCE_BUCKETS: { label: string; targets: readonly number[] }[] = [
-  { label: "55–73 m", targets: [55, 64, 73] },
-  { label: "82–110 m", targets: [82, 91, 110] },
-  { label: "128–165 m", targets: [128, 146, 165] },
+  { label: "50–75 m", targets: [55, 64, 73] },
+  { label: "75–100 m", targets: [82, 91] },
+  { label: "100–125 m", targets: [110] },
+  { label: "125–150 m", targets: [128, 146] },
+  { label: "150–175 m", targets: [165] },
 ];
 
 /** HCP per avståndsintervall – snittet av proximity SOM ANDEL AV
@@ -168,33 +171,6 @@ export function ApproachDeepAnalysis() {
         </div>
       )}
 
-      {/* HCP per avståndsintervall */}
-      <div className="mt-4 rounded-3xl border border-border bg-card p-5">
-        <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
-          HCP per avståndsintervall
-        </p>
-        <div className="mt-3 grid grid-cols-3 gap-2">
-          {bucketStats.map((b) => (
-            <div
-              key={b.label}
-              className={`rounded-2xl border p-3 text-center ${
-                worstBucket?.label === b.label
-                  ? "border-flag/40 bg-flag/5"
-                  : bestBucket?.label === b.label
-                    ? "border-primary/40 bg-primary/5"
-                    : "border-border"
-              }`}
-            >
-              <p className="text-[10px] font-semibold text-muted-foreground">{b.label}</p>
-              <p className="mt-1 font-[family-name:var(--font-display)] text-2xl leading-none">
-                {b.hcp !== undefined ? handicapLabel(b.hcp) : "–"}
-              </p>
-              <p className="mt-0.5 text-[10px] text-muted-foreground">{b.count} slag</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* Smarta insikter – rena fakta ur riktig data, ingen rådgivning */}
       <div className="mt-4 space-y-2">
         {best && (
@@ -286,6 +262,13 @@ export function ApproachDeepAnalysis() {
         targetStats={targetStats}
         selectedTarget={selectedTarget}
         onSelectTarget={setSelectedTarget}
+      />
+
+      {/* HCP per avståndsintervall – stapeldiagram under spridningskartan */}
+      <BucketHcpChart
+        buckets={bucketStats}
+        bestLabel={bestBucket?.label}
+        worstLabel={worstBucket?.label}
       />
     </section>
   );
@@ -538,6 +521,116 @@ function CombinedDispersionMap({
               </g>
             );
           })}
+      </svg>
+    </div>
+  );
+}
+
+/** Stapeldiagram: HCP-nivå per 25 m-brett avståndsintervall. Varje stapel
+ *  är höjden av intervallets HCP, med bäst/sämst markerat i primary/flag. */
+function BucketHcpChart({
+  buckets,
+  bestLabel,
+  worstLabel,
+}: {
+  buckets: ReturnType<typeof aggregateByBucket>;
+  bestLabel?: string;
+  worstLabel?: string;
+}) {
+  const withData = buckets.filter((b) => b.hcp !== undefined);
+  if (!withData.length) return null;
+
+  const maxHcp = Math.max(6, ...withData.map((b) => b.hcp ?? 0));
+  const w = 300;
+  const h = 170;
+  const padBottom = 34;
+  const padTop = 10;
+  const barGap = 10;
+  const barWidth = (w - barGap * (buckets.length + 1)) / buckets.length;
+  const yFor = (hcp: number) => h - padBottom - (hcp / maxHcp) * (h - padTop - padBottom);
+
+  return (
+    <div className="mt-4 rounded-3xl border border-border bg-card p-5">
+      <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
+        HCP per avståndsintervall
+      </p>
+      <p className="mt-1 text-xs text-muted-foreground">Lägre stapel är starkare.</p>
+
+      <svg
+        viewBox={`0 0 ${w} ${h}`}
+        className="mt-3 h-44 w-full"
+        role="img"
+        aria-label="HCP per avståndsintervall"
+      >
+        <line
+          x1={0}
+          y1={h - padBottom}
+          x2={w}
+          y2={h - padBottom}
+          className="stroke-border"
+          strokeWidth="1"
+        />
+        {buckets.map((b, i) => {
+          const x = barGap + i * (barWidth + barGap);
+          if (b.hcp === undefined) {
+            return (
+              <text
+                key={b.label}
+                x={x + barWidth / 2}
+                y={h - padBottom + 14}
+                textAnchor="middle"
+                className="fill-muted-foreground text-[8px]"
+              >
+                {b.label}
+              </text>
+            );
+          }
+          const barTop = yFor(b.hcp);
+          const isBest = bestLabel === b.label;
+          const isWorst = worstLabel === b.label && worstLabel !== bestLabel;
+          const color = isBest
+            ? "var(--primary)"
+            : isWorst
+              ? "var(--flag)"
+              : "var(--muted-foreground)";
+          return (
+            <g key={b.label}>
+              <rect
+                x={x}
+                y={barTop}
+                width={barWidth}
+                height={h - padBottom - barTop}
+                rx="6"
+                fill={color}
+                fillOpacity={isBest || isWorst ? 0.85 : 0.4}
+              />
+              <text
+                x={x + barWidth / 2}
+                y={barTop - 6}
+                textAnchor="middle"
+                className="fill-foreground text-[10px] font-bold"
+              >
+                {handicapLabel(b.hcp)}
+              </text>
+              <text
+                x={x + barWidth / 2}
+                y={h - padBottom + 14}
+                textAnchor="middle"
+                className="fill-muted-foreground text-[8px]"
+              >
+                {b.label}
+              </text>
+              <text
+                x={x + barWidth / 2}
+                y={h - padBottom + 24}
+                textAnchor="middle"
+                className="fill-muted-foreground text-[7px]"
+              >
+                {b.count} slag
+              </text>
+            </g>
+          );
+        })}
       </svg>
     </div>
   );

@@ -18,10 +18,12 @@ import { useSubscription } from "@/lib/subscription";
 import {
   CATEGORY_LABELS,
   computeCategoryDetail,
+  computeCategoryHcpTimeline,
   computeRatingTimeline,
   hcpLabel,
   type CategoryDetail,
   type CategorySlug,
+  type HcpTimelinePoint,
   type RatingPoint,
 } from "@/lib/sg-handicap";
 
@@ -83,17 +85,27 @@ function CategoryDetailPage() {
   const { slug } = Route.useLoaderData() as { slug: CategorySlug };
   const [detail, setDetail] = useState<CategoryDetail | null>(null);
   const [timeline, setTimeline] = useState<RatingPoint[]>([]);
+  const [hcpTimeline, setHcpTimeline] = useState<HcpTimelinePoint[]>([]);
   const { canViewFullHistory } = useSubscription();
 
   useEffect(() => {
     setDetail(computeCategoryDetail(slug));
     setTimeline(computeRatingTimeline(null));
+    setHcpTimeline(computeCategoryHcpTimeline(slug, null));
   }, [slug]);
 
   if (!detail) return null;
 
   const key = TIMELINE_KEY[slug];
   const chartData = timeline.filter((p) => p[key] !== undefined);
+  const hcpChartData = hcpTimeline.filter((p) => p.raw !== undefined);
+  const isApproach = slug === "approach";
+  const activeChartLength = isApproach ? hcpChartData.length : chartData.length;
+  const hcpValues = hcpChartData.map((p) => p.raw ?? 0);
+  const hcpDomain: [number, number] =
+    hcpValues.length > 0
+      ? [Math.max(0, Math.floor(Math.min(...hcpValues) - 2)), Math.ceil(Math.max(...hcpValues) + 2)]
+      : [0, 30];
   const history = detail.history;
 
   return (
@@ -155,11 +167,46 @@ function CategoryDetailPage() {
             ? "Varje genomfört test, i tidsordning."
             : "Dina 3 senaste tester. SG4+ visar hela historiken."}
         </p>
-        <ChartCard title={`${detail.title} över tid`}>
-          {chartData.length < 2 ? (
+        <ChartCard title={isApproach ? `${detail.title} HCP över tid` : `${detail.title} över tid`}>
+          {activeChartLength < 2 ? (
             <p className="py-10 text-center text-sm text-muted-foreground">
               Kör minst två tester i den här kategorin för att se en graf.
             </p>
+          ) : isApproach ? (
+            <div className="h-56 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={canViewFullHistory ? hcpChartData : hcpChartData.slice(-3)}
+                  margin={{ top: 10, right: 10, bottom: 0, left: -20 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                  <XAxis dataKey="date" tick={{ fontSize: 10 }} stroke="var(--muted-foreground)" />
+                  <YAxis
+                    domain={hcpDomain}
+                    reversed
+                    tick={{ fontSize: 10 }}
+                    stroke="var(--muted-foreground)"
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      background: "var(--card)",
+                      border: "1px solid var(--border)",
+                      borderRadius: 12,
+                      fontSize: 12,
+                    }}
+                    formatter={(value: number) => [hcpLabel(value), "HCP"]}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="raw"
+                    stroke="var(--primary)"
+                    strokeWidth={2}
+                    dot={{ r: 3 }}
+                    connectNulls
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           ) : (
             <div className="h-56 w-full">
               <ResponsiveContainer width="100%" height="100%">
@@ -195,9 +242,9 @@ function CategoryDetailPage() {
             </div>
           )}
         </ChartCard>
-        {!canViewFullHistory && chartData.length > 3 && (
+        {!canViewFullHistory && activeChartLength > 3 && (
           <div className="mt-3">
-            <PremiumLockLine label={`Se alla ${chartData.length} tester`} />
+            <PremiumLockLine label={`Se alla ${activeChartLength} tester`} />
           </div>
         )}
       </section>
