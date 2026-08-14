@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { ArrowRight, ChevronRight, Gauge } from "lucide-react";
+import { ArrowRight, ChevronRight, Gauge, Share2, User, Users } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { ThemeToggle } from "@/components/theme-toggle";
 import {
   computeBiggestOpportunity,
   computeCategoryHandicaps,
   computeEstimatedHandicap,
+  hcpLabel,
   loadRealHandicap,
   type CategoryHandicap,
   type Opportunity,
@@ -16,7 +17,8 @@ import { useSubscription } from "@/lib/subscription";
 import { PlayerCard } from "@/components/rating-card";
 import { computeRatingCard, loadCardProfile, type RatingCardData } from "@/lib/rating-card";
 import { RadarCard } from "@/components/progress-dashboard";
-import { pushPlayerSnapshot } from "@/lib/friends-cloud";
+import { pushPlayerSnapshot, listFriendships } from "@/lib/friends-cloud";
+import { loadFriends } from "@/lib/friends";
 import { AppStoryLauncher } from "@/components/app-story";
 
 export const Route = createFileRoute("/")({
@@ -63,12 +65,31 @@ function loadHomeData(): HomeData {
 function Home() {
   const { user, displayName } = useAuth();
   const [data, setData] = useState<HomeData | null>(null);
+  const [friendCount, setFriendCount] = useState<number | null>(null);
   const { isPlus } = useSubscription();
+  const profile = loadCardProfile();
 
   useEffect(() => {
     setData(loadHomeData());
-    if (user) void pushPlayerSnapshot();
+    setFriendCount(loadFriends().length);
+    if (user) {
+      void pushPlayerSnapshot();
+      void listFriendships().then((f) => setFriendCount(loadFriends().length + f.accepted.length));
+    }
   }, [user]);
+
+  function shareProfile() {
+    const shareData = {
+      title: "SG4",
+      text: `Följ min golfutveckling i SG4${data?.real !== null && data ? ` – HCP ${hcpLabel(data.real ?? data.estimated ?? 0)}` : ""}.`,
+      url: typeof window !== "undefined" ? window.location.origin : undefined,
+    };
+    if (typeof navigator !== "undefined" && navigator.share) {
+      navigator.share(shareData).catch(() => {});
+    } else if (typeof navigator !== "undefined" && navigator.clipboard && shareData.url) {
+      void navigator.clipboard.writeText(shareData.url);
+    }
+  }
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-28 pt-6">
@@ -78,6 +99,14 @@ function Home() {
         </span>
         <div className="flex shrink-0 items-center gap-2">
           <ThemeToggle />
+          <button
+            type="button"
+            onClick={shareProfile}
+            aria-label="Dela"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <Share2 className="h-4 w-4" />
+          </button>
           <Link
             to="/konto"
             className="rounded-full border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
@@ -87,16 +116,56 @@ function Home() {
         </div>
       </div>
 
-      <div className="mt-6">
-        <h1 className="font-[family-name:var(--font-display)] text-3xl leading-none tracking-wide">
-          LÄR KÄNNA DITT SPEL
-        </h1>
-        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          Mät ditt spel. Se vad du gör bäst, vad du behöver förbättra och hur du står dig mot andra.
-        </p>
-        <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.3em] text-muted-foreground/60">
-          Testa · Utvecklas · Jämför
-        </p>
+      <div className="mt-6 flex items-center gap-4">
+        <Link
+          to="/konto"
+          aria-label="Din profil"
+          className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-flag bg-muted"
+        >
+          {profile.photo ? (
+            <img
+              src={profile.photo}
+              alt={`Profilbild för ${displayName ?? "Golfspelare"}`}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <User className="h-7 w-7 text-muted-foreground" strokeWidth={1.5} />
+          )}
+        </Link>
+        <div className="min-w-0">
+          <p className="text-sm text-muted-foreground">Låt oss spela,</p>
+          <h1 className="truncate font-[family-name:var(--font-display)] text-3xl leading-none">
+            {displayName ?? "Golfspelare"}
+          </h1>
+        </div>
+      </div>
+
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        <Link
+          to="/konto"
+          className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4"
+        >
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <Users className="h-4 w-4" strokeWidth={1.75} />
+          </span>
+          <span>
+            <span className="block font-[family-name:var(--font-display)] text-2xl leading-none">
+              {friendCount ?? "–"}
+            </span>
+            <span className="block text-xs text-muted-foreground">Vänner</span>
+          </span>
+        </Link>
+        <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <Gauge className="h-4 w-4" strokeWidth={1.75} />
+          </span>
+          <span>
+            <span className="block font-[family-name:var(--font-display)] text-2xl leading-none">
+              {data ? hcpLabel(data.real ?? data.estimated ?? 0) : "–"}
+            </span>
+            <span className="block text-xs text-muted-foreground">HCP</span>
+          </span>
+        </div>
       </div>
 
       <AppStoryLauncher />
