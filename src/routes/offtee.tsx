@@ -1,5 +1,5 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, ArrowRight, Check, Gauge, Minus, Plus, Radar, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Minus, Plus, Radar, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
   OFFTEE_TOTAL_SHOTS,
@@ -9,13 +9,7 @@ import {
   type TeeShot,
 } from "@/lib/offtee";
 import { loadOffTeeSessions, saveOffTeeSession } from "@/lib/offtee-store";
-import {
-  RANGE_DEVICES,
-  SIMULATOR_DEVICES,
-  type Device,
-  type MeasurementContext,
-} from "@/lib/speed";
-import { FairwaySpec, TeeNumberField } from "@/components/offtee-visuals";
+import { TeeNumberField } from "@/components/offtee-visuals";
 import { OffTeeReport } from "@/components/offtee-report";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 import type { RevealState } from "@/components/test-reveal";
@@ -53,8 +47,6 @@ const DEFAULT_TOTAL = 220;
 function OffTeePage() {
   const navigate = useNavigate();
   const [phase, setPhase] = useState<Phase>("setup");
-  const [context, setContext] = useState<MeasurementContext>("range");
-  const [device, setDevice] = useState<Device>(RANGE_DEVICES[0]);
   const [shots, setShots] = useState<TeeShot[]>(emptyTeeShots);
   const [index, setIndex] = useState(0);
   const [total, setTotal] = useState(DEFAULT_TOTAL);
@@ -65,11 +57,6 @@ function OffTeePage() {
   const current = shots[Math.min(index, OFFTEE_TOTAL_SHOTS - 1)];
 
   useHideBottomNav(phase !== "setup");
-
-  function pickContext(c: MeasurementContext) {
-    setContext(c);
-    setDevice(c === "simulator" ? SIMULATOR_DEVICES[0] : RANGE_DEVICES[0]);
-  }
 
   function start() {
     const sessions = loadOffTeeSessions();
@@ -93,7 +80,7 @@ function OffTeePage() {
     if (next >= OFFTEE_TOTAL_SHOTS) {
       const previousSessions = loadOffTeeSessions();
       const previousHcps = previousSessions.map((s) => s.handicap);
-      const saved = saveOffTeeSession(updatedShots, context, device);
+      const saved = saveOffTeeSession(updatedShots);
       const derived = computeRevealState(previousHcps, saved.handicap);
       setReveal({
         state: derived.state,
@@ -127,7 +114,6 @@ function OffTeePage() {
   }
 
   if (phase === "setup") {
-    const devices = context === "simulator" ? SIMULATOR_DEVICES : RANGE_DEVICES;
     return (
       <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-16 pt-8">
         <header className="flex items-end justify-between">
@@ -151,52 +137,10 @@ function OffTeePage() {
             <Radar className="h-8 w-8 text-primary" />
           </span>
         </div>
-        <h2 className="mt-4 text-center text-2xl leading-tight">Var mäter du?</h2>
-        <p className="mt-2 text-center text-sm text-muted-foreground">
-          Olika system mäter olika högt – vi visar det med resultatet så du kan jämföra rättvist.
-        </p>
-
-        <div className="mt-6 grid grid-cols-2 gap-3">
-          <button
-            onClick={() => pickContext("simulator")}
-            className={`rounded-2xl border-2 p-4 text-left transition-colors ${
-              context === "simulator" ? "border-primary bg-primary/10" : "border-border bg-card"
-            }`}
-          >
-            <p className="font-[family-name:var(--font-display)] text-xl leading-none">Simulator</p>
-          </button>
-          <button
-            onClick={() => pickContext("range")}
-            className={`rounded-2xl border-2 p-4 text-left transition-colors ${
-              context === "range" ? "border-primary bg-primary/10" : "border-border bg-card"
-            }`}
-          >
-            <p className="font-[family-name:var(--font-display)] text-xl leading-none">Range</p>
-          </button>
-        </div>
-
-        <p className="mt-6 text-xs uppercase tracking-[0.2em] text-muted-foreground">
-          Vilken maskin?
-        </p>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {devices.map((d) => (
-            <button
-              key={d}
-              onClick={() => setDevice(d)}
-              className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
-                device === d
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border text-muted-foreground"
-              }`}
-            >
-              {d}
-            </button>
-          ))}
-        </div>
-
-        <p className="mt-4 flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
-          <Gauge className="h-3.5 w-3.5" />
-          Du kör testet på {context === "simulator" ? "simulator" : "range"} med {device}
+        <h2 className="mt-4 text-center text-2xl leading-tight">6 drives</h2>
+        <p className="mx-auto mt-2 max-w-xs text-center text-sm leading-relaxed text-muted-foreground">
+          Slå 6 drives och registrera totalt avstånd och sidled efter varje slag, så räknar vi ut
+          ditt Driving HCP direkt.
         </p>
 
         <button
@@ -231,15 +175,7 @@ function OffTeePage() {
     return <OffTeeReveal hcp={reveal.hcp} onContinue={() => setPhase("result")} />;
   }
 
-  return (
-    <ResultScreen
-      shots={shots}
-      prevScore={prevScore}
-      onRestart={start}
-      context={context}
-      device={device}
-    />
-  );
+  return <ResultScreen shots={shots} prevScore={prevScore} onRestart={start} />;
 }
 
 /* ----------------------------------------------------------------- test */
@@ -300,12 +236,6 @@ function TestScreen({
           />
         </div>
       </div>
-
-      {index === 0 && (
-        <div className="mt-4">
-          <FairwaySpec />
-        </div>
-      )}
 
       <div className="mt-4 space-y-2">
         <TeeNumberField label="Totalt" value={total} onChange={setTotal} unit="m" />
@@ -411,38 +341,23 @@ function ResultScreen({
   shots,
   prevScore,
   onRestart,
-  context,
-  device,
 }: {
   shots: TeeShot[];
   prevScore: number | null;
   onRestart: () => void;
-  context: MeasurementContext;
-  device: Device;
 }) {
   const result = offTeeResult(shots);
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-16 pt-10">
-      <p className="mb-6 flex items-center justify-center gap-1 text-xs text-primary">
-        <Check className="h-4 w-4" /> Testet är sparat
-      </p>
+      <OffTeeReport result={result} prevScore={prevScore} />
 
-      <OffTeeReport result={result} prevScore={prevScore} context={context} device={device} />
-
-      <div className="mt-10 flex gap-3">
+      <div className="mt-10">
         <button
           onClick={onRestart}
-          className="flex-1 rounded-2xl bg-primary py-4 font-[family-name:var(--font-display)] text-2xl text-primary-foreground"
+          className="w-full rounded-2xl bg-primary py-4 font-[family-name:var(--font-display)] text-2xl text-primary-foreground"
         >
           Nytt test
         </button>
-        <Link
-          to="/kategori/$slug"
-          params={{ slug: "driving" }}
-          className="flex-1 rounded-2xl border border-border py-4 text-center font-[family-name:var(--font-display)] text-2xl text-muted-foreground"
-        >
-          Klart
-        </Link>
       </div>
 
       <div className="mt-3 flex gap-3">

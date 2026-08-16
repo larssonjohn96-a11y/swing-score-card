@@ -130,7 +130,7 @@ const DISTANCE_ANCHORS: Anchor[] = [
   { hcp: 40, value: 147.0 },
 ];
 
-function distanceToHandicap(avgTotalMeters: number): number {
+export function distanceToHandicap(avgTotalMeters: number): number {
   return interpolate(avgTotalMeters, DISTANCE_ANCHORS, true);
 }
 

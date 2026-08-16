@@ -1,173 +1,166 @@
 import { ballSpeedDensity, ballSpeedPercentile } from "@/lib/speed";
 
-/**
- * Bellcurve som visar var spelarens ball speed ligger jämfört med en
- * jämförelsegrupp (jämnåriga ELLER alla golfare – styrs av mean/sd/
- * groupLabel/note som skickas in). Samma visuella princip som Approach-
- * testets HcpBellCurve: centrerad kring gruppens medelvärde, delen du
- * slår (långsammare än dig) upplyst i primary-färg, delen som är
- * snabbare än dig nedtonad i grått. Ball speed: HÖGRE är bättre
- * (tvärtemot HCP), så bäst hamnar liksom i HcpBellCurve till höger.
- *
- * `highlighted`: true för kurvan som ger bäst resultat av de två som
- * visas – får en tydlig badge och färgad kant istället för att bara
- * vara en av flera likvärdiga kort.
- */
-export function SpeedBellCurve({
-  ballSpeed,
-  groupLabel,
-  note,
-  mean,
-  sd,
-  highlighted = false,
-}: {
-  ballSpeed: number;
-  groupLabel: string;
+type Group = {
+  label: string;
   note: string;
   mean: number;
   sd: number;
-  highlighted?: boolean;
+};
+
+/**
+ * En kombinerad bellcurve som visar BÅDE "alla golfare" och (om ålder är
+ * satt) åldersgruppen i samma graf, istället för två separata kort. Löser
+ * layoutbuggen där en "Bäst resultat"-badge kolliderade med rubriktexten
+ * på det smalare kortet – all information ligger nu i en tydlig
+ * legend-rad ovanför grafen med gott om utrymme.
+ *
+ * Samma grundprincip som Approach-testets HcpBellCurve/DrivingHcpBellCurve:
+ * centrerad graf, delen du slår upplyst, delen som är bättre än dig
+ * nedtonad. Ball speed: HÖGRE är bättre, så bäst hamnar till höger.
+ * Den grupp som faktiskt ger bäst resultat (högst percentil) ritas med
+ * fylld area och tjockare linje, den andra bara som en tunn kontur, så
+ * skillnaden syns direkt i själva grafen också.
+ */
+export function SpeedComparisonBellCurve({
+  ballSpeed,
+  allGolfers,
+  ageGroup,
+}: {
+  ballSpeed: number;
+  allGolfers: Group;
+  ageGroup?: Group;
 }) {
-  const MIN = mean - 3 * sd;
-  const MAX = mean + 3 * sd;
+  const allPct = ballSpeedPercentile(ballSpeed, allGolfers.mean, allGolfers.sd);
+  const agePct = ageGroup ? ballSpeedPercentile(ballSpeed, ageGroup.mean, ageGroup.sd) : undefined;
+  const ageIsBest = agePct !== undefined && agePct > allPct;
+
+  const groups = [
+    { ...allGolfers, pct: allPct, color: "var(--primary)", best: !ageIsBest },
+    ...(ageGroup && agePct !== undefined
+      ? [{ ...ageGroup, pct: agePct, color: "var(--flag)", best: ageIsBest }]
+      : []),
+  ];
+
+  // Gemensam x-axel som ryms båda fördelningarna.
+  const MIN = Math.min(...groups.map((g) => g.mean - 3 * g.sd));
+  const MAX = Math.max(...groups.map((g) => g.mean + 3 * g.sd));
   const W = 320;
-  const H = 150;
-  const baseline = H - 20;
+  const H = 160;
+  const baseline = H - 24;
 
   const x = (v: number) => ((v - MIN) / (MAX - MIN)) * W;
-  const y = (d: number) => baseline - d * (baseline - 14);
-
   const clamped = Math.max(MIN, Math.min(MAX, ballSpeed));
   const px = x(clamped);
-  const py = y(ballSpeedDensity(clamped, mean, sd));
-  const pct = ballSpeedPercentile(ballSpeed, mean, sd);
-
-  // Höger om markören (snabbare än dig) – nedtonad grå.
-  const grayPoints: string[] = [];
-  for (let v = clamped; v <= MAX; v += 0.4) {
-    grayPoints.push(`${x(v).toFixed(1)},${y(ballSpeedDensity(v, mean, sd)).toFixed(1)}`);
-  }
-  const grayLine = `M ${grayPoints.join(" L ")}`;
-  const grayArea = `${grayLine} L ${x(MAX)},${baseline} L ${px},${baseline} Z`;
-
-  // Vänster om markören (långsammare än dig, "du slår dem") – lyses upp.
-  const litPoints: string[] = [];
-  for (let v = MIN; v <= clamped; v += 0.4) {
-    litPoints.push(`${x(v).toFixed(1)},${y(ballSpeedDensity(v, mean, sd)).toFixed(1)}`);
-  }
-  const litLine = `M ${litPoints.join(" L ")}`;
-  const litArea = `${litLine} L ${px},${baseline} L ${x(MIN)},${baseline} Z`;
 
   return (
-    <div
-      className={`relative rounded-3xl border p-5 ${
-        highlighted ? "border-flag/40 bg-flag/[0.04]" : "border-border bg-card"
-      }`}
-    >
-      {highlighted && (
-        <span className="absolute right-4 top-4 rounded-full bg-flag/15 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.15em] text-flag">
-          Bäst resultat
-        </span>
-      )}
+    <div className="rounded-3xl border border-border bg-card p-5">
       <p className="text-center text-xs uppercase tracking-[0.25em] text-muted-foreground">
-        Var du ligger till – {groupLabel}
+        Var du ligger till
       </p>
-      <p className="mt-1 text-center">
-        <span
-          className={`font-[family-name:var(--font-display)] text-4xl leading-none ${
-            highlighted ? "text-flag" : "text-primary"
-          }`}
-        >
-          {pct}%
-        </span>
-      </p>
-      <p className="text-center text-sm text-muted-foreground">av gruppen slår du</p>
+
+      {/* Legend – båda grupperna, med gott om utrymme, ingen överlappning */}
+      <div className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5">
+        {groups.map((g) => (
+          <span key={g.label} className="flex items-center gap-1.5 text-xs">
+            <span
+              className="h-2.5 w-2.5 shrink-0 rounded-full"
+              style={{ backgroundColor: g.color }}
+            />
+            <span className="text-muted-foreground">{g.label}</span>
+            <span
+              className="font-[family-name:var(--font-display)] text-base"
+              style={{ color: g.color }}
+            >
+              {g.pct}%
+            </span>
+            {g.best && groups.length > 1 && (
+              <span className="rounded-full bg-flag/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.1em] text-flag">
+                Bäst
+              </span>
+            )}
+          </span>
+        ))}
+      </div>
 
       <svg
         viewBox={`0 0 ${W} ${H}`}
         className="mx-auto mt-3 block w-full"
         role="img"
-        aria-label={`Din ball speed jämfört med ${groupLabel}`}
+        aria-label="Din ball speed jämfört med alla golfare och din åldersgrupp"
       >
         <defs>
-          <linearGradient id="speed-bell-lit" x1="0" y1="0" x2="0" y2="1">
-            <stop
-              offset="0%"
-              stopColor={highlighted ? "var(--flag)" : "var(--primary)"}
-              stopOpacity="0.5"
-            />
-            <stop
-              offset="100%"
-              stopColor={highlighted ? "var(--flag)" : "var(--primary)"}
-              stopOpacity="0.05"
-            />
-          </linearGradient>
-          <radialGradient id="speed-marker-glow" cx="50%" cy="50%" r="50%">
-            <stop
-              offset="0%"
-              stopColor={highlighted ? "var(--flag)" : "var(--primary)"}
-              stopOpacity="0.55"
-            />
-            <stop
-              offset="100%"
-              stopColor={highlighted ? "var(--flag)" : "var(--primary)"}
-              stopOpacity="0"
-            />
-          </radialGradient>
+          {groups.map((g) => (
+            <linearGradient key={g.label} id={`grad-${g.label}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={g.color} stopOpacity={g.best ? 0.4 : 0.12} />
+              <stop offset="100%" stopColor={g.color} stopOpacity="0.02" />
+            </linearGradient>
+          ))}
         </defs>
 
-        {/* Grå del: gruppen som är snabbare än dig */}
-        <path d={grayArea} className="fill-muted-foreground/10" />
-        <path d={grayLine} fill="none" className="stroke-muted-foreground/25" strokeWidth="2" />
+        <line x1={0} y1={baseline} x2={W} y2={baseline} className="stroke-border" strokeWidth="1" />
 
-        {/* Upplyst del: gruppen du slår */}
-        <path d={litArea} fill="url(#speed-bell-lit)" />
-        <path
-          d={litLine}
-          fill="none"
-          stroke={highlighted ? "var(--flag)" : "var(--primary)"}
-          strokeWidth="2.5"
-        />
+        {groups.map((g) => {
+          const y = (d: number) => baseline - d * (baseline - 16);
+          const points: string[] = [];
+          for (let v = MIN; v <= MAX; v += 0.5) {
+            points.push(`${x(v).toFixed(1)},${y(ballSpeedDensity(v, g.mean, g.sd)).toFixed(1)}`);
+          }
+          const line = `M ${points.join(" L ")}`;
+          const area = `${line} L ${W},${baseline} L 0,${baseline} Z`;
+          return (
+            <g key={g.label}>
+              <path d={area} fill={`url(#grad-${g.label})`} />
+              <path
+                d={line}
+                fill="none"
+                stroke={g.color}
+                strokeWidth={g.best ? 2.5 : 1.5}
+                strokeOpacity={g.best ? 1 : 0.55}
+                strokeDasharray={g.best ? undefined : "4 3"}
+              />
+            </g>
+          );
+        })}
 
-        {/* Markör med glöd – CSS-driven puls, inte SVG SMIL */}
-        <circle cx={px} cy={py} r="22" fill="url(#speed-marker-glow)" />
+        {/* Din markör – samma mph-position oavsett grupp */}
         <line
           x1={px}
-          y1={py}
+          y1={10}
           x2={px}
           y2={baseline}
-          stroke={highlighted ? "var(--flag)" : "var(--primary)"}
+          className="stroke-foreground/60"
           strokeWidth="2"
         />
         <circle
           cx={px}
-          cy={py}
+          cy={baseline}
           r="10"
-          className="opacity-40"
+          className="fill-foreground/10 opacity-60"
           style={{
-            fill: highlighted ? "var(--flag)" : "var(--primary)",
             transformBox: "fill-box",
             transformOrigin: "center",
             animation: "sg4-speed-bell-pulse 1.8s ease-out infinite",
           }}
         />
-        <circle cx={px} cy={py} r="6" fill={highlighted ? "var(--flag)" : "var(--primary)"} />
+        <circle cx={px} cy={10} r="4.5" className="fill-foreground" />
       </svg>
       <style>{`
         @keyframes sg4-speed-bell-pulse {
           0% { transform: scale(0.6); opacity: 0.5; }
-          100% { transform: scale(2.2); opacity: 0; }
+          100% { transform: scale(2.4); opacity: 0; }
         }
       `}</style>
 
-      <p
-        className={`mt-1 text-center text-xs font-semibold uppercase tracking-[0.15em] ${
-          highlighted ? "text-flag" : "text-primary"
-        }`}
-      >
+      <p className="mt-1 text-center text-xs font-semibold uppercase tracking-[0.15em] text-foreground">
         Du · {ballSpeed.toFixed(0)} mph
       </p>
-      <p className="mt-2 text-center text-[10px] text-muted-foreground">{note}</p>
+      <div className="mt-2 space-y-0.5">
+        {groups.map((g) => (
+          <p key={g.label} className="text-center text-[10px] text-muted-foreground">
+            {g.note}
+          </p>
+        ))}
+      </div>
     </div>
   );
 }
