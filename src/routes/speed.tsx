@@ -1,20 +1,23 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Check, Gauge, Radar, X } from "lucide-react";
+import { ArrowLeft, Gauge, Radar, Trophy, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
   RANGE_DEVICES,
   SIMULATOR_DEVICES,
   SPEED_TOTAL_SHOTS,
+  ballSpeedDistributionForAge,
   computeSpeedResult,
   emptySpeedShots,
+  handicapFromBallSpeed,
   handicapLabel,
   loadSpeedSessions,
   saveSpeedSession,
-  speedLevelLabel,
   type Device,
   type MeasurementContext,
   type SpeedShot,
 } from "@/lib/speed";
+import { loadCardProfile } from "@/lib/rating-card";
+import { SpeedAgeBellCurve } from "@/components/speed-bell-curve";
 import { TeeNumberField } from "@/components/offtee-visuals";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 import { TestResultProcessing, TestResultReveal, type RevealState } from "@/components/test-reveal";
@@ -23,11 +26,11 @@ import { computeRevealState } from "@/lib/test-reveal-helpers";
 export const Route = createFileRoute("/speed")({
   head: () => ({
     meta: [
-      { title: "Speed Test – 6 drives | SG4" },
+      { title: "Speed Test – 3 drives | SG4" },
       {
         name: "description",
         content:
-          "Speed Test: 6 drives, ball speed och valfri club head speed. Speed HCP och analys mätt i simulator eller på range.",
+          "Speed Test: 3 drives, ball speed och valfri club head speed. Speed HCP och analys mätt i simulator eller på range.",
       },
     ],
   }),
@@ -57,7 +60,6 @@ function SpeedPage() {
   const [clubSpeedEnabled, setClubSpeedEnabled] = useState(false);
   const [clubSpeed, setClubSpeed] = useState(0);
 
-  const [saved, setSaved] = useState(false);
   const [prevScore, setPrevScore] = useState<number | null>(null);
   const [reveal, setReveal] = useState<RevealData | null>(null);
 
@@ -100,7 +102,6 @@ function SpeedPage() {
       const previousSessions = loadSpeedSessions();
       const previousHcps = previousSessions.map((s) => s.handicap);
       const savedSession = saveSpeedSession(updated, context, device);
-      setSaved(true);
       const derived = computeRevealState(previousHcps, savedSession.handicap);
       setReveal({
         state: derived.state,
@@ -137,7 +138,6 @@ function SpeedPage() {
   }
 
   function restart() {
-    setSaved(false);
     setShots(emptySpeedShots());
     setIndex(0);
     setBallSpeedRaw(DEFAULT_BALL_SPEED);
@@ -354,103 +354,52 @@ function SpeedPage() {
   }
 
   const result = computeSpeedResult(shots);
+  const profile = loadCardProfile();
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-16 pt-10">
-      <p className="mb-6 flex items-center justify-center gap-1 text-xs text-primary">
-        <Check className="h-4 w-4" /> Testet är klart
-      </p>
-
-      <div className="rounded-3xl border border-border bg-card p-6 text-center shadow-[var(--shadow-glow)]">
+      <section className="rounded-3xl border border-border bg-card p-6 text-center shadow-[var(--shadow-glow)]">
         <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Speed HCP</p>
-        <p className="mt-1 font-[family-name:var(--font-display)] text-7xl leading-none text-primary">
+        <p className="mt-1 font-[family-name:var(--font-display)] text-8xl leading-none text-primary">
           {handicapLabel(result.handicap)}
         </p>
-        <p className="mt-2 inline-flex items-center rounded-full bg-flag/10 px-3 py-1 text-sm font-semibold text-flag">
-          {speedLevelLabel(result.score)}
-        </p>
-        <p className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">
-          <Gauge className="h-3.5 w-3.5" />
-          {context === "simulator" ? "Simulator" : "Range"} · {device}
-        </p>
-        {prevScore !== null && (
-          <p
-            className={`mt-2 text-sm ${result.score - prevScore >= 0 ? "text-primary" : "text-destructive"}`}
-          >
-            {result.score - prevScore > 0 ? "+" : ""}
-            {result.score - prevScore} sedan förra testet
-          </p>
-        )}
-      </div>
+      </section>
 
-      <div className="mt-4 grid grid-cols-2 gap-3">
-        <div className="rounded-2xl border border-border bg-card p-3">
-          <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
-            Snitt ball speed
-          </p>
-          <p className="mt-1 font-[family-name:var(--font-display)] text-2xl leading-none">
-            {result.avgBallSpeed.toFixed(1)} <span className="text-sm">mph</span>
-          </p>
+      {profile.age ? (
+        <div className="mt-4">
+          <SpeedAgeBellCurve
+            ballSpeed={result.avgBallSpeed}
+            age={profile.age}
+            {...ballSpeedDistributionForAge(profile.age)}
+          />
         </div>
-        <div className="rounded-2xl border border-border bg-card p-3">
-          <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
-            Topp ball speed
-          </p>
-          <p className="mt-1 font-[family-name:var(--font-display)] text-2xl leading-none">
-            {result.topBallSpeed.toFixed(1)} <span className="text-sm">mph</span>
-          </p>
-        </div>
-        {result.avgClubSpeed !== undefined && (
-          <div className="rounded-2xl border border-border bg-card p-3">
-            <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
-              Snitt clubhead
-            </p>
-            <p className="mt-1 font-[family-name:var(--font-display)] text-2xl leading-none">
-              {result.avgClubSpeed.toFixed(1)} <span className="text-sm">mph</span>
-            </p>
-          </div>
-        )}
-        {result.avgSmash !== undefined && (
-          <div className="rounded-2xl border border-border bg-card p-3">
-            <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
-              Smash factor
-            </p>
-            <p className="mt-1 font-[family-name:var(--font-display)] text-2xl leading-none">
-              {result.avgSmash.toFixed(2)}
-            </p>
-          </div>
-        )}
-      </div>
-
-      {result.analysis && (
-        <div className="mt-4 rounded-2xl border border-primary/30 bg-primary/[0.06] p-4">
-          <p className="text-xs uppercase tracking-[0.2em] text-primary">Analys</p>
-          <p className="mt-1.5 text-sm leading-relaxed">{result.analysis}</p>
-        </div>
+      ) : (
+        <Link
+          to="/konto"
+          className="mt-4 flex items-center gap-3 rounded-3xl border border-primary/30 bg-primary/5 p-4"
+        >
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
+            <Gauge className="h-4 w-4" strokeWidth={1.75} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-semibold leading-tight">Ange din ålder</span>
+            <span className="block text-xs text-muted-foreground">
+              Se var din ball speed ligger jämfört med jämnåriga golfare
+            </span>
+          </span>
+        </Link>
       )}
 
-      <div className="mt-6 flex gap-3">
-        {saved && (
-          <div className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-primary bg-primary/10 py-4 text-base font-semibold text-primary">
-            <Check className="h-5 w-5" /> Testet sparat
-          </div>
-        )}
+      <SpeedBestShotHighlight topBallSpeed={result.topBallSpeed} />
 
+      <div className="mt-6">
         <button
           onClick={restart}
-          className="flex-1 rounded-2xl border border-border py-4 font-[family-name:var(--font-display)] text-2xl text-muted-foreground"
+          className="w-full rounded-2xl bg-primary py-4 font-[family-name:var(--font-display)] text-2xl text-primary-foreground"
         >
           Nytt test
         </button>
       </div>
-
-      <Link
-        to="/kategori/$slug"
-        params={{ slug: "driving" }}
-        className="mt-4 block text-center text-sm text-muted-foreground underline-offset-4 hover:underline"
-      >
-        Tillbaka till Off the Tee
-      </Link>
 
       <div className="mt-3 flex gap-3">
         <Link
@@ -467,5 +416,39 @@ function SpeedPage() {
         </Link>
       </div>
     </main>
+  );
+}
+
+/** Ego boost: samma princip som Approach-testets BestShotHighlight – lyfter
+ *  fram testets snabbaste enskilda slag med dess motsvarande HCP-nivå. */
+function SpeedBestShotHighlight({ topBallSpeed }: { topBallSpeed: number }) {
+  if (!topBallSpeed) return null;
+  const bestHcp = handicapFromBallSpeed(topBallSpeed);
+
+  return (
+    <section className="relative mt-4 overflow-hidden rounded-3xl border border-flag/30 bg-flag/5 p-5 text-center">
+      <div
+        className="pointer-events-none absolute -top-10 left-1/2 h-32 w-32 -translate-x-1/2 rounded-full bg-flag/25 blur-2xl"
+        aria-hidden
+      />
+      <div className="relative">
+        <span className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-flag/20 text-flag">
+          <Trophy className="h-5 w-5" strokeWidth={2} />
+        </span>
+        <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.25em] text-flag">
+          Snabbaste slaget
+        </p>
+        <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+          HCP-nivå
+        </p>
+        <p className="mt-0.5 font-[family-name:var(--font-display)] text-6xl leading-none text-flag">
+          {handicapLabel(bestHcp)}
+        </p>
+        <p className="mt-2 text-xs text-muted-foreground">
+          {topBallSpeed.toFixed(0)} mph – du slog som en spelare med HCP {handicapLabel(bestHcp)}.
+          Snyggt jobbat! 🎉
+        </p>
+      </div>
+    </section>
   );
 }

@@ -90,6 +90,56 @@ export function handicapFromBallSpeed(avgBallSpeed: number): number {
   return Math.max(-8, Math.min(40, interpolate(avgBallSpeed, BALL_SPEED_ANCHORS)));
 }
 
+/**
+ * Ball speed (mph) efter åldersgrupp, herrar amatörer – en UPPSKATTNING
+ * baserad på allmänt kända mönster för svinghastighet över åldrar (topp i
+ * 20–30-årsåldern, gradvis nedgång därefter, brantare efter 55–60), inte
+ * en enskild verifierad källa. Samma försiktighetsprincip som
+ * populationsantagandena i Approach-testets bellcurve (hcp-bell-curve.tsx)
+ * – tydligt märkt som uppskattning i UI:t, inte påstådd exakt data.
+ */
+const AGE_BALL_SPEED_BRACKETS: { maxAge: number; mean: number; sd: number }[] = [
+  { maxAge: 25, mean: 148, sd: 12 },
+  { maxAge: 35, mean: 146, sd: 12 },
+  { maxAge: 45, mean: 140, sd: 12 },
+  { maxAge: 55, mean: 133, sd: 11 },
+  { maxAge: 65, mean: 124, sd: 10 },
+  { maxAge: 200, mean: 112, sd: 10 },
+];
+
+export function ballSpeedDistributionForAge(age: number): { mean: number; sd: number } {
+  const bracket = AGE_BALL_SPEED_BRACKETS.find((b) => age <= b.maxAge);
+  return bracket ?? AGE_BALL_SPEED_BRACKETS[AGE_BALL_SPEED_BRACKETS.length - 1];
+}
+
+/** Normalfördelningens täthet, normaliserad så toppen (vid mean) alltid är 1. */
+export function ballSpeedDensity(v: number, mean: number, sd: number): number {
+  const z = (v - mean) / sd;
+  return Math.exp(-0.5 * z * z);
+}
+
+/** Abramowitz & Stegun-approximation av felfunktionen erf(x). */
+function erf(x: number): number {
+  const sign = x < 0 ? -1 : 1;
+  const ax = Math.abs(x);
+  const a1 = 0.254829592;
+  const a2 = -0.284496736;
+  const a3 = 1.421413741;
+  const a4 = -1.453152027;
+  const a5 = 1.061405429;
+  const p = 0.3275911;
+  const t = 1 / (1 + p * ax);
+  const y = 1 - ((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t * Math.exp(-ax * ax);
+  return sign * y;
+}
+
+/** Andel jämnåriga (0–100) med LÄGRE ball speed än spelaren – dvs andelen
+ *  man slår. Ball speed: högre är bättre, tvärtemot HCP. */
+export function ballSpeedPercentile(v: number, mean: number, sd: number): number {
+  const cdf = 0.5 * (1 + erf((v - mean) / (sd * Math.SQRT2)));
+  return Math.max(1, Math.min(99, Math.round(cdf * 100)));
+}
+
 /** Förväntad smash factor vid en given handicapnivå, samma källor som ball speed-tabellen. */
 const SMASH_ANCHORS: { hcp: number; value: number }[] = [
   { hcp: -6, value: 1.49 },

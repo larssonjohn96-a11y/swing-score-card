@@ -177,6 +177,10 @@ export type CardProfile = {
   club?: string;
   country?: string;
   ageClass?: string;
+  /** faktisk ålder i år – separat från ageClass (fri text) eftersom
+   *  ålders-baserade jämförelser (t.ex. Speed-testets bellcurve) behöver
+   *  ett exakt tal, inte en kategori. */
+  age?: number;
   photo?: string;
 };
 

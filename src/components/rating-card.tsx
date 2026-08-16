@@ -457,6 +457,22 @@ function ProfileForm({
         placeholder="Senior / Junior"
       />
       <label className="block">
+        <span className="text-[11px] uppercase tracking-widest text-muted-foreground">Ålder</span>
+        <input
+          type="number"
+          inputMode="numeric"
+          min={5}
+          max={100}
+          value={draft.age ?? ""}
+          placeholder="42"
+          onChange={(e) => {
+            const n = e.target.value === "" ? undefined : Number(e.target.value);
+            setDraft({ ...draft, age: n !== undefined && !Number.isNaN(n) ? n : undefined });
+          }}
+          className="mt-1 w-full rounded-2xl border border-border bg-background px-4 py-3 text-base outline-none focus:border-primary"
+        />
+      </label>
+      <label className="block">
         <span className="text-[11px] uppercase tracking-widest text-muted-foreground">
           Profilbild
         </span>
