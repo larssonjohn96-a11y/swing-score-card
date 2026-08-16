@@ -172,7 +172,9 @@ function PrecisionPage() {
     );
     setNewAchievement(justUnlocked ?? null);
 
+    setRevealHcp(typeof saved.handicap === "number" ? saved.handicap : 36);
     setPhase("processing");
+
   }
 
   /** Ett steg bakåt till senast registrerade slag, med värdena förifyllda. */
