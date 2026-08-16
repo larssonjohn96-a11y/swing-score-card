@@ -43,13 +43,14 @@ export const Route = createFileRoute("/precision")({
       {
         name: "description",
         content:
-          "18 inspel mot nio avstånd. Få Precision Score 0–100, uppskattad handicapnivå, spridningsanalys och personliga träningsrekommendationer.",
+          "5 inspel mot 50, 75, 100, 125 och 150 meter. Få din Approach-HCP och se var du ligger i handicapfördelningen.",
       },
       { property: "og:title", content: "Inspelstest – Approach Precision Test" },
       {
         property: "og:description",
-        content: "Precision Score, handicapnivå, spridning och träningsråd på 20 minuter.",
+        content: "5 slag, en siffra: din Approach-HCP och var du ligger jämfört med andra golfare.",
       },
+
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
