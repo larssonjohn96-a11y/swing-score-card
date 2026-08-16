@@ -18,7 +18,8 @@ import {
 import { FairwaySpec, TeeNumberField } from "@/components/offtee-visuals";
 import { OffTeeReport } from "@/components/offtee-report";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
-import { TestResultProcessing, TestResultReveal, type RevealState } from "@/components/test-reveal";
+import type { RevealState } from "@/components/test-reveal";
+import { OffTeeProcessing, OffTeeReveal } from "@/components/offtee-reveal";
 import { computeRevealState } from "@/lib/test-reveal-helpers";
 
 export const Route = createFileRoute("/offtee")({
@@ -39,6 +40,7 @@ type Phase = "setup" | "test" | "processing" | "reveal" | "result";
 
 type RevealData = {
   state: RevealState;
+  hcp: number;
   hcpLabel: string;
   previousHcpLabel?: string;
   deltaLabel?: string;
@@ -95,6 +97,7 @@ function OffTeePage() {
       const derived = computeRevealState(previousHcps, saved.handicap);
       setReveal({
         state: derived.state,
+        hcp: saved.handicap,
         hcpLabel: handicapLabel(saved.handicap),
         previousHcpLabel:
           derived.previousHcp !== undefined ? handicapLabel(derived.previousHcp) : undefined,
@@ -221,28 +224,11 @@ function OffTeePage() {
       />
     );
   if (phase === "processing" && reveal) {
-    return (
-      <TestResultProcessing
-        testLabel="Off the Tee"
-        secondaryLabel={`${OFFTEE_TOTAL_SHOTS} / ${OFFTEE_TOTAL_SHOTS} slag`}
-        isRetest={reveal.isRetest}
-        onDone={() => setPhase("reveal")}
-      />
-    );
+    return <OffTeeProcessing onDone={() => setPhase("reveal")} />;
   }
 
   if (phase === "reveal" && reveal) {
-    return (
-      <TestResultReveal
-        testLabel="Off the Tee"
-        value={reveal.hcpLabel}
-        previousValue={reveal.previousHcpLabel}
-        deltaLabel={reveal.deltaLabel}
-        state={reveal.state}
-        profileUpdated
-        onContinue={() => setPhase("result")}
-      />
-    );
+    return <OffTeeReveal hcp={reveal.hcp} onContinue={() => setPhase("result")} />;
   }
 
   return (
