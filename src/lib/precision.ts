@@ -473,14 +473,15 @@ export function scoreBand(score: number): ScoreBand {
   return SCORE_BANDS[0];
 }
 
-/** Avståndsintervall som resultaten grupperas i. */
+/** Avståndsintervall som resultaten grupperas i (ett per målavstånd). */
 export const DISTANCE_GROUPS = [
-  { label: "50–75 m", min: 50, max: 75 },
-  { label: "75–100 m", min: 75, max: 100 },
-  { label: "100–125 m", min: 100, max: 125 },
-  { label: "125–150 m", min: 125, max: 150 },
-  { label: "150–165 m", min: 150, max: 165 },
+  { label: "50 m", min: 50, max: 50 },
+  { label: "75 m", min: 75, max: 75 },
+  { label: "100 m", min: 100, max: 100 },
+  { label: "125 m", min: 125, max: 125 },
+  { label: "150 m", min: 150, max: 150 },
 ] as const;
+
 
 export type GroupScore = {
   label: string;
