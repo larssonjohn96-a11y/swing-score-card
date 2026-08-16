@@ -75,7 +75,7 @@ function PrecisionPage() {
 
   const [pr, setPr] = useState<ApproachPRResult | null>(null);
   const [newAchievement, setNewAchievement] = useState<ProgressItem | null>(null);
-  /** true när alla 18 slag registrerats men användaren ännu inte slutfört testet */
+  /** true när alla slag registrerats men användaren ännu inte slutfört testet */
   const [allRegistered, setAllRegistered] = useState(false);
   /** bara ETT steg bakåt tillåts – spärras tills nästa slag sparats */
   const [undoUsed, setUndoUsed] = useState(false);
@@ -179,7 +179,6 @@ function PrecisionPage() {
 
     setRevealHcp(typeof saved.handicap === "number" ? saved.handicap : 36);
     setPhase("processing");
-
   }
 
   /** Ett steg bakåt till senast registrerade slag, med värdena förifyllda. */
@@ -316,7 +315,6 @@ function PrecisionPage() {
     return <ApproachHcpReveal hcp={revealHcp} onContinue={() => setPhase("result")} />;
   }
 
-
   return (
     <ResultScreen
       shots={shots}
@@ -360,7 +358,7 @@ function TestScreen({
   onBack: () => void;
   /** ett steg bakåt tillåtet just nu */
   canUndo: boolean;
-  /** alla 18 slag registrerade – väntar på att användaren slutför testet */
+  /** alla slag registrerade – väntar på att användaren slutför testet */
   allRegistered: boolean;
   onFinalize: () => void;
   onAbort: () => void;
@@ -418,12 +416,18 @@ function TestScreen({
         </div>
         <div className="mt-2 flex items-center justify-between text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
           {PRECISION_TARGETS.map((t, i) => (
-            <span key={t} className={i === Math.min(index, PRECISION_TOTAL_SHOTS - 1) ? "font-semibold text-foreground" : ""}>
+            <span
+              key={t}
+              className={
+                i === Math.min(index, PRECISION_TOTAL_SHOTS - 1)
+                  ? "font-semibold text-foreground"
+                  : ""
+              }
+            >
               {t} m
             </span>
           ))}
         </div>
-
       </div>
 
       {/* Föregående slag – kompakt, sekundär, tydligt egen luft runt sig */}

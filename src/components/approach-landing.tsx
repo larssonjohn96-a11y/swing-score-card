@@ -30,7 +30,7 @@ export function ApproachLanding() {
 
       <p className="mt-4 text-xs uppercase tracking-[0.3em] text-flag">Approach</p>
       <h1 className="mt-1 text-5xl leading-none">Inspelstest</h1>
-      <p className="mt-4 text-base leading-relaxed text-muted-foreground">55–165 meter</p>
+      <p className="mt-4 text-base leading-relaxed text-muted-foreground">50–150 meter</p>
 
       <ApproachStoryLink />
 

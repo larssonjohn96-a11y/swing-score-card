@@ -40,7 +40,7 @@ const TIMELINE_KEY: Record<CategorySlug, keyof RatingPoint> = {
 /** Kort, kategorispecifik förklaring av vad detaljsidan visar. */
 const CATEGORY_INTRO: Record<CategorySlug, string> = {
   approach:
-    "Din förmåga att spela inspel mot green och sätta upp lätta puttar – från 55 till 165 meter.",
+    "Din förmåga att spela inspel mot green och sätta upp lätta puttar – från 50 till 150 meter.",
   driving:
     "Din förmåga att slå långa, precisa och konsekventa drives från tee, samt din rena bollhastighet.",
   "around-the-green":

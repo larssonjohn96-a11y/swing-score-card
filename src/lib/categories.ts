@@ -81,9 +81,9 @@ export const CATEGORIES: Category[] = [
         number: "17",
         title: "Approach Test",
         subtitle:
-          "Inspel handlar om att kontrollera både längd och riktning för att sätta upp enkla puttar. Approach mäter hur nära flaggan du landar från 55 till 165 meter.",
+          "Inspel handlar om att kontrollera både längd och riktning för att sätta upp enkla puttar. Approach mäter hur nära flaggan du landar från 50 till 150 meter.",
         bullets: [
-          "9 avstånd × 2 varv, registrera carry och sidled med knappar.",
+          "5 avstånd, ett slag vardera, registrera carry och sidled med knappar.",
           "Resultat visas först när alla slag är klara.",
         ],
         result: "",

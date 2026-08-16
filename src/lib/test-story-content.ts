@@ -13,13 +13,13 @@ export const APPROACH_STORY: TestStoryConfig = {
   what: {
     title: "TESTA DITT APPROACHSPEL",
     description:
-      "18 slag från 9 avstånd mäter din precision och längdkontroll mot mål – från korta wedgeslag till längre inspel.",
-    tags: ["55 m", "64 m", "73 m", "82 m", "91 m", "110 m", "128 m", "146 m", "165 m"],
+      "5 slag från 5 avstånd mäter din precision och längdkontroll mot mål – från korta wedgeslag till längre inspel.",
+    tags: ["50 m", "75 m", "100 m", "125 m", "150 m"],
   },
   how: {
     title: "ETT SLAG I TAGET",
     steps: ["AVSTÅND", "SLÅ", "REGISTRERA", "NÄSTA"],
-    caption: "2 slag per avstånd, 18 totalt.",
+    caption: "1 slag per avstånd, 5 totalt.",
   },
   register: {
     title: "VAR HAMNAR BOLLEN?",

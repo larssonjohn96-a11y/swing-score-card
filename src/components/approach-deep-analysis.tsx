@@ -20,29 +20,21 @@ const PERIOD_OPTIONS: { key: Period; label: string }[] = [
   { key: "all", label: "Alla tester" },
 ];
 
-/** Fast, kategorisk niofärgspalett – en färg per målavstånd, oberoende av
+/** Fast, kategorisk femfärgspalett – en färg per målavstånd, oberoende av
  *  ljust/mörkt tema, samma princip som i referensbilderna. */
 const DISTANCE_COLORS: Record<number, string> = {
-  55: "#dc2626",
-  64: "#2563eb",
-  73: "#059669",
-  82: "#ea580c",
-  91: "#7c3aed",
-  110: "#0891b2",
-  128: "#ca8a04",
-  146: "#db2777",
-  165: "#4338ca",
+  50: "#dc2626",
+  75: "#ea580c",
+  100: "#059669",
+  125: "#2563eb",
+  150: "#7c3aed",
 };
 
-/** Fem avståndsintervall (25 m breda) som täcker alla nio testdistanser –
- *  samma granularitet som referensdiagrammet. */
-const DISTANCE_BUCKETS: { label: string; targets: readonly number[] }[] = [
-  { label: "50–75 m", targets: [55, 64, 73] },
-  { label: "75–100 m", targets: [82, 91] },
-  { label: "100–125 m", targets: [110] },
-  { label: "125–150 m", targets: [128, 146] },
-  { label: "150–175 m", targets: [165] },
-];
+/** Ett avstånd = ett intervall nu (de fem testdistanserna ligger redan
+ *  25 m ifrån varandra, så ingen ytterligare gruppering behövs). */
+const DISTANCE_BUCKETS: { label: string; targets: readonly number[] }[] = PRECISION_TARGETS.map(
+  (t) => ({ label: `${t} m`, targets: [t] }),
+);
 
 /** HCP per avståndsintervall – snittet av proximity SOM ANDEL AV
  *  slaglängden (inte råa meter), så korta och långa inspel blir rättvist
@@ -318,15 +310,15 @@ function CombinedDispersionMap({
   const h = 380;
   const padTop = 24;
   const padBottom = 24;
-  const minCarry = 40;
-  const maxCarry = 180;
+  const minCarry = 30;
+  const maxCarry = 170;
 
   const yFor = (carry: number) =>
     h - padBottom - ((carry - minCarry) / (maxCarry - minCarry)) * (h - padTop - padBottom);
   const xScale = 4.2; // px per meter sidled
   const xFor = (offline: number) => w / 2 + offline * xScale;
 
-  const gridLines = [60, 80, 100, 120, 140, 160];
+  const gridLines = [50, 75, 100, 125, 150];
 
   const selected = targetStats.find((t) => t.target === selectedTarget);
   const selectedScore =
