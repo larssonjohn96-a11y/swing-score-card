@@ -68,6 +68,8 @@ function PrecisionPage() {
   const [side, setSide] = useState<-1 | 1>(1);
   const [offset, setOffset] = useState(0);
   const [prevScore, setPrevScore] = useState<number | null>(null);
+  const [revealHcp, setRevealHcp] = useState(36);
+
   const [pr, setPr] = useState<ApproachPRResult | null>(null);
   const [newAchievement, setNewAchievement] = useState<ProgressItem | null>(null);
   /** true när alla 18 slag registrerats men användaren ännu inte slutfört testet */
