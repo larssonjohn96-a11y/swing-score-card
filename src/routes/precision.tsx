@@ -416,9 +416,13 @@ function TestScreen({
           />
         </div>
         <div className="mt-2 flex items-center justify-between text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-          <span className={current.round === 1 ? "font-semibold text-foreground" : ""}>Varv 1</span>
-          <span className={current.round === 2 ? "font-semibold text-foreground" : ""}>Varv 2</span>
+          {PRECISION_TARGETS.map((t, i) => (
+            <span key={t} className={i === Math.min(index, PRECISION_TOTAL_SHOTS - 1) ? "font-semibold text-foreground" : ""}>
+              {t} m
+            </span>
+          ))}
         </div>
+
       </div>
 
       {/* Föregående slag – kompakt, sekundär, tydligt egen luft runt sig */}
