@@ -90,6 +90,13 @@ export function handicapFromBallSpeed(avgBallSpeed: number): number {
   return Math.max(-8, Math.min(40, interpolate(avgBallSpeed, BALL_SPEED_ANCHORS)));
 }
 
+/** Ball speed-fördelning för ALLA golfare, oavsett ålder – medelvärdet
+ *  matchar samma HCP 20-ankare som resten av filen (≈126 mph), std.avv.
+ *  bredare än en enskild åldersgrupp eftersom den spänner över alla
+ *  åldrar och nivåer. Samma uppskattningsprincip som åldersmodellen
+ *  nedan – tydligt märkt i UI:t, inte påstådd exakt data. */
+export const ALL_GOLFERS_BALL_SPEED = { mean: 126, sd: 18 };
+
 /**
  * Ball speed (mph) efter åldersgrupp, herrar amatörer – en UPPSKATTNING
  * baserad på allmänt kända mönster för svinghastighet över åldrar (topp i

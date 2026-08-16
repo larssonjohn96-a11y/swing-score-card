@@ -1,23 +1,32 @@
 import { ballSpeedDensity, ballSpeedPercentile } from "@/lib/speed";
 
 /**
- * Bellcurve som visar var spelarens ball speed ligger jämfört med jämnåriga
- * (samma åldersintervall). Samma visuella princip som Approach-testets
- * HcpBellCurve: centrerad kring gruppens medelvärde, delen du slår
- * (långsammare än dig) upplyst i primary-färg, delen som är snabbare än
- * dig nedtonad i grått. Ball speed: HÖGRE är bättre (tvärtemot HCP), så
- * bäst hamnar liksom i HcpBellCurve till höger.
+ * Bellcurve som visar var spelarens ball speed ligger jämfört med en
+ * jämförelsegrupp (jämnåriga ELLER alla golfare – styrs av mean/sd/
+ * groupLabel/note som skickas in). Samma visuella princip som Approach-
+ * testets HcpBellCurve: centrerad kring gruppens medelvärde, delen du
+ * slår (långsammare än dig) upplyst i primary-färg, delen som är
+ * snabbare än dig nedtonad i grått. Ball speed: HÖGRE är bättre
+ * (tvärtemot HCP), så bäst hamnar liksom i HcpBellCurve till höger.
+ *
+ * `highlighted`: true för kurvan som ger bäst resultat av de två som
+ * visas – får en tydlig badge och färgad kant istället för att bara
+ * vara en av flera likvärdiga kort.
  */
-export function SpeedAgeBellCurve({
+export function SpeedBellCurve({
   ballSpeed,
-  age,
+  groupLabel,
+  note,
   mean,
   sd,
+  highlighted = false,
 }: {
   ballSpeed: number;
-  age: number;
+  groupLabel: string;
+  note: string;
   mean: number;
   sd: number;
+  highlighted?: boolean;
 }) {
   const MIN = mean - 3 * sd;
   const MAX = mean + 3 * sd;
@@ -50,57 +59,99 @@ export function SpeedAgeBellCurve({
   const litArea = `${litLine} L ${px},${baseline} L ${x(MIN)},${baseline} Z`;
 
   return (
-    <div className="rounded-3xl border border-border bg-card p-5">
+    <div
+      className={`relative rounded-3xl border p-5 ${
+        highlighted ? "border-flag/40 bg-flag/[0.04]" : "border-border bg-card"
+      }`}
+    >
+      {highlighted && (
+        <span className="absolute right-4 top-4 rounded-full bg-flag/15 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.15em] text-flag">
+          Bäst resultat
+        </span>
+      )}
       <p className="text-center text-xs uppercase tracking-[0.25em] text-muted-foreground">
-        Var du ligger till – {age} år
+        Var du ligger till – {groupLabel}
       </p>
       <p className="mt-1 text-center">
-        <span className="font-[family-name:var(--font-display)] text-4xl leading-none text-primary">
+        <span
+          className={`font-[family-name:var(--font-display)] text-4xl leading-none ${
+            highlighted ? "text-flag" : "text-primary"
+          }`}
+        >
           {pct}%
         </span>
       </p>
-      <p className="text-center text-sm text-muted-foreground">av jämnåriga slår du</p>
+      <p className="text-center text-sm text-muted-foreground">av gruppen slår du</p>
 
       <svg
         viewBox={`0 0 ${W} ${H}`}
         className="mx-auto mt-3 block w-full"
         role="img"
-        aria-label="Din ball speed jämfört med jämnåriga"
+        aria-label={`Din ball speed jämfört med ${groupLabel}`}
       >
         <defs>
           <linearGradient id="speed-bell-lit" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.5" />
-            <stop offset="100%" stopColor="var(--primary)" stopOpacity="0.05" />
+            <stop
+              offset="0%"
+              stopColor={highlighted ? "var(--flag)" : "var(--primary)"}
+              stopOpacity="0.5"
+            />
+            <stop
+              offset="100%"
+              stopColor={highlighted ? "var(--flag)" : "var(--primary)"}
+              stopOpacity="0.05"
+            />
           </linearGradient>
           <radialGradient id="speed-marker-glow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.55" />
-            <stop offset="100%" stopColor="var(--primary)" stopOpacity="0" />
+            <stop
+              offset="0%"
+              stopColor={highlighted ? "var(--flag)" : "var(--primary)"}
+              stopOpacity="0.55"
+            />
+            <stop
+              offset="100%"
+              stopColor={highlighted ? "var(--flag)" : "var(--primary)"}
+              stopOpacity="0"
+            />
           </radialGradient>
         </defs>
 
-        {/* Grå del: jämnåriga som är snabbare än dig */}
+        {/* Grå del: gruppen som är snabbare än dig */}
         <path d={grayArea} className="fill-muted-foreground/10" />
         <path d={grayLine} fill="none" className="stroke-muted-foreground/25" strokeWidth="2" />
 
-        {/* Upplyst del: jämnåriga du slår */}
+        {/* Upplyst del: gruppen du slår */}
         <path d={litArea} fill="url(#speed-bell-lit)" />
-        <path d={litLine} fill="none" stroke="var(--primary)" strokeWidth="2.5" />
+        <path
+          d={litLine}
+          fill="none"
+          stroke={highlighted ? "var(--flag)" : "var(--primary)"}
+          strokeWidth="2.5"
+        />
 
         {/* Markör med glöd – CSS-driven puls, inte SVG SMIL */}
         <circle cx={px} cy={py} r="22" fill="url(#speed-marker-glow)" />
-        <line x1={px} y1={py} x2={px} y2={baseline} className="stroke-primary" strokeWidth="2" />
+        <line
+          x1={px}
+          y1={py}
+          x2={px}
+          y2={baseline}
+          stroke={highlighted ? "var(--flag)" : "var(--primary)"}
+          strokeWidth="2"
+        />
         <circle
           cx={px}
           cy={py}
           r="10"
-          className="fill-primary opacity-40"
+          className="opacity-40"
           style={{
+            fill: highlighted ? "var(--flag)" : "var(--primary)",
             transformBox: "fill-box",
             transformOrigin: "center",
             animation: "sg4-speed-bell-pulse 1.8s ease-out infinite",
           }}
         />
-        <circle cx={px} cy={py} r="6" className="fill-primary" />
+        <circle cx={px} cy={py} r="6" fill={highlighted ? "var(--flag)" : "var(--primary)"} />
       </svg>
       <style>{`
         @keyframes sg4-speed-bell-pulse {
@@ -109,12 +160,14 @@ export function SpeedAgeBellCurve({
         }
       `}</style>
 
-      <p className="mt-1 text-center text-xs font-semibold uppercase tracking-[0.15em] text-primary">
+      <p
+        className={`mt-1 text-center text-xs font-semibold uppercase tracking-[0.15em] ${
+          highlighted ? "text-flag" : "text-primary"
+        }`}
+      >
         Du · {ballSpeed.toFixed(0)} mph
       </p>
-      <p className="mt-2 text-center text-[10px] text-muted-foreground">
-        Uppskattning baserad på ålder – jämnåriga golfares snitt ligger runt {mean} mph.
-      </p>
+      <p className="mt-2 text-center text-[10px] text-muted-foreground">{note}</p>
     </div>
   );
 }

@@ -5,7 +5,9 @@ import {
   RANGE_DEVICES,
   SIMULATOR_DEVICES,
   SPEED_TOTAL_SHOTS,
+  ALL_GOLFERS_BALL_SPEED,
   ballSpeedDistributionForAge,
+  ballSpeedPercentile,
   computeSpeedResult,
   emptySpeedShots,
   handicapFromBallSpeed,
@@ -17,7 +19,7 @@ import {
   type SpeedShot,
 } from "@/lib/speed";
 import { loadCardProfile } from "@/lib/rating-card";
-import { SpeedAgeBellCurve } from "@/components/speed-bell-curve";
+import { SpeedBellCurve } from "@/components/speed-bell-curve";
 import { AgeInlinePrompt } from "@/components/age-inline-prompt";
 import { TeeNumberField } from "@/components/offtee-visuals";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
@@ -349,6 +351,16 @@ function SpeedPage() {
   }
 
   const result = computeSpeedResult(shots);
+  const allGolfersPct = ballSpeedPercentile(
+    result.avgBallSpeed,
+    ALL_GOLFERS_BALL_SPEED.mean,
+    ALL_GOLFERS_BALL_SPEED.sd,
+  );
+  const ageDist = age ? ballSpeedDistributionForAge(age) : undefined;
+  const agePct = ageDist
+    ? ballSpeedPercentile(result.avgBallSpeed, ageDist.mean, ageDist.sd)
+    : undefined;
+  const ageIsBest = agePct !== undefined && agePct > allGolfersPct;
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-16 pt-10">
@@ -359,23 +371,33 @@ function SpeedPage() {
         </p>
       </section>
 
-      {age ? (
-        <div className="mt-4">
-          <SpeedAgeBellCurve
+      <div className="mt-4 space-y-3">
+        <SpeedBellCurve
+          ballSpeed={result.avgBallSpeed}
+          groupLabel="alla golfare"
+          note={`Uppskattning – alla golfares snitt ligger runt ${ALL_GOLFERS_BALL_SPEED.mean} mph.`}
+          mean={ALL_GOLFERS_BALL_SPEED.mean}
+          sd={ALL_GOLFERS_BALL_SPEED.sd}
+          highlighted={!ageIsBest}
+        />
+
+        {age && ageDist ? (
+          <SpeedBellCurve
             ballSpeed={result.avgBallSpeed}
-            age={age}
-            {...ballSpeedDistributionForAge(age)}
+            groupLabel={`${age} år`}
+            note={`Uppskattning baserad på ålder – jämnåriga golfares snitt ligger runt ${ageDist.mean} mph.`}
+            mean={ageDist.mean}
+            sd={ageDist.sd}
+            highlighted={ageIsBest}
           />
-        </div>
-      ) : (
-        <div className="mt-4">
+        ) : (
           <AgeInlinePrompt
             title="Ange din ålder"
             description="Se var din ball speed ligger jämfört med jämnåriga golfare"
             onSaved={(n) => setAge(n)}
           />
-        </div>
-      )}
+        )}
+      </div>
 
       <SpeedBestShotHighlight topBallSpeed={result.topBallSpeed} />
 
