@@ -1,6 +1,6 @@
 import { Minus, Plus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { FAIRWAY, type OffTeeResult } from "@/lib/offtee";
+import { FAIRWAY } from "@/lib/offtee";
 
 /** Hero: top-down-vy av en fairway med tee och spridda utslag. */
 export function TeeHero({ className = "h-44 w-full" }: { className?: string }) {
@@ -185,104 +185,5 @@ export function FairwaySpec() {
         </p>
       </div>
     </div>
-  );
-}
-
-/** Normaliserad spridningsbild – alla 12 slag mot den standardiserade fairwayn. */
-export function TeeDispersion({ result }: { result: OffTeeResult }) {
-  const size = 280;
-  const c = size / 2;
-  const rangeX = 2.4; // ± multipel av fairwayHalfWidth
-  const rangeY = 1.5; // relativt spelarens eget snittavstånd
-
-  const px = (nx: number) => c + (nx / rangeX) * (c - 16);
-  const py = (ny: number) => size - 12 - (ny / rangeY) * (size - 24);
-
-  const refDistance = Math.max(1, result.avgTotal);
-  const fairwayXHalf = 1;
-  const roughXHalf = 1 + FAIRWAY.roughDepth / FAIRWAY.halfWidth;
-
-  return (
-    <div>
-      <svg
-        viewBox={`0 0 ${size} ${size}`}
-        className="w-full"
-        role="img"
-        aria-label="Normaliserad spridningsbild för alla utslag i testet"
-      >
-        <defs>
-          <clipPath id="tee-dispersion-clip">
-            <rect x="0" y="0" width={size} height={size} rx="20" />
-          </clipPath>
-        </defs>
-        <g clipPath="url(#tee-dispersion-clip)">
-          <rect x="0" y="0" width={size} height={size} className="fill-destructive/10" />
-          <rect
-            x={px(-roughXHalf)}
-            y="0"
-            width={px(roughXHalf) - px(-roughXHalf)}
-            height={size}
-            className="fill-sand"
-          />
-          <rect
-            x={px(-fairwayXHalf)}
-            y="0"
-            width={px(fairwayXHalf) - px(-fairwayXHalf)}
-            height={size}
-            className="fill-fairway"
-          />
-          <line
-            x1={0}
-            y1={py(1)}
-            x2={size}
-            y2={py(1)}
-            className="stroke-flag"
-            strokeWidth="1.5"
-            strokeDasharray="4 5"
-          />
-          {result.shots.map((s) => {
-            const nx = s.offline / FAIRWAY.halfWidth;
-            const ny = s.total / refDistance;
-            const color = s.outcome.isOB
-              ? "fill-destructive"
-              : s.outcome.inRough
-                ? "fill-sand"
-                : "fill-primary";
-            return (
-              <circle
-                key={s.index}
-                cx={px(nx)}
-                cy={py(Math.min(ny, rangeY))}
-                r="5"
-                className={color}
-                stroke="var(--background)"
-                strokeWidth="1.5"
-              />
-            );
-          })}
-          <circle
-            cx={px(0)}
-            cy={size - 12}
-            r="5"
-            className="fill-background stroke-foreground"
-            strokeWidth="2"
-          />
-        </g>
-      </svg>
-      <div className="mt-3 flex flex-wrap justify-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
-        <Legend swatch="bg-primary" label="Fairway" />
-        <Legend swatch="bg-sand" label="Ruff" />
-        <Legend swatch="bg-destructive" label="OB" />
-      </div>
-    </div>
-  );
-}
-
-function Legend({ swatch, label }: { swatch: string; label: string }) {
-  return (
-    <span className="flex items-center gap-1.5">
-      <span className={`h-2.5 w-2.5 rounded-full ${swatch}`} />
-      {label}
-    </span>
   );
 }

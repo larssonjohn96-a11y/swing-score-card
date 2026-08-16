@@ -29,8 +29,8 @@ export const OFFTEE_TOTAL_SHOTS = 6;
 export type TeeShotInput = {
   /** totalt avstånd i meter */
   total: number;
-  /** sidled i meter, negativt = vänster, positivt = höger */
-  offline: number;
+  /** sidled i meter, alltid positivt – bara hur mycket, ingen riktning */
+  sidled: number;
 };
 
 export type TeeShot = TeeShotInput & {
@@ -44,7 +44,7 @@ export function emptyTeeShots(): TeeShot[] {
   return Array.from({ length: OFFTEE_TOTAL_SHOTS }, (_, i) => ({
     index: i + 1,
     total: 0,
-    offline: 0,
+    sidled: 0,
     filled: false,
   }));
 }
@@ -70,10 +70,9 @@ export type ShotOutcome = {
   isOB: boolean;
 };
 
-export function shotOutcome(offline: number): ShotOutcome {
-  const abs = Math.abs(offline);
-  const inFairway = abs <= FAIRWAY.halfWidth;
-  const isOB = abs > FAIRWAY.halfWidth + FAIRWAY.roughDepth;
+export function shotOutcome(sidled: number): ShotOutcome {
+  const inFairway = sidled <= FAIRWAY.halfWidth;
+  const isOB = sidled > FAIRWAY.halfWidth + FAIRWAY.roughDepth;
   const inRough = !inFairway && !isOB;
   return { inFairway, inRough, isOB };
 }
@@ -222,9 +221,7 @@ export type OffTeeResult = {
   longest: number;
   fairwayHitPct: number;
   waywardPct: number;
-  avgOffline: number;
-  leftPct: number;
-  rightPct: number;
+  avgSidled: number;
   /** spridning i totalt avstånd mellan slagen, meter (lägre = jämnare) */
   distanceSpread: number;
   /** spridning i sidled mellan slagen, meter (lägre = jämnare) */
@@ -241,18 +238,18 @@ export function offTeeResult(shots: TeeShot[]): OffTeeResult {
   const results: TeeShotResult[] = filled.map((s) => ({
     index: s.index,
     total: s.total,
-    offline: s.offline,
-    outcome: shotOutcome(s.offline),
+    sidled: s.sidled,
+    outcome: shotOutcome(s.sidled),
   }));
 
   const n = results.length || 1;
   const totals = results.map((r) => r.total);
-  const offlines = results.map((r) => r.offline);
+  const sidleds = results.map((r) => r.sidled);
   const avgTotal = mean(totals);
   const waywardPct = Math.round((results.filter((r) => r.outcome.isOB).length / n) * 100);
   const fairwayHitPct = Math.round((results.filter((r) => r.outcome.inFairway).length / n) * 100);
   const distanceSd = stdDev(totals);
-  const lateralSd = stdDev(offlines);
+  const lateralSd = stdDev(sidleds);
   const combinedSd = (distanceSd + lateralSd) / 2;
 
   const distanceHcp = results.length ? distanceToHandicap(avgTotal) : 0;
@@ -289,9 +286,7 @@ export function offTeeResult(shots: TeeShot[]): OffTeeResult {
     longest: totals.length ? Math.max(...totals) : 0,
     fairwayHitPct,
     waywardPct,
-    avgOffline: mean(results.map((r) => Math.abs(r.offline))),
-    leftPct: Math.round((results.filter((r) => r.offline < -1).length / n) * 100),
-    rightPct: Math.round((results.filter((r) => r.offline > 1).length / n) * 100),
+    avgSidled: mean(sidleds),
     distanceSpread: Math.round(distanceSd * 10) / 10,
     lateralSpread: Math.round(lateralSd * 10) / 10,
   };
@@ -401,11 +396,6 @@ export function analyseOffTee(result: OffTeeResult): OffTeeAnalysis {
     improvements.push(
       `${result.waywardPct} % av slagen slutade Out of Bounds – det största poängtappet.`,
     );
-  }
-  if (result.leftPct >= 45 && result.leftPct > result.rightPct) {
-    improvements.push(`Majoriteten av missarna går vänster (${result.leftPct} %).`);
-  } else if (result.rightPct >= 45 && result.rightPct > result.leftPct) {
-    improvements.push(`Majoriteten av missarna går höger (${result.rightPct} %).`);
   }
   if (result.breakdown.evennessHcp >= 20) {
     improvements.push(

@@ -825,18 +825,6 @@ function weakestApproachZone(session: PrecisionSession | undefined): string | un
   return `Approach ${worst.label} kostar flest slag just nu.`;
 }
 
-function offTeeMissBias(session: OffTeeSession | undefined): string | undefined {
-  if (!session) return undefined;
-  const n = session.shots.filter((s) => s.filled).length || 1;
-  const left = session.shots.filter((s) => s.offline < -1).length;
-  const right = session.shots.filter((s) => s.offline > 1).length;
-  const leftPct = Math.round((left / n) * 100);
-  const rightPct = Math.round((right / n) * 100);
-  if (rightPct >= 55) return `Du missar ${rightPct} % av dina tee-slag höger.`;
-  if (leftPct >= 55) return `Du missar ${leftPct} % av dina tee-slag vänster.`;
-  return undefined;
-}
-
 function offTeeStreak(sessions: OffTeeSession[]): string | undefined {
   if (sessions.length < 3) return undefined;
   const last3 = sessions.slice(-3);
@@ -855,7 +843,6 @@ export function getSmartInsight(cats: CategoryHandicap[]): string | undefined {
   const offtee = loadOffTeeSessions();
 
   const candidates = [
-    offTeeMissBias(offtee[offtee.length - 1]),
     weakestApproachZone(precision[precision.length - 1]),
     puttingLevel(cats),
     offTeeStreak(offtee),

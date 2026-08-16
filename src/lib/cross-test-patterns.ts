@@ -21,51 +21,7 @@ export type PatternFact = {
 };
 
 /* -------------------------------------------------------------------------
- * 1. Riktningsmönster: Approach vs Off the Tee
- * Båda testerna mäter signerad sidled (negativt = vänster, positivt =
- * höger) på riktigt registrerade slag, så det går att jämföra dem direkt.
- * ---------------------------------------------------------------------- */
-
-function directionalBias(offlineValues: number[]): { rightShare: number; n: number } | undefined {
-  const deviated = offlineValues.filter((v) => Math.abs(v) > 0.3);
-  if (deviated.length < 6) return undefined;
-  const right = deviated.filter((v) => v > 0).length;
-  return { rightShare: right / deviated.length, n: deviated.length };
-}
-
-function recentOffline(sessions: { date: string; shots: { offline: number }[] }[], take = 3) {
-  return sessions
-    .slice(-take)
-    .flatMap((s) => s.shots)
-    .map((s) => s.offline);
-}
-
-export function computeDirectionPattern(): PatternFact | undefined {
-  const approach = directionalBias(recentOffline(loadPrecisionSessions()));
-  const offtee = directionalBias(recentOffline(loadOffTeeSessions()));
-  if (!approach || !offtee) return undefined;
-
-  const approachSide = approach.rightShare >= 0.5 ? "höger" : "vänster";
-  const offteeSide = offtee.rightShare >= 0.5 ? "höger" : "vänster";
-  const approachPct = Math.round(
-    (approachSide === "höger" ? approach.rightShare : 1 - approach.rightShare) * 100,
-  );
-  const offteePct = Math.round(
-    (offteeSide === "höger" ? offtee.rightShare : 1 - offtee.rightShare) * 100,
-  );
-
-  // Bara en tydlig, samstämmig bias räknas som ett mönster (>60% åt samma håll i båda).
-  if (approachPct < 60 || offteePct < 60 || approachSide !== offteeSide) return undefined;
-
-  return {
-    id: "direction",
-    title: "Samma sidledstendens i två tester",
-    body: `${approachPct}% av dina registrerade Approach-slag och ${offteePct}% av dina Off the Tee-slag har landat åt ${approachSide}.`,
-  };
-}
-
-/* -------------------------------------------------------------------------
- * 2. Konsekvens: vilket test ger mest resp. minst stabila resultat
+ * 1. Konsekvens: vilket test ger mest resp. minst stabila resultat
  * Mäts som spridning (standardavvikelse) i handicap mellan sessioner,
  * samma enhet för alla sju tester så de går att jämföra rakt av.
  * ---------------------------------------------------------------------- */
@@ -123,7 +79,7 @@ export function computeConsistencyRanking(): PatternFact | undefined {
 }
 
 /* -------------------------------------------------------------------------
- * 3. Kategoriförändring: vilken av de fyra huvudkategorierna har rört sig
+ * 2. Kategoriförändring: vilken av de fyra huvudkategorierna har rört sig
  * mest respektive minst sedan ditt första test, ren skillnad i HCP-tal.
  * ---------------------------------------------------------------------- */
 
@@ -172,7 +128,7 @@ export function computeCategoryMovement(): PatternFact | undefined {
 
 /** Samlar alla mönster som faktiskt har tillräckligt med data att visas. */
 export function computeAllPatterns(): PatternFact[] {
-  return [computeDirectionPattern(), computeConsistencyRanking(), computeCategoryMovement()].filter(
+  return [computeConsistencyRanking(), computeCategoryMovement()].filter(
     (v): v is PatternFact => v !== undefined,
   );
 }

@@ -1,16 +1,5 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  Gauge,
-  Minus,
-  Plus,
-  Radar,
-  X,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Gauge, Minus, Plus, Radar, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
   OFFTEE_TOTAL_SHOTS,
@@ -67,13 +56,9 @@ function OffTeePage() {
   const [shots, setShots] = useState<TeeShot[]>(emptyTeeShots);
   const [index, setIndex] = useState(0);
   const [total, setTotal] = useState(DEFAULT_TOTAL);
-  const [side, setSide] = useState<-1 | 1>(1);
-  const [offset, setOffset] = useState(0);
+  const [sidled, setSidled] = useState(0);
   const [prevScore, setPrevScore] = useState<number | null>(null);
   const [reveal, setReveal] = useState<RevealData | null>(null);
-
-  // Kom ihåg senast valda riktning (vänster/höger) mellan slagen.
-  const lastSideRef = useRef<-1 | 1>(1);
 
   const current = shots[Math.min(index, OFFTEE_TOTAL_SHOTS - 1)];
 
@@ -90,23 +75,18 @@ function OffTeePage() {
     setPrevScore(last ? last.score : null);
     setShots(emptyTeeShots());
     setIndex(0);
-    lastSideRef.current = 1;
     setTotal(DEFAULT_TOTAL);
-    setSide(1);
-    setOffset(0);
+    setSidled(0);
     setReveal(null);
     setPhase("test");
   }
 
   function commit() {
-    const offline = side * offset;
     const next = index + 1;
     const updatedShots = shots.map((s, i) =>
-      i === index ? { ...s, total, offline, filled: true } : s,
+      i === index ? { ...s, total, sidled, filled: true } : s,
     );
     setShots(updatedShots);
-
-    lastSideRef.current = side;
 
     if (next >= OFFTEE_TOTAL_SHOTS) {
       const previousSessions = loadOffTeeSessions();
@@ -127,11 +107,9 @@ function OffTeePage() {
       const nextShot = shots[next];
       if (nextShot.filled) {
         setTotal(nextShot.total);
-        setSide(nextShot.offline < 0 ? -1 : 1);
-        setOffset(Math.abs(nextShot.offline));
+        setSidled(nextShot.sidled);
       } else {
-        setSide(lastSideRef.current);
-        setOffset(0);
+        setSidled(0);
       }
     }
   }
@@ -142,11 +120,7 @@ function OffTeePage() {
     setIndex(i);
     const s = shots[i];
     setTotal(s.filled ? s.total : total);
-    if (s.filled) {
-      lastSideRef.current = s.offline < 0 ? -1 : 1;
-    }
-    setSide(s.offline < 0 ? -1 : 1);
-    setOffset(Math.abs(s.offline));
+    setSidled(s.filled ? s.sidled : 0);
   }
 
   if (phase === "setup") {
@@ -238,11 +212,9 @@ function OffTeePage() {
         current={current}
         index={index}
         total={total}
-        side={side}
-        offset={offset}
+        sidled={sidled}
         setTotal={setTotal}
-        setSide={setSide}
-        setOffset={setOffset}
+        setSidled={setSidled}
         onCommit={commit}
         onBack={back}
         onAbort={() => navigate({ to: "/kategori/$slug", params: { slug: "driving" } })}
@@ -290,11 +262,9 @@ function TestScreen({
   current,
   index,
   total,
-  side,
-  offset,
+  sidled,
   setTotal,
-  setSide,
-  setOffset,
+  setSidled,
   onCommit,
   onBack,
   onAbort,
@@ -302,11 +272,9 @@ function TestScreen({
   current: TeeShot;
   index: number;
   total: number;
-  side: -1 | 1;
-  offset: number;
+  sidled: number;
   setTotal: (n: number) => void;
-  setSide: (s: -1 | 1) => void;
-  setOffset: (n: number) => void;
+  setSidled: (n: number) => void;
   onCommit: () => void;
   onBack: () => void;
   onAbort: () => void;
@@ -358,46 +326,21 @@ function TestScreen({
 
         <div className="rounded-2xl border border-border bg-card p-3">
           <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-            Sidled från mitten
+            Sidled – hur mycket ifrån mitten
           </p>
-          <div className="mt-2 grid grid-cols-2 gap-2">
-            {[
-              { v: -1 as const, label: "Vänster", Icon: ChevronLeft },
-              { v: 1 as const, label: "Höger", Icon: ChevronRight },
-            ].map((o) => (
-              <button
-                key={o.label}
-                type="button"
-                onClick={() => setSide(o.v)}
-                aria-pressed={side === o.v}
-                className={`flex items-center justify-center gap-1.5 rounded-xl border-2 py-2.5 text-sm font-semibold transition-colors ${
-                  side === o.v
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border bg-transparent text-foreground active:bg-muted"
-                }`}
-              >
-                {o.v === -1 && <o.Icon className="h-4 w-4" />}
-                {o.label}
-                {o.v === 1 && <o.Icon className="h-4 w-4" />}
-              </button>
-            ))}
-          </div>
-          <SidledValue value={offset} onChange={setOffset} />
+          <SidledValue value={sidled} onChange={setSidled} />
         </div>
       </div>
 
       <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/95 px-6 pb-6 pt-3 backdrop-blur supports-[backdrop-filter]:bg-background/80">
         <p className="mb-3 text-center text-sm leading-snug text-muted-foreground">
           Slaget gick <span className="font-semibold text-foreground">{total} m totalt</span>
-          {offset === 0 ? (
+          {sidled === 0 ? (
             " rakt på linjen"
           ) : (
             <>
               {" "}
-              och{" "}
-              <span className="font-semibold text-foreground">
-                {offset} m {side < 0 ? "vänster" : "höger"}
-              </span>
+              och <span className="font-semibold text-foreground">{sidled} m från mitten</span>
             </>
           )}
           .
