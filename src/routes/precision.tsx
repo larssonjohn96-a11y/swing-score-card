@@ -4,7 +4,6 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
-  Gauge,
   Minus,
   Plus,
   Radar,
@@ -20,12 +19,6 @@ import {
   type PrecisionShot,
 } from "@/lib/precision";
 import { loadPrecisionSessions, savePrecisionSession } from "@/lib/precision-store";
-import {
-  RANGE_DEVICES,
-  SIMULATOR_DEVICES,
-  type Device,
-  type MeasurementContext,
-} from "@/lib/speed";
 import { NumberField } from "@/components/precision-visuals";
 import { ApproachShotVisual } from "@/components/approach-shot-visual";
 import { PrecisionReport } from "@/components/precision-report";
@@ -63,8 +56,6 @@ type Phase = "setup" | "test" | "processing" | "reveal" | "result";
 function PrecisionPage() {
   const navigate = useNavigate();
   const [phase, setPhase] = useState<Phase>("setup");
-  const [context, setContext] = useState<MeasurementContext>("range");
-  const [device, setDevice] = useState<Device>(RANGE_DEVICES[0]);
   const [shots, setShots] = useState<PrecisionShot[]>(emptyPrecisionShots);
   const [index, setIndex] = useState(0);
   const [carry, setCarry] = useState<number>(PRECISION_TARGETS[0]);
@@ -83,11 +74,6 @@ function PrecisionPage() {
   const current = shots[Math.min(index, PRECISION_TOTAL_SHOTS - 1)];
 
   useHideBottomNav(true);
-
-  function pickContext(c: MeasurementContext) {
-    setContext(c);
-    setDevice(c === "simulator" ? SIMULATOR_DEVICES[0] : RANGE_DEVICES[0]);
-  }
 
   function start() {
     const sessions = loadPrecisionSessions();
@@ -147,7 +133,7 @@ function PrecisionPage() {
     // spelar ändå ut sin egen sekvens innan den visar CTA:n, se
     // ApproachProcessing. Sparas direkt så resultatet garanterat finns
     // klart innan användaren kan trycka "Se mitt resultat".
-    const saved = savePrecisionSession(finalShots, context, device);
+    const saved = savePrecisionSession(finalShots);
 
     const isFirstTest = previousSessions.length === 0;
     // Ett resultat som MATCHAR (delar) tidigare rekord räknas nu också
@@ -204,7 +190,6 @@ function PrecisionPage() {
   }
 
   if (phase === "setup") {
-    const devices = context === "simulator" ? SIMULATOR_DEVICES : RANGE_DEVICES;
     return (
       <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-16 pt-8">
         <header className="flex items-end justify-between">
@@ -228,49 +213,10 @@ function PrecisionPage() {
             <Radar className="h-8 w-8 text-primary" />
           </span>
         </div>
-        <h2 className="mt-4 text-center text-2xl leading-tight">Var mäter du?</h2>
-
-        <div className="mt-6 grid grid-cols-2 gap-3">
-          <button
-            onClick={() => pickContext("simulator")}
-            className={`rounded-2xl border-2 p-4 text-left transition-colors ${
-              context === "simulator" ? "border-primary bg-primary/10" : "border-border bg-card"
-            }`}
-          >
-            <p className="font-[family-name:var(--font-display)] text-xl leading-none">Simulator</p>
-          </button>
-          <button
-            onClick={() => pickContext("range")}
-            className={`rounded-2xl border-2 p-4 text-left transition-colors ${
-              context === "range" ? "border-primary bg-primary/10" : "border-border bg-card"
-            }`}
-          >
-            <p className="font-[family-name:var(--font-display)] text-xl leading-none">Range</p>
-          </button>
-        </div>
-
-        <p className="mt-6 text-xs uppercase tracking-[0.2em] text-muted-foreground">
-          Vilken maskin?
-        </p>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {devices.map((d) => (
-            <button
-              key={d}
-              onClick={() => setDevice(d)}
-              className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
-                device === d
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border text-muted-foreground"
-              }`}
-            >
-              {d}
-            </button>
-          ))}
-        </div>
-
-        <p className="mt-4 flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
-          <Gauge className="h-3.5 w-3.5" />
-          Du kör testet på {context === "simulator" ? "simulator" : "range"} med {device}
+        <h2 className="mt-4 text-center text-2xl leading-tight">5 slag, 5 avstånd</h2>
+        <p className="mx-auto mt-2 max-w-xs text-center text-sm leading-relaxed text-muted-foreground">
+          Ett inspel vardera mot 50, 75, 100, 125 och 150 meter. Registrera carry och sidled efter
+          varje slag, så räknar vi ut ditt Approach HCP direkt.
         </p>
 
         <button
@@ -320,8 +266,6 @@ function PrecisionPage() {
       shots={shots}
       prevScore={prevScore}
       onRestart={start}
-      context={context}
-      device={device}
       pr={pr}
       newAchievement={newAchievement}
     />
@@ -612,16 +556,12 @@ function ResultScreen({
   shots,
   prevScore,
   onRestart,
-  context,
-  device,
   pr,
   newAchievement,
 }: {
   shots: PrecisionShot[];
   prevScore: number | null;
   onRestart: () => void;
-  context: MeasurementContext;
-  device: Device;
   pr: ApproachPRResult | null;
   newAchievement: ProgressItem | null;
 }) {
@@ -633,7 +573,7 @@ function ResultScreen({
 
       {pr && <ApproachCelebration pr={pr} />}
 
-      <PrecisionReport shots={shots} prevScore={prevScore} context={context} device={device} />
+      <PrecisionReport shots={shots} prevScore={prevScore} />
 
       {newAchievement && (
         <div className="mt-4 flex items-center gap-3 rounded-2xl border border-flag/40 bg-flag/5 p-4">

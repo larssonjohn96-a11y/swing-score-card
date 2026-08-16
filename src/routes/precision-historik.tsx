@@ -231,12 +231,7 @@ function PrecisionHistoryPage() {
                     </button>
                     {isOpen ? (
                       <div className="border-t border-border px-5 py-6">
-                        <PrecisionReport
-                          shots={s.shots}
-                          compact
-                          context={s.context}
-                          device={s.device}
-                        />
+                        <PrecisionReport shots={s.shots} compact />
                       </div>
                     ) : null}
                   </div>

@@ -1,26 +1,29 @@
-import { Gauge } from "lucide-react";
-import { handicapLabel, precisionResult, scoreBand, type PrecisionShot } from "@/lib/precision";
-import type { Device, MeasurementContext } from "@/lib/speed";
+import { Sparkles } from "lucide-react";
+import {
+  handicapFromPct,
+  handicapLabel,
+  precisionResult,
+  proximityPct,
+  scoreBand,
+  type PrecisionShot,
+} from "@/lib/precision";
 import { HcpBellCurve } from "@/components/hcp-bell-curve";
 
 /**
  * Ännu mer förenklad analys för ett genomfört Approach Test – bara
- * Approach HCP och bellcurven som visar var det placerar dig. Inga
- * nyckeltal, ingen nivå per avstånd – matchar samma minimalism som
- * Off the Tee-testets analyssida.
+ * Approach HCP, bellcurven som visar var det placerar dig, och en
+ * uppmuntrande highlight av testets bästa enskilda slag. Inga nyckeltal,
+ * ingen nivå per avstånd, ingen mät-kontext – matchar samma minimalism
+ * som Off the Tee-testets analyssida.
  */
 export function PrecisionReport({
   shots,
   prevScore,
   compact = false,
-  context,
-  device,
 }: {
   shots: PrecisionShot[];
   prevScore?: number | null;
   compact?: boolean;
-  context?: MeasurementContext;
-  device?: Device;
 }) {
   const result = precisionResult(shots);
   const band = scoreBand(result.score);
@@ -38,12 +41,6 @@ export function PrecisionReport({
         >
           {band.label}
         </p>
-        {device && (
-          <p className="mx-auto mt-2 inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">
-            <Gauge className="h-3.5 w-3.5" />
-            {context === "simulator" ? "Simulator" : "Range"} · {device}
-          </p>
-        )}
         {delta !== null && (
           <p className={`mt-2 text-sm ${delta >= 0 ? "text-primary" : "text-destructive"}`}>
             {delta > 0 ? "+" : ""}
@@ -54,11 +51,36 @@ export function PrecisionReport({
 
       <HcpBellCurve hcp={result.handicap} />
 
+      <BestShotHighlight shots={shots} />
+
       {!compact && (
         <p className="text-center text-sm text-muted-foreground">
           Gör om testet varje vecka eller månad för att följa utvecklingen.
         </p>
       )}
     </div>
+  );
+}
+
+/** Ego boost: lyfter fram testets enskilt bästa slag med dess motsvarande
+ *  HCP-nivå, oavsett hur resten av testet gick. */
+function BestShotHighlight({ shots }: { shots: PrecisionShot[] }) {
+  const filled = shots.filter((s) => s.filled);
+  if (!filled.length) return null;
+
+  const best = filled.reduce((a, b) => (proximityPct(a) < proximityPct(b) ? a : b));
+  const bestHcp = handicapFromPct(proximityPct(best));
+
+  return (
+    <section className="rounded-3xl border border-flag/30 bg-flag/5 p-5 text-center">
+      <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-flag/15 text-flag">
+        <Sparkles className="h-5 w-5" />
+      </span>
+      <p className="mt-2 text-sm leading-relaxed text-foreground">
+        Wow, ditt bästa slag – på <span className="font-semibold">{best.target} m</span> – höll{" "}
+        <span className="font-semibold text-flag">HCP {handicapLabel(bestHcp)}</span>-nivå. Snyggt
+        jobbat!
+      </p>
+    </section>
   );
 }

@@ -11,11 +11,12 @@ export function HcpBellCurve({ hcp }: { hcp: number }) {
   const W = 320;
   const H = 140;
 
-  const x = (v: number) => ((v - MIN) / (MAX - MIN)) * W;
+  const x = (v: number) => W - ((v - MIN) / (MAX - MIN)) * W;
   const y = (d: number) => H - d * (H - 18);
 
   const points: string[] = [];
-  for (let v = MIN; v <= MAX; v += 0.5) points.push(`${x(v).toFixed(1)},${y(hcpDensity(v)).toFixed(1)}`);
+  for (let v = MIN; v <= MAX; v += 0.5)
+    points.push(`${x(v).toFixed(1)},${y(hcpDensity(v)).toFixed(1)}`);
   const line = `M ${points.join(" L ")}`;
   const area = `${line} L ${W},${H} L 0,${H} Z`;
 
@@ -26,7 +27,12 @@ export function HcpBellCurve({ hcp }: { hcp: number }) {
 
   return (
     <div className="rounded-3xl border border-border bg-card p-4">
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Din nivå i handicapfördelningen">
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        className="w-full"
+        role="img"
+        aria-label="Din nivå i handicapfördelningen"
+      >
         <defs>
           <linearGradient id="bell-fill" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="currentColor" stopOpacity="0.18" />
@@ -50,9 +56,9 @@ export function HcpBellCurve({ hcp }: { hcp: number }) {
       </svg>
 
       <div className="mt-1 flex justify-between text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-        <span>+6</span>
-        <span>HCP 20</span>
         <span>40</span>
+        <span>HCP 20</span>
+        <span>+6</span>
       </div>
 
       <p className="mt-3 text-center text-sm">
