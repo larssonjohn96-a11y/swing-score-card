@@ -31,6 +31,8 @@ import { ApproachShotVisual } from "@/components/approach-shot-visual";
 import { PrecisionReport } from "@/components/precision-report";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 import { ApproachProcessing } from "@/components/approach-processing";
+import { ApproachHcpReveal } from "@/components/approach-hcp-reveal";
+
 import { ApproachCelebration, type ApproachPRResult } from "@/components/approach-celebration";
 import { computeAchievements, type ProgressItem } from "@/lib/trophy-room";
 
