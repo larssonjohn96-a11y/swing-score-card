@@ -305,10 +305,14 @@ function PrecisionPage() {
       <ApproachProcessing
         totalShots={PRECISION_TOTAL_SHOTS}
         resultReady
-        onSeeResult={() => setPhase("result")}
+        onSeeResult={() => setPhase("reveal")}
       />
     );
   }
+  if (phase === "reveal") {
+    return <ApproachHcpReveal hcp={revealHcp} onContinue={() => setPhase("result")} />;
+  }
+
 
   return (
     <ResultScreen
