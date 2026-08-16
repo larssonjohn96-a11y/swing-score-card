@@ -55,7 +55,7 @@ export const Route = createFileRoute("/precision")({
   component: PrecisionPage,
 });
 
-type Phase = "setup" | "test" | "processing" | "result";
+type Phase = "setup" | "test" | "processing" | "reveal" | "result";
 
 function PrecisionPage() {
   const navigate = useNavigate();
