@@ -18,9 +18,12 @@ import {
 } from "@/lib/speed";
 import { loadCardProfile } from "@/lib/rating-card";
 import { SpeedAgeBellCurve } from "@/components/speed-bell-curve";
+import { AgeInlinePrompt } from "@/components/age-inline-prompt";
 import { TeeNumberField } from "@/components/offtee-visuals";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
-import { TestResultProcessing, TestResultReveal, type RevealState } from "@/components/test-reveal";
+import type { RevealState } from "@/components/test-reveal";
+import { SpeedProcessing } from "@/components/speed-processing";
+import { SpeedHcpReveal } from "@/components/speed-hcp-reveal";
 import { computeRevealState } from "@/lib/test-reveal-helpers";
 
 export const Route = createFileRoute("/speed")({
@@ -41,6 +44,7 @@ type Phase = "setup" | "test" | "processing" | "reveal" | "result";
 
 type RevealData = {
   state: RevealState;
+  hcp: number;
   hcpLabel: string;
   previousHcpLabel?: string;
   deltaLabel?: string;
@@ -61,6 +65,7 @@ function SpeedPage() {
   const [clubSpeed, setClubSpeed] = useState(0);
 
   const [prevScore, setPrevScore] = useState<number | null>(null);
+  const [age, setAge] = useState<number | undefined>(() => loadCardProfile().age);
   const [reveal, setReveal] = useState<RevealData | null>(null);
 
   const lastBallSpeedRef = useRef(DEFAULT_BALL_SPEED);
@@ -105,6 +110,7 @@ function SpeedPage() {
       const derived = computeRevealState(previousHcps, savedSession.handicap);
       setReveal({
         state: derived.state,
+        hcp: savedSession.handicap,
         hcpLabel: handicapLabel(savedSession.handicap),
         previousHcpLabel:
           derived.previousHcp !== undefined ? handicapLabel(derived.previousHcp) : undefined,
@@ -330,31 +336,19 @@ function SpeedPage() {
 
   if (phase === "processing" && reveal) {
     return (
-      <TestResultProcessing
-        testLabel="Speed"
-        secondaryLabel={`${SPEED_TOTAL_SHOTS} / ${SPEED_TOTAL_SHOTS} slag`}
-        isRetest={reveal.isRetest}
-        onDone={() => setPhase("reveal")}
+      <SpeedProcessing
+        totalShots={SPEED_TOTAL_SHOTS}
+        resultReady
+        onSeeResult={() => setPhase("reveal")}
       />
     );
   }
 
   if (phase === "reveal" && reveal) {
-    return (
-      <TestResultReveal
-        testLabel="Speed"
-        value={reveal.hcpLabel}
-        previousValue={reveal.previousHcpLabel}
-        deltaLabel={reveal.deltaLabel}
-        state={reveal.state}
-        profileUpdated
-        onContinue={() => setPhase("result")}
-      />
-    );
+    return <SpeedHcpReveal hcp={reveal.hcp} onContinue={() => setPhase("result")} />;
   }
 
   const result = computeSpeedResult(shots);
-  const profile = loadCardProfile();
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-16 pt-10">
@@ -365,29 +359,22 @@ function SpeedPage() {
         </p>
       </section>
 
-      {profile.age ? (
+      {age ? (
         <div className="mt-4">
           <SpeedAgeBellCurve
             ballSpeed={result.avgBallSpeed}
-            age={profile.age}
-            {...ballSpeedDistributionForAge(profile.age)}
+            age={age}
+            {...ballSpeedDistributionForAge(age)}
           />
         </div>
       ) : (
-        <Link
-          to="/konto"
-          className="mt-4 flex items-center gap-3 rounded-3xl border border-primary/30 bg-primary/5 p-4"
-        >
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
-            <Gauge className="h-4 w-4" strokeWidth={1.75} />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-sm font-semibold leading-tight">Ange din ålder</span>
-            <span className="block text-xs text-muted-foreground">
-              Se var din ball speed ligger jämfört med jämnåriga golfare
-            </span>
-          </span>
-        </Link>
+        <div className="mt-4">
+          <AgeInlinePrompt
+            title="Ange din ålder"
+            description="Se var din ball speed ligger jämfört med jämnåriga golfare"
+            onSaved={(n) => setAge(n)}
+          />
+        </div>
       )}
 
       <SpeedBestShotHighlight topBallSpeed={result.topBallSpeed} />

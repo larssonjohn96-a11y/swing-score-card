@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { ArrowRight, Calendar, ChevronRight, Gauge, Share2, User, Users } from "lucide-react";
+import { ArrowRight, ChevronRight, Gauge, Share2, User, Users } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { ThemeToggle } from "@/components/theme-toggle";
 import {
@@ -20,6 +20,7 @@ import { RadarCard } from "@/components/progress-dashboard";
 import { pushPlayerSnapshot, listFriendships } from "@/lib/friends-cloud";
 import { loadFriends } from "@/lib/friends";
 import { AppStoryLauncher } from "@/components/app-story";
+import { AgeInlinePrompt } from "@/components/age-inline-prompt";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -65,6 +66,7 @@ function loadHomeData(): HomeData {
 function Home() {
   const { user, displayName } = useAuth();
   const [data, setData] = useState<HomeData | null>(null);
+  const [ageSaved, setAgeSaved] = useState(false);
   const [friendCount, setFriendCount] = useState<number | null>(null);
   const { isPlus } = useSubscription();
   const profile = loadCardProfile();
@@ -192,22 +194,14 @@ function Home() {
             </Link>
           )}
 
-          {profile.age === undefined && (
-            <Link
-              to="/konto"
-              className="mb-4 flex items-center gap-3 rounded-2xl border border-primary/30 bg-primary/5 p-4"
-            >
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
-                <Calendar className="h-4 w-4" strokeWidth={1.75} />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-sm font-semibold leading-tight">Ange din ålder</span>
-                <span className="block text-xs text-muted-foreground">
-                  Se hur din ball speed i Speed Test står sig mot jämnåriga golfare
-                </span>
-              </span>
-              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-            </Link>
+          {profile.age === undefined && !ageSaved && (
+            <div className="mb-4">
+              <AgeInlinePrompt
+                title="Ange din ålder"
+                description="Se hur din ball speed i Speed Test står sig mot jämnåriga golfare"
+                onSaved={() => setAgeSaved(true)}
+              />
+            </div>
           )}
 
           <PlayerCard
