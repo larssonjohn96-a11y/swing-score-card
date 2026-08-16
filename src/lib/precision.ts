@@ -11,6 +11,12 @@ export const PRECISION_TARGETS = [50, 75, 100, 125, 150] as const;
 export const PRECISION_ROUNDS = 1;
 export const PRECISION_TOTAL_SHOTS = PRECISION_TARGETS.length * PRECISION_ROUNDS;
 
+/** Utökat test – för erfarna spelare som vill ha ett djupare underlag: de
+ *  ursprungliga nio avstånden, två varv, 18 slag totalt. */
+export const EXTENDED_PRECISION_TARGETS = [55, 64, 73, 82, 91, 110, 128, 146, 165] as const;
+export const EXTENDED_PRECISION_ROUNDS = 2;
+export const EXTENDED_PRECISION_TOTAL_SHOTS =
+  EXTENDED_PRECISION_TARGETS.length * EXTENDED_PRECISION_ROUNDS;
 
 /** Rådata för ett slag – samma form oavsett datakälla. */
 export type ShotInput = {
@@ -21,7 +27,7 @@ export type ShotInput = {
 };
 
 export type PrecisionShot = ShotInput & {
-  /** 1-baserat slagnummer, 1–18 */
+  /** 1-baserat slagnummer */
   index: number;
   round: number;
   target: number;
@@ -29,12 +35,17 @@ export type PrecisionShot = ShotInput & {
   filled: boolean;
 };
 
-/** Tom serie i rätt spelordning. */
-export function emptyPrecisionShots(): PrecisionShot[] {
+/** Tom serie i rätt spelordning. Utan argument: huvudtestet (5 slag).
+ *  Skicka EXTENDED_PRECISION_TARGETS/EXTENDED_PRECISION_ROUNDS för det
+ *  utökade 18-slagstestet. */
+export function emptyPrecisionShots(
+  targets: readonly number[] = PRECISION_TARGETS,
+  rounds: number = PRECISION_ROUNDS,
+): PrecisionShot[] {
   const shots: PrecisionShot[] = [];
   let index = 0;
-  for (let round = 1; round <= PRECISION_ROUNDS; round += 1) {
-    for (const target of PRECISION_TARGETS) {
+  for (let round = 1; round <= rounds; round += 1) {
+    for (const target of targets) {
       index += 1;
       shots.push({ index, round, target, carry: 0, offline: 0, filled: false });
     }
@@ -137,10 +148,16 @@ export type TargetStat = {
   count: number;
 };
 
-/** Resultat per avstånd, ett värde per varv plus medel. */
+/** Resultat per avstånd, ett värde per varv plus medel. Härleder både
+ *  vilka avstånd och hur många varv som förekommer ur SJÄLVA slagdatan
+ *  (inte de fasta PRECISION_TARGETS/PRECISION_ROUNDS-konstanterna), så
+ *  funktionen fungerar korrekt både för huvudtestet (5 slag) och det
+ *  utökade testet (18 slag, andra avstånd). */
 export function statsByTarget(shots: PrecisionShot[]): TargetStat[] {
-  return PRECISION_TARGETS.map((target) => {
-    const rounds = Array.from({ length: PRECISION_ROUNDS }, (_, i) =>
+  const targets = Array.from(new Set(shots.map((s) => s.target))).sort((a, b) => a - b);
+  const maxRound = shots.reduce((m, s) => Math.max(m, s.round), 1);
+  return targets.map((target) => {
+    const rounds = Array.from({ length: maxRound }, (_, i) =>
       shots.find((s) => s.target === target && s.round === i + 1 && s.filled),
     );
     const filled = rounds.filter(Boolean) as PrecisionShot[];
@@ -223,7 +240,8 @@ export type PrecisionResult = {
 
 export function precisionResult(shots: PrecisionShot[]): PrecisionResult {
   const filled = shots.filter((s) => s.filled);
-  const perTarget = PRECISION_TARGETS.map((target) => {
+  const targets = Array.from(new Set(shots.map((s) => s.target))).sort((a, b) => a - b);
+  const perTarget = targets.map((target) => {
     const t = filled.filter((s) => s.target === target);
     const avgPct = mean(t.map(proximityPct));
     return {
@@ -482,7 +500,6 @@ export const DISTANCE_GROUPS = [
   { label: "150 m", min: 150, max: 150 },
 ] as const;
 
-
 export type GroupScore = {
   label: string;
   min: number;
@@ -702,7 +719,8 @@ export function hcpPercentile(hcp: number): number {
   // Abramowitz & Stegun-approximation av normalfördelningens CDF.
   const t = 1 / (1 + 0.2316419 * Math.abs(z));
   const d = 0.3989423 * Math.exp((-z * z) / 2);
-  let p = d * t * (1.330274 * t ** 4 - 1.821256 * t ** 3 + 1.781478 * t * t - 0.356538 * t + 0.319381);
+  let p =
+    d * t * (1.330274 * t ** 4 - 1.821256 * t ** 3 + 1.781478 * t * t - 0.356538 * t + 0.319381);
   if (z > 0) p = 1 - p;
   // p = andel med lägre hcp än du → andelen du slår är resten.
   return Math.max(1, Math.min(99, Math.round((1 - p) * 100)));

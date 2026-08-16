@@ -17,14 +17,12 @@ import { HcpBellCurve } from "@/components/hcp-bell-curve";
  */
 export function PrecisionReport({
   shots,
-  prevScore,
 }: {
   shots: PrecisionShot[];
   prevScore?: number | null;
   compact?: boolean;
 }) {
   const result = precisionResult(shots);
-  const delta = typeof prevScore === "number" ? result.score - prevScore : null;
 
   return (
     <div className="space-y-4">
@@ -33,12 +31,6 @@ export function PrecisionReport({
         <p className="mt-1 font-[family-name:var(--font-display)] text-8xl leading-none text-primary">
           {handicapLabel(result.handicap)}
         </p>
-        {delta !== null && (
-          <p className={`mt-2 text-sm ${delta >= 0 ? "text-primary" : "text-destructive"}`}>
-            {delta > 0 ? "+" : ""}
-            {delta} poäng sedan förra testet
-          </p>
-        )}
       </section>
 
       <HcpBellCurve hcp={result.handicap} />
@@ -71,10 +63,16 @@ function BestShotHighlight({ shots }: { shots: PrecisionShot[] }) {
         <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.25em] text-flag">
           Bästa slaget
         </p>
-        <p className="mt-1 font-[family-name:var(--font-display)] text-6xl leading-none text-flag">
+        <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+          HCP-nivå
+        </p>
+        <p className="mt-0.5 font-[family-name:var(--font-display)] text-6xl leading-none text-flag">
           {handicapLabel(bestHcp)}
         </p>
-        <p className="mt-1.5 text-xs text-muted-foreground">{best.target} m · Snyggt jobbat! 🎉</p>
+        <p className="mt-2 text-xs text-muted-foreground">
+          På {best.target} m slog du som en spelare med HCP {handicapLabel(bestHcp)}. Snyggt jobbat!
+          🎉
+        </p>
       </div>
     </section>
   );

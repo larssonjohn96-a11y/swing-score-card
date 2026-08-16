@@ -1,7 +1,6 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   ArrowRight,
-  Check,
   ChevronLeft,
   ChevronRight,
   Minus,
@@ -13,8 +12,10 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
+  EXTENDED_PRECISION_ROUNDS,
+  EXTENDED_PRECISION_TARGETS,
+  PRECISION_ROUNDS,
   PRECISION_TARGETS,
-  PRECISION_TOTAL_SHOTS,
   emptyPrecisionShots,
   type PrecisionShot,
 } from "@/lib/precision";
@@ -52,10 +53,13 @@ export const Route = createFileRoute("/precision")({
 });
 
 type Phase = "setup" | "test" | "processing" | "reveal" | "result";
+type TestMode = "main" | "extended";
 
 function PrecisionPage() {
   const navigate = useNavigate();
   const [phase, setPhase] = useState<Phase>("setup");
+  const [mode, setMode] = useState<TestMode>("main");
+  const [showExtended, setShowExtended] = useState(false);
   const [shots, setShots] = useState<PrecisionShot[]>(emptyPrecisionShots);
   const [index, setIndex] = useState(0);
   const [carry, setCarry] = useState<number>(PRECISION_TARGETS[0]);
@@ -71,17 +75,23 @@ function PrecisionPage() {
   /** bara ETT steg bakåt tillåts – spärras tills nästa slag sparats */
   const [undoUsed, setUndoUsed] = useState(false);
 
-  const current = shots[Math.min(index, PRECISION_TOTAL_SHOTS - 1)];
+  /** Antal slag styrs av vilket läge som valdes vid start – shots.length
+   *  är alltid rätt storlek oavsett huvudtest (5) eller utökat test (18). */
+  const totalShots = shots.length;
+  const current = shots[Math.min(index, totalShots - 1)];
 
   useHideBottomNav(true);
 
-  function start() {
+  function start(selectedMode: TestMode = mode) {
     const sessions = loadPrecisionSessions();
     const last = sessions[sessions.length - 1];
     setPrevScore(last ? (last.score ?? 0) : null);
-    setShots(emptyPrecisionShots());
+    const targets = selectedMode === "extended" ? EXTENDED_PRECISION_TARGETS : PRECISION_TARGETS;
+    const rounds = selectedMode === "extended" ? EXTENDED_PRECISION_ROUNDS : PRECISION_ROUNDS;
+    setMode(selectedMode);
+    setShots(emptyPrecisionShots(targets, rounds));
     setIndex(0);
-    setCarry(PRECISION_TARGETS[0]);
+    setCarry(targets[0]);
     setSide(1);
     setOffset(0);
     setPr(null);
@@ -100,9 +110,9 @@ function PrecisionPage() {
     setShots(updatedShots);
     setUndoUsed(false);
 
-    if (next >= PRECISION_TOTAL_SHOTS) {
+    if (next >= totalShots) {
       // Testet låses INTE här – användaren får en sista chans att ändra
-      // slag 18 innan analysen körs (se finalize).
+      // sista slaget innan analysen körs (se finalize).
       setAllRegistered(true);
     } else {
       // Om nästa slag redan är registrerat (användaren gick ett steg bakåt)
@@ -170,9 +180,9 @@ function PrecisionPage() {
   /** Ett steg bakåt till senast registrerade slag, med värdena förifyllda. */
   function back() {
     if (allRegistered) {
-      // Slag 18 är registrerat men testet inte slutfört – ändra det slaget.
+      // Sista slaget är registrerat men testet inte slutfört – ändra det slaget.
       setAllRegistered(false);
-      const i = PRECISION_TOTAL_SHOTS - 1;
+      const i = totalShots - 1;
       setIndex(i);
       setCarry(shots[i].filled ? shots[i].carry : shots[i].target);
       setSide(shots[i].offline < 0 ? -1 : 1);
@@ -220,11 +230,37 @@ function PrecisionPage() {
         </p>
 
         <button
-          onClick={start}
+          onClick={() => start("main")}
           className="mt-6 w-full rounded-2xl bg-primary py-5 font-[family-name:var(--font-display)] text-2xl text-primary-foreground"
         >
           Starta Approach Test
         </button>
+
+        {!showExtended ? (
+          <button
+            type="button"
+            onClick={() => setShowExtended(true)}
+            className="mx-auto mt-4 block text-center text-xs text-muted-foreground underline-offset-4 hover:underline"
+          >
+            Erfaren spelare? Utökat test med 18 slag →
+          </button>
+        ) : (
+          <div className="mt-4 rounded-2xl border border-dashed border-border p-4 text-center">
+            <p className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+              Utökat test · för experter
+            </p>
+            <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+              18 slag mot nio avstånd (55–165 m), två varv – ett djupare underlag om du redan gör
+              huvudtestet regelbundet.
+            </p>
+            <button
+              onClick={() => start("extended")}
+              className="mt-3 w-full rounded-xl border border-border py-3 text-sm font-semibold text-foreground transition-colors hover:border-primary"
+            >
+              Starta utökat test (18 slag)
+            </button>
+          </div>
+        )}
       </main>
     );
   }
@@ -234,6 +270,7 @@ function PrecisionPage() {
       <TestScreen
         current={current}
         index={index}
+        totalShots={totalShots}
         carry={carry}
         side={side}
         offset={offset}
@@ -251,7 +288,7 @@ function PrecisionPage() {
   if (phase === "processing") {
     return (
       <ApproachProcessing
-        totalShots={PRECISION_TOTAL_SHOTS}
+        totalShots={totalShots}
         resultReady
         onSeeResult={() => setPhase("reveal")}
       />
@@ -277,6 +314,7 @@ function PrecisionPage() {
 function TestScreen({
   current,
   index,
+  totalShots,
   carry,
   side,
   offset,
@@ -292,6 +330,7 @@ function TestScreen({
 }: {
   current: PrecisionShot;
   index: number;
+  totalShots: number;
   carry: number;
   side: -1 | 1;
   offset: number;
@@ -307,8 +346,8 @@ function TestScreen({
   onFinalize: () => void;
   onAbort: () => void;
 }) {
-  const done = allRegistered ? PRECISION_TOTAL_SHOTS : index;
-  const pct = Math.round((done / PRECISION_TOTAL_SHOTS) * 100);
+  const done = allRegistered ? totalShots : index;
+  const pct = Math.round((done / totalShots) * 100);
   const diff = carry - current.target;
   const isPerfect = diff === 0 && offset === 0;
   const landingDistanceM = Math.sqrt(diff * diff + offset * offset);
@@ -342,11 +381,10 @@ function TestScreen({
         <div className="flex items-baseline justify-between text-sm">
           <span className="font-semibold">
             {allRegistered ? (
-              `${PRECISION_TOTAL_SHOTS}/${PRECISION_TOTAL_SHOTS} slag registrerade`
+              `${totalShots}/${totalShots} slag registrerade`
             ) : (
               <>
-                Slag {index + 1}{" "}
-                <span className="text-muted-foreground">av {PRECISION_TOTAL_SHOTS}</span>
+                Slag {index + 1} <span className="text-muted-foreground">av {totalShots}</span>
               </>
             )}
           </span>
@@ -363,9 +401,7 @@ function TestScreen({
             <span
               key={t}
               className={
-                i === Math.min(index, PRECISION_TOTAL_SHOTS - 1)
-                  ? "font-semibold text-foreground"
-                  : ""
+                i === Math.min(index, totalShots - 1) ? "font-semibold text-foreground" : ""
               }
             >
               {t} m
@@ -447,8 +483,7 @@ function TestScreen({
         <p className="mb-2 text-center text-xs leading-snug text-muted-foreground">
           {allRegistered ? (
             <>
-              Alla {PRECISION_TOTAL_SHOTS} slag är registrerade. Kontrollera senaste slaget innan du
-              slutför.
+              Alla {totalShots} slag är registrerade. Kontrollera senaste slaget innan du slutför.
             </>
           ) : (
             <>
@@ -474,11 +509,7 @@ function TestScreen({
           disabled={flying}
           className="mx-auto flex w-full max-w-md items-center justify-center gap-2 rounded-2xl bg-primary py-3.5 font-[family-name:var(--font-display)] text-xl text-primary-foreground disabled:opacity-70"
         >
-          {allRegistered
-            ? "Slutför test"
-            : index + 1 === PRECISION_TOTAL_SHOTS
-              ? "Spara slag"
-              : "Nästa slag"}
+          {allRegistered ? "Slutför test" : index + 1 === totalShots ? "Spara slag" : "Nästa slag"}
           <ArrowRight className="h-5 w-5" />
         </button>
       </div>
@@ -567,10 +598,6 @@ function ResultScreen({
 }) {
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-16 pt-10">
-      <p className="mb-6 flex items-center justify-center gap-1 text-xs text-primary">
-        <Check className="h-4 w-4" /> Testet är sparat
-      </p>
-
       {pr && <ApproachCelebration pr={pr} />}
 
       <PrecisionReport shots={shots} prevScore={prevScore} />
@@ -596,19 +623,13 @@ function ResultScreen({
         </div>
       )}
 
-      <div className="mt-10 flex gap-3">
+      <div className="mt-10">
         <button
           onClick={onRestart}
-          className="flex-1 rounded-2xl bg-primary py-4 font-[family-name:var(--font-display)] text-2xl text-primary-foreground"
+          className="w-full rounded-2xl bg-primary py-4 font-[family-name:var(--font-display)] text-2xl text-primary-foreground"
         >
           Nytt test
         </button>
-        <Link
-          to="/precision-historik"
-          className="flex-1 rounded-2xl border border-border py-4 text-center font-[family-name:var(--font-display)] text-2xl text-muted-foreground"
-        >
-          Historik
-        </Link>
       </div>
 
       <div className="mt-3 flex gap-3">
