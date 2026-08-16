@@ -681,3 +681,39 @@ export function precisionInsights(
 
   return insights.slice(0, 3);
 }
+
+/* -------------------------------------------------------------------------
+ * Normalfördelning av handicap – underlag till bellcurven på resultatsidan
+ * ---------------------------------------------------------------------- */
+
+/** Ungefärlig fördelning av handicap bland golfare (normalfördelad). */
+export const HCP_DISTRIBUTION_MEAN = 20;
+export const HCP_DISTRIBUTION_SD = 8;
+
+/** Täthetsfunktion (ej normerad i y) för handicap-fördelningen. */
+export function hcpDensity(hcp: number): number {
+  const z = (hcp - HCP_DISTRIBUTION_MEAN) / HCP_DISTRIBUTION_SD;
+  return Math.exp(-0.5 * z * z);
+}
+
+/** Andel golfare (0–100) som har HÖGRE handicap än det angivna, dvs som du slår. */
+export function hcpPercentile(hcp: number): number {
+  const z = (hcp - HCP_DISTRIBUTION_MEAN) / HCP_DISTRIBUTION_SD;
+  // Abramowitz & Stegun-approximation av normalfördelningens CDF.
+  const t = 1 / (1 + 0.2316419 * Math.abs(z));
+  const d = 0.3989423 * Math.exp((-z * z) / 2);
+  let p = d * t * (1.330274 * t ** 4 - 1.821256 * t ** 3 + 1.781478 * t * t - 0.356538 * t + 0.319381);
+  if (z > 0) p = 1 - p;
+  // p = andel med lägre hcp än du → andelen du slår är resten.
+  return Math.max(1, Math.min(99, Math.round((1 - p) * 100)));
+}
+
+/** Kort etikett för var i fördelningen spelaren ligger. */
+export function hcpCohortLabel(hcp: number): string {
+  if (hcp <= 0) return "Elitnivå";
+  if (hcp <= 5) return "Toppspelare";
+  if (hcp <= 12) return "Låg handicap";
+  if (hcp <= 20) return "Klubbspelare";
+  if (hcp <= 28) return "Utvecklingsnivå";
+  return "Nybörjarnivå";
+}
