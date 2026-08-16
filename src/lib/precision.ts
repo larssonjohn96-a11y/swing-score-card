@@ -1,15 +1,16 @@
 /**
  * Approach Precision Test – testlogik och beräkningar.
  *
- * 18 slag: 9 målavstånd × 2 varv. Spelaren matar in carry och sidled
+ * 5 slag: 5 målavstånd × 1 varv. Spelaren matar in carry och sidled
  * (manuellt eller, i framtiden, automatiskt från en launch monitor).
  * Alla beräkningar nedan är rena funktioner utan UI eller lagring.
  */
 
 /** Målavstånd i meter, i den ordning de spelas. */
-export const PRECISION_TARGETS = [55, 64, 73, 82, 91, 110, 128, 146, 165] as const;
-export const PRECISION_ROUNDS = 2;
+export const PRECISION_TARGETS = [50, 75, 100, 125, 150] as const;
+export const PRECISION_ROUNDS = 1;
 export const PRECISION_TOTAL_SHOTS = PRECISION_TARGETS.length * PRECISION_ROUNDS;
+
 
 /** Rådata för ett slag – samma form oavsett datakälla. */
 export type ShotInput = {
