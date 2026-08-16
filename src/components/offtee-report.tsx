@@ -99,7 +99,6 @@ export function OffTeeReport({
         <h2 className="font-display text-2xl leading-none">Längd</h2>
         <div className="mt-4 grid grid-cols-2 gap-3">
           <Stat label="Snitt totalt" value={`${result.avgTotal.toFixed(0)} m`} />
-          <Stat label="Snitt carry" value={`${result.avgCarry.toFixed(0)} m`} />
           <Stat label="Längsta drive" value={`${result.longest.toFixed(0)} m`} />
           <Stat label="Spridning" value={`±${result.distanceSpread.toFixed(0)} m`} />
         </div>

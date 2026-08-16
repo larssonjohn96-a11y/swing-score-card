@@ -1,12 +1,9 @@
-/**
- * Off the Tee Test – testlogik och beräkningar.
- *
- * Standardiserat test: 6 drives mot samma fairway. Spelaren matar bara in
- * tre tal per slag – carry, totalt avstånd och sidled från mitten. Ingen
- * klubba, inga varierande hål. Driving Handicap byggs av tre delar –
- * längd, wayward-andel (OB) och konsekvens – där längd och wayward-andel
- * är kalibrerade mot Arccos "Driving Distance Report" (2026 edition,
- * ~10 miljoner tee-slag): https://uploads.mygolfspy.com/uploads/2026/05/ArccosDrivingDistanceReport_2026Edition.pdf
+/** Standardiserat test: 6 drives mot samma fairway. Spelaren matar bara in
+ * två tal per slag – totalt avstånd och sidled från mitten. Ingen klubba,
+ * inga varierande hål. Driving Handicap byggs av fyra delar – längd,
+ * wayward-andel (OB), fairwayträff och jämnhet – där längd och
+ * wayward-andel är kalibrerade mot Arccos "Driving Distance Report" (2026
+ * edition, ~10 miljoner tee-slag): https://uploads.mygolfspy.com/uploads/2026/05/ArccosDrivingDistanceReport_2026Edition.pdf
  *
  * Nyckeltal därifrån (män, alla åldrar):
  * - HCP 0–4,9: snitt 244 yards (~223 m) totalt
@@ -30,9 +27,7 @@ export const OFFTEE_TOTAL_SHOTS = 6;
 
 /** Rådata för ett slag. */
 export type TeeShotInput = {
-  /** carry i meter */
-  carry: number;
-  /** totalt avstånd (carry + rull) i meter */
+  /** totalt avstånd i meter */
   total: number;
   /** sidled i meter, negativt = vänster, positivt = höger */
   offline: number;
@@ -48,7 +43,6 @@ export type TeeShot = TeeShotInput & {
 export function emptyTeeShots(): TeeShot[] {
   return Array.from({ length: OFFTEE_TOTAL_SHOTS }, (_, i) => ({
     index: i + 1,
-    carry: 0,
     total: 0,
     offline: 0,
     filled: false,
@@ -225,7 +219,6 @@ export type OffTeeResult = {
   breakdown: { distanceHcp: number; waywardHcp: number; fairwayHcp: number; evennessHcp: number };
   shots: TeeShotResult[];
   avgTotal: number;
-  avgCarry: number;
   longest: number;
   fairwayHitPct: number;
   waywardPct: number;
@@ -248,7 +241,6 @@ export function offTeeResult(shots: TeeShot[]): OffTeeResult {
   const results: TeeShotResult[] = filled.map((s) => ({
     index: s.index,
     total: s.total,
-    carry: s.carry,
     offline: s.offline,
     outcome: shotOutcome(s.offline),
   }));
@@ -268,20 +260,20 @@ export function offTeeResult(shots: TeeShot[]): OffTeeResult {
   const fairwayHcp = results.length ? fairwayToHandicap(fairwayHitPct) : 0;
   const evennessHcp = results.length >= 2 ? evennessToHandicap(combinedSd) : distanceHcp;
 
-  const handicap = results.length
-    ? Math.round(
-        Math.max(
-          -8,
-          Math.min(
-            40,
-            distanceHcp * DISTANCE_WEIGHT +
-              waywardHcp * WAYWARD_WEIGHT +
-              fairwayHcp * FAIRWAY_WEIGHT +
-              evennessHcp * EVENNESS_WEIGHT,
-          ),
-        ) * 10,
-      ) / 10
-    : 0;
+  // Viktad kombination av alla fyra – MEN aldrig bättre än distanceHcp - 8.
+  // Utan det här golvet kunde ett kort men rakt/jämnt slag (t.ex. 40 m
+  // totalt) "köpa tillbaka" poäng från wayward/fairway/jämnhet (som alla
+  // blir maximalt bra vid så få eller så korta slag) och landa på ett
+  // orimligt bra HCP – riktig längd är den enskilt viktigaste faktorn och
+  // ska inte gå att helt kompensera bort med bara riktning/konsekvens.
+  const weighted =
+    distanceHcp * DISTANCE_WEIGHT +
+    waywardHcp * WAYWARD_WEIGHT +
+    fairwayHcp * FAIRWAY_WEIGHT +
+    evennessHcp * EVENNESS_WEIGHT;
+  const floored = Math.max(weighted, distanceHcp - 8);
+
+  const handicap = results.length ? Math.round(Math.max(-8, Math.min(40, floored)) * 10) / 10 : 0;
 
   return {
     score: results.length ? scoreFromHandicap(handicap) : 0,
@@ -294,7 +286,6 @@ export function offTeeResult(shots: TeeShot[]): OffTeeResult {
     },
     shots: results,
     avgTotal,
-    avgCarry: mean(results.map((r) => r.carry)),
     longest: totals.length ? Math.max(...totals) : 0,
     fairwayHitPct,
     waywardPct,

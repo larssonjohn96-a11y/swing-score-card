@@ -56,15 +56,8 @@ type RevealData = {
   isRetest: boolean;
 };
 
-/** Förval för första slaget: 200 m carry, +10 % rull = 220 m totalt. */
-const DEFAULT_CARRY = 200;
-const DEFAULT_ROLL_RATIO = 1.1;
-const MIN_ROLL_RATIO = 1.0;
-const MAX_ROLL_RATIO = 1.3;
-
-function clampRatio(r: number): number {
-  return Math.max(MIN_ROLL_RATIO, Math.min(MAX_ROLL_RATIO, r));
-}
+/** Förval för första slaget: typiskt snitt-totalt avstånd. */
+const DEFAULT_TOTAL = 220;
 
 function OffTeePage() {
   const navigate = useNavigate();
@@ -73,17 +66,12 @@ function OffTeePage() {
   const [device, setDevice] = useState<Device>(RANGE_DEVICES[0]);
   const [shots, setShots] = useState<TeeShot[]>(emptyTeeShots);
   const [index, setIndex] = useState(0);
-  const [carry, setCarryRaw] = useState(DEFAULT_CARRY);
-  const [total, setTotalRaw] = useState(Math.round(DEFAULT_CARRY * DEFAULT_ROLL_RATIO));
+  const [total, setTotal] = useState(DEFAULT_TOTAL);
   const [side, setSide] = useState<-1 | 1>(1);
   const [offset, setOffset] = useState(0);
   const [prevScore, setPrevScore] = useState<number | null>(null);
   const [reveal, setReveal] = useState<RevealData | null>(null);
 
-  // Kom ihåg carry och rull-förhållandet (totalt / carry) mellan slagen, så
-  // spelaren slipper skriva in samma värden på nytt varje gång.
-  const rollRatioRef = useRef(DEFAULT_ROLL_RATIO);
-  const totalTouchedRef = useRef(false);
   // Kom ihåg senast valda riktning (vänster/höger) mellan slagen.
   const lastSideRef = useRef<-1 | 1>(1);
 
@@ -96,31 +84,14 @@ function OffTeePage() {
     setDevice(c === "simulator" ? SIMULATOR_DEVICES[0] : RANGE_DEVICES[0]);
   }
 
-  /** Ändrar carry – och räknar live om totalt via det ihågkomna rull-förhållandet,
-   *  så länge spelaren inte redan justerat totalt manuellt för det här slaget. */
-  function setCarry(n: number) {
-    setCarryRaw(n);
-    if (!totalTouchedRef.current) {
-      setTotalRaw(Math.round(n * rollRatioRef.current));
-    }
-  }
-
-  function setTotal(n: number) {
-    setTotalRaw(n);
-    totalTouchedRef.current = true;
-  }
-
   function start() {
     const sessions = loadOffTeeSessions();
     const last = sessions[sessions.length - 1];
     setPrevScore(last ? last.score : null);
     setShots(emptyTeeShots());
     setIndex(0);
-    rollRatioRef.current = DEFAULT_ROLL_RATIO;
-    totalTouchedRef.current = false;
     lastSideRef.current = 1;
-    setCarryRaw(DEFAULT_CARRY);
-    setTotalRaw(Math.round(DEFAULT_CARRY * DEFAULT_ROLL_RATIO));
+    setTotal(DEFAULT_TOTAL);
     setSide(1);
     setOffset(0);
     setReveal(null);
@@ -131,14 +102,10 @@ function OffTeePage() {
     const offline = side * offset;
     const next = index + 1;
     const updatedShots = shots.map((s, i) =>
-      i === index ? { ...s, carry, total, offline, filled: true } : s,
+      i === index ? { ...s, total, offline, filled: true } : s,
     );
     setShots(updatedShots);
 
-    // Uppdatera det ihågkomna rull-förhållandet och riktningen från slaget som just registrerades.
-    if (carry > 0) {
-      rollRatioRef.current = clampRatio(total / carry);
-    }
     lastSideRef.current = side;
 
     if (next >= OFFTEE_TOTAL_SHOTS) {
@@ -157,17 +124,12 @@ function OffTeePage() {
       setPhase("processing");
     } else {
       setIndex(next);
-      totalTouchedRef.current = false;
       const nextShot = shots[next];
-      const nextCarry = nextShot.filled ? nextShot.carry : carry;
-      setCarryRaw(nextCarry);
       if (nextShot.filled) {
-        setTotalRaw(nextShot.total);
-        totalTouchedRef.current = true;
+        setTotal(nextShot.total);
         setSide(nextShot.offline < 0 ? -1 : 1);
         setOffset(Math.abs(nextShot.offline));
       } else {
-        setTotalRaw(Math.round(nextCarry * rollRatioRef.current));
         setSide(lastSideRef.current);
         setOffset(0);
       }
@@ -179,12 +141,7 @@ function OffTeePage() {
     const i = index - 1;
     setIndex(i);
     const s = shots[i];
-    setCarryRaw(s.filled ? s.carry : carry);
-    setTotalRaw(s.filled ? s.total : total);
-    totalTouchedRef.current = true;
-    if (s.filled && s.carry > 0) {
-      rollRatioRef.current = clampRatio(s.total / s.carry);
-    }
+    setTotal(s.filled ? s.total : total);
     if (s.filled) {
       lastSideRef.current = s.offline < 0 ? -1 : 1;
     }
@@ -280,11 +237,9 @@ function OffTeePage() {
       <TestScreen
         current={current}
         index={index}
-        carry={carry}
         total={total}
         side={side}
         offset={offset}
-        setCarry={setCarry}
         setTotal={setTotal}
         setSide={setSide}
         setOffset={setOffset}
@@ -334,11 +289,9 @@ function OffTeePage() {
 function TestScreen({
   current,
   index,
-  carry,
   total,
   side,
   offset,
-  setCarry,
   setTotal,
   setSide,
   setOffset,
@@ -348,11 +301,9 @@ function TestScreen({
 }: {
   current: TeeShot;
   index: number;
-  carry: number;
   total: number;
   side: -1 | 1;
   offset: number;
-  setCarry: (n: number) => void;
   setTotal: (n: number) => void;
   setSide: (s: -1 | 1) => void;
   setOffset: (n: number) => void;
@@ -361,7 +312,6 @@ function TestScreen({
   onAbort: () => void;
 }) {
   const pct = Math.round((index / OFFTEE_TOTAL_SHOTS) * 100);
-  const roll = Math.max(0, total - carry);
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-44 pt-4">
@@ -404,14 +354,7 @@ function TestScreen({
       )}
 
       <div className="mt-4 space-y-2">
-        <TeeNumberField label="Carry" value={carry} onChange={setCarry} unit="m" />
-        <TeeNumberField
-          label="Totalt"
-          value={total}
-          onChange={setTotal}
-          unit="m"
-          hint={roll > 0 ? `+${roll} m rull` : undefined}
-        />
+        <TeeNumberField label="Totalt" value={total} onChange={setTotal} unit="m" />
 
         <div className="rounded-2xl border border-border bg-card p-3">
           <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">

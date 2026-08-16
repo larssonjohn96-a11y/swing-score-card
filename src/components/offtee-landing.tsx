@@ -30,7 +30,9 @@ export function OffTeeLanding() {
 
       <p className="mt-4 text-xs uppercase tracking-[0.3em] text-flag">Off the Tee</p>
       <h1 className="mt-1 text-5xl leading-none">Off the Tee Test</h1>
-      <p className="mt-4 text-base leading-relaxed text-muted-foreground">6 drives</p>
+      <p className="mt-4 text-base leading-relaxed text-muted-foreground">
+        Testa längd, riktning och konsekvens på 6 drives från tee.
+      </p>
 
       <TestHowItWorksLink config={OFFTEE_STORY} />
 

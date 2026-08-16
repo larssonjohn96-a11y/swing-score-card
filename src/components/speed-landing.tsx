@@ -25,7 +25,9 @@ export function SpeedLanding() {
 
       <p className="mt-4 text-xs uppercase tracking-[0.3em] text-flag">Speed</p>
       <h1 className="mt-1 text-5xl leading-none">Speed Test</h1>
-      <p className="mt-4 text-base leading-relaxed text-muted-foreground">6 drives</p>
+      <p className="mt-4 text-base leading-relaxed text-muted-foreground">
+        Testa din bollhastighet på 3 drives och se hur du står dig mot andra HCP-nivåer.
+      </p>
 
       <TestHowItWorksLink config={SPEED_STORY} />
 

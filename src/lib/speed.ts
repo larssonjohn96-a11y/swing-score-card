@@ -30,7 +30,7 @@ export const RANGE_DEVICES = ["Toptracer Range", "Trackman Range", "Annan range"
 
 export type Device = (typeof SIMULATOR_DEVICES)[number] | (typeof RANGE_DEVICES)[number];
 
-export const SPEED_TOTAL_SHOTS = 6;
+export const SPEED_TOTAL_SHOTS = 3;
 
 export type SpeedShot = {
   index: number;
