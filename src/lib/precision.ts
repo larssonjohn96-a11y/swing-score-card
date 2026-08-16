@@ -1,15 +1,16 @@
 /**
  * Approach Precision Test – testlogik och beräkningar.
  *
- * 18 slag: 9 målavstånd × 2 varv. Spelaren matar in carry och sidled
+ * 5 slag: 5 målavstånd × 1 varv. Spelaren matar in carry och sidled
  * (manuellt eller, i framtiden, automatiskt från en launch monitor).
  * Alla beräkningar nedan är rena funktioner utan UI eller lagring.
  */
 
 /** Målavstånd i meter, i den ordning de spelas. */
-export const PRECISION_TARGETS = [55, 64, 73, 82, 91, 110, 128, 146, 165] as const;
-export const PRECISION_ROUNDS = 2;
+export const PRECISION_TARGETS = [50, 75, 100, 125, 150] as const;
+export const PRECISION_ROUNDS = 1;
 export const PRECISION_TOTAL_SHOTS = PRECISION_TARGETS.length * PRECISION_ROUNDS;
+
 
 /** Rådata för ett slag – samma form oavsett datakälla. */
 export type ShotInput = {
@@ -472,14 +473,15 @@ export function scoreBand(score: number): ScoreBand {
   return SCORE_BANDS[0];
 }
 
-/** Avståndsintervall som resultaten grupperas i. */
+/** Avståndsintervall som resultaten grupperas i (ett per målavstånd). */
 export const DISTANCE_GROUPS = [
-  { label: "50–75 m", min: 50, max: 75 },
-  { label: "75–100 m", min: 75, max: 100 },
-  { label: "100–125 m", min: 100, max: 125 },
-  { label: "125–150 m", min: 125, max: 150 },
-  { label: "150–165 m", min: 150, max: 165 },
+  { label: "50 m", min: 50, max: 50 },
+  { label: "75 m", min: 75, max: 75 },
+  { label: "100 m", min: 100, max: 100 },
+  { label: "125 m", min: 125, max: 125 },
+  { label: "150 m", min: 150, max: 150 },
 ] as const;
+
 
 export type GroupScore = {
   label: string;
@@ -678,4 +680,40 @@ export function precisionInsights(
   }
 
   return insights.slice(0, 3);
+}
+
+/* -------------------------------------------------------------------------
+ * Normalfördelning av handicap – underlag till bellcurven på resultatsidan
+ * ---------------------------------------------------------------------- */
+
+/** Ungefärlig fördelning av handicap bland golfare (normalfördelad). */
+export const HCP_DISTRIBUTION_MEAN = 20;
+export const HCP_DISTRIBUTION_SD = 8;
+
+/** Täthetsfunktion (ej normerad i y) för handicap-fördelningen. */
+export function hcpDensity(hcp: number): number {
+  const z = (hcp - HCP_DISTRIBUTION_MEAN) / HCP_DISTRIBUTION_SD;
+  return Math.exp(-0.5 * z * z);
+}
+
+/** Andel golfare (0–100) som har HÖGRE handicap än det angivna, dvs som du slår. */
+export function hcpPercentile(hcp: number): number {
+  const z = (hcp - HCP_DISTRIBUTION_MEAN) / HCP_DISTRIBUTION_SD;
+  // Abramowitz & Stegun-approximation av normalfördelningens CDF.
+  const t = 1 / (1 + 0.2316419 * Math.abs(z));
+  const d = 0.3989423 * Math.exp((-z * z) / 2);
+  let p = d * t * (1.330274 * t ** 4 - 1.821256 * t ** 3 + 1.781478 * t * t - 0.356538 * t + 0.319381);
+  if (z > 0) p = 1 - p;
+  // p = andel med lägre hcp än du → andelen du slår är resten.
+  return Math.max(1, Math.min(99, Math.round((1 - p) * 100)));
+}
+
+/** Kort etikett för var i fördelningen spelaren ligger. */
+export function hcpCohortLabel(hcp: number): string {
+  if (hcp <= 0) return "Elitnivå";
+  if (hcp <= 5) return "Toppspelare";
+  if (hcp <= 12) return "Låg handicap";
+  if (hcp <= 20) return "Klubbspelare";
+  if (hcp <= 28) return "Utvecklingsnivå";
+  return "Nybörjarnivå";
 }

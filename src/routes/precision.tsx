@@ -31,6 +31,8 @@ import { ApproachShotVisual } from "@/components/approach-shot-visual";
 import { PrecisionReport } from "@/components/precision-report";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 import { ApproachProcessing } from "@/components/approach-processing";
+import { ApproachHcpReveal } from "@/components/approach-hcp-reveal";
+
 import { ApproachCelebration, type ApproachPRResult } from "@/components/approach-celebration";
 import { computeAchievements, type ProgressItem } from "@/lib/trophy-room";
 
@@ -41,13 +43,14 @@ export const Route = createFileRoute("/precision")({
       {
         name: "description",
         content:
-          "18 inspel mot nio avstånd. Få Precision Score 0–100, uppskattad handicapnivå, spridningsanalys och personliga träningsrekommendationer.",
+          "5 inspel mot 50, 75, 100, 125 och 150 meter. Få din Approach-HCP och se var du ligger i handicapfördelningen.",
       },
       { property: "og:title", content: "Inspelstest – Approach Precision Test" },
       {
         property: "og:description",
-        content: "Precision Score, handicapnivå, spridning och träningsråd på 20 minuter.",
+        content: "5 slag, en siffra: din Approach-HCP och var du ligger jämfört med andra golfare.",
       },
+
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -55,7 +58,7 @@ export const Route = createFileRoute("/precision")({
   component: PrecisionPage,
 });
 
-type Phase = "setup" | "test" | "processing" | "result";
+type Phase = "setup" | "test" | "processing" | "reveal" | "result";
 
 function PrecisionPage() {
   const navigate = useNavigate();
@@ -68,6 +71,8 @@ function PrecisionPage() {
   const [side, setSide] = useState<-1 | 1>(1);
   const [offset, setOffset] = useState(0);
   const [prevScore, setPrevScore] = useState<number | null>(null);
+  const [revealHcp, setRevealHcp] = useState(36);
+
   const [pr, setPr] = useState<ApproachPRResult | null>(null);
   const [newAchievement, setNewAchievement] = useState<ProgressItem | null>(null);
   /** true när alla 18 slag registrerats men användaren ännu inte slutfört testet */
@@ -172,7 +177,9 @@ function PrecisionPage() {
     );
     setNewAchievement(justUnlocked ?? null);
 
+    setRevealHcp(typeof saved.handicap === "number" ? saved.handicap : 36);
     setPhase("processing");
+
   }
 
   /** Ett steg bakåt till senast registrerade slag, med värdena förifyllda. */
@@ -301,10 +308,14 @@ function PrecisionPage() {
       <ApproachProcessing
         totalShots={PRECISION_TOTAL_SHOTS}
         resultReady
-        onSeeResult={() => setPhase("result")}
+        onSeeResult={() => setPhase("reveal")}
       />
     );
   }
+  if (phase === "reveal") {
+    return <ApproachHcpReveal hcp={revealHcp} onContinue={() => setPhase("result")} />;
+  }
+
 
   return (
     <ResultScreen
@@ -406,9 +417,13 @@ function TestScreen({
           />
         </div>
         <div className="mt-2 flex items-center justify-between text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-          <span className={current.round === 1 ? "font-semibold text-foreground" : ""}>Varv 1</span>
-          <span className={current.round === 2 ? "font-semibold text-foreground" : ""}>Varv 2</span>
+          {PRECISION_TARGETS.map((t, i) => (
+            <span key={t} className={i === Math.min(index, PRECISION_TOTAL_SHOTS - 1) ? "font-semibold text-foreground" : ""}>
+              {t} m
+            </span>
+          ))}
         </div>
+
       </div>
 
       {/* Föregående slag – kompakt, sekundär, tydligt egen luft runt sig */}
