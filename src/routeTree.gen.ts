@@ -29,6 +29,7 @@ import { Route as PitchRouteImport } from './routes/pitch'
 import { Route as PrecisionRouteImport } from './routes/precision'
 import { Route as PrecisionHistorikRouteImport } from './routes/precision-historik'
 import { Route as PremiumRouteImport } from './routes/premium'
+import { Route as PuttingRouteImport } from './routes/putting'
 import { Route as ShortPuttingTestRouteImport } from './routes/short-putting-test'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SpeedRouteImport } from './routes/speed'
@@ -145,6 +146,11 @@ const PremiumRoute = PremiumRouteImport.update({
   path: '/premium',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PuttingRoute = PuttingRouteImport.update({
+  id: '/putting',
+  path: '/putting',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ShortPuttingTestRoute = ShortPuttingTestRouteImport.update({
   id: '/short-putting-test',
   path: '/short-putting-test',
@@ -242,6 +248,7 @@ export interface FileRoutesByFullPath {
   '/precision': typeof PrecisionRoute
   '/precision-historik': typeof PrecisionHistorikRoute
   '/premium': typeof PremiumRoute
+  '/putting': typeof PuttingRoute
   '/short-putting-test': typeof ShortPuttingTestRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
@@ -279,6 +286,7 @@ export interface FileRoutesByTo {
   '/precision': typeof PrecisionRoute
   '/precision-historik': typeof PrecisionHistorikRoute
   '/premium': typeof PremiumRoute
+  '/putting': typeof PuttingRoute
   '/short-putting-test': typeof ShortPuttingTestRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
@@ -317,6 +325,7 @@ export interface FileRoutesById {
   '/precision': typeof PrecisionRoute
   '/precision-historik': typeof PrecisionHistorikRoute
   '/premium': typeof PremiumRoute
+  '/putting': typeof PuttingRoute
   '/short-putting-test': typeof ShortPuttingTestRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
@@ -356,6 +365,7 @@ export interface FileRouteTypes {
     | '/precision'
     | '/precision-historik'
     | '/premium'
+    | '/putting'
     | '/short-putting-test'
     | '/sitemap.xml'
     | '/speed'
@@ -393,6 +403,7 @@ export interface FileRouteTypes {
     | '/precision'
     | '/precision-historik'
     | '/premium'
+    | '/putting'
     | '/short-putting-test'
     | '/sitemap.xml'
     | '/speed'
@@ -430,6 +441,7 @@ export interface FileRouteTypes {
     | '/precision'
     | '/precision-historik'
     | '/premium'
+    | '/putting'
     | '/short-putting-test'
     | '/sitemap.xml'
     | '/speed'
@@ -468,6 +480,7 @@ export interface RootRouteChildren {
   PrecisionRoute: typeof PrecisionRoute
   PrecisionHistorikRoute: typeof PrecisionHistorikRoute
   PremiumRoute: typeof PremiumRoute
+  PuttingRoute: typeof PuttingRoute
   ShortPuttingTestRoute: typeof ShortPuttingTestRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SpeedRoute: typeof SpeedRoute
@@ -626,6 +639,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PremiumRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/putting': {
+      id: '/putting'
+      path: '/putting'
+      fullPath: '/putting'
+      preLoaderRoute: typeof PuttingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/short-putting-test': {
       id: '/short-putting-test'
       path: '/short-putting-test'
@@ -767,6 +787,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrecisionRoute: PrecisionRoute,
   PrecisionHistorikRoute: PrecisionHistorikRoute,
   PremiumRoute: PremiumRoute,
+  PuttingRoute: PuttingRoute,
   ShortPuttingTestRoute: ShortPuttingTestRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SpeedRoute: SpeedRoute,

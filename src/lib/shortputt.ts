@@ -70,6 +70,21 @@ export function emptyShortPutts(): ShortPutt[] {
   return putts;
 }
 
+/** Förkortad serie för Putting Test-huvudtestet: 3 puttar, en per avstånd
+ *  (1/2/3 m), samma riktning – matchar samma korta huvudtest/utökat-test-
+ *  mönster som Approach-testet. Samma ShortPutt-typ och samma
+ *  saveShortPuttSession() som den fulla 12-puttarsserien, så all befintlig
+ *  poängsättning/lagring återanvänds oförändrad. */
+export function emptyShortPuttsMain(): ShortPutt[] {
+  return SHORT_PUTT_DISTANCES.map((distance, i) => ({
+    direction: "12",
+    distance,
+    round: 1,
+    holed: false,
+    index: i + 1,
+  }));
+}
+
 export type ShortPuttSession = {
   id: string;
   date: string;
@@ -131,6 +146,16 @@ function weightedPoints(putts: ShortPutt[]): number {
   return putts.filter((p) => p.holed).reduce((sum, p) => sum + POINTS_BY_DISTANCE[p.distance], 0);
 }
 
+/** Max möjliga poäng FÖR DEN HÄR SPECIFIKA SERIEN (inte den fasta
+ *  MAX_POINTS-konstanten, som bara stämmer för hela 12-puttarserien) –
+ *  gör funktionen korrekt oavsett hur många putts som faktiskt spelades
+ *  (t.ex. Putting Test-huvudtestets 3 puttar). Samma typ av fix som
+ *  gjordes för Approach-testets precisionResult()/statsByTarget() när
+ *  huvudtest/utökat-test-systemet byggdes där. */
+function maxPossiblePoints(putts: ShortPutt[]): number {
+  return putts.reduce((sum, p) => sum + POINTS_BY_DISTANCE[p.distance], 0);
+}
+
 /** Handicap-punktskattning ur Short Putting Score, samma princip som övriga tester. */
 export function handicapFromScore(score: number): number {
   return Math.max(-4, Math.min(36, 30 - score * 0.34));
@@ -158,7 +183,7 @@ export function computeShortPuttResult(putts: ShortPutt[], greenType?: GreenType
   const holed = putts.filter((p) => p.holed).length;
   const pct = count ? (holed / count) * 100 : 0;
   const points = weightedPoints(putts);
-  const score = count ? Math.round((points / MAX_POINTS) * 100) : 0;
+  const score = count ? Math.round((points / maxPossiblePoints(putts)) * 100) : 0;
   const byDistance = shortPuttStats(putts);
   const byDirection = shortPuttDirectionStats(putts).filter((d) => d.count > 0);
 

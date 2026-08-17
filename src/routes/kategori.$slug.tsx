@@ -21,6 +21,7 @@ const TEST_THUMBNAILS: Partial<Record<CategoryTest["to"], () => React.ReactNode>
   "/approach": () => <ApproachLoopIllustration className="h-32 w-full" />,
   "/offtee-test": () => <TeeHero className="h-32 w-full" />,
   "/short-putting-test": () => <PuttingHero className="h-32 w-full" />,
+  "/putting": () => <PuttingHero className="h-32 w-full" />,
   "/speed-test": () => <SpeedHero className="h-32 w-full" />,
   "/narspel-test": () => <ShortGameHero className="h-32 w-full" />,
   "/bunker-test": () => <BunkerHero className="h-32 w-full" />,
@@ -36,6 +37,7 @@ const CARD_TITLES: Partial<Record<CategoryTest["to"], string>> = {
   "/narspel-test": "Närspelstest",
   "/short-putting-test": "Short Putting",
   "/lagputt-test": "Lag Putt",
+  "/putting": "Putting Test",
 };
 
 export const Route = createFileRoute("/kategori/$slug")({

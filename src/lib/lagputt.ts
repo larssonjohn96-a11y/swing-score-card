@@ -93,6 +93,16 @@ export function emptyLagPutts(): LagPutt[] {
   return shuffled(LAG_PUTT_DISTANCES).map((distance) => ({ distance }));
 }
 
+/** Förkortad serie för Putting Test-huvudtestet: 3 representativa avstånd
+ *  (8/13/18 m, kort/mellan/lång) istället för alla sex – matchar samma
+ *  huvudtest/utökat-test-mönster som Approach. Samma LagPutt-typ och
+ *  samma saveLagPuttSession() som den fulla sexdistansserien. */
+export const LAG_PUTT_DISTANCES_MAIN = [8, 13, 18] as const;
+
+export function emptyLagPuttsMain(): LagPutt[] {
+  return shuffled(LAG_PUTT_DISTANCES_MAIN).map((distance) => ({ distance }));
+}
+
 export function mean(values: number[]): number {
   if (!values.length) return 0;
   return values.reduce((a, b) => a + b, 0) / values.length;

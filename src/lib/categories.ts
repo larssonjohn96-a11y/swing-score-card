@@ -19,7 +19,8 @@ export type CategoryTest = {
     | "/short-putting-test"
     | "/tornado"
     | "/lagputt"
-    | "/lagputt-test";
+    | "/lagputt-test"
+    | "/putting";
 
   number: string;
   title: string;
@@ -129,28 +130,16 @@ export const CATEGORIES: Category[] = [
     description: "Tester för längdkänsla och korta puttar.",
     tests: [
       {
-        to: "/short-putting-test",
+        to: "/putting",
         number: "14",
-        title: "Short Putting Test",
+        title: "Putting Test",
         subtitle:
-          "Korta puttar avgör poäng på en runda. Testet mäter hur ofta du sänker från de avstånd som statistiskt kostar flest slag.",
+          "Korta puttar avgör poäng, lagputtar handlar om längdkontroll. Testet mäter båda i ett flöde och ger ett samlat Putting HCP, uppdelat på Short Putt och Lag Putt.",
         bullets: [
-          "Mäter hur säkert du sätter korta, avgörande puttar.",
-          "Score 0–100 och ett uppskattat handicap.",
+          "6 puttar (3 korta + 3 lagputtar) – eller ett utökat 18-puttarstest för erfarna spelare.",
+          "Ett Putting HCP, plus separat HCP för Short Putt och Lag Putt.",
         ],
-        result: "RESULTAT: SCORE 0–100 + EST. HCP-INTERVALL",
-      },
-      {
-        to: "/lagputt-test",
-        number: "15",
-        title: "Lagputt",
-        subtitle:
-          "Lag putting är långa puttar där målet är att kontrollera längden och lämna bollen så nära hålet som möjligt, snarare än att sänka direkt.",
-        bullets: [
-          "8, 10, 12, 14, 16 och 18 meter, i slumpad ordning varje test.",
-          "Allt inom 1 meter från hålet är godkänt.",
-        ],
-        result: "RESULTAT: ANDEL GODKÄNDA + SNITT KVAR",
+        result: "RESULTAT: PUTTING HCP + UPPDELAT PER DEL",
       },
     ],
   },
