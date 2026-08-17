@@ -1,6 +1,7 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   ArrowRight,
+  Check,
   ChevronLeft,
   ChevronRight,
   Minus,
@@ -59,7 +60,6 @@ function PrecisionPage() {
   const navigate = useNavigate();
   const [phase, setPhase] = useState<Phase>("setup");
   const [mode, setMode] = useState<TestMode>("main");
-  const [showExtended, setShowExtended] = useState(false);
   const [shots, setShots] = useState<PrecisionShot[]>(emptyPrecisionShots);
   const [index, setIndex] = useState(0);
   const [carry, setCarry] = useState<number>(PRECISION_TARGETS[0]);
@@ -223,44 +223,37 @@ function PrecisionPage() {
             <Radar className="h-8 w-8 text-primary" />
           </span>
         </div>
-        <h2 className="mt-4 text-center text-2xl leading-tight">5 slag, 5 avstånd</h2>
-        <p className="mx-auto mt-2 max-w-xs text-center text-sm leading-relaxed text-muted-foreground">
-          Ett inspel vardera mot 50, 75, 100, 125 och 150 meter. Registrera carry och sidled efter
-          varje slag, så räknar vi ut ditt Approach HCP direkt.
-        </p>
+        <h2 className="mt-4 text-center text-xl leading-tight text-muted-foreground">
+          Välj testlängd
+        </h2>
 
         <button
           onClick={() => start("main")}
-          className="mt-6 w-full rounded-2xl bg-primary py-5 font-[family-name:var(--font-display)] text-2xl text-primary-foreground"
+          className="mt-6 w-full rounded-2xl bg-primary py-5 text-left"
         >
-          Starta Approach Test
+          <span className="flex items-center justify-between px-6">
+            <span>
+              <span className="block font-[family-name:var(--font-display)] text-2xl text-primary-foreground">
+                Standard
+              </span>
+              <span className="block text-sm text-primary-foreground/70">5 slag · 50–150 m</span>
+            </span>
+            <ArrowRight className="h-5 w-5 shrink-0 text-primary-foreground" />
+          </span>
         </button>
 
-        {!showExtended ? (
-          <button
-            type="button"
-            onClick={() => setShowExtended(true)}
-            className="mx-auto mt-4 block text-center text-xs text-muted-foreground underline-offset-4 hover:underline"
-          >
-            Erfaren spelare? Utökat test med 18 slag →
-          </button>
-        ) : (
-          <div className="mt-4 rounded-2xl border border-dashed border-border p-4 text-center">
-            <p className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
-              Utökat test · för experter
-            </p>
-            <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-              18 slag mot nio avstånd (55–165 m), två varv – ett djupare underlag om du redan gör
-              huvudtestet regelbundet.
-            </p>
-            <button
-              onClick={() => start("extended")}
-              className="mt-3 w-full rounded-xl border border-border py-3 text-sm font-semibold text-foreground transition-colors hover:border-primary"
-            >
-              Starta utökat test (18 slag)
-            </button>
-          </div>
-        )}
+        <button
+          onClick={() => start("extended")}
+          className="mt-3 w-full rounded-2xl border-2 border-border py-5 text-left transition-colors hover:border-primary"
+        >
+          <span className="flex items-center justify-between px-6">
+            <span>
+              <span className="block font-[family-name:var(--font-display)] text-2xl">Utökat</span>
+              <span className="block text-sm text-muted-foreground">18 slag · 55–165 m</span>
+            </span>
+            <ArrowRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+          </span>
+        </button>
       </main>
     );
   }
@@ -365,6 +358,53 @@ function TestScreen({
     }, delay);
   }
 
+  if (allRegistered) {
+    return (
+      <main className="mx-auto flex min-h-screen w-full max-w-md flex-col px-6 py-8">
+        <div className="flex items-center justify-end">
+          <button
+            onClick={onAbort}
+            className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <X className="h-3.5 w-3.5" /> Avbryt test
+          </button>
+        </div>
+
+        <div className="flex flex-1 flex-col items-center justify-center text-center">
+          <span className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+            <Check className="h-8 w-8 text-primary" strokeWidth={2.5} />
+          </span>
+          <h1 className="mt-5 font-[family-name:var(--font-display)] text-3xl leading-tight">
+            Alla {totalShots} slag registrerade!
+          </h1>
+          <p className="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-muted-foreground">
+            Redo att se ditt resultat? Du kan ändra det senaste slaget en sista gång innan du
+            slutför.
+          </p>
+
+          {canUndo && (
+            <button
+              type="button"
+              onClick={onBack}
+              className="mt-5 flex items-center gap-1.5 rounded-full border border-border/70 px-4 py-2 text-xs font-medium text-muted-foreground transition-colors active:bg-muted"
+            >
+              <Undo2 className="h-3.5 w-3.5" />
+              Ändra senaste slag
+            </button>
+          )}
+
+          <button
+            onClick={onFinalize}
+            className="mt-8 flex w-full max-w-xs items-center justify-center gap-2 rounded-2xl bg-primary py-4 font-[family-name:var(--font-display)] text-2xl text-primary-foreground"
+          >
+            Slutför test
+            <ArrowRight className="h-5 w-5" />
+          </button>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-md flex-col px-6 pb-32 pt-3">
       <div className="flex items-center justify-end">
@@ -380,13 +420,7 @@ function TestScreen({
       <div className="mt-5">
         <div className="flex items-baseline justify-between text-sm">
           <span className="font-semibold">
-            {allRegistered ? (
-              `${totalShots}/${totalShots} slag registrerade`
-            ) : (
-              <>
-                Slag {index + 1} <span className="text-muted-foreground">av {totalShots}</span>
-              </>
-            )}
+            Slag {index + 1} <span className="text-muted-foreground">av {totalShots}</span>
           </span>
           <span className="text-muted-foreground">{pct} %</span>
         </div>
@@ -420,7 +454,7 @@ function TestScreen({
             className="flex items-center gap-1.5 rounded-full border border-border/70 px-3 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors active:bg-muted disabled:opacity-40"
           >
             <Undo2 className="h-3 w-3" />
-            {allRegistered ? "Ändra senaste slag" : "Föregående slag"}
+            Föregående slag
           </button>
         </div>
       )}
@@ -436,10 +470,7 @@ function TestScreen({
         />
       </div>
 
-      <div
-        className={`mt-4 space-y-1.5 ${allRegistered ? "pointer-events-none opacity-50" : ""}`}
-        aria-hidden={allRegistered}
-      >
+      <div className="mt-4 space-y-1.5">
         <NumberField
           label="Carry"
           value={carry}
@@ -481,35 +512,27 @@ function TestScreen({
 
       <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/95 px-6 pb-5 pt-2.5 backdrop-blur supports-[backdrop-filter]:bg-background/80">
         <p className="mb-2 text-center text-xs leading-snug text-muted-foreground">
-          {allRegistered ? (
-            <>
-              Alla {totalShots} slag är registrerade. Kontrollera senaste slaget innan du slutför.
-            </>
+          Slaget landade <span className="font-semibold text-foreground">{carry} m</span>
+          {offset === 0 ? (
+            " rakt på målet"
           ) : (
             <>
-              Slaget landade <span className="font-semibold text-foreground">{carry} m</span>
-              {offset === 0 ? (
-                " rakt på målet"
-              ) : (
-                <>
-                  {" "}
-                  och{" "}
-                  <span className="font-semibold text-foreground">
-                    {offset} m {side < 0 ? "vänster" : "höger"}
-                  </span>{" "}
-                  om målet
-                </>
-              )}
-              .
+              {" "}
+              och{" "}
+              <span className="font-semibold text-foreground">
+                {offset} m {side < 0 ? "vänster" : "höger"}
+              </span>{" "}
+              om målet
             </>
           )}
+          .
         </p>
         <button
-          onClick={allRegistered ? onFinalize : handleCommitClick}
+          onClick={handleCommitClick}
           disabled={flying}
           className="mx-auto flex w-full max-w-md items-center justify-center gap-2 rounded-2xl bg-primary py-3.5 font-[family-name:var(--font-display)] text-xl text-primary-foreground disabled:opacity-70"
         >
-          {allRegistered ? "Slutför test" : index + 1 === totalShots ? "Spara slag" : "Nästa slag"}
+          {index + 1 === totalShots ? "Spara slag" : "Nästa slag"}
           <ArrowRight className="h-5 w-5" />
         </button>
       </div>

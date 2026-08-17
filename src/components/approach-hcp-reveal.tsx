@@ -24,11 +24,18 @@ export function ApproachHcpReveal({ hcp, onContinue }: { hcp: number; onContinue
     let raf = 0;
     const tick = (now: number) => {
       const p = Math.min(1, (now - start) / duration);
-      // Långsam inbromsning – siffran "letar sig" fram till resultatet.
-      const eased = 1 - Math.pow(1 - p, 4);
-      setDisplay(from + (hcp - from) * eased);
+      // Bas-approach mot resultatet...
+      const eased = 1 - Math.pow(1 - p, 3);
+      // ...plus en dämpad vackling upp och ner, som en våg som stannar –
+      // amplituden avtar mot slutet så siffran ändå landar exakt på hcp.
+      const wobbleAmplitude = 9 * Math.pow(1 - p, 1.6);
+      const wobble = Math.sin(p * Math.PI * 7) * wobbleAmplitude;
+      setDisplay(from + (hcp - from) * eased + wobble);
       if (p < 1) raf = requestAnimationFrame(tick);
-      else setStage("done");
+      else {
+        setDisplay(hcp);
+        setStage("done");
+      }
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);

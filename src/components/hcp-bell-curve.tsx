@@ -47,15 +47,13 @@ export function HcpBellCurve({ hcp }: { hcp: number }) {
 
   return (
     <div className="rounded-3xl border border-border bg-card p-5">
-      <p className="text-center text-xs uppercase tracking-[0.25em] text-muted-foreground">
-        Var du ligger till
-      </p>
-      <p className="mt-1 text-center">
-        <span className="font-[family-name:var(--font-display)] text-4xl leading-none text-primary">
+      <p className="text-center text-sm text-muted-foreground">Du är bättre än</p>
+      <p className="mt-0.5 text-center">
+        <span className="font-[family-name:var(--font-display)] text-5xl leading-none text-primary">
           {pct}%
         </span>
       </p>
-      <p className="text-center text-sm text-muted-foreground">av golfarna slår du</p>
+      <p className="text-center text-sm text-muted-foreground">av golfarna</p>
 
       <svg
         viewBox={`0 0 ${W} ${H}`}
