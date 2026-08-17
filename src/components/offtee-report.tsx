@@ -46,7 +46,6 @@ export function OffTeeReport({
         hcp={result.handicap}
         allGolfers={{
           label: "Alla golfare",
-          note: `Alla golfare – uppskattning, snittet ligger runt HCP ${ALL_GOLFERS_DRIVING_HCP.mean}.`,
           mean: ALL_GOLFERS_DRIVING_HCP.mean,
           sd: ALL_GOLFERS_DRIVING_HCP.sd,
         }}
@@ -54,7 +53,6 @@ export function OffTeeReport({
           age && ageDist
             ? {
                 label: `${age} år`,
-                note: `${age} år – uppskattning baserad på ålder, snittet ligger runt HCP ${ageDist.mean}.`,
                 mean: ageDist.mean,
                 sd: ageDist.sd,
               }

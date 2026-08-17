@@ -2,24 +2,22 @@ import { ballSpeedDensity, ballSpeedPercentile } from "@/lib/speed";
 
 type Group = {
   label: string;
-  note: string;
   mean: number;
   sd: number;
 };
 
 /**
  * En kombinerad bellcurve som visar BÅDE "alla golfare" och (om ålder är
- * satt) åldersgruppen i samma graf, istället för två separata kort. Löser
- * layoutbuggen där en "Bäst resultat"-badge kolliderade med rubriktexten
- * på det smalare kortet – all information ligger nu i en tydlig
- * legend-rad ovanför grafen med gott om utrymme.
+ * satt) åldersgruppen i samma graf. Samma grundprincip som Approach-
+ * testets HcpBellCurve: den grupp som faktiskt ger bäst resultat lyser
+ * upp med fylld, färgad area, den andra ligger nedtonad bakom i grått.
+ * Ball speed: HÖGRE är bättre, så bäst hamnar till höger.
  *
- * Samma grundprincip som Approach-testets HcpBellCurve/DrivingHcpBellCurve:
- * centrerad graf, delen du slår upplyst, delen som är bättre än dig
- * nedtonad. Ball speed: HÖGRE är bättre, så bäst hamnar till höger.
- * Den grupp som faktiskt ger bäst resultat (högst percentil) ritas med
- * fylld area och tjockare linje, den andra bara som en tunn kontur, så
- * skillnaden syns direkt i själva grafen också.
+ * BUGGFIX: gradient-id:na byggdes tidigare direkt av grupp-etiketten
+ * ("Alla golfare", "70 år") – ogiltigt id med mellanslag, som gjorde att
+ * url(#...)-referensen aldrig matchade och webbläsaren föll tillbaka på
+ * en svart fyllning istället för färgen. Använder nu index-baserade id:n
+ * som alltid är giltiga oavsett etikettext.
  */
 export function SpeedComparisonBellCurve({
   ballSpeed,
@@ -41,7 +39,6 @@ export function SpeedComparisonBellCurve({
       : []),
   ];
 
-  // Gemensam x-axel som ryms båda fördelningarna.
   const MIN = Math.min(...groups.map((g) => g.mean - 3 * g.sd));
   const MAX = Math.max(...groups.map((g) => g.mean + 3 * g.sd));
   const W = 320;
@@ -51,15 +48,19 @@ export function SpeedComparisonBellCurve({
   const x = (v: number) => ((v - MIN) / (MAX - MIN)) * W;
   const clamped = Math.max(MIN, Math.min(MAX, ballSpeed));
   const px = x(clamped);
+  const bestPct = Math.max(...groups.map((g) => g.pct));
 
   return (
-    <div className="rounded-3xl border border-border bg-card p-5">
-      <p className="text-center text-xs uppercase tracking-[0.25em] text-muted-foreground">
+    <div className="relative overflow-hidden rounded-3xl border border-border bg-card p-5">
+      <div
+        className="pointer-events-none absolute -top-16 left-1/2 h-48 w-48 -translate-x-1/2 rounded-full bg-flag/15 blur-3xl"
+        aria-hidden
+      />
+      <p className="relative text-center text-xs uppercase tracking-[0.25em] text-muted-foreground">
         Var du ligger till
       </p>
 
-      {/* Legend – båda grupperna, med gott om utrymme, ingen överlappning */}
-      <div className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5">
+      <div className="relative mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5">
         {groups.map((g) => (
           <span key={g.label} className="flex items-center gap-1.5 text-xs">
             <span
@@ -68,7 +69,7 @@ export function SpeedComparisonBellCurve({
             />
             <span className="text-muted-foreground">{g.label}</span>
             <span
-              className="font-[family-name:var(--font-display)] text-base"
+              className="font-[family-name:var(--font-display)] text-xl"
               style={{ color: g.color }}
             >
               {g.pct}%
@@ -84,14 +85,14 @@ export function SpeedComparisonBellCurve({
 
       <svg
         viewBox={`0 0 ${W} ${H}`}
-        className="mx-auto mt-3 block w-full"
+        className="relative mx-auto mt-3 block w-full"
         role="img"
-        aria-label="Din ball speed jämfört med alla golfare och din åldersgrupp"
+        aria-label={`Du slår ${bestPct}% av jämförelsegruppen`}
       >
         <defs>
-          {groups.map((g) => (
-            <linearGradient key={g.label} id={`grad-${g.label}`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={g.color} stopOpacity={g.best ? 0.4 : 0.12} />
+          {groups.map((g, i) => (
+            <linearGradient key={g.label} id={`speed-grad-${i}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={g.color} stopOpacity={g.best ? 0.5 : 0.1} />
               <stop offset="100%" stopColor={g.color} stopOpacity="0.02" />
             </linearGradient>
           ))}
@@ -99,7 +100,7 @@ export function SpeedComparisonBellCurve({
 
         <line x1={0} y1={baseline} x2={W} y2={baseline} className="stroke-border" strokeWidth="1" />
 
-        {groups.map((g) => {
+        {groups.map((g, i) => {
           const y = (d: number) => baseline - d * (baseline - 16);
           const points: string[] = [];
           for (let v = MIN; v <= MAX; v += 0.5) {
@@ -109,20 +110,19 @@ export function SpeedComparisonBellCurve({
           const area = `${line} L ${W},${baseline} L 0,${baseline} Z`;
           return (
             <g key={g.label}>
-              <path d={area} fill={`url(#grad-${g.label})`} />
+              <path d={area} fill={`url(#speed-grad-${i})`} />
               <path
                 d={line}
                 fill="none"
                 stroke={g.color}
                 strokeWidth={g.best ? 2.5 : 1.5}
-                strokeOpacity={g.best ? 1 : 0.55}
+                strokeOpacity={g.best ? 1 : 0.5}
                 strokeDasharray={g.best ? undefined : "4 3"}
               />
             </g>
           );
         })}
 
-        {/* Din markör – samma mph-position oavsett grupp */}
         <line
           x1={px}
           y1={10}
@@ -135,7 +135,7 @@ export function SpeedComparisonBellCurve({
           cx={px}
           cy={baseline}
           r="10"
-          className="fill-foreground/10 opacity-60"
+          className="fill-flag/20 opacity-70"
           style={{
             transformBox: "fill-box",
             transformOrigin: "center",
@@ -146,21 +146,14 @@ export function SpeedComparisonBellCurve({
       </svg>
       <style>{`
         @keyframes sg4-speed-bell-pulse {
-          0% { transform: scale(0.6); opacity: 0.5; }
-          100% { transform: scale(2.4); opacity: 0; }
+          0% { transform: scale(0.6); opacity: 0.6; }
+          100% { transform: scale(2.6); opacity: 0; }
         }
       `}</style>
 
-      <p className="mt-1 text-center text-xs font-semibold uppercase tracking-[0.15em] text-foreground">
+      <p className="relative mt-1 text-center text-xs font-semibold uppercase tracking-[0.15em] text-foreground">
         Du · {ballSpeed.toFixed(0)} mph
       </p>
-      <div className="mt-2 space-y-0.5">
-        {groups.map((g) => (
-          <p key={g.label} className="text-center text-[10px] text-muted-foreground">
-            {g.note}
-          </p>
-        ))}
-      </div>
     </div>
   );
 }

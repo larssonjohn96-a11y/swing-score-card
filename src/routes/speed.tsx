@@ -366,7 +366,6 @@ function SpeedPage() {
           ballSpeed={result.avgBallSpeed}
           allGolfers={{
             label: "Alla golfare",
-            note: `Alla golfare – uppskattning, snittet ligger runt ${ALL_GOLFERS_BALL_SPEED.mean} mph.`,
             mean: ALL_GOLFERS_BALL_SPEED.mean,
             sd: ALL_GOLFERS_BALL_SPEED.sd,
           }}
@@ -374,7 +373,6 @@ function SpeedPage() {
             age && ageDist
               ? {
                   label: `${age} år`,
-                  note: `${age} år – uppskattning baserad på ålder, snittet ligger runt ${ageDist.mean} mph.`,
                   mean: ageDist.mean,
                   sd: ageDist.sd,
                 }
