@@ -134,6 +134,60 @@ export function distanceToHandicap(avgTotalMeters: number): number {
   return interpolate(avgTotalMeters, DISTANCE_ANCHORS, true);
 }
 
+/** Kontinuerlig mappning sidled (m) → "träffsäkerhets-HCP" för ETT enskilt
+ *  slag – 0 m (mitt i fairway) bäst, fairwaykanten ungefär scratch-nivå,
+ *  OB-gränsen sämsta. Kalibrerad mot samma FAIRWAY-konstanter som
+ *  shotOutcome() redan använder. */
+const ACCURACY_ANCHORS: Anchor[] = [
+  { hcp: -6, value: 0 },
+  { hcp: 2.5, value: FAIRWAY.halfWidth },
+  { hcp: 20, value: FAIRWAY.halfWidth + FAIRWAY.roughDepth / 2 },
+  { hcp: 40, value: FAIRWAY.halfWidth + FAIRWAY.roughDepth },
+];
+
+function accuracyToHandicap(sidledMeters: number): number {
+  return interpolate(Math.abs(sidledMeters), ACCURACY_ANCHORS, false);
+}
+
+/**
+ * HCP-motsvarighet för ETT enskilt slag – väger in BÅDE längd och
+ * träffsäkerhet (sidled), inte bara längd. Fixar en bugg där "bästa
+ * slaget"-highlighten kunde lyfta fram ett långt men vilt slag utanför
+ * fairway som "bäst", trots att ett kortare men rakt slag faktiskt är ett
+ * bättre slag – ett enskilt slag saknar förstås jämnhets-komponenten
+ * (kräver flera slag), så viktningen är 50/50 längd/träffsäkerhet istället
+ * för de fyra vanliga delarnas 45/30/15/10.
+ */
+export function shotHandicap(shot: { total: number; sidled: number }): number {
+  const distanceHcp = distanceToHandicap(shot.total);
+  const accuracyHcp = accuracyToHandicap(shot.sidled);
+  return Math.round((distanceHcp * 0.5 + accuracyHcp * 0.5) * 10) / 10;
+}
+
+/** Driving HCP efter åldersgrupp – en UPPSKATTNING baserad på allmänt
+ *  kända mönster för utslagslängd över åldrar (topp i 20–30-årsåldern,
+ *  gradvis nedgång, brantare efter 55–60), inte en enskild verifierad
+ *  källa. Samma försiktighetsprincip som Speed-testets
+ *  ballSpeedDistributionForAge – tydligt märkt i UI:t. */
+const AGE_DRIVING_HCP_BRACKETS: { maxAge: number; mean: number; sd: number }[] = [
+  { maxAge: 25, mean: 14, sd: 9 },
+  { maxAge: 35, mean: 11, sd: 8 },
+  { maxAge: 45, mean: 12, sd: 8 },
+  { maxAge: 55, mean: 15, sd: 8 },
+  { maxAge: 65, mean: 19, sd: 9 },
+  { maxAge: 200, mean: 24, sd: 9 },
+];
+
+export function drivingHcpDistributionForAge(age: number): { mean: number; sd: number } {
+  const bracket = AGE_DRIVING_HCP_BRACKETS.find((b) => age <= b.maxAge);
+  return bracket ?? AGE_DRIVING_HCP_BRACKETS[AGE_DRIVING_HCP_BRACKETS.length - 1];
+}
+
+/** Samma population/spridning som DrivingHcpBellCurve (offtee-bellcurve.tsx)
+ *  använde tidigare, nu exporterad så den kan återanvändas i den
+ *  sammanslagna alla-golfare/ålders-jämförelsen. */
+export const ALL_GOLFERS_DRIVING_HCP = { mean: 17, sd: 8 };
+
 /**
  * Wayward-andel (OB) → handicap. Arccos-rapporten: scratch-golfare har
  * ~12 % wayward-slag, 30+ hcp ~45 %. Betydligt starkare skiljelinje mellan

@@ -9,6 +9,7 @@ import {
   type TeeShot,
 } from "@/lib/offtee";
 import { loadOffTeeSessions, saveOffTeeSession } from "@/lib/offtee-store";
+import { loadCardProfile } from "@/lib/rating-card";
 import { TeeNumberField } from "@/components/offtee-visuals";
 import { OffTeeReport } from "@/components/offtee-report";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
@@ -51,7 +52,6 @@ function OffTeePage() {
   const [index, setIndex] = useState(0);
   const [total, setTotal] = useState(DEFAULT_TOTAL);
   const [sidled, setSidled] = useState(0);
-  const [prevScore, setPrevScore] = useState<number | null>(null);
   const [reveal, setReveal] = useState<RevealData | null>(null);
 
   const current = shots[Math.min(index, OFFTEE_TOTAL_SHOTS - 1)];
@@ -59,9 +59,6 @@ function OffTeePage() {
   useHideBottomNav(phase !== "setup");
 
   function start() {
-    const sessions = loadOffTeeSessions();
-    const last = sessions[sessions.length - 1];
-    setPrevScore(last ? last.score : null);
     setShots(emptyTeeShots());
     setIndex(0);
     setTotal(DEFAULT_TOTAL);
@@ -175,7 +172,7 @@ function OffTeePage() {
     return <OffTeeReveal hcp={reveal.hcp} onContinue={() => setPhase("result")} />;
   }
 
-  return <ResultScreen shots={shots} prevScore={prevScore} onRestart={start} />;
+  return <ResultScreen shots={shots} onRestart={start} />;
 }
 
 /* ----------------------------------------------------------------- test */
@@ -337,19 +334,12 @@ function SidledValue({ value, onChange }: { value: number; onChange: (n: number)
 
 /* --------------------------------------------------------------- result */
 
-function ResultScreen({
-  shots,
-  prevScore,
-  onRestart,
-}: {
-  shots: TeeShot[];
-  prevScore: number | null;
-  onRestart: () => void;
-}) {
+function ResultScreen({ shots, onRestart }: { shots: TeeShot[]; onRestart: () => void }) {
   const result = offTeeResult(shots);
+  const [age, setAge] = useState<number | undefined>(() => loadCardProfile().age);
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-16 pt-10">
-      <OffTeeReport result={result} prevScore={prevScore} />
+      <OffTeeReport result={result} age={age} onAgeSaved={setAge} />
 
       <div className="mt-10">
         <button
