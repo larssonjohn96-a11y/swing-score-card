@@ -59,9 +59,9 @@ function loadHomeData(): HomeData {
     cats,
     estimated: computeEstimatedHandicap(cats),
     opportunity: computeBiggestOpportunity(cats),
-    card: computeRatingCard(real),
   };
 }
+
 
 function Home() {
   const { user, displayName } = useAuth();
