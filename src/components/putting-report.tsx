@@ -1,18 +1,19 @@
 import { Trophy } from "lucide-react";
 import { handicapLabel } from "@/lib/offtee";
-import { DrivingHcpBellCurve } from "@/components/offtee-bellcurve";
+import { HcpBellCurve } from "@/components/hcp-bell-curve";
 import type { ShortPuttSession } from "@/lib/shortputt";
 import { handicapFromProximity, intervalMidpoint, type LagPuttSession } from "@/lib/lagputt";
 import { INTERVALS } from "@/lib/shortgame";
 
 /**
- * Ännu mer förenklad analys för ett genomfört Putting Test – matchar exakt
- * samma minimalism som Approach/Speed/Off the Tee: sammanslaget Putting
- * HCP som huvudresultat, en bellcurve, en uppmuntrande highlight, inga
- * extra nyckeltal. Utöver det – enligt uttrycklig önskan – en tydlig
- * uppdelning i Short Putt-HCP och Lag Putt-HCP var för sig, eftersom det
- * sammanslagna talet annars döljer vilken av de två delarna som drar ner
- * eller upp resultatet.
+ * Analys för ett genomfört Putting Test – matchar exakt samma format som
+ * Approach/Speed/Off the Tee: sammanslaget Putting HCP som huvudresultat,
+ * samma HcpBellCurve-komponent (centrerad, upplyst/grå-delning, glödande
+ * puls, "Du är bättre än X%"), en uppmuntrande highlight, inga extra
+ * nyckeltal, ingen 'gör om varje vecka'-text. Utöver det – enligt
+ * uttrycklig önskan – en tydlig uppdelning i Short Putt-HCP och Lag
+ * Putt-HCP var för sig, eftersom det sammanslagna talet annars döljer
+ * vilken av de två delarna som drar ner eller upp resultatet.
  */
 export function PuttingReport({
   combinedHcp,
@@ -32,7 +33,7 @@ export function PuttingReport({
         </p>
       </section>
 
-      <DrivingHcpBellCurve hcp={combinedHcp} />
+      <HcpBellCurve hcp={combinedHcp} />
 
       <section className="grid grid-cols-2 gap-3">
         <div className="rounded-2xl border border-border bg-card p-4 text-center">
@@ -54,10 +55,6 @@ export function PuttingReport({
       </section>
 
       <BestLagPuttHighlight lagSession={lagSession} />
-
-      <p className="text-center text-sm text-muted-foreground">
-        Gör om testet varje vecka eller månad för att följa utvecklingen.
-      </p>
     </div>
   );
 }
