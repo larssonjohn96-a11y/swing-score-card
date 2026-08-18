@@ -300,7 +300,15 @@ export function RadarCard({
                 borderRadius: 12,
                 fontSize: 12,
               }}
+              formatter={(value, name, props) => {
+                const hcp =
+                  props.dataKey === "spelare"
+                    ? props.payload.spelareHcp
+                    : props.payload.targetHcp;
+                return [hcp !== undefined ? hcpLabel(hcp) : "–", name];
+              }}
             />
+
           </RadarChart>
         </ResponsiveContainer>
       </div>
