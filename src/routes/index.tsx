@@ -48,8 +48,8 @@ type HomeData = {
   cats: CategoryHandicap[];
   estimated: number | undefined;
   opportunity: Opportunity | undefined;
-  card: RatingCardData;
 };
+
 
 function loadHomeData(): HomeData {
   const real = loadRealHandicap();
