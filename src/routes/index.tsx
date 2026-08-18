@@ -203,14 +203,8 @@ function Home() {
               />
             </div>
           )}
-
-          <PlayerCard
-            data={data.card}
-            profile={loadCardProfile()}
-            playerName={displayName ?? "Golfspelare"}
-          />
-
           <div className="mt-10">
+
             <RadarCard cats={data.cats} totalHandicap={data.estimated} />
           </div>
           <OpportunityCard opportunity={data.opportunity} />
