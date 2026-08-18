@@ -1,5 +1,5 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ArrowRight, Compass, Radar, X } from "lucide-react";
+import { ArrowRight, Compass, X } from "lucide-react";
 import { useState } from "react";
 import {
   DIRECTIONS,
@@ -22,6 +22,8 @@ import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 import { PuttingProcessing } from "@/components/putting-processing";
 import { PuttingHcpReveal } from "@/components/putting-hcp-reveal";
 import { PuttingReport } from "@/components/putting-report";
+import { PuttingHero, PuttingPositionDiagram } from "@/components/shortputt-visuals";
+import { LagPuttHero } from "@/components/lagputt-visuals";
 
 export const Route = createFileRoute("/putting")({
   head: () => ({
@@ -134,10 +136,8 @@ function PuttingPage() {
           </Link>
         </header>
 
-        <div className="mt-8 flex justify-center">
-          <span className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-            <Radar className="h-8 w-8 text-primary" />
-          </span>
+        <div className="mt-6 overflow-hidden rounded-2xl bg-primary/5">
+          <PuttingHero className="h-40 w-full" />
         </div>
         <h2 className="mt-4 text-center text-2xl leading-tight">6 puttar</h2>
         <p className="mx-auto mt-2 max-w-xs text-center text-sm leading-relaxed text-muted-foreground">
@@ -213,8 +213,15 @@ function PuttingPage() {
           </div>
         </div>
 
+        <div className="mt-4 rounded-3xl border border-border bg-card p-3">
+          <PuttingPositionDiagram
+            activeDirection={current.direction}
+            activeDistance={current.distance}
+          />
+        </div>
+
         <div
-          className={`mt-5 rounded-3xl border-2 p-6 text-center shadow-[var(--shadow-glow)] transition-colors duration-200 ${
+          className={`mt-4 rounded-3xl border-2 p-6 text-center shadow-[var(--shadow-glow)] transition-colors duration-200 ${
             flash === "made"
               ? "border-primary bg-primary/15"
               : flash === "missed"
@@ -292,7 +299,11 @@ function PuttingPage() {
           </div>
         </div>
 
-        <div className="mt-5 rounded-3xl border-2 border-border bg-card p-6 text-center shadow-[var(--shadow-glow)]">
+        <div className="mt-4 overflow-hidden rounded-3xl bg-primary/5">
+          <LagPuttHero className="h-28 w-full" />
+        </div>
+
+        <div className="mt-4 rounded-3xl border-2 border-border bg-card p-6 text-center shadow-[var(--shadow-glow)]">
           <p className="text-[11px] uppercase tracking-[0.3em] text-muted-foreground">
             Lagputt · avstånd
           </p>
