@@ -14,8 +14,8 @@ import {
 } from "@/lib/sg-handicap";
 import { OpportunityCard, BiggestGapCard } from "@/components/home-dashboard";
 import { useSubscription } from "@/lib/subscription";
-import { PlayerCard } from "@/components/rating-card";
-import { computeRatingCard, loadCardProfile, type RatingCardData } from "@/lib/rating-card";
+import { loadCardProfile } from "@/lib/rating-card";
+
 import { RadarCard } from "@/components/progress-dashboard";
 import { pushPlayerSnapshot, listFriendships } from "@/lib/friends-cloud";
 import { loadFriends } from "@/lib/friends";
