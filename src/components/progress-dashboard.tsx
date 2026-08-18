@@ -171,14 +171,19 @@ export function RadarCard({
     ...cats.map((c) => ({
       subject: `HCP: ${c.title}`,
       spelare: c.handicap !== undefined ? ratingFromHandicap(c.handicap) : 0,
+      spelareHcp: c.handicap,
       target: targetFor(c.slug),
+      targetHcp: (c.slug && target.categoryHcp?.[c.slug]) ?? target.hcp,
     })),
     {
       subject: "HCP: Totalt",
       spelare: totalHandicap !== undefined ? ratingFromHandicap(totalHandicap) : 0,
+      spelareHcp: totalHandicap,
       target: targetFor(undefined),
+      targetHcp: target.hcp,
     },
   ];
+
 
   return (
     <section className="mt-6">
@@ -295,7 +300,15 @@ export function RadarCard({
                 borderRadius: 12,
                 fontSize: 12,
               }}
+              formatter={(value, name, props) => {
+                const hcp =
+                  props.dataKey === "spelare"
+                    ? props.payload.spelareHcp
+                    : props.payload.targetHcp;
+                return [hcp !== undefined ? hcpLabel(hcp) : "–", name];
+              }}
             />
+
           </RadarChart>
         </ResponsiveContainer>
       </div>
