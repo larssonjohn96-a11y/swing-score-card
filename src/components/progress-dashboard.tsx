@@ -33,7 +33,6 @@ import {
 } from "@/lib/friends-cloud";
 import { searchOpenProfiles, type OpenProfile } from "@/lib/open-profiles";
 import { useSubscription } from "@/lib/subscription";
-import { PremiumLock } from "@/components/premium-lock";
 import type {
   CategoryHandicap,
   CategorySlug,
@@ -317,8 +316,6 @@ export function RadarCard({
         </span>
       </div>
 
-      <AdvancedCompareSection cats={cats} target={target} />
-
       <p className="mt-4 text-center text-sm text-muted-foreground">
         Vill du jämföra med andra spelare?
       </p>
@@ -372,79 +369,6 @@ function BadgedAvatar({
         />
       )}
     </span>
-  );
-}
-
-/** SG4+: kategori-för-kategori-jämförelse mot valt mål, med störst fördel/gap sammanfattat. */
-function AdvancedCompareSection({
-  cats,
-  target,
-}: {
-  cats: CategoryHandicap[];
-  target: CompareTarget;
-}) {
-  const { canViewAdvancedComparison } = useSubscription();
-
-  const rows = cats
-    .filter((c) => c.handicap !== undefined)
-    .map((c) => {
-      const benchmark = target.categoryHcp?.[c.slug] ?? target.hcp;
-      // Lägre HCP är bättre, så diff = benchmark - du (positivt = du är bättre).
-      const diff = Math.round((benchmark - c.handicap!) * 10) / 10;
-      return { slug: c.slug, title: c.title, you: c.handicap!, benchmark, diff };
-    });
-
-  if (rows.length < 2) return null;
-
-  const biggestAdvantage = [...rows].sort((a, b) => b.diff - a.diff)[0];
-  const biggestGap = [...rows].sort((a, b) => a.diff - b.diff)[0];
-
-  const table = (
-    <div className="rounded-3xl border border-border bg-card p-5">
-      <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
-        Detaljerad jämförelse
-      </p>
-      <div className="mt-3 space-y-3">
-        {rows.map((r) => (
-          <div key={r.slug} className="text-sm">
-            <p className="font-medium">{r.title}</p>
-            <div className="mt-0.5 flex items-center justify-between text-xs text-muted-foreground">
-              <span>
-                Du <span className="font-semibold text-foreground">{hcpLabel(r.you)}</span>
-              </span>
-              <span>
-                Benchmark{" "}
-                <span className="font-semibold text-foreground">{hcpLabel(r.benchmark)}</span>
-              </span>
-              <span className={r.diff >= 0 ? "text-primary" : "text-destructive"}>
-                {r.diff > 0 ? "+" : ""}
-                {r.diff}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="mt-4 grid grid-cols-2 gap-2 border-t border-border pt-3 text-xs">
-        <div>
-          <p className="uppercase tracking-[0.15em] text-muted-foreground">Störst fördel</p>
-          <p className="mt-0.5 font-semibold text-primary">{biggestAdvantage.title}</p>
-        </div>
-        <div>
-          <p className="uppercase tracking-[0.15em] text-muted-foreground">Störst gap</p>
-          <p className="mt-0.5 font-semibold text-destructive">{biggestGap.title}</p>
-        </div>
-      </div>
-    </div>
-  );
-
-  return (
-    <div className="mt-4">
-      {canViewAdvancedComparison ? (
-        table
-      ) : (
-        <PremiumLock label="Se detaljerad jämförelse">{table}</PremiumLock>
-      )}
-    </div>
   );
 }
 

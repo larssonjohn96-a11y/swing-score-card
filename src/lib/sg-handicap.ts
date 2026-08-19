@@ -120,42 +120,36 @@ export function hcpLabel(hcp: number): string {
  * kalibreringsdata som redan används för respektive tests egna HCP-skalor
  * i den här filen – en rimlig uppskattning, inte en exakt mätning.
  */
+/**
+ * Jämförelsenivåer för RadarCard/AdvancedCompareSection: varje nivås
+ * kategori-HCP är samma tal som nivåns totala HCP i ALLA kategorier
+ * (en 0-hcp-spelare har 0 i alla kategorier, en 20-hcp-spelare 20 i
+ * alla, osv) – en enkel, konsekvent jämförelsereferens, inte en
+ * uppskattning av hur en riktig spelare på den nivån brukar fördela
+ * sig mellan kategorier.
+ */
 export const BENCHMARK_LEVELS: {
   label: string;
   hcp: number;
   categoryHcp: Record<CategorySlug, number>;
-}[] = [
-  {
-    label: "30",
-    hcp: 30,
-    categoryHcp: { approach: 28, driving: 26, "around-the-green": 32, puttning: 30, speed: 28 },
+}[] = [30, 20, 10, SCRATCH_HANDICAP, -3, ELITE_HANDICAP].map((hcp) => ({
+  label:
+    hcp === SCRATCH_HANDICAP
+      ? "0"
+      : hcp === ELITE_HANDICAP
+        ? "Tour"
+        : hcp === -3
+          ? "+3"
+          : String(hcp),
+  hcp,
+  categoryHcp: {
+    approach: hcp,
+    driving: hcp,
+    "around-the-green": hcp,
+    puttning: hcp,
+    speed: hcp,
   },
-  {
-    label: "20",
-    hcp: 20,
-    categoryHcp: { approach: 19, driving: 17, "around-the-green": 21, puttning: 19, speed: 18 },
-  },
-  {
-    label: "10",
-    hcp: 10,
-    categoryHcp: { approach: 9, driving: 8, "around-the-green": 10, puttning: 9, speed: 9 },
-  },
-  {
-    label: "0",
-    hcp: SCRATCH_HANDICAP,
-    categoryHcp: { approach: 0, driving: -1, "around-the-green": 1, puttning: 0, speed: 0 },
-  },
-  {
-    label: "+3",
-    hcp: -3,
-    categoryHcp: { approach: -3, driving: -4, "around-the-green": -2, puttning: -3, speed: -4 },
-  },
-  {
-    label: "Tour",
-    hcp: ELITE_HANDICAP,
-    categoryHcp: { approach: -6, driving: -7, "around-the-green": -5, puttning: -6, speed: -8 },
-  },
-];
+}));
 
 /** Trend = senaste värdet minus värdet i början av de senaste n testen. Negativt = förbättring. */
 function trendOf(values: number[], n = 5): number | undefined {
