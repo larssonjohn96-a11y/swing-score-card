@@ -184,7 +184,6 @@ export function RadarCard({
     },
   ];
 
-
   return (
     <section className="mt-6">
       <div className="flex items-center justify-center gap-6">
@@ -302,13 +301,10 @@ export function RadarCard({
               }}
               formatter={(value, name, props) => {
                 const hcp =
-                  props.dataKey === "spelare"
-                    ? props.payload.spelareHcp
-                    : props.payload.targetHcp;
+                  props.dataKey === "spelare" ? props.payload.spelareHcp : props.payload.targetHcp;
                 return [hcp !== undefined ? hcpLabel(hcp) : "–", name];
               }}
             />
-
           </RadarChart>
         </ResponsiveContainer>
       </div>
