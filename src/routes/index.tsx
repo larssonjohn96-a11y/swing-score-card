@@ -14,8 +14,8 @@ import {
 } from "@/lib/sg-handicap";
 import { OpportunityCard, BiggestGapCard } from "@/components/home-dashboard";
 import { useSubscription } from "@/lib/subscription";
-import { PlayerCard } from "@/components/rating-card";
-import { computeRatingCard, loadCardProfile, type RatingCardData } from "@/lib/rating-card";
+import { loadCardProfile } from "@/lib/rating-card";
+
 import { RadarCard } from "@/components/progress-dashboard";
 import { pushPlayerSnapshot, listFriendships } from "@/lib/friends-cloud";
 import { loadFriends } from "@/lib/friends";
@@ -48,8 +48,8 @@ type HomeData = {
   cats: CategoryHandicap[];
   estimated: number | undefined;
   opportunity: Opportunity | undefined;
-  card: RatingCardData;
 };
+
 
 function loadHomeData(): HomeData {
   const real = loadRealHandicap();
@@ -59,9 +59,9 @@ function loadHomeData(): HomeData {
     cats,
     estimated: computeEstimatedHandicap(cats),
     opportunity: computeBiggestOpportunity(cats),
-    card: computeRatingCard(real),
   };
 }
+
 
 function Home() {
   const { user, displayName } = useAuth();
@@ -203,14 +203,8 @@ function Home() {
               />
             </div>
           )}
-
-          <PlayerCard
-            data={data.card}
-            profile={loadCardProfile()}
-            playerName={displayName ?? "Golfspelare"}
-          />
-
           <div className="mt-10">
+
             <RadarCard cats={data.cats} totalHandicap={data.estimated} />
           </div>
           <OpportunityCard opportunity={data.opportunity} />
