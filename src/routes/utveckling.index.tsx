@@ -14,10 +14,10 @@ import {
   DevelopmentChart,
   FocusCard,
   LevelSummary,
-  ProfileRadar,
   type CategoryVerdict,
   type DevPeriod,
 } from "@/components/utveckling-overview";
+import { RadarCard } from "@/components/progress-dashboard";
 
 export const Route = createFileRoute("/utveckling/")({
   head: () => ({
@@ -46,6 +46,9 @@ type Data = {
   real: number | null;
   cats: CategoryHandicap[];
   pastCats: CategoryHandicap[];
+  /** kategori-HCP ett år tillbaka, separat från pastCats (90 dagar) – driver
+   *  RadarCard:s "Mig själv (föregående år)"-förval. */
+  pastYearCats: CategoryHandicap[];
   totalHandicap: number | undefined;
   change90d: number | undefined;
   rows: CategoryVerdict[];
@@ -55,15 +58,17 @@ type Data = {
 /** Närmaste jämförelsenivå utifrån spelarens egen nivå. */
 function pickBenchmark(level: number | undefined) {
   if (level === undefined) return BENCHMARK_LEVELS[2];
-  return [...BENCHMARK_LEVELS].sort(
-    (a, b) => Math.abs(a.hcp - level) - Math.abs(b.hcp - level),
-  )[0];
+  return [...BENCHMARK_LEVELS].sort((a, b) => Math.abs(a.hcp - level) - Math.abs(b.hcp - level))[0];
 }
 
 function loadData(): Data {
   const real = loadRealHandicap();
   const cats = computeCategoryHandicaps(undefined, real ?? undefined);
   const pastCats = computeCategoryHandicaps(new Date(Date.now() - 90 * DAY), real ?? undefined);
+  const pastYearCats = computeCategoryHandicaps(
+    new Date(Date.now() - 365 * DAY),
+    real ?? undefined,
+  );
   const total = computeEstimatedHandicap(cats);
   const pastTotal = computeEstimatedHandicap(pastCats);
 
@@ -84,6 +89,7 @@ function loadData(): Data {
     real,
     cats,
     pastCats,
+    pastYearCats,
     totalHandicap: total,
     change90d:
       total !== undefined && pastTotal !== undefined
@@ -109,9 +115,7 @@ function UtvecklingPage() {
 
   const hasAnyData = (data?.cats.filter((c) => c.count > 0).length ?? 0) > 0;
   const focus = data
-    ? [...data.rows]
-        .filter((r) => r.diff !== undefined)
-        .sort((a, b) => a.diff! - b.diff!)[0]
+    ? [...data.rows].filter((r) => r.diff !== undefined).sort((a, b) => a.diff! - b.diff!)[0]
     : undefined;
 
   return (
@@ -135,10 +139,10 @@ function UtvecklingPage() {
             change90d={data.change90d}
           />
 
-          <ProfileRadar
+          <RadarCard
             cats={data.cats}
             totalHandicap={data.totalHandicap}
-            pastCats={data.pastCats}
+            pastYearCats={data.pastYearCats}
           />
 
           <CategoryHeatTable rows={data.rows} benchmarkLabel={data.benchmarkLabel} />

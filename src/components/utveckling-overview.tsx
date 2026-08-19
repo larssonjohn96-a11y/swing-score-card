@@ -1,11 +1,10 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   ArrowRight,
   ArrowUpRight,
   ArrowDownRight,
   Minus,
-  ChevronRight,
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
@@ -13,11 +12,6 @@ import {
   CartesianGrid,
   Line,
   LineChart,
-  PolarAngleAxis,
-  PolarGrid,
-  PolarRadiusAxis,
-  Radar,
-  RadarChart,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -25,12 +19,8 @@ import {
   YAxis,
 } from "recharts";
 import {
-  BENCHMARK_LEVELS,
   handicapFromRating,
   hcpLabel,
-  nextMilestone,
-  ratingFromHandicap,
-  type CategoryHandicap,
   type CategorySlug,
   type RatingPoint,
 } from "@/lib/sg-handicap";
@@ -87,156 +77,6 @@ export function LevelSummary({
           </>
         )}
       </p>
-    </section>
-  );
-}
-
-/* ------------------------------------------------------------ 2. Golfprofil */
-
-type Comparison = {
-  id: string;
-  label: string;
-  /** HCP per kategori */
-  categoryHcp: Partial<Record<CategorySlug, number>>;
-  totalHcp?: number;
-};
-
-export function ProfileRadar({
-  cats,
-  totalHandicap,
-  pastCats,
-}: {
-  cats: CategoryHandicap[];
-  totalHandicap: number | undefined;
-  /** kategori-HCP som de såg ut för 3 månader sedan */
-  pastCats: CategoryHandicap[];
-}) {
-  const comparisons = useMemo<Comparison[]>(() => {
-    const past: Comparison = {
-      id: "past",
-      label: "3 mån sedan",
-      categoryHcp: Object.fromEntries(
-        pastCats.filter((c) => c.handicap !== undefined).map((c) => [c.slug, c.handicap!]),
-      ) as Partial<Record<CategorySlug, number>>,
-    };
-    const target: Comparison = {
-      id: "target",
-      label: "Målnivå",
-      categoryHcp: Object.fromEntries(
-        cats
-          .filter((c) => c.handicap !== undefined)
-          .map((c) => [c.slug, nextMilestone(c.handicap!)]),
-      ) as Partial<Record<CategorySlug, number>>,
-      totalHcp: totalHandicap !== undefined ? nextMilestone(totalHandicap) : undefined,
-    };
-    const benchmarks = BENCHMARK_LEVELS.filter((l) => ["10", "0", "Tour"].includes(l.label)).map(
-      (l) => ({
-        id: `bm-${l.label}`,
-        label: l.label === "Tour" ? "Tour" : `HCP ${l.label}`,
-        categoryHcp: l.categoryHcp,
-        totalHcp: l.hcp,
-      }),
-    );
-    return [past, target, ...benchmarks];
-  }, [cats, pastCats, totalHandicap]);
-
-  const [activeId, setActiveId] = useState("past");
-  const active = comparisons.find((c) => c.id === activeId) ?? comparisons[0];
-
-  const data = cats.map((c) => {
-    const cmp = active.categoryHcp[c.slug];
-    return {
-      slug: c.slug,
-      subject: c.title,
-      spelare: c.handicap !== undefined ? ratingFromHandicap(c.handicap) : 0,
-      spelareHcp: c.handicap,
-      jamfor: cmp !== undefined ? ratingFromHandicap(cmp) : 0,
-      jamforHcp: cmp,
-    };
-  });
-
-  return (
-    <section className="mt-8">
-      <div className="flex items-baseline justify-between">
-        <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Din golfprofil</p>
-        <span className="text-[11px] text-muted-foreground">Klicka på en kategori</span>
-      </div>
-
-      <div className="-mx-5 mt-3 flex gap-2 overflow-x-auto px-5 pb-1">
-        {comparisons.map((c) => (
-          <button
-            key={c.id}
-            type="button"
-            onClick={() => setActiveId(c.id)}
-            className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
-              c.id === activeId
-                ? "border-chart-3 bg-chart-3 text-background"
-                : "border-border text-muted-foreground"
-            }`}
-          >
-            {c.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="mt-3 rounded-3xl border border-border bg-card p-3">
-        <div className="h-80 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <RadarChart data={data} outerRadius="70%">
-              <PolarGrid stroke="var(--border)" />
-              <PolarAngleAxis
-                dataKey="subject"
-                tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
-              />
-              <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
-              <Radar
-                name={active.label}
-                dataKey="jamfor"
-                stroke="var(--chart-3)"
-                fill="var(--chart-3)"
-                fillOpacity={0.12}
-                strokeWidth={2}
-              />
-              <Radar
-                name="Din nivå"
-                dataKey="spelare"
-                stroke="var(--chart-4)"
-                fill="var(--chart-4)"
-                fillOpacity={0.3}
-                strokeWidth={2}
-                dot={{ r: 4, fill: "var(--chart-4)", stroke: "var(--card)", strokeWidth: 1 }}
-              />
-              <Tooltip
-                contentStyle={{
-                  background: "var(--card)",
-                  border: "1px solid var(--border)",
-                  borderRadius: 12,
-                  fontSize: 12,
-                }}
-                formatter={(_value, name, props) => {
-                  const p = props.payload as (typeof data)[number];
-                  const hcp = name === "Din nivå" ? p.spelareHcp : p.jamforHcp;
-                  return [hcp !== undefined ? `HCP ${hcpLabel(hcp)}` : "–", name];
-                }}
-              />
-            </RadarChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="flex flex-wrap gap-2 border-t border-border pt-3">
-          {cats.map((c) => (
-            <Link
-              key={c.slug}
-              to="/utveckling/$slug"
-              params={{ slug: c.slug }}
-              className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-xs font-medium transition-colors hover:border-primary hover:text-primary"
-            >
-              {c.title}
-              <ChevronRight className="h-3 w-3" />
-            </Link>
-          ))}
-        </div>
-      </div>
     </section>
   );
 }
@@ -314,9 +154,7 @@ export function CategoryHeatTable({
               </span>
               <span className="flex justify-center">{trendIcon}</span>
               <span className="flex justify-end">
-                <span
-                  className={`rounded-full px-2 py-1 text-[11px] font-semibold ${toneClass}`}
-                >
+                <span className={`rounded-full px-2 py-1 text-[11px] font-semibold ${toneClass}`}>
                   {r.diff === undefined
                     ? "Ingen data"
                     : tone === "good"
@@ -395,9 +233,7 @@ export function DevelopmentChart({
     .map((p) => ({
       date: p.date.slice(5),
       value:
-        metric === "performance"
-          ? p.total!
-          : Math.round(handicapFromRating(p.total!) * 10) / 10,
+        metric === "performance" ? p.total! : Math.round(handicapFromRating(p.total!) * 10) / 10,
     }));
 
   return (

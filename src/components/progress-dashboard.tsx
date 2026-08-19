@@ -147,9 +147,12 @@ const QUICK_LEVELS = BENCHMARK_LEVELS.filter((l) => ["20", "10", "0", "Tour"].in
 export function RadarCard({
   cats,
   totalHandicap,
+  pastYearCats,
 }: {
   cats: CategoryHandicap[];
   totalHandicap: number | undefined;
+  /** kategori-HCP för ett år sedan – driver "Mig själv (föregående år)"-förvalet */
+  pastYearCats?: CategoryHandicap[];
 }) {
   const [target, setTarget] = useState<CompareTarget>(DEFAULT_TARGET);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -158,6 +161,19 @@ export function RadarCard({
   useEffect(() => setFriends(loadFriends()), []);
 
   const profile = loadCardProfile();
+
+  const pastYearTarget: CompareTarget | undefined = pastYearCats?.some(
+    (c) => c.handicap !== undefined,
+  )
+    ? {
+        label: "Mig själv (föregående år)",
+        hcp: computeEstimatedHandicap(pastYearCats) ?? 0,
+        isFriend: true,
+        categoryHcp: Object.fromEntries(
+          pastYearCats.filter((c) => c.handicap !== undefined).map((c) => [c.slug, c.handicap!]),
+        ) as Partial<Record<CategorySlug, number>>,
+      }
+    : undefined;
 
   const targetFor = (slug?: CategorySlug) => {
     const exact = slug && target.categoryHcp?.[slug];
@@ -241,7 +257,20 @@ export function RadarCard({
         </button>
       </div>
 
-      <div className="mt-4 flex justify-center gap-2">
+      <div className="mt-4 flex flex-wrap justify-center gap-2">
+        {pastYearTarget && (
+          <button
+            type="button"
+            onClick={() => setTarget(pastYearTarget)}
+            className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+              target.label === pastYearTarget.label
+                ? "border-chart-3 bg-chart-3 text-background"
+                : "border-border text-muted-foreground"
+            }`}
+          >
+            Mig själv (föregående år)
+          </button>
+        )}
         {QUICK_LEVELS.map((l) => (
           <button
             key={l.label}
