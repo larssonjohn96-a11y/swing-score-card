@@ -14,12 +14,18 @@ function loadOverride(): Plan | null {
 
 /**
  * Riktig prenumerationsstatus. Ingen betalinfrastruktur (App Store/Google
- * Play) finns ännu, så det här är en medveten platshållare som alltid ger
- * "free". Byts ut mot en riktig koppling senare – resten av appen läser
- * bara plan via useSubscription() och behöver inte ändras när det sker.
+ * Play) finns ännu.
+ *
+ * TILLFÄLLIGT DÖLJD: returnerar "plus" istället för "free" tills vidare,
+ * så att ingen premium-UI (paywalls, låsta funktioner, "Uppgradera till
+ * SG4+"-CTA:er) syns någonstans i appen – hela produkten ska upplevas
+ * som en enda, fullständig app just nu. Prenumerationssystemet i övrigt
+ * (typer, entitlements, PremiumLock-komponenten, Developer-overriden)
+ * är oförändrat och kan slås på igen genom att bara ändra den här ena
+ * raden när betalinfrastruktur finns på plats.
  */
 function loadActualPlan(): Plan {
-  return "free";
+  return "plus";
 }
 
 type SubscriptionContextValue = {

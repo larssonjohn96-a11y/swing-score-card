@@ -35,7 +35,6 @@ import { searchOpenProfiles, type OpenProfile } from "@/lib/open-profiles";
 import { useSubscription } from "@/lib/subscription";
 import { PremiumLock } from "@/components/premium-lock";
 import type {
-  CategoryCardStat,
   CategoryHandicap,
   CategorySlug,
   HeatmapZone,
@@ -45,7 +44,6 @@ import type {
 import {
   BENCHMARK_LEVELS,
   CATEGORY_LABELS,
-  computeCategoryCardStats,
   computeCategoryHandicaps,
   computeEstimatedHandicap,
   hcpLabel,
@@ -889,10 +887,16 @@ const NO_DATA_LINK: Record<CategorySlug, { to: string; params?: Record<string, s
   speed: { to: "/speed-test" },
 };
 
-/** De fyra HCP-kategorierna som ingår i färgkodningen, i visningsordning
- *  för 2×2-gridet. Speed hålls medvetet utanför – det är inte en
- *  HCP-kategori och ska inte färgkodas mot Total HCP. */
-const HCP_GRID_SLUGS: CategorySlug[] = ["approach", "driving", "around-the-green", "puttning"];
+/** De fem HCP-kategorierna som ingår i gridet och färgkodningen mot
+ *  Total HCP – inklusive Speed, som nu behandlas exakt likadant som de
+ *  övriga fyra. */
+const HCP_GRID_SLUGS: CategorySlug[] = [
+  "approach",
+  "driving",
+  "around-the-green",
+  "puttning",
+  "speed",
+];
 
 /** Kontinuerlig färgskala baserad på hur en kategoris HCP förhåller sig
  *  till spelarens Total HCP – grönt för styrkor, rött för svagheter,
@@ -924,15 +928,12 @@ function categoryTone(diff: number | undefined): {
 export function CategoryStatsSection() {
   const [cats, setCats] = useState<CategoryHandicap[]>([]);
   const [totalHcp, setTotalHcp] = useState<number | undefined>(undefined);
-  const [speedStat, setSpeedStat] = useState<CategoryCardStat | null>(null);
 
   useEffect(() => {
     const real = loadRealHandicap();
     const computed = computeCategoryHandicaps(undefined, real ?? undefined);
     setCats(computed);
     setTotalHcp(real ?? computeEstimatedHandicap(computed));
-    const cardStats = computeCategoryCardStats(90, real ?? undefined);
-    setSpeedStat(cardStats.find((c) => c.slug === "speed") ?? null);
   }, []);
 
   return (
@@ -949,7 +950,7 @@ export function CategoryStatsSection() {
         </p>
       </div>
 
-      {/* 2×2-grid – de fyra HCP-kategorierna, färgkodade mot Total HCP */}
+      {/* Grid – alla fem kategorier, inklusive Speed, färgkodade mot Total HCP */}
       <div className="mt-2 grid grid-cols-2 gap-2">
         {HCP_GRID_SLUGS.map((slug) => {
           const cat = cats.find((c) => c.slug === slug);
@@ -993,22 +994,6 @@ export function CategoryStatsSection() {
           );
         })}
       </div>
-
-      {/* Speed – separat, ingen HCP-färgkodning eftersom det inte är en HCP-kategori */}
-      <Link
-        to={speedStat?.hasData ? "/utveckling/$slug" : NO_DATA_LINK.speed.to}
-        params={speedStat?.hasData ? { slug: "speed" } : NO_DATA_LINK.speed.params}
-        className="mt-2 flex items-center justify-between rounded-2xl border border-border bg-card p-3.5 transition-transform active:scale-[0.98]"
-      >
-        <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">Speed</p>
-        {speedStat?.hasData ? (
-          <p className="font-[family-name:var(--font-display)] text-xl leading-none">
-            HCP {speedStat.estHcp !== undefined ? hcpLabel(speedStat.estHcp) : "–"}
-          </p>
-        ) : (
-          <p className="text-sm font-medium text-primary">Gör ett test</p>
-        )}
-      </Link>
     </section>
   );
 }

@@ -16,7 +16,7 @@ import { OpportunityCard, BiggestGapCard } from "@/components/home-dashboard";
 import { useSubscription } from "@/lib/subscription";
 import { loadCardProfile } from "@/lib/rating-card";
 
-import { RadarCard } from "@/components/progress-dashboard";
+import { RadarCard, CategoryStatsSection } from "@/components/progress-dashboard";
 import { pushPlayerSnapshot, listFriendships } from "@/lib/friends-cloud";
 import { loadFriends } from "@/lib/friends";
 import { AppStoryLauncher } from "@/components/app-story";
@@ -50,7 +50,6 @@ type HomeData = {
   opportunity: Opportunity | undefined;
 };
 
-
 function loadHomeData(): HomeData {
   const real = loadRealHandicap();
   const cats = computeCategoryHandicaps(undefined, real ?? undefined);
@@ -61,7 +60,6 @@ function loadHomeData(): HomeData {
     opportunity: computeBiggestOpportunity(cats),
   };
 }
-
 
 function Home() {
   const { user, displayName } = useAuth();
@@ -204,9 +202,9 @@ function Home() {
             </div>
           )}
           <div className="mt-10">
-
             <RadarCard cats={data.cats} totalHandicap={data.estimated} />
           </div>
+          <CategoryStatsSection />
           <OpportunityCard opportunity={data.opportunity} />
           <BiggestGapCard cats={data.cats} isPlus={isPlus} />
 
