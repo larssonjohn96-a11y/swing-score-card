@@ -254,6 +254,31 @@ export function drivingHcpDistributionForAge(age: number): { mean: number; sd: n
 
 export const ALL_GOLFERS_DRIVING_HCP = { mean: 17, sd: 8 };
 
+/** Abramowitz & Stegun-approximation av felfunktionen erf(x). Delad
+ *  percentil-matematik – samma princip som hcp-comparison-bellcurve.tsx
+ *  använder internt, men exporterad här så prestationskommentaren
+ *  (OffTeePerformanceBadge) kan återanvända den utan att duplicera. */
+function erf(x: number): number {
+  const sign = x < 0 ? -1 : 1;
+  const ax = Math.abs(x);
+  const a1 = 0.254829592;
+  const a2 = -0.284496736;
+  const a3 = 1.421413741;
+  const a4 = -1.453152027;
+  const a5 = 1.061405429;
+  const p = 0.3275911;
+  const t = 1 / (1 + p * ax);
+  const y = 1 - ((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t * Math.exp(-ax * ax);
+  return sign * y;
+}
+
+/** Andel (0–100) med SÄMRE (högre) HCP än `hcp` inom given grupp – dvs
+ *  andelen man slår. */
+export function drivingHcpPercentile(hcp: number, mean: number, sd: number): number {
+  const worseFraction = 1 - 0.5 * (1 + erf((hcp - mean) / (sd * Math.SQRT2)));
+  return Math.max(1, Math.min(99, Math.round(worseFraction * 100)));
+}
+
 /** Positivt = höger, negativt = vänster. Äldre sessioner saknar direction
  *  och behandlas som höger – bevarar deras gamla dispersion-tecken så
  *  bias/dispersion-beräkningen fortfarande ger ett sammanhängande resultat

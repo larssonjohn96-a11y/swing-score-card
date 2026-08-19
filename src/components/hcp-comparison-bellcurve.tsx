@@ -94,7 +94,7 @@ export function HcpComparisonBellCurve({
               className="font-[family-name:var(--font-display)] text-xl"
               style={{ color: g.color }}
             >
-              {g.pct}%
+              {g.pct}/100
             </span>
             {g.best && groups.length > 1 && (
               <span className="rounded-full bg-flag/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.1em] text-flag">

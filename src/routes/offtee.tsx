@@ -40,6 +40,7 @@ type RevealData = {
   state: RevealState;
   hcp: number;
   hcpLabel: string;
+  previousHcp?: number;
   previousHcpLabel?: string;
   deltaLabel?: string;
   isRetest: boolean;
@@ -86,6 +87,7 @@ function OffTeePage() {
         state: derived.state,
         hcp: saved.handicap,
         hcpLabel: handicapLabel(saved.handicap),
+        previousHcp: derived.previousHcp,
         previousHcpLabel:
           derived.previousHcp !== undefined ? handicapLabel(derived.previousHcp) : undefined,
         deltaLabel: derived.deltaLabel,
@@ -197,7 +199,7 @@ function OffTeePage() {
     return <OffTeeReveal hcp={reveal.hcp} onContinue={() => setPhase("result")} />;
   }
 
-  return <ResultScreen shots={shots} onRestart={start} />;
+  return <ResultScreen shots={shots} reveal={reveal} onRestart={start} />;
 }
 
 function TestScreen({
@@ -362,7 +364,8 @@ function PersistentFairwayVisual({ flight }: { flight: FlightShot | null }) {
           <span className="font-semibold text-foreground">{flight.total} m</span>
           {flight.sidled > 0 ? (
             <span className="text-muted-foreground">
-              {" "}· {flight.sidled} m {flight.direction === "left" ? "vänster" : "höger"}
+              {" "}
+              · {flight.sidled} m {flight.direction === "left" ? "vänster" : "höger"}
             </span>
           ) : (
             <span className="text-muted-foreground"> · mittlinje</span>
@@ -410,9 +413,7 @@ function SidledValue({
           onClick={() => onDirectionChange("left")}
           aria-pressed={direction === "left"}
           className={`rounded-lg py-2 text-sm font-semibold transition-colors ${
-            direction === "left"
-              ? "bg-primary text-primary-foreground"
-              : "text-muted-foreground"
+            direction === "left" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
           }`}
         >
           ← Vänster
@@ -422,9 +423,7 @@ function SidledValue({
           onClick={() => onDirectionChange("right")}
           aria-pressed={direction === "right"}
           className={`rounded-lg py-2 text-sm font-semibold transition-colors ${
-            direction === "right"
-              ? "bg-primary text-primary-foreground"
-              : "text-muted-foreground"
+            direction === "right" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
           }`}
         >
           Höger →
@@ -476,12 +475,26 @@ function SidledValue({
   );
 }
 
-function ResultScreen({ shots, onRestart }: { shots: TeeShot[]; onRestart: () => void }) {
+function ResultScreen({
+  shots,
+  reveal,
+  onRestart,
+}: {
+  shots: TeeShot[];
+  reveal: RevealData | null;
+  onRestart: () => void;
+}) {
   const result = offTeeResult(shots);
   const [age, setAge] = useState<number | undefined>(() => loadCardProfile().age);
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-16 pt-10">
-      <OffTeeReport result={result} age={age} onAgeSaved={setAge} />
+      <OffTeeReport
+        result={result}
+        age={age}
+        onAgeSaved={setAge}
+        isPersonalBest={reveal?.state === "personal-best"}
+        previousBestHcp={reveal?.previousHcp}
+      />
 
       <div className="mt-10">
         <button
