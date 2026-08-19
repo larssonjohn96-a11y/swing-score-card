@@ -32,6 +32,9 @@ export const Route = createFileRoute("/offtee")({
 });
 
 type Phase = "setup" | "test" | "processing" | "reveal" | "result";
+type ShotDirection = "left" | "right";
+type DirectedTeeShot = TeeShot & { direction?: ShotDirection };
+type FlightShot = { total: number; sidled: number; direction: ShotDirection };
 
 type RevealData = {
   state: RevealState;
@@ -42,16 +45,18 @@ type RevealData = {
   isRetest: boolean;
 };
 
-/** Förval för första slaget: typiskt snitt-totalt avstånd. */
 const DEFAULT_TOTAL = 220;
+const FLIGHT_DURATION_MS = 1250;
 
 function OffTeePage() {
   const navigate = useNavigate();
   const [phase, setPhase] = useState<Phase>("setup");
-  const [shots, setShots] = useState<TeeShot[]>(emptyTeeShots);
+  const [shots, setShots] = useState<DirectedTeeShot[]>(emptyTeeShots);
   const [index, setIndex] = useState(0);
   const [total, setTotal] = useState(DEFAULT_TOTAL);
   const [sidled, setSidled] = useState(0);
+  const [direction, setDirection] = useState<ShotDirection>("right");
+  const [flight, setFlight] = useState<FlightShot | null>(null);
   const [reveal, setReveal] = useState<RevealData | null>(null);
 
   const current = shots[Math.min(index, OFFTEE_TOTAL_SHOTS - 1)];
@@ -63,16 +68,14 @@ function OffTeePage() {
     setIndex(0);
     setTotal(DEFAULT_TOTAL);
     setSidled(0);
+    setDirection("right");
+    setFlight(null);
     setReveal(null);
     setPhase("test");
   }
 
-  function commit() {
-    const next = index + 1;
-    const updatedShots = shots.map((s, i) =>
-      i === index ? { ...s, total, sidled, filled: true } : s,
-    );
-    setShots(updatedShots);
+  function finishCommit(updatedShots: DirectedTeeShot[], next: number) {
+    setFlight(null);
 
     if (next >= OFFTEE_TOTAL_SHOTS) {
       const previousSessions = loadOffTeeSessions();
@@ -89,25 +92,42 @@ function OffTeePage() {
         isRetest: previousSessions.length > 0,
       });
       setPhase("processing");
+      return;
+    }
+
+    setIndex(next);
+    const nextShot = updatedShots[next];
+    if (nextShot.filled) {
+      setTotal(nextShot.total);
+      setSidled(nextShot.sidled);
+      setDirection(nextShot.direction ?? "right");
     } else {
-      setIndex(next);
-      const nextShot = shots[next];
-      if (nextShot.filled) {
-        setTotal(nextShot.total);
-        setSidled(nextShot.sidled);
-      } else {
-        setSidled(0);
-      }
+      setSidled(0);
+      setDirection("right");
     }
   }
 
+  function commit() {
+    if (flight) return;
+
+    const next = index + 1;
+    const updatedShots: DirectedTeeShot[] = shots.map((s, i) =>
+      i === index ? { ...s, total, sidled, direction, filled: true } : s,
+    );
+    setShots(updatedShots);
+    setFlight({ total, sidled, direction });
+
+    window.setTimeout(() => finishCommit(updatedShots, next), FLIGHT_DURATION_MS + 150);
+  }
+
   function back() {
-    if (index === 0) return;
+    if (index === 0 || flight) return;
     const i = index - 1;
     setIndex(i);
     const s = shots[i];
     setTotal(s.filled ? s.total : total);
     setSidled(s.filled ? s.sidled : 0);
+    setDirection(s.direction ?? "right");
   }
 
   if (phase === "setup") {
@@ -150,20 +170,25 @@ function OffTeePage() {
     );
   }
 
-  if (phase === "test")
+  if (phase === "test") {
     return (
       <TestScreen
         current={current}
         index={index}
         total={total}
         sidled={sidled}
+        direction={direction}
+        flight={flight}
         setTotal={setTotal}
         setSidled={setSidled}
+        setDirection={setDirection}
         onCommit={commit}
         onBack={back}
         onAbort={() => navigate({ to: "/kategori/$slug", params: { slug: "driving" } })}
       />
     );
+  }
+
   if (phase === "processing" && reveal) {
     return <OffTeeProcessing onDone={() => setPhase("reveal")} />;
   }
@@ -175,15 +200,16 @@ function OffTeePage() {
   return <ResultScreen shots={shots} onRestart={start} />;
 }
 
-/* ----------------------------------------------------------------- test */
-
 function TestScreen({
   current,
   index,
   total,
   sidled,
+  direction,
+  flight,
   setTotal,
   setSidled,
+  setDirection,
   onCommit,
   onBack,
   onAbort,
@@ -192,20 +218,24 @@ function TestScreen({
   index: number;
   total: number;
   sidled: number;
+  direction: ShotDirection;
+  flight: FlightShot | null;
   setTotal: (n: number) => void;
   setSidled: (n: number) => void;
+  setDirection: (direction: ShotDirection) => void;
   onCommit: () => void;
   onBack: () => void;
   onAbort: () => void;
 }) {
   const pct = Math.round((index / OFFTEE_TOTAL_SHOTS) * 100);
+  void current;
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-44 pt-4">
       <div className="flex items-center justify-between">
         <button
           onClick={onBack}
-          disabled={index === 0}
+          disabled={index === 0 || Boolean(flight)}
           aria-label="Föregående slag"
           className="rounded-full border border-border p-2 text-muted-foreground disabled:opacity-30"
         >
@@ -213,7 +243,8 @@ function TestScreen({
         </button>
         <button
           onClick={onAbort}
-          className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+          disabled={Boolean(flight)}
+          className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground disabled:opacity-40"
         >
           <X className="h-3.5 w-3.5" /> Avbryt test
         </button>
@@ -234,14 +265,21 @@ function TestScreen({
         </div>
       </div>
 
-      <div className="mt-4 space-y-2">
+      <PersistentFairwayVisual flight={flight} />
+
+      <div className="mt-3 space-y-2">
         <TeeNumberField label="Totalt" value={total} onChange={setTotal} unit="m" />
 
         <div className="rounded-2xl border border-border bg-card p-3">
           <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-            Sidled – hur mycket ifrån mitten
+            Sidled – hur mycket från mitten
           </p>
-          <SidledValue value={sidled} onChange={setSidled} />
+          <SidledValue
+            value={sidled}
+            direction={direction}
+            onChange={setSidled}
+            onDirectionChange={setDirection}
+          />
         </div>
       </div>
 
@@ -253,24 +291,103 @@ function TestScreen({
           ) : (
             <>
               {" "}
-              och <span className="font-semibold text-foreground">{sidled} m från mitten</span>
+              och{" "}
+              <span className="font-semibold text-foreground">
+                {sidled} m {direction === "left" ? "vänster" : "höger"}
+              </span>
             </>
           )}
           .
         </p>
         <button
           onClick={onCommit}
-          className="mx-auto flex w-full max-w-md items-center justify-center gap-2 rounded-2xl bg-primary py-4 font-[family-name:var(--font-display)] text-2xl text-primary-foreground"
+          disabled={Boolean(flight)}
+          className="mx-auto flex w-full max-w-md items-center justify-center gap-2 rounded-2xl bg-primary py-4 font-[family-name:var(--font-display)] text-2xl text-primary-foreground disabled:opacity-60"
         >
-          {index + 1 === OFFTEE_TOTAL_SHOTS ? "Avsluta test" : "Nästa slag"}
-          <ArrowRight className="h-5 w-5" />
+          {flight
+            ? "Bollen flyger…"
+            : index + 1 === OFFTEE_TOTAL_SHOTS
+              ? "Avsluta test"
+              : "Nästa slag"}
+          {!flight ? <ArrowRight className="h-5 w-5" /> : null}
         </button>
       </div>
     </main>
   );
 }
 
-function SidledValue({ value, onChange }: { value: number; onChange: (n: number) => void }) {
+function PersistentFairwayVisual({ flight }: { flight: FlightShot | null }) {
+  const [landed, setLanded] = useState(false);
+
+  useEffect(() => {
+    setLanded(false);
+    if (!flight) return;
+    const frame = window.requestAnimationFrame(() => setLanded(true));
+    return () => window.cancelAnimationFrame(frame);
+  }, [flight]);
+
+  const lateralSign = flight?.direction === "left" ? -1 : 1;
+  const lateralPx = flight
+    ? Math.max(-105, Math.min(105, lateralSign * (flight.sidled / 40) * 105))
+    : 0;
+  const distancePx = flight ? Math.max(55, Math.min(205, (flight.total / 320) * 205)) : 0;
+
+  return (
+    <section className="relative mt-4 h-64 overflow-hidden rounded-3xl border border-border bg-primary/5">
+      <div className="absolute inset-x-0 top-3 flex items-center justify-between px-4 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+        <span>← Vänster</span>
+        <span>Fairway</span>
+        <span>Höger →</span>
+      </div>
+
+      <div className="absolute bottom-0 left-1/2 h-[82%] w-[48%] -translate-x-1/2 rounded-t-[46%] bg-primary/10" />
+      <div className="absolute bottom-0 left-1/2 h-[82%] w-px -translate-x-1/2 border-l border-dashed border-primary/40" />
+      <div className="absolute bottom-5 left-1/2 -translate-x-1/2 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+        Tee
+      </div>
+
+      <div
+        className="absolute bottom-10 left-1/2 z-10 h-3.5 w-3.5 rounded-full bg-flag shadow-[0_0_0_5px_rgba(255,255,255,0.55)] transition-transform ease-out"
+        style={{
+          transitionDuration: `${FLIGHT_DURATION_MS}ms`,
+          transform:
+            flight && landed
+              ? `translate(calc(-50% + ${lateralPx}px), -${distancePx}px)`
+              : "translate(-50%, 0)",
+        }}
+      />
+
+      {flight ? (
+        <div className="absolute bottom-3 left-3 rounded-xl bg-card/90 px-3 py-2 text-xs shadow-sm backdrop-blur">
+          <span className="font-semibold text-foreground">{flight.total} m</span>
+          {flight.sidled > 0 ? (
+            <span className="text-muted-foreground">
+              {" "}· {flight.sidled} m {flight.direction === "left" ? "vänster" : "höger"}
+            </span>
+          ) : (
+            <span className="text-muted-foreground"> · mittlinje</span>
+          )}
+        </div>
+      ) : (
+        <div className="absolute bottom-3 left-3 rounded-xl bg-card/80 px-3 py-2 text-xs text-muted-foreground backdrop-blur">
+          Bollen ligger på tee
+        </div>
+      )}
+    </section>
+  );
+}
+
+function SidledValue({
+  value,
+  direction,
+  onChange,
+  onDirectionChange,
+}: {
+  value: number;
+  direction: ShotDirection;
+  onChange: (n: number) => void;
+  onDirectionChange: (direction: ShotDirection) => void;
+}) {
   const set = (n: number) => onChange(Math.max(0, Math.round(n)));
   const atMin = value <= 0;
 
@@ -287,7 +404,34 @@ function SidledValue({ value, onChange }: { value: number; onChange: (n: number)
 
   return (
     <div>
-      <div className="mt-1.5 flex items-center gap-2">
+      <div className="mt-2 grid grid-cols-2 gap-2 rounded-xl bg-muted p-1">
+        <button
+          type="button"
+          onClick={() => onDirectionChange("left")}
+          aria-pressed={direction === "left"}
+          className={`rounded-lg py-2 text-sm font-semibold transition-colors ${
+            direction === "left"
+              ? "bg-primary text-primary-foreground"
+              : "text-muted-foreground"
+          }`}
+        >
+          ← Vänster
+        </button>
+        <button
+          type="button"
+          onClick={() => onDirectionChange("right")}
+          aria-pressed={direction === "right"}
+          className={`rounded-lg py-2 text-sm font-semibold transition-colors ${
+            direction === "right"
+              ? "bg-primary text-primary-foreground"
+              : "text-muted-foreground"
+          }`}
+        >
+          Höger →
+        </button>
+      </div>
+
+      <div className="mt-2 flex items-center gap-2">
         <button
           type="button"
           onClick={() => set(value - 1)}
@@ -331,8 +475,6 @@ function SidledValue({ value, onChange }: { value: number; onChange: (n: number)
     </div>
   );
 }
-
-/* --------------------------------------------------------------- result */
 
 function ResultScreen({ shots, onRestart }: { shots: TeeShot[]; onRestart: () => void }) {
   const result = offTeeResult(shots);
