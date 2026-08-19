@@ -12,8 +12,7 @@ import {
   type CategoryHandicap,
   type Opportunity,
 } from "@/lib/sg-handicap";
-import { OpportunityCard, BiggestGapCard } from "@/components/home-dashboard";
-import { useSubscription } from "@/lib/subscription";
+import { OpportunityCard } from "@/components/home-dashboard";
 import { loadCardProfile } from "@/lib/rating-card";
 
 import { RadarCard, CategoryStatsSection } from "@/components/progress-dashboard";
@@ -66,7 +65,6 @@ function Home() {
   const [data, setData] = useState<HomeData | null>(null);
   const [ageSaved, setAgeSaved] = useState(false);
   const [friendCount, setFriendCount] = useState<number | null>(null);
-  const { isPlus } = useSubscription();
   const profile = loadCardProfile();
 
   useEffect(() => {
@@ -206,7 +204,6 @@ function Home() {
           </div>
           <CategoryStatsSection />
           <OpportunityCard opportunity={data.opportunity} />
-          <BiggestGapCard cats={data.cats} isPlus={isPlus} />
 
           <Link
             to="/tester"
