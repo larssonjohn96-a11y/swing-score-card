@@ -13,7 +13,7 @@ import { loadLagPuttSessions } from "@/lib/lagputt";
 import { loadSpeedSessions } from "@/lib/speed";
 import { loadShortGameSessions } from "@/lib/shortgame";
 import { precisionResult, groupScores } from "@/lib/precision";
-import { offTeeResult, analyseOffTee } from "@/lib/offtee";
+import { offTeeResult } from "@/lib/offtee";
 
 /* -------------------------------------------------------------------------
  * Verkligt Handicap – manuellt satt och redigerbart av spelaren
@@ -884,36 +884,55 @@ function approachDetailData(): CategoryDetailData {
   return { strength, limitation, keyMetrics, strengths, improvements, heatmap };
 }
 
-const OFFTEE_DIMENSIONS = [
-  { key: "distanceHcp", label: "Längd" },
-  { key: "waywardHcp", label: "OB-kontroll" },
-  { key: "fairwayHcp", label: "Fairway-träff" },
-  { key: "evennessHcp", label: "Jämnhet" },
-] as const;
-
 function drivingDetailData(): CategoryDetailData {
   const sessions = loadOffTeeSessions();
   const last = sessions[sessions.length - 1];
   if (!last) return { keyMetrics: [], strengths: [], improvements: [], heatmap: [] };
   const result = offTeeResult(last.shots);
-  const analysis = analyseOffTee(result);
-  const sorted = [...OFFTEE_DIMENSIONS].sort(
-    (a, b) => result.breakdown[a.key] - result.breakdown[b.key],
-  );
-  const strength = sorted[0]?.label;
-  const limitation = sorted[sorted.length - 1]?.label;
+
   const keyMetrics = [
     { label: "Senaste score", value: `${result.score}/100` },
     { label: "Driving HCP", value: hcpLabel(result.handicap) },
     { label: "Snitt totalt", value: `${result.avgTotal.toFixed(0)} m` },
     { label: "Fairway-träff", value: `${result.fairwayHitPct} %` },
   ];
+
+  const strengths: string[] = [];
+  const improvements: string[] = [];
+
+  if (result.dispersion <= 3 && result.bias <= 5) {
+    strengths.push("Mycket stabilt riktningsmönster – slagen hamnar nära varandra.");
+  } else if (result.dispersion <= 3) {
+    strengths.push("Konsekvent mönster, om än åt samma håll varje gång.");
+  }
+  if (result.fairwayHitPct >= 55) {
+    strengths.push(`${result.fairwayHitPct} % av slagen i fairway.`);
+  }
+  if (result.waywardPct === 0) {
+    strengths.push("Inga slag Out of Bounds.");
+  }
+  if (!strengths.length) strengths.push(`Snittlängd ${result.avgTotal.toFixed(0)} m.`);
+
+  if (result.dispersion > 10) {
+    improvements.push(
+      "Slagen sprider åt både vänster och höger – ett mer konsekvent mönster ger fler slag i fairway.",
+    );
+  } else if (result.bias > 10) {
+    improvements.push("Tydlig missriktning åt samma håll varje gång.");
+  }
+  if (result.waywardPct >= 25) {
+    improvements.push(
+      `${result.waywardPct} % av slagen slutade Out of Bounds – det största poängtappet.`,
+    );
+  }
+  if (!improvements.length) improvements.push("Redan starkt – fortsätt i samma spår.");
+
   return {
-    strength,
-    limitation,
+    strength: strengths[0],
+    limitation: improvements[0],
     keyMetrics,
-    strengths: analysis.strengths,
-    improvements: analysis.improvements,
+    strengths: strengths.slice(0, 3),
+    improvements: improvements.slice(0, 3),
     heatmap: [],
   };
 }

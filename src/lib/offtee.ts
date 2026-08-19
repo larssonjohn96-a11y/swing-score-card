@@ -1,4 +1,32 @@
-/** Standardiserat Off the Tee-test: 6 drives mot samma fairway. */
+/**
+ * Off the Tee Test HCP-modell v3 — "shot-level model".
+ *
+ * Historik (för framtida underhåll):
+ * v1/v2 delade in varje slag i fairway/rough/OB (kategoriskt) och vägde
+ * ihop fyra separata komponenter (längd 45%, wayward% 30%, fairway% 15%,
+ * jämnhet 10%) plus ett artificiellt golv (handicap >= distanceHcp - 8)
+ * för att förhindra att bra riktning "köpte tillbaka" för mycket poäng
+ * från ett kort slag. Granskning visade två problem: (1) en spelare med
+ * perfekt riktning men måttlig längd kunde tvingas från ett rimligt
+ * viktat resultat (~12) upp till 24 av golvet – en förändring på över
+ * 12 slag, och (2) en spelare med 100% slag OB men lång längd kunde få
+ * BÄTTRE HCP än en kort-men-perfekt spelare – en ren invertering, eftersom
+ * kategoriseringen (fairway/rough/OB) inte skiljde en stabil ensidig miss
+ * (t.ex. +15,+16,+14,+15,+17,+14 m) från en stor tvåvägsspridning
+ * (-15,+16,-14,+15,-17,+14 m) – båda gav samma |sidled|-baserade straff
+ * trots att den senare är ett betydligt sämre mönster.
+ *
+ * v3 löser båda: varje slag får ett eget shotHcp (kontinuerlig funktion
+ * av längd OCH sidled, inget hink-hopp vid fairwaykanten), sedan läggs en
+ * liten korrigering på för konsekvent bias (samma riktning varje gång,
+ * mildare straff) och en större för dispersion (spretande båda hållen,
+ * hårdare straff). Inget artificiellt golv behövs – avvägningen mellan
+ * längd och träffsäkerhet ligger redan i varje enskilt slags 55/45-vikt.
+ */
+
+/** Standardiserad fairway – samma för alla 6 slag. Används för shotOutcome
+ *  (fairway/rough/OB, ren rapport-statistik, bygger inte längre HCP:t) och
+ *  som referensskala för accuracyToHandicap. */
 export const FAIRWAY = {
   halfWidth: 16,
   roughDepth: 12,
@@ -43,6 +71,8 @@ export function stdDev(values: number[]): number {
   return Math.sqrt(mean(values.map((v) => (v - m) ** 2)));
 }
 
+/** Ren rapport-statistik (fairway/rough/OB-andelar visas fortfarande i
+ *  resultatet), bygger INTE längre Driving HCP i v3. */
 export type ShotOutcome = {
   inFairway: boolean;
   inRough: boolean;
@@ -97,6 +127,7 @@ const DISTANCE_ANCHORS: Anchor[] = [
   { hcp: 40, value: 147.0 },
 ];
 
+/** Längd-HCP för ETT enskilt slag – samma ankare som tidigare, oförändrade. */
 export function distanceToHandicap(avgTotalMeters: number): number {
   return interpolate(avgTotalMeters, DISTANCE_ANCHORS, true);
 }
@@ -108,14 +139,50 @@ const ACCURACY_ANCHORS: Anchor[] = [
   { hcp: 40, value: FAIRWAY.halfWidth + FAIRWAY.roughDepth },
 ];
 
+/** Träffsäkerhets-HCP för ETT enskilt slag – kontinuerlig funktion av
+ *  |sidled|, inget hopp vid fairwaykanten (27,9 m och 28,1 m ger nästan
+ *  identiskt värde). */
 function accuracyToHandicap(sidledMeters: number): number {
   return interpolate(Math.abs(sidledMeters), ACCURACY_ANCHORS, false);
 }
 
+/**
+ * HCP-motsvarighet för ETT enskilt slag – kärnan i v3-modellen. 55% längd,
+ * 45% träffsäkerhet; kalibreras senare mot riktig SG4-data (se
+ * ALL_GOLFERS_DRIVING_HCP/drivingHcpDistributionForAge för samma princip
+ * på andra ställen i filen). Används både för aggregatets baseHcp och för
+ * "bästa slaget"-highlighten.
+ */
 export function shotHandicap(shot: { total: number; sidled: number }): number {
   const distanceHcp = distanceToHandicap(shot.total);
   const accuracyHcp = accuracyToHandicap(shot.sidled);
-  return Math.round((distanceHcp * 0.5 + accuracyHcp * 0.5) * 10) / 10;
+  return Math.round((distanceHcp * 0.55 + accuracyHcp * 0.45) * 10) / 10;
+}
+
+/**
+ * Bias-korrigering: |medelvärdet av signerade sidled-värden|. Dödzon 0–5 m
+ * (ett konsekvent litet mönster kostar inget extra – redan fångat i varje
+ * slags egen accuracyHcp), sedan gradvis straff, takat vid 2 HCP. Ett
+ * stabilt ensidigt mönster är reproducerbart och ska inte straffas hårt.
+ */
+function biasPenalty(biasMeters: number): number {
+  const b = Math.abs(biasMeters);
+  if (b <= 5) return 0;
+  return Math.min(2, ((b - 5) / 15) * 2);
+}
+
+/**
+ * Dispersion-korrigering: standardavvikelsen på de SIGNERADE sidled-
+ * värdena. Dödzon 0–3 m, sedan gradvis straff, takat vid 4 HCP – tyngre
+ * än bias-straffet, eftersom en spelare som spretar åt båda hållen är
+ * svårare att spela runt än en med ett stabilt, förutsägbart mönster.
+ * Det här är vad som skiljer +15,+16,+14,+15,+17,+14 m (låg dispersion,
+ * bara bias) från -15,+16,-14,+15,-17,+14 m (hög dispersion) trots att
+ * |sidled| är likvärdigt slag för slag i bägge fallen.
+ */
+function dispersionPenalty(dispersionMeters: number): number {
+  if (dispersionMeters <= 3) return 0;
+  return Math.min(4, ((dispersionMeters - 3) / 17) * 4);
 }
 
 const AGE_DRIVING_HCP_BRACKETS: { maxAge: number; mean: number; sd: number }[] = [
@@ -134,57 +201,13 @@ export function drivingHcpDistributionForAge(age: number): { mean: number; sd: n
 
 export const ALL_GOLFERS_DRIVING_HCP = { mean: 17, sd: 8 };
 
-const WAYWARD_ANCHORS: Anchor[] = [
-  { hcp: -8, value: 1 },
-  { hcp: -6, value: 2 },
-  { hcp: 2.5, value: 12 },
-  { hcp: 32, value: 45 },
-  { hcp: 40, value: 71 },
-];
-
-function waywardToHandicap(waywardPct: number): number {
-  return interpolate(waywardPct, WAYWARD_ANCHORS, false);
-}
-
-const FAIRWAY_ANCHORS: Anchor[] = [
-  { hcp: -8, value: 65 },
-  { hcp: -6, value: 60 },
-  { hcp: 2.5, value: 50 },
-  { hcp: 32, value: 40 },
-  { hcp: 40, value: 30 },
-];
-
-function fairwayToHandicap(fairwayHitPct: number): number {
-  return interpolate(fairwayHitPct, FAIRWAY_ANCHORS, true);
-}
-
-const EVENNESS_ANCHORS: Anchor[] = [
-  { hcp: -8, value: 2 },
-  { hcp: -6, value: 3 },
-  { hcp: 3, value: 6 },
-  { hcp: 15, value: 12 },
-  { hcp: 32, value: 22 },
-  { hcp: 40, value: 30 },
-];
-
-function evennessToHandicap(combinedSdMeters: number): number {
-  return interpolate(combinedSdMeters, EVENNESS_ANCHORS, false);
-}
-
-/**
- * Jeffreys smoothing för binomiala andelar. Med bara 6 slag är råa
- * procentsatser mycket grova (0, 16,7, 33,3 ...). Den här uppskattningen
- * används endast internt i HCP-modellen; UI/resultat fortsätter visa rådata.
- */
-function jeffreysRate(successes: number, attempts: number): number {
-  if (attempts <= 0) return 0;
-  return ((successes + 0.5) / (attempts + 1)) * 100;
-}
-
+/** Positivt = höger, negativt = vänster. Äldre sessioner saknar direction
+ *  och behandlas som höger – bevarar deras gamla dispersion-tecken så
+ *  bias/dispersion-beräkningen fortfarande ger ett sammanhängande resultat
+ *  för migrerad data, om än inte nödvändigtvis numeriskt identiskt med
+ *  v1/v2 (helt annan formel). */
 function signedSidled(shot: TeeShotInput): number {
   const amount = Math.abs(shot.sidled);
-  // Äldre sessioner saknar direction. Positivt värde bevarar deras gamla
-  // dispersion och gör migreringen bakåtkompatibel.
   if (shot.direction === "left") return -amount;
   return amount;
 }
@@ -206,29 +229,26 @@ export type TeeShotResult = TeeShotInput & {
 export type OffTeeResult = {
   score: number;
   handicap: number;
-  breakdown: {
-    distanceHcp: number;
-    waywardHcp: number;
-    fairwayHcp: number;
-    evennessHcp: number;
-  };
+  /** medelvärdet av alla shotHcp_i, innan bias/dispersion-korrigering */
+  baseHcp: number;
+  /** |medelvärdet av signerade sidled-värden|, i meter */
+  bias: number;
+  /** standardavvikelse på signerade sidled-värden, i meter */
+  dispersion: number;
+  biasPenalty: number;
+  dispersionPenalty: number;
   shots: TeeShotResult[];
   avgTotal: number;
   longest: number;
-  /** råa observerade procenttal, inte de smoothing-justerade modellvärdena */
+  /** rena rapport-procenttal, bygger inte HCP:t i v3 */
   fairwayHitPct: number;
   waywardPct: number;
   /** genomsnittligt absolut avstånd från mittlinjen */
   avgSidled: number;
   distanceSpread: number;
-  /** standardavvikelse på signed vänster/höger-position */
+  /** = dispersion, kvar för bakåtkompatibel namngivning i UI */
   lateralSpread: number;
 };
-
-const DISTANCE_WEIGHT = 0.45;
-const WAYWARD_WEIGHT = 0.3;
-const FAIRWAY_WEIGHT = 0.15;
-const EVENNESS_WEIGHT = 0.1;
 
 export function offTeeResult(shots: TeeShot[]): OffTeeResult {
   const filled = shots.filter((s) => s.filled);
@@ -243,54 +263,39 @@ export function offTeeResult(shots: TeeShot[]): OffTeeResult {
   const n = results.length;
   const totals = results.map((r) => r.total);
   const absoluteSidleds = results.map((r) => Math.abs(r.sidled));
-  const signedSidleds = results.map(signedSidled);
+  const signedSidleds = filled.map(signedSidled);
   const avgTotal = mean(totals);
 
   const waywardCount = results.filter((r) => r.outcome.isOB).length;
   const fairwayCount = results.filter((r) => r.outcome.inFairway).length;
-
   const waywardPct = n ? Math.round((waywardCount / n) * 100) : 0;
   const fairwayHitPct = n ? Math.round((fairwayCount / n) * 100) : 0;
 
-  const modelWaywardPct = jeffreysRate(waywardCount, n);
-  const modelFairwayPct = jeffreysRate(fairwayCount, n);
+  const shotHcps = filled.map((s) => shotHandicap({ total: s.total, sidled: s.sidled }));
+  const baseHcp = n ? mean(shotHcps) : 0;
+  const bias = n ? Math.abs(mean(signedSidleds)) : 0;
+  const dispersion = n >= 2 ? stdDev(signedSidleds) : 0;
+  const bp = biasPenalty(bias);
+  const dp = dispersionPenalty(dispersion);
 
-  const distanceSd = stdDev(totals);
-  const lateralSd = stdDev(signedSidleds);
-  const combinedSd = (distanceSd + lateralSd) / 2;
-
-  const distanceHcp = n ? distanceToHandicap(avgTotal) : 0;
-  const waywardHcp = n ? waywardToHandicap(modelWaywardPct) : 0;
-  const fairwayHcp = n ? fairwayToHandicap(modelFairwayPct) : 0;
-  const evennessHcp = n >= 2 ? evennessToHandicap(combinedSd) : distanceHcp;
-
-  const weighted =
-    distanceHcp * DISTANCE_WEIGHT +
-    waywardHcp * WAYWARD_WEIGHT +
-    fairwayHcp * FAIRWAY_WEIGHT +
-    evennessHcp * EVENNESS_WEIGHT;
-
-  // Behåll befintligt distance floor oförändrat i denna iteration.
-  const floored = Math.max(weighted, distanceHcp - 8);
-  const handicap = n ? Math.round(Math.max(-8, Math.min(40, floored)) * 10) / 10 : 0;
+  const handicap = n ? Math.round(Math.max(-8, Math.min(40, baseHcp + bp + dp)) * 10) / 10 : 0;
 
   return {
     score: n ? scoreFromHandicap(handicap) : 0,
     handicap,
-    breakdown: {
-      distanceHcp: Math.round(distanceHcp * 10) / 10,
-      waywardHcp: Math.round(waywardHcp * 10) / 10,
-      fairwayHcp: Math.round(fairwayHcp * 10) / 10,
-      evennessHcp: Math.round(evennessHcp * 10) / 10,
-    },
+    baseHcp: Math.round(baseHcp * 10) / 10,
+    bias: Math.round(bias * 10) / 10,
+    dispersion: Math.round(dispersion * 10) / 10,
+    biasPenalty: Math.round(bp * 10) / 10,
+    dispersionPenalty: Math.round(dp * 10) / 10,
     shots: results,
     avgTotal,
     longest: totals.length ? Math.max(...totals) : 0,
     fairwayHitPct,
     waywardPct,
     avgSidled: mean(absoluteSidleds),
-    distanceSpread: Math.round(distanceSd * 10) / 10,
-    lateralSpread: Math.round(lateralSd * 10) / 10,
+    distanceSpread: Math.round(stdDev(totals) * 10) / 10,
+    lateralSpread: Math.round(dispersion * 10) / 10,
   };
 }
 
@@ -313,11 +318,32 @@ export type ScoreBand = {
 };
 
 const SCORE_BANDS: ScoreBand[] = [
-  { key: "low", label: "Låg", emoji: "🔴", text: "text-destructive", bg: "bg-destructive/10", bar: "bg-destructive" },
+  {
+    key: "low",
+    label: "Låg",
+    emoji: "🔴",
+    text: "text-destructive",
+    bg: "bg-destructive/10",
+    bar: "bg-destructive",
+  },
   { key: "mid", label: "Medel", emoji: "🟠", text: "text-sand", bg: "bg-sand/10", bar: "bg-sand" },
   { key: "ok", label: "Bra", emoji: "🟡", text: "text-flag", bg: "bg-flag/10", bar: "bg-flag" },
-  { key: "great", label: "Mycket bra", emoji: "🟢", text: "text-primary", bg: "bg-primary/10", bar: "bg-primary" },
-  { key: "elite", label: "Exceptionell", emoji: "⭐", text: "text-chart-4", bg: "bg-chart-4/10", bar: "bg-chart-4" },
+  {
+    key: "great",
+    label: "Mycket bra",
+    emoji: "🟢",
+    text: "text-primary",
+    bg: "bg-primary/10",
+    bar: "bg-primary",
+  },
+  {
+    key: "elite",
+    label: "Exceptionell",
+    emoji: "⭐",
+    text: "text-chart-4",
+    bg: "bg-chart-4/10",
+    bar: "bg-chart-4",
+  },
 ];
 
 export function scoreBand(score: number): ScoreBand {
@@ -326,74 +352,4 @@ export function scoreBand(score: number): ScoreBand {
   if (score >= 60) return SCORE_BANDS[2];
   if (score >= 40) return SCORE_BANDS[1];
   return SCORE_BANDS[0];
-}
-
-export type OffTeeAnalysis = {
-  strengths: string[];
-  improvements: string[];
-};
-
-export function analyseOffTee(result: OffTeeResult): OffTeeAnalysis {
-  const strengths: string[] = [];
-  const improvements: string[] = [];
-
-  if (!result.shots.length) {
-    return { strengths: ["Genomför testet för att få din analys."], improvements: [] };
-  }
-
-  if (result.avgTotal >= PGA_TOUR_AVERAGE_METERS) {
-    strengths.push(
-      `Snittlängden (${result.avgTotal.toFixed(0)} m) matchar PGA Tour-snittet (${PGA_TOUR_AVERAGE_METERS.toFixed(0)} m).`,
-    );
-  } else if (result.avgTotal >= AVERAGE_GOLFER_METERS) {
-    strengths.push(`Snittlängden (${result.avgTotal.toFixed(0)} m) slår snittgolfaren.`);
-  }
-
-  if (result.fairwayHitPct >= 55) {
-    strengths.push(`Stark fairwayträff – ${result.fairwayHitPct} % av slagen i fairway.`);
-  }
-  if (result.waywardPct === 0) {
-    strengths.push("Inga slag Out of Bounds – bra riskhantering.");
-  } else if (result.waywardPct <= 15) {
-    strengths.push(`Låg OB-andel (${result.waywardPct} %) – nära scratch-nivå.`);
-  }
-  if (result.breakdown.evennessHcp <= 10) {
-    strengths.push(
-      `Jämnt slag för slag – både längd (±${result.distanceSpread.toFixed(0)} m) och sidled (±${result.lateralSpread.toFixed(0)} m).`,
-    );
-  }
-  if (!strengths.length) strengths.push(`Längsta drive ${result.longest.toFixed(0)} m i testet.`);
-
-  if (result.waywardPct >= 25) {
-    improvements.push(`${result.waywardPct} % av slagen slutade Out of Bounds – det största poängtappet.`);
-  }
-  if (result.breakdown.evennessHcp >= 20) {
-    improvements.push(
-      `Spridningen varierar mycket mellan slagen (±${result.distanceSpread.toFixed(0)} m längd, ±${result.lateralSpread.toFixed(0)} m sidled) – jobba på jämnare kontakt.`,
-    );
-  }
-  if (result.fairwayHitPct < 40) {
-    improvements.push(`Fairway-träffen (${result.fairwayHitPct} %) ligger under snittet – fler slag i fairway ger enklare andraslag.`);
-  }
-  if (result.avgTotal < AVERAGE_GOLFER_METERS) {
-    const gap = AVERAGE_GOLFER_METERS - result.avgTotal;
-    improvements.push(`${gap.toFixed(0)} m kortare än snittgolfaren – mer fart eller bättre center-träff kan hjälpa.`);
-  }
-
-  if (!improvements.length && result.score < 97) {
-    const weakest = (["distanceHcp", "waywardHcp", "fairwayHcp", "evennessHcp"] as const).reduce(
-      (a, b) => (result.breakdown[b] > result.breakdown[a] ? b : a),
-    );
-    if (weakest === "distanceHcp") {
-      improvements.push("Redan starkt – lite mer längd kan sänka handicapet ytterligare.");
-    } else if (weakest === "waywardHcp") {
-      improvements.push("Redan starkt – fortsätt hålla nere OB-andelen, det väger tyngst efter längd.");
-    } else if (weakest === "fairwayHcp") {
-      improvements.push("Redan starkt – något högre fairway-träff kan finslipa resultatet.");
-    } else {
-      improvements.push("Redan starkt – jämnare spridning i längd och sidled kan finslipa resultatet.");
-    }
-  }
-
-  return { strengths: strengths.slice(0, 3), improvements: improvements.slice(0, 3) };
 }
