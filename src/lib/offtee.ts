@@ -147,16 +147,69 @@ function accuracyToHandicap(sidledMeters: number): number {
 }
 
 /**
- * HCP-motsvarighet för ETT enskilt slag – kärnan i v3-modellen. 55% längd,
- * 45% träffsäkerhet; kalibreras senare mot riktig SG4-data (se
- * ALL_GOLFERS_DRIVING_HCP/drivingHcpDistributionForAge för samma princip
- * på andra ställen i filen). Används både för aggregatets baseHcp och för
- * "bästa slaget"-highlighten.
+ * HCP-motsvarighet för ETT enskilt slag – kärnan i v4-modellen. 55% längd,
+ * 45% träffsäkerhet (rawShotHcp), plus två tillägg som täpper till de två
+ * kvarvarande svagheterna som identifierades vid granskning av v3:
+ *
+ * 1. Soft distance protection (softDistanceProtection): utan den kunde
+ *    extremt korta men perfekt raka slag (t.ex. 50 m, 0 m sidled) "köpa
+ *    tillbaka" nästan hela längdstraffet med bara träffsäkerhet – sex sådana
+ *    slag gav tidigare Driving HCP ~19, alldeles för bra. Det är INTE
+ *    samma sak som v1/v2:s gamla hårda golv (handicap >= distanceHcp - 8,
+ *    applicerat EFTER viktning på aggregatnivå) – den nya skyddet är
+ *    kontinuerligt, PER SLAG, och graderat efter hur dåligt distanceHcp
+ *    faktiskt är (obegränsat vid bra/normal längd, gradvis mer begränsat
+ *    ju kortare slaget är).
+ *
+ * 2. Severe miss penalty (severeMissPenalty): accuracyToHandicap:s ankare
+ *    slutar vid 28 m (fairwaykant + ruff), så tidigare kunde 30 m offline
+ *    och 100 m offline ge nästan identisk träffsäkerhets-HCP – sex slag på
+ *    300 m/100 m offline gav tidigare Driving HCP ~15-16, alldeles för
+ *    bra för en så extrem miss. Straffet är kontinuerligt och BÖRJAR
+ *    exakt där accuracyToHandicap redan planar ut (28 m), så det finns
+ *    fortfarande inget hopp vid fairwaykanten (27,9 m och 28,1 m ger
+ *    fortfarande nästan identiskt resultat) – det är bara det att
+ *    missar bortom det inte längre behandlas som "lika dåliga".
+ *
+ * Interna mellanvärden avrundas INTE – bara det slutgiltiga handicapet
+ * (och andra UI-visade tal) avrundas, för att undvika att sex separata
+ * avrundningar ackumulerar en liten men onödig snedvridning.
  */
+
+/** Hur många HCP-enheter får träffsäkerhet som mest "köpa tillbaka" från
+ *  ett dåligt distanceHcp? Obegränsat (i praktiken) vid bra/normal längd,
+ *  gradvis mer begränsat mot den sämsta änden av skalan. */
+function maxAccuracyBuyBack(distanceHcp: number): number {
+  if (distanceHcp <= 15) return 20;
+  if (distanceHcp >= 38) return 3;
+  const t = (distanceHcp - 15) / (38 - 15);
+  return 20 - t * (20 - 3);
+}
+
+function softDistanceProtection(distanceHcp: number, rawShotHcp: number): number {
+  const floor = distanceHcp - maxAccuracyBuyBack(distanceHcp);
+  return Math.max(rawShotHcp, floor);
+}
+
+/** Kontinuerligt tilläggsstraff för extrema missar bortom där
+ *  accuracyToHandicap redan planar ut (28 m). Noll upp till exakt 28 m
+ *  (ingen påverkan på den redan verifierade kontinuiteten där), sedan
+ *  stegvis brantare: 28–40 m växer snabbast, 40–60 m fortsätter växa,
+ *  60 m+ planar ut igen (hårt men takat straff, inte oändligt). */
+function severeMissPenalty(sidledMeters: number): number {
+  const a = Math.abs(sidledMeters);
+  if (a <= 28) return 0;
+  if (a <= 40) return ((a - 28) / (40 - 28)) * 8;
+  if (a <= 60) return 8 + ((a - 40) / (60 - 40)) * 8;
+  return 16 + Math.min(4, ((a - 60) / 20) * 4);
+}
+
 export function shotHandicap(shot: { total: number; sidled: number }): number {
   const distanceHcp = distanceToHandicap(shot.total);
   const accuracyHcp = accuracyToHandicap(shot.sidled);
-  return Math.round((distanceHcp * 0.55 + accuracyHcp * 0.45) * 10) / 10;
+  const raw = distanceHcp * 0.55 + accuracyHcp * 0.45;
+  const protectedHcp = softDistanceProtection(distanceHcp, raw);
+  return protectedHcp + severeMissPenalty(shot.sidled);
 }
 
 /**
