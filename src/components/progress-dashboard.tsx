@@ -32,7 +32,6 @@ import {
   type Profile,
 } from "@/lib/friends-cloud";
 import { searchOpenProfiles, type OpenProfile } from "@/lib/open-profiles";
-import { Sparkline } from "@/components/home-dashboard";
 import { useSubscription } from "@/lib/subscription";
 import { PremiumLock } from "@/components/premium-lock";
 import type {
@@ -47,7 +46,8 @@ import {
   BENCHMARK_LEVELS,
   CATEGORY_LABELS,
   computeCategoryCardStats,
-  computeCategoryHcpTimeline,
+  computeCategoryHandicaps,
+  computeEstimatedHandicap,
   hcpLabel,
   loadRealHandicap,
   ratingFromHandicap,
@@ -880,19 +880,50 @@ const NO_DATA_LINK: Record<CategorySlug, { to: string; params?: Record<string, s
   speed: { to: "/speed-test" },
 };
 
+/** De fyra HCP-kategorierna som ingår i färgkodningen, i visningsordning
+ *  för 2×2-gridet. Speed hålls medvetet utanför – det är inte en
+ *  HCP-kategori och ska inte färgkodas mot Total HCP. */
+const HCP_GRID_SLUGS: CategorySlug[] = ["approach", "driving", "around-the-green", "puttning"];
+
+/** Kontinuerlig färgskala baserad på hur en kategoris HCP förhåller sig
+ *  till spelarens Total HCP – grönt för styrkor, rött för svagheter,
+ *  intensiteten interpolerad snarare än i fasta steg. Mycket subtil
+ *  bakgrundston, starkare färg på själva HCP-siffran, subtil kant. */
+function categoryTone(diff: number | undefined): {
+  background?: string;
+  borderColor?: string;
+  valueColor?: string;
+} {
+  if (diff === undefined) return {};
+  const clamped = Math.max(-4, Math.min(4, diff));
+  // Liten dödzon kring 0 räknas som neutral, ingen färgsignal där.
+  if (Math.abs(clamped) < 0.3) return {};
+
+  const intensity = Math.min(1, Math.abs(clamped) / 4); // 0–1
+  const color = clamped > 0 ? "var(--destructive)" : "var(--primary)";
+  const bgPct = Math.round(4 + intensity * 10);
+  const borderPct = Math.round(10 + intensity * 35);
+  const valuePct = Math.round(55 + intensity * 35);
+
+  return {
+    background: `color-mix(in oklch, ${color} ${bgPct}%, var(--card))`,
+    borderColor: `color-mix(in oklch, ${color} ${borderPct}%, var(--border))`,
+    valueColor: `color-mix(in oklch, ${color} ${valuePct}%, var(--foreground))`,
+  };
+}
+
 export function CategoryStatsSection() {
-  const [cards, setCards] = useState<CategoryCardStat[]>([]);
-  const [sparklines, setSparklines] = useState<Record<string, number[]>>({});
+  const [cats, setCats] = useState<CategoryHandicap[]>([]);
+  const [totalHcp, setTotalHcp] = useState<number | undefined>(undefined);
+  const [speedStat, setSpeedStat] = useState<CategoryCardStat | null>(null);
 
   useEffect(() => {
-    const stats = computeCategoryCardStats(90, loadRealHandicap() ?? undefined);
-    setCards(stats);
-    const next: Record<string, number[]> = {};
-    for (const c of stats) {
-      const points = computeCategoryHcpTimeline(c.slug, 90);
-      next[c.slug] = points.map((p) => ratingFromHandicap(p.rolling ?? p.raw ?? 0));
-    }
-    setSparklines(next);
+    const real = loadRealHandicap();
+    const computed = computeCategoryHandicaps(undefined, real ?? undefined);
+    setCats(computed);
+    setTotalHcp(real ?? computeEstimatedHandicap(computed));
+    const cardStats = computeCategoryCardStats(90, real ?? undefined);
+    setSpeedStat(cardStats.find((c) => c.slug === "speed") ?? null);
   }, []);
 
   return (
@@ -901,70 +932,74 @@ export function CategoryStatsSection() {
         Stats per kategori
       </p>
 
-      <div className="mt-3 grid grid-cols-2 gap-2">
-        {cards.map((c) => {
-          const points = sparklines[c.slug] ?? [];
+      {/* Total HCP – störst visuell prioritet, egen rad överst */}
+      <div className="mt-3 rounded-3xl border border-border bg-card p-5 text-center shadow-[var(--shadow-glow)]">
+        <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Total HCP</p>
+        <p className="mt-1 font-[family-name:var(--font-display)] text-5xl leading-none text-primary">
+          {totalHcp !== undefined ? hcpLabel(totalHcp) : "–"}
+        </p>
+      </div>
+
+      {/* 2×2-grid – de fyra HCP-kategorierna, färgkodade mot Total HCP */}
+      <div className="mt-2 grid grid-cols-2 gap-2">
+        {HCP_GRID_SLUGS.map((slug) => {
+          const cat = cats.find((c) => c.slug === slug);
+          const hasHcp = cat?.handicap !== undefined;
+          const diff = hasHcp && totalHcp !== undefined ? cat!.handicap! - totalHcp : undefined;
+          const tone = categoryTone(diff);
+          const noDataLink = NO_DATA_LINK[slug];
+
           return (
-            <div key={c.slug} className="rounded-2xl border border-border bg-card p-3">
+            <Link
+              key={slug}
+              to={hasHcp ? "/utveckling/$slug" : noDataLink.to}
+              params={hasHcp ? { slug } : noDataLink.params}
+              className="block rounded-2xl border p-3.5 transition-transform active:scale-[0.98]"
+              style={{
+                background: tone.background ?? "var(--card)",
+                borderColor: tone.borderColor ?? "var(--border)",
+              }}
+            >
               <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
-                {c.title}
+                {CATEGORY_LABELS[slug]}
               </p>
-              {c.hasData ? (
+              {hasHcp ? (
                 <>
-                  <p className="mt-1 flex items-baseline gap-1.5 font-[family-name:var(--font-display)] text-2xl leading-none">
-                    HCP {c.estHcp !== undefined ? hcpLabel(c.estHcp) : "–"}
-                  </p>
-                  {c.isBaseline && (
-                    <p className="mt-0.5 text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
-                      Uppskattning · inget test än
-                    </p>
-                  )}
-                  {c.capped && !c.isBaseline && (
-                    <p className="mt-0.5 text-[9px] font-medium text-muted-foreground">
-                      Skyddad från stort hopp
-                    </p>
-                  )}
-                  <div className="mt-2 h-6">
-                    {points.length >= 2 ? (
-                      <Sparkline values={points} />
-                    ) : (
-                      <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                        <div
-                          className="h-full rounded-full bg-primary"
-                          style={{
-                            width: `${Math.max(4, c.estHcp !== undefined ? ratingFromHandicap(c.estHcp) : 4)}%`,
-                          }}
-                        />
-                      </div>
-                    )}
-                  </div>
-                  <Link
-                    to="/utveckling/$slug"
-                    params={{ slug: c.slug }}
-                    className="mt-3 block rounded-xl bg-primary py-2 text-center text-xs font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+                  <p
+                    className="mt-1 font-[family-name:var(--font-display)] text-2xl leading-none"
+                    style={tone.valueColor ? { color: tone.valueColor } : undefined}
                   >
-                    Visa analys
-                  </Link>
+                    HCP {hcpLabel(cat!.handicap!)}
+                  </p>
+                  {cat!.isBaseline && (
+                    <p className="mt-0.5 text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      Uppskattning
+                    </p>
+                  )}
                 </>
               ) : (
-                <>
-                  <p className="mt-1 text-sm font-medium text-primary">Gör ett test</p>
-                  <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
-                    Inget test ännu
-                  </p>
-                  <Link
-                    to={NO_DATA_LINK[c.slug].to}
-                    params={NO_DATA_LINK[c.slug].params}
-                    className="mt-3 block rounded-xl border border-border py-2 text-center text-xs font-semibold text-foreground transition-colors hover:border-primary"
-                  >
-                    Genomför ett test
-                  </Link>
-                </>
+                <p className="mt-1 text-sm font-medium text-primary">Gör ett test</p>
               )}
-            </div>
+            </Link>
           );
         })}
       </div>
+
+      {/* Speed – separat, ingen HCP-färgkodning eftersom det inte är en HCP-kategori */}
+      <Link
+        to={speedStat?.hasData ? "/utveckling/$slug" : NO_DATA_LINK.speed.to}
+        params={speedStat?.hasData ? { slug: "speed" } : NO_DATA_LINK.speed.params}
+        className="mt-2 flex items-center justify-between rounded-2xl border border-border bg-card p-3.5 transition-transform active:scale-[0.98]"
+      >
+        <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">Speed</p>
+        {speedStat?.hasData ? (
+          <p className="font-[family-name:var(--font-display)] text-xl leading-none">
+            HCP {speedStat.estHcp !== undefined ? hcpLabel(speedStat.estHcp) : "–"}
+          </p>
+        ) : (
+          <p className="text-sm font-medium text-primary">Gör ett test</p>
+        )}
+      </Link>
     </section>
   );
 }
