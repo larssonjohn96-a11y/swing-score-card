@@ -1,0 +1,88 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { ArrowLeft, ArrowRight, RotateCcw, Target, Trophy, X } from "lucide-react";
+import { useState } from "react";
+import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
+
+export const Route = createFileRoute("/8-bollar")({
+  head: () => ({ meta: [{ title: "8-bollsövningen – Around the Green | SG4" }] }),
+  component: EightBallPage,
+});
+
+type Phase = "intro" | "test" | "result";
+const STATIONS = 8;
+const ROUNDS = 5;
+const SHOTS = STATIONS * ROUNDS;
+const STORAGE_KEY = "sg4-8-bollar-v1";
+
+type Session = { id: string; date: string; score: number };
+
+function loadSessions(): Session[] {
+  if (typeof window === "undefined") return [];
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); } catch { return []; }
+}
+
+function EightBallPage() {
+  useHideBottomNav(true);
+  const [phase, setPhase] = useState<Phase>("intro");
+  const [shot, setShot] = useState(0);
+  const [scores, setScores] = useState<number[]>([]);
+  const [result, setResult] = useState<number | null>(null);
+
+  const station = (shot % STATIONS) + 1;
+  const round = Math.floor(shot / STATIONS) + 1;
+
+  function start() { setShot(0); setScores([]); setResult(null); setPhase("test"); }
+  function register(points: number) {
+    const next = [...scores, points];
+    if (shot + 1 >= SHOTS) {
+      const total = next.reduce((sum, value) => sum + value, 0);
+      const sessions = loadSessions();
+      const id = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : String(Date.now());
+      localStorage.setItem(STORAGE_KEY, JSON.stringify([...sessions, { id, date: new Date().toISOString(), score: total }]));
+      setScores(next); setResult(total); setPhase("result");
+    } else {
+      setScores(next); setShot((value) => value + 1);
+    }
+  }
+
+  if (phase === "intro") return (
+    <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-16 pt-8">
+      <Link to="/kategori/$slug" params={{ slug: "around-the-green" }} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border"><ArrowLeft className="h-4 w-4" /></Link>
+      <p className="mt-8 text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">Around the Green · Träningstest</p>
+      <h1 className="mt-2 text-5xl leading-none">8-bollsövningen</h1>
+      <p className="mt-4 text-sm leading-relaxed text-muted-foreground">Åtta stationer runt greenen med chip, pitch, lobb och bunker. Spela fem varv för totalt 40 slag.</p>
+      <div className="mt-6 grid grid-cols-3 gap-2 text-center">
+        <div className="rounded-2xl border border-border bg-card p-3"><p className="font-display text-3xl">8</p><p className="text-xs text-muted-foreground">stationer</p></div>
+        <div className="rounded-2xl border border-border bg-card p-3"><p className="font-display text-3xl">5</p><p className="text-xs text-muted-foreground">varv</p></div>
+        <div className="rounded-2xl border border-border bg-card p-3"><p className="font-display text-3xl">40</p><p className="text-xs text-muted-foreground">slag</p></div>
+      </div>
+      <p className="mt-4 rounded-2xl bg-muted/50 p-4 text-xs text-muted-foreground">Registrera 0–4 poäng per slag enligt övningens poängmodell. Maxresultat är 160 poäng. Ej HCP-grundande.</p>
+      <button onClick={start} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-5 font-display text-2xl text-primary-foreground">Starta 40 slag <ArrowRight className="h-5 w-5" /></button>
+    </main>
+  );
+
+  if (phase === "test") {
+    const total = scores.reduce((sum, value) => sum + value, 0);
+    return (
+      <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-28 pt-4">
+        <div className="flex items-center justify-between"><span className="text-sm font-semibold">Slag {shot + 1} / {SHOTS}</span><Link to="/kategori/$slug" params={{ slug: "around-the-green" }} className="flex items-center gap-1 text-xs text-muted-foreground"><X className="h-4 w-4" /> Avbryt</Link></div>
+        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-primary" style={{ width: `${(shot / SHOTS) * 100}%` }} /></div>
+        <section className="mt-6 rounded-3xl border border-border bg-card p-6 text-center"><Target className="mx-auto h-6 w-6 text-primary" /><p className="mt-3 text-xs uppercase tracking-[0.2em] text-muted-foreground">Varv {round} · Station {station}</p><p className="mt-2 font-display text-5xl">Poäng</p></section>
+        <div className="mt-5 grid grid-cols-5 gap-2">{[0,1,2,3,4].map((points) => <button key={points} onClick={() => register(points)} className="rounded-2xl border border-border bg-card py-5 font-display text-3xl active:scale-95">{points}</button>)}</div>
+        <div className="mt-5 flex justify-between rounded-2xl bg-muted/50 px-4 py-3 text-sm"><span className="text-muted-foreground">Hittills</span><span className="font-semibold">{total} p</span></div>
+      </main>
+    );
+  }
+
+  const sessions = loadSessions();
+  const best = sessions.length ? Math.max(...sessions.map((session) => session.score)) : result ?? 0;
+  return (
+    <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-16 pt-8">
+      <Link to="/kategori/$slug" params={{ slug: "around-the-green" }} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border"><ArrowLeft className="h-4 w-4" /></Link>
+      <p className="mt-7 text-xs uppercase tracking-[0.22em] text-muted-foreground">8-bollsövningen</p><h1 className="mt-1 text-4xl">Resultat</h1>
+      <div className="mt-5 rounded-3xl border border-border bg-card p-6 text-center"><p className="text-xs text-muted-foreground">Totalpoäng</p><p className="font-display text-7xl text-primary">{result}</p><p className="mt-2 text-xs text-muted-foreground">av 160 poäng</p></div>
+      <div className="mt-4 rounded-2xl border border-border bg-card p-4"><Trophy className="h-4 w-4 text-primary" /><p className="mt-2 text-xs text-muted-foreground">Personbästa</p><p className="font-display text-3xl">{best} p</p></div>
+      <button onClick={start} className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-4 font-display text-xl text-primary-foreground"><RotateCcw className="h-5 w-5" /> Kör igen</button>
+    </main>
+  );
+}
