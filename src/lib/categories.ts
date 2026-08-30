@@ -143,6 +143,18 @@ export const CATEGORIES: Category[] = [
         result: "RESULTAT: PUTTING HCP + UPPDELAT PER DEL",
       },
       {
+        to: "/lagputt-test",
+        number: "6",
+        title: "Lag Putt",
+        subtitle:
+          "Testa din längdkontroll på långa puttar. Sex olika avstånd spelas i slumpad ordning så att du måste läsa och anpassa farten på varje putt.",
+        bullets: [
+          "6 puttar från 8, 10, 12, 14, 16 och 18 meter i slumpad ordning.",
+          "Registrera hur nära hålet varje putt stannar. Inom 1 meter räknas som godkänt.",
+        ],
+        result: "RESULTAT: LAGPUTT HCP + SNITTAVSTÅND + ANDEL INOM 1 M",
+      },
+      {
         to: "/50-bollar",
         number: "50",
         title: "50-bollsövningen",
