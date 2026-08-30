@@ -1,5 +1,5 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { ChevronRight, Dumbbell } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { CATEGORIES } from "@/lib/categories";
 import {
   ApproachCategoryIcon,
@@ -15,7 +15,7 @@ export const Route = createFileRoute("/tester")({
       {
         name: "description",
         content:
-          "Bläddra bland alla golftester i SG4: driving, approach, around the green, puttning och egna träningstester.",
+          "Bläddra bland alla golftester i SG4: driving, approach, around the green och puttning.",
       },
     ],
   }),
@@ -36,7 +36,7 @@ function TesterPage() {
         <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Bläddra</p>
         <h1 className="text-4xl leading-none">Tester</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Välj en kategori för att se och starta dess tester.
+          Välj en kategori för att se HCP-grundande tester och träningsövningar.
         </p>
       </header>
 
@@ -61,7 +61,7 @@ function TesterPage() {
                 <p className="mt-1 text-sm leading-snug text-muted-foreground">{c.description}</p>
                 <p className="mt-1.5 text-xs font-semibold uppercase tracking-[0.15em] text-flag">
                   {c.tests.length > 0
-                    ? `${c.tests.length} test${c.tests.length === 1 ? "" : "er"}`
+                    ? `${c.tests.length} core-test${c.tests.length === 1 ? "" : "er"}`
                     : "Kommer snart"}
                 </p>
               </div>
@@ -69,28 +69,6 @@ function TesterPage() {
             </Link>
           );
         })}
-
-        <Link
-          to="/traning"
-          className="flex items-center gap-4 rounded-3xl border border-border bg-card p-4 shadow-[var(--shadow-glow)] transition-colors hover:border-primary"
-        >
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted text-muted-foreground">
-            <Dumbbell className="h-7 w-7" strokeWidth={1.75} />
-          </span>
-          <div className="min-w-0 flex-1">
-            <h2 className="text-2xl leading-none">Träningstester</h2>
-            <p className="mt-1 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-              Egen progress
-            </p>
-            <p className="mt-1 text-sm leading-snug text-muted-foreground">
-              Bygg egna tester för att mäta och följa din träning över tid.
-            </p>
-            <p className="mt-1.5 text-xs font-semibold uppercase tracking-[0.15em] text-flag">
-              Skapa eget test
-            </p>
-          </div>
-          <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
-        </Link>
       </section>
     </main>
   );
