@@ -56,7 +56,7 @@ const APPROACH_TRAINING_TESTS = [
   {
     to: "/approach-pei" as const,
     title: "18-bollars PEI",
-    subtitle: "18 slumpade inspel mellan 50–220 meter. Mät procentuell miss och följ precisionen över tid.",
+    subtitle: "18 fasta inspel mellan 50–220 meter. Mät procentuell miss och följ precisionen över tid.",
     meta: "Ej HCP-grundande",
   },
 ];
