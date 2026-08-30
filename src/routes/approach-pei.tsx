@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, RotateCcw, Target, Trophy, X } from "lucide-react";
-import { useMemo, useState } from "react";
-import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { useState } from "react";
 import {
   createPeiShots,
   loadPeiSessions,
@@ -69,12 +68,11 @@ function ApproachPeiPage() {
 
     if (index + 1 >= PEI_SHOT_COUNT) {
       const session = savePeiSession(updated);
-      const nextHistory = [...history, session];
-      setHistory(nextHistory);
+      setHistory((old) => [...old, session]);
       setSavedSession(session);
       setPhase("result");
     } else {
-      setIndex(index + 1);
+      setIndex((old) => old + 1);
     }
   }
 
@@ -103,24 +101,21 @@ function ApproachPeiPage() {
         </p>
         <h1 className="mt-2 text-5xl leading-none">18-bollars PEI</h1>
         <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-          Ett precisionstest för inspel. Du får 18 slumpade avstånd mellan 50 och 220 meter.
-          Avstånden fördelas över hela spannet så testet blir jämförbart över tid.
+          18 slumpade inspel mellan 50 och 220 meter. Tre slag genereras i varje avståndszon,
+          och ordningen blandas inför varje test.
         </p>
 
         <div className="mt-6 rounded-3xl border border-border bg-card p-5">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-            Så räknas PEI
+            Så räknas resultatet
           </p>
           <p className="mt-2 text-sm leading-relaxed">
-            Mät hur många meter du missar i längd och sidled. Appen räknar den raka missen till målet
-            och dividerar den med målavståndet.
+            Ange längdmiss och sidledsmiss i meter. Appen räknar den raka missen till målet och
+            dividerar den med målavståndet. Snittet av alla 18 slag blir ditt PEI.
           </p>
-          <div className="mt-4 rounded-2xl bg-muted/60 p-4 text-sm">
-            <p className="font-semibold">Exempel</p>
-            <p className="mt-1 text-muted-foreground">
-              100 m till mål, 3 m längdmiss och 4 m sidled = 5 m total miss = 5,0 % PEI.
-            </p>
-          </div>
+          <p className="mt-3 rounded-2xl bg-muted/60 p-3 text-xs text-muted-foreground">
+            Exempel: 100 m till mål + 3 m längdmiss + 4 m sidled = 5 m total miss = 5,0 % PEI.
+          </p>
         </div>
 
         <div className="mt-4 grid grid-cols-2 gap-2">
@@ -132,8 +127,8 @@ function ApproachPeiPage() {
           ))}
         </div>
 
-        <p className="mt-5 rounded-2xl border border-border bg-muted/40 p-3 text-xs leading-relaxed text-muted-foreground">
-          Ej HCP-grundande. Testet är en träningsbenchmark och påverkar inte SG4 HCP.
+        <p className="mt-5 rounded-2xl border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
+          Ej HCP-grundande · påverkar inte SG4 HCP.
         </p>
 
         <button
@@ -169,12 +164,12 @@ function ApproachPeiPage() {
             params={{ slug: "approach" }}
             className="flex items-center gap-1 text-xs text-muted-foreground"
           >
-            <X className="h-4 w-4" /> Avbryt test
+            <X className="h-4 w-4" /> Avbryt
           </Link>
         </div>
 
         <div className="mt-4">
-          <div className="flex items-center justify-between text-sm">
+          <div className="flex justify-between text-sm">
             <span className="font-semibold">Slag {index + 1} av {PEI_SHOT_COUNT}</span>
             <span className="text-muted-foreground">{progress} %</span>
           </div>
@@ -192,61 +187,37 @@ function ApproachPeiPage() {
         </section>
 
         <section className="mt-5 rounded-3xl border border-border bg-card p-5">
-          <p className="text-sm font-semibold">Hur långt från målet?</p>
+          <p className="text-sm font-semibold">Registrera missen</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Ange absolut miss i meter. Riktningen spelar ingen roll – bara storleken på missen.
+            Ange absoluta meter. Kort/långt eller vänster/höger spelar ingen roll för PEI.
           </p>
           <div className="mt-4 grid grid-cols-2 gap-3">
             <label className="text-xs text-muted-foreground">
               Längdmiss
               <div className="mt-1 flex items-center rounded-2xl border border-border bg-background px-3">
-                <input
-                  inputMode="decimal"
-                  value={lengthError}
-                  onChange={(event) => setLengthError(event.target.value)}
-                  placeholder="0"
-                  className="min-w-0 flex-1 bg-transparent py-4 text-2xl text-foreground outline-none"
-                />
+                <input inputMode="decimal" value={lengthError} onChange={(e) => setLengthError(e.target.value)} placeholder="0" className="min-w-0 flex-1 bg-transparent py-4 text-2xl outline-none" />
                 <span>m</span>
               </div>
             </label>
             <label className="text-xs text-muted-foreground">
               Sidledsmiss
               <div className="mt-1 flex items-center rounded-2xl border border-border bg-background px-3">
-                <input
-                  inputMode="decimal"
-                  value={lateralError}
-                  onChange={(event) => setLateralError(event.target.value)}
-                  placeholder="0"
-                  className="min-w-0 flex-1 bg-transparent py-4 text-2xl text-foreground outline-none"
-                />
+                <input inputMode="decimal" value={lateralError} onChange={(e) => setLateralError(e.target.value)} placeholder="0" className="min-w-0 flex-1 bg-transparent py-4 text-2xl outline-none" />
                 <span>m</span>
               </div>
             </label>
           </div>
-
           {canContinue ? (
-            <div className="mt-4 flex items-center justify-between rounded-2xl bg-muted/60 p-4">
-              <div>
-                <p className="text-xs text-muted-foreground">Total miss</p>
-                <p className="font-display text-2xl">{missDistance(previewShot).toFixed(1)} m</p>
-              </div>
-              <div className="text-right">
-                <p className="text-xs text-muted-foreground">PEI</p>
-                <p className="font-display text-2xl">{shotPei(previewShot).toFixed(1)} %</p>
-              </div>
+            <div className="mt-4 flex justify-between rounded-2xl bg-muted/60 p-4">
+              <div><p className="text-xs text-muted-foreground">Total miss</p><p className="font-display text-2xl">{missDistance(previewShot).toFixed(1)} m</p></div>
+              <div className="text-right"><p className="text-xs text-muted-foreground">PEI</p><p className="font-display text-2xl">{shotPei(previewShot).toFixed(1)} %</p></div>
             </div>
           ) : null}
         </section>
 
         <div className="fixed bottom-0 left-0 right-0 border-t border-border bg-background/95 px-6 pb-6 pt-3 backdrop-blur">
-          <button
-            onClick={commit}
-            disabled={!canContinue}
-            className="mx-auto flex w-full max-w-md items-center justify-center gap-2 rounded-2xl bg-primary py-4 font-display text-xl text-primary-foreground disabled:opacity-40"
-          >
-            {index + 1 === PEI_SHOT_COUNT ? "Avsluta test" : "Nästa slag"}
-            <ArrowRight className="h-5 w-5" />
+          <button onClick={commit} disabled={!canContinue} className="mx-auto flex w-full max-w-md items-center justify-center gap-2 rounded-2xl bg-primary py-4 font-display text-xl text-primary-foreground disabled:opacity-40">
+            {index + 1 === PEI_SHOT_COUNT ? "Avsluta test" : "Nästa slag"}<ArrowRight className="h-5 w-5" />
           </button>
         </div>
       </main>
@@ -256,35 +227,18 @@ function ApproachPeiPage() {
   const result = savedSession ?? { id: "", date: "", shots, pei: sessionPei(shots) };
   const best = history.length ? Math.min(...history.map((session) => session.pei)) : result.pei;
   const rolling = rollingEightAverage(history);
-  const chartData = history.slice(-12).map((session, i) => ({
-    test: i + 1,
-    pei: Number(session.pei.toFixed(2)),
-  }));
-
-  const zoneResults = useMemo(
-    () =>
-      PEI_ZONES.map((zone) => {
-        const zoneShots = result.shots.filter(
-          (shot) => shot.targetDistance >= zone.min && shot.targetDistance <= zone.max,
-        );
-        return {
-          label: zone.label,
-          pei: zoneShots.length ? sessionPei(zoneShots) : 0,
-        };
-      }),
-    [result],
-  );
+  const zoneResults = PEI_ZONES.map((zone) => {
+    const zoneShots = result.shots.filter(
+      (shot) => shot.targetDistance >= zone.min && shot.targetDistance <= zone.max,
+    );
+    return { label: zone.label, pei: zoneShots.length ? sessionPei(zoneShots) : 0 };
+  });
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-16 pt-6">
-      <Link
-        to="/kategori/$slug"
-        params={{ slug: "approach" }}
-        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border text-muted-foreground"
-      >
+      <Link to="/kategori/$slug" params={{ slug: "approach" }} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border text-muted-foreground">
         <ArrowLeft className="h-4 w-4" />
       </Link>
-
       <p className="mt-6 text-xs uppercase tracking-[0.25em] text-muted-foreground">Approach · Träningstest</p>
       <h1 className="mt-1 text-4xl leading-none">18-bollars PEI</h1>
 
@@ -306,38 +260,29 @@ function ApproachPeiPage() {
         </div>
       </div>
 
-      {chartData.length > 1 ? (
-        <section className="mt-5 rounded-3xl border border-border bg-card p-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Utveckling</p>
-          <div className="mt-4 h-44">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData}>
-                <XAxis dataKey="test" tickLine={false} axisLine={false} />
-                <YAxis tickLine={false} axisLine={false} width={34} domain={["auto", "auto"]} />
-                <Tooltip formatter={(value) => [`${Number(value).toFixed(2)}%`, "PEI"]} />
-                <Line type="monotone" dataKey="pei" stroke="currentColor" strokeWidth={2} dot />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </section>
-      ) : null}
-
       <section className="mt-5 rounded-3xl border border-border bg-card p-5">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Per avståndszon</p>
         <div className="mt-3 space-y-2">
           {zoneResults.map((zone) => (
-            <div key={zone.label} className="flex items-center justify-between rounded-2xl bg-muted/50 px-4 py-3">
-              <span className="text-sm">{zone.label}</span>
-              <span className="font-semibold">{zone.pei.toFixed(2)}%</span>
+            <div key={zone.label} className="flex justify-between rounded-2xl bg-muted/50 px-4 py-3">
+              <span className="text-sm">{zone.label}</span><span className="font-semibold">{zone.pei.toFixed(2)}%</span>
             </div>
           ))}
         </div>
       </section>
 
-      <button
-        onClick={start}
-        className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-4 font-display text-xl text-primary-foreground"
-      >
+      {history.length > 1 ? (
+        <section className="mt-5 rounded-3xl border border-border bg-card p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Senaste tester</p>
+          <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+            {history.slice(-8).reverse().map((session) => (
+              <span key={session.id} className="shrink-0 rounded-full border border-border px-3 py-2 text-xs">{session.pei.toFixed(2)}%</span>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      <button onClick={start} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-4 font-display text-xl text-primary-foreground">
         <RotateCcw className="h-5 w-5" /> Kör igen
       </button>
     </main>
