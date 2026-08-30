@@ -20,7 +20,8 @@ export type CategoryTest = {
     | "/tornado"
     | "/lagputt"
     | "/lagputt-test"
-    | "/putting";
+    | "/putting"
+    | "/50-bollar";
 
   number: string;
   title: string;
@@ -140,6 +141,30 @@ export const CATEGORIES: Category[] = [
           "Ett Putting HCP, plus separat HCP för Short Putt och Lag Putt.",
         ],
         result: "RESULTAT: PUTTING HCP + UPPDELAT PER DEL",
+      },
+      {
+        to: "/lagputt-test",
+        number: "6",
+        title: "Lag Putt",
+        subtitle:
+          "Testa din längdkontroll på långa puttar. Sex olika avstånd spelas i slumpad ordning så att du måste läsa och anpassa farten på varje putt.",
+        bullets: [
+          "6 puttar från 8, 10, 12, 14, 16 och 18 meter i slumpad ordning.",
+          "Registrera hur nära hålet varje putt stannar. Inom 1 meter räknas som godkänt.",
+        ],
+        result: "RESULTAT: LAGPUTT HCP + SNITTAVSTÅND + ANDEL INOM 1 M",
+      },
+      {
+        to: "/50-bollar",
+        number: "50",
+        title: "50-bollsövningen",
+        subtitle:
+          "Ett klassiskt puttningstest där du spelar 10 bollar från 1, 2, 3, 4 och 5 meter och räknar varje slag tills alla bollar är hålade.",
+        bullets: [
+          "50 bollar totalt – 10 från varje avstånd mellan 1 och 5 meter.",
+          "Lägre score är bättre. Referenspar är 72 slag.",
+        ],
+        result: "RESULTAT: TOTALSCORE + PERSONBÄSTA + UTVECKLING ÖVER TID",
       },
     ],
   },
