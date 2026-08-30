@@ -72,9 +72,9 @@ function TesterPage() {
 
         <Link
           to="/traning"
-          className="flex items-center gap-4 rounded-3xl border border-primary/30 bg-primary/5 p-4 shadow-[var(--shadow-glow)] transition-colors hover:border-primary"
+          className="flex items-center gap-4 rounded-3xl border border-border bg-card p-4 shadow-[var(--shadow-glow)] transition-colors hover:border-primary"
         >
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted text-muted-foreground">
             <Dumbbell className="h-7 w-7" strokeWidth={1.75} />
           </span>
           <div className="min-w-0 flex-1">
@@ -83,10 +83,10 @@ function TesterPage() {
               Egen progress
             </p>
             <p className="mt-1 text-sm leading-snug text-muted-foreground">
-              Bygg egna tester, logga resultat och följ utvecklingen utan att påverka HCP.
+              Bygg egna tester för att mäta och följa din träning över tid.
             </p>
-            <p className="mt-1.5 text-xs font-semibold uppercase tracking-[0.15em] text-primary">
-              Skapa egna tester
+            <p className="mt-1.5 text-xs font-semibold uppercase tracking-[0.15em] text-flag">
+              Skapa eget test
             </p>
           </div>
           <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
