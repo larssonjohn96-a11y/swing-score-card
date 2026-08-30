@@ -1,18 +1,20 @@
-export const PEI_SHOT_COUNT = 18;
+export const PEI_TARGET_DISTANCES = [
+  109, 201, 149, 66, 90, 170, 143, 50, 194, 129, 83, 220, 117, 102, 181, 157, 208, 61,
+] as const;
 
-export const PEI_ZONES = [
-  { min: 50, max: 79, label: "50–79 m" },
-  { min: 80, max: 109, label: "80–109 m" },
-  { min: 110, max: 139, label: "110–139 m" },
-  { min: 140, max: 169, label: "140–169 m" },
-  { min: 170, max: 199, label: "170–199 m" },
-  { min: 200, max: 220, label: "200–220 m" },
+export const PEI_SHOT_COUNT = PEI_TARGET_DISTANCES.length;
+
+export const PEI_GROUPS = [
+  { min: 0, max: 100, label: "0–100 m" },
+  { min: 100, max: 150, label: "100–150 m" },
+  { min: 150, max: 200, label: "150–200 m" },
+  { min: 200, max: 250, label: "200–250 m" },
 ] as const;
 
 export type PeiShot = {
   targetDistance: number;
-  lengthError: number;
-  lateralError: number;
+  actualDistance: number;
+  lateral: number;
 };
 
 export type PeiSession = {
@@ -22,34 +24,22 @@ export type PeiSession = {
   pei: number;
 };
 
-const STORAGE_KEY = "sg4-approach-pei-v1";
-
-function randomInt(min: number, max: number) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-function shuffle<T>(items: T[]) {
-  const next = [...items];
-  for (let i = next.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [next[i], next[j]] = [next[j], next[i]];
-  }
-  return next;
-}
+const STORAGE_KEY = "sg4-approach-pei-v2";
 
 export function createPeiShots(): PeiShot[] {
-  const distances = PEI_ZONES.flatMap((zone) =>
-    Array.from({ length: 3 }, () => randomInt(zone.min, zone.max)),
-  );
-  return shuffle(distances).map((targetDistance) => ({
+  return PEI_TARGET_DISTANCES.map((targetDistance) => ({
     targetDistance,
-    lengthError: 0,
-    lateralError: 0,
+    actualDistance: 0,
+    lateral: 0,
   }));
 }
 
+export function distanceError(shot: PeiShot) {
+  return shot.actualDistance - shot.targetDistance;
+}
+
 export function missDistance(shot: PeiShot) {
-  return Math.hypot(shot.lengthError, shot.lateralError);
+  return Math.hypot(distanceError(shot), shot.lateral);
 }
 
 export function shotPei(shot: PeiShot) {
@@ -60,6 +50,26 @@ export function shotPei(shot: PeiShot) {
 export function sessionPei(shots: PeiShot[]) {
   if (!shots.length) return 0;
   return shots.reduce((sum, shot) => sum + shotPei(shot), 0) / shots.length;
+}
+
+export function averageDistancePercent(shots: PeiShot[]) {
+  if (!shots.length) return 0;
+  return (
+    shots.reduce((sum, shot) => sum + shot.actualDistance / shot.targetDistance, 0) /
+    shots.length
+  ) * 100;
+}
+
+export function averageDirection(shots: PeiShot[]) {
+  if (!shots.length) return 0;
+  return shots.reduce((sum, shot) => sum + shot.lateral, 0) / shots.length;
+}
+
+export function groupPei(shots: PeiShot[], min: number, max: number) {
+  const grouped = shots.filter(
+    (shot) => shot.targetDistance >= min && shot.targetDistance < max,
+  );
+  return grouped.length ? sessionPei(grouped) : 0;
 }
 
 export function loadPeiSessions(): PeiSession[] {
@@ -75,9 +85,10 @@ export function loadPeiSessions(): PeiSession[] {
 
 export function savePeiSession(shots: PeiShot[]): PeiSession {
   const record: PeiSession = {
-    id: typeof crypto !== "undefined" && "randomUUID" in crypto
-      ? crypto.randomUUID()
-      : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    id:
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
     date: new Date().toISOString(),
     shots,
     pei: sessionPei(shots),
