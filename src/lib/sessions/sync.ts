@@ -22,6 +22,7 @@ import {
   hasStorage,
   markOutboxFailed,
   mergeIntoLegacyStores,
+  otherUserSyncedHere,
   pendingDeleteIds,
   readOutbox,
   removeFromOutbox,
@@ -182,6 +183,8 @@ async function doFlush(userIdHint?: string) {
 export type SyncReport = {
   userId: string;
   imported: number;
+  /** true när bulk-importen hoppades över för att ett annat konto redan synkat på enheten. */
+  importSkippedSharedDevice?: boolean;
   fetched: number;
   merge: MergeReport;
   error?: string;
@@ -212,11 +215,18 @@ async function doSync(userId: string): Promise<SyncReport> {
     const state = userSyncState(userId);
 
     // 1. Engångsimport av all lokal legacy-historik (idempotent upsert).
+    //    Hoppas över på delade enheter: har ett annat konto redan synkat här kan
+    //    de lokala historikerna innehålla dess sessioner. Nya tester går ändå
+    //    via outboxen, så inget som spelas efter inloggning går förlorat.
     if (state.importedSchema !== SESSIONS_SCHEMA_VERSION) {
-      const tombstones = pendingDeleteIds();
-      const local = collectLocalSessions().filter((s) => !tombstones.has(s.id));
-      if (local.length) await gateway.upsert(userId, local);
-      report.imported = local.length;
+      if (otherUserSyncedHere(userId)) {
+        report.importSkippedSharedDevice = true;
+      } else {
+        const tombstones = pendingDeleteIds();
+        const local = collectLocalSessions().filter((s) => !tombstones.has(s.id));
+        if (local.length) await gateway.upsert(userId, local);
+        report.imported = local.length;
+      }
       updateUserSyncState(userId, { importedSchema: SESSIONS_SCHEMA_VERSION, importedAt: new Date().toISOString() });
     }
 

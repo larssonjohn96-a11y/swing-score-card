@@ -197,6 +197,16 @@ export function userSyncState(userId: string): UserSyncState {
   return readSyncState().users[userId] ?? {};
 }
 
+/**
+ * Har någon ANNAN användare redan importerat/återställt historik på den här
+ * enheten? Då kan de lokala legacy-historikerna innehålla den användarens
+ * sessioner och får inte bulk-importeras till ett nytt konto.
+ */
+export function otherUserSyncedHere(userId: string): boolean {
+  const users = readSyncState().users;
+  return Object.entries(users).some(([id, s]) => id !== userId && Boolean(s.importedSchema || s.restoredAt));
+}
+
 export function updateUserSyncState(userId: string, patch: UserSyncState) {
   const state = readSyncState();
   state.users[userId] = { ...state.users[userId], ...patch };
