@@ -12,7 +12,8 @@ export type TrainingTestRoute =
   | "/green-reading"
   | "/upp-och-in"
   | "/wedge-stege"
-  | "/driver-konsekvens";
+  | "/driver-konsekvens"
+  | "/pga-tour-18-puttar";
 
 export type TrainingHistoryRoute =
   | "/shot-shaping-9-window-historik"
@@ -21,4 +22,5 @@ export type TrainingHistoryRoute =
   | "/green-reading-historik"
   | "/upp-och-in-historik"
   | "/wedge-stege-historik"
-  | "/driver-konsekvens-historik";
+  | "/driver-konsekvens-historik"
+  | "/pga-tour-18-puttar-historik";
