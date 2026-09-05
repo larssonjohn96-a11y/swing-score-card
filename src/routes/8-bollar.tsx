@@ -161,21 +161,9 @@ function EightBallPage() {
   const strongest = stationTotals.reduce((a, b) => (b.total > a.total ? b : a));
   const weakest = stationTotals.reduce((a, b) => (b.total < a.total ? b : a));
 
-  const lightSurface = {
-    "--background": "oklch(0.985 0.004 120)",
-    "--foreground": "oklch(0.22 0.03 155)",
-    "--card": "oklch(1 0 0)",
-    "--card-foreground": "oklch(0.22 0.03 155)",
-    "--primary": "oklch(0.34 0.07 160)",
-    "--primary-foreground": "oklch(0.99 0.005 120)",
-    "--muted": "oklch(0.955 0.006 140)",
-    "--muted-foreground": "oklch(0.5 0.02 155)",
-    "--border": "oklch(0.9 0.008 140)",
-  } as unknown as import("react").CSSProperties;
-
   return (
     <main
-      style={lightSurface}
+      style={LIGHT_SURFACE}
       className="mx-auto min-h-screen w-full max-w-md bg-background px-5 pb-16 pt-6 text-foreground"
     >
       <header className="flex items-center justify-between">
