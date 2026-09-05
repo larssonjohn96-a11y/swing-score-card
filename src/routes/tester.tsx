@@ -100,7 +100,7 @@ function TesterPage() {
           Ej HCP-grundande
         </p>
         <Link
-          to="/traning"
+          to="/traning" search={{ category: undefined }}
           className="mt-3 flex items-center gap-3 rounded-2xl border border-border bg-card px-5 py-4 shadow-[var(--shadow-glow)] transition-colors hover:border-primary hover:bg-tint"
         >
           <div className="min-w-0 flex-1">

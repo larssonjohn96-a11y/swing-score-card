@@ -72,7 +72,7 @@ function LagPuttPage() {
         className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background px-5 pb-5 pt-4 text-foreground"
       >
         <div className="flex shrink-0 items-center justify-between">
-          <Link to="/traning" className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card">
+          <Link to="/traning" search={{ category: undefined }} className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card">
             <ArrowLeft className="h-4 w-4" />
           </Link>
           <Link
@@ -146,7 +146,7 @@ function LagPuttPage() {
             Putt {index + 1} av {LAG18_TOTAL}
           </span>
           <Link
-            to="/traning"
+            to="/traning" search={{ category: undefined }}
             className="flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground"
           >
             <X className="h-3.5 w-3.5" /> Avbryt
@@ -218,7 +218,7 @@ function LagPuttPage() {
     >
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link to="/traning" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card">
+          <Link to="/traning" search={{ category: undefined }} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card">
             <ArrowLeft className="h-4 w-4" />
           </Link>
           <div>
