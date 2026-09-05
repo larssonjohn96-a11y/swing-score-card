@@ -53,7 +53,7 @@ function ApproachPeiPage() {
   const [phase, setPhase] = useState<Phase>("intro");
   const [shots, setShots] = useState<PeiShot[]>(createPeiShots);
   const [index, setIndex] = useState(0);
-  const [actualDistance, setActualDistance] = useState(PEI_TARGET_DISTANCES[0]);
+  const [actualDistance, setActualDistance] = useState<number>(PEI_TARGET_DISTANCES[0]);
   const [lateral, setLateral] = useState(0);
   const [distanceActive, setDistanceActive] = useState(false);
   const [savedSession, setSavedSession] = useState<PeiSession | null>(null);
