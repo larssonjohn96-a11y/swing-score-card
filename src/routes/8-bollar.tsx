@@ -213,7 +213,7 @@ function EightBallPage() {
                 <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-muted">
                   <div className={`h-full rounded-full ${isBest ? "bg-primary" : "bg-primary/25"}`} style={{ width: `${(value / 32) * 100}%` }} />
                 </div>
-                <span className={`w-14 shrink-0 text-right text-xs font-semibold tabular-nums ${isBest ? "text-primary" : "text-foreground"}`}>{value} / 32</span>
+                <span className={`w-20 shrink-0 text-right text-xs font-semibold tabular-nums ${isBest ? "text-primary" : "text-foreground"}`}>{value} poäng</span>
               </div>
             );
           })}
