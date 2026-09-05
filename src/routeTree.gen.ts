@@ -17,6 +17,7 @@ import { Route as TeeshotRouteImport } from './routes/teeshot'
 import { Route as SpeedTestRouteImport } from './routes/speed-test'
 import { Route as SpeedRouteImport } from './routes/speed'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as ShotShaping9WindowRouteImport } from './routes/shot-shaping-9-window'
 import { Route as ShotShapingRouteImport } from './routes/shot-shaping'
 import { Route as ShortPuttingTestRouteImport } from './routes/short-putting-test'
 import { Route as PuttingRouteImport } from './routes/putting'
@@ -97,6 +98,11 @@ const SpeedRoute = SpeedRouteImport.update({
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShotShaping9WindowRoute = ShotShaping9WindowRouteImport.update({
+  id: '/shot-shaping-9-window',
+  path: '/shot-shaping-9-window',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ShotShapingRoute = ShotShapingRouteImport.update({
@@ -342,6 +348,7 @@ export interface FileRoutesByFullPath {
   '/putting': typeof PuttingRoute
   '/short-putting-test': typeof ShortPuttingTestRoute
   '/shot-shaping': typeof ShotShapingRoute
+  '/shot-shaping-9-window': typeof ShotShaping9WindowRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
   '/speed-test': typeof SpeedTestRoute
@@ -393,6 +400,7 @@ export interface FileRoutesByTo {
   '/putting': typeof PuttingRoute
   '/short-putting-test': typeof ShortPuttingTestRoute
   '/shot-shaping': typeof ShotShapingRoute
+  '/shot-shaping-9-window': typeof ShotShaping9WindowRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
   '/speed-test': typeof SpeedTestRoute
@@ -445,6 +453,7 @@ export interface FileRoutesById {
   '/putting': typeof PuttingRoute
   '/short-putting-test': typeof ShortPuttingTestRoute
   '/shot-shaping': typeof ShotShapingRoute
+  '/shot-shaping-9-window': typeof ShotShaping9WindowRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
   '/speed-test': typeof SpeedTestRoute
@@ -498,6 +507,7 @@ export interface FileRouteTypes {
     | '/putting'
     | '/short-putting-test'
     | '/shot-shaping'
+    | '/shot-shaping-9-window'
     | '/sitemap.xml'
     | '/speed'
     | '/speed-test'
@@ -549,6 +559,7 @@ export interface FileRouteTypes {
     | '/putting'
     | '/short-putting-test'
     | '/shot-shaping'
+    | '/shot-shaping-9-window'
     | '/sitemap.xml'
     | '/speed'
     | '/speed-test'
@@ -600,6 +611,7 @@ export interface FileRouteTypes {
     | '/putting'
     | '/short-putting-test'
     | '/shot-shaping'
+    | '/shot-shaping-9-window'
     | '/sitemap.xml'
     | '/speed'
     | '/speed-test'
@@ -652,6 +664,7 @@ export interface RootRouteChildren {
   PuttingRoute: typeof PuttingRoute
   ShortPuttingTestRoute: typeof ShortPuttingTestRoute
   ShotShapingRoute: typeof ShotShapingRoute
+  ShotShaping9WindowRoute: typeof ShotShaping9WindowRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SpeedRoute: typeof SpeedRoute
   SpeedTestRoute: typeof SpeedTestRoute
@@ -723,6 +736,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/shot-shaping-9-window': {
+      id: '/shot-shaping-9-window'
+      path: '/shot-shaping-9-window'
+      fullPath: '/shot-shaping-9-window'
+      preLoaderRoute: typeof ShotShaping9WindowRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/shot-shaping': {
@@ -1063,6 +1083,7 @@ const rootRouteChildren: RootRouteChildren = {
   PuttingRoute: PuttingRoute,
   ShortPuttingTestRoute: ShortPuttingTestRoute,
   ShotShapingRoute: ShotShapingRoute,
+  ShotShaping9WindowRoute: ShotShaping9WindowRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SpeedRoute: SpeedRoute,
   SpeedTestRoute: SpeedTestRoute,
