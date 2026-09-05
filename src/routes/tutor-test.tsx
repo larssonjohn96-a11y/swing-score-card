@@ -188,7 +188,6 @@ function TutorTestPage() {
   }
 
   const score = results.filter(Boolean).length;
-  const misses = TUTOR_PUTTS - score;
   const sessions = loadTutorSessions();
   const latestAverage = recentAverage(sessions);
   const rollingCount = Math.min(sessions.length, TUTOR_ROLLING_WINDOW);
@@ -233,9 +232,7 @@ function TutorTestPage() {
             <Trophy className="h-3.5 w-3.5" /> Perfekt test
           </p>
         ) : (
-          <p className="mt-4 text-xs text-muted-foreground">
-            {misses} {misses === 1 ? "miss" : "missar"}
-          </p>
+          <p className="mt-4 text-xs text-muted-foreground">{score * 10}% genom Tutor</p>
         )}
       </section>
 
@@ -269,16 +266,6 @@ function TutorTestPage() {
           </p>
         </div>
       </div>
-
-      <section className="mt-3 rounded-2xl border border-border bg-card p-4">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Analys</p>
-        <p className="mt-3 text-sm font-semibold">
-          {score >= 9 ? "Mycket stabil startlinje" : score >= 7 ? "Bra grund – bygg mer repeterbarhet" : "Startlinjen är ett tydligt träningsområde"}
-        </p>
-        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-          Tutor-testet mäter inte greenläsning eller längdkontroll. Det isolerar om du kan starta bollen på den linje du valt.
-        </p>
-      </section>
 
       <button
         onClick={start}
