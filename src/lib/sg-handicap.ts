@@ -39,13 +39,30 @@ export function saveRealHandicap(value: number) {
 
 export type CategorySlug = "approach" | "driving" | "around-the-green" | "puttning" | "speed";
 
+/**
+ * Total SG4 HCP bygger på exakt fyra scoringkategorier. Speed är en
+ * fysisk kapacitetsmetric som visas separat (radar, profil, utveckling,
+ * snapshots) men aldrig vägs in i totalen – därför vikt 0.
+ */
+export const SCORING_CATEGORIES = [
+  "driving",
+  "approach",
+  "around-the-green",
+  "puttning",
+] as const satisfies readonly CategorySlug[];
+
+export function isScoringCategory(slug: CategorySlug): boolean {
+  return (SCORING_CATEGORIES as readonly CategorySlug[]).includes(slug);
+}
+
 export const CATEGORY_WEIGHTS: Record<CategorySlug, number> = {
   approach: 0.35,
   driving: 0.25,
   puttning: 0.2,
   "around-the-green": 0.1,
-  speed: 0.1,
+  speed: 0,
 };
+
 
 export const CATEGORY_LABELS: Record<CategorySlug, string> = {
   approach: "Approach",
