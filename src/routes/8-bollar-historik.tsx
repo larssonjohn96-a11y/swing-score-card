@@ -194,7 +194,7 @@ function EightBallHistoryPage() {
               <p className="mt-1 text-xs text-muted-foreground">Högsta poäng i ett enskilt varv (max 32).</p>
               <div className="mt-4 h-36 w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData.filter((d) => typeof d.best === "number")} margin={{ top: 4, right: 10, left: -10, bottom: 0 }}>
+                  <BarChart data={chartData.filter((d) => typeof d.best === "number")} margin={{ top: 4, right: 10, left: 4, bottom: 0 }}>
                     <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
                     <XAxis dataKey="label" tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} />
                     <YAxis
