@@ -31,7 +31,7 @@ function NavLink({
     <Link to={tab.to} className="flex flex-1 flex-col items-center gap-1 py-2 active:scale-95">
       <span
         className={`relative flex h-8 w-9 items-center justify-center rounded-xl transition-colors ${
-          active ? "bg-primary/15 text-primary" : "text-muted-foreground"
+          active ? "bg-tint-strong text-primary" : "text-muted-foreground"
         }`}
       >
         <tab.icon className="h-5 w-5" />
@@ -43,7 +43,7 @@ function NavLink({
       </span>
       <span
         className={`text-[10px] font-medium uppercase tracking-wide transition-colors ${
-          active ? "text-primary" : "text-muted-foreground"
+          active ? "font-semibold text-primary" : "text-muted-foreground"
         }`}
       >
         {tab.label}
@@ -67,7 +67,7 @@ export function BottomNav() {
 
   return (
     <>
-      <nav className="fixed bottom-0 left-0 right-0 z-40 h-16 border-t border-border bg-card">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 h-16 border-t border-border bg-card shadow-[0_-8px_24px_-24px_oklch(0.3_0.06_160/0.6)]">
         <div className="mx-auto flex h-full w-full max-w-md items-center px-2">
           {LEFT_TABS.map((tab) => (
             <NavLink

@@ -77,15 +77,16 @@ function TesterPage() {
             key={slug}
             to="/kategori/$slug"
             params={{ slug }}
-            className="flex items-center gap-3 rounded-2xl border border-border bg-card px-5 py-4 shadow-sm transition-colors hover:border-primary"
+            className="group flex items-center gap-4 overflow-hidden rounded-2xl border border-border bg-card px-5 py-4 shadow-[var(--shadow-glow)] transition-colors hover:border-primary hover:bg-tint"
           >
+            <span aria-hidden className="-ml-5 mr-1 h-14 w-1 shrink-0 rounded-r-full bg-primary/25 transition-colors group-hover:bg-primary" />
             <div className="min-w-0 flex-1">
               <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                 {eyebrow}
               </p>
               <h2 className="mt-0.5 text-2xl leading-none">{title}</h2>
               <p className="mt-1.5 text-sm leading-snug text-muted-foreground">{description}</p>
-              <span className="mt-2 inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-primary">
+              <span className="mt-2 inline-flex rounded-full bg-tint-strong px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-primary">
                 HCP-test
               </span>
             </div>
@@ -100,7 +101,7 @@ function TesterPage() {
         </p>
         <Link
           to="/traning"
-          className="mt-3 flex items-center gap-3 rounded-2xl border border-border bg-card px-5 py-4 shadow-sm transition-colors hover:border-primary"
+          className="mt-3 flex items-center gap-3 rounded-2xl border border-border bg-card px-5 py-4 shadow-[var(--shadow-glow)] transition-colors hover:border-primary hover:bg-tint"
         >
           <div className="min-w-0 flex-1">
             <h2 className="text-2xl leading-none">Träningstester</h2>

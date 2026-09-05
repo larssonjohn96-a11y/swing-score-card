@@ -112,7 +112,7 @@ function TestCard({ to, title, description, meta }: TestItem) {
     "flex w-full items-center gap-4 rounded-3xl border border-border bg-card p-4 text-left shadow-[var(--shadow-glow)] transition-colors hover:border-primary";
   return (
     <Link to={to} className={className}>
-      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-tint-strong text-primary">
         <Trophy className="h-5 w-5" />
       </span>
       <span className="min-w-0 flex-1">
@@ -159,7 +159,7 @@ function TrainingTestsPage() {
                   onClick={() => setCategory(item.id)}
                   className="flex w-full items-center gap-4 rounded-3xl border border-border bg-card p-4 text-left shadow-[var(--shadow-glow)] transition-colors hover:border-primary"
                 >
-                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-tint-strong text-primary">
                     <Target className="h-5 w-5" />
                   </span>
                   <span className="min-w-0 flex-1">
