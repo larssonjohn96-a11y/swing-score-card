@@ -62,6 +62,8 @@ function EightBallHistoryPage() {
     ? Math.round(complete.reduce((sum, s) => sum + s.score, 0) / complete.length)
     : 0;
   const recent = [...complete].slice(-12);
+  const latest = complete.length ? complete[complete.length - 1] : null;
+
 
   const chartData = recent.map((s, i) => ({
     key: s.id,
