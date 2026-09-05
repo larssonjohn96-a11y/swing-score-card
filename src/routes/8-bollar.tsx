@@ -30,15 +30,20 @@ export const EIGHT_BALL_ROUNDS = ROUNDS;
 
 /** Ljus yta (off-white + djupgrön accent) som delas av test-, resultat- och historiksidan. */
 export const LIGHT_SURFACE = {
-  "--background": "oklch(0.985 0.004 120)",
-  "--foreground": "oklch(0.22 0.03 155)",
+  "--background": "oklch(0.995 0.005 110)",
+  "--foreground": "oklch(0.18 0.035 160)",
   "--card": "oklch(1 0 0)",
-  "--card-foreground": "oklch(0.22 0.03 155)",
-  "--primary": "oklch(0.34 0.07 160)",
-  "--primary-foreground": "oklch(0.99 0.005 120)",
-  "--muted": "oklch(0.955 0.006 140)",
-  "--muted-foreground": "oklch(0.5 0.02 155)",
-  "--border": "oklch(0.9 0.008 140)",
+  "--card-foreground": "oklch(0.18 0.035 160)",
+  "--primary": "oklch(0.4 0.11 158)",
+  "--primary-foreground": "oklch(0.99 0.008 120)",
+  "--primary-bright": "oklch(0.58 0.14 155)",
+  "--tint": "oklch(0.972 0.026 158)",
+  "--tint-strong": "oklch(0.94 0.045 158)",
+  "--accent": "oklch(0.955 0.03 158)",
+  "--muted": "oklch(0.965 0.011 150)",
+  "--muted-foreground": "oklch(0.46 0.028 158)",
+  "--border": "oklch(0.905 0.016 155)",
+  "--chart-1": "oklch(0.4 0.11 158)",
 } as unknown as import("react").CSSProperties;
 
 export function loadEightBallSessions(): EightBallSession[] {
