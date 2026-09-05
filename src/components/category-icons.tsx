@@ -42,10 +42,9 @@ export function PuttingCategoryIcon({ className = "h-14 w-14" }: IconProps) {
   return (
     <IconFrame className={className} label="Putting – på greenen">
       <ellipse cx="32" cy="44" rx="19" ry="8" />
-      <path d="M40 14v18" />
-      <path d="M22 35h18v6H22z" className="fill-primary" />
-      <path d="M40 38h-0.5" />
-      <circle cx="17" cy="45" r="3.2" />
+      <path d="M38 14v20" />
+      <path d="M26 34h13v5H26z" className="fill-primary" />
+      <circle cx="17" cy="44" r="3.2" />
     </IconFrame>
   );
 }
