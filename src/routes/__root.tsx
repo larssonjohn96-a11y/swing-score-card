@@ -80,6 +80,7 @@ const TRAINING_ROOT_ROUTES = new Set([
   "/lagputt",
   "/50-bollar",
   "/tutor-test",
+  "/pga-tour-18-puttar",
   "/green-reading",
   "/upp-och-in",
   "/wedge-stege",
