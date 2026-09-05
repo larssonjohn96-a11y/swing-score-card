@@ -98,14 +98,15 @@ function EightBallPage() {
     return (
       <main
         style={LIGHT_SURFACE}
-        className="mx-auto flex h-[100dvh] w-full max-w-md flex-col overflow-hidden bg-background px-5 pb-4 pt-4 text-foreground"
+        className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background px-5 pb-6 text-foreground"
+        // eslint-disable-next-line react/no-unknown-property
       >
-        <div className="flex shrink-0 items-center justify-between">
+        <div className="flex items-center justify-between pt-[max(1rem,env(safe-area-inset-top))]">
           <span className="text-sm font-semibold">Slag {shot + 1} av {SHOTS}</span>
           <Link to="/kategori/$slug" params={{ slug: "around-the-green" }} className="flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground"><X className="h-3.5 w-3.5" /> Avbryt</Link>
         </div>
 
-        <div className="mt-3 shrink-0 rounded-2xl border border-border bg-card p-3">
+        <div className="mt-3 rounded-2xl border border-border bg-card p-3 shadow-sm">
           <div className="grid grid-cols-5 gap-2">
             {Array.from({ length: ROUNDS }, (_, i) => {
               const active = i === round - 1;
@@ -122,31 +123,32 @@ function EightBallPage() {
           </div>
         </div>
 
-        <section className="mt-3 shrink-0 rounded-2xl border border-border bg-card px-4 py-3 text-center">
+        <section className="mt-3 flex h-[150px] flex-col items-center justify-center rounded-2xl border border-border bg-card px-4 text-center shadow-sm">
           <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Varv {round} · Station {station}</p>
-          <p className="mt-1 font-display text-3xl leading-none">{stationInfo.type}</p>
-          <p className="mt-1 text-sm font-semibold text-primary">{stationInfo.distance} meter från hål</p>
+          <p className="mt-2 font-display text-3xl leading-none">{stationInfo.type}</p>
+          <p className="mt-2 text-sm font-semibold text-primary">{stationInfo.distance} meter från hål</p>
         </section>
 
-        <p className="mt-3 shrink-0 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Resultat från hål</p>
-        <div className="mt-2 grid flex-1 grid-cols-5 gap-2.5">
+        <p className="mt-4 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Resultat från hål</p>
+        <div className="mt-2 grid grid-cols-5 gap-2">
           {[{ p: 4, l: "Sänkt" }, { p: 3, l: "≤ 1 m" }, { p: 2, l: "≤ 2 m" }, { p: 1, l: "≤ 3 m" }, { p: 0, l: "> 3 m" }].map(({ p, l }) => (
             <button
               key={p}
               onClick={() => register(p)}
-              className="flex h-full min-h-[6rem] flex-col items-center justify-center rounded-2xl border border-border bg-card px-1 shadow-sm transition-transform active:scale-95"
+              className="flex h-[112px] flex-col items-center justify-center rounded-2xl border border-border bg-card px-1 shadow-sm transition-transform active:scale-95"
             >
-              <span className="font-display text-4xl leading-none text-primary">{p}</span>
+              <span className="font-display text-3xl leading-none text-primary">{p}</span>
               <span className="mt-2 text-[11px] font-semibold">{l}</span>
               <span className="mt-0.5 text-[9px] text-muted-foreground">{p} poäng</span>
             </button>
           ))}
         </div>
 
-        <div className="mt-3 flex shrink-0 items-center justify-between rounded-2xl border border-border bg-card px-4 py-3 text-sm">
+        <div className="mt-3 flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3 text-sm shadow-sm">
           <span className="text-muted-foreground">Hittills</span>
           <span className="font-semibold tabular-nums">{total} poäng</span>
         </div>
+
       </main>
     );
   }
