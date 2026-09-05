@@ -88,11 +88,8 @@ function TesterPage() {
             key={slug}
             to="/kategori/$slug"
             params={{ slug }}
-            className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm transition-colors hover:border-primary"
+            className="flex items-center gap-3 rounded-2xl border border-border bg-card px-5 py-4 shadow-sm transition-colors hover:border-primary"
           >
-            <span className="shrink-0">
-              <Icon className="h-14 w-14" />
-            </span>
             <div className="min-w-0 flex-1">
               <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                 {eyebrow}
