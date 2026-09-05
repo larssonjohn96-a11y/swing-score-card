@@ -9,7 +9,9 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WedgeStegeHistorikRouteImport } from './routes/wedge-stege-historik'
 import { Route as WedgeStegeRouteImport } from './routes/wedge-stege'
+import { Route as UppOchInHistorikRouteImport } from './routes/upp-och-in-historik'
 import { Route as UppOchInRouteImport } from './routes/upp-och-in'
 import { Route as TrophyRouteImport } from './routes/trophy'
 import { Route as TraningRouteImport } from './routes/traning'
@@ -19,8 +21,11 @@ import { Route as TeeshotRouteImport } from './routes/teeshot'
 import { Route as SpeedTestRouteImport } from './routes/speed-test'
 import { Route as SpeedRouteImport } from './routes/speed'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as ShotShapingVaxlandeHistorikRouteImport } from './routes/shot-shaping-vaxlande-historik'
 import { Route as ShotShapingVaxlandeRouteImport } from './routes/shot-shaping-vaxlande'
+import { Route as ShotShapingKonstantHistorikRouteImport } from './routes/shot-shaping-konstant-historik'
 import { Route as ShotShapingKonstantRouteImport } from './routes/shot-shaping-konstant'
+import { Route as ShotShaping9WindowHistorikRouteImport } from './routes/shot-shaping-9-window-historik'
 import { Route as ShotShaping9WindowRouteImport } from './routes/shot-shaping-9-window'
 import { Route as ShotShapingRouteImport } from './routes/shot-shaping'
 import { Route as ShortPuttingTestRouteImport } from './routes/short-putting-test'
@@ -39,6 +44,7 @@ import { Route as LagputtHistorikRouteImport } from './routes/lagputt-historik'
 import { Route as LagputtRouteImport } from './routes/lagputt'
 import { Route as KortputtRouteImport } from './routes/kortputt'
 import { Route as KontoRouteImport } from './routes/konto'
+import { Route as GreenReadingHistorikRouteImport } from './routes/green-reading-historik'
 import { Route as GreenReadingRouteImport } from './routes/green-reading'
 import { Route as FairwayRouteImport } from './routes/fairway'
 import { Route as CombineRouteImport } from './routes/combine'
@@ -65,9 +71,19 @@ import { Route as KategoriSlugRouteImport } from './routes/kategori.$slug'
 import { Route as FramstegSlugRouteImport } from './routes/framsteg.$slug'
 import { Route as FramstegSlugTestRouteImport } from './routes/framsteg.$slug.$test'
 
+const WedgeStegeHistorikRoute = WedgeStegeHistorikRouteImport.update({
+  id: '/wedge-stege-historik',
+  path: '/wedge-stege-historik',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WedgeStegeRoute = WedgeStegeRouteImport.update({
   id: '/wedge-stege',
   path: '/wedge-stege',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UppOchInHistorikRoute = UppOchInHistorikRouteImport.update({
+  id: '/upp-och-in-historik',
+  path: '/upp-och-in-historik',
   getParentRoute: () => rootRouteImport,
 } as any)
 const UppOchInRoute = UppOchInRouteImport.update({
@@ -115,16 +131,34 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ShotShapingVaxlandeHistorikRoute =
+  ShotShapingVaxlandeHistorikRouteImport.update({
+    id: '/shot-shaping-vaxlande-historik',
+    path: '/shot-shaping-vaxlande-historik',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ShotShapingVaxlandeRoute = ShotShapingVaxlandeRouteImport.update({
   id: '/shot-shaping-vaxlande',
   path: '/shot-shaping-vaxlande',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ShotShapingKonstantHistorikRoute =
+  ShotShapingKonstantHistorikRouteImport.update({
+    id: '/shot-shaping-konstant-historik',
+    path: '/shot-shaping-konstant-historik',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ShotShapingKonstantRoute = ShotShapingKonstantRouteImport.update({
   id: '/shot-shaping-konstant',
   path: '/shot-shaping-konstant',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ShotShaping9WindowHistorikRoute =
+  ShotShaping9WindowHistorikRouteImport.update({
+    id: '/shot-shaping-9-window-historik',
+    path: '/shot-shaping-9-window-historik',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ShotShaping9WindowRoute = ShotShaping9WindowRouteImport.update({
   id: '/shot-shaping-9-window',
   path: '/shot-shaping-9-window',
@@ -213,6 +247,11 @@ const KortputtRoute = KortputtRouteImport.update({
 const KontoRoute = KontoRouteImport.update({
   id: '/konto',
   path: '/konto',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GreenReadingHistorikRoute = GreenReadingHistorikRouteImport.update({
+  id: '/green-reading-historik',
+  path: '/green-reading-historik',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GreenReadingRoute = GreenReadingRouteImport.update({
@@ -362,6 +401,7 @@ export interface FileRoutesByFullPath {
   '/combine': typeof CombineRoute
   '/fairway': typeof FairwayRoute
   '/green-reading': typeof GreenReadingRoute
+  '/green-reading-historik': typeof GreenReadingHistorikRoute
   '/konto': typeof KontoRoute
   '/kortputt': typeof KortputtRoute
   '/lagputt': typeof LagputtRoute
@@ -380,8 +420,11 @@ export interface FileRoutesByFullPath {
   '/short-putting-test': typeof ShortPuttingTestRoute
   '/shot-shaping': typeof ShotShapingRoute
   '/shot-shaping-9-window': typeof ShotShaping9WindowRoute
+  '/shot-shaping-9-window-historik': typeof ShotShaping9WindowHistorikRoute
   '/shot-shaping-konstant': typeof ShotShapingKonstantRoute
+  '/shot-shaping-konstant-historik': typeof ShotShapingKonstantHistorikRoute
   '/shot-shaping-vaxlande': typeof ShotShapingVaxlandeRoute
+  '/shot-shaping-vaxlande-historik': typeof ShotShapingVaxlandeHistorikRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
   '/speed-test': typeof SpeedTestRoute
@@ -391,7 +434,9 @@ export interface FileRoutesByFullPath {
   '/traning': typeof TraningRoute
   '/trophy': typeof TrophyRoute
   '/upp-och-in': typeof UppOchInRoute
+  '/upp-och-in-historik': typeof UppOchInHistorikRoute
   '/wedge-stege': typeof WedgeStegeRoute
+  '/wedge-stege-historik': typeof WedgeStegeHistorikRoute
   '/framsteg/$slug': typeof FramstegSlugRouteWithChildren
   '/kategori/$slug': typeof KategoriSlugRoute
   '/utveckling/$slug': typeof UtvecklingSlugRoute
@@ -419,6 +464,7 @@ export interface FileRoutesByTo {
   '/combine': typeof CombineRoute
   '/fairway': typeof FairwayRoute
   '/green-reading': typeof GreenReadingRoute
+  '/green-reading-historik': typeof GreenReadingHistorikRoute
   '/konto': typeof KontoRoute
   '/kortputt': typeof KortputtRoute
   '/lagputt': typeof LagputtRoute
@@ -437,8 +483,11 @@ export interface FileRoutesByTo {
   '/short-putting-test': typeof ShortPuttingTestRoute
   '/shot-shaping': typeof ShotShapingRoute
   '/shot-shaping-9-window': typeof ShotShaping9WindowRoute
+  '/shot-shaping-9-window-historik': typeof ShotShaping9WindowHistorikRoute
   '/shot-shaping-konstant': typeof ShotShapingKonstantRoute
+  '/shot-shaping-konstant-historik': typeof ShotShapingKonstantHistorikRoute
   '/shot-shaping-vaxlande': typeof ShotShapingVaxlandeRoute
+  '/shot-shaping-vaxlande-historik': typeof ShotShapingVaxlandeHistorikRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
   '/speed-test': typeof SpeedTestRoute
@@ -448,7 +497,9 @@ export interface FileRoutesByTo {
   '/traning': typeof TraningRoute
   '/trophy': typeof TrophyRoute
   '/upp-och-in': typeof UppOchInRoute
+  '/upp-och-in-historik': typeof UppOchInHistorikRoute
   '/wedge-stege': typeof WedgeStegeRoute
+  '/wedge-stege-historik': typeof WedgeStegeHistorikRoute
   '/framsteg/$slug': typeof FramstegSlugRouteWithChildren
   '/kategori/$slug': typeof KategoriSlugRoute
   '/utveckling/$slug': typeof UtvecklingSlugRoute
@@ -477,6 +528,7 @@ export interface FileRoutesById {
   '/combine': typeof CombineRoute
   '/fairway': typeof FairwayRoute
   '/green-reading': typeof GreenReadingRoute
+  '/green-reading-historik': typeof GreenReadingHistorikRoute
   '/konto': typeof KontoRoute
   '/kortputt': typeof KortputtRoute
   '/lagputt': typeof LagputtRoute
@@ -495,8 +547,11 @@ export interface FileRoutesById {
   '/short-putting-test': typeof ShortPuttingTestRoute
   '/shot-shaping': typeof ShotShapingRoute
   '/shot-shaping-9-window': typeof ShotShaping9WindowRoute
+  '/shot-shaping-9-window-historik': typeof ShotShaping9WindowHistorikRoute
   '/shot-shaping-konstant': typeof ShotShapingKonstantRoute
+  '/shot-shaping-konstant-historik': typeof ShotShapingKonstantHistorikRoute
   '/shot-shaping-vaxlande': typeof ShotShapingVaxlandeRoute
+  '/shot-shaping-vaxlande-historik': typeof ShotShapingVaxlandeHistorikRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
   '/speed-test': typeof SpeedTestRoute
@@ -506,7 +561,9 @@ export interface FileRoutesById {
   '/traning': typeof TraningRoute
   '/trophy': typeof TrophyRoute
   '/upp-och-in': typeof UppOchInRoute
+  '/upp-och-in-historik': typeof UppOchInHistorikRoute
   '/wedge-stege': typeof WedgeStegeRoute
+  '/wedge-stege-historik': typeof WedgeStegeHistorikRoute
   '/framsteg/$slug': typeof FramstegSlugRouteWithChildren
   '/kategori/$slug': typeof KategoriSlugRoute
   '/utveckling/$slug': typeof UtvecklingSlugRoute
@@ -536,6 +593,7 @@ export interface FileRouteTypes {
     | '/combine'
     | '/fairway'
     | '/green-reading'
+    | '/green-reading-historik'
     | '/konto'
     | '/kortputt'
     | '/lagputt'
@@ -554,8 +612,11 @@ export interface FileRouteTypes {
     | '/short-putting-test'
     | '/shot-shaping'
     | '/shot-shaping-9-window'
+    | '/shot-shaping-9-window-historik'
     | '/shot-shaping-konstant'
+    | '/shot-shaping-konstant-historik'
     | '/shot-shaping-vaxlande'
+    | '/shot-shaping-vaxlande-historik'
     | '/sitemap.xml'
     | '/speed'
     | '/speed-test'
@@ -565,7 +626,9 @@ export interface FileRouteTypes {
     | '/traning'
     | '/trophy'
     | '/upp-och-in'
+    | '/upp-och-in-historik'
     | '/wedge-stege'
+    | '/wedge-stege-historik'
     | '/framsteg/$slug'
     | '/kategori/$slug'
     | '/utveckling/$slug'
@@ -593,6 +656,7 @@ export interface FileRouteTypes {
     | '/combine'
     | '/fairway'
     | '/green-reading'
+    | '/green-reading-historik'
     | '/konto'
     | '/kortputt'
     | '/lagputt'
@@ -611,8 +675,11 @@ export interface FileRouteTypes {
     | '/short-putting-test'
     | '/shot-shaping'
     | '/shot-shaping-9-window'
+    | '/shot-shaping-9-window-historik'
     | '/shot-shaping-konstant'
+    | '/shot-shaping-konstant-historik'
     | '/shot-shaping-vaxlande'
+    | '/shot-shaping-vaxlande-historik'
     | '/sitemap.xml'
     | '/speed'
     | '/speed-test'
@@ -622,7 +689,9 @@ export interface FileRouteTypes {
     | '/traning'
     | '/trophy'
     | '/upp-och-in'
+    | '/upp-och-in-historik'
     | '/wedge-stege'
+    | '/wedge-stege-historik'
     | '/framsteg/$slug'
     | '/kategori/$slug'
     | '/utveckling/$slug'
@@ -650,6 +719,7 @@ export interface FileRouteTypes {
     | '/combine'
     | '/fairway'
     | '/green-reading'
+    | '/green-reading-historik'
     | '/konto'
     | '/kortputt'
     | '/lagputt'
@@ -668,8 +738,11 @@ export interface FileRouteTypes {
     | '/short-putting-test'
     | '/shot-shaping'
     | '/shot-shaping-9-window'
+    | '/shot-shaping-9-window-historik'
     | '/shot-shaping-konstant'
+    | '/shot-shaping-konstant-historik'
     | '/shot-shaping-vaxlande'
+    | '/shot-shaping-vaxlande-historik'
     | '/sitemap.xml'
     | '/speed'
     | '/speed-test'
@@ -679,7 +752,9 @@ export interface FileRouteTypes {
     | '/traning'
     | '/trophy'
     | '/upp-och-in'
+    | '/upp-och-in-historik'
     | '/wedge-stege'
+    | '/wedge-stege-historik'
     | '/framsteg/$slug'
     | '/kategori/$slug'
     | '/utveckling/$slug'
@@ -708,6 +783,7 @@ export interface RootRouteChildren {
   CombineRoute: typeof CombineRoute
   FairwayRoute: typeof FairwayRoute
   GreenReadingRoute: typeof GreenReadingRoute
+  GreenReadingHistorikRoute: typeof GreenReadingHistorikRoute
   KontoRoute: typeof KontoRoute
   KortputtRoute: typeof KortputtRoute
   LagputtRoute: typeof LagputtRoute
@@ -726,8 +802,11 @@ export interface RootRouteChildren {
   ShortPuttingTestRoute: typeof ShortPuttingTestRoute
   ShotShapingRoute: typeof ShotShapingRoute
   ShotShaping9WindowRoute: typeof ShotShaping9WindowRoute
+  ShotShaping9WindowHistorikRoute: typeof ShotShaping9WindowHistorikRoute
   ShotShapingKonstantRoute: typeof ShotShapingKonstantRoute
+  ShotShapingKonstantHistorikRoute: typeof ShotShapingKonstantHistorikRoute
   ShotShapingVaxlandeRoute: typeof ShotShapingVaxlandeRoute
+  ShotShapingVaxlandeHistorikRoute: typeof ShotShapingVaxlandeHistorikRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SpeedRoute: typeof SpeedRoute
   SpeedTestRoute: typeof SpeedTestRoute
@@ -737,7 +816,9 @@ export interface RootRouteChildren {
   TraningRoute: typeof TraningRoute
   TrophyRoute: typeof TrophyRoute
   UppOchInRoute: typeof UppOchInRoute
+  UppOchInHistorikRoute: typeof UppOchInHistorikRoute
   WedgeStegeRoute: typeof WedgeStegeRoute
+  WedgeStegeHistorikRoute: typeof WedgeStegeHistorikRoute
   FramstegSlugRoute: typeof FramstegSlugRouteWithChildren
   KategoriSlugRoute: typeof KategoriSlugRoute
   UtvecklingSlugRoute: typeof UtvecklingSlugRoute
@@ -747,11 +828,25 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/wedge-stege-historik': {
+      id: '/wedge-stege-historik'
+      path: '/wedge-stege-historik'
+      fullPath: '/wedge-stege-historik'
+      preLoaderRoute: typeof WedgeStegeHistorikRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/wedge-stege': {
       id: '/wedge-stege'
       path: '/wedge-stege'
       fullPath: '/wedge-stege'
       preLoaderRoute: typeof WedgeStegeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/upp-och-in-historik': {
+      id: '/upp-och-in-historik'
+      path: '/upp-och-in-historik'
+      fullPath: '/upp-och-in-historik'
+      preLoaderRoute: typeof UppOchInHistorikRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/upp-och-in': {
@@ -817,6 +912,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/shot-shaping-vaxlande-historik': {
+      id: '/shot-shaping-vaxlande-historik'
+      path: '/shot-shaping-vaxlande-historik'
+      fullPath: '/shot-shaping-vaxlande-historik'
+      preLoaderRoute: typeof ShotShapingVaxlandeHistorikRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/shot-shaping-vaxlande': {
       id: '/shot-shaping-vaxlande'
       path: '/shot-shaping-vaxlande'
@@ -824,11 +926,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShotShapingVaxlandeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/shot-shaping-konstant-historik': {
+      id: '/shot-shaping-konstant-historik'
+      path: '/shot-shaping-konstant-historik'
+      fullPath: '/shot-shaping-konstant-historik'
+      preLoaderRoute: typeof ShotShapingKonstantHistorikRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/shot-shaping-konstant': {
       id: '/shot-shaping-konstant'
       path: '/shot-shaping-konstant'
       fullPath: '/shot-shaping-konstant'
       preLoaderRoute: typeof ShotShapingKonstantRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/shot-shaping-9-window-historik': {
+      id: '/shot-shaping-9-window-historik'
+      path: '/shot-shaping-9-window-historik'
+      fullPath: '/shot-shaping-9-window-historik'
+      preLoaderRoute: typeof ShotShaping9WindowHistorikRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/shot-shaping-9-window': {
@@ -955,6 +1071,13 @@ declare module '@tanstack/react-router' {
       path: '/konto'
       fullPath: '/konto'
       preLoaderRoute: typeof KontoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/green-reading-historik': {
+      id: '/green-reading-historik'
+      path: '/green-reading-historik'
+      fullPath: '/green-reading-historik'
+      preLoaderRoute: typeof GreenReadingHistorikRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/green-reading': {
@@ -1167,6 +1290,7 @@ const rootRouteChildren: RootRouteChildren = {
   CombineRoute: CombineRoute,
   FairwayRoute: FairwayRoute,
   GreenReadingRoute: GreenReadingRoute,
+  GreenReadingHistorikRoute: GreenReadingHistorikRoute,
   KontoRoute: KontoRoute,
   KortputtRoute: KortputtRoute,
   LagputtRoute: LagputtRoute,
@@ -1185,8 +1309,11 @@ const rootRouteChildren: RootRouteChildren = {
   ShortPuttingTestRoute: ShortPuttingTestRoute,
   ShotShapingRoute: ShotShapingRoute,
   ShotShaping9WindowRoute: ShotShaping9WindowRoute,
+  ShotShaping9WindowHistorikRoute: ShotShaping9WindowHistorikRoute,
   ShotShapingKonstantRoute: ShotShapingKonstantRoute,
+  ShotShapingKonstantHistorikRoute: ShotShapingKonstantHistorikRoute,
   ShotShapingVaxlandeRoute: ShotShapingVaxlandeRoute,
+  ShotShapingVaxlandeHistorikRoute: ShotShapingVaxlandeHistorikRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SpeedRoute: SpeedRoute,
   SpeedTestRoute: SpeedTestRoute,
@@ -1196,7 +1323,9 @@ const rootRouteChildren: RootRouteChildren = {
   TraningRoute: TraningRoute,
   TrophyRoute: TrophyRoute,
   UppOchInRoute: UppOchInRoute,
+  UppOchInHistorikRoute: UppOchInHistorikRoute,
   WedgeStegeRoute: WedgeStegeRoute,
+  WedgeStegeHistorikRoute: WedgeStegeHistorikRoute,
   FramstegSlugRoute: FramstegSlugRouteWithChildren,
   KategoriSlugRoute: KategoriSlugRoute,
   UtvecklingSlugRoute: UtvecklingSlugRoute,
