@@ -256,7 +256,9 @@ function EightBallHistoryPage() {
           <section className="mt-3 rounded-2xl border border-border bg-card p-4">
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Senaste resultat</p>
             <div className="mt-3 divide-y divide-border">
-              {[...complete].reverse().slice(0, 10).map((s) => (
+              {(() => {
+                const rows = [...complete].reverse();
+                return (showAll ? rows : rows.slice(0, 5)).map((s) => (
                 <div key={s.id} className="flex items-center justify-between gap-3 py-3">
                   <div>
                     <p className="text-sm font-semibold">{new Date(s.date).toLocaleDateString("sv-SE")}</p>
@@ -274,9 +276,20 @@ function EightBallHistoryPage() {
                     </button>
                   </div>
                 </div>
-              ))}
+                ));
+              })()}
             </div>
+            {complete.length > 5 ? (
+              <button
+                type="button"
+                onClick={() => setShowAll((v) => !v)}
+                className="mt-3 w-full rounded-xl border border-border py-2.5 text-xs font-semibold text-muted-foreground transition-colors active:bg-muted"
+              >
+                {showAll ? "Visa färre" : `Visa fler (${complete.length - 5})`}
+              </button>
+            ) : null}
           </section>
+
 
           <Link to="/8-bollar" className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-4 font-display text-xl text-primary-foreground">Gör ett nytt test <ArrowRight className="h-5 w-5" /></Link>
           <Link to="/8-bollar" className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-border bg-card py-4 font-semibold"><Trophy className="h-4 w-4" /> Till testet</Link>
