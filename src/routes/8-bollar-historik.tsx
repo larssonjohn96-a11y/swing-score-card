@@ -45,6 +45,8 @@ function KpiCard({ label, value, unit, hint }: { label: string; value: string; u
 
 function EightBallHistoryPage() {
   const [sessions, setSessions] = useState<EightBallSession[]>([]);
+  const [showAll, setShowAll] = useState(false);
+
   useEffect(() => {
     setSessions(loadEightBallSessions());
   }, []);
