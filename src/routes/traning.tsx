@@ -9,7 +9,7 @@ export const Route = createFileRoute("/traning")({
       {
         name: "description",
         content:
-          "Färdigbyggda träningstester för putting, around the green, approach, shot shaping och off the tee. Följ din utveckling utan att påverka SG4 HCP.",
+          "Färdigbyggda träningstester för putting, around the green, approach och shot shaping. Följ din utveckling utan att påverka SG4 HCP.",
       },
       { property: "og:title", content: "Träningstester | SG4" },
       {
@@ -28,6 +28,7 @@ type Category = "putting" | "around-the-green" | "approach";
 type TestRoute =
   | "/lagputt"
   | "/50-bollar"
+  | "/tutor-test"
   | "/8-bollar"
   | "/approach-pei-valj"
   | "/green-reading"
@@ -39,6 +40,13 @@ type TestItem = { to: TestRoute; title: string; description: string; meta: strin
 
 const TESTS: Record<Category, TestItem[]> = {
   putting: [
+    {
+      to: "/tutor-test",
+      title: "Tutor",
+      description:
+        "10 puttar genom Putting Tutor. Isolera startlinjen och följ ditt rullande 20-testerssnitt.",
+      meta: "10 puttar · startlinje · 20-test snitt",
+    },
     {
       to: "/lagputt",
       title: "Lag putt",
@@ -104,7 +112,7 @@ const TESTS: Record<Category, TestItem[]> = {
 const CATEGORIES: Array<{ id: Category; title: string; description: string }> = [
   { id: "approach", title: "Approach", description: "Wedges, järn, avståndskontroll och shot shaping" },
   { id: "around-the-green", title: "Around the Green", description: "Chip, pitch, lobb och bunker" },
-  { id: "putting", title: "Putting", description: "Puttning, greenläsning och längdkontroll" },
+  { id: "putting", title: "Putting", description: "Startlinje, greenläsning och längdkontroll" },
 ];
 
 function TestCard({ to, title, description, meta }: TestItem) {
