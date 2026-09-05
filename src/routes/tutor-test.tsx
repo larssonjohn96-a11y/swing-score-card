@@ -188,6 +188,7 @@ function TutorTestPage() {
   }
 
   const score = results.filter(Boolean).length;
+  const misses = TUTOR_PUTTS - score;
   const sessions = loadTutorSessions();
   const latestAverage = recentAverage(sessions);
   const rollingCount = Math.min(sessions.length, TUTOR_ROLLING_WINDOW);
@@ -233,7 +234,7 @@ function TutorTestPage() {
           </p>
         ) : (
           <p className="mt-4 text-xs text-muted-foreground">
-            {TUTOR_PUTTS - score} miss {TUTOR_PUTTS - score === 1 ? "" : "ar"}
+            {misses} {misses === 1 ? "miss" : "missar"}
           </p>
         )}
       </section>
