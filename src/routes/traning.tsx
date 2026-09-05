@@ -14,9 +14,8 @@ const CATEGORIES:Array<{id:Category;title:string;description:string;count:number
   {id:"off-the-tee",title:"Off the Tee",description:"Driver, precision och shot shaping",count:0},
 ];
 
-type TestRoute="/lagputt-test"|"/50-bollar"|"/kategori/$slug"|"/approach-pei-valj";
+type TestRoute="/lagputt-test"|"/50-bollar"|"/8-bollar"|"/approach-pei-valj";
 function TestCard({to,title,description,meta}:{to:TestRoute;title:string;description:string;meta:string}){
-  if(to==="/kategori/$slug") return <Link to={to} params={{slug:"around-the-green"}} className="flex w-full items-center gap-4 rounded-3xl border border-border bg-card p-4 text-left shadow-[var(--shadow-glow)] transition-colors hover:border-primary"><Icon/><Body title={title} description={description} meta={meta}/><ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground"/></Link>;
   return <Link to={to} className="flex w-full items-center gap-4 rounded-3xl border border-border bg-card p-4 text-left shadow-[var(--shadow-glow)] transition-colors hover:border-primary"><Icon/><Body title={title} description={description} meta={meta}/><ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground"/></Link>;
 }
 function Icon(){return <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"><Trophy className="h-5 w-5"/></span>}
