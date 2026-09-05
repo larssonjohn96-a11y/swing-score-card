@@ -132,7 +132,7 @@ function EightBallHistoryPage() {
             </div>
             <div className="mt-4 h-52 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 4, bottom: 0 }}>
                   <defs>
                     <linearGradient id="eightBallFill" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.28} />
@@ -151,7 +151,8 @@ function EightBallHistoryPage() {
                     tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
                     tickLine={false}
                     axisLine={false}
-                    width={30}
+                    width={40}
+                    tickMargin={6}
                   />
                   <Tooltip
                     formatter={(value) => [`${value} poäng`, "Totalpoäng"]}
@@ -193,7 +194,7 @@ function EightBallHistoryPage() {
               <p className="mt-1 text-xs text-muted-foreground">Högsta poäng i ett enskilt varv (max 32).</p>
               <div className="mt-4 h-36 w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData.filter((d) => typeof d.best === "number")} margin={{ top: 4, right: 10, left: -10, bottom: 0 }}>
+                  <BarChart data={chartData.filter((d) => typeof d.best === "number")} margin={{ top: 4, right: 10, left: 4, bottom: 0 }}>
                     <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
                     <XAxis dataKey="label" tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} />
                     <YAxis
@@ -206,7 +207,8 @@ function EightBallHistoryPage() {
                       tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
                       tickLine={false}
                       axisLine={false}
-                      width={30}
+                      width={40}
+                      tickMargin={6}
                     />
                     <Tooltip
                       formatter={(value) => [`${value} poäng`, "Bästa varv"]}
