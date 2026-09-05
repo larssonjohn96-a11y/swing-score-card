@@ -99,7 +99,6 @@ function EightBallPage() {
       <main
         style={LIGHT_SURFACE}
         className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background px-5 pb-6 text-foreground"
-        // eslint-disable-next-line react/no-unknown-property
       >
         <div className="flex items-center justify-between pt-[max(1rem,env(safe-area-inset-top))]">
           <span className="text-sm font-semibold">Slag {shot + 1} av {SHOTS}</span>
