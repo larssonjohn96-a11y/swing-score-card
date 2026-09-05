@@ -45,7 +45,6 @@ function TutorHistoryPage() {
   const latest = sessions.at(-1);
   const latest20 = sessions.slice(-TUTOR_ROLLING_WINDOW);
   const perfect20 = latest20.filter((session) => session.score === 10).length;
-  const misses20 = latest20.reduce((sum, session) => sum + (10 - session.score), 0);
   const visibleHistory = [...sessions].reverse();
   const chartPoints = points.slice(-60).map((point) => ({
     ...point,
@@ -132,23 +131,20 @@ function TutorHistoryPage() {
               value={bestAverage === null ? "–" : formatTutorAverage(bestAverage)}
               hint={bestAverage === null ? "Kräver 20 test" : "Bästa rullande snitt"}
             />
-            <Kpi
-              label="Perfekta test"
-              value={String(perfect20)}
-              hint={`av senaste ${latest20.length}`}
-            />
-            <Kpi
-              label="Missar"
-              value={String(misses20)}
-              hint={`senaste ${latest20.length} test`}
-            />
+            <div className="col-span-2">
+              <Kpi
+                label="Perfekta test"
+                value={String(perfect20)}
+                hint={`10/10 av senaste ${latest20.length} test`}
+              />
+            </div>
           </div>
 
           <section className="mt-4 rounded-2xl border border-border bg-card p-4">
             <div className="flex items-end justify-between gap-3">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                  Startlinje över tid
+                  20-testers snitt över tid
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">Rullande snitt · högre är bättre</p>
               </div>
@@ -198,38 +194,6 @@ function TutorHistoryPage() {
                 </AreaChart>
               </ResponsiveContainer>
             </div>
-          </section>
-
-          <section className="mt-3 rounded-2xl border border-border bg-card p-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-              Analys
-            </p>
-            <div className="mt-3 rounded-xl bg-tint px-3 py-3">
-              <p className="text-sm font-semibold text-primary">
-                {rollingAverage >= 9.5
-                  ? "Exceptionellt stabil startlinje"
-                  : rollingAverage >= 9
-                    ? "Mycket stark startlinje"
-                    : rollingAverage >= 8
-                      ? "Stabil grund – jaga färre enstaka missar"
-                      : "Startlinjen är ett tydligt förbättringsområde"}
-              </p>
-              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                Fokus här är repeterbarhet. Enskilda 10/10 är bra, men 20-testerssnittet visar om din startlinje håller över tid.
-              </p>
-            </div>
-            {sessions.length >= TUTOR_ROLLING_WINDOW ? (
-              <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                <div className="rounded-xl bg-muted px-3 py-2.5">
-                  <p className="text-muted-foreground">Genom gaten</p>
-                  <p className="mt-1 font-semibold">{latest20.reduce((sum, session) => sum + session.score, 0)} / {latest20.length * 10}</p>
-                </div>
-                <div className="rounded-xl bg-muted px-3 py-2.5">
-                  <p className="text-muted-foreground">Stabilitet</p>
-                  <p className="mt-1 font-semibold">{perfect20} perfekta test</p>
-                </div>
-              </div>
-            ) : null}
           </section>
 
           <section className="mt-3 rounded-2xl border border-border bg-card p-4">
