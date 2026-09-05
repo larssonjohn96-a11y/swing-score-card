@@ -39,15 +39,18 @@
   --color-tier-icon: var(--tier-icon);
   --color-tier-icon-deep: var(--tier-icon-deep);
   --color-card-ink: var(--card-ink);
-  --shadow-glow: 0 0 0 1px var(--border), 0 18px 40px -20px oklch(0 0 0 / 0.8);
+  /* Diskret, återhållsam höjdkänsla – ingen tung skugga. */
+  --shadow-glow: 0 1px 2px oklch(0 0 0 / 0.04), 0 10px 28px -22px oklch(0 0 0 / 0.35);
 
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
+  /* Återhållsamma hörnradier (ca 8–24px). */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 0.875rem;
+  --radius-2xl: 1rem;
+  --radius-3xl: 1.25rem;
+  --radius-4xl: 1.5rem;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);

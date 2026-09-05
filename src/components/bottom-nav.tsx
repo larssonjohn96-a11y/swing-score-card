@@ -67,7 +67,7 @@ export function BottomNav() {
 
   return (
     <>
-      <nav className="fixed bottom-0 left-0 right-0 z-40 h-16 border-t border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 h-16 border-t border-border bg-card">
         <div className="mx-auto flex h-full w-full max-w-md items-center px-2">
           {LEFT_TABS.map((tab) => (
             <NavLink
