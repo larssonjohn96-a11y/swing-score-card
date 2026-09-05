@@ -17,6 +17,7 @@ import { BottomNavVisibilityProvider } from "@/lib/bottom-nav-visibility";
 import { SubscriptionProvider } from "@/lib/subscription";
 import { DevPlanSwitcher } from "@/components/dev-plan-switcher";
 import { SplashScreen, useSplash } from "@/components/splash-screen";
+import { startSessionSync } from "@/lib/sessions/startup";
 
 function NotFoundComponent() {
   return (
@@ -99,6 +100,9 @@ function trainingFallback(pathname: string) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const { show, dismiss } = useSplash();
+
+  // Central molnsynk av testhistorik: inloggad → import + restore, gäst → enbart lokalt.
+  useEffect(() => startSessionSync(), []);
 
   useEffect(() => {
     const goBackNaturally = (control: HTMLElement) => {

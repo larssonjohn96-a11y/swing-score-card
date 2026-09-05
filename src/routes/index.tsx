@@ -12,6 +12,7 @@ import {
   type Opportunity,
 } from "@/lib/sg-handicap";
 import { computeStableCategoryHandicaps } from "@/lib/category-index";
+import { useSessionsVersion } from "@/lib/sessions/use-sessions";
 import { OpportunityCard } from "@/components/home-dashboard";
 import { loadCardProfile } from "@/lib/rating-card";
 import { RadarCard } from "@/components/progress-dashboard";
@@ -48,6 +49,7 @@ function Home() {
   const [data, setData] = useState<HomeData | null>(null);
   const [ageSaved, setAgeSaved] = useState(false);
   const [friendCount, setFriendCount] = useState<number | null>(null);
+  const sessionsVersion = useSessionsVersion();
   const profile = loadCardProfile();
 
   useEffect(() => {
@@ -57,7 +59,7 @@ function Home() {
       void pushPlayerSnapshot();
       void listFriendships().then((f) => setFriendCount(loadFriends().length + f.accepted.length));
     }
-  }, [user]);
+  }, [user, sessionsVersion]);
 
   function shareProfile() {
     const shareData = {
