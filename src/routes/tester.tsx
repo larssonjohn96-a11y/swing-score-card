@@ -1,12 +1,6 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { ChevronRight } from "lucide-react";
 import { CATEGORIES } from "@/lib/categories";
-import {
-  ApproachCategoryIcon,
-  AroundGreenCategoryIcon,
-  DrivingCategoryIcon,
-  PuttingCategoryIcon,
-} from "@/components/category-icons";
 
 export const Route = createFileRoute("/tester")({
   head: () => ({
@@ -33,7 +27,6 @@ type CardConfig = {
   eyebrow: string;
   title: string;
   description: string;
-  Icon: (props: { className?: string }) => React.ReactNode;
 };
 
 const CARDS: CardConfig[] = [
@@ -42,28 +35,24 @@ const CARDS: CardConfig[] = [
     eyebrow: "Inspel mot green",
     title: "Approach",
     description: "Precision, avståndskontroll och känsla på inspel mot green.",
-    Icon: ApproachCategoryIcon,
   },
   {
     slug: "puttning",
     eyebrow: "På greenen",
     title: "Putting",
     description: "Tester för längdkänsla, riktning och korta puttar.",
-    Icon: PuttingCategoryIcon,
   },
   {
     slug: "driving",
     eyebrow: "Utslag",
     title: "Off the Tee",
     description: "Längd, precision och träffsäkerhet från tee.",
-    Icon: DrivingCategoryIcon,
   },
   {
     slug: "around-the-green",
     eyebrow: "Runt greenen",
     title: "Shortgame",
     description: "Chip, pitch, bunker och svåra lägen runt greenen.",
-    Icon: AroundGreenCategoryIcon,
   },
 ];
 
@@ -83,16 +72,13 @@ function TesterPage() {
       </header>
 
       <section className="mt-6 space-y-3">
-        {cards.map(({ slug, eyebrow, title, description, Icon }) => (
+        {cards.map(({ slug, eyebrow, title, description }) => (
           <Link
             key={slug}
             to="/kategori/$slug"
             params={{ slug }}
-            className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm transition-colors hover:border-primary"
+            className="flex items-center gap-3 rounded-2xl border border-border bg-card px-5 py-4 shadow-sm transition-colors hover:border-primary"
           >
-            <span className="shrink-0">
-              <Icon className="h-14 w-14" />
-            </span>
             <div className="min-w-0 flex-1">
               <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                 {eyebrow}
