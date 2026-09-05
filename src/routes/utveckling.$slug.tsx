@@ -1,65 +1,50 @@
 import { Link, createFileRoute, notFound } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { ArrowLeft, CheckCircle2, Target, Trophy } from "lucide-react";
+import { ArrowLeft, ChevronRight } from "lucide-react";
 import { ChartCard } from "@/components/chart-card";
 import { HeatmapCard, HistoryPanel } from "@/components/progress-dashboard";
 import { ApproachDeepAnalysis } from "@/components/approach-deep-analysis";
 import { PremiumLockLine } from "@/components/premium-lock";
 import { useSubscription } from "@/lib/subscription";
-import {
-  CATEGORY_LABELS,
-  computeCategoryDetail,
-  hcpLabel,
-  ratingFromHandicap,
-  type CategoryDetail,
-  type CategorySlug,
-  type HcpTimelinePoint,
-} from "@/lib/sg-handicap";
+import { CATEGORY_LABELS, computeCategoryDetail, hcpLabel, ratingFromHandicap, type CategoryDetail, type CategorySlug, type HcpTimelinePoint } from "@/lib/sg-handicap";
 import { computeStableCategoryHandicaps, computeStableCategoryHcpTimeline } from "@/lib/category-index";
 
-const VALID_SLUGS = Object.keys(CATEGORY_LABELS) as CategorySlug[];
-const CATEGORY_INTRO: Record<CategorySlug,string> = {
-  approach:"Din förmåga att spela inspel mot green och sätta upp lätta puttar – från 50 till 150 meter.",
-  driving:"Din förmåga att slå långa, precisa och konsekventa drives från tee, samt din rena bollhastighet.",
-  "around-the-green":"Din förmåga att komma nära hålet i närspel och ur bunker – allt inom cirka 20 meter från green.",
-  puttning:"Din träffsäkerhet på korta puttar och distanskontroll på längre lagputtar.",
-  speed:"Din bollhastighet och kraftöverföring från driver, oavsett teknik.",
+const VALID_SLUGS=Object.keys(CATEGORY_LABELS) as CategorySlug[];
+const CATEGORY_INTRO:Record<CategorySlug,string>={approach:"Inspel mot green – precision, avståndskontroll och bollflykt.",driving:"Prestation från tee – precision, konsekvens och fart.","around-the-green":"Scoring runt green – närspel, bunker och slagvariation.",puttning:"Hela din puttingprofil – kortputt, längdkontroll, startlinje och greenläsning.",speed:"Din bollhastighet och kraftöverföring med driver."};
+type HubItem={title:string;subtitle:string;to:string};
+const TRAINING:Record<CategorySlug,HubItem[]>={
+ driving:[{title:"Driver med konsekvens",subtitle:"Precision & konsekvens · 16 drives",to:"/driver-konsekvens-historik"}],
+ approach:[{title:"PEI Precision",subtitle:"Approachprecision",to:"/approach-pei-historik"},{title:"Wedgestege",subtitle:"Avståndskontroll 40–90 m",to:"/wedge-stege-historik"},{title:"9 Window Drill",subtitle:"Höjd × bollkurva",to:"/shot-shaping-9-window-historik"},{title:"Constant Shot Shape",subtitle:"Repeterbar draw eller fade",to:"/shot-shaping-konstant-historik"},{title:"Alternating Shot Shape",subtitle:"Växla draw och fade",to:"/shot-shaping-vaxlande-historik"}],
+ "around-the-green":[{title:"8-bollsövningen",subtitle:"Chip, pitch, lobb & bunker",to:"/8-bollar-historik"},{title:"Up & Down Challenge",subtitle:"Scoring från 10 lägen",to:"/upp-och-in-historik"}],
+ puttning:[{title:"Tutor",subtitle:"Startlinje",to:"/tutor-test-historik"},{title:"Green Reading",subtitle:"Greenläsning",to:"/green-reading-historik"},{title:"Lag putt",subtitle:"Längdkontroll",to:"/lagputt-historik"},{title:"25-bollsövningen",subtitle:"Kortputt & hole-out",to:"/50-bollar-resultat"},{title:"PGA Tour – 18 Puttar",subtitle:"Total putting-performance",to:"/pga-tour-18-puttar-historik"}],
+ speed:[]
 };
+const HCP_TEST_LINK:Record<CategorySlug,{to:string;label:string}>={driving:{to:"/kategori/driving",label:"Off the Tee HCP-test"},approach:{to:"/kategori/approach",label:"Approach HCP-test"},"around-the-green":{to:"/kategori/around-the-green",label:"Around the Green HCP-test"},puttning:{to:"/kategori/puttning",label:"Putting HCP-test"},speed:{to:"/speed-test",label:"Speed Test"}};
 
-export const Route=createFileRoute("/utveckling/$slug")({loader:({params})=>{if(!VALID_SLUGS.includes(params.slug as CategorySlug))throw notFound();return{slug:params.slug as CategorySlug}},head:({loaderData})=>{if(!loaderData)return{meta:[{title:"Kategorin hittades inte"},{name:"robots",content:"noindex"}]};const title=CATEGORY_LABELS[loaderData.slug];return{meta:[{title:`${title} – Utveckling | SG4`}]}} ,notFoundComponent:CategoryDetailNotFound,component:CategoryDetailPage});
+export const Route=createFileRoute("/utveckling/$slug")({loader:({params})=>{if(!VALID_SLUGS.includes(params.slug as CategorySlug))throw notFound();return{slug:params.slug as CategorySlug}},head:({loaderData})=>({meta:[{title:loaderData?`${CATEGORY_LABELS[loaderData.slug]} – Analys | SG4`:"Kategorin hittades inte"}]}),notFoundComponent:()=> <main className="mx-auto max-w-md px-5 pt-16"><h1 className="font-display text-4xl">Kategorin finns inte</h1></main>,component:CategoryDetailPage});
 
-function CategoryDetailNotFound(){return <main className="mx-auto min-h-screen w-full max-w-md px-5 pt-16"><h1 className="font-display text-4xl">Kategorin finns inte</h1><Link to="/utveckling" className="mt-6 inline-block rounded-full border border-border px-4 py-2 text-sm">Till utveckling</Link></main>}
+function RowLink({item}:{item:HubItem}){return <Link to={item.to} className="flex min-h-[66px] items-center gap-3 px-4 py-3 active:bg-tint"><div className="min-w-0 flex-1"><p className="text-[15px] font-semibold">{item.title}</p><p className="mt-0.5 text-xs text-muted-foreground">{item.subtitle}</p></div><ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground"/></Link>}
 
 function CategoryDetailPage(){
-  const{slug}=Route.useLoaderData() as{slug:CategorySlug};
-  const[detail,setDetail]=useState<CategoryDetail|null>(null);
-  const[hcpTimeline,setHcpTimeline]=useState<HcpTimelinePoint[]>([]);
-  const{canViewFullHistory}=useSubscription();
+ const{slug}=Route.useLoaderData() as{slug:CategorySlug};const[detail,setDetail]=useState<CategoryDetail|null>(null);const[hcpTimeline,setHcpTimeline]=useState<HcpTimelinePoint[]>([]);const{canViewFullHistory}=useSubscription();
+ useEffect(()=>{const raw=computeCategoryDetail(slug);const stable=computeStableCategoryHandicaps().find(c=>c.slug===slug);setDetail({...raw,handicap:stable?.handicap,trend:stable?.trend,score:stable?.handicap!==undefined?ratingFromHandicap(stable.handicap):raw.score});setHcpTimeline(computeStableCategoryHcpTimeline(slug,null))},[slug]);
+ if(!detail)return null;const chart=hcpTimeline.filter(p=>p.rolling!==undefined);const vals=chart.map(p=>p.rolling??0);const domain:[number,number]=vals.length?[Math.floor(Math.min(...vals)-2),Math.ceil(Math.max(...vals)+2)]:[-5,30];const training=TRAINING[slug];const hcpTest=HCP_TEST_LINK[slug];
+ return <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-28 pt-7">
+  <Link to="/utveckling" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card"><ArrowLeft className="h-4 w-4"/></Link>
+  <p className="mt-5 text-[11px] font-semibold uppercase tracking-[0.22em] text-primary">Kategoriöversikt</p><h1 className="mt-1 font-display text-4xl leading-none">{detail.title}</h1><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{CATEGORY_INTRO[slug]}</p>
+  <section className="mt-5 rounded-3xl border border-primary/20 bg-card p-5 shadow-[var(--shadow-glow)]"><div className="flex items-end justify-between"><div><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Kategori-HCP</p><p className="mt-1 font-display text-6xl leading-none text-primary">{detail.handicap!==undefined?hcpLabel(detail.handicap):"–"}</p></div><div className="text-right"><p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground">Trend</p><p className={`mt-1 font-display text-2xl ${detail.trend!==undefined&&detail.trend<0?"text-primary":detail.trend!==undefined&&detail.trend>0?"text-destructive":""}`}>{detail.trend!==undefined?hcpLabel(detail.trend):"–"}</p></div></div></section>
 
-  useEffect(()=>{
-    const rawDetail=computeCategoryDetail(slug);
-    const stable=computeStableCategoryHandicaps().find(c=>c.slug===slug);
-    setDetail({...rawDetail,handicap:stable?.handicap,trend:stable?.trend,score:stable?.handicap!==undefined?ratingFromHandicap(stable.handicap):rawDetail.score});
-    setHcpTimeline(computeStableCategoryHcpTimeline(slug,null));
-  },[slug]);
+  {slug==="approach"&&<div className="mt-5"><ApproachDeepAnalysis/></div>}
+  {detail.keyMetrics.length>0&&slug!=="approach"&&<section className="mt-6"><p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Vad består din {detail.title.toLowerCase()} av?</p><div className="mt-3 grid grid-cols-2 gap-2">{detail.keyMetrics.map(m=><div key={m.label} className="rounded-2xl border border-border bg-card p-4"><p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{m.label}</p><p className="mt-1 font-display text-2xl">{m.value}</p></div>)}</div></section>}
 
-  if(!detail)return null;
-  const hcpChartData=hcpTimeline.filter(p=>p.rolling!==undefined);
-  const activeChartLength=hcpChartData.length;
-  const hcpValues=hcpChartData.map(p=>p.rolling??0);
-  const hcpDomain:[number,number]=hcpValues.length>0?[Math.floor(Math.min(...hcpValues)-2),Math.ceil(Math.max(...hcpValues)+2)]:[-5,30];
-  const history=detail.history;
+  {detail.heatmap.length>0&&slug!=="approach"&&<section className="mt-6"><p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Detaljer</p><div className="mt-3"><HeatmapCard title={slug==="puttning"?"Putting per avstånd":"Prestation per avstånd"} zones={detail.heatmap} unit={slug==="puttning"?"%":""}/></div></section>}
 
-  return <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-28 pt-10">
-    <Link to="/utveckling" className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:text-foreground"><ArrowLeft className="h-4 w-4"/></Link>
-    <p className="mt-4 text-xs uppercase tracking-[0.3em] text-flag">Detaljerad analys</p><h1 className="mt-1 text-4xl leading-none">{detail.title}</h1><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{CATEGORY_INTRO[slug]}</p>
-    <section className="mt-6 rounded-3xl border border-border bg-card p-6 text-center shadow-[var(--shadow-glow)]"><p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">{detail.title} HCP</p><p className="mt-1 font-display text-7xl leading-none text-primary">{detail.handicap!==undefined?hcpLabel(detail.handicap):"–"}</p><div className="mt-4 flex items-center justify-center gap-6 border-t border-border pt-4"><div><p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">Index score</p><p className="mt-0.5 font-display text-2xl leading-none">{Math.round(detail.score)}<span className="text-sm text-muted-foreground">/100</span></p></div><div><p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">Trend</p><p className={`mt-0.5 font-display text-2xl leading-none ${detail.trend!==undefined&&detail.trend<0?"text-primary":detail.trend!==undefined&&detail.trend>0?"text-destructive":""}`}>{detail.trend!==undefined?hcpLabel(detail.trend):"–"}</p></div></div></section>
-    {slug==="approach"&&<ApproachDeepAnalysis/>}
-    <section className="mt-6"><p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">HCP-utveckling över tid</p><p className="mt-1 text-xs text-muted-foreground">Linjen visar ditt stabiliserade kategoriindex. Punkterna bygger på varje genomfört test.</p><ChartCard title={`${detail.title} HCP över tid`}>{activeChartLength<2?<p className="py-10 text-center text-sm text-muted-foreground">Kör minst två tester i den här kategorin för att se en graf.</p>:<div className="h-56 w-full"><ResponsiveContainer width="100%" height="100%"><LineChart data={canViewFullHistory?hcpChartData:hcpChartData.slice(-3)} margin={{top:10,right:10,bottom:0,left:-20}}><CartesianGrid strokeDasharray="3 3" stroke="var(--border)"/><XAxis dataKey="date" tick={{fontSize:10}} stroke="var(--muted-foreground)"/><YAxis domain={hcpDomain} reversed tick={{fontSize:10}} stroke="var(--muted-foreground)"/><Tooltip contentStyle={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:12,fontSize:12}} formatter={(value:number)=>[hcpLabel(value),"Kategori-HCP"]}/><Line type="monotone" dataKey="rolling" stroke="var(--primary)" strokeWidth={3} dot={{r:3}} connectNulls/></LineChart></ResponsiveContainer></div>}</ChartCard>{!canViewFullHistory&&activeChartLength>3&&<div className="mt-3"><PremiumLockLine label={`Se alla ${activeChartLength} tester`}/></div>}</section>
-    {slug!=="approach"&&detail.keyMetrics.length>0&&<section className="mt-6"><p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Nyckeltal</p><div className="mt-3 grid grid-cols-2 gap-2">{detail.keyMetrics.map(m=><div key={m.label} className="rounded-2xl border border-border bg-card p-3"><p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">{m.label}</p><p className="mt-1 font-display text-xl leading-none">{m.value}</p></div>)}</div></section>}
-    {slug!=="approach"&&detail.heatmap.length>0&&<section className="mt-6"><p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Starka och svaga avstånd</p><p className="mt-1 text-xs text-muted-foreground">Snitt av dina senaste 5 tester · grönt är starkt, rött behöver mest träning.</p><div className="mt-3"><HeatmapCard title={slug==="puttning"?"Träffprocent per avstånd":"Score per avstånd"} zones={detail.heatmap} unit={slug==="puttning"?"%":""}/></div></section>}
-    {slug!=="approach"&&(detail.strengths.length>0||detail.improvements.length>0)&&<section className="mt-6 space-y-4">{detail.strengths.length>0&&<div className="rounded-[28px] border border-border bg-card p-5 shadow-sm"><div className="flex items-center gap-3"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10"><Trophy className="h-5 w-5 text-primary"/></span><p className="text-base font-extrabold uppercase tracking-wide text-primary">Styrkor</p></div><ul className="mt-4 space-y-3">{detail.strengths.map(s=><li key={s} className="flex items-start gap-3 text-[15px] leading-snug"><CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary"/><span>{s}</span></li>)}</ul></div>}{detail.improvements.length>0&&<div className="rounded-[28px] border border-border bg-card p-5 shadow-sm"><div className="flex items-center gap-3"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-destructive/10"><Target className="h-5 w-5 text-destructive"/></span><p className="text-base font-extrabold uppercase tracking-wide text-destructive">Förbättringsområden</p></div><ul className="mt-4 space-y-3">{detail.improvements.map(s=><li key={s} className="flex items-start gap-3 text-[15px] leading-snug"><CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-destructive"/><span>{s}</span></li>)}</ul></div>}</section>}
-    <HistoryPanel entries={history} limit={canViewFullHistory?undefined:3}/>{!canViewFullHistory&&history.length>3&&<div className="mt-2"><PremiumLockLine label={`Se alla ${history.length} tester i historiken`}/></div>}
-  </main>;
+  <section className="mt-7"><div className="flex items-end justify-between"><div><p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">Tester</p><h2 className="mt-1 text-2xl font-semibold">Mät kategorin</h2></div></div><div className="mt-3 overflow-hidden rounded-3xl border border-border bg-card"><Link to={hcpTest.to} className="flex min-h-[68px] items-center gap-3 px-4 py-3"><div className="min-w-0 flex-1"><p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-primary">HCP-grundande</p><p className="mt-0.5 text-[15px] font-semibold">{hcpTest.label}</p><p className="text-xs text-muted-foreground">Påverkar ditt stabiliserade kategori-HCP</p></div><ChevronRight className="h-4 w-4 text-muted-foreground"/></Link></div></section>
+
+  {training.length>0&&<section className="mt-6"><p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">Träningstester</p><h2 className="mt-1 text-2xl font-semibold">Fördjupa {detail.title}</h2><p className="mt-1 text-sm text-muted-foreground">Varje test isolerar en specifik färdighet. Öppna för progress och historik.</p><div className="mt-3 divide-y divide-border overflow-hidden rounded-3xl border border-border bg-card">{training.map(item=><RowLink key={item.to} item={item}/>)}</div></section>}
+
+  <section className="mt-7"><p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Kategoriutveckling</p><ChartCard title={`${detail.title} HCP över tid`}>{chart.length<2?<p className="py-10 text-center text-sm text-muted-foreground">Kör minst två HCP-test för att se utvecklingen.</p>:<div className="h-56 w-full"><ResponsiveContainer width="100%" height="100%"><LineChart data={canViewFullHistory?chart:chart.slice(-3)} margin={{top:10,right:10,bottom:0,left:-20}}><CartesianGrid strokeDasharray="3 3" stroke="var(--border)"/><XAxis dataKey="date" tick={{fontSize:10}} stroke="var(--muted-foreground)"/><YAxis domain={domain} reversed tick={{fontSize:10}} stroke="var(--muted-foreground)"/><Tooltip formatter={(v:number)=>[hcpLabel(v),"Kategori-HCP"]}/><Line type="monotone" dataKey="rolling" stroke="var(--primary)" strokeWidth={3} dot={{r:3}}/></LineChart></ResponsiveContainer></div>}</ChartCard>{!canViewFullHistory&&chart.length>3&&<PremiumLockLine label={`Se alla ${chart.length} tester`}/>}</section>
+  <HistoryPanel entries={detail.history} limit={canViewFullHistory?undefined:5}/>
+ </main>
 }
