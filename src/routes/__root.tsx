@@ -152,6 +152,26 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const { show, dismiss } = useSplash();
 
+  useEffect(() => {
+    const handleBackControl = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      const control = target?.closest<HTMLElement>("a,button");
+      if (!control) return;
+
+      const label = control.getAttribute("aria-label")?.trim().toLowerCase() ?? "";
+      const text = control.textContent?.trim().toLowerCase() ?? "";
+      const isBackControl = label === "tillbaka" || text === "tillbaka" || text.startsWith("tillbaka till ");
+      if (!isBackControl) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      window.history.back();
+    };
+
+    document.addEventListener("click", handleBackControl, true);
+    return () => document.removeEventListener("click", handleBackControl, true);
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <SubscriptionProvider>
