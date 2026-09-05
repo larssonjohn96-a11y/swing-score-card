@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, ArrowRight, Trophy } from "lucide-react";
+import { ArrowLeft, ArrowRight, Trash2, Trophy } from "lucide-react";
+import { useEffect, useState } from "react";
 import {
   Area,
   AreaChart,
@@ -16,7 +17,9 @@ import {
   EIGHT_BALL_ROUNDS,
   LIGHT_SURFACE,
   STATION_LIST,
+  deleteEightBallSession,
   loadEightBallSessions,
+  type EightBallSession,
 } from "./8-bollar";
 
 export const Route = createFileRoute("/8-bollar-historik")({
@@ -41,7 +44,16 @@ function KpiCard({ label, value, unit, hint }: { label: string; value: string; u
 }
 
 function EightBallHistoryPage() {
-  const sessions = loadEightBallSessions();
+  const [sessions, setSessions] = useState<EightBallSession[]>([]);
+  useEffect(() => {
+    setSessions(loadEightBallSessions());
+  }, []);
+
+  function remove(id: string) {
+    if (typeof window !== "undefined" && !window.confirm("Vill du ta bort det här testet?")) return;
+    setSessions(deleteEightBallSession(id));
+  }
+
   const complete = sessions.filter((s) => typeof s.score === "number");
   const bestScore = complete.length ? Math.max(...complete.map((s) => s.score)) : 0;
   const roundScores = complete.flatMap((s) => s.roundTotals ?? []);
@@ -120,7 +132,7 @@ function EightBallHistoryPage() {
             </div>
             <div className="mt-4 h-52 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -18, bottom: 0 }}>
+                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                   <defs>
                     <linearGradient id="eightBallFill" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.28} />
@@ -129,7 +141,18 @@ function EightBallHistoryPage() {
                   </defs>
                   <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
                   <XAxis dataKey="label" tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} />
-                  <YAxis domain={[0, 160]} tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} width={34} />
+                  <YAxis
+                    type="number"
+                    domain={[0, 160]}
+                    ticks={[0, 40, 80, 120, 160]}
+                    interval={0}
+                    allowDecimals={false}
+                    tickFormatter={(value: number) => String(value)}
+                    tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
+                    tickLine={false}
+                    axisLine={false}
+                    width={30}
+                  />
                   <Tooltip
                     formatter={(value) => [`${value} poäng`, "Totalpoäng"]}
                     contentStyle={{ borderRadius: 12, border: "1px solid var(--border)", fontSize: 12 }}
@@ -167,12 +190,24 @@ function EightBallHistoryPage() {
           {roundScores.length ? (
             <section className="mt-3 rounded-2xl border border-border bg-card p-4">
               <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Bästa varv per test</p>
-              <div className="mt-4 h-32 w-full">
+              <p className="mt-1 text-xs text-muted-foreground">Högsta poäng i ett enskilt varv (max 32).</p>
+              <div className="mt-4 h-36 w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData} margin={{ top: 4, right: 10, left: -18, bottom: 0 }}>
+                  <BarChart data={chartData.filter((d) => typeof d.best === "number")} margin={{ top: 4, right: 10, left: -10, bottom: 0 }}>
                     <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
                     <XAxis dataKey="label" tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} />
-                    <YAxis domain={[0, 32]} tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} width={34} />
+                    <YAxis
+                      type="number"
+                      domain={[0, 32]}
+                      ticks={[0, 8, 16, 24, 32]}
+                      interval={0}
+                      allowDecimals={false}
+                      tickFormatter={(value: number) => String(value)}
+                      tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
+                      tickLine={false}
+                      axisLine={false}
+                      width={30}
+                    />
                     <Tooltip
                       formatter={(value) => [`${value} poäng`, "Bästa varv"]}
                       contentStyle={{ borderRadius: 12, border: "1px solid var(--border)", fontSize: 12 }}
@@ -183,21 +218,6 @@ function EightBallHistoryPage() {
               </div>
             </section>
           ) : null}
-
-          <section className="mt-3 rounded-2xl border border-border bg-card p-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Senaste resultat</p>
-            <div className="mt-3 divide-y divide-border">
-              {[...complete].reverse().slice(0, 10).map((s) => (
-                <div key={s.id} className="flex items-center justify-between py-3">
-                  <div>
-                    <p className="text-sm font-semibold">{new Date(s.date).toLocaleDateString("sv-SE")}</p>
-                    <p className="text-xs text-muted-foreground">Bästa varv {s.roundTotals?.length ? `${Math.max(...s.roundTotals)} poäng` : "–"}</p>
-                  </div>
-                  <p className="font-display text-2xl leading-none">{s.score}<span className="ml-1 text-sm text-muted-foreground">poäng</span></p>
-                </div>
-              ))}
-            </div>
-          </section>
 
           {strongest && weakest ? (
             <section className="mt-3 rounded-2xl border border-border bg-card p-4">
@@ -215,6 +235,31 @@ function EightBallHistoryPage() {
               <p className="mt-3 text-xs text-muted-foreground">Snittpoäng per slag på respektive station.</p>
             </section>
           ) : null}
+
+          <section className="mt-3 rounded-2xl border border-border bg-card p-4">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Senaste resultat</p>
+            <div className="mt-3 divide-y divide-border">
+              {[...complete].reverse().slice(0, 10).map((s) => (
+                <div key={s.id} className="flex items-center justify-between gap-3 py-3">
+                  <div>
+                    <p className="text-sm font-semibold">{new Date(s.date).toLocaleDateString("sv-SE")}</p>
+                    <p className="text-xs text-muted-foreground">Bästa varv {s.roundTotals?.length ? `${Math.max(...s.roundTotals)} poäng` : "–"}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <p className="font-display text-2xl leading-none">{s.score}<span className="ml-1 text-sm text-muted-foreground">poäng</span></p>
+                    <button
+                      type="button"
+                      aria-label="Ta bort test"
+                      onClick={() => remove(s.id)}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors active:bg-muted"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
 
           <Link to="/8-bollar" className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-4 font-display text-xl text-primary-foreground">Gör ett nytt test <ArrowRight className="h-5 w-5" /></Link>
           <Link to="/8-bollar" className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-border bg-card py-4 font-semibold"><Trophy className="h-4 w-4" /> Till testet</Link>
