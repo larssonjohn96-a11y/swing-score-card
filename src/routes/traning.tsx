@@ -23,7 +23,7 @@ export const Route = createFileRoute("/traning")({
   component: TrainingTestsPage,
 });
 
-type Category = "putting" | "around-the-green" | "approach" | "off-the-tee";
+type Category = "putting" | "around-the-green" | "approach";
 
 type TestRoute =
   | "/lagputt"
@@ -91,13 +91,11 @@ const TESTS: Record<Category, TestItem[]> = {
         "40 till 90 meter, två bollar per avstånd. Kalibrera dina wedgeavstånd.",
       meta: "12 slag · 40–90 meter",
     },
-  ],
-  "off-the-tee": [
     {
       to: "/shot-shaping",
       title: "Shot Shaping",
       description:
-        "Tre tester i samma familj: 9 Window Drill, konstant shape och växlande draw/fade.",
+        "Underfamilj med tre tester: 9 Window Drill, konstant shape och växlande draw/fade.",
       meta: "3 tester · bollkontroll",
     },
   ],
@@ -106,8 +104,7 @@ const TESTS: Record<Category, TestItem[]> = {
 const CATEGORIES: Array<{ id: Category; title: string; description: string }> = [
   { id: "putting", title: "Putting", description: "Puttning, greenläsning och längdkontroll" },
   { id: "around-the-green", title: "Around the Green", description: "Chip, pitch, lobb och bunker" },
-  { id: "approach", title: "Approach", description: "Wedges, järn och avståndskontroll" },
-  { id: "off-the-tee", title: "Off the Tee", description: "Bollflykt, form och shot shaping" },
+  { id: "approach", title: "Approach", description: "Wedges, järn, avståndskontroll och shot shaping" },
 ];
 
 function TestCard({ to, title, description, meta }: TestItem) {
@@ -115,7 +112,7 @@ function TestCard({ to, title, description, meta }: TestItem) {
     "flex w-full items-center gap-4 rounded-3xl border border-border bg-card p-4 text-left shadow-[var(--shadow-glow)] transition-colors hover:border-primary";
   return (
     <Link to={to} className={className}>
-      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-tint-strong text-primary">
         <Trophy className="h-5 w-5" />
       </span>
       <span className="min-w-0 flex-1">
@@ -162,7 +159,7 @@ function TrainingTestsPage() {
                   onClick={() => setCategory(item.id)}
                   className="flex w-full items-center gap-4 rounded-3xl border border-border bg-card p-4 text-left shadow-[var(--shadow-glow)] transition-colors hover:border-primary"
                 >
-                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-tint-strong text-primary">
                     <Target className="h-5 w-5" />
                   </span>
                   <span className="min-w-0 flex-1">
