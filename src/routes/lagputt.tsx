@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, BarChart3, RotateCcw, X } from "lucide-react";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 import { LIGHT_SURFACE } from "./8-bollar";
 import {
@@ -281,19 +281,19 @@ function LagPuttPage() {
           </thead>
           <tbody>
             {scores.map((value, i) => (
-              <>
-                <tr key={i} className="border-t border-border/60">
+              <Fragment key={i}>
+                <tr className="border-t border-border/60">
                   <td className="py-2">{i + 1}</td>
                   <td className="py-2 text-muted-foreground">{LAG18_DISTANCES[i]} m</td>
                   <td className="py-2 text-right font-semibold tabular-nums">{fmtScore(value)}</td>
                 </tr>
                 {i === 8 ? (
-                  <tr key="out" className="border-t border-border bg-muted/60 font-semibold">
+                  <tr className="border-t border-border bg-muted/60 font-semibold">
                     <td className="py-2" colSpan={2}>OUT</td>
                     <td className="py-2 text-right tabular-nums">{fmtScore(out)}</td>
                   </tr>
                 ) : null}
-              </>
+              </Fragment>
             ))}
             <tr className="border-t border-border bg-muted/60 font-semibold">
               <td className="py-2" colSpan={2}>IN</td>
