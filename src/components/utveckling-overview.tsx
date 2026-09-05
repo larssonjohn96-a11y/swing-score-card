@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   ArrowRight,
@@ -57,12 +58,74 @@ export type CategoryVerdict = {
   diff?: number;
 };
 
+type CategorySort = "game" | "strongest" | "weakest";
+
+const GAME_ORDER: CategorySlug[] = [
+  "driving",
+  "approach",
+  "around-the-green",
+  "puttning",
+  "speed",
+];
+
+function sortRows(rows: CategoryVerdict[], sort: CategorySort) {
+  const copy = [...rows];
+
+  if (sort === "game") {
+    return copy.sort((a, b) => GAME_ORDER.indexOf(a.slug) - GAME_ORDER.indexOf(b.slug));
+  }
+
+  return copy.sort((a, b) => {
+    const aMissing = a.handicap === undefined;
+    const bMissing = b.handicap === undefined;
+    if (aMissing && bMissing) return 0;
+    if (aMissing) return 1;
+    if (bMissing) return -1;
+    return sort === "strongest"
+      ? a.handicap! - b.handicap!
+      : b.handicap! - a.handicap!;
+  });
+}
+
 export function CategoryHeatTable({ rows }: { rows: CategoryVerdict[]; benchmarkLabel: string }) {
+  const [sort, setSort] = useState<CategorySort>("game");
+  const sortedRows = useMemo(() => sortRows(rows, sort), [rows, sort]);
+
   return (
     <section className="mt-8">
-      <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Kategorier</p>
+      <div className="flex items-end justify-between gap-3">
+        <div>
+          <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Handicap per kategori</p>
+          <p className="mt-1 text-xs text-muted-foreground">Lägre HCP-nivå = starkare kategori</p>
+        </div>
+      </div>
+
+      <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <button
+          type="button"
+          onClick={() => setSort("game")}
+          className={`shrink-0 rounded-full border px-3 py-2 text-xs font-semibold transition-colors ${sort === "game" ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground"}`}
+        >
+          Spelordning
+        </button>
+        <button
+          type="button"
+          onClick={() => setSort("strongest")}
+          className={`shrink-0 rounded-full border px-3 py-2 text-xs font-semibold transition-colors ${sort === "strongest" ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground"}`}
+        >
+          Starkast → svagast
+        </button>
+        <button
+          type="button"
+          onClick={() => setSort("weakest")}
+          className={`shrink-0 rounded-full border px-3 py-2 text-xs font-semibold transition-colors ${sort === "weakest" ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground"}`}
+        >
+          Svagast → starkast
+        </button>
+      </div>
+
       <div className="mt-3 grid grid-cols-2 gap-3">
-        {rows.map((r) => {
+        {sortedRows.map((r) => {
           const flat = r.trend === undefined || Math.abs(r.trend) < 0.05;
           const improving = r.trend !== undefined && r.trend < -0.05;
           const TrendIcon = flat ? Minus : improving ? ArrowDownRight : ArrowUpRight;
