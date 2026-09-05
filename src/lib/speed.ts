@@ -28,7 +28,7 @@ function buildAnalysis(avg:number,top:number,smash:number|undefined,hcp:number){
 export type SpeedSession={id:string;date:string;context:MeasurementContext;device:Device;shots:SpeedShot[];avgBallSpeed:number;topBallSpeed:number;avgClubSpeed?:number;/** stabiliserat Speed HCP när sessionen läses */handicap:number;/** rå HCP-nivå från just detta test */testHandicap?:number;score:number;notes?:string};
 const KEY="golf-speed-sessions-v2",REAL_HCP_KEY="golf-real-handicap-v1";
 function loadStored():SpeedSession[]{if(typeof window==="undefined")return[];try{const raw=window.localStorage.getItem(KEY),parsed=raw?(JSON.parse(raw) as SpeedSession[]):[];return Array.isArray(parsed)?[...parsed].sort((a,b)=>a.date.localeCompare(b.date)):[]}catch{return[]}}
-function realHcp(){if(typeof window==="undefined")return null;const n=Number(window.localStorage.getItem(REAL_HCP_KEY));return Number.isFinite(n)?n:null}
+function realHcp(){if(typeof window==="undefined")return null;const raw=window.localStorage.getItem(REAL_HCP_KEY);if(raw===null)return null;const n=Number(raw);return Number.isFinite(n)?n:null}
 /** WHS-inspirerat index: senaste 20 råa tester, bästa 8. Innan 8 tester finns
  * fylls indexet med spelarens riktiga HCP som startankare. Därefter får ett
  * enskilt test flytta indexet max 1,5 nedåt eller 0,8 uppåt. */
