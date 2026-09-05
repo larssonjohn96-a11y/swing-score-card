@@ -5,13 +5,13 @@ import { useAuth } from "@/hooks/use-auth";
 import { ThemeToggle } from "@/components/theme-toggle";
 import {
   computeBiggestOpportunity,
-  computeCategoryHandicaps,
   computeEstimatedHandicap,
   hcpLabel,
   loadRealHandicap,
   type CategoryHandicap,
   type Opportunity,
 } from "@/lib/sg-handicap";
+import { computeStableCategoryHandicaps } from "@/lib/category-index";
 import { OpportunityCard } from "@/components/home-dashboard";
 import { loadCardProfile } from "@/lib/rating-card";
 
@@ -51,7 +51,7 @@ type HomeData = {
 
 function loadHomeData(): HomeData {
   const real = loadRealHandicap();
-  const cats = computeCategoryHandicaps(undefined, real ?? undefined);
+  const cats = computeStableCategoryHandicaps(undefined, real ?? undefined);
   return {
     real,
     cats,
