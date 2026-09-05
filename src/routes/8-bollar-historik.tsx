@@ -207,7 +207,8 @@ function EightBallHistoryPage() {
                       tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
                       tickLine={false}
                       axisLine={false}
-                      width={30}
+                      width={40}
+                      tickMargin={6}
                     />
                     <Tooltip
                       formatter={(value) => [`${value} poäng`, "Bästa varv"]}
