@@ -55,7 +55,7 @@ function ShotShapingFamily() {
     >
       <div className="flex items-center justify-between">
         <Link
-          to="/traning"
+          to="/traning" search={{ category: undefined }}
           className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card"
         >
           <ArrowLeft className="h-4 w-4" />

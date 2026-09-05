@@ -39,13 +39,30 @@ export function saveRealHandicap(value: number) {
 
 export type CategorySlug = "approach" | "driving" | "around-the-green" | "puttning" | "speed";
 
+/**
+ * Total SG4 HCP bygger på exakt fyra scoringkategorier. Speed är en
+ * fysisk kapacitetsmetric som visas separat (radar, profil, utveckling,
+ * snapshots) men aldrig vägs in i totalen – därför vikt 0.
+ */
+export const SCORING_CATEGORIES = [
+  "driving",
+  "approach",
+  "around-the-green",
+  "puttning",
+] as const satisfies readonly CategorySlug[];
+
+export function isScoringCategory(slug: CategorySlug): boolean {
+  return (SCORING_CATEGORIES as readonly CategorySlug[]).includes(slug);
+}
+
 export const CATEGORY_WEIGHTS: Record<CategorySlug, number> = {
   approach: 0.35,
   driving: 0.25,
   puttning: 0.2,
   "around-the-green": 0.1,
-  speed: 0.1,
+  speed: 0,
 };
+
 
 export const CATEGORY_LABELS: Record<CategorySlug, string> = {
   approach: "Approach",
@@ -389,23 +406,26 @@ export function computeCategoryHandicaps(
   return [driving, approach, aroundGreen, putting, speed];
 }
 
-/** Viktat snitt av kategori-HCP som finns data för – Estimated SG Handicap. */
+/** Viktat snitt av de fyra scoringkategoriernas HCP – Estimated SG Handicap. */
 export function computeEstimatedHandicap(cats: CategoryHandicap[]): number | undefined {
-  const available = cats.filter((c) => c.handicap !== undefined);
+  const available = cats.filter((c) => c.handicap !== undefined && isScoringCategory(c.slug));
   if (!available.length) return undefined;
   const totalWeight = available.reduce((a, c) => a + CATEGORY_WEIGHTS[c.slug], 0);
+  if (!totalWeight) return undefined;
   const weighted = available.reduce((a, c) => a + c.handicap! * CATEGORY_WEIGHTS[c.slug], 0);
   return Math.round((weighted / totalWeight) * 10) / 10;
 }
 
-/** Viktat snitt av kategoriernas trend – negativt = det totala handicapet sjunker. */
+/** Viktat snitt av scoringkategoriernas trend – negativt = totalen sjunker. */
 export function computeEstimatedTrend(cats: CategoryHandicap[]): number | undefined {
-  const available = cats.filter((c) => c.trend !== undefined);
+  const available = cats.filter((c) => c.trend !== undefined && isScoringCategory(c.slug));
   if (!available.length) return undefined;
   const totalWeight = available.reduce((a, c) => a + CATEGORY_WEIGHTS[c.slug], 0);
+  if (!totalWeight) return undefined;
   const weighted = available.reduce((a, c) => a + c.trend! * CATEGORY_WEIGHTS[c.slug], 0);
   return Math.round((weighted / totalWeight) * 10) / 10;
 }
+
 
 /* -------------------------------------------------------------------------
  * Din största möjlighet
@@ -424,7 +444,7 @@ export type Opportunity = {
 export function computeBiggestOpportunity(cats: CategoryHandicap[]): Opportunity | undefined {
   // Prioritera kategorier utan ett enda test – viktigare att fylla luckor än att
   // finslipa en kategori man redan har data för.
-  const missing = cats.filter((c) => c.count === 0);
+  const missing = cats.filter((c) => c.count === 0 && isScoringCategory(c.slug));
   if (missing.length) {
     const pick = [...missing].sort(
       (a, b) => CATEGORY_WEIGHTS[b.slug] - CATEGORY_WEIGHTS[a.slug],
@@ -432,8 +452,11 @@ export function computeBiggestOpportunity(cats: CategoryHandicap[]): Opportunity
     return { slug: pick.slug, title: pick.title, handicap: 0, impact: 0, reason: "missing" };
   }
 
-  const available = cats.filter((c) => c.handicap !== undefined && c.handicap > -3.5);
+  const available = cats.filter(
+    (c) => c.handicap !== undefined && c.handicap > -3.5 && isScoringCategory(c.slug),
+  );
   if (!available.length) return undefined;
+
   const scored = available
     .map((c) => ({ ...c, weightedGap: c.handicap! * CATEGORY_WEIGHTS[c.slug] }))
     .sort((a, b) => b.weightedGap - a.weightedGap);
@@ -506,7 +529,8 @@ export type StrokesLost = {
  */
 export function computeStrokesLost(cats: CategoryHandicap[]): StrokesLost[] {
   return cats
-    .filter((c) => c.handicap !== undefined)
+    .filter((c) => c.handicap !== undefined && isScoringCategory(c.slug))
+
     .map((c) => ({
       slug: c.slug,
       title: c.title,
@@ -529,7 +553,8 @@ export type Potential = {
 
 export function computePotentials(cats: CategoryHandicap[]): Potential[] {
   return cats
-    .filter((c) => c.handicap !== undefined)
+    .filter((c) => c.handicap !== undefined && isScoringCategory(c.slug))
+
     .map((c) => {
       const fromRating = ratingFromHandicap(c.handicap!);
       const toRating = Math.min(100, fromRating + 10);
