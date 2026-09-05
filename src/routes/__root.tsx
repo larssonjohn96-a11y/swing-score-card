@@ -93,6 +93,25 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+const TRAINING_ROOT_ROUTES = new Set([
+  "/8-bollar",
+  "/lagputt",
+  "/50-bollar",
+  "/tutor-test",
+  "/green-reading",
+  "/upp-och-in",
+  "/wedge-stege",
+  "/approach-pei-valj",
+]);
+
+function trainingFallback(pathname: string) {
+  if (pathname === "/shot-shaping") return "/traning";
+  if (pathname.startsWith("/shot-shaping-") && !pathname.endsWith("-historik")) return "/shot-shaping";
+  if (pathname === "/approach-pei" || pathname === "/approach-pei-wedge" || pathname === "/approach-pei-iron") return "/approach-pei-valj";
+  if (TRAINING_ROOT_ROUTES.has(pathname)) return "/traning";
+  return null;
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const { show, dismiss } = useSplash();
@@ -108,8 +127,15 @@ function RootComponent() {
         return;
       }
 
-      // Direct/deep-link fallback: use the control's original destination instead
-      // of sending the user out of the app or leaving them stuck.
+      // Deep links still need a meaningful parent. Training tests must never
+      // fall through into the HCP category hierarchy just because an old Link
+      // happens to point there.
+      const trainingParent = trainingFallback(window.location.pathname);
+      if (trainingParent) {
+        window.location.assign(trainingParent);
+        return;
+      }
+
       const href = control instanceof HTMLAnchorElement ? control.getAttribute("href") : null;
       if (href && href.startsWith("/") && href !== window.location.pathname) {
         window.location.assign(href);
@@ -136,11 +162,6 @@ function RootComponent() {
         text === "tillbaka" ||
         text.startsWith("tillbaka till ");
 
-      // Canceling a test is navigation, not a new page visit. Pop the test route
-      // instead of pushing its parent route on top of it. This prevents flows like
-      // Putting -> Putting Test -> Avbryt -> Back from reopening the canceled test.
-      // Only exact anchor "Avbryt" or explicit "Avbryt test" controls are handled,
-      // so ordinary modal/form cancel buttons still work normally.
       const isCancelNavigation =
         explicitlyDynamicCancel ||
         text.startsWith("avbryt test") ||
