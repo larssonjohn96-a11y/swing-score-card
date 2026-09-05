@@ -1,69 +1,75 @@
-/** Runda, platta kategoriikoner för kategorilistan – samma illustrations-
- *  språk som testernas hero-illustrationer, men förenklade till en cirkel. */
+/**
+ * Platta, handritade kategoriikoner för Tester-sidan.
+ * Samma geometri i alla fyra: 64x64-ruta, blek grön cirkel som botten,
+ * mörkgröna siluetter, samma stroke-bredd (2.4) och samma detaljnivå.
+ */
 
-export function DrivingCategoryIcon({ className = "h-14 w-14" }: { className?: string }) {
+type IconProps = { className?: string };
+
+const S = 2.4;
+
+function IconFrame({ className, label, children }: IconProps & { label: string; children: React.ReactNode }) {
   return (
-    <svg viewBox="0 0 64 64" className={className} role="img" aria-label="Utslag">
-      <circle cx="32" cy="32" r="32" className="fill-primary/12" />
-      <path d="M32 46 Q26 30 40 18" fill="none" className="stroke-foreground" strokeWidth="2.5" />
-      <ellipse
-        cx="41"
-        cy="16"
-        rx="7"
-        ry="5"
-        transform="rotate(-25 41 16)"
-        className="fill-foreground"
-      />
-      <ellipse cx="32" cy="48" rx="3.5" ry="1.6" className="fill-foreground/30" />
-      <circle cx="45" cy="24" r="2.2" className="fill-background" />
+    <svg viewBox="0 0 64 64" className={className} role="img" aria-label={label}>
+      <circle cx="32" cy="32" r="32" className="fill-primary/10" />
+      <g
+        className="stroke-primary"
+        strokeWidth={S}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      >
+        {children}
+      </g>
     </svg>
   );
 }
 
-export function ApproachCategoryIcon({ className = "h-14 w-14" }: { className?: string }) {
+/** Approach: green med flagga + boll. */
+export function ApproachCategoryIcon({ className = "h-14 w-14" }: IconProps) {
   return (
-    <svg viewBox="0 0 64 64" className={className} role="img" aria-label="Inspel">
-      <circle cx="32" cy="32" r="32" className="fill-primary/12" />
-      <ellipse cx="36" cy="34" rx="20" ry="14" className="fill-primary/25" />
-      <ellipse cx="36" cy="34" rx="12" ry="8" className="fill-primary/40" />
-      <circle
-        cx="20"
-        cy="46"
-        r="4"
-        className="fill-background stroke-foreground/60"
-        strokeWidth="1.2"
-      />
-    </svg>
+    <IconFrame className={className} label="Approach – inspel mot green">
+      <ellipse cx="32" cy="42" rx="19" ry="9" />
+      <path d="M32 42V16" />
+      <path d="M32 17h11l-3.5 5 3.5 5H32" className="fill-primary" />
+      <circle cx="20" cy="47" r="3.2" />
+    </IconFrame>
   );
 }
 
-export function AroundGreenCategoryIcon({ className = "h-14 w-14" }: { className?: string }) {
+/** Putting: putterhuvud + boll på green. */
+export function PuttingCategoryIcon({ className = "h-14 w-14" }: IconProps) {
   return (
-    <svg viewBox="0 0 64 64" className={className} role="img" aria-label="Närspel">
-      <circle cx="32" cy="32" r="32" className="fill-primary/12" />
-      <ellipse cx="32" cy="30" rx="22" ry="15" className="fill-primary/30" />
-      <path d="M14 40 Q24 30 20 44 Q34 50 44 40" className="fill-sand" />
-      <line x1="34" y1="28" x2="34" y2="14" className="stroke-foreground" strokeWidth="1.6" />
-      <path d="M34 14 L44 18 L34 22 Z" className="fill-flag" />
-    </svg>
+    <IconFrame className={className} label="Putting – på greenen">
+      <ellipse cx="32" cy="44" rx="19" ry="8" />
+      <path d="M38 14v20" />
+      <path d="M26 34h13v5H26z" className="fill-primary" />
+      <circle cx="17" cy="44" r="3.2" />
+    </IconFrame>
   );
 }
 
-export function PuttingCategoryIcon({ className = "h-14 w-14" }: { className?: string }) {
+/** Off the Tee: driverhuvud + boll på tee. */
+export function DrivingCategoryIcon({ className = "h-14 w-14" }: IconProps) {
   return (
-    <svg viewBox="0 0 64 64" className={className} role="img" aria-label="Puttning">
-      <circle cx="32" cy="32" r="32" className="fill-primary/12" />
-      <ellipse cx="32" cy="34" rx="21" ry="15" className="fill-primary/30" />
-      <line x1="34" y1="30" x2="34" y2="16" className="stroke-foreground" strokeWidth="1.6" />
-      <path d="M34 16 L44 20 L34 24 Z" className="fill-flag" />
-      <circle cx="34" cy="30" r="2" className="fill-foreground" />
-      <circle
-        cx="20"
-        cy="42"
-        r="3.2"
-        className="fill-background stroke-foreground/60"
-        strokeWidth="1.2"
-      />
-    </svg>
+    <IconFrame className={className} label="Off the Tee – utslag">
+      <path d="M41 13L30 31" />
+      <path d="M24 30c5-4 11-2 12 4s-4 10-9 8-7-8-3-12z" className="fill-primary" />
+      <circle cx="45" cy="41" r="3.2" />
+      <path d="M45 45v5" />
+      <path d="M36 50h18" />
+    </IconFrame>
+  );
+}
+
+/** Shortgame: wedge + boll med bunkerkant. */
+export function AroundGreenCategoryIcon({ className = "h-14 w-14" }: IconProps) {
+  return (
+    <IconFrame className={className} label="Shortgame – runt greenen">
+      <path d="M40 13L31 30" />
+      <path d="M24 29h13l-2 9H22z" className="fill-primary" />
+      <circle cx="18" cy="43" r="3.2" />
+      <path d="M10 52c5-6 12-6 16-2s11 3 15-3" />
+    </IconFrame>
   );
 }
