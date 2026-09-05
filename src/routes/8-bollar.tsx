@@ -25,6 +25,22 @@ const STORAGE_KEY = "sg4-8-bollar-v1";
 
 export type EightBallSession = { id: string; date: string; score: number; scores?: number[]; roundTotals?: number[] };
 
+export const STATION_LIST = STATIONS;
+export const EIGHT_BALL_ROUNDS = ROUNDS;
+
+/** Ljus yta (off-white + djupgrön accent) som delas av test-, resultat- och historiksidan. */
+export const LIGHT_SURFACE = {
+  "--background": "oklch(0.985 0.004 120)",
+  "--foreground": "oklch(0.22 0.03 155)",
+  "--card": "oklch(1 0 0)",
+  "--card-foreground": "oklch(0.22 0.03 155)",
+  "--primary": "oklch(0.34 0.07 160)",
+  "--primary-foreground": "oklch(0.99 0.005 120)",
+  "--muted": "oklch(0.955 0.006 140)",
+  "--muted-foreground": "oklch(0.5 0.02 155)",
+  "--border": "oklch(0.9 0.008 140)",
+} as unknown as import("react").CSSProperties;
+
 export function loadEightBallSessions(): EightBallSession[] {
   if (typeof window === "undefined") return [];
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); } catch { return []; }
