@@ -29,11 +29,16 @@ export type SpeedSession={id:string;date:string;context:MeasurementContext;devic
 const KEY="golf-speed-sessions-v2",REAL_HCP_KEY="golf-real-handicap-v1";
 function loadStored():SpeedSession[]{if(typeof window==="undefined")return[];try{const raw=window.localStorage.getItem(KEY),parsed=raw?(JSON.parse(raw) as SpeedSession[]):[];return Array.isArray(parsed)?[...parsed].sort((a,b)=>a.date.localeCompare(b.date)):[]}catch{return[]}}
 function realHcp(){if(typeof window==="undefined")return null;const raw=window.localStorage.getItem(REAL_HCP_KEY);if(raw===null)return null;const n=Number(raw);return Number.isFinite(n)?n:null}
-/** WHS-inspirerat index: senaste 20 råa tester, bästa 8. Innan 8 tester finns
- * fylls indexet med spelarens riktiga HCP som startankare. Därefter får ett
- * enskilt test flytta indexet max 1,5 nedåt eller 0,8 uppåt. */
-function indexedSeries(raw:number[],baseline:number|null){if(!raw.length)return[];const seed=baseline??raw[0];const out:number[]=[];for(let i=0;i<raw.length;i++){const recent=raw.slice(Math.max(0,i-19),i+1);const filler=Array(Math.max(0,8-recent.length)).fill(seed) as number[];const pool=[...recent,...filler].sort((a,b)=>a-b);const take=Math.min(8,pool.length);let target=pool.slice(0,take).reduce((a,b)=>a+b,0)/take;if(i===0){const delta=target-seed;target=seed+Math.max(-1.5,Math.min(.8,delta))}else{const prev=out[i-1],delta=target-prev;target=prev+Math.max(-1.5,Math.min(.8,delta))}out.push(Math.round(target*10)/10)}return out}
-export function loadSpeedSessions():SpeedSession[]{const stored=loadStored();const raws=stored.map(s=>typeof s.testHandicap==="number"?s.testHandicap:s.handicap);const idx=indexedSeries(raws,realHcp());return stored.map((s,i)=>({...s,testHandicap:raws[i],handicap:idx[i]??raws[i]}))}
+/**
+ * Speed-testet levererar ett RÅTT testresultat (testHandicap). All
+ * stabilisering över tid sker enbart i den gemensamma category-index-motorn
+ * (src/lib/category-index.ts) – ingen Speed-specifik andra motor här.
+ *
+ * Bakåtkompatibelt: äldre sparade sessioner saknar testHandicap och faller
+ * då tillbaka på det sparade handicap-fältet. Ingen data skrivs om.
+ */
+export function loadSpeedSessions():SpeedSession[]{return loadStored().map(s=>{const raw=typeof s.testHandicap==="number"?s.testHandicap:s.handicap;return{...s,testHandicap:raw,handicap:raw}})}
+
 function persist(sessions:SpeedSession[]){const sorted=[...sessions].sort((a,b)=>a.date.localeCompare(b.date));window.localStorage.setItem(KEY,JSON.stringify(sorted));return sorted}
 export function saveSpeedSession(shots:SpeedShot[],context:MeasurementContext,device:Device,notes?:string):SpeedSession{const r=computeSpeedResult(shots);const session:SpeedSession={id:crypto.randomUUID(),date:new Date().toISOString(),context,device,shots,avgBallSpeed:r.avgBallSpeed,topBallSpeed:r.topBallSpeed,avgClubSpeed:r.avgClubSpeed,handicap:r.handicap,testHandicap:r.handicap,score:r.score,notes:notes?.trim()||undefined};persist([...loadStored(),session]);return session}
 export function deleteSpeedSession(id:string):SpeedSession[]{persist(loadStored().filter(s=>s.id!==id));return loadSpeedSessions()}
