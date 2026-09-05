@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, ChevronRight, Dumbbell, Target, Trophy } from "lucide-react";
+import { ArrowLeft, ChevronRight, Dumbbell, Target } from "lucide-react";
 import { useState } from "react";
 
 export const Route = createFileRoute("/traning")({
@@ -120,9 +120,6 @@ function TestCard({ to, title, description, meta }: TestItem) {
     "flex w-full items-center gap-4 rounded-3xl border border-border bg-card p-4 text-left shadow-[var(--shadow-glow)] transition-colors hover:border-primary";
   return (
     <Link to={to} className={className}>
-      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-tint-strong text-primary">
-        <Trophy className="h-5 w-5" />
-      </span>
       <span className="min-w-0 flex-1">
         <span className="block font-display text-2xl leading-none">{title}</span>
         <span className="mt-1 block text-xs leading-snug text-muted-foreground">{description}</span>
