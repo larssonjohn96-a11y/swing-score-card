@@ -529,7 +529,8 @@ export type StrokesLost = {
  */
 export function computeStrokesLost(cats: CategoryHandicap[]): StrokesLost[] {
   return cats
-    .filter((c) => c.handicap !== undefined)
+    .filter((c) => c.handicap !== undefined && isScoringCategory(c.slug))
+
     .map((c) => ({
       slug: c.slug,
       title: c.title,
@@ -552,7 +553,8 @@ export type Potential = {
 
 export function computePotentials(cats: CategoryHandicap[]): Potential[] {
   return cats
-    .filter((c) => c.handicap !== undefined)
+    .filter((c) => c.handicap !== undefined && isScoringCategory(c.slug))
+
     .map((c) => {
       const fromRating = ratingFromHandicap(c.handicap!);
       const toRating = Math.min(100, fromRating + 10);
