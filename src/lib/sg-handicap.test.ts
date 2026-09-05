@@ -54,10 +54,13 @@ describe("Total SG4 HCP", () => {
 });
 
 describe("Speed stabiliseras bara en gång", () => {
-  it("category-index är idempotent på redan indexerad serie", () => {
+  it("dubbel stabilisering ger ett annat resultat än en enda – därför får bara category-index stabilisera", () => {
     const raw = [22, 12, 24, 15, 19];
     const once = buildCategoryIndexSeries(raw);
     const twice = buildCategoryIndexSeries(once);
-    expect(twice).toEqual(once);
+    expect(twice).not.toEqual(once);
+    // Speed-libbet får alltså aldrig leverera en redan utjämnad serie.
+    expect(once[once.length - 1]).not.toBe(twice[twice.length - 1]);
   });
 });
+
