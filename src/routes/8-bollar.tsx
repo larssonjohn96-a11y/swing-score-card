@@ -225,11 +225,11 @@ function EightBallPage() {
         <div className="mt-3 space-y-2">
           <div className="flex items-center justify-between rounded-xl bg-primary/8 px-3 py-2.5">
             <span className="text-sm"><b className="text-primary">Starkast:</b> {strongest.type} {strongest.distance} m</span>
-            <span className="text-sm font-semibold tabular-nums">{strongest.total}/20</span>
+            <span className="shrink-0 text-sm font-semibold tabular-nums">{strongest.total} poäng</span>
           </div>
           <div className="flex items-center justify-between rounded-xl bg-muted px-3 py-2.5">
             <span className="text-sm"><b>Fokus:</b> {weakest.type} {weakest.distance} m</span>
-            <span className="text-sm font-semibold tabular-nums">{weakest.total}/20</span>
+            <span className="shrink-0 text-sm font-semibold tabular-nums">{weakest.total} poäng</span>
           </div>
         </div>
       </section>
