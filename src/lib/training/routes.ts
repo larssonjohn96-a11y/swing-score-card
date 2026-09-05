@@ -11,7 +11,8 @@ export type TrainingTestRoute =
   | "/shot-shaping-vaxlande"
   | "/green-reading"
   | "/upp-och-in"
-  | "/wedge-stege";
+  | "/wedge-stege"
+  | "/driver-konsekvens";
 
 export type TrainingHistoryRoute =
   | "/shot-shaping-9-window-historik"
@@ -19,4 +20,5 @@ export type TrainingHistoryRoute =
   | "/shot-shaping-vaxlande-historik"
   | "/green-reading-historik"
   | "/upp-och-in-historik"
-  | "/wedge-stege-historik";
+  | "/wedge-stege-historik"
+  | "/driver-konsekvens-historik";
