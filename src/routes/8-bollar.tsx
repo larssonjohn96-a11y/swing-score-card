@@ -110,7 +110,7 @@ function EightBallPage() {
     "--muted": "oklch(0.955 0.006 140)",
     "--muted-foreground": "oklch(0.5 0.02 155)",
     "--border": "oklch(0.9 0.008 140)",
-  } as React.CSSProperties;
+  } as unknown as import("react").CSSProperties;
 
   return (
     <main
