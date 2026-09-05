@@ -118,12 +118,25 @@ function EightBallHistoryPage() {
         </section>
       ) : (
         <>
-          <div className="mt-5 grid grid-cols-2 gap-3">
+          <section className="mt-5 rounded-2xl border border-border bg-card p-5">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Totalpoäng</p>
+            <p className="mt-2 font-display text-6xl leading-none">
+              {latest?.score ?? bestScore}
+              <span className="ml-2 text-base text-muted-foreground">poäng</span>
+            </p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              {latest ? `Senaste testet ${dateLabel(latest.date)} · personbästa ${bestScore} poäng` : `Personbästa ${bestScore} poäng`}
+              {latest && latest.score >= bestScore ? " · nytt PB!" : ""}
+            </p>
+          </section>
+
+          <div className="mt-3 grid grid-cols-2 gap-3">
             <KpiCard label="Bästa totalpoäng" value={String(bestScore)} unit="poäng" />
             <KpiCard label="Bästa varv" value={roundScores.length ? String(bestRound) : "–"} unit={roundScores.length ? "poäng" : undefined} />
             <KpiCard label="Snittresultat" value={String(average)} unit="poäng" />
             <KpiCard label="Antal tester" value={String(complete.length)} hint="Genomförda test" />
           </div>
+
 
           <section className="mt-4 rounded-2xl border border-border bg-card p-4">
             <div className="flex items-end justify-between">
