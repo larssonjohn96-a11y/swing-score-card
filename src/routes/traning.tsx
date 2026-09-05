@@ -1,8 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, ChevronRight, Dumbbell, Target } from "lucide-react";
-import { useState } from "react";
+
+type Category = "putting" | "around-the-green" | "approach";
+
+const CATEGORY_IDS: Category[] = ["approach", "around-the-green", "putting"];
 
 export const Route = createFileRoute("/traning")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    category:
+      typeof search.category === "string" && CATEGORY_IDS.includes(search.category as Category)
+        ? (search.category as Category)
+        : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Träningstester | SG4" },
@@ -22,8 +31,6 @@ export const Route = createFileRoute("/traning")({
   }),
   component: TrainingTestsPage,
 });
-
-type Category = "putting" | "around-the-green" | "approach";
 
 type TestRoute =
   | "/lagputt"
@@ -116,10 +123,11 @@ const CATEGORIES: Array<{ id: Category; title: string; description: string }> = 
 ];
 
 function TestCard({ to, title, description, meta }: TestItem) {
-  const className =
-    "flex w-full items-center gap-4 rounded-3xl border border-border bg-card p-4 text-left shadow-[var(--shadow-glow)] transition-colors hover:border-primary";
   return (
-    <Link to={to} className={className}>
+    <Link
+      to={to}
+      className="flex w-full items-center gap-4 rounded-3xl border border-border bg-card p-4 text-left shadow-[var(--shadow-glow)] transition-colors hover:border-primary"
+    >
       <span className="min-w-0 flex-1">
         <span className="block font-display text-2xl leading-none">{title}</span>
         <span className="mt-1 block text-xs leading-snug text-muted-foreground">{description}</span>
@@ -133,7 +141,7 @@ function TestCard({ to, title, description, meta }: TestItem) {
 }
 
 function TrainingTestsPage() {
-  const [category, setCategory] = useState<Category | null>(null);
+  const { category } = Route.useSearch();
   const active = CATEGORIES.find((item) => item.id === category);
 
   return (
@@ -158,10 +166,10 @@ function TrainingTestsPage() {
             {CATEGORIES.map((item) => {
               const count = TESTS[item.id].length;
               return (
-                <button
+                <Link
                   key={item.id}
-                  type="button"
-                  onClick={() => setCategory(item.id)}
+                  to="/traning"
+                  search={{ category: item.id }}
                   className="flex w-full items-center gap-4 rounded-3xl border border-border bg-card p-4 text-left shadow-[var(--shadow-glow)] transition-colors hover:border-primary"
                 >
                   <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-tint-strong text-primary">
@@ -177,20 +185,21 @@ function TrainingTestsPage() {
                     </span>
                   </span>
                   <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
-                </button>
+                </Link>
               );
             })}
           </div>
         </section>
       ) : (
         <section className="mt-7">
-          <button
-            type="button"
-            onClick={() => setCategory(null)}
-            className="flex items-center gap-1 text-xs text-muted-foreground"
+          <Link
+            to="/traning"
+            search={{ category: undefined }}
+            aria-label="Tillbaka"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-muted-foreground"
           >
-            <ArrowLeft className="h-3.5 w-3.5" /> Kategorier
-          </button>
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
           <p className="mt-5 text-xs uppercase tracking-[0.2em] text-primary">{active?.title}</p>
           <h2 className="mt-1 font-display text-3xl leading-none">Träningstester</h2>
           <div className="mt-4 space-y-3">
