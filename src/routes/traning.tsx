@@ -102,9 +102,9 @@ const TESTS: Record<Category, TestItem[]> = {
 };
 
 const CATEGORIES: Array<{ id: Category; title: string; description: string }> = [
-  { id: "putting", title: "Putting", description: "Puttning, greenläsning och längdkontroll" },
-  { id: "around-the-green", title: "Around the Green", description: "Chip, pitch, lobb och bunker" },
   { id: "approach", title: "Approach", description: "Wedges, järn, avståndskontroll och shot shaping" },
+  { id: "around-the-green", title: "Around the Green", description: "Chip, pitch, lobb och bunker" },
+  { id: "putting", title: "Putting", description: "Puttning, greenläsning och längdkontroll" },
 ];
 
 function TestCard({ to, title, description, meta }: TestItem) {

@@ -31,28 +31,28 @@ type CardConfig = {
 
 const CARDS: CardConfig[] = [
   {
-    slug: "approach",
-    eyebrow: "Inspel mot green",
-    title: "Approach",
-    description: "Precision, avståndskontroll och känsla på inspel mot green.",
-  },
-  {
-    slug: "puttning",
-    eyebrow: "På greenen",
-    title: "Putting",
-    description: "Tester för längdkänsla, riktning och korta puttar.",
-  },
-  {
     slug: "driving",
     eyebrow: "Utslag",
     title: "Off the Tee",
     description: "Längd, precision och träffsäkerhet från tee.",
   },
   {
+    slug: "approach",
+    eyebrow: "Inspel mot green",
+    title: "Approach",
+    description: "Precision, avståndskontroll och känsla på inspel mot green.",
+  },
+  {
     slug: "around-the-green",
     eyebrow: "Runt greenen",
     title: "Shortgame",
     description: "Chip, pitch, bunker och svåra lägen runt greenen.",
+  },
+  {
+    slug: "puttning",
+    eyebrow: "På greenen",
+    title: "Putting",
+    description: "Tester för längdkänsla, riktning och korta puttar.",
   },
 ];
 

@@ -386,7 +386,7 @@ export function computeCategoryHandicaps(
     ...baseline(speedSessions.length),
   };
 
-  return [approach, driving, aroundGreen, putting, speed];
+  return [driving, approach, aroundGreen, putting, speed];
 }
 
 /** Viktat snitt av kategori-HCP som finns data för – Estimated SG Handicap. */
