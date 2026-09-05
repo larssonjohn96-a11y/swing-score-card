@@ -25,6 +25,22 @@ const STORAGE_KEY = "sg4-8-bollar-v1";
 
 export type EightBallSession = { id: string; date: string; score: number; scores?: number[]; roundTotals?: number[] };
 
+export const STATION_LIST = STATIONS;
+export const EIGHT_BALL_ROUNDS = ROUNDS;
+
+/** Ljus yta (off-white + djupgrön accent) som delas av test-, resultat- och historiksidan. */
+export const LIGHT_SURFACE = {
+  "--background": "oklch(0.985 0.004 120)",
+  "--foreground": "oklch(0.22 0.03 155)",
+  "--card": "oklch(1 0 0)",
+  "--card-foreground": "oklch(0.22 0.03 155)",
+  "--primary": "oklch(0.34 0.07 160)",
+  "--primary-foreground": "oklch(0.99 0.005 120)",
+  "--muted": "oklch(0.955 0.006 140)",
+  "--muted-foreground": "oklch(0.5 0.02 155)",
+  "--border": "oklch(0.9 0.008 140)",
+} as unknown as import("react").CSSProperties;
+
 export function loadEightBallSessions(): EightBallSession[] {
   if (typeof window === "undefined") return [];
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); } catch { return []; }
@@ -74,13 +90,58 @@ function EightBallPage() {
   if (phase === "test") {
     const total = scores.reduce((sum, value) => sum + value, 0);
     return (
-      <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-28 pt-4">
-        <div className="flex items-center justify-between"><span className="text-sm font-semibold">Slag {shot + 1} / {SHOTS}</span><Link to="/kategori/$slug" params={{ slug: "around-the-green" }} className="flex items-center gap-1 text-xs text-muted-foreground"><X className="h-4 w-4" /> Avbryt</Link></div>
-        <div className="mt-4 grid grid-cols-5 gap-2">{Array.from({length: ROUNDS}, (_, i) => { const active=i===round-1; const done=i<round-1; return <div key={i}><div className={`h-2 overflow-hidden rounded-full ${active||done?"bg-primary/20":"bg-muted"}`}><div className="h-full bg-primary" style={{width: done?"100%":active?`${((stationIndex)/STATIONS.length)*100}%`:"0%"}} /></div><p className={`mt-1 text-center text-[10px] font-semibold ${active?"text-primary":"text-muted-foreground"}`}>Varv {i+1}</p></div>})}</div>
-        <section className="mt-6 rounded-3xl border border-border bg-card p-6 text-center"><Target className="mx-auto h-6 w-6 text-primary" /><p className="mt-3 text-xs uppercase tracking-[0.2em] text-muted-foreground">Varv {round} · Station {station}</p><p className="mt-2 font-display text-5xl">{stationInfo.type}</p><p className="mt-2 text-lg font-semibold text-primary">{stationInfo.distance} meter från hål</p></section>
-        <p className="mt-5 text-center text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Resultat från hål</p>
-        <div className="mt-3 grid grid-cols-5 gap-2">{[{p:4,l:"Sänkt"},{p:3,l:"≤ 1 m"},{p:2,l:"≤ 2 m"},{p:1,l:"≤ 3 m"},{p:0,l:"> 3 m"}].map(({p,l}) => <button key={p} onClick={() => register(p)} className="flex min-h-24 flex-col items-center justify-center rounded-2xl border border-border bg-card px-1 active:scale-95"><span className="font-display text-3xl">{p}</span><span className="mt-1 text-[10px] font-semibold text-muted-foreground">{l}</span><span className="text-[9px] text-muted-foreground">{p} p</span></button>)}</div>
-        <div className="mt-5 flex justify-between rounded-2xl bg-muted/50 px-4 py-3 text-sm"><span className="text-muted-foreground">Hittills</span><span className="font-semibold">{total} p</span></div>
+      <main
+        style={LIGHT_SURFACE}
+        className="mx-auto min-h-screen w-full max-w-md bg-background px-5 pb-28 pt-5 text-foreground"
+      >
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-semibold">Slag {shot + 1} av {SHOTS}</span>
+          <Link to="/kategori/$slug" params={{ slug: "around-the-green" }} className="flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground"><X className="h-3.5 w-3.5" /> Avbryt</Link>
+        </div>
+
+        <div className="mt-4 rounded-2xl border border-border bg-card p-4">
+          <div className="grid grid-cols-5 gap-2">
+            {Array.from({ length: ROUNDS }, (_, i) => {
+              const active = i === round - 1;
+              const done = i < round - 1;
+              return (
+                <div key={i}>
+                  <div className="h-2 overflow-hidden rounded-full bg-muted">
+                    <div className="h-full rounded-full bg-primary" style={{ width: done ? "100%" : active ? `${(stationIndex / STATIONS.length) * 100}%` : "0%" }} />
+                  </div>
+                  <p className={`mt-1.5 text-center text-[10px] font-semibold ${active ? "text-primary" : "text-muted-foreground"}`}>Varv {i + 1}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <section className="mt-4 rounded-3xl border border-border bg-card p-6 text-center">
+          <Target className="mx-auto h-5 w-5 text-primary" />
+          <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Varv {round} · Station {station}</p>
+          <p className="mt-2 font-display text-5xl leading-none">{stationInfo.type}</p>
+          <p className="mt-3 text-base font-semibold text-primary">{stationInfo.distance} meter från hål</p>
+        </section>
+
+        <p className="mt-5 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Resultat från hål</p>
+        <div className="mt-3 grid grid-cols-5 gap-2">
+          {[{ p: 4, l: "Sänkt" }, { p: 3, l: "≤ 1 m" }, { p: 2, l: "≤ 2 m" }, { p: 1, l: "≤ 3 m" }, { p: 0, l: "> 3 m" }].map(({ p, l }) => (
+            <button
+              key={p}
+              onClick={() => register(p)}
+              className="flex min-h-24 flex-col items-center justify-center rounded-2xl border border-border bg-card px-1 shadow-sm transition-transform active:scale-95"
+            >
+              <span className="font-display text-3xl leading-none text-primary">{p}</span>
+              <span className="mt-1.5 text-[11px] font-semibold">{l}</span>
+              <span className="mt-0.5 text-[9px] text-muted-foreground">{p} poäng</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="mt-5 flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3.5 text-sm">
+          <span className="text-muted-foreground">Hittills</span>
+          <span className="font-semibold tabular-nums">{total} poäng</span>
+        </div>
       </main>
     );
   }
@@ -100,21 +161,9 @@ function EightBallPage() {
   const strongest = stationTotals.reduce((a, b) => (b.total > a.total ? b : a));
   const weakest = stationTotals.reduce((a, b) => (b.total < a.total ? b : a));
 
-  const lightSurface = {
-    "--background": "oklch(0.985 0.004 120)",
-    "--foreground": "oklch(0.22 0.03 155)",
-    "--card": "oklch(1 0 0)",
-    "--card-foreground": "oklch(0.22 0.03 155)",
-    "--primary": "oklch(0.34 0.07 160)",
-    "--primary-foreground": "oklch(0.99 0.005 120)",
-    "--muted": "oklch(0.955 0.006 140)",
-    "--muted-foreground": "oklch(0.5 0.02 155)",
-    "--border": "oklch(0.9 0.008 140)",
-  } as unknown as import("react").CSSProperties;
-
   return (
     <main
-      style={lightSurface}
+      style={LIGHT_SURFACE}
       className="mx-auto min-h-screen w-full max-w-md bg-background px-5 pb-16 pt-6 text-foreground"
     >
       <header className="flex items-center justify-between">
@@ -131,26 +180,25 @@ function EightBallPage() {
       <section className="mt-5 rounded-3xl border border-border bg-card p-6 text-center">
         <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Totalpoäng</p>
         <p className="mt-2 font-display text-6xl leading-none text-primary">
-          {total}<span className="ml-1 text-2xl text-muted-foreground">/ 160</span>
+          {total}<span className="ml-2 text-xl text-muted-foreground">poäng</span>
         </p>
-        <p className="mt-2 text-xs text-muted-foreground">{Math.round((total / 160) * 100)}% av max</p>
         {isPb ? (
           <p className="mx-auto mt-4 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary"><Trophy className="h-3.5 w-3.5" /> Nytt personbästa</p>
         ) : (
-          <p className="mt-4 text-xs text-muted-foreground">Personbästa {best} p</p>
+          <p className="mt-4 text-xs text-muted-foreground">Personbästa {best} poäng</p>
         )}
       </section>
 
       <div className="mt-3 grid grid-cols-2 gap-3">
         <div className="rounded-2xl border border-border bg-card p-4">
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Bästa varv</p>
-          <p className="mt-2 font-display text-3xl leading-none">{bestRound}<span className="text-base text-muted-foreground"> / 32</span></p>
+          <p className="mt-2 font-display text-3xl leading-none">{bestRound}<span className="ml-1 text-sm text-muted-foreground">poäng</span></p>
           <p className="mt-1 text-xs text-muted-foreground">Varv {bestRoundNumber}</p>
         </div>
         <div className="rounded-2xl border border-border bg-card p-4">
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Snitt per varv</p>
-          <p className="mt-2 font-display text-3xl leading-none">{(total / ROUNDS).toFixed(1)}</p>
-          <p className="mt-1 text-xs text-muted-foreground">av 32 möjliga</p>
+          <p className="mt-2 font-display text-3xl leading-none">{(total / ROUNDS).toFixed(1)}<span className="ml-1 text-sm text-muted-foreground">poäng</span></p>
+          <p className="mt-1 text-xs text-muted-foreground">Per varv</p>
         </div>
       </div>
 
@@ -165,7 +213,7 @@ function EightBallPage() {
                 <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-muted">
                   <div className={`h-full rounded-full ${isBest ? "bg-primary" : "bg-primary/25"}`} style={{ width: `${(value / 32) * 100}%` }} />
                 </div>
-                <span className={`w-14 shrink-0 text-right text-xs font-semibold tabular-nums ${isBest ? "text-primary" : "text-foreground"}`}>{value} / 32</span>
+                <span className={`w-20 shrink-0 text-right text-xs font-semibold tabular-nums ${isBest ? "text-primary" : "text-foreground"}`}>{value} poäng</span>
               </div>
             );
           })}
@@ -177,11 +225,11 @@ function EightBallPage() {
         <div className="mt-3 space-y-2">
           <div className="flex items-center justify-between rounded-xl bg-primary/8 px-3 py-2.5">
             <span className="text-sm"><b className="text-primary">Starkast:</b> {strongest.type} {strongest.distance} m</span>
-            <span className="text-sm font-semibold tabular-nums">{strongest.total}/20</span>
+            <span className="shrink-0 text-sm font-semibold tabular-nums">{strongest.total} poäng</span>
           </div>
           <div className="flex items-center justify-between rounded-xl bg-muted px-3 py-2.5">
             <span className="text-sm"><b>Fokus:</b> {weakest.type} {weakest.distance} m</span>
-            <span className="text-sm font-semibold tabular-nums">{weakest.total}/20</span>
+            <span className="shrink-0 text-sm font-semibold tabular-nums">{weakest.total} poäng</span>
           </div>
         </div>
       </section>
