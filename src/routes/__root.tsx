@@ -28,12 +28,7 @@ function NotFoundComponent() {
           The page you're looking for doesn't exist or has been moved.
         </p>
         <div className="mt-6">
-          <Link
-            to="/"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Go home
-          </Link>
+          <Link to="/" className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">Go home</Link>
         </div>
       </div>
     </div>
@@ -43,35 +38,15 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
-  useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
-  }, [error]);
-
+  useEffect(() => { reportLovableError(error, { boundary: "tanstack_root_error_component" }); }, [error]);
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          This page didn't load
-        </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
-        </p>
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">This page didn't load</h1>
+        <p className="mt-2 text-sm text-muted-foreground">Something went wrong on our end. You can try refreshing or head back home.</p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
-          <button
-            onClick={() => {
-              router.invalidate();
-              reset();
-            }}
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Try again
-          </button>
-          <a
-            href="/"
-            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
-          >
-            Go home
-          </a>
+          <button onClick={() => { router.invalidate(); reset(); }} className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">Try again</button>
+          <a href="/" className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent">Go home</a>
         </div>
       </div>
     </div>
@@ -84,45 +59,21 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "SG4 – Testa hela ditt spel och sänk ditt handicap" },
-      {
-        name: "description",
-        content:
-          "SG4 mäter ditt spel i fyra kategorier: driving, approach, around the green och puttning. Kör testerna, följ utvecklingen och få personliga träningsprogram.",
-      },
+      { name: "description", content: "SG4 mäter ditt spel i fyra kategorier: driving, approach, around the green och puttning. Kör testerna, följ utvecklingen och få personliga träningsprogram." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:title", content: "SG4 – Testa hela ditt spel" },
       { name: "twitter:title", content: "SG4 – Testa hela ditt spel" },
-      {
-        property: "og:description",
-        content: "Mät, följ och förbättra ditt golfspel från utslag till putt med SG4.",
-      },
-      {
-        name: "twitter:description",
-        content: "Mät, följ och förbättra ditt golfspel från utslag till putt med SG4.",
-      },
-      {
-        property: "og:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/fd1440f1-021b-448e-b236-f00665931288/id-preview-6339d7c2--e6eaffe8-9d53-49c7-8353-659215697a59.lovable.app-1785048898778.png",
-      },
-      {
-        name: "twitter:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/fd1440f1-021b-448e-b236-f00665931288/id-preview-6339d7c2--e6eaffe8-9d53-49c7-8353-659215697a59.lovable.app-1785048898778.png",
-      },
+      { property: "og:description", content: "Mät, följ och förbättra ditt golfspel från utslag till putt med SG4." },
+      { name: "twitter:description", content: "Mät, följ och förbättra ditt golfspel från utslag till putt med SG4." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/fd1440f1-021b-448e-b236-f00665931288/id-preview-6339d7c2--e6eaffe8-9d53-49c7-8353-659215697a59.lovable.app-1785048898778.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/fd1440f1-021b-448e-b236-f00665931288/id-preview-6339d7c2--e6eaffe8-9d53-49c7-8353-659215697a59.lovable.app-1785048898778.png" },
     ],
     links: [
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
+      { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap",
-      },
+      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" },
       { rel: "icon", href: "/favicon.png", type: "image/png" },
       { rel: "manifest", href: "/manifest.json" },
     ],
@@ -136,14 +87,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="sv" className="dark">
-      <head>
-        <HeadContent />
-        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
-      </head>
-      <body>
-        {children}
-        <Scripts />
-      </body>
+      <head><HeadContent /><script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} /></head>
+      <body>{children}<Scripts /></body>
     </html>
   );
 }
@@ -160,12 +105,23 @@ function RootComponent() {
 
       const label = control.getAttribute("aria-label")?.trim().toLowerCase() ?? "";
       const text = control.textContent?.trim().toLowerCase() ?? "";
-      const isBackControl = label === "tillbaka" || text === "tillbaka" || text.startsWith("tillbaka till ");
+      const hasArrowLeft = Boolean(control.querySelector(".lucide-arrow-left"));
+      const explicitlyDynamic = control.hasAttribute("data-dynamic-back");
+      const isBackControl = explicitlyDynamic || hasArrowLeft || label === "tillbaka" || text === "tillbaka" || text.startsWith("tillbaka till ");
       if (!isBackControl) return;
 
       event.preventDefault();
       event.stopPropagation();
-      window.history.back();
+
+      // Always follow the user's real navigation path. This is important for
+      // routes that can be opened from several places (e.g. Utveckling ->
+      // training progress -> a specific Shot Shaping test). A hard-coded Link
+      // destination would otherwise trap the user in that test hierarchy.
+      if (window.history.length > 1) {
+        window.history.back();
+      } else {
+        window.location.assign("/utveckling");
+      }
     };
 
     document.addEventListener("click", handleBackControl, true);
@@ -177,7 +133,6 @@ function RootComponent() {
       <SubscriptionProvider>
         <BottomNavVisibilityProvider>
           <div className="relative min-h-screen pb-20">
-            {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
             <Outlet />
             <BottomNav />
             <DevPlanSwitcher />
