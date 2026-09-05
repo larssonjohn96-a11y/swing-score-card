@@ -7,11 +7,11 @@
  * åldersklass, bild) sparas lokalt.
  */
 import {
-  computeCategoryHandicaps,
   computeEstimatedHandicap,
   ratingFromHandicap,
   type CategoryHandicap,
 } from "@/lib/sg-handicap";
+import { computeStableCategoryHandicaps } from "@/lib/category-index";
 import { loadSpeedSessions } from "@/lib/speed";
 import { loadPrecisionSessions } from "@/lib/precision-store";
 import { loadOffTeeSessions } from "@/lib/offtee-store";
@@ -21,42 +21,16 @@ import { loadShortPuttSessions } from "@/lib/shortputt";
 export type CardTier = {
   key: "bronze" | "silver" | "gold" | "elite" | "icon";
   label: string;
-  /** kort beskrivning av nivån */
   range: string;
   blurb: string;
 };
 
 export const CARD_TIERS: CardTier[] = [
-  {
-    key: "bronze",
-    label: "Brons",
-    range: "HCP 18,0 – 54,0",
-    blurb: "För dig som är ny på resan eller utvecklar ditt spel.",
-  },
-  {
-    key: "silver",
-    label: "Silver",
-    range: "HCP 10,0 – 17,9",
-    blurb: "För den stabila golfaren som tar nästa steg.",
-  },
-  {
-    key: "gold",
-    label: "Gold",
-    range: "HCP 0,0 – 9,9",
-    blurb: "För den låghandicappade spelaren som presterar på hög nivå.",
-  },
-  {
-    key: "elite",
-    label: "Elite",
-    range: "HCP +1,0 – +2,9",
-    blurb: "För spelare på mycket hög nivå med plus-handicap.",
-  },
-  {
-    key: "icon",
-    label: "Icon",
-    range: "HCP +3,0 och uppåt",
-    blurb: "För de allra bästa. Golf på högsta nivå.",
-  },
+  { key: "bronze", label: "Brons", range: "HCP 18,0 – 54,0", blurb: "För dig som är ny på resan eller utvecklar ditt spel." },
+  { key: "silver", label: "Silver", range: "HCP 10,0 – 17,9", blurb: "För den stabila golfaren som tar nästa steg." },
+  { key: "gold", label: "Gold", range: "HCP 0,0 – 9,9", blurb: "För den låghandicappade spelaren som presterar på hög nivå." },
+  { key: "elite", label: "Elite", range: "HCP +1,0 – +2,9", blurb: "För spelare på mycket hög nivå med plus-handicap." },
+  { key: "icon", label: "Icon", range: "HCP +3,0 och uppåt", blurb: "För de allra bästa. Golf på högsta nivå." },
 ];
 
 export function tierForHandicap(hcp: number | undefined): CardTier {
@@ -81,33 +55,19 @@ function catRating(cats: CategoryHandicap[], slug: CategoryHandicap["slug"]) {
   return hcp === undefined ? undefined : clamp(ratingFromHandicap(hcp));
 }
 
-/** Speed: senaste Speed Test-resultatet, omvandlat till samma 0–100-skala som övriga kort. */
-function speedRating(): number | undefined {
-  const sessions = loadSpeedSessions();
-  if (!sessions.length) return undefined;
-  const last = sessions[sessions.length - 1];
-  return clamp(ratingFromHandicap(last.handicap));
-}
-
 export type RatingCardData = {
   rating: number;
   tier: CardTier;
   stats: CardStat[];
   handicap?: number;
-  /** verkligt (manuellt satt) handicap, om det finns */
   real: number | null;
-  /** uppskattat handicap ur testresultaten */
   estimated?: number;
-  /** true om handicapet är manuellt satt (verifierat), annars uppskattat */
   verified: boolean;
   testCount: number;
   lastUpdated?: string;
-  /** spelartyp, härledd ur vilken kategori som sticker ut mest relativt övriga */
   playerType?: string;
 };
 
-/** Härleder en kort "spelartyp" ur vilken av de fem kategorierna som är starkast
- *  relativt spelarens egna snitt – inte bara högst i absoluta tal. */
 function derivePlayerType(stats: CardStat[]): string | undefined {
   const known = stats.filter((s): s is CardStat & { value: number } => s.value !== undefined);
   if (known.length < 2) return undefined;
@@ -123,29 +83,24 @@ function derivePlayerType(stats: CardStat[]): string | undefined {
 }
 
 export function computeRatingCard(realHandicap: number | null): RatingCardData {
-  const cats = computeCategoryHandicaps(undefined, realHandicap ?? undefined);
+  const cats = computeStableCategoryHandicaps(undefined, realHandicap ?? undefined);
   const estimated = computeEstimatedHandicap(cats);
   const handicap = realHandicap ?? estimated;
 
   const stats: CardStat[] = [
-    { key: "speed", label: "Speed", value: speedRating() },
+    { key: "speed", label: "Speed", value: catRating(cats, "speed") },
     { key: "driving", label: "Driving", value: catRating(cats, "driving") },
     { key: "approach", label: "Approach", value: catRating(cats, "approach") },
-    {
-      key: "around-the-green",
-      label: "Around the Green",
-      value: catRating(cats, "around-the-green"),
-    },
+    { key: "around-the-green", label: "Around the Green", value: catRating(cats, "around-the-green") },
     { key: "puttning", label: "Putting", value: catRating(cats, "puttning") },
   ];
 
   const known = stats.map((s) => s.value).filter((v): v is number => v !== undefined);
   const fromStats = known.length ? known.reduce((a, b) => a + b, 0) / known.length : undefined;
   const fromHcp = handicap === undefined ? undefined : clamp(ratingFromHandicap(handicap));
-  const rating =
-    fromHcp !== undefined && fromStats !== undefined
-      ? clamp(fromHcp * 0.6 + fromStats * 0.4)
-      : (fromHcp ?? (fromStats !== undefined ? clamp(fromStats) : 40));
+  const rating = fromHcp !== undefined && fromStats !== undefined
+    ? clamp(fromHcp * 0.6 + fromStats * 0.4)
+    : (fromHcp ?? (fromStats !== undefined ? clamp(fromStats) : 40));
 
   const dates = [
     ...loadPrecisionSessions().map((s) => s.date),
@@ -169,17 +124,10 @@ export function computeRatingCard(realHandicap: number | null): RatingCardData {
   };
 }
 
-/* -------------------------------------------------------------------------
- * Valfria profiluppgifter
- * ---------------------------------------------------------------------- */
-
 export type CardProfile = {
   club?: string;
   country?: string;
   ageClass?: string;
-  /** faktisk ålder i år – separat från ageClass (fri text) eftersom
-   *  ålders-baserade jämförelser (t.ex. Speed-testets bellcurve) behöver
-   *  ett exakt tal, inte en kategori. */
   age?: number;
   photo?: string;
 };
