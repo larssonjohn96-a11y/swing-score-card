@@ -10,18 +10,15 @@ import { useSubscription } from "@/lib/subscription";
 import {
   CATEGORY_LABELS,
   computeCategoryDetail,
-  computeRatingTimeline,
   hcpLabel,
   ratingFromHandicap,
   type CategoryDetail,
   type CategorySlug,
   type HcpTimelinePoint,
-  type RatingPoint,
 } from "@/lib/sg-handicap";
 import { computeStableCategoryHandicaps, computeStableCategoryHcpTimeline } from "@/lib/category-index";
 
 const VALID_SLUGS = Object.keys(CATEGORY_LABELS) as CategorySlug[];
-const TIMELINE_KEY: Record<CategorySlug, keyof RatingPoint> = { approach:"approach", driving:"driving", "around-the-green":"aroundGreen", puttning:"putting", speed:"speed" };
 const CATEGORY_INTRO: Record<CategorySlug,string> = {
   approach:"Din förmåga att spela inspel mot green och sätta upp lätta puttar – från 50 till 150 meter.",
   driving:"Din förmåga att slå långa, precisa och konsekventa drives från tee, samt din rena bollhastighet.",
@@ -37,7 +34,6 @@ function CategoryDetailNotFound(){return <main className="mx-auto min-h-screen w
 function CategoryDetailPage(){
   const{slug}=Route.useLoaderData() as{slug:CategorySlug};
   const[detail,setDetail]=useState<CategoryDetail|null>(null);
-  const[timeline,setTimeline]=useState<RatingPoint[]>([]);
   const[hcpTimeline,setHcpTimeline]=useState<HcpTimelinePoint[]>([]);
   const{canViewFullHistory}=useSubscription();
 
@@ -45,13 +41,10 @@ function CategoryDetailPage(){
     const rawDetail=computeCategoryDetail(slug);
     const stable=computeStableCategoryHandicaps().find(c=>c.slug===slug);
     setDetail({...rawDetail,handicap:stable?.handicap,trend:stable?.trend,score:stable?.handicap!==undefined?ratingFromHandicap(stable.handicap):rawDetail.score});
-    setTimeline(computeRatingTimeline(null));
     setHcpTimeline(computeStableCategoryHcpTimeline(slug,null));
   },[slug]);
 
   if(!detail)return null;
-  const key=TIMELINE_KEY[slug];
-  const chartData=timeline.filter(p=>p[key]!==undefined);
   const hcpChartData=hcpTimeline.filter(p=>p.rolling!==undefined);
   const activeChartLength=hcpChartData.length;
   const hcpValues=hcpChartData.map(p=>p.rolling??0);
@@ -61,17 +54,9 @@ function CategoryDetailPage(){
   return <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-28 pt-10">
     <Link to="/utveckling" className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:text-foreground"><ArrowLeft className="h-4 w-4"/></Link>
     <p className="mt-4 text-xs uppercase tracking-[0.3em] text-flag">Detaljerad analys</p><h1 className="mt-1 text-4xl leading-none">{detail.title}</h1><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{CATEGORY_INTRO[slug]}</p>
-
-    <section className="mt-6 rounded-3xl border border-border bg-card p-6 text-center shadow-[var(--shadow-glow)]">
-      <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">{detail.title} HCP</p>
-      <p className="mt-1 font-display text-7xl leading-none text-primary">{detail.handicap!==undefined?hcpLabel(detail.handicap):"–"}</p>
-      <div className="mt-4 flex items-center justify-center gap-6 border-t border-border pt-4"><div><p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">Index score</p><p className="mt-0.5 font-display text-2xl leading-none">{Math.round(detail.score)}<span className="text-sm text-muted-foreground">/100</span></p></div><div><p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">Trend</p><p className={`mt-0.5 font-display text-2xl leading-none ${detail.trend!==undefined&&detail.trend<0?"text-primary":detail.trend!==undefined&&detail.trend>0?"text-destructive":""}`}>{detail.trend!==undefined?hcpLabel(detail.trend):"–"}</p></div></div>
-    </section>
-
+    <section className="mt-6 rounded-3xl border border-border bg-card p-6 text-center shadow-[var(--shadow-glow)]"><p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">{detail.title} HCP</p><p className="mt-1 font-display text-7xl leading-none text-primary">{detail.handicap!==undefined?hcpLabel(detail.handicap):"–"}</p><div className="mt-4 flex items-center justify-center gap-6 border-t border-border pt-4"><div><p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">Index score</p><p className="mt-0.5 font-display text-2xl leading-none">{Math.round(detail.score)}<span className="text-sm text-muted-foreground">/100</span></p></div><div><p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">Trend</p><p className={`mt-0.5 font-display text-2xl leading-none ${detail.trend!==undefined&&detail.trend<0?"text-primary":detail.trend!==undefined&&detail.trend>0?"text-destructive":""}`}>{detail.trend!==undefined?hcpLabel(detail.trend):"–"}</p></div></div></section>
     {slug==="approach"&&<ApproachDeepAnalysis/>}
-
     <section className="mt-6"><p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">HCP-utveckling över tid</p><p className="mt-1 text-xs text-muted-foreground">Linjen visar ditt stabiliserade kategoriindex. Punkterna bygger på varje genomfört test.</p><ChartCard title={`${detail.title} HCP över tid`}>{activeChartLength<2?<p className="py-10 text-center text-sm text-muted-foreground">Kör minst två tester i den här kategorin för att se en graf.</p>:<div className="h-56 w-full"><ResponsiveContainer width="100%" height="100%"><LineChart data={canViewFullHistory?hcpChartData:hcpChartData.slice(-3)} margin={{top:10,right:10,bottom:0,left:-20}}><CartesianGrid strokeDasharray="3 3" stroke="var(--border)"/><XAxis dataKey="date" tick={{fontSize:10}} stroke="var(--muted-foreground)"/><YAxis domain={hcpDomain} reversed tick={{fontSize:10}} stroke="var(--muted-foreground)"/><Tooltip contentStyle={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:12,fontSize:12}} formatter={(value:number)=>[hcpLabel(value),"Kategori-HCP"]}/><Line type="monotone" dataKey="rolling" stroke="var(--primary)" strokeWidth={3} dot={{r:3}} connectNulls/></LineChart></ResponsiveContainer></div>}</ChartCard>{!canViewFullHistory&&activeChartLength>3&&<div className="mt-3"><PremiumLockLine label={`Se alla ${activeChartLength} tester`}/></div>}</section>
-
     {slug!=="approach"&&detail.keyMetrics.length>0&&<section className="mt-6"><p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Nyckeltal</p><div className="mt-3 grid grid-cols-2 gap-2">{detail.keyMetrics.map(m=><div key={m.label} className="rounded-2xl border border-border bg-card p-3"><p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">{m.label}</p><p className="mt-1 font-display text-xl leading-none">{m.value}</p></div>)}</div></section>}
     {slug!=="approach"&&detail.heatmap.length>0&&<section className="mt-6"><p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Starka och svaga avstånd</p><p className="mt-1 text-xs text-muted-foreground">Snitt av dina senaste 5 tester · grönt är starkt, rött behöver mest träning.</p><div className="mt-3"><HeatmapCard title={slug==="puttning"?"Träffprocent per avstånd":"Score per avstånd"} zones={detail.heatmap} unit={slug==="puttning"?"%":""}/></div></section>}
     {slug!=="approach"&&(detail.strengths.length>0||detail.improvements.length>0)&&<section className="mt-6 space-y-4">{detail.strengths.length>0&&<div className="rounded-[28px] border border-border bg-card p-5 shadow-sm"><div className="flex items-center gap-3"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10"><Trophy className="h-5 w-5 text-primary"/></span><p className="text-base font-extrabold uppercase tracking-wide text-primary">Styrkor</p></div><ul className="mt-4 space-y-3">{detail.strengths.map(s=><li key={s} className="flex items-start gap-3 text-[15px] leading-snug"><CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary"/><span>{s}</span></li>)}</ul></div>}{detail.improvements.length>0&&<div className="rounded-[28px] border border-border bg-card p-5 shadow-sm"><div className="flex items-center gap-3"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-destructive/10"><Target className="h-5 w-5 text-destructive"/></span><p className="text-base font-extrabold uppercase tracking-wide text-destructive">Förbättringsområden</p></div><ul className="mt-4 space-y-3">{detail.improvements.map(s=><li key={s} className="flex items-start gap-3 text-[15px] leading-snug"><CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-destructive"/><span>{s}</span></li>)}</ul></div>}</section>}
