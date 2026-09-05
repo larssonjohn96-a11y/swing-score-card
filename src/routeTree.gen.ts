@@ -13,6 +13,8 @@ import { Route as WedgeStegeHistorikRouteImport } from './routes/wedge-stege-his
 import { Route as WedgeStegeRouteImport } from './routes/wedge-stege'
 import { Route as UppOchInHistorikRouteImport } from './routes/upp-och-in-historik'
 import { Route as UppOchInRouteImport } from './routes/upp-och-in'
+import { Route as TutorTestHistorikRouteImport } from './routes/tutor-test-historik'
+import { Route as TutorTestRouteImport } from './routes/tutor-test'
 import { Route as TrophyRouteImport } from './routes/trophy'
 import { Route as TraningRouteImport } from './routes/traning'
 import { Route as TornadoRouteImport } from './routes/tornado'
@@ -34,6 +36,8 @@ import { Route as PremiumRouteImport } from './routes/premium'
 import { Route as PrecisionHistorikRouteImport } from './routes/precision-historik'
 import { Route as PrecisionRouteImport } from './routes/precision'
 import { Route as PitchRouteImport } from './routes/pitch'
+import { Route as PgaTour18PuttarHistorikRouteImport } from './routes/pga-tour-18-puttar-historik'
+import { Route as PgaTour18PuttarRouteImport } from './routes/pga-tour-18-puttar'
 import { Route as OffteeTestRouteImport } from './routes/offtee-test'
 import { Route as OffteeRouteImport } from './routes/offtee'
 import { Route as NarspelTestRouteImport } from './routes/narspel-test'
@@ -47,6 +51,8 @@ import { Route as KontoRouteImport } from './routes/konto'
 import { Route as GreenReadingHistorikRouteImport } from './routes/green-reading-historik'
 import { Route as GreenReadingRouteImport } from './routes/green-reading'
 import { Route as FairwayRouteImport } from './routes/fairway'
+import { Route as DriverKonsekvensHistorikRouteImport } from './routes/driver-konsekvens-historik'
+import { Route as DriverKonsekvensRouteImport } from './routes/driver-konsekvens'
 import { Route as CombineRouteImport } from './routes/combine'
 import { Route as ChipRouteImport } from './routes/chip'
 import { Route as BunkerTestRouteImport } from './routes/bunker-test'
@@ -89,6 +95,16 @@ const UppOchInHistorikRoute = UppOchInHistorikRouteImport.update({
 const UppOchInRoute = UppOchInRouteImport.update({
   id: '/upp-och-in',
   path: '/upp-och-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TutorTestHistorikRoute = TutorTestHistorikRouteImport.update({
+  id: '/tutor-test-historik',
+  path: '/tutor-test-historik',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TutorTestRoute = TutorTestRouteImport.update({
+  id: '/tutor-test',
+  path: '/tutor-test',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TrophyRoute = TrophyRouteImport.update({
@@ -199,6 +215,16 @@ const PitchRoute = PitchRouteImport.update({
   path: '/pitch',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PgaTour18PuttarHistorikRoute = PgaTour18PuttarHistorikRouteImport.update({
+  id: '/pga-tour-18-puttar-historik',
+  path: '/pga-tour-18-puttar-historik',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PgaTour18PuttarRoute = PgaTour18PuttarRouteImport.update({
+  id: '/pga-tour-18-puttar',
+  path: '/pga-tour-18-puttar',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OffteeTestRoute = OffteeTestRouteImport.update({
   id: '/offtee-test',
   path: '/offtee-test',
@@ -262,6 +288,17 @@ const GreenReadingRoute = GreenReadingRouteImport.update({
 const FairwayRoute = FairwayRouteImport.update({
   id: '/fairway',
   path: '/fairway',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DriverKonsekvensHistorikRoute =
+  DriverKonsekvensHistorikRouteImport.update({
+    id: '/driver-konsekvens-historik',
+    path: '/driver-konsekvens-historik',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const DriverKonsekvensRoute = DriverKonsekvensRouteImport.update({
+  id: '/driver-konsekvens',
+  path: '/driver-konsekvens',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CombineRoute = CombineRouteImport.update({
@@ -399,6 +436,8 @@ export interface FileRoutesByFullPath {
   '/bunker-test': typeof BunkerTestRoute
   '/chip': typeof ChipRoute
   '/combine': typeof CombineRoute
+  '/driver-konsekvens': typeof DriverKonsekvensRoute
+  '/driver-konsekvens-historik': typeof DriverKonsekvensHistorikRoute
   '/fairway': typeof FairwayRoute
   '/green-reading': typeof GreenReadingRoute
   '/green-reading-historik': typeof GreenReadingHistorikRoute
@@ -412,6 +451,8 @@ export interface FileRoutesByFullPath {
   '/narspel-test': typeof NarspelTestRoute
   '/offtee': typeof OffteeRoute
   '/offtee-test': typeof OffteeTestRoute
+  '/pga-tour-18-puttar': typeof PgaTour18PuttarRoute
+  '/pga-tour-18-puttar-historik': typeof PgaTour18PuttarHistorikRoute
   '/pitch': typeof PitchRoute
   '/precision': typeof PrecisionRoute
   '/precision-historik': typeof PrecisionHistorikRoute
@@ -433,6 +474,8 @@ export interface FileRoutesByFullPath {
   '/tornado': typeof TornadoRoute
   '/traning': typeof TraningRoute
   '/trophy': typeof TrophyRoute
+  '/tutor-test': typeof TutorTestRoute
+  '/tutor-test-historik': typeof TutorTestHistorikRoute
   '/upp-och-in': typeof UppOchInRoute
   '/upp-och-in-historik': typeof UppOchInHistorikRoute
   '/wedge-stege': typeof WedgeStegeRoute
@@ -462,6 +505,8 @@ export interface FileRoutesByTo {
   '/bunker-test': typeof BunkerTestRoute
   '/chip': typeof ChipRoute
   '/combine': typeof CombineRoute
+  '/driver-konsekvens': typeof DriverKonsekvensRoute
+  '/driver-konsekvens-historik': typeof DriverKonsekvensHistorikRoute
   '/fairway': typeof FairwayRoute
   '/green-reading': typeof GreenReadingRoute
   '/green-reading-historik': typeof GreenReadingHistorikRoute
@@ -475,6 +520,8 @@ export interface FileRoutesByTo {
   '/narspel-test': typeof NarspelTestRoute
   '/offtee': typeof OffteeRoute
   '/offtee-test': typeof OffteeTestRoute
+  '/pga-tour-18-puttar': typeof PgaTour18PuttarRoute
+  '/pga-tour-18-puttar-historik': typeof PgaTour18PuttarHistorikRoute
   '/pitch': typeof PitchRoute
   '/precision': typeof PrecisionRoute
   '/precision-historik': typeof PrecisionHistorikRoute
@@ -496,6 +543,8 @@ export interface FileRoutesByTo {
   '/tornado': typeof TornadoRoute
   '/traning': typeof TraningRoute
   '/trophy': typeof TrophyRoute
+  '/tutor-test': typeof TutorTestRoute
+  '/tutor-test-historik': typeof TutorTestHistorikRoute
   '/upp-och-in': typeof UppOchInRoute
   '/upp-och-in-historik': typeof UppOchInHistorikRoute
   '/wedge-stege': typeof WedgeStegeRoute
@@ -526,6 +575,8 @@ export interface FileRoutesById {
   '/bunker-test': typeof BunkerTestRoute
   '/chip': typeof ChipRoute
   '/combine': typeof CombineRoute
+  '/driver-konsekvens': typeof DriverKonsekvensRoute
+  '/driver-konsekvens-historik': typeof DriverKonsekvensHistorikRoute
   '/fairway': typeof FairwayRoute
   '/green-reading': typeof GreenReadingRoute
   '/green-reading-historik': typeof GreenReadingHistorikRoute
@@ -539,6 +590,8 @@ export interface FileRoutesById {
   '/narspel-test': typeof NarspelTestRoute
   '/offtee': typeof OffteeRoute
   '/offtee-test': typeof OffteeTestRoute
+  '/pga-tour-18-puttar': typeof PgaTour18PuttarRoute
+  '/pga-tour-18-puttar-historik': typeof PgaTour18PuttarHistorikRoute
   '/pitch': typeof PitchRoute
   '/precision': typeof PrecisionRoute
   '/precision-historik': typeof PrecisionHistorikRoute
@@ -560,6 +613,8 @@ export interface FileRoutesById {
   '/tornado': typeof TornadoRoute
   '/traning': typeof TraningRoute
   '/trophy': typeof TrophyRoute
+  '/tutor-test': typeof TutorTestRoute
+  '/tutor-test-historik': typeof TutorTestHistorikRoute
   '/upp-och-in': typeof UppOchInRoute
   '/upp-och-in-historik': typeof UppOchInHistorikRoute
   '/wedge-stege': typeof WedgeStegeRoute
@@ -591,6 +646,8 @@ export interface FileRouteTypes {
     | '/bunker-test'
     | '/chip'
     | '/combine'
+    | '/driver-konsekvens'
+    | '/driver-konsekvens-historik'
     | '/fairway'
     | '/green-reading'
     | '/green-reading-historik'
@@ -604,6 +661,8 @@ export interface FileRouteTypes {
     | '/narspel-test'
     | '/offtee'
     | '/offtee-test'
+    | '/pga-tour-18-puttar'
+    | '/pga-tour-18-puttar-historik'
     | '/pitch'
     | '/precision'
     | '/precision-historik'
@@ -625,6 +684,8 @@ export interface FileRouteTypes {
     | '/tornado'
     | '/traning'
     | '/trophy'
+    | '/tutor-test'
+    | '/tutor-test-historik'
     | '/upp-och-in'
     | '/upp-och-in-historik'
     | '/wedge-stege'
@@ -654,6 +715,8 @@ export interface FileRouteTypes {
     | '/bunker-test'
     | '/chip'
     | '/combine'
+    | '/driver-konsekvens'
+    | '/driver-konsekvens-historik'
     | '/fairway'
     | '/green-reading'
     | '/green-reading-historik'
@@ -667,6 +730,8 @@ export interface FileRouteTypes {
     | '/narspel-test'
     | '/offtee'
     | '/offtee-test'
+    | '/pga-tour-18-puttar'
+    | '/pga-tour-18-puttar-historik'
     | '/pitch'
     | '/precision'
     | '/precision-historik'
@@ -688,6 +753,8 @@ export interface FileRouteTypes {
     | '/tornado'
     | '/traning'
     | '/trophy'
+    | '/tutor-test'
+    | '/tutor-test-historik'
     | '/upp-och-in'
     | '/upp-och-in-historik'
     | '/wedge-stege'
@@ -717,6 +784,8 @@ export interface FileRouteTypes {
     | '/bunker-test'
     | '/chip'
     | '/combine'
+    | '/driver-konsekvens'
+    | '/driver-konsekvens-historik'
     | '/fairway'
     | '/green-reading'
     | '/green-reading-historik'
@@ -730,6 +799,8 @@ export interface FileRouteTypes {
     | '/narspel-test'
     | '/offtee'
     | '/offtee-test'
+    | '/pga-tour-18-puttar'
+    | '/pga-tour-18-puttar-historik'
     | '/pitch'
     | '/precision'
     | '/precision-historik'
@@ -751,6 +822,8 @@ export interface FileRouteTypes {
     | '/tornado'
     | '/traning'
     | '/trophy'
+    | '/tutor-test'
+    | '/tutor-test-historik'
     | '/upp-och-in'
     | '/upp-och-in-historik'
     | '/wedge-stege'
@@ -781,6 +854,8 @@ export interface RootRouteChildren {
   BunkerTestRoute: typeof BunkerTestRoute
   ChipRoute: typeof ChipRoute
   CombineRoute: typeof CombineRoute
+  DriverKonsekvensRoute: typeof DriverKonsekvensRoute
+  DriverKonsekvensHistorikRoute: typeof DriverKonsekvensHistorikRoute
   FairwayRoute: typeof FairwayRoute
   GreenReadingRoute: typeof GreenReadingRoute
   GreenReadingHistorikRoute: typeof GreenReadingHistorikRoute
@@ -794,6 +869,8 @@ export interface RootRouteChildren {
   NarspelTestRoute: typeof NarspelTestRoute
   OffteeRoute: typeof OffteeRoute
   OffteeTestRoute: typeof OffteeTestRoute
+  PgaTour18PuttarRoute: typeof PgaTour18PuttarRoute
+  PgaTour18PuttarHistorikRoute: typeof PgaTour18PuttarHistorikRoute
   PitchRoute: typeof PitchRoute
   PrecisionRoute: typeof PrecisionRoute
   PrecisionHistorikRoute: typeof PrecisionHistorikRoute
@@ -815,6 +892,8 @@ export interface RootRouteChildren {
   TornadoRoute: typeof TornadoRoute
   TraningRoute: typeof TraningRoute
   TrophyRoute: typeof TrophyRoute
+  TutorTestRoute: typeof TutorTestRoute
+  TutorTestHistorikRoute: typeof TutorTestHistorikRoute
   UppOchInRoute: typeof UppOchInRoute
   UppOchInHistorikRoute: typeof UppOchInHistorikRoute
   WedgeStegeRoute: typeof WedgeStegeRoute
@@ -854,6 +933,20 @@ declare module '@tanstack/react-router' {
       path: '/upp-och-in'
       fullPath: '/upp-och-in'
       preLoaderRoute: typeof UppOchInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tutor-test-historik': {
+      id: '/tutor-test-historik'
+      path: '/tutor-test-historik'
+      fullPath: '/tutor-test-historik'
+      preLoaderRoute: typeof TutorTestHistorikRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tutor-test': {
+      id: '/tutor-test'
+      path: '/tutor-test'
+      fullPath: '/tutor-test'
+      preLoaderRoute: typeof TutorTestRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/trophy': {
@@ -1003,6 +1096,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PitchRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pga-tour-18-puttar-historik': {
+      id: '/pga-tour-18-puttar-historik'
+      path: '/pga-tour-18-puttar-historik'
+      fullPath: '/pga-tour-18-puttar-historik'
+      preLoaderRoute: typeof PgaTour18PuttarHistorikRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pga-tour-18-puttar': {
+      id: '/pga-tour-18-puttar'
+      path: '/pga-tour-18-puttar'
+      fullPath: '/pga-tour-18-puttar'
+      preLoaderRoute: typeof PgaTour18PuttarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/offtee-test': {
       id: '/offtee-test'
       path: '/offtee-test'
@@ -1092,6 +1199,20 @@ declare module '@tanstack/react-router' {
       path: '/fairway'
       fullPath: '/fairway'
       preLoaderRoute: typeof FairwayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/driver-konsekvens-historik': {
+      id: '/driver-konsekvens-historik'
+      path: '/driver-konsekvens-historik'
+      fullPath: '/driver-konsekvens-historik'
+      preLoaderRoute: typeof DriverKonsekvensHistorikRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/driver-konsekvens': {
+      id: '/driver-konsekvens'
+      path: '/driver-konsekvens'
+      fullPath: '/driver-konsekvens'
+      preLoaderRoute: typeof DriverKonsekvensRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/combine': {
@@ -1288,6 +1409,8 @@ const rootRouteChildren: RootRouteChildren = {
   BunkerTestRoute: BunkerTestRoute,
   ChipRoute: ChipRoute,
   CombineRoute: CombineRoute,
+  DriverKonsekvensRoute: DriverKonsekvensRoute,
+  DriverKonsekvensHistorikRoute: DriverKonsekvensHistorikRoute,
   FairwayRoute: FairwayRoute,
   GreenReadingRoute: GreenReadingRoute,
   GreenReadingHistorikRoute: GreenReadingHistorikRoute,
@@ -1301,6 +1424,8 @@ const rootRouteChildren: RootRouteChildren = {
   NarspelTestRoute: NarspelTestRoute,
   OffteeRoute: OffteeRoute,
   OffteeTestRoute: OffteeTestRoute,
+  PgaTour18PuttarRoute: PgaTour18PuttarRoute,
+  PgaTour18PuttarHistorikRoute: PgaTour18PuttarHistorikRoute,
   PitchRoute: PitchRoute,
   PrecisionRoute: PrecisionRoute,
   PrecisionHistorikRoute: PrecisionHistorikRoute,
@@ -1322,6 +1447,8 @@ const rootRouteChildren: RootRouteChildren = {
   TornadoRoute: TornadoRoute,
   TraningRoute: TraningRoute,
   TrophyRoute: TrophyRoute,
+  TutorTestRoute: TutorTestRoute,
+  TutorTestHistorikRoute: TutorTestHistorikRoute,
   UppOchInRoute: UppOchInRoute,
   UppOchInHistorikRoute: UppOchInHistorikRoute,
   WedgeStegeRoute: WedgeStegeRoute,
