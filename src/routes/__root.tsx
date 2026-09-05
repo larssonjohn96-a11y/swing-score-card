@@ -98,7 +98,27 @@ function RootComponent() {
   const { show, dismiss } = useSplash();
 
   useEffect(() => {
-    const handleBackControl = (event: MouseEvent) => {
+    const goBackNaturally = (control: HTMLElement) => {
+      const state = window.history.state as { __TSR_index?: number } | null;
+      const hasTanStackHistory = typeof state?.__TSR_index === "number" && state.__TSR_index > 0;
+      const hasSameOriginReferrer = Boolean(document.referrer && document.referrer.startsWith(window.location.origin));
+
+      if (hasTanStackHistory || hasSameOriginReferrer) {
+        window.history.back();
+        return;
+      }
+
+      // Direct/deep-link fallback: use the control's original destination instead
+      // of sending the user out of the app or leaving them stuck.
+      const href = control instanceof HTMLAnchorElement ? control.getAttribute("href") : null;
+      if (href && href.startsWith("/") && href !== window.location.pathname) {
+        window.location.assign(href);
+      } else {
+        window.location.assign("/tester");
+      }
+    };
+
+    const handleNavigationControl = (event: MouseEvent) => {
       const target = event.target as HTMLElement | null;
       const control = target?.closest<HTMLElement>("a,button");
       if (!control) return;
@@ -106,26 +126,35 @@ function RootComponent() {
       const label = control.getAttribute("aria-label")?.trim().toLowerCase() ?? "";
       const text = control.textContent?.trim().toLowerCase() ?? "";
       const hasArrowLeft = Boolean(control.querySelector(".lucide-arrow-left"));
-      const explicitlyDynamic = control.hasAttribute("data-dynamic-back");
-      const isBackControl = explicitlyDynamic || hasArrowLeft || label === "tillbaka" || text === "tillbaka" || text.startsWith("tillbaka till ");
-      if (!isBackControl) return;
+      const explicitlyDynamicBack = control.hasAttribute("data-dynamic-back");
+      const explicitlyDynamicCancel = control.hasAttribute("data-dynamic-cancel");
+
+      const isBackControl =
+        explicitlyDynamicBack ||
+        hasArrowLeft ||
+        label === "tillbaka" ||
+        text === "tillbaka" ||
+        text.startsWith("tillbaka till ");
+
+      // Canceling a test is navigation, not a new page visit. Pop the test route
+      // instead of pushing its parent route on top of it. This prevents flows like
+      // Putting -> Putting Test -> Avbryt -> Back from reopening the canceled test.
+      // Only exact anchor "Avbryt" or explicit "Avbryt test" controls are handled,
+      // so ordinary modal/form cancel buttons still work normally.
+      const isCancelNavigation =
+        explicitlyDynamicCancel ||
+        text.startsWith("avbryt test") ||
+        (control instanceof HTMLAnchorElement && text === "avbryt");
+
+      if (!isBackControl && !isCancelNavigation) return;
 
       event.preventDefault();
       event.stopPropagation();
-
-      // Always follow the user's real navigation path. This is important for
-      // routes that can be opened from several places (e.g. Utveckling ->
-      // training progress -> a specific Shot Shaping test). A hard-coded Link
-      // destination would otherwise trap the user in that test hierarchy.
-      if (window.history.length > 1) {
-        window.history.back();
-      } else {
-        window.location.assign("/utveckling");
-      }
+      goBackNaturally(control);
     };
 
-    document.addEventListener("click", handleBackControl, true);
-    return () => document.removeEventListener("click", handleBackControl, true);
+    document.addEventListener("click", handleNavigationControl, true);
+    return () => document.removeEventListener("click", handleNavigationControl, true);
   }, []);
 
   return (
