@@ -15,7 +15,7 @@ const TESTS = [
 function PeiChoosePage() {
   return <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-16 pt-8">
     <div className="flex items-center justify-between">
-      <Link to="/kategori/$slug" params={{ slug: "approach" }} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border text-muted-foreground"><ArrowLeft className="h-4 w-4" /></Link>
+      <Link to="/traning" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border text-muted-foreground"><ArrowLeft className="h-4 w-4" /></Link>
       <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Ej HCP-grundande</span>
     </div>
     <p className="mt-7 text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">Approach · Träningstest</p>
