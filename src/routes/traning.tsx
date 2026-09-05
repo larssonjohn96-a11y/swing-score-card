@@ -16,7 +16,10 @@ const CATEGORIES:Array<{id:Category;title:string;description:string;count:number
 
 type TestRoute="/lagputt-test"|"/50-bollar"|"/8-bollar"|"/approach-pei-valj";
 function TestCard({to,title,description,meta}:{to:TestRoute;title:string;description:string;meta:string}){
-  return <Link to={to} className="flex w-full items-center gap-4 rounded-3xl border border-border bg-card p-4 text-left shadow-[var(--shadow-glow)] transition-colors hover:border-primary"><Icon/><Body title={title} description={description} meta={meta}/><ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground"/></Link>;
+  const className="flex w-full items-center gap-4 rounded-3xl border border-border bg-card p-4 text-left shadow-[var(--shadow-glow)] transition-colors hover:border-primary";
+  const content=<><Icon/><Body title={title} description={description} meta={meta}/><ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground"/></>;
+  if(to==="/8-bollar") return <a href="/8-bollar" className={className}>{content}</a>;
+  return <Link to={to} className={className}>{content}</Link>;
 }
 function Icon(){return <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"><Trophy className="h-5 w-5"/></span>}
 function Body({title,description,meta}:{title:string;description:string;meta:string}){return <span className="min-w-0 flex-1"><span className="block font-display text-2xl leading-none">{title}</span><span className="mt-1 block text-xs leading-snug text-muted-foreground">{description}</span><span className="mt-2 block text-[10px] font-semibold uppercase tracking-[0.16em] text-primary">{meta}</span></span>}
