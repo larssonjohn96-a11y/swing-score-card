@@ -94,14 +94,24 @@ function TesterPage() {
         ))}
       </section>
 
-      <div className="mt-10 border-t border-border pt-5 text-center">
+      <section className="mt-8 border-t border-border pt-6">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+          Ej HCP-grundande
+        </p>
         <Link
           to="/traning"
-          className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+          className="mt-3 flex items-center gap-3 rounded-2xl border border-border bg-card px-5 py-4 shadow-sm transition-colors hover:border-primary"
         >
-          Fler tester <ChevronRight className="h-3.5 w-3.5" />
+          <div className="min-w-0 flex-1">
+            <h2 className="text-2xl leading-none">Träningstester</h2>
+            <p className="mt-1.5 text-sm leading-snug text-muted-foreground">
+              Puttning, närspel, wedges och shot shaping. Följ progress utan att påverka ditt HCP.
+            </p>
+          </div>
+          <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
         </Link>
-      </div>
+      </section>
+
     </main>
   );
 }
