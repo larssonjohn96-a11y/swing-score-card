@@ -67,7 +67,7 @@ export function BottomNav() {
 
   return (
     <>
-      <nav className="fixed bottom-0 left-0 right-0 z-40 h-16 border-t border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 h-16 border-t border-border bg-card">
         <div className="mx-auto flex h-full w-full max-w-md items-center px-2">
           {LEFT_TABS.map((tab) => (
             <NavLink
@@ -82,7 +82,7 @@ export function BottomNav() {
               type="button"
               onClick={() => setOpen(true)}
               aria-label="Starta test"
-              className="flex h-12 w-12 -translate-y-4 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform active:scale-95"
+              className="flex h-12 w-12 -translate-y-4 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_6px_16px_-8px_oklch(0_0_0_/_0.45)] transition-transform active:scale-95"
             >
               <Plus className="h-6 w-6" />
             </button>

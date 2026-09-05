@@ -5,7 +5,7 @@ export type Theme = "dark" | "light";
 export const THEME_KEY = "golf-theme";
 
 /** Körs före hydrering i <head> så temat sätts utan blink. */
-export const THEME_SCRIPT = `(function(){try{var t=localStorage.getItem('${THEME_KEY}');if(t!=='light'){t='dark'}document.documentElement.classList.remove('dark','light');document.documentElement.classList.add(t);}catch(e){document.documentElement.classList.add('dark');}})();`;
+export const THEME_SCRIPT = `(function(){try{var t=localStorage.getItem('${THEME_KEY}');if(t!=='dark'){t='light'}document.documentElement.classList.remove('dark','light');document.documentElement.classList.add(t);}catch(e){document.documentElement.classList.add('light');}})();`;
 
 function apply(theme: Theme) {
   const root = document.documentElement;
@@ -15,11 +15,11 @@ function apply(theme: Theme) {
 }
 
 export function useTheme() {
-  const [theme, setTheme] = useState<Theme>("dark");
+  const [theme, setTheme] = useState<Theme>("light");
 
   useEffect(() => {
     const stored = window.localStorage.getItem(THEME_KEY);
-    const initial: Theme = stored === "light" ? "light" : "dark";
+    const initial: Theme = stored === "dark" ? "dark" : "light";
     setTheme(initial);
     apply(initial);
   }, []);
