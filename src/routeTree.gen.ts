@@ -45,6 +45,7 @@ import { Route as ApproachPeiIronRouteImport } from './routes/approach-pei-iron'
 import { Route as ApproachPeiHistorikRouteImport } from './routes/approach-pei-historik'
 import { Route as ApproachPeiRouteImport } from './routes/approach-pei'
 import { Route as ApproachRouteImport } from './routes/approach'
+import { Route as R8BollarHistorikRouteImport } from './routes/8-bollar-historik'
 import { Route as R8BollarRouteImport } from './routes/8-bollar'
 import { Route as R50BollarResultatRouteImport } from './routes/50-bollar-resultat'
 import { Route as R50BollarRouteImport } from './routes/50-bollar'
@@ -237,6 +238,11 @@ const ApproachRoute = ApproachRouteImport.update({
   path: '/approach',
   getParentRoute: () => rootRouteImport,
 } as any)
+const R8BollarHistorikRoute = R8BollarHistorikRouteImport.update({
+  id: '/8-bollar-historik',
+  path: '/8-bollar-historik',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const R8BollarRoute = R8BollarRouteImport.update({
   id: '/8-bollar',
   path: '/8-bollar',
@@ -293,6 +299,7 @@ export interface FileRoutesByFullPath {
   '/50-bollar': typeof R50BollarRoute
   '/50-bollar-resultat': typeof R50BollarResultatRoute
   '/8-bollar': typeof R8BollarRoute
+  '/8-bollar-historik': typeof R8BollarHistorikRoute
   '/approach': typeof ApproachRoute
   '/approach-pei': typeof ApproachPeiRoute
   '/approach-pei-historik': typeof ApproachPeiHistorikRoute
@@ -341,6 +348,7 @@ export interface FileRoutesByTo {
   '/50-bollar': typeof R50BollarRoute
   '/50-bollar-resultat': typeof R50BollarResultatRoute
   '/8-bollar': typeof R8BollarRoute
+  '/8-bollar-historik': typeof R8BollarHistorikRoute
   '/approach': typeof ApproachRoute
   '/approach-pei': typeof ApproachPeiRoute
   '/approach-pei-historik': typeof ApproachPeiHistorikRoute
@@ -390,6 +398,7 @@ export interface FileRoutesById {
   '/50-bollar': typeof R50BollarRoute
   '/50-bollar-resultat': typeof R50BollarResultatRoute
   '/8-bollar': typeof R8BollarRoute
+  '/8-bollar-historik': typeof R8BollarHistorikRoute
   '/approach': typeof ApproachRoute
   '/approach-pei': typeof ApproachPeiRoute
   '/approach-pei-historik': typeof ApproachPeiHistorikRoute
@@ -440,6 +449,7 @@ export interface FileRouteTypes {
     | '/50-bollar'
     | '/50-bollar-resultat'
     | '/8-bollar'
+    | '/8-bollar-historik'
     | '/approach'
     | '/approach-pei'
     | '/approach-pei-historik'
@@ -488,6 +498,7 @@ export interface FileRouteTypes {
     | '/50-bollar'
     | '/50-bollar-resultat'
     | '/8-bollar'
+    | '/8-bollar-historik'
     | '/approach'
     | '/approach-pei'
     | '/approach-pei-historik'
@@ -536,6 +547,7 @@ export interface FileRouteTypes {
     | '/50-bollar'
     | '/50-bollar-resultat'
     | '/8-bollar'
+    | '/8-bollar-historik'
     | '/approach'
     | '/approach-pei'
     | '/approach-pei-historik'
@@ -585,6 +597,7 @@ export interface RootRouteChildren {
   R50BollarRoute: typeof R50BollarRoute
   R50BollarResultatRoute: typeof R50BollarResultatRoute
   R8BollarRoute: typeof R8BollarRoute
+  R8BollarHistorikRoute: typeof R8BollarHistorikRoute
   ApproachRoute: typeof ApproachRoute
   ApproachPeiRoute: typeof ApproachPeiRoute
   ApproachPeiHistorikRoute: typeof ApproachPeiHistorikRoute
@@ -882,6 +895,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApproachRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/8-bollar-historik': {
+      id: '/8-bollar-historik'
+      path: '/8-bollar-historik'
+      fullPath: '/8-bollar-historik'
+      preLoaderRoute: typeof R8BollarHistorikRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/8-bollar': {
       id: '/8-bollar'
       path: '/8-bollar'
@@ -972,6 +992,7 @@ const rootRouteChildren: RootRouteChildren = {
   R50BollarRoute: R50BollarRoute,
   R50BollarResultatRoute: R50BollarResultatRoute,
   R8BollarRoute: R8BollarRoute,
+  R8BollarHistorikRoute: R8BollarHistorikRoute,
   ApproachRoute: ApproachRoute,
   ApproachPeiRoute: ApproachPeiRoute,
   ApproachPeiHistorikRoute: ApproachPeiHistorikRoute,
