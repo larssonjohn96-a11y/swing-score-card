@@ -406,23 +406,26 @@ export function computeCategoryHandicaps(
   return [driving, approach, aroundGreen, putting, speed];
 }
 
-/** Viktat snitt av kategori-HCP som finns data för – Estimated SG Handicap. */
+/** Viktat snitt av de fyra scoringkategoriernas HCP – Estimated SG Handicap. */
 export function computeEstimatedHandicap(cats: CategoryHandicap[]): number | undefined {
-  const available = cats.filter((c) => c.handicap !== undefined);
+  const available = cats.filter((c) => c.handicap !== undefined && isScoringCategory(c.slug));
   if (!available.length) return undefined;
   const totalWeight = available.reduce((a, c) => a + CATEGORY_WEIGHTS[c.slug], 0);
+  if (!totalWeight) return undefined;
   const weighted = available.reduce((a, c) => a + c.handicap! * CATEGORY_WEIGHTS[c.slug], 0);
   return Math.round((weighted / totalWeight) * 10) / 10;
 }
 
-/** Viktat snitt av kategoriernas trend – negativt = det totala handicapet sjunker. */
+/** Viktat snitt av scoringkategoriernas trend – negativt = totalen sjunker. */
 export function computeEstimatedTrend(cats: CategoryHandicap[]): number | undefined {
-  const available = cats.filter((c) => c.trend !== undefined);
+  const available = cats.filter((c) => c.trend !== undefined && isScoringCategory(c.slug));
   if (!available.length) return undefined;
   const totalWeight = available.reduce((a, c) => a + CATEGORY_WEIGHTS[c.slug], 0);
+  if (!totalWeight) return undefined;
   const weighted = available.reduce((a, c) => a + c.trend! * CATEGORY_WEIGHTS[c.slug], 0);
   return Math.round((weighted / totalWeight) * 10) / 10;
 }
+
 
 /* -------------------------------------------------------------------------
  * Din största möjlighet
