@@ -9,6 +9,8 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WedgeStegeRouteImport } from './routes/wedge-stege'
+import { Route as UppOchInRouteImport } from './routes/upp-och-in'
 import { Route as TrophyRouteImport } from './routes/trophy'
 import { Route as TraningRouteImport } from './routes/traning'
 import { Route as TornadoRouteImport } from './routes/tornado'
@@ -17,6 +19,8 @@ import { Route as TeeshotRouteImport } from './routes/teeshot'
 import { Route as SpeedTestRouteImport } from './routes/speed-test'
 import { Route as SpeedRouteImport } from './routes/speed'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as ShotShapingVaxlandeRouteImport } from './routes/shot-shaping-vaxlande'
+import { Route as ShotShapingKonstantRouteImport } from './routes/shot-shaping-konstant'
 import { Route as ShotShaping9WindowRouteImport } from './routes/shot-shaping-9-window'
 import { Route as ShotShapingRouteImport } from './routes/shot-shaping'
 import { Route as ShortPuttingTestRouteImport } from './routes/short-putting-test'
@@ -35,6 +39,7 @@ import { Route as LagputtHistorikRouteImport } from './routes/lagputt-historik'
 import { Route as LagputtRouteImport } from './routes/lagputt'
 import { Route as KortputtRouteImport } from './routes/kortputt'
 import { Route as KontoRouteImport } from './routes/konto'
+import { Route as GreenReadingRouteImport } from './routes/green-reading'
 import { Route as FairwayRouteImport } from './routes/fairway'
 import { Route as CombineRouteImport } from './routes/combine'
 import { Route as ChipRouteImport } from './routes/chip'
@@ -60,6 +65,16 @@ import { Route as KategoriSlugRouteImport } from './routes/kategori.$slug'
 import { Route as FramstegSlugRouteImport } from './routes/framsteg.$slug'
 import { Route as FramstegSlugTestRouteImport } from './routes/framsteg.$slug.$test'
 
+const WedgeStegeRoute = WedgeStegeRouteImport.update({
+  id: '/wedge-stege',
+  path: '/wedge-stege',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UppOchInRoute = UppOchInRouteImport.update({
+  id: '/upp-och-in',
+  path: '/upp-och-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TrophyRoute = TrophyRouteImport.update({
   id: '/trophy',
   path: '/trophy',
@@ -98,6 +113,16 @@ const SpeedRoute = SpeedRouteImport.update({
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShotShapingVaxlandeRoute = ShotShapingVaxlandeRouteImport.update({
+  id: '/shot-shaping-vaxlande',
+  path: '/shot-shaping-vaxlande',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShotShapingKonstantRoute = ShotShapingKonstantRouteImport.update({
+  id: '/shot-shaping-konstant',
+  path: '/shot-shaping-konstant',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ShotShaping9WindowRoute = ShotShaping9WindowRouteImport.update({
@@ -188,6 +213,11 @@ const KortputtRoute = KortputtRouteImport.update({
 const KontoRoute = KontoRouteImport.update({
   id: '/konto',
   path: '/konto',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GreenReadingRoute = GreenReadingRouteImport.update({
+  id: '/green-reading',
+  path: '/green-reading',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FairwayRoute = FairwayRouteImport.update({
@@ -331,6 +361,7 @@ export interface FileRoutesByFullPath {
   '/chip': typeof ChipRoute
   '/combine': typeof CombineRoute
   '/fairway': typeof FairwayRoute
+  '/green-reading': typeof GreenReadingRoute
   '/konto': typeof KontoRoute
   '/kortputt': typeof KortputtRoute
   '/lagputt': typeof LagputtRoute
@@ -349,6 +380,8 @@ export interface FileRoutesByFullPath {
   '/short-putting-test': typeof ShortPuttingTestRoute
   '/shot-shaping': typeof ShotShapingRoute
   '/shot-shaping-9-window': typeof ShotShaping9WindowRoute
+  '/shot-shaping-konstant': typeof ShotShapingKonstantRoute
+  '/shot-shaping-vaxlande': typeof ShotShapingVaxlandeRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
   '/speed-test': typeof SpeedTestRoute
@@ -357,6 +390,8 @@ export interface FileRoutesByFullPath {
   '/tornado': typeof TornadoRoute
   '/traning': typeof TraningRoute
   '/trophy': typeof TrophyRoute
+  '/upp-och-in': typeof UppOchInRoute
+  '/wedge-stege': typeof WedgeStegeRoute
   '/framsteg/$slug': typeof FramstegSlugRouteWithChildren
   '/kategori/$slug': typeof KategoriSlugRoute
   '/utveckling/$slug': typeof UtvecklingSlugRoute
@@ -383,6 +418,7 @@ export interface FileRoutesByTo {
   '/chip': typeof ChipRoute
   '/combine': typeof CombineRoute
   '/fairway': typeof FairwayRoute
+  '/green-reading': typeof GreenReadingRoute
   '/konto': typeof KontoRoute
   '/kortputt': typeof KortputtRoute
   '/lagputt': typeof LagputtRoute
@@ -401,6 +437,8 @@ export interface FileRoutesByTo {
   '/short-putting-test': typeof ShortPuttingTestRoute
   '/shot-shaping': typeof ShotShapingRoute
   '/shot-shaping-9-window': typeof ShotShaping9WindowRoute
+  '/shot-shaping-konstant': typeof ShotShapingKonstantRoute
+  '/shot-shaping-vaxlande': typeof ShotShapingVaxlandeRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
   '/speed-test': typeof SpeedTestRoute
@@ -409,6 +447,8 @@ export interface FileRoutesByTo {
   '/tornado': typeof TornadoRoute
   '/traning': typeof TraningRoute
   '/trophy': typeof TrophyRoute
+  '/upp-och-in': typeof UppOchInRoute
+  '/wedge-stege': typeof WedgeStegeRoute
   '/framsteg/$slug': typeof FramstegSlugRouteWithChildren
   '/kategori/$slug': typeof KategoriSlugRoute
   '/utveckling/$slug': typeof UtvecklingSlugRoute
@@ -436,6 +476,7 @@ export interface FileRoutesById {
   '/chip': typeof ChipRoute
   '/combine': typeof CombineRoute
   '/fairway': typeof FairwayRoute
+  '/green-reading': typeof GreenReadingRoute
   '/konto': typeof KontoRoute
   '/kortputt': typeof KortputtRoute
   '/lagputt': typeof LagputtRoute
@@ -454,6 +495,8 @@ export interface FileRoutesById {
   '/short-putting-test': typeof ShortPuttingTestRoute
   '/shot-shaping': typeof ShotShapingRoute
   '/shot-shaping-9-window': typeof ShotShaping9WindowRoute
+  '/shot-shaping-konstant': typeof ShotShapingKonstantRoute
+  '/shot-shaping-vaxlande': typeof ShotShapingVaxlandeRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
   '/speed-test': typeof SpeedTestRoute
@@ -462,6 +505,8 @@ export interface FileRoutesById {
   '/tornado': typeof TornadoRoute
   '/traning': typeof TraningRoute
   '/trophy': typeof TrophyRoute
+  '/upp-och-in': typeof UppOchInRoute
+  '/wedge-stege': typeof WedgeStegeRoute
   '/framsteg/$slug': typeof FramstegSlugRouteWithChildren
   '/kategori/$slug': typeof KategoriSlugRoute
   '/utveckling/$slug': typeof UtvecklingSlugRoute
@@ -490,6 +535,7 @@ export interface FileRouteTypes {
     | '/chip'
     | '/combine'
     | '/fairway'
+    | '/green-reading'
     | '/konto'
     | '/kortputt'
     | '/lagputt'
@@ -508,6 +554,8 @@ export interface FileRouteTypes {
     | '/short-putting-test'
     | '/shot-shaping'
     | '/shot-shaping-9-window'
+    | '/shot-shaping-konstant'
+    | '/shot-shaping-vaxlande'
     | '/sitemap.xml'
     | '/speed'
     | '/speed-test'
@@ -516,6 +564,8 @@ export interface FileRouteTypes {
     | '/tornado'
     | '/traning'
     | '/trophy'
+    | '/upp-och-in'
+    | '/wedge-stege'
     | '/framsteg/$slug'
     | '/kategori/$slug'
     | '/utveckling/$slug'
@@ -542,6 +592,7 @@ export interface FileRouteTypes {
     | '/chip'
     | '/combine'
     | '/fairway'
+    | '/green-reading'
     | '/konto'
     | '/kortputt'
     | '/lagputt'
@@ -560,6 +611,8 @@ export interface FileRouteTypes {
     | '/short-putting-test'
     | '/shot-shaping'
     | '/shot-shaping-9-window'
+    | '/shot-shaping-konstant'
+    | '/shot-shaping-vaxlande'
     | '/sitemap.xml'
     | '/speed'
     | '/speed-test'
@@ -568,6 +621,8 @@ export interface FileRouteTypes {
     | '/tornado'
     | '/traning'
     | '/trophy'
+    | '/upp-och-in'
+    | '/wedge-stege'
     | '/framsteg/$slug'
     | '/kategori/$slug'
     | '/utveckling/$slug'
@@ -594,6 +649,7 @@ export interface FileRouteTypes {
     | '/chip'
     | '/combine'
     | '/fairway'
+    | '/green-reading'
     | '/konto'
     | '/kortputt'
     | '/lagputt'
@@ -612,6 +668,8 @@ export interface FileRouteTypes {
     | '/short-putting-test'
     | '/shot-shaping'
     | '/shot-shaping-9-window'
+    | '/shot-shaping-konstant'
+    | '/shot-shaping-vaxlande'
     | '/sitemap.xml'
     | '/speed'
     | '/speed-test'
@@ -620,6 +678,8 @@ export interface FileRouteTypes {
     | '/tornado'
     | '/traning'
     | '/trophy'
+    | '/upp-och-in'
+    | '/wedge-stege'
     | '/framsteg/$slug'
     | '/kategori/$slug'
     | '/utveckling/$slug'
@@ -647,6 +707,7 @@ export interface RootRouteChildren {
   ChipRoute: typeof ChipRoute
   CombineRoute: typeof CombineRoute
   FairwayRoute: typeof FairwayRoute
+  GreenReadingRoute: typeof GreenReadingRoute
   KontoRoute: typeof KontoRoute
   KortputtRoute: typeof KortputtRoute
   LagputtRoute: typeof LagputtRoute
@@ -665,6 +726,8 @@ export interface RootRouteChildren {
   ShortPuttingTestRoute: typeof ShortPuttingTestRoute
   ShotShapingRoute: typeof ShotShapingRoute
   ShotShaping9WindowRoute: typeof ShotShaping9WindowRoute
+  ShotShapingKonstantRoute: typeof ShotShapingKonstantRoute
+  ShotShapingVaxlandeRoute: typeof ShotShapingVaxlandeRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SpeedRoute: typeof SpeedRoute
   SpeedTestRoute: typeof SpeedTestRoute
@@ -673,6 +736,8 @@ export interface RootRouteChildren {
   TornadoRoute: typeof TornadoRoute
   TraningRoute: typeof TraningRoute
   TrophyRoute: typeof TrophyRoute
+  UppOchInRoute: typeof UppOchInRoute
+  WedgeStegeRoute: typeof WedgeStegeRoute
   FramstegSlugRoute: typeof FramstegSlugRouteWithChildren
   KategoriSlugRoute: typeof KategoriSlugRoute
   UtvecklingSlugRoute: typeof UtvecklingSlugRoute
@@ -682,6 +747,20 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/wedge-stege': {
+      id: '/wedge-stege'
+      path: '/wedge-stege'
+      fullPath: '/wedge-stege'
+      preLoaderRoute: typeof WedgeStegeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/upp-och-in': {
+      id: '/upp-och-in'
+      path: '/upp-och-in'
+      fullPath: '/upp-och-in'
+      preLoaderRoute: typeof UppOchInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/trophy': {
       id: '/trophy'
       path: '/trophy'
@@ -736,6 +815,20 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/shot-shaping-vaxlande': {
+      id: '/shot-shaping-vaxlande'
+      path: '/shot-shaping-vaxlande'
+      fullPath: '/shot-shaping-vaxlande'
+      preLoaderRoute: typeof ShotShapingVaxlandeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/shot-shaping-konstant': {
+      id: '/shot-shaping-konstant'
+      path: '/shot-shaping-konstant'
+      fullPath: '/shot-shaping-konstant'
+      preLoaderRoute: typeof ShotShapingKonstantRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/shot-shaping-9-window': {
@@ -862,6 +955,13 @@ declare module '@tanstack/react-router' {
       path: '/konto'
       fullPath: '/konto'
       preLoaderRoute: typeof KontoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/green-reading': {
+      id: '/green-reading'
+      path: '/green-reading'
+      fullPath: '/green-reading'
+      preLoaderRoute: typeof GreenReadingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/fairway': {
@@ -1066,6 +1166,7 @@ const rootRouteChildren: RootRouteChildren = {
   ChipRoute: ChipRoute,
   CombineRoute: CombineRoute,
   FairwayRoute: FairwayRoute,
+  GreenReadingRoute: GreenReadingRoute,
   KontoRoute: KontoRoute,
   KortputtRoute: KortputtRoute,
   LagputtRoute: LagputtRoute,
@@ -1084,6 +1185,8 @@ const rootRouteChildren: RootRouteChildren = {
   ShortPuttingTestRoute: ShortPuttingTestRoute,
   ShotShapingRoute: ShotShapingRoute,
   ShotShaping9WindowRoute: ShotShaping9WindowRoute,
+  ShotShapingKonstantRoute: ShotShapingKonstantRoute,
+  ShotShapingVaxlandeRoute: ShotShapingVaxlandeRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SpeedRoute: SpeedRoute,
   SpeedTestRoute: SpeedTestRoute,
@@ -1092,6 +1195,8 @@ const rootRouteChildren: RootRouteChildren = {
   TornadoRoute: TornadoRoute,
   TraningRoute: TraningRoute,
   TrophyRoute: TrophyRoute,
+  UppOchInRoute: UppOchInRoute,
+  WedgeStegeRoute: WedgeStegeRoute,
   FramstegSlugRoute: FramstegSlugRouteWithChildren,
   KategoriSlugRoute: KategoriSlugRoute,
   UtvecklingSlugRoute: UtvecklingSlugRoute,
