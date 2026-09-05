@@ -90,13 +90,58 @@ function EightBallPage() {
   if (phase === "test") {
     const total = scores.reduce((sum, value) => sum + value, 0);
     return (
-      <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-28 pt-4">
-        <div className="flex items-center justify-between"><span className="text-sm font-semibold">Slag {shot + 1} / {SHOTS}</span><Link to="/kategori/$slug" params={{ slug: "around-the-green" }} className="flex items-center gap-1 text-xs text-muted-foreground"><X className="h-4 w-4" /> Avbryt</Link></div>
-        <div className="mt-4 grid grid-cols-5 gap-2">{Array.from({length: ROUNDS}, (_, i) => { const active=i===round-1; const done=i<round-1; return <div key={i}><div className={`h-2 overflow-hidden rounded-full ${active||done?"bg-primary/20":"bg-muted"}`}><div className="h-full bg-primary" style={{width: done?"100%":active?`${((stationIndex)/STATIONS.length)*100}%`:"0%"}} /></div><p className={`mt-1 text-center text-[10px] font-semibold ${active?"text-primary":"text-muted-foreground"}`}>Varv {i+1}</p></div>})}</div>
-        <section className="mt-6 rounded-3xl border border-border bg-card p-6 text-center"><Target className="mx-auto h-6 w-6 text-primary" /><p className="mt-3 text-xs uppercase tracking-[0.2em] text-muted-foreground">Varv {round} · Station {station}</p><p className="mt-2 font-display text-5xl">{stationInfo.type}</p><p className="mt-2 text-lg font-semibold text-primary">{stationInfo.distance} meter från hål</p></section>
-        <p className="mt-5 text-center text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Resultat från hål</p>
-        <div className="mt-3 grid grid-cols-5 gap-2">{[{p:4,l:"Sänkt"},{p:3,l:"≤ 1 m"},{p:2,l:"≤ 2 m"},{p:1,l:"≤ 3 m"},{p:0,l:"> 3 m"}].map(({p,l}) => <button key={p} onClick={() => register(p)} className="flex min-h-24 flex-col items-center justify-center rounded-2xl border border-border bg-card px-1 active:scale-95"><span className="font-display text-3xl">{p}</span><span className="mt-1 text-[10px] font-semibold text-muted-foreground">{l}</span><span className="text-[9px] text-muted-foreground">{p} p</span></button>)}</div>
-        <div className="mt-5 flex justify-between rounded-2xl bg-muted/50 px-4 py-3 text-sm"><span className="text-muted-foreground">Hittills</span><span className="font-semibold">{total} p</span></div>
+      <main
+        style={LIGHT_SURFACE}
+        className="mx-auto min-h-screen w-full max-w-md bg-background px-5 pb-28 pt-5 text-foreground"
+      >
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-semibold">Slag {shot + 1} av {SHOTS}</span>
+          <Link to="/kategori/$slug" params={{ slug: "around-the-green" }} className="flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground"><X className="h-3.5 w-3.5" /> Avbryt</Link>
+        </div>
+
+        <div className="mt-4 rounded-2xl border border-border bg-card p-4">
+          <div className="grid grid-cols-5 gap-2">
+            {Array.from({ length: ROUNDS }, (_, i) => {
+              const active = i === round - 1;
+              const done = i < round - 1;
+              return (
+                <div key={i}>
+                  <div className="h-2 overflow-hidden rounded-full bg-muted">
+                    <div className="h-full rounded-full bg-primary" style={{ width: done ? "100%" : active ? `${(stationIndex / STATIONS.length) * 100}%` : "0%" }} />
+                  </div>
+                  <p className={`mt-1.5 text-center text-[10px] font-semibold ${active ? "text-primary" : "text-muted-foreground"}`}>Varv {i + 1}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <section className="mt-4 rounded-3xl border border-border bg-card p-6 text-center">
+          <Target className="mx-auto h-5 w-5 text-primary" />
+          <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Varv {round} · Station {station}</p>
+          <p className="mt-2 font-display text-5xl leading-none">{stationInfo.type}</p>
+          <p className="mt-3 text-base font-semibold text-primary">{stationInfo.distance} meter från hål</p>
+        </section>
+
+        <p className="mt-5 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Resultat från hål</p>
+        <div className="mt-3 grid grid-cols-5 gap-2">
+          {[{ p: 4, l: "Sänkt" }, { p: 3, l: "≤ 1 m" }, { p: 2, l: "≤ 2 m" }, { p: 1, l: "≤ 3 m" }, { p: 0, l: "> 3 m" }].map(({ p, l }) => (
+            <button
+              key={p}
+              onClick={() => register(p)}
+              className="flex min-h-24 flex-col items-center justify-center rounded-2xl border border-border bg-card px-1 shadow-sm transition-transform active:scale-95"
+            >
+              <span className="font-display text-3xl leading-none text-primary">{p}</span>
+              <span className="mt-1.5 text-[11px] font-semibold">{l}</span>
+              <span className="mt-0.5 text-[9px] text-muted-foreground">{p} poäng</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="mt-5 flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3.5 text-sm">
+          <span className="text-muted-foreground">Hittills</span>
+          <span className="font-semibold tabular-nums">{total} poäng</span>
+        </div>
       </main>
     );
   }
