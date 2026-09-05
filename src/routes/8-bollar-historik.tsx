@@ -45,6 +45,8 @@ function KpiCard({ label, value, unit, hint }: { label: string; value: string; u
 
 function EightBallHistoryPage() {
   const [sessions, setSessions] = useState<EightBallSession[]>([]);
+  const [showAll, setShowAll] = useState(false);
+
   useEffect(() => {
     setSessions(loadEightBallSessions());
   }, []);
@@ -62,6 +64,8 @@ function EightBallHistoryPage() {
     ? Math.round(complete.reduce((sum, s) => sum + s.score, 0) / complete.length)
     : 0;
   const recent = [...complete].slice(-12);
+  const latest = complete.length ? complete[complete.length - 1] : null;
+
 
   const chartData = recent.map((s, i) => ({
     key: s.id,
@@ -118,12 +122,25 @@ function EightBallHistoryPage() {
         </section>
       ) : (
         <>
-          <div className="mt-5 grid grid-cols-2 gap-3">
+          <section className="mt-5 rounded-2xl border border-border bg-card p-5">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Totalpoäng</p>
+            <p className="mt-2 font-display text-6xl leading-none">
+              {latest?.score ?? bestScore}
+              <span className="ml-2 text-base text-muted-foreground">poäng</span>
+            </p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              {latest ? `Senaste testet ${dateLabel(latest.date)} · personbästa ${bestScore} poäng` : `Personbästa ${bestScore} poäng`}
+              {latest && latest.score >= bestScore ? " · nytt PB!" : ""}
+            </p>
+          </section>
+
+          <div className="mt-3 grid grid-cols-2 gap-3">
             <KpiCard label="Bästa totalpoäng" value={String(bestScore)} unit="poäng" />
             <KpiCard label="Bästa varv" value={roundScores.length ? String(bestRound) : "–"} unit={roundScores.length ? "poäng" : undefined} />
             <KpiCard label="Snittresultat" value={String(average)} unit="poäng" />
             <KpiCard label="Antal tester" value={String(complete.length)} hint="Genomförda test" />
           </div>
+
 
           <section className="mt-4 rounded-2xl border border-border bg-card p-4">
             <div className="flex items-end justify-between">
@@ -241,7 +258,9 @@ function EightBallHistoryPage() {
           <section className="mt-3 rounded-2xl border border-border bg-card p-4">
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Senaste resultat</p>
             <div className="mt-3 divide-y divide-border">
-              {[...complete].reverse().slice(0, 10).map((s) => (
+              {(() => {
+                const rows = [...complete].reverse();
+                return (showAll ? rows : rows.slice(0, 5)).map((s) => (
                 <div key={s.id} className="flex items-center justify-between gap-3 py-3">
                   <div>
                     <p className="text-sm font-semibold">{new Date(s.date).toLocaleDateString("sv-SE")}</p>
@@ -259,9 +278,20 @@ function EightBallHistoryPage() {
                     </button>
                   </div>
                 </div>
-              ))}
+                ));
+              })()}
             </div>
+            {complete.length > 5 ? (
+              <button
+                type="button"
+                onClick={() => setShowAll((v) => !v)}
+                className="mt-3 w-full rounded-xl border border-border py-2.5 text-xs font-semibold text-muted-foreground transition-colors active:bg-muted"
+              >
+                {showAll ? "Visa färre" : `Visa fler (${complete.length - 5})`}
+              </button>
+            ) : null}
           </section>
+
 
           <Link to="/8-bollar" className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-4 font-display text-xl text-primary-foreground">Gör ett nytt test <ArrowRight className="h-5 w-5" /></Link>
           <Link to="/8-bollar" className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-border bg-card py-4 font-semibold"><Trophy className="h-4 w-4" /> Till testet</Link>
