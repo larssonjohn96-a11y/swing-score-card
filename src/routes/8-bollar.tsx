@@ -122,22 +122,22 @@ function EightBallPage() {
           </div>
         </div>
 
-        <section className="mt-3 flex flex-1 flex-col items-center justify-center rounded-3xl border border-border bg-card p-5 text-center">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Varv {round} · Station {station}</p>
-          <p className="mt-2 font-display text-5xl leading-none">{stationInfo.type}</p>
-          <p className="mt-2 text-base font-semibold text-primary">{stationInfo.distance} meter från hål</p>
+        <section className="mt-3 shrink-0 rounded-2xl border border-border bg-card px-4 py-3 text-center">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Varv {round} · Station {station}</p>
+          <p className="mt-1 font-display text-3xl leading-none">{stationInfo.type}</p>
+          <p className="mt-1 text-sm font-semibold text-primary">{stationInfo.distance} meter från hål</p>
         </section>
 
         <p className="mt-3 shrink-0 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Resultat från hål</p>
-        <div className="mt-2 grid shrink-0 grid-cols-5 gap-2">
+        <div className="mt-2 grid flex-1 grid-cols-5 gap-2.5">
           {[{ p: 4, l: "Sänkt" }, { p: 3, l: "≤ 1 m" }, { p: 2, l: "≤ 2 m" }, { p: 1, l: "≤ 3 m" }, { p: 0, l: "> 3 m" }].map(({ p, l }) => (
             <button
               key={p}
               onClick={() => register(p)}
-              className="flex min-h-[4.5rem] flex-col items-center justify-center rounded-2xl border border-border bg-card px-1 shadow-sm transition-transform active:scale-95"
+              className="flex h-full min-h-[6rem] flex-col items-center justify-center rounded-2xl border border-border bg-card px-1 shadow-sm transition-transform active:scale-95"
             >
-              <span className="font-display text-3xl leading-none text-primary">{p}</span>
-              <span className="mt-1.5 text-[11px] font-semibold">{l}</span>
+              <span className="font-display text-4xl leading-none text-primary">{p}</span>
+              <span className="mt-2 text-[11px] font-semibold">{l}</span>
               <span className="mt-0.5 text-[9px] text-muted-foreground">{p} poäng</span>
             </button>
           ))}
