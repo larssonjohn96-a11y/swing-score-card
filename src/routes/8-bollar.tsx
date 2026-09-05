@@ -82,14 +82,14 @@ function EightBallPage() {
   }
 
   if (phase === "intro") return (
-    <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-16 pt-8">
-      <div className="flex items-center justify-between"><Link to="/kategori/$slug" params={{ slug: "around-the-green" }} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border"><ArrowLeft className="h-4 w-4" /></Link><Link to="/8-bollar-historik" className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm text-muted-foreground"><BarChart3 className="h-4 w-4"/> Progress</Link></div>
-      <p className="mt-8 text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">Around the Green · Träningstest</p>
-      <h1 className="mt-2 text-5xl leading-none">8-bollsövningen</h1>
-      <p className="mt-4 text-sm leading-relaxed text-muted-foreground">Åtta fasta stationer i ordningen nedan. Spela samtliga stationer fem varv för totalt 40 slag.</p>
-      <div className="mt-6 overflow-hidden rounded-2xl border border-border bg-card">{STATIONS.map((s, i) => <div key={i} className="flex items-center justify-between border-b border-border px-4 py-3 last:border-b-0"><span className="text-sm"><b>Station {i + 1}</b> · {s.type}</span><span className="font-semibold">{s.distance} m</span></div>)}</div>
-      <div className="mt-4 rounded-2xl bg-muted/50 p-4 text-xs leading-relaxed text-muted-foreground"><b className="text-foreground">Poäng per slag</b><br/>4 p · Sänkt<br/>3 p · Inom 1 m från hål<br/>2 p · Inom 2 m från hål<br/>1 p · Inom 3 m från hål<br/>0 p · Utanför 3 m</div>
-      <button onClick={start} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-5 font-display text-2xl text-primary-foreground">Starta 40 slag <ArrowRight className="h-5 w-5" /></button>
+    <main className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col px-5 pb-4 pt-3">
+      <div className="flex shrink-0 items-center justify-between"><Link to="/kategori/$slug" params={{ slug: "around-the-green" }} className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border"><ArrowLeft className="h-4 w-4" /></Link><Link to="/8-bollar-historik" className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground"><BarChart3 className="h-3.5 w-3.5"/> Progress</Link></div>
+      <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">Around the Green · Träningstest</p>
+      <h1 className="mt-1 text-3xl leading-none">8-bollsövningen</h1>
+      <p className="mt-1.5 text-xs leading-snug text-muted-foreground">Åtta fasta stationer i ordningen nedan. Spela samtliga stationer fem varv för totalt 40 slag.</p>
+      <div className="mt-3 overflow-hidden rounded-2xl border border-border bg-card">{STATIONS.map((s, i) => <div key={i} className="flex items-center justify-between border-b border-border px-3 py-1.5 last:border-b-0"><span className="text-xs"><b>Station {i + 1}</b> · {s.type}</span><span className="text-xs font-semibold">{s.distance} m</span></div>)}</div>
+      <div className="mt-3 rounded-2xl bg-muted/50 px-3 py-2.5 text-[11px] leading-relaxed text-muted-foreground"><b className="text-foreground">Poäng per slag</b> · 4 p Sänkt · 3 p ≤ 1 m · 2 p ≤ 2 m · 1 p ≤ 3 m · 0 p &gt; 3 m</div>
+      <button onClick={start} className="mt-3 flex w-full shrink-0 items-center justify-center gap-2 rounded-2xl bg-primary py-4 font-display text-xl text-primary-foreground">Starta test <ArrowRight className="h-5 w-5" /></button>
     </main>
   );
 
