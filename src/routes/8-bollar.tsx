@@ -180,26 +180,25 @@ function EightBallPage() {
       <section className="mt-5 rounded-3xl border border-border bg-card p-6 text-center">
         <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Totalpoäng</p>
         <p className="mt-2 font-display text-6xl leading-none text-primary">
-          {total}<span className="ml-1 text-2xl text-muted-foreground">/ 160</span>
+          {total}<span className="ml-2 text-xl text-muted-foreground">poäng</span>
         </p>
-        <p className="mt-2 text-xs text-muted-foreground">{Math.round((total / 160) * 100)}% av max</p>
         {isPb ? (
           <p className="mx-auto mt-4 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary"><Trophy className="h-3.5 w-3.5" /> Nytt personbästa</p>
         ) : (
-          <p className="mt-4 text-xs text-muted-foreground">Personbästa {best} p</p>
+          <p className="mt-4 text-xs text-muted-foreground">Personbästa {best} poäng</p>
         )}
       </section>
 
       <div className="mt-3 grid grid-cols-2 gap-3">
         <div className="rounded-2xl border border-border bg-card p-4">
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Bästa varv</p>
-          <p className="mt-2 font-display text-3xl leading-none">{bestRound}<span className="text-base text-muted-foreground"> / 32</span></p>
+          <p className="mt-2 font-display text-3xl leading-none">{bestRound}<span className="ml-1 text-sm text-muted-foreground">poäng</span></p>
           <p className="mt-1 text-xs text-muted-foreground">Varv {bestRoundNumber}</p>
         </div>
         <div className="rounded-2xl border border-border bg-card p-4">
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Snitt per varv</p>
-          <p className="mt-2 font-display text-3xl leading-none">{(total / ROUNDS).toFixed(1)}</p>
-          <p className="mt-1 text-xs text-muted-foreground">av 32 möjliga</p>
+          <p className="mt-2 font-display text-3xl leading-none">{(total / ROUNDS).toFixed(1)}<span className="ml-1 text-sm text-muted-foreground">poäng</span></p>
+          <p className="mt-1 text-xs text-muted-foreground">Per varv</p>
         </div>
       </div>
 
