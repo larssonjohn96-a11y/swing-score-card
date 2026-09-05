@@ -1,3 +1,5 @@
+import { LEGACY_KEYS } from "@/lib/sessions/keys";
+import { recordSessionDeleted, recordSessionSaved } from "@/lib/sessions/sync";
 /** Pitch – 6 slag från 8, 12, 16, 10, 14, 18 m. Resultat mäts i meter till hål. */
 export const PITCH_DISTANCES = [8, 12, 16, 10, 14, 18] as const;
 
@@ -19,7 +21,7 @@ export type PitchSession = {
   notes?: string;
 };
 
-const KEY = "golf-pitch-sessions-v1";
+const KEY = LEGACY_KEYS.pitch;
 
 export function emptyPitchShots(): PitchShot[] {
   return PITCH_DISTANCES.map((distance) => ({ distance, proximity: 0 }));
@@ -56,11 +58,13 @@ export function savePitchSession(shots: PitchShot[], notes?: string): PitchSessi
     notes: notes?.trim() || undefined,
   };
   window.localStorage.setItem(KEY, JSON.stringify([...loadPitchSessions(), record]));
+  recordSessionSaved("pitch", record);
   return record;
 }
 
 export function deletePitchSession(id: string): PitchSession[] {
   const all = loadPitchSessions().filter((s) => s.id !== id);
   window.localStorage.setItem(KEY, JSON.stringify(all));
+  recordSessionDeleted("pitch", id);
   return all;
 }

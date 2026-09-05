@@ -1,3 +1,5 @@
+import { LEGACY_KEYS } from "@/lib/sessions/keys";
+import { recordSessionDeleted, recordSessionSaved } from "@/lib/sessions/sync";
 /** Tornado drill – 10 puttar runt hålet: 3 × 1 m, 4 × 2 m, 3 × 3 m. 10 poäng per isatt putt. */
 export const TORNADO_PLAN: { distance: number; count: number }[] = [
   { distance: 1, count: 3 },
@@ -43,7 +45,7 @@ export type TornadoSession = {
   notes?: string;
 };
 
-const KEY = "golf-tornado-sessions-v1";
+const KEY = LEGACY_KEYS.tornado;
 
 function shuffle<T>(items: T[]): T[] {
   const arr = [...items];
@@ -109,12 +111,14 @@ export function saveTornadoSession(putts: TornadoPutt[], notes?: string): Tornad
     notes: notes?.trim() || undefined,
   };
   window.localStorage.setItem(KEY, JSON.stringify([...loadTornadoSessions(), record]));
+  recordSessionSaved("tornado", record);
   return record;
 }
 
 export function deleteTornadoSession(id: string): TornadoSession[] {
   const all = loadTornadoSessions().filter((s) => s.id !== id);
   window.localStorage.setItem(KEY, JSON.stringify(all));
+  recordSessionDeleted("tornado", id);
   return all;
 }
 

@@ -1,6 +1,8 @@
+import { LEGACY_KEYS } from "@/lib/sessions/keys";
+import { recordSessionDeleted, recordSessionSaved } from "@/lib/sessions/sync";
 export const TUTOR_PUTTS = 10;
 export const TUTOR_ROLLING_WINDOW = 20;
-export const TUTOR_STORAGE_KEY = "sg4-tutor-test-v1";
+export const TUTOR_STORAGE_KEY = LEGACY_KEYS.tutor;
 
 export type TutorSession = {
   id: string;
@@ -52,6 +54,7 @@ export function saveTutorSession(results: boolean[]): TutorSession {
       TUTOR_STORAGE_KEY,
       JSON.stringify([...loadTutorSessions(), session]),
     );
+    recordSessionSaved("tutor", session);
   }
   return session;
 }
@@ -60,6 +63,7 @@ export function deleteTutorSession(id: string): TutorSession[] {
   const next = loadTutorSessions().filter((session) => session.id !== id);
   if (typeof window !== "undefined") {
     localStorage.setItem(TUTOR_STORAGE_KEY, JSON.stringify(next));
+    recordSessionDeleted("tutor", id);
   }
   return next;
 }

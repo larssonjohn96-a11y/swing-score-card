@@ -1,7 +1,11 @@
 /**
  * Generisk motor för SG4:s träningstester (INTE HCP-tester).
  * Varje test sparar sessioner i localStorage under sitt eget id.
+ * Sparade sessioner dual-writes till det gemensamma sessionslagret
+ * (src/lib/sessions) som synkar dem till kontot när spelaren är inloggad.
  */
+import { trainingKey } from "@/lib/sessions/keys";
+import { recordSessionDeleted, recordSessionSaved } from "@/lib/sessions/sync";
 
 export type ScoreOption = { value: number; label: string; hint?: string };
 
@@ -17,7 +21,7 @@ export type TrainingSession = {
   total: number;
 };
 
-const key = (testId: string) => `sg4-training-${testId}-v1`;
+const key = trainingKey;
 
 export function loadSessions(testId: string): TrainingSession[] {
   if (typeof window === "undefined") return [];
@@ -53,6 +57,7 @@ export function saveSession(
       key(testId),
       JSON.stringify([...loadSessions(testId), record]),
     );
+    recordSessionSaved(testId, record);
   }
   return record;
 }
@@ -61,6 +66,7 @@ export function deleteSession(testId: string, id: string): TrainingSession[] {
   const next = loadSessions(testId).filter((s) => s.id !== id);
   if (typeof window !== "undefined") {
     window.localStorage.setItem(key(testId), JSON.stringify(next));
+    recordSessionDeleted(testId, id);
   }
   return next;
 }

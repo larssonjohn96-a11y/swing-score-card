@@ -1,4 +1,6 @@
 import { INTERVALS, type IntervalKey } from "@/lib/shortgame";
+import { LEGACY_KEYS } from "@/lib/sessions/keys";
+import { recordSessionDeleted, recordSessionSaved } from "@/lib/sessions/sync";
 
 /** Lagputt – 6 puttar från 8–18 m, i slumpad ordning varje test. Registreras
  *  som ett intervall (samma som Närspelstest/Bunkerslag) istället för att
@@ -77,7 +79,7 @@ export function handicapFromProximity(avgLeftM: number): number {
   return Math.max(-5, Math.min(54, interpolate(avgLeftM, PROXIMITY_ANCHORS)));
 }
 
-const KEY = "golf-lagputt-sessions-v3";
+const KEY = LEGACY_KEYS.lagputtHcp;
 
 function shuffled<T>(arr: readonly T[]): T[] {
   const copy = [...arr];
@@ -142,11 +144,13 @@ export function saveLagPuttSession(putts: LagPutt[], notes?: string): LagPuttSes
     notes: notes?.trim() || undefined,
   };
   window.localStorage.setItem(KEY, JSON.stringify([...loadLagPuttSessions(), record]));
+  recordSessionSaved("lag-putt-hcp", record);
   return record;
 }
 
 export function deleteLagPuttSession(id: string): LagPuttSession[] {
   const all = loadLagPuttSessions().filter((s) => s.id !== id);
   window.localStorage.setItem(KEY, JSON.stringify(all));
+  recordSessionDeleted("lag-putt-hcp", id);
   return all;
 }

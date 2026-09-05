@@ -176,6 +176,57 @@ export type Database = {
         }
         Relationships: []
       }
+      test_sessions: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          metrics: Json
+          played_at: string
+          score: number | null
+          scoring_version: number
+          shots: Json | null
+          test_handicap: number | null
+          test_id: string
+          test_type: string
+          test_version: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id: string
+          metrics?: Json
+          played_at: string
+          score?: number | null
+          scoring_version?: number
+          shots?: Json | null
+          test_handicap?: number | null
+          test_id: string
+          test_type: string
+          test_version?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          metrics?: Json
+          played_at?: string
+          score?: number | null
+          scoring_version?: number
+          shots?: Json | null
+          test_handicap?: number | null
+          test_id?: string
+          test_type?: string
+          test_version?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

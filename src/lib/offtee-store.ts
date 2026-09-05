@@ -4,6 +4,8 @@
  */
 import { offTeeResult, type TeeShot } from "@/lib/offtee";
 import type { Device, MeasurementContext } from "@/lib/speed";
+import { LEGACY_KEYS } from "@/lib/sessions/keys";
+import { recordSessionDeleted, recordSessionSaved } from "@/lib/sessions/sync";
 
 export type OffTeeSession = {
   id: string;
@@ -21,7 +23,7 @@ export type OffTeeSession = {
   device?: Device;
 };
 
-const KEY = "golf-offtee-sessions-v1";
+const KEY = LEGACY_KEYS.offtee;
 
 export function loadOffTeeSessions(): OffTeeSession[] {
   if (typeof window === "undefined") return [];
@@ -61,9 +63,12 @@ export function saveOffTeeSession(
     device,
   };
   persist([...loadOffTeeSessions(), session]);
+  recordSessionSaved("off-the-tee", session);
   return session;
 }
 
 export function deleteOffTeeSession(id: string): OffTeeSession[] {
-  return persist(loadOffTeeSessions().filter((s) => s.id !== id));
+  const next = persist(loadOffTeeSessions().filter((s) => s.id !== id));
+  recordSessionDeleted("off-the-tee", id);
+  return next;
 }

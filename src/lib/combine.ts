@@ -1,3 +1,5 @@
+import { LEGACY_KEYS } from "@/lib/sessions/keys";
+import { recordSessionDeleted, recordSessionSaved } from "@/lib/sessions/sync";
 /** Combine test – approach 55–165 m + driver, poäng 0–100 (Trackman-liknande). */
 
 export type CombineStation = {
@@ -210,7 +212,7 @@ export function emptyCombineShots(size: CombineSize): CombineShot[] {
   return shots;
 }
 
-const KEY = "golf-combine-sessions-v1";
+const KEY = LEGACY_KEYS.combine;
 
 export function loadCombineSessions(): CombineSession[] {
   if (typeof window === "undefined") return [];
@@ -237,11 +239,13 @@ export function saveCombineSession(
     notes: notes?.trim() || undefined,
   };
   window.localStorage.setItem(KEY, JSON.stringify([...loadCombineSessions(), record]));
+  recordSessionSaved("combine", record);
   return record;
 }
 
 export function deleteCombineSession(id: string): CombineSession[] {
   const all = loadCombineSessions().filter((s) => s.id !== id);
   window.localStorage.setItem(KEY, JSON.stringify(all));
+  recordSessionDeleted("combine", id);
   return all;
 }
