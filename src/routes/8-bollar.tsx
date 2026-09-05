@@ -2,6 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, BarChart3, RotateCcw, Trophy, X } from "lucide-react";
 import { useState } from "react";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
+import { LEGACY_KEYS } from "@/lib/sessions/keys";
+import { recordSessionDeleted, recordSessionSaved } from "@/lib/sessions/sync";
 
 export const Route = createFileRoute("/8-bollar")({
   head: () => ({ meta: [{ title: "8-bollsövningen – Around the Green | SG4" }] }),
@@ -21,7 +23,7 @@ const STATIONS = [
 ] as const;
 const ROUNDS = 5;
 const SHOTS = STATIONS.length * ROUNDS;
-const STORAGE_KEY = "sg4-8-bollar-v1";
+const STORAGE_KEY = LEGACY_KEYS.eightBall;
 
 export type EightBallSession = { id: string; date: string; score: number; scores?: number[]; roundTotals?: number[] };
 
@@ -53,7 +55,10 @@ export function loadEightBallSessions(): EightBallSession[] {
 
 export function deleteEightBallSession(id: string): EightBallSession[] {
   const next = loadEightBallSessions().filter((session) => session.id !== id);
-  if (typeof window !== "undefined") localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  if (typeof window !== "undefined") {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    recordSessionDeleted("eight-ball", id);
+  }
   return next;
 }
 
@@ -81,7 +86,9 @@ function EightBallPage() {
       const sessions = loadEightBallSessions();
       const id = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : String(Date.now());
       const roundTotals = getRoundTotals(next);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify([...sessions, { id, date: new Date().toISOString(), score: total, scores: next, roundTotals }]));
+      const record: EightBallSession = { id, date: new Date().toISOString(), score: total, scores: next, roundTotals };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify([...sessions, record]));
+      recordSessionSaved("eight-ball", record);
       setScores(next); setResult(total); setPhase("result");
     } else { setScores(next); setShot((value) => value + 1); }
   }

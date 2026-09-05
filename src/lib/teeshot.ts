@@ -1,3 +1,5 @@
+import { LEGACY_KEYS } from "@/lib/sessions/keys";
+import { recordSessionDeleted, recordSessionSaved } from "@/lib/sessions/sync";
 /**
  * Off the tee – positionsslag utan driver mot bestämda landningsytor.
  * Tre stationer × 3 varv = 9 slag.  * Ett slag ger 1 poäng när bollen stannar inom både längdspannet
@@ -137,7 +139,7 @@ export function emptyTeeShots(): TeeShot[] {
   return shots;
 }
 
-const KEY = "golf-teeshot-sessions-v3";
+const KEY = LEGACY_KEYS.teeshot;
 
 export function loadTeeSessions(): TeeSession[] {
   if (typeof window === "undefined") return [];
@@ -158,11 +160,15 @@ function persist(sessions: TeeSession[]) {
 
 export function saveTeeSession(input: Omit<TeeSession, "id">): TeeSession[] {
   const session: TeeSession = { ...input, id: crypto.randomUUID() };
-  return persist([...loadTeeSessions(), session]);
+  const next = persist([...loadTeeSessions(), session]);
+  recordSessionSaved("tee-shot", session);
+  return next;
 }
 
 export function deleteTeeSession(id: string): TeeSession[] {
-  return persist(loadTeeSessions().filter((s) => s.id !== id));
+  const next = persist(loadTeeSessions().filter((s) => s.id !== id));
+  recordSessionDeleted("tee-shot", id);
+  return next;
 }
 
 export function teeStats(sessions: TeeSession[]) {

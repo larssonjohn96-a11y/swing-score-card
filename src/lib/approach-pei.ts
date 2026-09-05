@@ -1,3 +1,5 @@
+import { LEGACY_KEYS } from "@/lib/sessions/keys";
+import { recordSessionSaved } from "@/lib/sessions/sync";
 export const PEI_TARGET_DISTANCES = [
   109, 201, 149, 66, 90, 170, 143, 50, 194, 129, 83, 220, 117, 102, 181, 157, 208, 61,
 ] as const;
@@ -24,7 +26,7 @@ export type PeiSession = {
   pei: number;
 };
 
-const STORAGE_KEY = "sg4-approach-pei-v2";
+const STORAGE_KEY = LEGACY_KEYS.approachPei;
 
 export function createPeiShots(): PeiShot[] {
   return PEI_TARGET_DISTANCES.map((targetDistance) => ({
@@ -94,6 +96,7 @@ export function savePeiSession(shots: PeiShot[]): PeiSession {
     pei: sessionPei(shots),
   };
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify([...loadPeiSessions(), record]));
+  recordSessionSaved("approach-pei", record);
   return record;
 }
 

@@ -1,3 +1,5 @@
+import { LEGACY_KEYS } from "@/lib/sessions/keys";
+import { recordSessionDeleted, recordSessionSaved } from "@/lib/sessions/sync";
 /**
  * Fairway challenge: 10 drivar. Varje drive får poäng för träffbild (fairway /
  * ruff / out) och för längd (carry mot vald nivås carry-mål). Simulerar vad som
@@ -61,7 +63,7 @@ export function avgCarry(drives: FairwayDrive[]) {
   return inPlay.reduce((a, d) => a + d.carry, 0) / inPlay.length;
 }
 
-const KEY = "golf-fairway-sessions-v1";
+const KEY = LEGACY_KEYS.fairway;
 
 export function loadFairwaySessions(): FairwaySession[] {
   if (typeof window === "undefined") return [];
@@ -82,11 +84,15 @@ function persist(sessions: FairwaySession[]) {
 
 export function saveFairwaySession(input: Omit<FairwaySession, "id">): FairwaySession[] {
   const session: FairwaySession = { ...input, id: crypto.randomUUID() };
-  return persist([...loadFairwaySessions(), session]);
+  const next = persist([...loadFairwaySessions(), session]);
+  recordSessionSaved("fairway", session);
+  return next;
 }
 
 export function deleteFairwaySession(id: string): FairwaySession[] {
-  return persist(loadFairwaySessions().filter((s) => s.id !== id));
+  const next = persist(loadFairwaySessions().filter((s) => s.id !== id));
+  recordSessionDeleted("fairway", id);
+  return next;
 }
 
 export function fairwayStats(sessions: FairwaySession[]) {

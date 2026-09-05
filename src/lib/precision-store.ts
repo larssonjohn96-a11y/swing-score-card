@@ -9,6 +9,8 @@ import {
   type PrecisionSummary,
 } from "@/lib/precision";
 import type { Device, MeasurementContext } from "@/lib/speed";
+import { LEGACY_KEYS } from "@/lib/sessions/keys";
+import { recordSessionDeleted, recordSessionSaved } from "@/lib/sessions/sync";
 
 export type PrecisionSession = {
   id: string;
@@ -28,7 +30,7 @@ export type PrecisionSession = {
   device?: Device;
 };
 
-const KEY = "golf-precision-sessions-v1";
+const KEY = LEGACY_KEYS.precision;
 
 export function loadPrecisionSessions(): PrecisionSession[] {
   if (typeof window === "undefined") return [];
@@ -71,9 +73,12 @@ export function savePrecisionSession(
     device,
   };
   persist([...loadPrecisionSessions(), session]);
+  recordSessionSaved("approach-precision", session);
   return session;
 }
 
 export function deletePrecisionSession(id: string): PrecisionSession[] {
-  return persist(loadPrecisionSessions().filter((s) => s.id !== id));
+  const next = persist(loadPrecisionSessions().filter((s) => s.id !== id));
+  recordSessionDeleted("approach-precision", id);
+  return next;
 }

@@ -2,14 +2,16 @@ import { Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, BarChart3, RotateCcw, X } from "lucide-react";
 import { useState } from "react";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
+import { LEGACY_KEYS } from "@/lib/sessions/keys";
+import { recordSessionSaved } from "@/lib/sessions/sync";
 
 export type FocusKind = "wedge" | "iron";
 type Shot = { target: number; actual: number; lateral: number };
 type Session = { id: string; date: string; pei: number };
 
 const CONFIG = {
-  wedge: { title: "Wedge PEI", min: 50, max: 120, key: "sg4-pei-wedge-v1" },
-  iron: { title: "Iron PEI", min: 120, max: 190, key: "sg4-pei-iron-v1" },
+  wedge: { title: "Wedge PEI", min: 50, max: 120, key: LEGACY_KEYS.peiWedge, testId: "pei-wedge" },
+  iron: { title: "Iron PEI", min: 120, max: 190, key: LEGACY_KEYS.peiIron, testId: "pei-iron" },
 } as const;
 
 function generateDistances(min: number, max: number) {
@@ -118,13 +120,9 @@ export function PeiFocusTest({ kind }: { kind: FocusKind }) {
         typeof crypto !== "undefined" && "randomUUID" in crypto
           ? crypto.randomUUID()
           : String(Date.now());
-      localStorage.setItem(
-        cfg.key,
-        JSON.stringify([
-          ...sessions,
-          { id, date: new Date().toISOString(), pei },
-        ]),
-      );
+      const record: Session = { id, date: new Date().toISOString(), pei };
+      localStorage.setItem(cfg.key, JSON.stringify([...sessions, record]));
+      recordSessionSaved(cfg.testId, record);
       setResult(pei);
       setPhase("result");
       return;

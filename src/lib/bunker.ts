@@ -14,6 +14,8 @@
  * Green (14 hcp ≈ 16 fot) och Pelz/PGA Tour ShotLink (proffs < 10 fot).
  */
 
+import { LEGACY_KEYS } from "@/lib/sessions/keys";
+import { recordSessionDeleted, recordSessionSaved } from "@/lib/sessions/sync";
 import {
   INTERVALS as SHORTGAME_INTERVALS,
   type IntervalKey as ShortGameIntervalKey,
@@ -162,7 +164,7 @@ export type BunkerSession = {
   score: number;
 };
 
-const KEY = "golf-bunker-sessions-v3";
+const KEY = LEGACY_KEYS.bunker;
 
 export function loadBunkerSessions(): BunkerSession[] {
   if (typeof window === "undefined") return [];
@@ -191,9 +193,12 @@ export function saveBunkerSession(shots: BunkerShot[]): BunkerSession {
     score: r.score,
   };
   persist([...loadBunkerSessions(), record]);
+  recordSessionSaved("bunker", record);
   return record;
 }
 
 export function deleteBunkerSession(id: string): BunkerSession[] {
-  return persist(loadBunkerSessions().filter((s) => s.id !== id));
+  const next = persist(loadBunkerSessions().filter((s) => s.id !== id));
+  recordSessionDeleted("bunker", id);
+  return next;
 }

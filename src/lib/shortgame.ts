@@ -1,3 +1,5 @@
+import { LEGACY_KEYS } from "@/lib/sessions/keys";
+import { recordSessionDeleted, recordSessionSaved } from "@/lib/sessions/sync";
 /**
  * Närspelstest – ersätter Chip Test och Pitch Test.
  *
@@ -192,7 +194,7 @@ export type ShortGameSession = {
   notes?: string;
 };
 
-const KEY = "golf-shortgame-sessions-v1";
+const KEY = LEGACY_KEYS.shortgame;
 
 export function loadShortGameSessions(): ShortGameSession[] {
   if (typeof window === "undefined") return [];
@@ -224,9 +226,12 @@ export function saveShortGameSession(shots: ShortGameShot[], notes?: string): Sh
     notes: notes?.trim() || undefined,
   };
   persist([...loadShortGameSessions(), session]);
+  recordSessionSaved("short-game", session);
   return session;
 }
 
 export function deleteShortGameSession(id: string): ShortGameSession[] {
-  return persist(loadShortGameSessions().filter((s) => s.id !== id));
+  const next = persist(loadShortGameSessions().filter((s) => s.id !== id));
+  recordSessionDeleted("short-game", id);
+  return next;
 }

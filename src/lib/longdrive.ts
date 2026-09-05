@@ -1,3 +1,5 @@
+import { LEGACY_KEYS } from "@/lib/sessions/keys";
+import { recordSessionDeleted, recordSessionSaved } from "@/lib/sessions/sync";
 export const LONG_DRIVE_ATTEMPTS = 6;
 
 export type LongDriveUnit = "m" | "yds";
@@ -12,7 +14,7 @@ export type LongDriveSession = {
   note?: string;
 };
 
-const KEY = "golf-longdrive-sessions-v1";
+const KEY = LEGACY_KEYS.longdrive;
 
 export function loadLongDriveSessions(): LongDriveSession[] {
   if (typeof window === "undefined") return [];
@@ -33,11 +35,15 @@ function persist(sessions: LongDriveSession[]) {
 
 export function saveLongDriveSession(input: Omit<LongDriveSession, "id">): LongDriveSession[] {
   const session: LongDriveSession = { ...input, id: crypto.randomUUID() };
-  return persist([...loadLongDriveSessions(), session]);
+  const next = persist([...loadLongDriveSessions(), session]);
+  recordSessionSaved("long-drive", session);
+  return next;
 }
 
 export function deleteLongDriveSession(id: string): LongDriveSession[] {
-  return persist(loadLongDriveSessions().filter((s) => s.id !== id));
+  const next = persist(loadLongDriveSessions().filter((s) => s.id !== id));
+  recordSessionDeleted("long-drive", id);
+  return next;
 }
 
 export function sessionBest(session: LongDriveSession) {

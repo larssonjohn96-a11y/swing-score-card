@@ -1,3 +1,5 @@
+import { LEGACY_KEYS } from "@/lib/sessions/keys";
+import { recordSessionDeleted, recordSessionSaved } from "@/lib/sessions/sync";
 /**
  * Short Putting Test (tidigare "Kortputt").
  *
@@ -276,7 +278,7 @@ export function puttingLevelLabel(score: number): string {
  * Lagring
  * ---------------------------------------------------------------------- */
 
-const KEY = "golf-shortputt-sessions-v4";
+const KEY = LEGACY_KEYS.shortputt;
 
 export function loadShortPuttSessions(): ShortPuttSession[] {
   if (typeof window === "undefined") return [];
@@ -308,11 +310,13 @@ export function saveShortPuttSession(
     notes: notes?.trim() || undefined,
   };
   window.localStorage.setItem(KEY, JSON.stringify([...loadShortPuttSessions(), record]));
+  recordSessionSaved("short-putt", record);
   return record;
 }
 
 export function deleteShortPuttSession(id: string): ShortPuttSession[] {
   const all = loadShortPuttSessions().filter((s) => s.id !== id);
   window.localStorage.setItem(KEY, JSON.stringify(all));
+  recordSessionDeleted("short-putt", id);
   return all;
 }

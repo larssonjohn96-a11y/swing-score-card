@@ -1,3 +1,5 @@
+import { LEGACY_KEYS } from "@/lib/sessions/keys";
+import { recordSessionDeleted, recordSessionSaved } from "@/lib/sessions/sync";
 /**
  * Lag putt – 18 puttar, träningstest (INTE ett HCP-test).
  * Fast hålsekvens 8–22 m enligt Svenska Golfteamets lagputtest.
@@ -39,7 +41,7 @@ export type Lag18Session = {
   total: number;
 };
 
-const KEY = "sg4-lagputt-18-v1";
+const KEY = LEGACY_KEYS.lagputt18;
 
 export function loadLag18Sessions(): Lag18Session[] {
   if (typeof window === "undefined") return [];
@@ -67,13 +69,17 @@ export function saveLag18Session(scores: number[]): Lag18Session {
   };
   if (typeof window !== "undefined") {
     window.localStorage.setItem(KEY, JSON.stringify([...loadLag18Sessions(), record]));
+    recordSessionSaved("lag-putt-18", record);
   }
   return record;
 }
 
 export function deleteLag18Session(id: string): Lag18Session[] {
   const next = loadLag18Sessions().filter((s) => s.id !== id);
-  if (typeof window !== "undefined") window.localStorage.setItem(KEY, JSON.stringify(next));
+  if (typeof window !== "undefined") {
+    window.localStorage.setItem(KEY, JSON.stringify(next));
+    recordSessionDeleted("lag-putt-18", id);
+  }
   return next;
 }
 
