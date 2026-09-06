@@ -1,5 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, Repeat, Shuffle, Grid3x3 } from "lucide-react";
+import {
+  formatShotShapingRating,
+  loadShotShapingRating,
+} from "@/lib/shot-shaping-rating";
 import { LIGHT_SURFACE } from "./8-bollar";
 
 export const Route = createFileRoute("/shot-shaping")({
@@ -48,6 +52,8 @@ const TESTS = [
 ];
 
 function ShotShapingFamily() {
+  const rating = loadShotShapingRating();
+
   return (
     <main
       style={LIGHT_SURFACE}
@@ -55,7 +61,8 @@ function ShotShapingFamily() {
     >
       <div className="flex items-center justify-between">
         <Link
-          to="/traning" search={{ category: undefined }}
+          to="/traning"
+          search={{ category: undefined }}
           className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -73,6 +80,28 @@ function ShotShapingFamily() {
         Tre olika sätt att mäta bollkontroll: träffa alla fönster, upprepa en form eller växla mellan
         draw och fade.
       </p>
+
+      {rating ? (
+        <section className="mt-5 rounded-3xl border border-primary/25 bg-primary/[0.06] p-5">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-primary">
+            Shot Shaping Rating
+          </p>
+          <div className="mt-2 flex items-end justify-between gap-4">
+            <p className="font-display text-5xl leading-none text-foreground">
+              {formatShotShapingRating(rating.rating)}
+              <span className="ml-1 text-base text-muted-foreground">/ 10</span>
+            </p>
+            <p className="pb-1 text-right text-xs leading-relaxed text-muted-foreground">
+              Snitt av senaste {rating.count}
+              <br />
+              Shot Shaping-test{rating.count === 1 ? "" : "er"}
+            </p>
+          </div>
+          <p className="mt-3 text-xs text-muted-foreground">
+            Varje test behåller sitt eget resultat. Ratingen normaliserar testerna till 0–10 och använder högst de senaste 5.
+          </p>
+        </section>
+      ) : null}
 
       <div className="mt-6 space-y-3">
         {TESTS.map(({ to, title, meta, description, icon: Icon }) => (
