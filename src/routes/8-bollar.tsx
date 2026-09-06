@@ -100,22 +100,35 @@ function EightBallPage() {
 
   if (phase === "intro") return (
     <main style={LIGHT_SURFACE} className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background px-5 pb-5 pt-4 text-foreground">
-      <div className="flex shrink-0 items-center justify-between"><Link to="/kategori/$slug" params={{ slug: "around-the-green" }} className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card"><ArrowLeft className="h-4 w-4" /></Link><Link to="/8-bollar-historik" className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground"><BarChart3 className="h-3.5 w-3.5"/> Progress</Link></div>
+      <div className="flex shrink-0 items-center justify-between">
+        <Link to="/kategori/$slug" params={{ slug: "around-the-green" }} className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card"><ArrowLeft className="h-4 w-4" /></Link>
+        <Link to="/8-bollar-historik" className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground"><BarChart3 className="h-3.5 w-3.5"/> Progress</Link>
+      </div>
+
       <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">Around the Green · Träningstest</p>
       <h1 className="mt-2 font-display text-3xl leading-none">8-bollsövningen</h1>
-      <p className="mt-2.5 text-[13px] leading-relaxed text-muted-foreground">Åtta fasta stationer i ordningen nedan. Spela samtliga stationer fem varv – totalt 40 slag.</p>
-      <div className="mt-4 overflow-hidden rounded-2xl border border-border bg-card">{STATIONS.map((s, i) => <div key={i} className="flex h-[30px] items-center justify-between border-b border-border px-3.5 last:border-b-0"><span className="text-[13px]"><b>Station {i + 1}</b> · {s.type}</span><span className="text-[13px] font-semibold tabular-nums">{s.distance} m</span></div>)}</div>
-      <div className="mt-4 rounded-2xl border border-border bg-card p-3.5">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Poäng per slag</p>
-        <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1.5 text-[13px]">
-          {[["4 p", "Sänkt"], ["3 p", "≤ 1 m"], ["2 p", "≤ 2 m"], ["1 p", "≤ 3 m"], ["0 p", "> 3 m"]].map(([p, label]) => (
-            <div key={p} className="flex items-center justify-between border-b border-border/60 pb-1 last:border-b-0">
-              <span className="text-muted-foreground">{label}</span>
-              <span className="font-semibold tabular-nums">{p}</span>
+      <p className="mt-2 text-sm font-semibold text-primary">40 slag · 8 stationer · 5 varv</p>
+      <p className="mt-2.5 text-[13px] leading-relaxed text-muted-foreground">Träna chip, pitch, lobb och bunker och mät hur nära hålet du kommer.</p>
+
+      <section className="mt-5 rounded-2xl border border-border bg-card p-4">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Stationer</p>
+        <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2.5">
+          {STATIONS.map((s, i) => (
+            <div key={i} className="flex items-center justify-between gap-2 border-b border-border/60 pb-2 text-[13px] last:border-b-0">
+              <span className="font-semibold">{s.type}</span>
+              <span className="tabular-nums text-muted-foreground">{s.distance} m</span>
             </div>
           ))}
         </div>
-      </div>
+      </section>
+
+      <section className="mt-3 rounded-2xl border border-border bg-card p-4">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Poäng per slag</p>
+        <p className="mt-2 text-[12px] leading-relaxed text-muted-foreground">
+          <span className="font-semibold text-foreground">4</span> = sänkt · <span className="font-semibold text-foreground">3</span> = ≤1 m · <span className="font-semibold text-foreground">2</span> = ≤2 m · <span className="font-semibold text-foreground">1</span> = ≤3 m · <span className="font-semibold text-foreground">0</span> = &gt;3 m
+        </p>
+      </section>
+
       <button onClick={start} className="mt-auto flex w-full shrink-0 items-center justify-center gap-2 rounded-2xl bg-primary py-4 font-display text-xl text-primary-foreground">Starta test <ArrowRight className="h-5 w-5" /></button>
     </main>
   );
