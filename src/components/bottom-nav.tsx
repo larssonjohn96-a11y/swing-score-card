@@ -123,6 +123,24 @@ export function BottomNav() {
                 </p>
               </Link>
             ))}
+
+            <Link
+              to="/traning"
+              search={{ category: undefined }}
+              onClick={() => setOpen(false)}
+              className="block rounded-2xl border border-border bg-card p-4 transition-colors hover:border-primary"
+            >
+              <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                Ej HCP-grundande
+              </p>
+              <h3 className="mt-0.5 text-2xl leading-none">Träningstester</h3>
+              <p className="mt-1.5 text-xs text-muted-foreground">
+                Träna med syfte och följ din utveckling över tid utan att påverka ditt HCP.
+              </p>
+              <p className="mt-2 text-[11px] uppercase tracking-[0.2em] text-flag">
+                Träna & följ progress
+              </p>
+            </Link>
           </div>
         </SheetContent>
       </Sheet>
