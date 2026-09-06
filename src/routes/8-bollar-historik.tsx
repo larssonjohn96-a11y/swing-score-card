@@ -101,6 +101,10 @@ function EightBallHistoryPage() {
     score: s.score,
     isLast: i === recent.length - 1,
   }));
+  const highestRecentScore = recent.length ? Math.max(...recent.map((s) => s.score)) : 0;
+  const chartMax = highestRecentScore <= 100 ? 100 : highestRecentScore <= 120 ? 120 : highestRecentScore <= 140 ? 140 : 160;
+  const chartStep = chartMax / 4;
+  const chartTicks = [0, chartStep, chartStep * 2, chartStep * 3, chartMax];
 
   const detailed = complete.filter((s) => Array.isArray(s.scores) && s.scores.length > 0);
   const recentDetailed = detailed.slice(-5);
@@ -187,8 +191,8 @@ function EightBallHistoryPage() {
                   <XAxis dataKey="label" tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} />
                   <YAxis
                     type="number"
-                    domain={[0, 160]}
-                    ticks={[0, 40, 80, 120, 160]}
+                    domain={[0, chartMax]}
+                    ticks={chartTicks}
                     interval={0}
                     allowDecimals={false}
                     tickFormatter={(value: number) => String(value)}
