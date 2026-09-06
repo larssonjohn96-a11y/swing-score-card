@@ -19,6 +19,7 @@ type TestRoute =
   | "/longdrive"
   | "/fairway-streak"
   | "/putting-streak"
+  | "/lagputt-ladder"
   | "/driver-konsekvens"
   | "/lagputt"
   | "/50-bollar"
@@ -117,6 +118,15 @@ const TESTS: Record<Category, TestItem[]> = {
       description:
         "En putt per nivå från 1 till 10 meter. Sätt den för att gå vidare. Första missen avslutar testet.",
       meta: "1 liv · progressiv stege · PB",
+      skill: "Challenge",
+      featured: true,
+    },
+    {
+      to: "/lagputt-ladder",
+      title: "Lag Putt Ladder",
+      description:
+        "Börja på 8 meter och gå upp två meter per nivå. Håla ut på högst två puttar för att gå vidare. Tre puttar avslutar testet.",
+      meta: "8–30 m · max 2 puttar · PB",
       skill: "Challenge",
       featured: true,
     },
@@ -247,7 +257,7 @@ function TrainingTestsPage() {
             </p>
           ) : category === "putting" ? (
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Jaga PB i Putting Streak eller välj ett djupare test för total putting, kortputt, längdkontroll, startlinje eller greenläsning.
+              Jaga PB i Putting Streak och Lag Putt Ladder eller välj ett djupare test för total putting, kortputt, längdkontroll, startlinje eller greenläsning.
             </p>
           ) : category === "approach" ? (
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
