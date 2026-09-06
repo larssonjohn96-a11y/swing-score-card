@@ -4,8 +4,6 @@ import { useEffect, useState } from "react";
 import {
   Area,
   AreaChart,
-  Bar,
-  BarChart,
   CartesianGrid,
   Dot,
   ResponsiveContainer,
@@ -30,6 +28,9 @@ export const Route = createFileRoute("/8-bollar-historik")({
 const dateLabel = (iso: string) =>
   new Date(iso).toLocaleDateString("sv-SE", { day: "numeric", month: "short" });
 
+const TECHNIQUES = ["Chip", "Pitch", "Lobb", "Bunker"] as const;
+type Technique = (typeof TECHNIQUES)[number];
+
 function KpiCard({ label, value, unit, hint }: { label: string; value: string; unit?: string; hint?: string }) {
   return (
     <div className="rounded-2xl border border-border bg-card p-4">
@@ -41,6 +42,22 @@ function KpiCard({ label, value, unit, hint }: { label: string; value: string; u
       {hint ? <p className="mt-1 text-xs text-muted-foreground">{hint}</p> : null}
     </div>
   );
+}
+
+function techniqueAverage(session: EightBallSession, technique: Technique) {
+  if (!Array.isArray(session.scores) || session.scores.length === 0) return null;
+  const stationIndexes = STATION_LIST.flatMap((station, index) => station.type === technique ? [index] : []);
+  const values: number[] = [];
+
+  for (let round = 0; round < EIGHT_BALL_ROUNDS; round += 1) {
+    for (const stationIndex of stationIndexes) {
+      const value = session.scores[round * STATION_LIST.length + stationIndex];
+      if (typeof value === "number") values.push(value);
+    }
+  }
+
+  if (!values.length) return null;
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
 function EightBallHistoryPage() {
@@ -60,43 +77,46 @@ function EightBallHistoryPage() {
   const bestScore = complete.length ? Math.max(...complete.map((s) => s.score)) : 0;
   const roundScores = complete.flatMap((s) => s.roundTotals ?? []);
   const bestRound = roundScores.length ? Math.max(...roundScores) : 0;
-  const average = complete.length
-    ? Math.round(complete.reduce((sum, s) => sum + s.score, 0) / complete.length)
+  const latestFive = complete.slice(-5);
+  const recentAverage = latestFive.length
+    ? Math.round(latestFive.reduce((sum, s) => sum + s.score, 0) / latestFive.length)
     : 0;
   const recent = [...complete].slice(-12);
   const latest = complete.length ? complete[complete.length - 1] : null;
-
 
   const chartData = recent.map((s, i) => ({
     key: s.id,
     label: dateLabel(s.date),
     score: s.score,
-    best: s.roundTotals?.length ? Math.max(...s.roundTotals) : null,
     isLast: i === recent.length - 1,
   }));
 
   const detailed = complete.filter((s) => Array.isArray(s.scores) && s.scores.length > 0);
-  const stationTotals = detailed.length
-    ? STATION_LIST.map((station, stationIdx) => {
-        let sum = 0;
-        let count = 0;
-        for (const session of detailed) {
-          for (let r = 0; r < EIGHT_BALL_ROUNDS; r += 1) {
-            const value = session.scores?.[r * STATION_LIST.length + stationIdx];
-            if (typeof value === "number") {
-              sum += value;
-              count += 1;
-            }
-          }
-        }
-        return { ...station, index: stationIdx, avg: count ? sum / count : 0, count };
-      }).filter((s) => s.count > 0)
-    : [];
-  const strongest = stationTotals.length
-    ? stationTotals.reduce((a, b) => (b.avg > a.avg ? b : a))
+  const latestDetailed = detailed.length ? detailed[detailed.length - 1] : null;
+  const recentDetailed = detailed.slice(-5);
+
+  const techniqueStats = TECHNIQUES.map((technique) => {
+    const recentValues = recentDetailed
+      .map((session) => techniqueAverage(session, technique))
+      .filter((value): value is number => value !== null);
+    const allValues = detailed
+      .map((session) => techniqueAverage(session, technique))
+      .filter((value): value is number => value !== null);
+    const latestValue = latestDetailed ? techniqueAverage(latestDetailed, technique) : null;
+
+    return {
+      technique,
+      recentAvg: recentValues.length ? recentValues.reduce((sum, value) => sum + value, 0) / recentValues.length : null,
+      latest: latestValue,
+      best: allValues.length ? Math.max(...allValues) : null,
+    };
+  }).filter((item) => item.recentAvg !== null);
+
+  const strongestTechnique = techniqueStats.length
+    ? techniqueStats.reduce((a, b) => (Number(b.recentAvg) > Number(a.recentAvg) ? b : a))
     : null;
-  const weakest = stationTotals.length
-    ? stationTotals.reduce((a, b) => (b.avg < a.avg ? b : a))
+  const weakestTechnique = techniqueStats.length
+    ? techniqueStats.reduce((a, b) => (Number(b.recentAvg) < Number(a.recentAvg) ? b : a))
     : null;
 
   return (
@@ -136,11 +156,10 @@ function EightBallHistoryPage() {
 
           <div className="mt-3 grid grid-cols-2 gap-3">
             <KpiCard label="Bästa totalpoäng" value={String(bestScore)} unit="poäng" />
+            <KpiCard label="Snitt senaste 5" value={String(recentAverage)} unit="poäng" hint={`${latestFive.length} senaste test`} />
             <KpiCard label="Bästa varv" value={roundScores.length ? String(bestRound) : "–"} unit={roundScores.length ? "poäng" : undefined} />
-            <KpiCard label="Snittresultat" value={String(average)} unit="poäng" />
             <KpiCard label="Antal tester" value={String(complete.length)} hint="Genomförda test" />
           </div>
-
 
           <section className="mt-4 rounded-2xl border border-border bg-card p-4">
             <div className="flex items-end justify-between">
@@ -205,53 +224,50 @@ function EightBallHistoryPage() {
             ) : null}
           </section>
 
-          {roundScores.length ? (
+          {techniqueStats.length ? (
             <section className="mt-3 rounded-2xl border border-border bg-card p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Bästa varv per test</p>
-              <p className="mt-1 text-xs text-muted-foreground">Högsta poäng i ett enskilt varv (max 32).</p>
-              <div className="mt-4 h-36 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData.filter((d) => typeof d.best === "number")} margin={{ top: 4, right: 10, left: 4, bottom: 0 }}>
-                    <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="label" tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} />
-                    <YAxis
-                      type="number"
-                      domain={[0, 32]}
-                      ticks={[0, 8, 16, 24, 32]}
-                      interval={0}
-                      allowDecimals={false}
-                      tickFormatter={(value: number) => String(value)}
-                      tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
-                      tickLine={false}
-                      axisLine={false}
-                      width={40}
-                      tickMargin={6}
-                    />
-                    <Tooltip
-                      formatter={(value) => [`${value} poäng`, "Bästa varv"]}
-                      contentStyle={{ borderRadius: 12, border: "1px solid var(--border)", fontSize: 12 }}
-                    />
-                    <Bar dataKey="best" fill="var(--primary)" radius={[6, 6, 0, 0]} maxBarSize={22} />
-                  </BarChart>
-                </ResponsiveContainer>
+              <div className="flex items-end justify-between gap-3">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Styrkor & svagheter</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Snittpoäng per slag · senaste {recentDetailed.length} test</p>
+                </div>
+                <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Max 4,0</span>
               </div>
-            </section>
-          ) : null}
 
-          {strongest && weakest ? (
-            <section className="mt-3 rounded-2xl border border-border bg-card p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Analys</p>
-              <div className="mt-3 space-y-2">
-                <div className="flex items-center justify-between rounded-xl bg-primary/8 px-3 py-2.5">
-                  <span className="text-sm"><b className="text-primary">Starkast:</b> {strongest.type} {strongest.distance} m</span>
-                  <span className="shrink-0 text-sm font-semibold tabular-nums">{strongest.avg.toFixed(1)} poäng</span>
-                </div>
-                <div className="flex items-center justify-between rounded-xl bg-muted px-3 py-2.5">
-                  <span className="text-sm"><b>Fokus:</b> {weakest.type} {weakest.distance} m</span>
-                  <span className="shrink-0 text-sm font-semibold tabular-nums">{weakest.avg.toFixed(1)} poäng</span>
-                </div>
+              <div className="mt-4 divide-y divide-border">
+                {techniqueStats.map((item) => {
+                  const isStrongest = item.technique === strongestTechnique?.technique;
+                  const isWeakest = item.technique === weakestTechnique?.technique;
+                  return (
+                    <div key={item.technique} className="grid grid-cols-[1fr_auto_auto] items-center gap-3 py-3 first:pt-0 last:pb-0">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-semibold">{item.technique}</p>
+                          {isStrongest ? <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-primary">Styrka</span> : null}
+                          {isWeakest && !isStrongest ? <span className="rounded-full bg-muted px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Fokus</span> : null}
+                        </div>
+                        <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
+                          <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, (Number(item.recentAvg) / 4) * 100)}%` }} />
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Senaste 5</p>
+                        <p className="mt-0.5 text-sm font-semibold tabular-nums">{Number(item.recentAvg).toFixed(1)}<span className="text-xs text-muted-foreground"> / 4</span></p>
+                      </div>
+                      <div className="w-12 text-right">
+                        <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Bäst</p>
+                        <p className="mt-0.5 text-sm font-semibold tabular-nums">{item.best?.toFixed(1) ?? "–"}</p>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-              <p className="mt-3 text-xs text-muted-foreground">Snittpoäng per slag på respektive station.</p>
+
+              {strongestTechnique && weakestTechnique ? (
+                <p className="mt-4 rounded-xl bg-muted px-3 py-2.5 text-xs text-muted-foreground">
+                  <b className="text-foreground">Styrka:</b> {strongestTechnique.technique} {Number(strongestTechnique.recentAvg).toFixed(1)}/4 · <b className="text-foreground">Träningsfokus:</b> {weakestTechnique.technique} {Number(weakestTechnique.recentAvg).toFixed(1)}/4
+                </p>
+              ) : null}
             </section>
           ) : null}
 
@@ -261,23 +277,23 @@ function EightBallHistoryPage() {
               {(() => {
                 const rows = [...complete].reverse();
                 return (showAll ? rows : rows.slice(0, 5)).map((s) => (
-                <div key={s.id} className="flex items-center justify-between gap-3 py-3">
-                  <div>
-                    <p className="text-sm font-semibold">{new Date(s.date).toLocaleDateString("sv-SE")}</p>
-                    <p className="text-xs text-muted-foreground">Bästa varv {s.roundTotals?.length ? `${Math.max(...s.roundTotals)} poäng` : "–"}</p>
+                  <div key={s.id} className="flex items-center justify-between gap-3 py-3">
+                    <div>
+                      <p className="text-sm font-semibold">{new Date(s.date).toLocaleDateString("sv-SE")}</p>
+                      <p className="text-xs text-muted-foreground">Bästa varv {s.roundTotals?.length ? `${Math.max(...s.roundTotals)} poäng` : "–"}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <p className="font-display text-2xl leading-none">{s.score}<span className="ml-1 text-sm text-muted-foreground">poäng</span></p>
+                      <button
+                        type="button"
+                        aria-label="Ta bort test"
+                        onClick={() => remove(s.id)}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors active:bg-muted"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <p className="font-display text-2xl leading-none">{s.score}<span className="ml-1 text-sm text-muted-foreground">poäng</span></p>
-                    <button
-                      type="button"
-                      aria-label="Ta bort test"
-                      onClick={() => remove(s.id)}
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors active:bg-muted"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </div>
                 ));
               })()}
             </div>
@@ -291,7 +307,6 @@ function EightBallHistoryPage() {
               </button>
             ) : null}
           </section>
-
 
           <Link to="/8-bollar" className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-4 font-display text-xl text-primary-foreground">Gör ett nytt test <ArrowRight className="h-5 w-5" /></Link>
           <Link to="/8-bollar" className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-border bg-card py-4 font-semibold"><Trophy className="h-4 w-4" /> Till testet</Link>
