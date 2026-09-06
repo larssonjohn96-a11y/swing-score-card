@@ -67,7 +67,7 @@ function TesterPage() {
         </p>
         <h1 className="mt-1 text-4xl leading-none">Tester</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Välj en kategori, gör testet och få din HCP-nivå.
+          HCP-tester visar din nivå och dina svagheter. Gör testerna för att se vilken HCP-nivå ditt spel motsvarar.
         </p>
       </header>
 
@@ -106,13 +106,16 @@ function TesterPage() {
           <div className="min-w-0 flex-1">
             <h2 className="text-2xl leading-none">Träningstester</h2>
             <p className="mt-1.5 text-sm leading-snug text-muted-foreground">
-              Puttning, närspel, wedges och shot shaping. Följ progress utan att påverka ditt HCP.
+              Träna med syfte, gör träningen roligare och följ din utveckling över tid – utan att påverka ditt HCP.
             </p>
           </div>
           <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
         </Link>
       </section>
 
+      <p className="mt-6 text-center text-xs font-semibold text-muted-foreground">
+        Mät din nivå. Träna med syfte. Följ din utveckling.
+      </p>
     </main>
   );
 }
