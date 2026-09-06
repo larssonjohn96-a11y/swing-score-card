@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, BarChart3, RotateCcw, Trophy, X } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 import { LEGACY_KEYS } from "@/lib/sessions/keys";
 import { recordSessionDeleted, recordSessionSaved } from "@/lib/sessions/sync";
@@ -72,19 +72,32 @@ function EightBallPage() {
   const [shot, setShot] = useState(0);
   const [scores, setScores] = useState<number[]>([]);
   const [result, setResult] = useState<number | null>(null);
+  const [feedback, setFeedback] = useState<number | null>(null);
+  const feedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const stationIndex = shot % STATIONS.length;
   const station = stationIndex + 1;
   const stationInfo = STATIONS[stationIndex];
   const round = Math.floor(shot / STATIONS.length) + 1;
 
-  function start() { setShot(0); setScores([]); setResult(null); setPhase("test"); }
+  function clearFeedback() {
+    if (feedbackTimer.current) clearTimeout(feedbackTimer.current);
+    feedbackTimer.current = null;
+    setFeedback(null);
+  }
+
+  function start() { clearFeedback(); setShot(0); setScores([]); setResult(null); setPhase("test"); }
   function previous() {
     if (shot <= 0) return;
+    clearFeedback();
     setScores((values) => values.slice(0, -1));
     setShot((value) => Math.max(0, value - 1));
   }
   function register(points: number) {
+    if (feedbackTimer.current) clearTimeout(feedbackTimer.current);
+    setFeedback(points);
+    feedbackTimer.current = setTimeout(() => setFeedback(null), 650);
+
     const next = [...scores, points];
     if (shot + 1 >= SHOTS) {
       const total = next.reduce((sum, value) => sum + value, 0);
@@ -135,64 +148,67 @@ function EightBallPage() {
 
   if (phase === "test") {
     const total = scores.reduce((sum, value) => sum + value, 0);
+    const progress = (shot / SHOTS) * 100;
     return (
       <main
         style={LIGHT_SURFACE}
         className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background px-5 pb-6 text-foreground"
       >
         <div className="flex items-center justify-between pt-[max(1rem,env(safe-area-inset-top))]">
-          <span className="text-sm font-semibold">Slag {shot + 1} av {SHOTS}</span>
-          <Link to="/kategori/$slug" params={{ slug: "around-the-green" }} className="flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground"><X className="h-3.5 w-3.5" /> Avbryt</Link>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">8-bollsövningen</p>
+            <p className="mt-0.5 text-sm font-semibold">Slag {shot + 1} av {SHOTS}</p>
+          </div>
+          <Link to="/kategori/$slug" params={{ slug: "around-the-green" }} className="flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-semibold text-muted-foreground"><X className="h-3.5 w-3.5" /> Avbryt</Link>
         </div>
 
-        <div className="mt-3 rounded-2xl border border-border bg-card p-3 shadow-sm">
+        <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-muted">
+          <div className="h-full rounded-full bg-primary transition-[width] duration-300" style={{ width: `${progress}%` }} />
+        </div>
+        <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
+          <span>Varv {round} av {ROUNDS}</span>
+          <span>Station {station} av {STATIONS.length}</span>
+        </div>
+
+        <section className="flex flex-1 flex-col items-center justify-center py-8 text-center">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">Nästa slag</p>
+          <h2 className="mt-3 font-display text-5xl leading-none">{stationInfo.type}</h2>
+          <p className="mt-3 text-xl font-semibold tabular-nums text-primary">{stationInfo.distance} m</p>
+          <p className="mt-1 text-xs text-muted-foreground">från hål</p>
+        </section>
+
+        <div className="relative">
+          {feedback !== null ? (
+            <div className="pointer-events-none absolute -top-11 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full bg-foreground px-3 py-1.5 text-xs font-semibold text-background shadow-lg">
+              {feedback} poäng registrerat
+            </div>
+          ) : null}
+
+          <p className="mb-2 text-center text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Resultat</p>
           <div className="grid grid-cols-5 gap-2">
-            {Array.from({ length: ROUNDS }, (_, i) => {
-              const active = i === round - 1;
-              const done = i < round - 1;
-              return (
-                <div key={i}>
-                  <div className="h-2 overflow-hidden rounded-full bg-muted">
-                    <div className="h-full rounded-full bg-primary" style={{ width: done ? "100%" : active ? `${(stationIndex / STATIONS.length) * 100}%` : "0%" }} />
-                  </div>
-                  <p className={`mt-1.5 text-center text-[10px] font-semibold ${active ? "text-primary" : "text-muted-foreground"}`}>Varv {i + 1}</p>
-                </div>
-              );
-            })}
+            {[{ p: 4, l: "Sänkt" }, { p: 3, l: "≤ 1 m" }, { p: 2, l: "≤ 2 m" }, { p: 1, l: "≤ 3 m" }, { p: 0, l: "> 3 m" }].map(({ p, l }) => (
+              <button
+                key={p}
+                onClick={() => register(p)}
+                className="flex h-[94px] flex-col items-center justify-center rounded-2xl border border-border bg-card px-1 transition-[transform,border-color,background-color] active:scale-[0.97] active:border-primary active:bg-tint"
+              >
+                <span className="font-display text-3xl leading-none text-primary">{p}</span>
+                <span className="mt-2 text-[10px] font-semibold leading-none">{l}</span>
+              </button>
+            ))}
           </div>
         </div>
 
-        <section className="mt-3 flex h-[150px] flex-col items-center justify-center rounded-2xl border border-border bg-card px-4 text-center shadow-sm">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Varv {round} · Station {station}</p>
-          <p className="mt-2 font-display text-3xl leading-none">{stationInfo.type}</p>
-          <p className="mt-2 text-sm font-semibold text-primary">{stationInfo.distance} meter från hål</p>
-        </section>
-
-        <p className="mt-4 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Resultat från hål</p>
-        <div className="mt-2 grid grid-cols-5 gap-2">
-          {[{ p: 4, l: "Sänkt" }, { p: 3, l: "≤ 1 m" }, { p: 2, l: "≤ 2 m" }, { p: 1, l: "≤ 3 m" }, { p: 0, l: "> 3 m" }].map(({ p, l }) => (
-            <button
-              key={p}
-              onClick={() => register(p)}
-              className="flex h-[112px] flex-col items-center justify-center rounded-2xl border border-border bg-card px-1 shadow-sm transition-transform active:scale-95"
-            >
-              <span className="font-display text-3xl leading-none text-primary">{p}</span>
-              <span className="mt-2 text-[11px] font-semibold">{l}</span>
-              <span className="mt-0.5 text-[9px] text-muted-foreground">{p} poäng</span>
-            </button>
-          ))}
-        </div>
-
-        <div className="mt-3 flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3 text-sm shadow-sm">
-          <span className="text-muted-foreground">Hittills</span>
+        <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-sm">
+          <span className="text-muted-foreground">Total hittills</span>
           <span className="font-semibold tabular-nums">{total} poäng</span>
         </div>
 
         {shot > 0 ? (
-          <button onClick={previous} className="mt-3 w-full py-2 text-sm font-semibold text-muted-foreground">
+          <button onClick={previous} className="mt-1 w-full py-2 text-sm font-semibold text-muted-foreground">
             Ändra föregående slag
           </button>
-        ) : null}
+        ) : <div className="h-10" />}
       </main>
     );
   }
