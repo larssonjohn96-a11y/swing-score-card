@@ -23,6 +23,7 @@ export const Route = createFileRoute("/shot-shaping-konstant-historik")({
       higherIsBetter
       scaleHint="max 10"
       variants={SHAPE_VARIANTS}
+      rollingWindow={5}
       breakdown={constantShapeHistory}
     />
   ),
