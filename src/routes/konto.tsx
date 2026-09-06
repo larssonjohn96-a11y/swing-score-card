@@ -124,15 +124,20 @@ function AccountPage() {
         <>
           <section className="mt-6 space-y-4 rounded-3xl border border-border bg-card p-5">
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                Inloggad som
-              </p>
+              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Inloggad som</p>
               <p className="font-[family-name:var(--font-display)] text-3xl text-primary">
                 {displayName ?? user.email}
               </p>
               <p className="text-xs text-muted-foreground">{user.email}</p>
             </div>
             <NameForm currentName={displayName} userId={user.id} />
+            <Link
+              to="/vanner"
+              className="flex w-full items-center justify-between rounded-2xl border border-border px-4 py-3 text-sm font-semibold"
+            >
+              <span>Vänner</span>
+              <span className="text-primary">Lägg till & hantera ›</span>
+            </Link>
             <button
               onClick={signOut}
               className="w-full rounded-2xl border border-border py-3 text-sm text-muted-foreground"
@@ -163,35 +168,12 @@ function AccountPage() {
             ))}
           </div>
 
-          <form
-            onSubmit={submit}
-            className="mt-4 space-y-3 rounded-3xl border border-border bg-card p-5"
-          >
+          <form onSubmit={submit} className="mt-4 space-y-3 rounded-3xl border border-border bg-card p-5">
             {mode === "signup" ? (
-              <Field
-                label="Spelarnamn"
-                value={name}
-                onChange={setName}
-                placeholder="Visas i topplistan"
-                maxLength={30}
-              />
+              <Field label="Spelarnamn" value={name} onChange={setName} placeholder="Visas i topplistan" maxLength={30} />
             ) : null}
-            <Field
-              label="E-post"
-              type="email"
-              value={email}
-              onChange={setEmail}
-              placeholder="din@mail.se"
-              maxLength={255}
-            />
-            <Field
-              label="Lösenord"
-              type="password"
-              value={password}
-              onChange={setPassword}
-              placeholder="Minst 6 tecken"
-              maxLength={72}
-            />
+            <Field label="E-post" type="email" value={email} onChange={setEmail} placeholder="din@mail.se" maxLength={255} />
+            <Field label="Lösenord" type="password" value={password} onChange={setPassword} placeholder="Minst 6 tecken" maxLength={72} />
             {error ? <p className="text-sm text-flag">{error}</p> : null}
             {message ? <p className="text-sm text-muted-foreground">{message}</p> : null}
             <button
