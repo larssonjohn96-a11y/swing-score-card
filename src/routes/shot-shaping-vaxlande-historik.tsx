@@ -21,6 +21,7 @@ export const Route = createFileRoute("/shot-shaping-vaxlande-historik")({
       valueSuffix="p"
       higherIsBetter
       scaleHint="max 10"
+      rollingWindow={5}
     />
   ),
 });
