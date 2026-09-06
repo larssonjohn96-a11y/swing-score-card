@@ -38,12 +38,12 @@ export const Route = createFileRoute("/precision")({
       {
         name: "description",
         content:
-          "5 inspel mot 50, 75, 100, 125 och 150 meter. Få din Approach-HCP och se var du ligger i handicapfördelningen.",
+          "18 inspel över nio avstånd från 55 till 165 meter. Få din Approach-HCP och se var du ligger i handicapfördelningen.",
       },
       { property: "og:title", content: "Inspelstest – Approach Precision Test" },
       {
         property: "og:description",
-        content: "5 slag, en siffra: din Approach-HCP och var du ligger jämfört med andra golfare.",
+        content: "18 slag, en siffra: din Approach-HCP och var du ligger jämfört med andra golfare.",
       },
 
       { property: "og:type", content: "website" },
@@ -59,10 +59,12 @@ type TestMode = "main" | "extended";
 function PrecisionPage() {
   const navigate = useNavigate();
   const [phase, setPhase] = useState<Phase>("setup");
-  const [mode, setMode] = useState<TestMode>("main");
-  const [shots, setShots] = useState<PrecisionShot[]>(emptyPrecisionShots);
+  const [mode, setMode] = useState<TestMode>("extended");
+  const [shots, setShots] = useState<PrecisionShot[]>(() =>
+    emptyPrecisionShots(EXTENDED_PRECISION_TARGETS, EXTENDED_PRECISION_ROUNDS),
+  );
   const [index, setIndex] = useState(0);
-  const [carry, setCarry] = useState<number>(PRECISION_TARGETS[0]);
+  const [carry, setCarry] = useState<number>(EXTENDED_PRECISION_TARGETS[0]);
   const [side, setSide] = useState<-1 | 1>(1);
   const [offset, setOffset] = useState(0);
   const [prevScore, setPrevScore] = useState<number | null>(null);
@@ -76,7 +78,7 @@ function PrecisionPage() {
   const [undoUsed, setUndoUsed] = useState(false);
 
   /** Antal slag styrs av vilket läge som valdes vid start – shots.length
-   *  är alltid rätt storlek oavsett huvudtest (5) eller utökat test (18). */
+   *  är alltid rätt storlek oavsett standardtest (18) eller snabbtest (5). */
   const totalShots = shots.length;
   const current = shots[Math.min(index, totalShots - 1)];
 
@@ -228,7 +230,7 @@ function PrecisionPage() {
         </h2>
 
         <button
-          onClick={() => start("main")}
+          onClick={() => start("extended")}
           className="mt-6 w-full rounded-2xl bg-primary py-5 text-left"
         >
           <span className="flex items-center justify-between px-6">
@@ -236,20 +238,20 @@ function PrecisionPage() {
               <span className="block font-[family-name:var(--font-display)] text-2xl text-primary-foreground">
                 Standard
               </span>
-              <span className="block text-sm text-primary-foreground/70">5 slag · 50–150 m</span>
+              <span className="block text-sm text-primary-foreground/70">18 slag · 55–165 m</span>
             </span>
             <ArrowRight className="h-5 w-5 shrink-0 text-primary-foreground" />
           </span>
         </button>
 
         <button
-          onClick={() => start("extended")}
+          onClick={() => start("main")}
           className="mt-3 w-full rounded-2xl border-2 border-border py-5 text-left transition-colors hover:border-primary"
         >
           <span className="flex items-center justify-between px-6">
             <span>
-              <span className="block font-[family-name:var(--font-display)] text-2xl">Utökat</span>
-              <span className="block text-sm text-muted-foreground">18 slag · 55–165 m</span>
+              <span className="block font-[family-name:var(--font-display)] text-2xl">Snabbtest</span>
+              <span className="block text-sm text-muted-foreground">5 slag · 50–150 m</span>
             </span>
             <ArrowRight className="h-5 w-5 shrink-0 text-muted-foreground" />
           </span>
@@ -345,6 +347,9 @@ function TestScreen({
   const isPerfect = diff === 0 && offset === 0;
   const landingDistanceM = Math.sqrt(diff * diff + offset * offset);
   const isBirdieRange = !isPerfect && landingDistanceM <= 4;
+  const progressTargets = totalShots === EXTENDED_PRECISION_TARGETS.length * EXTENDED_PRECISION_ROUNDS
+    ? EXTENDED_PRECISION_TARGETS
+    : PRECISION_TARGETS;
 
   const [flying, setFlying] = useState(false);
 
@@ -431,13 +436,8 @@ function TestScreen({
           />
         </div>
         <div className="mt-2 flex items-center justify-between text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-          {PRECISION_TARGETS.map((t, i) => (
-            <span
-              key={t}
-              className={
-                i === Math.min(index, totalShots - 1) ? "font-semibold text-foreground" : ""
-              }
-            >
+          {progressTargets.map((t) => (
+            <span key={t} className={t === current.target ? "font-semibold text-foreground" : ""}>
               {t} m
             </span>
           ))}
