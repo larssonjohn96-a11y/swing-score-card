@@ -2,7 +2,14 @@ import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { syncLocalSessions } from "@/lib/cloud";
+import { syncLocalSessions as syncBunkerLeaderboard } from "@/lib/cloud";
+import { syncForUser } from "@/lib/sessions/sync";
+import { useSessionSyncStatus } from "@/lib/sessions/use-sessions";
+
+/** Bunker-leaderboarden (egen tabell) + det gemensamma sessionslagret. */
+async function syncLocalSessions(userId: string) {
+  await Promise.allSettled([syncBunkerLeaderboard(userId), syncForUser(userId)]);
+}
 import { RatingCardSection } from "@/components/rating-card";
 import { DeveloperPreviewPanel } from "@/components/dev-plan-switcher";
 
