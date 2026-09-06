@@ -79,6 +79,11 @@ function EightBallPage() {
   const round = Math.floor(shot / STATIONS.length) + 1;
 
   function start() { setShot(0); setScores([]); setResult(null); setPhase("test"); }
+  function previous() {
+    if (shot <= 0) return;
+    setScores((values) => values.slice(0, -1));
+    setShot((value) => Math.max(0, value - 1));
+  }
   function register(points: number) {
     const next = [...scores, points];
     if (shot + 1 >= SHOTS) {
@@ -114,7 +119,6 @@ function EightBallPage() {
       <button onClick={start} className="mt-auto flex w-full shrink-0 items-center justify-center gap-2 rounded-2xl bg-primary py-4 font-display text-xl text-primary-foreground">Starta test <ArrowRight className="h-5 w-5" /></button>
     </main>
   );
-
 
   if (phase === "test") {
     const total = scores.reduce((sum, value) => sum + value, 0);
@@ -171,6 +175,11 @@ function EightBallPage() {
           <span className="font-semibold tabular-nums">{total} poäng</span>
         </div>
 
+        {shot > 0 ? (
+          <button onClick={previous} className="mt-3 w-full py-2 text-sm font-semibold text-muted-foreground">
+            Ändra föregående slag
+          </button>
+        ) : null}
       </main>
     );
   }
@@ -265,38 +274,39 @@ function EightBallPage() {
 
       <section className="mt-5">
         <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Score breakdown</p>
-        <div className="mt-3 overflow-x-auto rounded-2xl border border-border bg-card">
-          <table className="w-full min-w-[480px] text-center text-xs">
+        <div className="mt-3 overflow-hidden rounded-2xl border border-border bg-card">
+          <table className="w-full table-fixed text-center text-[10px]">
             <thead>
               <tr className="border-b border-border text-muted-foreground">
-                <th className="sticky left-0 bg-card px-3 py-3 text-left font-semibold">Station</th>
+                <th className="w-[28%] px-2 py-2.5 text-left font-semibold">Station</th>
+                <th className="px-1 py-2.5 font-semibold text-primary">Tot</th>
                 {Array.from({ length: ROUNDS }, (_, i) => (
-                  <th key={i} className={`px-2 py-3 font-semibold ${i + 1 === bestRoundNumber ? "text-primary" : ""}`}>V{i + 1}</th>
+                  <th key={i} className={`px-1 py-2.5 font-semibold ${i + 1 === bestRoundNumber ? "text-primary" : ""}`}>V{i + 1}</th>
                 ))}
-                <th className="px-3 py-3 font-semibold">Totalt</th>
               </tr>
             </thead>
             <tbody>
               {STATIONS.map((s, stationIdx) => {
                 const row = Array.from({ length: ROUNDS }, (_, r) => scores[r * STATIONS.length + stationIdx] ?? 0);
+                const rowTotal = row.reduce((a, b) => a + b, 0);
                 return (
                   <tr key={stationIdx} className="border-t border-border/60 odd:bg-muted/40">
-                    <td className="sticky left-0 bg-inherit px-3 py-3 text-left">
+                    <td className="px-2 py-2.5 text-left leading-tight">
                       <b>{stationIdx + 1}. {s.type}</b><br /><span className="text-muted-foreground">{s.distance} m</span>
                     </td>
+                    <td className="px-1 py-2.5 font-semibold tabular-nums text-primary">{rowTotal}</td>
                     {row.map((v, i) => (
-                      <td key={i} className={`px-2 py-3 tabular-nums ${i + 1 === bestRoundNumber ? "font-semibold text-primary" : ""}`}>{v}</td>
+                      <td key={i} className={`px-1 py-2.5 tabular-nums ${i + 1 === bestRoundNumber ? "font-semibold text-primary" : ""}`}>{v}</td>
                     ))}
-                    <td className="px-3 py-3 font-semibold tabular-nums">{row.reduce((a, b) => a + b, 0)}</td>
                   </tr>
                 );
               })}
               <tr className="border-t border-border bg-muted/70 font-semibold">
-                <td className="sticky left-0 bg-inherit px-3 py-3 text-left">Varv total</td>
+                <td className="px-2 py-2.5 text-left">Alla</td>
+                <td className="px-1 py-2.5 tabular-nums text-primary">{total}</td>
                 {roundTotals.map((v, i) => (
-                  <td key={i} className={`px-2 py-3 tabular-nums ${v === bestRound ? "text-primary" : ""}`}>{v}</td>
+                  <td key={i} className={`px-1 py-2.5 tabular-nums ${v === bestRound ? "text-primary" : ""}`}>{v}</td>
                 ))}
-                <td className="px-3 py-3 tabular-nums">{total}</td>
               </tr>
             </tbody>
           </table>
