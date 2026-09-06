@@ -3,21 +3,27 @@ import { ArrowLeft, Check, Users, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { listFriendships, type Friendship } from "@/lib/friends-cloud";
-import { createEightBallGroupSession } from "@/lib/group-eight-ball";
+import { createEightBallGroupSession, listActiveEightBallGroupSessions } from "@/lib/group-eight-ball";
 import { LIGHT_SURFACE } from "./8-bollar";
 
 export const Route = createFileRoute("/8-bollar-grupp")({ component: GroupSetupPage });
 
+type ActiveSession = { id: string; hostUserId: string; createdAt: string };
+
 function GroupSetupPage() {
   const { user, displayName, loading } = useAuth();
   const [friends, setFriends] = useState<Friendship[]>([]);
+  const [activeSessions, setActiveSessions] = useState<ActiveSession[]>([]);
   const [selected, setSelected] = useState<Friendship[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
-    void listFriendships().then((r) => setFriends(r.accepted));
+    void Promise.all([listFriendships(), listActiveEightBallGroupSessions()]).then(([r, sessions]) => {
+      setFriends(r.accepted);
+      setActiveSessions(sessions);
+    });
   }, [user]);
 
   function toggle(friend: Friendship) {
@@ -54,7 +60,19 @@ function GroupSetupPage() {
         </section>
       ) : (
         <>
-          <section className="mt-6 rounded-3xl border border-border bg-card p-5">
+          {activeSessions.length ? (
+            <section className="mt-6 rounded-3xl border border-primary/30 bg-primary/[0.05] p-5">
+              <div className="flex items-end justify-between gap-3"><div><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-primary">Pågående</p><h2 className="mt-1 font-display text-2xl">Gruppsession</h2></div><span className="text-xs text-muted-foreground">{activeSessions.length}</span></div>
+              <div className="mt-3 space-y-2">{activeSessions.map((session) => (
+                <a key={session.id} href={`/8-bollar-grupp/${session.id}`} className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3">
+                  <span><span className="block text-sm font-semibold">8-bollsövningen</span><span className="block text-[11px] text-muted-foreground">{session.hostUserId === user.id ? "Du är scorer" : "Live · host registrerar"}</span></span>
+                  <span className="text-sm font-semibold text-primary">Öppna ›</span>
+                </a>
+              ))}</div>
+            </section>
+          ) : null}
+
+          <section className={`${activeSessions.length ? "mt-3" : "mt-6"} rounded-3xl border border-border bg-card p-5`}>
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Scorer</p>
             <p className="mt-1 font-display text-2xl">{displayName ?? "Du"}</p>
             <p className="mt-1 text-xs text-muted-foreground">Du matar in resultat för hela gruppen.</p>
