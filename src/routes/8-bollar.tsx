@@ -148,38 +148,48 @@ function EightBallPage() {
 
   if (phase === "test") {
     const total = scores.reduce((sum, value) => sum + value, 0);
-    const progress = (shot / SHOTS) * 100;
     return (
       <main
         style={LIGHT_SURFACE}
-        className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background px-5 pb-6 text-foreground"
+        className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background px-5 pb-5 text-foreground"
       >
-        <div className="flex items-center justify-between pt-[max(1rem,env(safe-area-inset-top))]">
+        <div className="flex items-center justify-between pt-[max(.75rem,env(safe-area-inset-top))]">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">8-bollsövningen</p>
             <p className="mt-0.5 text-sm font-semibold">Slag {shot + 1} av {SHOTS}</p>
           </div>
-          <Link to="/kategori/$slug" params={{ slug: "around-the-green" }} className="flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-semibold text-muted-foreground"><X className="h-3.5 w-3.5" /> Avbryt</Link>
+          <Link to="/kategori/$slug" params={{ slug: "around-the-green" }} className="flex items-center gap-1.5 rounded-full px-2 py-1.5 text-xs font-semibold text-muted-foreground"><X className="h-3.5 w-3.5" /> Avbryt</Link>
         </div>
 
-        <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-muted">
-          <div className="h-full rounded-full bg-primary transition-[width] duration-300" style={{ width: `${progress}%` }} />
-        </div>
-        <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
-          <span>Varv {round} av {ROUNDS}</span>
-          <span>Station {station} av {STATIONS.length}</span>
+        <div className="mt-3 grid grid-cols-5 gap-2">
+          {Array.from({ length: ROUNDS }, (_, i) => {
+            const active = i === round - 1;
+            const done = i < round - 1;
+            return (
+              <div key={i} className="min-w-0">
+                <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full rounded-full bg-primary transition-[width] duration-300"
+                    style={{ width: done ? "100%" : active ? `${(stationIndex / STATIONS.length) * 100}%` : "0%" }}
+                  />
+                </div>
+                <p className={`mt-1 text-center text-[9px] font-semibold ${active ? "text-primary" : "text-muted-foreground"}`}>V{i + 1}</p>
+              </div>
+            );
+          })}
         </div>
 
-        <section className="flex flex-1 flex-col items-center justify-center py-8 text-center">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">Nästa slag</p>
-          <h2 className="mt-3 font-display text-5xl leading-none">{stationInfo.type}</h2>
-          <p className="mt-3 text-xl font-semibold tabular-nums text-primary">{stationInfo.distance} m</p>
-          <p className="mt-1 text-xs text-muted-foreground">från hål</p>
+        <section className="py-5 text-center">
+          <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Varv {round} · Station {station}</p>
+          <div className="mt-2 flex items-end justify-center gap-3">
+            <h2 className="font-display text-5xl leading-none">{stationInfo.type}</h2>
+            <p className="pb-1 text-xl font-semibold tabular-nums text-primary">{stationInfo.distance} m</p>
+          </div>
         </section>
 
         <div className="relative">
           {feedback !== null ? (
-            <div className="pointer-events-none absolute -top-11 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full bg-foreground px-3 py-1.5 text-xs font-semibold text-background shadow-lg">
+            <div className="pointer-events-none absolute -top-10 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full bg-foreground px-3 py-1.5 text-xs font-semibold text-background shadow-lg">
               {feedback} poäng registrerat
             </div>
           ) : null}
@@ -190,7 +200,7 @@ function EightBallPage() {
               <button
                 key={p}
                 onClick={() => register(p)}
-                className="flex h-[94px] flex-col items-center justify-center rounded-2xl border border-border bg-card px-1 transition-[transform,border-color,background-color] active:scale-[0.97] active:border-primary active:bg-tint"
+                className="flex h-[88px] flex-col items-center justify-center rounded-2xl border border-border bg-card px-1 transition-[transform,border-color,background-color] active:scale-[0.97] active:border-primary active:bg-tint"
               >
                 <span className="font-display text-3xl leading-none text-primary">{p}</span>
                 <span className="mt-2 text-[10px] font-semibold leading-none">{l}</span>
@@ -199,7 +209,7 @@ function EightBallPage() {
           </div>
         </div>
 
-        <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-sm">
+        <div className="mt-3 flex items-center justify-between border-t border-border pt-3 text-sm">
           <span className="text-muted-foreground">Total hittills</span>
           <span className="font-semibold tabular-nums">{total} poäng</span>
         </div>
@@ -208,7 +218,7 @@ function EightBallPage() {
           <button onClick={previous} className="mt-1 w-full py-2 text-sm font-semibold text-muted-foreground">
             Ändra föregående slag
           </button>
-        ) : <div className="h-10" />}
+        ) : <div className="h-9" />}
       </main>
     );
   }
