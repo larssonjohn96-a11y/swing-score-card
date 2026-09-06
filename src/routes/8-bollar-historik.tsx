@@ -6,6 +6,11 @@ import {
   AreaChart,
   CartesianGrid,
   Dot,
+  PolarAngleAxis,
+  PolarGrid,
+  PolarRadiusAxis,
+  Radar,
+  RadarChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -92,7 +97,6 @@ function EightBallHistoryPage() {
   }));
 
   const detailed = complete.filter((s) => Array.isArray(s.scores) && s.scores.length > 0);
-  const latestDetailed = detailed.length ? detailed[detailed.length - 1] : null;
   const recentDetailed = detailed.slice(-5);
 
   const techniqueStats = TECHNIQUES.map((technique) => {
@@ -102,12 +106,10 @@ function EightBallHistoryPage() {
     const allValues = detailed
       .map((session) => techniqueAverage(session, technique))
       .filter((value): value is number => value !== null);
-    const latestValue = latestDetailed ? techniqueAverage(latestDetailed, technique) : null;
 
     return {
       technique,
       recentAvg: recentValues.length ? recentValues.reduce((sum, value) => sum + value, 0) / recentValues.length : null,
-      latest: latestValue,
       best: allValues.length ? Math.max(...allValues) : null,
     };
   }).filter((item) => item.recentAvg !== null);
@@ -118,6 +120,17 @@ function EightBallHistoryPage() {
   const weakestTechnique = techniqueStats.length
     ? techniqueStats.reduce((a, b) => (Number(b.recentAvg) < Number(a.recentAvg) ? b : a))
     : null;
+
+  const totalPerShot = latestFive.length
+    ? latestFive.reduce((sum, session) => sum + session.score / 40, 0) / latestFive.length
+    : 0;
+  const radarData = [
+    { subject: "Total/slag", value: totalPerShot },
+    ...TECHNIQUES.map((technique) => ({
+      subject: technique,
+      value: techniqueStats.find((item) => item.technique === technique)?.recentAvg ?? 0,
+    })),
+  ];
 
   return (
     <main
@@ -234,39 +247,40 @@ function EightBallHistoryPage() {
                 <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Max 4,0</span>
               </div>
 
-              <div className="mt-4 divide-y divide-border">
-                {techniqueStats.map((item) => {
-                  const isStrongest = item.technique === strongestTechnique?.technique;
-                  const isWeakest = item.technique === weakestTechnique?.technique;
-                  return (
-                    <div key={item.technique} className="grid grid-cols-[1fr_auto_auto] items-center gap-3 py-3 first:pt-0 last:pb-0">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-semibold">{item.technique}</p>
-                          {isStrongest ? <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-primary">Styrka</span> : null}
-                          {isWeakest && !isStrongest ? <span className="rounded-full bg-muted px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Fokus</span> : null}
-                        </div>
-                        <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
-                          <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, (Number(item.recentAvg) / 4) * 100)}%` }} />
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Senaste 5</p>
-                        <p className="mt-0.5 text-sm font-semibold tabular-nums">{Number(item.recentAvg).toFixed(1)}<span className="text-xs text-muted-foreground"> / 4</span></p>
-                      </div>
-                      <div className="w-12 text-right">
-                        <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Bäst</p>
-                        <p className="mt-0.5 text-sm font-semibold tabular-nums">{item.best?.toFixed(1) ?? "–"}</p>
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className="mt-3 h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RadarChart data={radarData} outerRadius="68%">
+                    <PolarGrid stroke="var(--border)" />
+                    <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} />
+                    <PolarRadiusAxis domain={[0, 4]} tick={false} axisLine={false} />
+                    <Radar
+                      name="Snitt senaste 5"
+                      dataKey="value"
+                      stroke="var(--chart-4)"
+                      fill="var(--chart-4)"
+                      fillOpacity={0.3}
+                      strokeWidth={2}
+                      dot={{ r: 4, fill: "var(--chart-4)", stroke: "var(--card)", strokeWidth: 1 }}
+                    />
+                    <Tooltip
+                      formatter={(value) => [`${Number(value).toFixed(1)} / 4`, "Snitt senaste 5"]}
+                      contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 12, fontSize: 12 }}
+                    />
+                  </RadarChart>
+                </ResponsiveContainer>
               </div>
 
               {strongestTechnique && weakestTechnique ? (
-                <p className="mt-4 rounded-xl bg-muted px-3 py-2.5 text-xs text-muted-foreground">
-                  <b className="text-foreground">Styrka:</b> {strongestTechnique.technique} {Number(strongestTechnique.recentAvg).toFixed(1)}/4 · <b className="text-foreground">Träningsfokus:</b> {weakestTechnique.technique} {Number(weakestTechnique.recentAvg).toFixed(1)}/4
-                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="rounded-xl bg-primary/8 px-3 py-2.5">
+                    <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-primary">Styrka</p>
+                    <p className="mt-1 text-sm font-semibold">{strongestTechnique.technique} <span className="tabular-nums">{Number(strongestTechnique.recentAvg).toFixed(1)}/4</span></p>
+                  </div>
+                  <div className="rounded-xl bg-muted px-3 py-2.5">
+                    <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Fokus</p>
+                    <p className="mt-1 text-sm font-semibold">{weakestTechnique.technique} <span className="tabular-nums">{Number(weakestTechnique.recentAvg).toFixed(1)}/4</span></p>
+                  </div>
+                </div>
               ) : null}
             </section>
           ) : null}
