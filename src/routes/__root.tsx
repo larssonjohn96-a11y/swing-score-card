@@ -97,12 +97,66 @@ function trainingFallback(pathname: string) {
   return null;
 }
 
+type WakeLockHandle = {
+  released?: boolean;
+  release: () => Promise<void>;
+};
+
+type WakeLockNavigator = Navigator & {
+  wakeLock?: {
+    request: (type: "screen") => Promise<WakeLockHandle>;
+  };
+};
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const { show, dismiss } = useSplash();
 
   // Central molnsynk av testhistorik: inloggad → import + restore, gäst → enbart lokalt.
   useEffect(() => startSessionSync(), []);
+
+  // Håll skärmen aktiv så länge SG4 är öppen och synlig. Wake Lock släpps av
+  // operativsystemet när appen går i bakgrunden och begärs då igen när den blir synlig.
+  useEffect(() => {
+    const wakeLockNavigator = navigator as WakeLockNavigator;
+    if (!wakeLockNavigator.wakeLock) return;
+
+    let handle: WakeLockHandle | null = null;
+    let requesting = false;
+    let disposed = false;
+
+    const requestWakeLock = async () => {
+      if (disposed || requesting || document.visibilityState !== "visible" || (handle && !handle.released)) return;
+      requesting = true;
+      try {
+        handle = await wakeLockNavigator.wakeLock?.request("screen") ?? null;
+      } catch {
+        // Vissa webbläsare kräver användarinteraktion eller kan neka p.g.a. systeminställningar.
+      } finally {
+        requesting = false;
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") void requestWakeLock();
+    };
+
+    const handleFirstInteraction = () => {
+      void requestWakeLock();
+    };
+
+    void requestWakeLock();
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    document.addEventListener("pointerdown", handleFirstInteraction, { passive: true });
+
+    return () => {
+      disposed = true;
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      document.removeEventListener("pointerdown", handleFirstInteraction);
+      if (handle && !handle.released) void handle.release().catch(() => undefined);
+      handle = null;
+    };
+  }, []);
 
   useEffect(() => {
     const goBackNaturally = (control: HTMLElement) => {
