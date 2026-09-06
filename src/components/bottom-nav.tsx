@@ -113,12 +113,16 @@ export function BottomNav() {
                 onClick={() => setOpen(false)}
                 className="block rounded-2xl border border-border bg-card px-4 py-3 transition-colors hover:border-primary"
               >
-                <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{c.subtitle}</p>
-                <h3 className="mt-0.5 text-xl leading-none">{c.title}</h3>
-                <p className="mt-1 text-xs leading-snug text-muted-foreground line-clamp-1">{c.description}</p>
-                <p className="mt-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-flag">
-                  Gör ett test · få ett HCP-resultat
-                </p>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{c.subtitle}</p>
+                    <h3 className="mt-0.5 text-xl leading-none">{c.title}</h3>
+                    <p className="mt-1 text-xs leading-snug text-muted-foreground line-clamp-1">{c.description}</p>
+                  </div>
+                  <p className="mt-0.5 max-w-[120px] shrink-0 text-right text-[9px] font-semibold uppercase leading-tight tracking-[0.1em] text-flag">
+                    Gör ett test · få ett HCP-resultat
+                  </p>
+                </div>
               </Link>
             ))}
 
