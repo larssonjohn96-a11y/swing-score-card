@@ -11,11 +11,13 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WedgeStegeHistorikRouteImport } from './routes/wedge-stege-historik'
 import { Route as WedgeStegeRouteImport } from './routes/wedge-stege'
+import { Route as VannerRouteImport } from './routes/vanner'
 import { Route as UppOchInHistorikRouteImport } from './routes/upp-och-in-historik'
 import { Route as UppOchInRouteImport } from './routes/upp-och-in'
 import { Route as TutorTestHistorikRouteImport } from './routes/tutor-test-historik'
 import { Route as TutorTestRouteImport } from './routes/tutor-test'
 import { Route as TrophyRouteImport } from './routes/trophy'
+import { Route as TraningProgressRouteImport } from './routes/traning-progress'
 import { Route as TraningRouteImport } from './routes/traning'
 import { Route as TornadoRouteImport } from './routes/tornado'
 import { Route as TesterRouteImport } from './routes/tester'
@@ -87,6 +89,11 @@ const WedgeStegeRoute = WedgeStegeRouteImport.update({
   path: '/wedge-stege',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VannerRoute = VannerRouteImport.update({
+  id: '/vanner',
+  path: '/vanner',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const UppOchInHistorikRoute = UppOchInHistorikRouteImport.update({
   id: '/upp-och-in-historik',
   path: '/upp-och-in-historik',
@@ -110,6 +117,11 @@ const TutorTestRoute = TutorTestRouteImport.update({
 const TrophyRoute = TrophyRouteImport.update({
   id: '/trophy',
   path: '/trophy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TraningProgressRoute = TraningProgressRouteImport.update({
+  id: '/traning-progress',
+  path: '/traning-progress',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TraningRoute = TraningRouteImport.update({
@@ -473,11 +485,13 @@ export interface FileRoutesByFullPath {
   '/tester': typeof TesterRoute
   '/tornado': typeof TornadoRoute
   '/traning': typeof TraningRoute
+  '/traning-progress': typeof TraningProgressRoute
   '/trophy': typeof TrophyRoute
   '/tutor-test': typeof TutorTestRoute
   '/tutor-test-historik': typeof TutorTestHistorikRoute
   '/upp-och-in': typeof UppOchInRoute
   '/upp-och-in-historik': typeof UppOchInHistorikRoute
+  '/vanner': typeof VannerRoute
   '/wedge-stege': typeof WedgeStegeRoute
   '/wedge-stege-historik': typeof WedgeStegeHistorikRoute
   '/framsteg/$slug': typeof FramstegSlugRouteWithChildren
@@ -542,11 +556,13 @@ export interface FileRoutesByTo {
   '/tester': typeof TesterRoute
   '/tornado': typeof TornadoRoute
   '/traning': typeof TraningRoute
+  '/traning-progress': typeof TraningProgressRoute
   '/trophy': typeof TrophyRoute
   '/tutor-test': typeof TutorTestRoute
   '/tutor-test-historik': typeof TutorTestHistorikRoute
   '/upp-och-in': typeof UppOchInRoute
   '/upp-och-in-historik': typeof UppOchInHistorikRoute
+  '/vanner': typeof VannerRoute
   '/wedge-stege': typeof WedgeStegeRoute
   '/wedge-stege-historik': typeof WedgeStegeHistorikRoute
   '/framsteg/$slug': typeof FramstegSlugRouteWithChildren
@@ -612,11 +628,13 @@ export interface FileRoutesById {
   '/tester': typeof TesterRoute
   '/tornado': typeof TornadoRoute
   '/traning': typeof TraningRoute
+  '/traning-progress': typeof TraningProgressRoute
   '/trophy': typeof TrophyRoute
   '/tutor-test': typeof TutorTestRoute
   '/tutor-test-historik': typeof TutorTestHistorikRoute
   '/upp-och-in': typeof UppOchInRoute
   '/upp-och-in-historik': typeof UppOchInHistorikRoute
+  '/vanner': typeof VannerRoute
   '/wedge-stege': typeof WedgeStegeRoute
   '/wedge-stege-historik': typeof WedgeStegeHistorikRoute
   '/framsteg/$slug': typeof FramstegSlugRouteWithChildren
@@ -683,11 +701,13 @@ export interface FileRouteTypes {
     | '/tester'
     | '/tornado'
     | '/traning'
+    | '/traning-progress'
     | '/trophy'
     | '/tutor-test'
     | '/tutor-test-historik'
     | '/upp-och-in'
     | '/upp-och-in-historik'
+    | '/vanner'
     | '/wedge-stege'
     | '/wedge-stege-historik'
     | '/framsteg/$slug'
@@ -752,11 +772,13 @@ export interface FileRouteTypes {
     | '/tester'
     | '/tornado'
     | '/traning'
+    | '/traning-progress'
     | '/trophy'
     | '/tutor-test'
     | '/tutor-test-historik'
     | '/upp-och-in'
     | '/upp-och-in-historik'
+    | '/vanner'
     | '/wedge-stege'
     | '/wedge-stege-historik'
     | '/framsteg/$slug'
@@ -821,11 +843,13 @@ export interface FileRouteTypes {
     | '/tester'
     | '/tornado'
     | '/traning'
+    | '/traning-progress'
     | '/trophy'
     | '/tutor-test'
     | '/tutor-test-historik'
     | '/upp-och-in'
     | '/upp-och-in-historik'
+    | '/vanner'
     | '/wedge-stege'
     | '/wedge-stege-historik'
     | '/framsteg/$slug'
@@ -891,11 +915,13 @@ export interface RootRouteChildren {
   TesterRoute: typeof TesterRoute
   TornadoRoute: typeof TornadoRoute
   TraningRoute: typeof TraningRoute
+  TraningProgressRoute: typeof TraningProgressRoute
   TrophyRoute: typeof TrophyRoute
   TutorTestRoute: typeof TutorTestRoute
   TutorTestHistorikRoute: typeof TutorTestHistorikRoute
   UppOchInRoute: typeof UppOchInRoute
   UppOchInHistorikRoute: typeof UppOchInHistorikRoute
+  VannerRoute: typeof VannerRoute
   WedgeStegeRoute: typeof WedgeStegeRoute
   WedgeStegeHistorikRoute: typeof WedgeStegeHistorikRoute
   FramstegSlugRoute: typeof FramstegSlugRouteWithChildren
@@ -919,6 +945,13 @@ declare module '@tanstack/react-router' {
       path: '/wedge-stege'
       fullPath: '/wedge-stege'
       preLoaderRoute: typeof WedgeStegeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/vanner': {
+      id: '/vanner'
+      path: '/vanner'
+      fullPath: '/vanner'
+      preLoaderRoute: typeof VannerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/upp-och-in-historik': {
@@ -954,6 +987,13 @@ declare module '@tanstack/react-router' {
       path: '/trophy'
       fullPath: '/trophy'
       preLoaderRoute: typeof TrophyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/traning-progress': {
+      id: '/traning-progress'
+      path: '/traning-progress'
+      fullPath: '/traning-progress'
+      preLoaderRoute: typeof TraningProgressRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/traning': {
@@ -1446,11 +1486,13 @@ const rootRouteChildren: RootRouteChildren = {
   TesterRoute: TesterRoute,
   TornadoRoute: TornadoRoute,
   TraningRoute: TraningRoute,
+  TraningProgressRoute: TraningProgressRoute,
   TrophyRoute: TrophyRoute,
   TutorTestRoute: TutorTestRoute,
   TutorTestHistorikRoute: TutorTestHistorikRoute,
   UppOchInRoute: UppOchInRoute,
   UppOchInHistorikRoute: UppOchInHistorikRoute,
+  VannerRoute: VannerRoute,
   WedgeStegeRoute: WedgeStegeRoute,
   WedgeStegeHistorikRoute: WedgeStegeHistorikRoute,
   FramstegSlugRoute: FramstegSlugRouteWithChildren,
