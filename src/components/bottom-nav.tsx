@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
-import { Home, ListChecks, Plus, Trophy, TrendingUp } from "lucide-react";
+import { ChevronRight, Home, ListChecks, Plus, Trophy, TrendingUp } from "lucide-react";
 import { useBottomNavVisibility } from "@/lib/bottom-nav-visibility";
 import { CATEGORIES } from "@/lib/categories";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -100,44 +100,54 @@ export function BottomNav() {
       </nav>
 
       <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent side="bottom" className="rounded-t-3xl px-5 pb-6 pt-5">
-          <SheetHeader>
-            <SheetTitle className="text-left text-2xl">Starta test</SheetTitle>
+        <SheetContent side="bottom" className="rounded-t-3xl px-5 pb-5 pt-5">
+          <SheetHeader className="space-y-1">
+            <SheetTitle className="text-left text-2xl">Vad vill du göra?</SheetTitle>
+            <p className="text-left text-xs text-muted-foreground">Mät din nivå eller träna en specifik färdighet.</p>
           </SheetHeader>
-          <div className="mt-4 space-y-2.5">
+
+          <div className="mt-4 space-y-2">
             {CATEGORIES.map((c) => (
               <Link
                 key={c.slug}
                 to="/kategori/$slug"
                 params={{ slug: c.slug }}
                 onClick={() => setOpen(false)}
-                className="block rounded-2xl border border-border bg-card px-4 py-3 transition-colors hover:border-primary"
+                className="group flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 transition-colors hover:border-primary hover:bg-tint"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{c.subtitle}</p>
-                    <h3 className="mt-0.5 text-xl leading-none">{c.title}</h3>
-                    <p className="mt-1 text-xs leading-snug text-muted-foreground line-clamp-1">{c.description}</p>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg leading-none">{c.title}</h3>
+                    <span className="rounded-full bg-tint-strong px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-primary">
+                      HCP
+                    </span>
                   </div>
-                  <p className="mt-0.5 max-w-[120px] shrink-0 text-right text-[9px] font-semibold uppercase leading-tight tracking-[0.1em] text-flag">
-                    Gör ett test · få ett HCP-resultat
-                  </p>
+                  <p className="mt-1 text-[11px] leading-snug text-muted-foreground line-clamp-1">{c.description}</p>
+                  <p className="mt-1 text-[10px] font-semibold text-flag">Gör testet · få din nivå</p>
                 </div>
+                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
               </Link>
             ))}
 
-            <Link
-              to="/traning"
-              search={{ category: undefined }}
-              onClick={() => setOpen(false)}
-              className="block rounded-2xl border border-border bg-muted/55 px-4 py-3.5 transition-colors hover:border-primary hover:bg-muted/70"
-            >
-              <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Ej HCP-grundande</p>
-              <h3 className="mt-0.5 text-xl leading-none">Träningstester</h3>
-              <p className="mt-1 text-xs leading-snug text-muted-foreground">
-                Träna med syfte och följ din utveckling över tid.
-              </p>
-            </Link>
+            <div className="pt-1">
+              <Link
+                to="/traning"
+                search={{ category: undefined }}
+                onClick={() => setOpen(false)}
+                className="group flex items-center gap-3 rounded-2xl border border-border bg-muted/55 px-4 py-3.5 transition-colors hover:border-primary hover:bg-muted/70"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg leading-none">Träningstester</h3>
+                    <span className="rounded-full bg-background/80 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                      Träning
+                    </span>
+                  </div>
+                  <p className="mt-1 text-[11px] leading-snug text-muted-foreground">Träna med syfte och följ din utveckling över tid.</p>
+                </div>
+                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+              </Link>
+            </div>
           </div>
         </SheetContent>
       </Sheet>
