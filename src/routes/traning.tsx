@@ -20,6 +20,7 @@ type TestRoute =
   | "/fairway-streak"
   | "/putting-streak"
   | "/lagputt-ladder"
+  | "/klock-putt"
   | "/driver-konsekvens"
   | "/lagputt"
   | "/50-bollar"
@@ -128,6 +129,15 @@ const TESTS: Record<Category, TestItem[]> = {
         "Börja på 8 meter och gå upp två meter per nivå. Håla ut på högst två puttar för att gå vidare. Tre puttar avslutar testet.",
       meta: "8–30 m · max 2 puttar · PB",
       skill: "Challenge",
+      featured: true,
+    },
+    {
+      to: "/klock-putt",
+      title: "Klockan",
+      description:
+        "12 puttar från klockan 12, 3, 6 och 9. En putt från 1, 2 och 3 meter på varje position och totalpoäng upp till 16.",
+      meta: "12 puttar · score 0–16 · 20-test snitt",
+      skill: "Scoring",
       featured: true,
     },
     {
@@ -256,9 +266,21 @@ function TrainingTestsPage() {
               Speed är en central del av din spelarprofil och visas i spindeldiagrammet, men räknas inte in i Total HCP. Följ fart, längd, streaks och driverkontroll här.
             </p>
           ) : category === "putting" ? (
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Jaga PB i Putting Streak och Lag Putt Ladder eller välj ett djupare test för total putting, kortputt, längdkontroll, startlinje eller greenläsning.
-            </p>
+            <>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                Jaga PB i streaks och ladders eller kör scoringtester som Klockan. All kompatibel puttdata kan samtidigt räknas ihop per avstånd, oavsett vilket test putten kom från.
+              </p>
+              <Link
+                to="/putting-data"
+                className="mt-4 flex items-center justify-between rounded-2xl border border-primary/30 bg-primary/[0.04] px-4 py-3"
+              >
+                <span>
+                  <span className="block text-sm font-semibold">Se all puttingdata</span>
+                  <span className="mt-0.5 block text-xs text-muted-foreground">Sänkprocent, antal puttar och lagputt samlat från flera tester</span>
+                </span>
+                <ChevronRight className="h-4 w-4 shrink-0 text-primary" />
+              </Link>
+            </>
           ) : category === "approach" ? (
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               Träna och mät precision från wedge till långa inspel eller testa din kontroll över bollflykten.
