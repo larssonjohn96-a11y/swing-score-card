@@ -35,6 +35,7 @@ const dateLabel = (iso: string) =>
 
 const TECHNIQUES = ["Chip", "Pitch", "Lobb", "Bunker"] as const;
 type Technique = (typeof TECHNIQUES)[number];
+type RadarScope = "all" | "short" | "long";
 
 function KpiCard({ label, value, unit, hint }: { label: string; value: string; unit?: string; hint?: string }) {
   return (
@@ -49,9 +50,16 @@ function KpiCard({ label, value, unit, hint }: { label: string; value: string; u
   );
 }
 
-function techniqueAverage(session: EightBallSession, technique: Technique) {
+function techniqueStationIndexes(technique: Technique, scope: RadarScope) {
+  const indexes = STATION_LIST.flatMap((station, index) => station.type === technique ? [index] : []);
+  if (scope === "all" || indexes.length <= 1) return indexes;
+  const sorted = [...indexes].sort((a, b) => STATION_LIST[a].distance - STATION_LIST[b].distance);
+  return scope === "short" ? [sorted[0]] : [sorted[sorted.length - 1]];
+}
+
+function techniqueAverage(session: EightBallSession, technique: Technique, scope: RadarScope) {
   if (!Array.isArray(session.scores) || session.scores.length === 0) return null;
-  const stationIndexes = STATION_LIST.flatMap((station, index) => station.type === technique ? [index] : []);
+  const stationIndexes = techniqueStationIndexes(technique, scope);
   const values: number[] = [];
 
   for (let round = 0; round < EIGHT_BALL_ROUNDS; round += 1) {
@@ -65,6 +73,20 @@ function techniqueAverage(session: EightBallSession, technique: Technique) {
   return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
+function sessionAverage(session: EightBallSession, scope: RadarScope) {
+  if (!Array.isArray(session.scores) || session.scores.length === 0) return null;
+  const selectedIndexes = TECHNIQUES.flatMap((technique) => techniqueStationIndexes(technique, scope));
+  const values: number[] = [];
+  for (let round = 0; round < EIGHT_BALL_ROUNDS; round += 1) {
+    for (const stationIndex of selectedIndexes) {
+      const value = session.scores[round * STATION_LIST.length + stationIndex];
+      if (typeof value === "number") values.push(value);
+    }
+  }
+  if (!values.length) return null;
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
 function radarLevel(value: number) {
   const score = Math.max(0, Math.min(4, value));
   if (score === 0) return 0;
@@ -74,6 +96,7 @@ function radarLevel(value: number) {
 function EightBallHistoryPage() {
   const [sessions, setSessions] = useState<EightBallSession[]>([]);
   const [showAll, setShowAll] = useState(false);
+  const [radarScope, setRadarScope] = useState<RadarScope>("all");
 
   useEffect(() => {
     setSessions(loadEightBallSessions());
@@ -111,7 +134,7 @@ function EightBallHistoryPage() {
 
   const techniqueStats = TECHNIQUES.map((technique) => {
     const recentValues = recentDetailed
-      .map((session) => techniqueAverage(session, technique))
+      .map((session) => techniqueAverage(session, technique, radarScope))
       .filter((value): value is number => value !== null);
 
     return {
@@ -120,8 +143,11 @@ function EightBallHistoryPage() {
     };
   }).filter((item) => item.recentAvg !== null);
 
-  const totalPerShot = latestFive.length
-    ? latestFive.reduce((sum, session) => sum + session.score / 40, 0) / latestFive.length
+  const recentSessionAverages = recentDetailed
+    .map((session) => sessionAverage(session, radarScope))
+    .filter((value): value is number => value !== null);
+  const totalPerShot = recentSessionAverages.length
+    ? recentSessionAverages.reduce((sum, value) => sum + value, 0) / recentSessionAverages.length
     : 0;
   const radarData = [
     { subject: "Total/slag", raw: totalPerShot, value: radarLevel(totalPerShot) },
@@ -246,7 +272,23 @@ function EightBallHistoryPage() {
                 <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">4,0 = max</span>
               </div>
 
-              <div className="mt-3 h-64 w-full">
+              <div className="mt-3 grid grid-cols-3 rounded-xl bg-muted p-1">
+                {([[
+                  "all",
+                  "Alla",
+                ], ["short", "Korta"], ["long", "Långa"]] as const).map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setRadarScope(value)}
+                    className={`rounded-lg px-2 py-2 text-xs font-semibold transition-all duration-200 ${radarScope === value ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="mt-2 h-64 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <RadarChart data={radarData} outerRadius="68%">
                     <PolarGrid stroke="var(--border)" />
@@ -260,6 +302,9 @@ function EightBallHistoryPage() {
                       fillOpacity={0.3}
                       strokeWidth={2}
                       dot={{ r: 4, fill: "var(--chart-4)", stroke: "var(--card)", strokeWidth: 1 }}
+                      isAnimationActive
+                      animationDuration={350}
+                      animationEasing="ease-out"
                     />
                     <Tooltip
                       formatter={(_value, _name, props) => [`${Number(props.payload?.raw ?? 0).toFixed(1)} / 4`, "Snitt senaste 5"]}
