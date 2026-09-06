@@ -120,9 +120,12 @@ export function BottomNav() {
                     <p className="mt-1 text-[11px] leading-snug text-muted-foreground line-clamp-1">{c.description}</p>
                   </div>
                   <p className="mt-0.5 shrink-0 text-[9px] uppercase tracking-[0.18em] text-flag">
-                    {c.tests.length > 0 ? `${c.tests.length} test` : "Kommer snart"}
+                    HCP-grundande
                   </p>
                 </div>
+                <p className="mt-1.5 text-[10px] font-medium text-flag">
+                  Gör ett test · få ett HCP-resultat
+                </p>
               </Link>
             ))}
 
