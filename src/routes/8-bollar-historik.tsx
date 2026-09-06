@@ -65,6 +65,30 @@ function techniqueAverage(session: EightBallSession, technique: Technique) {
   return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
+function radarLevel(value: number) {
+  const score = Math.max(0, Math.min(4, value));
+  const anchors = [
+    { score: 0, level: 0 },
+    { score: 1, level: 25 },
+    { score: 2, level: 55 },
+    { score: 2.5, level: 70 },
+    { score: 3, level: 85 },
+    { score: 3.5, level: 95 },
+    { score: 4, level: 100 },
+  ];
+
+  for (let index = 1; index < anchors.length; index += 1) {
+    const lower = anchors[index - 1];
+    const upper = anchors[index];
+    if (score <= upper.score) {
+      const progress = (score - lower.score) / (upper.score - lower.score);
+      return lower.level + progress * (upper.level - lower.level);
+    }
+  }
+
+  return 100;
+}
+
 function EightBallHistoryPage() {
   const [sessions, setSessions] = useState<EightBallSession[]>([]);
   const [showAll, setShowAll] = useState(false);
@@ -125,11 +149,11 @@ function EightBallHistoryPage() {
     ? latestFive.reduce((sum, session) => sum + session.score / 40, 0) / latestFive.length
     : 0;
   const radarData = [
-    { subject: "Total/slag", value: totalPerShot },
-    ...TECHNIQUES.map((technique) => ({
-      subject: technique,
-      value: techniqueStats.find((item) => item.technique === technique)?.recentAvg ?? 0,
-    })),
+    { subject: "Total/slag", raw: totalPerShot, value: radarLevel(totalPerShot) },
+    ...TECHNIQUES.map((technique) => {
+      const raw = Number(techniqueStats.find((item) => item.technique === technique)?.recentAvg ?? 0);
+      return { subject: technique, raw, value: radarLevel(raw) };
+    }),
   ];
 
   return (
@@ -244,7 +268,7 @@ function EightBallHistoryPage() {
                   <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Styrkor & svagheter</p>
                   <p className="mt-1 text-xs text-muted-foreground">Snittpoäng per slag · senaste {recentDetailed.length} test</p>
                 </div>
-                <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Max 4,0</span>
+                <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">4,0 = max</span>
               </div>
 
               <div className="mt-3 h-64 w-full">
@@ -252,7 +276,7 @@ function EightBallHistoryPage() {
                   <RadarChart data={radarData} outerRadius="68%">
                     <PolarGrid stroke="var(--border)" />
                     <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} />
-                    <PolarRadiusAxis domain={[0, 4]} tick={false} axisLine={false} />
+                    <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
                     <Radar
                       name="Snitt senaste 5"
                       dataKey="value"
@@ -263,7 +287,7 @@ function EightBallHistoryPage() {
                       dot={{ r: 4, fill: "var(--chart-4)", stroke: "var(--card)", strokeWidth: 1 }}
                     />
                     <Tooltip
-                      formatter={(value) => [`${Number(value).toFixed(1)} / 4`, "Snitt senaste 5"]}
+                      formatter={(_value, _name, props) => [`${Number(props.payload?.raw ?? 0).toFixed(1)} / 4`, "Snitt senaste 5"]}
                       contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 12, fontSize: 12 }}
                     />
                   </RadarChart>
