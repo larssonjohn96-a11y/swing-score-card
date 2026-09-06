@@ -22,6 +22,7 @@ export const Route = createFileRoute("/shot-shaping-9-window-historik")({
       valueSuffix="p"
       higherIsBetter
       scaleHint="max 9"
+      rollingWindow={5}
       breakdown={nineWindowHistory}
     />
   ),
