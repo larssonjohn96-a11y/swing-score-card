@@ -13,10 +13,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
-  EXTENDED_PRECISION_ROUNDS,
   EXTENDED_PRECISION_TARGETS,
-  PRECISION_ROUNDS,
-  PRECISION_TARGETS,
   emptyPrecisionShots,
   type PrecisionShot,
 } from "@/lib/precision";
@@ -37,12 +34,12 @@ export const Route = createFileRoute("/precision")({
       {
         name: "description",
         content:
-          "18 inspel över nio avstånd från 55 till 165 meter. Få din Approach-HCP och se var du ligger i handicapfördelningen.",
+          "9 inspel över nio avstånd från 55 till 165 meter. Få din Approach-HCP och se var du ligger i handicapfördelningen.",
       },
       { property: "og:title", content: "Inspelstest – Approach Precision Test" },
       {
         property: "og:description",
-        content: "18 slag, en siffra: din Approach-HCP och var du ligger jämfört med andra golfare.",
+        content: "9 slag, en siffra: din Approach-HCP och var du ligger jämfört med andra golfare.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -52,14 +49,12 @@ export const Route = createFileRoute("/precision")({
 });
 
 type Phase = "setup" | "test" | "processing" | "reveal" | "result";
-type TestMode = "main" | "extended";
 
 function PrecisionPage() {
   const navigate = useNavigate();
   const [phase, setPhase] = useState<Phase>("setup");
-  const [mode, setMode] = useState<TestMode>("extended");
   const [shots, setShots] = useState<PrecisionShot[]>(() =>
-    emptyPrecisionShots(EXTENDED_PRECISION_TARGETS, EXTENDED_PRECISION_ROUNDS),
+    emptyPrecisionShots(EXTENDED_PRECISION_TARGETS, 1),
   );
   const [index, setIndex] = useState(0);
   const [carry, setCarry] = useState<number>(EXTENDED_PRECISION_TARGETS[0]);
@@ -77,16 +72,13 @@ function PrecisionPage() {
 
   useHideBottomNav(true);
 
-  function start(selectedMode: TestMode = mode) {
+  function start() {
     const sessions = loadPrecisionSessions();
     const last = sessions[sessions.length - 1];
     setPrevScore(last ? (last.score ?? 0) : null);
-    const targets = selectedMode === "extended" ? EXTENDED_PRECISION_TARGETS : PRECISION_TARGETS;
-    const rounds = selectedMode === "extended" ? EXTENDED_PRECISION_ROUNDS : PRECISION_ROUNDS;
-    setMode(selectedMode);
-    setShots(emptyPrecisionShots(targets, rounds));
+    setShots(emptyPrecisionShots(EXTENDED_PRECISION_TARGETS, 1));
     setIndex(0);
-    setCarry(targets[0]);
+    setCarry(EXTENDED_PRECISION_TARGETS[0]);
     setSide(1);
     setOffset(0);
     setPr(null);
@@ -182,7 +174,7 @@ function PrecisionPage() {
       <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-16 pt-8">
         <header className="flex items-end justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Innan du börjar</p>
+            <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Approach HCP</p>
             <h1 className="text-4xl leading-none">Approach Test</h1>
           </div>
           <Link
@@ -194,34 +186,29 @@ function PrecisionPage() {
           </Link>
         </header>
 
-        <div className="mt-8 flex justify-center">
+        <div className="mt-10 flex justify-center">
           <span className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
             <Radar className="h-8 w-8 text-primary" />
           </span>
         </div>
-        <h2 className="mt-4 text-center text-xl leading-tight text-muted-foreground">Välj testlängd</h2>
+        <h2 className="mt-5 text-center font-[family-name:var(--font-display)] text-3xl">9 slag. 9 avstånd.</h2>
+        <p className="mx-auto mt-2 max-w-xs text-center text-sm leading-relaxed text-muted-foreground">
+          Ett slag från varje avstånd mellan 55 och 165 meter. Resultatet ger din Approach-HCP.
+        </p>
 
-        <button onClick={() => start("extended")} className="mt-6 w-full rounded-2xl bg-primary py-5 text-left">
-          <span className="flex items-center justify-between px-6">
-            <span>
-              <span className="block font-[family-name:var(--font-display)] text-2xl text-primary-foreground">Standard</span>
-              <span className="block text-sm text-primary-foreground/70">18 slag · 55–165 m</span>
+        <div className="mt-5 flex flex-wrap justify-center gap-2">
+          {EXTENDED_PRECISION_TARGETS.map((target) => (
+            <span key={target} className="rounded-full bg-muted px-3 py-1.5 text-xs font-semibold text-muted-foreground">
+              {target} m
             </span>
-            <ArrowRight className="h-5 w-5 shrink-0 text-primary-foreground" />
-          </span>
-        </button>
+          ))}
+        </div>
 
         <button
-          onClick={() => start("main")}
-          className="mt-3 w-full rounded-2xl border-2 border-border py-5 text-left transition-colors hover:border-primary"
+          onClick={start}
+          className="mt-8 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-4 font-[family-name:var(--font-display)] text-2xl text-primary-foreground"
         >
-          <span className="flex items-center justify-between px-6">
-            <span>
-              <span className="block font-[family-name:var(--font-display)] text-2xl">Snabbtest</span>
-              <span className="block text-sm text-muted-foreground">5 slag · 50–150 m</span>
-            </span>
-            <ArrowRight className="h-5 w-5 shrink-0 text-muted-foreground" />
-          </span>
+          Starta test <ArrowRight className="h-5 w-5" />
         </button>
       </main>
     );
@@ -300,15 +287,7 @@ function TestScreen({
   const isPerfect = diff === 0 && offset === 0;
   const landingDistanceM = Math.sqrt(diff * diff + offset * offset);
   const isBirdieRange = !isPerfect && landingDistanceM <= 4;
-  const isStandard = totalShots === EXTENDED_PRECISION_TARGETS.length * EXTENDED_PRECISION_ROUNDS;
-  const shotsPerRound = isStandard ? EXTENDED_PRECISION_TARGETS.length : PRECISION_TARGETS.length;
-  const activeRound = isStandard ? Math.floor(index / shotsPerRound) + 1 : 1;
-  const positionInRound = index % shotsPerRound;
-  const nextTarget = index + 1 < totalShots
-    ? isStandard
-      ? EXTENDED_PRECISION_TARGETS[(index + 1) % shotsPerRound]
-      : PRECISION_TARGETS[index + 1]
-    : undefined;
+  const nextTarget = index + 1 < totalShots ? EXTENDED_PRECISION_TARGETS[index + 1] : undefined;
 
   const [flying, setFlying] = useState(false);
 
@@ -335,9 +314,9 @@ function TestScreen({
           <span className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
             <Check className="h-8 w-8 text-primary" strokeWidth={2.5} />
           </span>
-          <h1 className="mt-5 font-[family-name:var(--font-display)] text-3xl leading-tight">Alla {totalShots} slag registrerade!</h1>
+          <h1 className="mt-5 font-[family-name:var(--font-display)] text-3xl leading-tight">Alla 9 slag registrerade!</h1>
           <p className="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-muted-foreground">
-            Redo att se ditt resultat? Du kan ändra det senaste slaget en sista gång innan du slutför.
+            Redo att se din Approach-HCP? Du kan ändra det senaste slaget en sista gång.
           </p>
 
           {canUndo && (
@@ -347,7 +326,7 @@ function TestScreen({
           )}
 
           <button onClick={onFinalize} className="mt-8 flex w-full max-w-xs items-center justify-center gap-2 rounded-2xl bg-primary py-4 font-[family-name:var(--font-display)] text-2xl text-primary-foreground">
-            Slutför test <ArrowRight className="h-5 w-5" />
+            Se mitt resultat <ArrowRight className="h-5 w-5" />
           </button>
         </div>
       </main>
@@ -365,9 +344,7 @@ function TestScreen({
       <section className="mt-4 rounded-3xl border border-border bg-card p-4">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-              {isStandard ? `Varv ${activeRound} av 2` : "Snabbtest"}
-            </p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Approach HCP</p>
             <div className="mt-1 flex items-baseline gap-2">
               <span className="font-[family-name:var(--font-display)] text-4xl leading-none text-primary">{current.target} m</span>
               <span className="text-xs text-muted-foreground">nu</span>
@@ -379,29 +356,9 @@ function TestScreen({
           </div>
         </div>
 
-        {isStandard ? (
-          <div className="mt-4 grid grid-cols-2 gap-2">
-            {[1, 2].map((round) => {
-              const completedInRound = round < activeRound ? shotsPerRound : round > activeRound ? 0 : positionInRound;
-              const width = (completedInRound / shotsPerRound) * 100;
-              return (
-                <div key={round}>
-                  <div className="mb-1 flex items-center justify-between text-[9px] font-bold uppercase tracking-[0.14em]">
-                    <span className={round === activeRound ? "text-primary" : "text-muted-foreground"}>Varv {round}</span>
-                    {round < activeRound && <span className="text-primary">Klart</span>}
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-muted">
-                    <div className="h-full rounded-full bg-primary transition-[width] duration-300" style={{ width: `${width}%` }} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="mt-4 h-2 overflow-hidden rounded-full bg-muted">
-            <div className="h-full rounded-full bg-primary transition-[width] duration-300" style={{ width: `${pct}%` }} />
-          </div>
-        )}
+        <div className="mt-4 h-2 overflow-hidden rounded-full bg-muted">
+          <div className="h-full rounded-full bg-primary transition-[width] duration-300" style={{ width: `${pct}%` }} />
+        </div>
 
         <div className="mt-3 flex items-center justify-between rounded-2xl bg-muted/60 px-3 py-2.5">
           <div>
