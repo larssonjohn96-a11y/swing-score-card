@@ -100,24 +100,24 @@ export function BottomNav() {
       </nav>
 
       <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent side="bottom" className="rounded-t-3xl px-5 pb-5 pt-4">
+        <SheetContent side="bottom" className="rounded-t-3xl px-5 pb-6 pt-5">
           <SheetHeader>
-            <SheetTitle className="text-left text-xl">Starta test</SheetTitle>
+            <SheetTitle className="text-left text-2xl">Starta test</SheetTitle>
           </SheetHeader>
-          <div className="mt-3 space-y-2">
+          <div className="mt-4 space-y-2.5">
             {CATEGORIES.map((c) => (
               <Link
                 key={c.slug}
                 to="/kategori/$slug"
                 params={{ slug: c.slug }}
                 onClick={() => setOpen(false)}
-                className="block rounded-xl border border-border bg-card px-4 py-2.5 transition-colors hover:border-primary"
+                className="block rounded-2xl border border-border bg-card px-4 py-3 transition-colors hover:border-primary"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
-                    <p className="text-[9px] uppercase tracking-[0.18em] text-muted-foreground">{c.subtitle}</p>
-                    <h3 className="mt-0.5 text-lg leading-none">{c.title}</h3>
-                    <p className="mt-1 text-[11px] leading-snug text-muted-foreground line-clamp-1">{c.description}</p>
+                    <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{c.subtitle}</p>
+                    <h3 className="mt-0.5 text-xl leading-none">{c.title}</h3>
+                    <p className="mt-1 text-xs leading-snug text-muted-foreground line-clamp-1">{c.description}</p>
                   </div>
                   <p className="mt-0.5 shrink-0 text-[9px] uppercase tracking-[0.18em] text-flag">
                     HCP-grundande
@@ -133,13 +133,13 @@ export function BottomNav() {
               to="/traning"
               search={{ category: undefined }}
               onClick={() => setOpen(false)}
-              className="block rounded-xl border border-border bg-muted/55 px-4 py-3 transition-colors hover:border-primary hover:bg-muted/70"
+              className="block rounded-2xl border border-border bg-muted/55 px-4 py-3.5 transition-colors hover:border-primary hover:bg-muted/70"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
-                  <p className="text-[9px] uppercase tracking-[0.18em] text-muted-foreground">Ej HCP-grundande</p>
-                  <h3 className="mt-0.5 text-lg leading-none">Träningstester</h3>
-                  <p className="mt-1 text-[11px] leading-snug text-muted-foreground">
+                  <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Ej HCP-grundande</p>
+                  <h3 className="mt-0.5 text-xl leading-none">Träningstester</h3>
+                  <p className="mt-1 text-xs leading-snug text-muted-foreground">
                     Träna med syfte och följ din utveckling över tid.
                   </p>
                 </div>
