@@ -1,14 +1,19 @@
-import { Target, Trophy } from "lucide-react";
+import { Trophy } from "lucide-react";
 import {
-  dispersionStats,
   handicapFromPct,
   handicapLabel,
+  hcpPercentile,
   precisionResult,
   proximityPct,
   type PrecisionShot,
 } from "@/lib/precision";
 import { HcpBellCurve } from "@/components/hcp-bell-curve";
 
+/**
+ * HCP-testresultat ska vara en belöningsskärm, inte en analysdashboard:
+ * 1) din score/HCP, 2) var du placerar dig, 3) bästa slaget som ego-boost.
+ * Djupare analys hör hemma i Utveckling.
+ */
 export function PrecisionReport({
   shots,
 }: {
@@ -17,131 +22,37 @@ export function PrecisionReport({
   compact?: boolean;
 }) {
   const result = precisionResult(shots);
-  const dispersion = dispersionStats(shots);
-  const isStandard = shots.length === 18;
-  const strongest = result.perTarget.filter((item) => item.count > 0).sort((a, b) => b.score - a.score)[0];
-  const weakest = result.perTarget.filter((item) => item.count > 0).sort((a, b) => a.score - b.score)[0];
+  const percentile = hcpPercentile(result.handicap);
 
   return (
     <div className="space-y-4">
-      <section className="overflow-hidden rounded-[2rem] border border-border bg-card p-5">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
-              {isStandard ? "Standard · 18 slag" : "Snabbtest · 5 slag"}
-            </p>
-            <p className="mt-2 text-xs font-semibold uppercase tracking-[0.22em] text-primary">Approach HCP</p>
-            <p className="mt-1 font-[family-name:var(--font-display)] text-7xl leading-none text-primary">
-              {handicapLabel(result.handicap)}
-            </p>
-          </div>
-          <div className="rounded-2xl bg-primary/10 px-4 py-3 text-center">
-            <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Score</p>
-            <p className="font-[family-name:var(--font-display)] text-4xl leading-none text-primary">{result.score}</p>
-            <p className="text-[10px] text-muted-foreground">/100</p>
-          </div>
-        </div>
-
-        <div className="mt-5 grid grid-cols-3 divide-x divide-border border-t border-border pt-4 text-center">
-          <Metric label="Snitt till flagg" value={`${result.avgProximity.toFixed(1).replace(".", ",")} m`} />
-          <Metric label="Greenträff" value={`${Math.round((dispersion.greens / Math.max(1, dispersion.count)) * 100)} %`} />
-          <Metric label="Konsistens" value={`${result.consistency}/100`} />
+      <section className="rounded-[2rem] border border-border bg-card px-5 py-8 text-center">
+        <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-muted-foreground">
+          Din Approach-nivå
+        </p>
+        <p className="mt-3 font-[family-name:var(--font-display)] text-8xl leading-none text-primary">
+          {handicapLabel(result.handicap)}
+        </p>
+        <p className="mt-2 text-sm font-semibold text-muted-foreground">HCP</p>
+        <div className="mx-auto mt-5 inline-flex items-center rounded-full bg-primary/10 px-4 py-2">
+          <span className="text-sm font-bold text-primary">Score {result.score}/100</span>
         </div>
       </section>
 
-      <section className="rounded-3xl border border-border bg-card p-4">
-        <div className="mb-2 flex items-center justify-between">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Jämförelse</p>
-            <h3 className="mt-0.5 font-[family-name:var(--font-display)] text-xl">Din HCP-nivå</h3>
-          </div>
-          <span className="rounded-full bg-muted px-3 py-1 text-[10px] font-semibold text-muted-foreground">Lägre är bättre</span>
-        </div>
-        <HcpBellCurve hcp={result.handicap} />
-      </section>
-
-      <section className="grid grid-cols-2 gap-3">
-        <InsightCard
-          eyebrow="Starkast"
-          title={strongest ? `${strongest.target} m` : "–"}
-          text={strongest ? `${strongest.avgProximity.toFixed(1).replace(".", ",")} m i snitt · ${strongest.score}/100` : "Gör testet för analys."}
-          positive
-        />
-        <InsightCard
-          eyebrow="Störst potential"
-          title={weakest ? `${weakest.target} m` : "–"}
-          text={weakest
-            ? isStandard
-              ? `${weakest.avgProximity.toFixed(1).replace(".", ",")} m i snitt · ${weakest.score}/100`
-              : "Snabbtestet ger en första indikation – bekräfta med standardtestet."
-            : "Gör testet för analys."}
-        />
-      </section>
-
-      <section className="rounded-3xl border border-border bg-card p-4">
-        <div className="flex items-end justify-between gap-3">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Avståndsprofil</p>
-            <h3 className="mt-0.5 font-[family-name:var(--font-display)] text-xl">Var vinner och tappar du?</h3>
-          </div>
-          {!isStandard && <span className="text-[10px] font-semibold text-muted-foreground">Indikation</span>}
-        </div>
-
-        <div className="mt-3 divide-y divide-border">
-          {result.perTarget.filter((item) => item.count > 0).map((item) => (
-            <div key={item.target} className="grid grid-cols-[54px_1fr_auto] items-center gap-3 py-3">
-              <div>
-                <p className="font-[family-name:var(--font-display)] text-xl leading-none">{item.target}</p>
-                <p className="text-[9px] uppercase tracking-wide text-muted-foreground">meter</p>
-              </div>
-              <div>
-                <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                  <div className="h-full rounded-full bg-primary" style={{ width: `${Math.max(3, item.score)}%` }} />
-                </div>
-                <p className="mt-1 text-[10px] text-muted-foreground">
-                  {item.avgProximity.toFixed(1).replace(".", ",")} m till flagg
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="font-[family-name:var(--font-display)] text-xl leading-none text-primary">{item.score}</p>
-                <p className="mt-0.5 text-[9px] text-muted-foreground">HCP {handicapLabel(item.handicap)}</p>
-              </div>
-            </div>
-          ))}
+      <section className="rounded-3xl border border-border bg-card p-4 text-center">
+        <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
+          Du slår
+        </p>
+        <p className="mt-1 font-[family-name:var(--font-display)] text-5xl leading-none text-foreground">
+          {percentile} %
+        </p>
+        <p className="mt-1 text-sm text-muted-foreground">av golfarna på den här skalan</p>
+        <div className="mt-3">
+          <HcpBellCurve hcp={result.handicap} />
         </div>
       </section>
 
       <BestShotHighlight shots={shots} />
-    </div>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="px-2">
-      <p className="font-[family-name:var(--font-display)] text-xl leading-none">{value}</p>
-      <p className="mt-1 text-[9px] font-semibold uppercase leading-tight tracking-[0.12em] text-muted-foreground">{label}</p>
-    </div>
-  );
-}
-
-function InsightCard({
-  eyebrow,
-  title,
-  text,
-  positive = false,
-}: {
-  eyebrow: string;
-  title: string;
-  text: string;
-  positive?: boolean;
-}) {
-  return (
-    <div className={`rounded-3xl border p-4 ${positive ? "border-primary/25 bg-primary/5" : "border-border bg-card"}`}>
-      <Target className={`h-4 w-4 ${positive ? "text-primary" : "text-muted-foreground"}`} strokeWidth={1.75} />
-      <p className={`mt-3 text-[9px] font-bold uppercase tracking-[0.18em] ${positive ? "text-primary" : "text-muted-foreground"}`}>{eyebrow}</p>
-      <p className="mt-1 font-[family-name:var(--font-display)] text-2xl leading-none">{title}</p>
-      <p className="mt-2 text-[11px] leading-snug text-muted-foreground">{text}</p>
     </div>
   );
 }
@@ -152,16 +63,24 @@ function BestShotHighlight({ shots }: { shots: PrecisionShot[] }) {
 
   const best = filled.reduce((a, b) => (proximityPct(a) < proximityPct(b) ? a : b));
   const bestHcp = handicapFromPct(proximityPct(best));
+  const distance = Math.sqrt((best.carry - best.target) ** 2 + best.offline ** 2);
 
   return (
-    <section className="flex items-center gap-4 rounded-3xl border border-flag/25 bg-flag/5 p-4">
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-flag/15 text-flag">
-        <Trophy className="h-4 w-4" strokeWidth={2} />
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-flag">Bästa slaget</p>
-        <p className="mt-0.5 text-sm font-semibold">{best.target} m · HCP-nivå {handicapLabel(bestHcp)}</p>
-        <p className="mt-0.5 text-[11px] text-muted-foreground">{Math.sqrt((best.carry - best.target) ** 2 + best.offline ** 2).toFixed(1).replace(".", ",")} m från flaggan</p>
+    <section className="relative overflow-hidden rounded-3xl border border-flag/30 bg-flag/5 p-5 text-center">
+      <div
+        className="pointer-events-none absolute -top-12 left-1/2 h-36 w-36 -translate-x-1/2 rounded-full bg-flag/20 blur-3xl"
+        aria-hidden
+      />
+      <div className="relative">
+        <span className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-flag/15 text-flag">
+          <Trophy className="h-5 w-5" strokeWidth={2} />
+        </span>
+        <p className="mt-3 text-[10px] font-bold uppercase tracking-[0.24em] text-flag">Bästa slaget</p>
+        <p className="mt-2 font-[family-name:var(--font-display)] text-5xl leading-none text-flag">
+          HCP {handicapLabel(bestHcp)}
+        </p>
+        <p className="mt-2 text-sm font-semibold">{best.target} m · {distance.toFixed(1).replace(".", ",")} m från flaggan</p>
+        <p className="mt-1 text-xs text-muted-foreground">Det slaget höll HCP {handicapLabel(bestHcp)}-nivå.</p>
       </div>
     </section>
   );
