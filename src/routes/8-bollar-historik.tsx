@@ -67,26 +67,8 @@ function techniqueAverage(session: EightBallSession, technique: Technique) {
 
 function radarLevel(value: number) {
   const score = Math.max(0, Math.min(4, value));
-  const anchors = [
-    { score: 0, level: 0 },
-    { score: 1, level: 25 },
-    { score: 2, level: 55 },
-    { score: 2.5, level: 70 },
-    { score: 3, level: 85 },
-    { score: 3.5, level: 95 },
-    { score: 4, level: 100 },
-  ];
-
-  for (let index = 1; index < anchors.length; index += 1) {
-    const lower = anchors[index - 1];
-    const upper = anchors[index];
-    if (score <= upper.score) {
-      const progress = (score - lower.score) / (upper.score - lower.score);
-      return lower.level + progress * (upper.level - lower.level);
-    }
-  }
-
-  return 100;
+  if (score === 0) return 0;
+  return Math.sqrt(score / 4) * 100;
 }
 
 function EightBallHistoryPage() {
@@ -127,23 +109,12 @@ function EightBallHistoryPage() {
     const recentValues = recentDetailed
       .map((session) => techniqueAverage(session, technique))
       .filter((value): value is number => value !== null);
-    const allValues = detailed
-      .map((session) => techniqueAverage(session, technique))
-      .filter((value): value is number => value !== null);
 
     return {
       technique,
       recentAvg: recentValues.length ? recentValues.reduce((sum, value) => sum + value, 0) / recentValues.length : null,
-      best: allValues.length ? Math.max(...allValues) : null,
     };
   }).filter((item) => item.recentAvg !== null);
-
-  const strongestTechnique = techniqueStats.length
-    ? techniqueStats.reduce((a, b) => (Number(b.recentAvg) > Number(a.recentAvg) ? b : a))
-    : null;
-  const weakestTechnique = techniqueStats.length
-    ? techniqueStats.reduce((a, b) => (Number(b.recentAvg) < Number(a.recentAvg) ? b : a))
-    : null;
 
   const totalPerShot = latestFive.length
     ? latestFive.reduce((sum, session) => sum + session.score / 40, 0) / latestFive.length
@@ -293,19 +264,6 @@ function EightBallHistoryPage() {
                   </RadarChart>
                 </ResponsiveContainer>
               </div>
-
-              {strongestTechnique && weakestTechnique ? (
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="rounded-xl bg-primary/8 px-3 py-2.5">
-                    <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-primary">Styrka</p>
-                    <p className="mt-1 text-sm font-semibold">{strongestTechnique.technique} <span className="tabular-nums">{Number(strongestTechnique.recentAvg).toFixed(1)}/4</span></p>
-                  </div>
-                  <div className="rounded-xl bg-muted px-3 py-2.5">
-                    <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Fokus</p>
-                    <p className="mt-1 text-sm font-semibold">{weakestTechnique.technique} <span className="tabular-nums">{Number(weakestTechnique.recentAvg).toFixed(1)}/4</span></p>
-                  </div>
-                </div>
-              ) : null}
             </section>
           ) : null}
 
