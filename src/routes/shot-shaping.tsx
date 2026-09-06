@@ -1,8 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, Repeat, Shuffle, Grid3x3 } from "lucide-react";
+import { useEffect, useState } from "react";
 import {
   formatShotShapingRating,
   loadShotShapingRating,
+  type ShotShapingRatingResult,
 } from "@/lib/shot-shaping-rating";
 import { LIGHT_SURFACE } from "./8-bollar";
 
@@ -52,7 +54,11 @@ const TESTS = [
 ];
 
 function ShotShapingFamily() {
-  const rating = loadShotShapingRating();
+  const [rating, setRating] = useState<ShotShapingRatingResult | null>(null);
+
+  useEffect(() => {
+    setRating(loadShotShapingRating());
+  }, []);
 
   return (
     <main
