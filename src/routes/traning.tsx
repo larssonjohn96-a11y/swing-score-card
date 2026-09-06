@@ -17,6 +17,8 @@ export const Route = createFileRoute("/traning")({
 type TestRoute =
   | "/speed"
   | "/longdrive"
+  | "/fairway-streak"
+  | "/putting-streak"
   | "/driver-konsekvens"
   | "/lagputt"
   | "/50-bollar"
@@ -55,6 +57,15 @@ const TESTS: Record<Category, TestItem[]> = {
         "Sex försök med driver. Jaga personbästa i carry och följ både längsta slag och snitt över tid.",
       meta: "6 drives · längsta carry · PB",
       skill: "Distance",
+      featured: true,
+    },
+    {
+      to: "/fairway-streak",
+      title: "Fairway Streak",
+      description:
+        "Träffa en 30 m bred fairway och fortsätt så länge du lyckas. Första missen avslutar testet.",
+      meta: "1 liv · fairways i rad · PB",
+      skill: "Challenge",
       featured: true,
     },
     {
@@ -101,6 +112,15 @@ const TESTS: Record<Category, TestItem[]> = {
   ],
   putting: [
     {
+      to: "/putting-streak",
+      title: "Putting Streak",
+      description:
+        "En putt per nivå från 1 till 10 meter. Sätt den för att gå vidare. Första missen avslutar testet.",
+      meta: "1 liv · progressiv stege · PB",
+      skill: "Challenge",
+      featured: true,
+    },
+    {
       to: "/pga-tour-18-puttar",
       title: "PGA Tour – 18 Puttar",
       description:
@@ -145,7 +165,7 @@ const CATEGORIES: Array<{ id: Category; title: string; description: string }> = 
   { id: "off-the-tee", title: "Off the Tee", description: "Speed, längd och driver-performance" },
   { id: "approach", title: "Approach", description: "Precision och shot shaping" },
   { id: "around-the-green", title: "Around the Green", description: "Slagvariation och scoring runt green" },
-  { id: "putting", title: "Putting", description: "Fem separata färdigheter – utan onödig överlappning" },
+  { id: "putting", title: "Putting", description: "Challenges, putting-performance och specifika färdigheter" },
 ];
 
 function TestCard({ to, title, description, meta, skill, featured }: TestItem) {
@@ -223,11 +243,11 @@ function TrainingTestsPage() {
           <h2 className="mt-1 font-display text-3xl leading-none">Performance & träning</h2>
           {category === "off-the-tee" ? (
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Speed är en central del av din spelarprofil och visas i spindeldiagrammet, men räknas inte in i Total HCP. Följ ball speed, club speed, längsta drive och driverkontroll här.
+              Speed är en central del av din spelarprofil och visas i spindeldiagrammet, men räknas inte in i Total HCP. Följ fart, längd, streaks och driverkontroll här.
             </p>
           ) : category === "putting" ? (
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Välj vad du vill träna och mäta: startlinje, greenläsning, längdkontroll, kortputt eller total putting-performance.
+              Jaga PB i Putting Streak eller välj ett djupare test för total putting, kortputt, längdkontroll, startlinje eller greenläsning.
             </p>
           ) : category === "approach" ? (
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
