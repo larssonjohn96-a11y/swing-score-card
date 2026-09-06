@@ -90,7 +90,7 @@ function Home() {
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-3">
-        <Link to="/konto" className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"><Users className="h-4 w-4" strokeWidth={1.75} /></span><span><span className="block font-[family-name:var(--font-display)] text-2xl leading-none">{friendCount ?? "–"}</span><span className="block text-xs text-muted-foreground">Vänner</span></span></Link>
+        <Link to="/vanner" className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"><Users className="h-4 w-4" strokeWidth={1.75} /></span><span><span className="block font-[family-name:var(--font-display)] text-2xl leading-none">{friendCount ?? "–"}</span><span className="block text-xs text-muted-foreground">Vänner</span></span></Link>
         <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"><Gauge className="h-4 w-4" strokeWidth={1.75} /></span><span><span className="block font-[family-name:var(--font-display)] text-2xl leading-none">{data ? hcpLabel(data.real ?? data.estimated ?? 0) : "–"}</span><span className="block text-xs text-muted-foreground">HCP</span></span></div>
       </div>
 
