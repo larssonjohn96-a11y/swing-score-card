@@ -27,7 +27,6 @@ import { PrecisionReport } from "@/components/precision-report";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 import { ApproachProcessing } from "@/components/approach-processing";
 import { ApproachHcpReveal } from "@/components/approach-hcp-reveal";
-
 import { ApproachCelebration, type ApproachPRResult } from "@/components/approach-celebration";
 import { computeAchievements, type ProgressItem } from "@/lib/trophy-room";
 
@@ -45,7 +44,6 @@ export const Route = createFileRoute("/precision")({
         property: "og:description",
         content: "18 slag, en siffra: din Approach-HCP och var du ligger jämfört med andra golfare.",
       },
-
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -69,16 +67,11 @@ function PrecisionPage() {
   const [offset, setOffset] = useState(0);
   const [prevScore, setPrevScore] = useState<number | null>(null);
   const [revealHcp, setRevealHcp] = useState(36);
-
   const [pr, setPr] = useState<ApproachPRResult | null>(null);
   const [newAchievement, setNewAchievement] = useState<ProgressItem | null>(null);
-  /** true när alla slag registrerats men användaren ännu inte slutfört testet */
   const [allRegistered, setAllRegistered] = useState(false);
-  /** bara ETT steg bakåt tillåts – spärras tills nästa slag sparats */
   const [undoUsed, setUndoUsed] = useState(false);
 
-  /** Antal slag styrs av vilket läge som valdes vid start – shots.length
-   *  är alltid rätt storlek oavsett standardtest (18) eller snabbtest (5). */
   const totalShots = shots.length;
   const current = shots[Math.min(index, totalShots - 1)];
 
@@ -113,12 +106,8 @@ function PrecisionPage() {
     setUndoUsed(false);
 
     if (next >= totalShots) {
-      // Testet låses INTE här – användaren får en sista chans att ändra
-      // sista slaget innan analysen körs (se finalize).
       setAllRegistered(true);
     } else {
-      // Om nästa slag redan är registrerat (användaren gick ett steg bakåt)
-      // förifylls dess tidigare värden istället för måldistansen.
       const n = updatedShots[next];
       setIndex(next);
       setCarry(n.filled ? n.carry : n.target);
@@ -128,8 +117,6 @@ function PrecisionPage() {
   }
 
   function finalize(finalShots: PrecisionShot[]) {
-    // Jämför alltid mot historiken FÖRE det här testet inkluderas, annars
-    // riskerar det nya resultatet att jämföras mot sig självt.
     const previousSessions = loadPrecisionSessions();
     const previousHcps = previousSessions
       .map((s) => s.handicap)
@@ -140,17 +127,9 @@ function PrecisionPage() {
     const previousBestHcp = previousHcps.length ? Math.min(...previousHcps) : undefined;
     const previousBestScore = previousScores.length ? Math.max(...previousScores) : undefined;
     const achievementsBefore = computeAchievements();
-
-    // Beräkningen (allt synkron JS) är klar direkt – processing-skärmen
-    // spelar ändå ut sin egen sekvens innan den visar CTA:n, se
-    // ApproachProcessing. Sparas direkt så resultatet garanterat finns
-    // klart innan användaren kan trycka "Se mitt resultat".
     const saved = savePrecisionSession(finalShots);
 
     const isFirstTest = previousSessions.length === 0;
-    // Ett resultat som MATCHAR (delar) tidigare rekord räknas nu också
-    // som PR, inte bara ett som slår det – bara ett sämre resultat är
-    // inget PR.
     const hcpPR =
       !isFirstTest &&
       typeof saved.handicap === "number" &&
@@ -174,15 +153,12 @@ function PrecisionPage() {
         achievementsBefore.find((b) => b.id === a.id)?.status !== "unlocked",
     );
     setNewAchievement(justUnlocked ?? null);
-
     setRevealHcp(typeof saved.handicap === "number" ? saved.handicap : 36);
     setPhase("processing");
   }
 
-  /** Ett steg bakåt till senast registrerade slag, med värdena förifyllda. */
   function back() {
     if (allRegistered) {
-      // Sista slaget är registrerat men testet inte slutfört – ändra det slaget.
       setAllRegistered(false);
       const i = totalShots - 1;
       setIndex(i);
@@ -206,9 +182,7 @@ function PrecisionPage() {
       <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-16 pt-8">
         <header className="flex items-end justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
-              Innan du börjar
-            </p>
+            <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Innan du börjar</p>
             <h1 className="text-4xl leading-none">Approach Test</h1>
           </div>
           <Link
@@ -225,19 +199,12 @@ function PrecisionPage() {
             <Radar className="h-8 w-8 text-primary" />
           </span>
         </div>
-        <h2 className="mt-4 text-center text-xl leading-tight text-muted-foreground">
-          Välj testlängd
-        </h2>
+        <h2 className="mt-4 text-center text-xl leading-tight text-muted-foreground">Välj testlängd</h2>
 
-        <button
-          onClick={() => start("extended")}
-          className="mt-6 w-full rounded-2xl bg-primary py-5 text-left"
-        >
+        <button onClick={() => start("extended")} className="mt-6 w-full rounded-2xl bg-primary py-5 text-left">
           <span className="flex items-center justify-between px-6">
             <span>
-              <span className="block font-[family-name:var(--font-display)] text-2xl text-primary-foreground">
-                Standard
-              </span>
+              <span className="block font-[family-name:var(--font-display)] text-2xl text-primary-foreground">Standard</span>
               <span className="block text-sm text-primary-foreground/70">18 slag · 55–165 m</span>
             </span>
             <ArrowRight className="h-5 w-5 shrink-0 text-primary-foreground" />
@@ -260,7 +227,7 @@ function PrecisionPage() {
     );
   }
 
-  if (phase === "test")
+  if (phase === "test") {
     return (
       <TestScreen
         current={current}
@@ -280,31 +247,19 @@ function PrecisionPage() {
         onAbort={() => navigate({ to: "/kategori/$slug", params: { slug: "approach" } })}
       />
     );
+  }
+
   if (phase === "processing") {
-    return (
-      <ApproachProcessing
-        totalShots={totalShots}
-        resultReady
-        onSeeResult={() => setPhase("reveal")}
-      />
-    );
+    return <ApproachProcessing totalShots={totalShots} resultReady onSeeResult={() => setPhase("reveal")} />;
   }
   if (phase === "reveal") {
     return <ApproachHcpReveal hcp={revealHcp} onContinue={() => setPhase("result")} />;
   }
 
   return (
-    <ResultScreen
-      shots={shots}
-      prevScore={prevScore}
-      onRestart={start}
-      pr={pr}
-      newAchievement={newAchievement}
-    />
+    <ResultScreen shots={shots} prevScore={prevScore} onRestart={start} pr={pr} newAchievement={newAchievement} />
   );
 }
-
-/* ----------------------------------------------------------------- test */
 
 function TestScreen({
   current,
@@ -334,9 +289,7 @@ function TestScreen({
   setOffset: (n: number) => void;
   onCommit: () => void;
   onBack: () => void;
-  /** ett steg bakåt tillåtet just nu */
   canUndo: boolean;
-  /** alla slag registrerade – väntar på att användaren slutför testet */
   allRegistered: boolean;
   onFinalize: () => void;
   onAbort: () => void;
@@ -347,9 +300,15 @@ function TestScreen({
   const isPerfect = diff === 0 && offset === 0;
   const landingDistanceM = Math.sqrt(diff * diff + offset * offset);
   const isBirdieRange = !isPerfect && landingDistanceM <= 4;
-  const progressTargets = totalShots === EXTENDED_PRECISION_TARGETS.length * EXTENDED_PRECISION_ROUNDS
-    ? EXTENDED_PRECISION_TARGETS
-    : PRECISION_TARGETS;
+  const isStandard = totalShots === EXTENDED_PRECISION_TARGETS.length * EXTENDED_PRECISION_ROUNDS;
+  const shotsPerRound = isStandard ? EXTENDED_PRECISION_TARGETS.length : PRECISION_TARGETS.length;
+  const activeRound = isStandard ? Math.floor(index / shotsPerRound) + 1 : 1;
+  const positionInRound = index % shotsPerRound;
+  const nextTarget = index + 1 < totalShots
+    ? isStandard
+      ? EXTENDED_PRECISION_TARGETS[(index + 1) % shotsPerRound]
+      : PRECISION_TARGETS[index + 1]
+    : undefined;
 
   const [flying, setFlying] = useState(false);
 
@@ -367,10 +326,7 @@ function TestScreen({
     return (
       <main className="mx-auto flex min-h-screen w-full max-w-md flex-col px-6 py-8">
         <div className="flex items-center justify-end">
-          <button
-            onClick={onAbort}
-            className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
-          >
+          <button onClick={onAbort} className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground">
             <X className="h-3.5 w-3.5" /> Avbryt test
           </button>
         </div>
@@ -379,31 +335,19 @@ function TestScreen({
           <span className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
             <Check className="h-8 w-8 text-primary" strokeWidth={2.5} />
           </span>
-          <h1 className="mt-5 font-[family-name:var(--font-display)] text-3xl leading-tight">
-            Alla {totalShots} slag registrerade!
-          </h1>
+          <h1 className="mt-5 font-[family-name:var(--font-display)] text-3xl leading-tight">Alla {totalShots} slag registrerade!</h1>
           <p className="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-muted-foreground">
-            Redo att se ditt resultat? Du kan ändra det senaste slaget en sista gång innan du
-            slutför.
+            Redo att se ditt resultat? Du kan ändra det senaste slaget en sista gång innan du slutför.
           </p>
 
           {canUndo && (
-            <button
-              type="button"
-              onClick={onBack}
-              className="mt-5 flex items-center gap-1.5 rounded-full border border-border/70 px-4 py-2 text-xs font-medium text-muted-foreground transition-colors active:bg-muted"
-            >
-              <Undo2 className="h-3.5 w-3.5" />
-              Ändra senaste slag
+            <button type="button" onClick={onBack} className="mt-5 flex items-center gap-1.5 rounded-full border border-border/70 px-4 py-2 text-xs font-medium text-muted-foreground transition-colors active:bg-muted">
+              <Undo2 className="h-3.5 w-3.5" /> Ändra senaste slag
             </button>
           )}
 
-          <button
-            onClick={onFinalize}
-            className="mt-8 flex w-full max-w-xs items-center justify-center gap-2 rounded-2xl bg-primary py-4 font-[family-name:var(--font-display)] text-2xl text-primary-foreground"
-          >
-            Slutför test
-            <ArrowRight className="h-5 w-5" />
+          <button onClick={onFinalize} className="mt-8 flex w-full max-w-xs items-center justify-center gap-2 rounded-2xl bg-primary py-4 font-[family-name:var(--font-display)] text-2xl text-primary-foreground">
+            Slutför test <ArrowRight className="h-5 w-5" />
           </button>
         </div>
       </main>
@@ -413,53 +357,79 @@ function TestScreen({
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-md flex-col px-6 pb-32 pt-3">
       <div className="flex items-center justify-end">
-        <button
-          onClick={onAbort}
-          className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
-        >
+        <button onClick={onAbort} className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground">
           <X className="h-3.5 w-3.5" /> Avbryt test
         </button>
       </div>
 
-      {/* Testprogress – egen tydlig sektion, progressbaren alltid helt synlig */}
-      <div className="mt-5">
-        <div className="flex items-baseline justify-between text-sm">
-          <span className="font-semibold">
-            Slag {index + 1} <span className="text-muted-foreground">av {totalShots}</span>
-          </span>
-          <span className="text-muted-foreground">{pct} %</span>
+      <section className="mt-4 rounded-3xl border border-border bg-card p-4">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+              {isStandard ? `Varv ${activeRound} av 2` : "Snabbtest"}
+            </p>
+            <div className="mt-1 flex items-baseline gap-2">
+              <span className="font-[family-name:var(--font-display)] text-4xl leading-none text-primary">{current.target} m</span>
+              <span className="text-xs text-muted-foreground">nu</span>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-xs font-semibold">Slag {index + 1} av {totalShots}</p>
+            <p className="mt-1 text-[10px] text-muted-foreground">{pct} % klart</p>
+          </div>
         </div>
-        <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
-          <div
-            className="h-full rounded-full bg-primary transition-all"
-            style={{ width: `${pct}%` }}
-          />
-        </div>
-        <div className="mt-2 flex items-center justify-between text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-          {progressTargets.map((t) => (
-            <span key={t} className={t === current.target ? "font-semibold text-foreground" : ""}>
-              {t} m
-            </span>
-          ))}
-        </div>
-      </div>
 
-      {/* Föregående slag – kompakt, sekundär, tydligt egen luft runt sig */}
+        {isStandard ? (
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            {[1, 2].map((round) => {
+              const completedInRound = round < activeRound ? shotsPerRound : round > activeRound ? 0 : positionInRound;
+              const width = (completedInRound / shotsPerRound) * 100;
+              return (
+                <div key={round}>
+                  <div className="mb-1 flex items-center justify-between text-[9px] font-bold uppercase tracking-[0.14em]">
+                    <span className={round === activeRound ? "text-primary" : "text-muted-foreground"}>Varv {round}</span>
+                    {round < activeRound && <span className="text-primary">Klart</span>}
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-muted">
+                    <div className="h-full rounded-full bg-primary transition-[width] duration-300" style={{ width: `${width}%` }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="mt-4 h-2 overflow-hidden rounded-full bg-muted">
+            <div className="h-full rounded-full bg-primary transition-[width] duration-300" style={{ width: `${pct}%` }} />
+          </div>
+        )}
+
+        <div className="mt-3 flex items-center justify-between rounded-2xl bg-muted/60 px-3 py-2.5">
+          <div>
+            <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Nu</p>
+            <p className="mt-0.5 text-sm font-semibold">{current.target} m</p>
+          </div>
+          <ArrowRight className="h-4 w-4 text-muted-foreground" />
+          <div className="text-right">
+            <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Nästa</p>
+            <p className="mt-0.5 text-sm font-semibold">{nextTarget !== undefined ? `${nextTarget} m` : "Sista slaget"}</p>
+          </div>
+        </div>
+      </section>
+
       {canUndo && (
-        <div className="mt-4">
+        <div className="mt-3">
           <button
             type="button"
             onClick={onBack}
             disabled={flying}
             className="flex items-center gap-1.5 rounded-full border border-border/70 px-3 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors active:bg-muted disabled:opacity-40"
           >
-            <Undo2 className="h-3 w-3" />
-            Föregående slag
+            <Undo2 className="h-3 w-3" /> Föregående slag
           </button>
         </div>
       )}
 
-      <div className="mt-6">
+      <div className="mt-4">
         <ApproachShotVisual
           target={current.target}
           diff={diff}
@@ -503,7 +473,6 @@ function TestScreen({
               </button>
             ))}
           </div>
-
           <SidledValue value={offset} onChange={setOffset} />
         </div>
       </div>
@@ -517,11 +486,8 @@ function TestScreen({
             " rakt på målet"
           ) : (
             <>
-              {" "}
-              och{" "}
-              <span className="font-semibold text-foreground">
-                {offset} m {side < 0 ? "vänster" : "höger"}
-              </span>{" "}
+              {" "}och{" "}
+              <span className="font-semibold text-foreground">{offset} m {side < 0 ? "vänster" : "höger"}</span>{" "}
               om målet
             </>
           )}
@@ -540,14 +506,12 @@ function TestScreen({
   );
 }
 
-/** Kompakt sifferstepper för sidled – delar visuell stil med NumberField
- *  men utan egen etikett/hint, eftersom Sidled-kortet redan har en rubrik. */
 function SidledValue({ value, onChange }: { value: number; onChange: (n: number) => void }) {
   const set = (n: number) => onChange(Math.max(0, Math.round(n)));
   const atMin = value <= 0;
-
   const [flash, setFlash] = useState(false);
   const prevValue = useRef(value);
+
   useEffect(() => {
     if (prevValue.current !== value) {
       prevValue.current = value;
@@ -570,11 +534,7 @@ function SidledValue({ value, onChange }: { value: number; onChange: (n: number)
           <Minus className="h-4 w-4" />
         </button>
         <div className="flex flex-1 items-baseline justify-center gap-1">
-          <span
-            className={`font-[family-name:var(--font-display)] text-3xl leading-none transition-[color,transform] duration-200 ${
-              flash ? "scale-110 text-flag" : "scale-100 text-foreground"
-            }`}
-          >
+          <span className={`font-[family-name:var(--font-display)] text-3xl leading-none transition-[color,transform] duration-200 ${flash ? "scale-110 text-flag" : "scale-100 text-foreground"}`}>
             {value}
           </span>
           <span className="text-sm text-muted-foreground">m</span>
@@ -604,8 +564,6 @@ function SidledValue({ value, onChange }: { value: number; onChange: (n: number)
   );
 }
 
-/* --------------------------------------------------------------- result */
-
 function ResultScreen({
   shots,
   prevScore,
@@ -622,7 +580,6 @@ function ResultScreen({
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-16 pt-10">
       {pr && <ApproachCelebration pr={pr} />}
-
       <PrecisionReport shots={shots} prevScore={prevScore} />
 
       {newAchievement && (
@@ -632,42 +589,20 @@ function ResultScreen({
           </span>
           <div className="min-w-0 flex-1">
             <p className="text-[10px] uppercase tracking-[0.2em] text-flag">Achievement unlocked</p>
-            <p className="mt-0.5 font-[family-name:var(--font-display)] text-lg leading-none">
-              {newAchievement.title.toUpperCase()}
-            </p>
+            <p className="mt-0.5 font-[family-name:var(--font-display)] text-lg leading-none">{newAchievement.title.toUpperCase()}</p>
             <p className="mt-0.5 text-xs text-muted-foreground">{newAchievement.description}</p>
           </div>
-          <Link
-            to="/trophy"
-            className="shrink-0 rounded-full border border-flag/40 px-3 py-1.5 text-xs font-semibold text-flag"
-          >
-            Trophy Room
-          </Link>
+          <Link to="/trophy" className="shrink-0 rounded-full border border-flag/40 px-3 py-1.5 text-xs font-semibold text-flag">Trophy Room</Link>
         </div>
       )}
 
-      <div className="mt-10">
-        <button
-          onClick={onRestart}
-          className="w-full rounded-2xl bg-primary py-4 font-[family-name:var(--font-display)] text-2xl text-primary-foreground"
-        >
-          Nytt test
-        </button>
+      <div className="mt-8">
+        <button onClick={onRestart} className="w-full rounded-2xl bg-primary py-4 font-[family-name:var(--font-display)] text-2xl text-primary-foreground">Nytt test</button>
       </div>
 
       <div className="mt-3 flex gap-3">
-        <Link
-          to="/"
-          className="flex-1 rounded-2xl border border-border py-3 text-center text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
-        >
-          Startsida
-        </Link>
-        <Link
-          to="/utveckling"
-          className="flex-1 rounded-2xl border border-border py-3 text-center text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
-        >
-          Utveckling
-        </Link>
+        <Link to="/" className="flex-1 rounded-2xl border border-border py-3 text-center text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground">Startsida</Link>
+        <Link to="/utveckling" className="flex-1 rounded-2xl border border-border py-3 text-center text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground">Utveckling</Link>
       </div>
     </main>
   );
