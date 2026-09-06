@@ -10,7 +10,7 @@ export const Route = createFileRoute("/putting-data")({
       {
         name: "description",
         content:
-          "Samlad puttingdata från flera SG4-tester: träffprocent per avstånd, lagputt hole-out och längdkontroll.",
+          "Samlad puttingdata från flera SG4-tester: träffprocent per avståndszon, lagputt hole-out och längdkontroll.",
       },
     ],
   }),
@@ -19,9 +19,48 @@ export const Route = createFileRoute("/putting-data")({
 
 const fmt = (value: number, decimals = 0) => value.toFixed(decimals).replace(".", ",");
 
+const SHORT_PUTT_BINS = [
+  { min: 0, max: 1, label: "0–1 m" },
+  { min: 1, max: 2, label: "1–2 m" },
+  { min: 2, max: 3, label: "2–3 m" },
+  { min: 3, max: 4, label: "3–4 m" },
+  { min: 4, max: 5, label: "4–5 m" },
+] as const;
+
+type ShortPuttBin = {
+  label: string;
+  made: number;
+  attempts: number;
+  pct: number;
+  sources: number;
+};
+
+function shortPuttBins(): ShortPuttBin[] {
+  const exact = puttingMakeStats();
+
+  return SHORT_PUTT_BINS.map((bin, index) => {
+    const rows = exact.filter((row) =>
+      index === 0
+        ? row.distance >= bin.min && row.distance <= bin.max
+        : row.distance > bin.min && row.distance <= bin.max,
+    );
+    const made = rows.reduce((sum, row) => sum + row.made, 0);
+    const attempts = rows.reduce((sum, row) => sum + row.attempts, 0);
+    const sources = rows.reduce((sum, row) => sum + row.sources, 0);
+
+    return {
+      label: bin.label,
+      made,
+      attempts,
+      pct: attempts ? (made / attempts) * 100 : 0,
+      sources,
+    };
+  });
+}
+
 function PuttingDataPage() {
   const makeStats = useMemo(() => puttingMakeStats(), []);
-  const shortStats = makeStats.filter((row) => row.distance <= 5);
+  const shortStats = useMemo(() => shortPuttBins(), []);
   const lagHoleOut = useMemo(() => lagHoleOutStats(), []);
   const lagProximity = useMemo(() => lagProximityStats(), []);
   const totalStarts = makeStats.reduce((sum, row) => sum + row.attempts, 0);
@@ -47,7 +86,7 @@ function PuttingDataPage() {
           </div>
         </div>
         <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-          En putt räknas efter vad den faktiskt var — inte vilket test den kom från. En 1-metersputt i Klockan, Putting HCP, 25-bollar eller Putting Streak bidrar därför till samma 1 m-statistik.
+          En putt räknas efter avståndet den faktiskt slogs från — inte vilket test den kom från. Kortputtar från alla kompatibla tester slås ihop i fem tydliga avståndszoner.
         </p>
       </header>
 
@@ -58,9 +97,9 @@ function PuttingDataPage() {
           <p className="mt-1 text-xs text-muted-foreground">från flera tester</p>
         </div>
         <div className="rounded-3xl border border-border bg-card p-5 text-center">
-          <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Avstånd</p>
-          <p className="mt-1 font-display text-5xl leading-none">{makeStats.length}</p>
-          <p className="mt-1 text-xs text-muted-foreground">unika distanser</p>
+          <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Kortputtzoner</p>
+          <p className="mt-1 font-display text-5xl leading-none">5</p>
+          <p className="mt-1 text-xs text-muted-foreground">0–5 meter</p>
         </div>
       </section>
 
@@ -73,20 +112,22 @@ function PuttingDataPage() {
           <span className="text-xs text-muted-foreground">alla kompatibla tester</span>
         </div>
         <div className="mt-3 space-y-2">
-          {shortStats.length ? shortStats.map((row) => (
-            <div key={row.distance} className="rounded-2xl border border-border bg-card px-4 py-3">
+          {shortStats.map((row) => (
+            <div key={row.label} className="rounded-2xl border border-border bg-card px-4 py-3">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="font-display text-2xl">{String(row.distance).replace(".", ",")} m</p>
-                  <p className="text-xs text-muted-foreground">{row.made} satta av {row.attempts} · {row.sources} testtyper</p>
+                  <p className="font-display text-2xl">{row.label}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {row.attempts ? `${row.made} satta av ${row.attempts}` : "Ingen data ännu"}
+                  </p>
                 </div>
-                <p className="font-display text-3xl text-primary">{fmt(row.pct)}%</p>
+                <p className="font-display text-3xl text-primary">{row.attempts ? `${fmt(row.pct)}%` : "–"}</p>
               </div>
               <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
                 <div className="h-full rounded-full bg-primary" style={{ width: `${Math.max(0, Math.min(100, row.pct))}%` }} />
               </div>
             </div>
-          )) : <p className="rounded-2xl border border-border bg-card p-4 text-sm text-muted-foreground">Ingen kortputtdata ännu.</p>}
+          ))}
         </div>
       </section>
 
