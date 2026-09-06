@@ -113,17 +113,10 @@ export function BottomNav() {
                 onClick={() => setOpen(false)}
                 className="block rounded-2xl border border-border bg-card px-4 py-3 transition-colors hover:border-primary"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{c.subtitle}</p>
-                    <h3 className="mt-0.5 text-xl leading-none">{c.title}</h3>
-                    <p className="mt-1 text-xs leading-snug text-muted-foreground line-clamp-1">{c.description}</p>
-                  </div>
-                  <p className="mt-0.5 shrink-0 text-[9px] uppercase tracking-[0.18em] text-flag">
-                    HCP-grundande
-                  </p>
-                </div>
-                <p className="mt-1.5 text-[10px] font-medium text-flag">
+                <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{c.subtitle}</p>
+                <h3 className="mt-0.5 text-xl leading-none">{c.title}</h3>
+                <p className="mt-1 text-xs leading-snug text-muted-foreground line-clamp-1">{c.description}</p>
+                <p className="mt-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-flag">
                   Gör ett test · få ett HCP-resultat
                 </p>
               </Link>
@@ -135,16 +128,11 @@ export function BottomNav() {
               onClick={() => setOpen(false)}
               className="block rounded-2xl border border-border bg-muted/55 px-4 py-3.5 transition-colors hover:border-primary hover:bg-muted/70"
             >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Ej HCP-grundande</p>
-                  <h3 className="mt-0.5 text-xl leading-none">Träningstester</h3>
-                  <p className="mt-1 text-xs leading-snug text-muted-foreground">
-                    Träna med syfte och följ din utveckling över tid.
-                  </p>
-                </div>
-                <p className="mt-0.5 shrink-0 text-[9px] uppercase tracking-[0.18em] text-muted-foreground">Träning</p>
-              </div>
+              <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Ej HCP-grundande</p>
+              <h3 className="mt-0.5 text-xl leading-none">Träningstester</h3>
+              <p className="mt-1 text-xs leading-snug text-muted-foreground">
+                Träna med syfte och följ din utveckling över tid.
+              </p>
             </Link>
           </div>
         </SheetContent>
