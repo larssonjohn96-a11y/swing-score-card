@@ -10,7 +10,7 @@ import { useSessionSyncStatus } from "@/lib/sessions/use-sessions";
 async function syncLocalSessions(userId: string) {
   await Promise.allSettled([syncBunkerLeaderboard(userId), syncForUser(userId)]);
 }
-import { RatingCardSection } from "@/components/rating-card";
+import { RatingCardSection } from "@/components/player-card-v2";
 import { DeveloperPreviewPanel } from "@/components/dev-plan-switcher";
 
 export const Route = createFileRoute("/konto")({
