@@ -5,6 +5,7 @@ import { ArrowLeft, ChevronRight } from "lucide-react";
 import { ChartCard } from "@/components/chart-card";
 import { HeatmapCard, HistoryPanel } from "@/components/progress-dashboard";
 import { ApproachDeepAnalysis } from "@/components/approach-deep-analysis";
+import { ApproachRadarAnalysis } from "@/components/approach-radar-analysis";
 import { PremiumLockLine } from "@/components/premium-lock";
 import { useSubscription } from "@/lib/subscription";
 import { CATEGORY_LABELS, computeCategoryDetail, hcpLabel, ratingFromHandicap, type CategoryDetail, type CategorySlug, type HcpTimelinePoint } from "@/lib/sg-handicap";
@@ -35,7 +36,7 @@ function CategoryDetailPage(){
   <p className="mt-5 text-[11px] font-semibold uppercase tracking-[0.22em] text-primary">Kategoriöversikt</p><h1 className="mt-1 font-display text-4xl leading-none">{detail.title}</h1><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{CATEGORY_INTRO[slug]}</p>
   <section className="mt-5 rounded-3xl border border-primary/20 bg-card p-5 shadow-[var(--shadow-glow)]"><div className="flex items-end justify-between"><div><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Kategori-HCP</p><p className="mt-1 font-display text-6xl leading-none text-primary">{detail.handicap!==undefined?hcpLabel(detail.handicap):"–"}</p></div><div className="text-right"><p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground">Trend</p><p className={`mt-1 font-display text-2xl ${detail.trend!==undefined&&detail.trend<0?"text-primary":detail.trend!==undefined&&detail.trend>0?"text-destructive":""}`}>{detail.trend!==undefined?hcpLabel(detail.trend):"–"}</p></div></div></section>
 
-  {slug==="approach"&&<div className="mt-5"><ApproachDeepAnalysis/></div>}
+  {slug==="approach"&&<><div className="mt-5"><ApproachRadarAnalysis/></div><div className="mt-5"><ApproachDeepAnalysis/></div></>}
   {detail.keyMetrics.length>0&&slug!=="approach"&&<section className="mt-6"><p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Vad består din {detail.title.toLowerCase()} av?</p><div className="mt-3 grid grid-cols-2 gap-2">{detail.keyMetrics.map(m=><div key={m.label} className="rounded-2xl border border-border bg-card p-4"><p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{m.label}</p><p className="mt-1 font-display text-2xl">{m.value}</p></div>)}</div></section>}
 
   {detail.heatmap.length>0&&slug!=="approach"&&<section className="mt-6"><p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Detaljer</p><div className="mt-3"><HeatmapCard title={slug==="puttning"?"Putting per avstånd":"Prestation per avstånd"} zones={detail.heatmap} unit={slug==="puttning"?"%":""}/></div></section>}
