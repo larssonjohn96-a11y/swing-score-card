@@ -15,6 +15,7 @@ import {
 import { EIGHT_BALL_MULTIPLAYER_ADAPTER, type EightBallMultiplayerResult } from "@/lib/multiplayer-tests";
 
 const db = supabase as any;
+const LEGACY_BOOTSTRAP_PREFIX = "sg4:eight-ball-group:bootstrap:";
 let createSessionPromise: Promise<string> | null = null;
 
 export type GroupSessionStatus = MultiplayerStatus;
@@ -55,6 +56,15 @@ function fromCore(session: MultiplayerSession<EightBallMultiplayerResult> | null
   };
 }
 
+function writeLegacyBootstrap(session: GroupSession) {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.setItem(`${LEGACY_BOOTSTRAP_PREFIX}${session.id}`, JSON.stringify(session));
+  } catch {
+    // Route can still fall back to backend fetch.
+  }
+}
+
 export function readEightBallBootstrap(id: string): GroupSession | null {
   return fromCore(readMultiplayerBootstrap<EightBallMultiplayerResult>(EIGHT_BALL_MULTIPLAYER_ADAPTER.testId, id));
 }
@@ -62,10 +72,18 @@ export function readEightBallBootstrap(id: string): GroupSession | null {
 export async function createEightBallGroupSession(friendships: Friendship[]) {
   if (createSessionPromise) return createSessionPromise;
   const selected = friendships.slice(0, 3);
-  createSessionPromise = createMultiplayerSession(
-    EIGHT_BALL_MULTIPLAYER_ADAPTER,
-    selected.map((friend) => ({ id: friend.other.id, displayName: friend.other.displayName })),
-  );
+  createSessionPromise = (async () => {
+    const id = await createMultiplayerSession(
+      EIGHT_BALL_MULTIPLAYER_ADAPTER,
+      selected.map((friend) => ({ id: friend.other.id, displayName: friend.other.displayName })),
+    );
+    // Temporary compatibility bridge while the 8-ball route is migrated to the
+    // generic bootstrap reader. This keeps Start -> score screen immediate.
+    const coreBootstrap = readMultiplayerBootstrap<EightBallMultiplayerResult>(EIGHT_BALL_MULTIPLAYER_ADAPTER.testId, id);
+    const legacyBootstrap = fromCore(coreBootstrap);
+    if (legacyBootstrap) writeLegacyBootstrap(legacyBootstrap);
+    return id;
+  })();
   try {
     return await createSessionPromise;
   } finally {
