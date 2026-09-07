@@ -24,6 +24,24 @@ export async function createEightBallGroupSession(friendships: Friendship[]) {
   if (createSessionPromise) return createSessionPromise;
   const ids = friendships.slice(0, 3).map((f) => f.other.id);
   createSessionPromise = (async () => {
+    const { data: userData } = await supabase.auth.getUser();
+    const uid = userData.user?.id;
+
+    // If navigation failed after a successful create, reuse the latest active
+    // hosted session instead of silently creating another duplicate session.
+    if (uid) {
+      const { data: active } = await db
+        .from("group_sessions")
+        .select("id")
+        .eq("host_user_id", uid)
+        .eq("test_id", "eight-ball")
+        .eq("status", "active")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (active?.id) return active.id as string;
+    }
+
     const { data, error } = await db.rpc("create_eight_ball_group_session", { p_member_ids: ids });
     if (error) throw new Error(error.message);
     if (!data || typeof data !== "string") throw new Error("Gruppsessionen skapades inte korrekt.");
