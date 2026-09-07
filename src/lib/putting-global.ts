@@ -16,6 +16,12 @@ export type PuttStart = {
   distance: number;
   firstPuttHoled: boolean;
   strokesToHole?: number;
+  /**
+   * Only independent/comparable attempts may feed pooled benchmark statistics.
+   * Format-dependent attempts (for example progression/streak gates) stay in the
+   * shot history but are excluded from pooled make-rate calculations.
+   */
+  pooledBenchmarkEligible?: boolean;
 };
 
 export type DistanceMakeStat = {
@@ -32,6 +38,10 @@ function byDate<T extends { date: string }>(a: T, b: T) {
 
 export function latestRows<T extends { date: string }>(rows: T[], limit = RECENT_PUTT_SAMPLE): T[] {
   return [...rows].sort(byDate).slice(-limit);
+}
+
+export function isPooledBenchmarkEligible(row: PuttStart): boolean {
+  return row.pooledBenchmarkEligible !== false;
 }
 
 export function collectPuttStarts(): PuttStart[] {
@@ -66,12 +76,30 @@ export function collectPuttStarts(): PuttStart[] {
     });
   }
 
+  // Putting Streak remains valuable as test history/progress data, but its
+  // progression format means attempts are not independent/comparable. A player
+  // only reaches longer distances after making earlier putts, so including it
+  // in pooled make-rate data would inflate short-distance percentages and
+  // create selection bias at longer distances.
   for (const session of loadPuttingStreakSessions()) {
     PUTTING_STREAK_DISTANCES.slice(0, session.cleared).forEach((distance) =>
-      rows.push({ source: "Putting Streak", date: session.date, distance, firstPuttHoled: true, strokesToHole: 1 }),
+      rows.push({
+        source: "Putting Streak",
+        date: session.date,
+        distance,
+        firstPuttHoled: true,
+        strokesToHole: 1,
+        pooledBenchmarkEligible: false,
+      }),
     );
     if (session.cleared < PUTTING_STREAK_DISTANCES.length) {
-      rows.push({ source: "Putting Streak", date: session.date, distance: session.failedDistance, firstPuttHoled: false });
+      rows.push({
+        source: "Putting Streak",
+        date: session.date,
+        distance: session.failedDistance,
+        firstPuttHoled: false,
+        pooledBenchmarkEligible: false,
+      });
     }
   }
 
@@ -80,7 +108,7 @@ export function collectPuttStarts(): PuttStart[] {
 
 export function puttingMakeStats(rows = collectPuttStarts()): DistanceMakeStat[] {
   const map = new Map<number, { made: number; attempts: number; sources: Set<string> }>();
-  rows.forEach((row) => {
+  rows.filter(isPooledBenchmarkEligible).forEach((row) => {
     const stat = map.get(row.distance) ?? { made: 0, attempts: 0, sources: new Set<string>() };
     stat.attempts += 1;
     if (row.firstPuttHoled) stat.made += 1;
