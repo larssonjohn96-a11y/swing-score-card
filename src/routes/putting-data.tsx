@@ -132,6 +132,7 @@ function skillIndex(metric: MetricKey, raw: number) {
 function RadarTooltip({ active, payload }: { active?: boolean; payload?: Array<{ payload?: Record<string, unknown> }> }) {
   if (!active || !payload?.length) return null;
   const row = payload[0]?.payload as {
+    key?: MetricKey;
     subject?: string;
     raw?: number;
     attempts?: number;
@@ -141,15 +142,24 @@ function RadarTooltip({ active, payload }: { active?: boolean; payload?: Array<{
   } | undefined;
   if (!row) return null;
 
+  const isThreePutt = row.key === "three-putt";
+  const raw = row.raw ?? 0;
+  const benchmarkRaw = row.benchmarkRaw ?? 0;
+
   return (
     <div className="rounded-xl border border-border bg-card px-3 py-2 text-xs shadow-lg">
       <p className="font-semibold text-foreground">{row.subject}</p>
       <p className="mt-1 text-muted-foreground">
-        Du: <span className="font-semibold text-foreground">{fmt(row.raw ?? 0)}%</span>
+        Du: <span className="font-semibold text-foreground">{fmt(raw)}%</span>
+        {isThreePutt ? " utan 3-putt" : ""}
         {row.attempts ? ` · ${row.attempts}` : ""}
       </p>
+      {isThreePutt ? (
+        <p className="text-muted-foreground">3-putt+: <span className="font-semibold text-foreground">{fmt(100 - raw)}%</span></p>
+      ) : null}
       <p className="text-muted-foreground">
-        {row.benchmarkLabel}: <span className="font-semibold text-foreground">{fmt(row.benchmarkRaw ?? 0)}%</span>
+        {row.benchmarkLabel}: <span className="font-semibold text-foreground">{fmt(benchmarkRaw)}%</span>
+        {isThreePutt ? " utan 3-putt" : ""}
       </p>
     </div>
   );
@@ -182,11 +192,12 @@ function PuttingDataPage() {
     { key: "1-2", subject: "1–2 m", raw: shortStats[1]?.pct ?? 0, attempts: shortStats[1]?.attempts ?? 0 },
     { key: "2-3", subject: "2–3 m", raw: shortStats[2]?.pct ?? 0, attempts: shortStats[2]?.attempts ?? 0 },
     { key: "3-5", subject: "3–5 m", raw: weightedPct(shortStats.slice(3)), attempts: totalAttempts(shortStats.slice(3)) },
-    { key: "three-putt", subject: "3-putt", raw: threePuttAvoidance, attempts: lagHoleOutStarts.length },
+    { key: "three-putt", subject: "3-putt undvik.", raw: threePuttAvoidance, attempts: lagHoleOutStarts.length },
   ];
 
   const selectedBenchmark = BENCHMARKS[benchmark];
   const radarData = rawMetrics.map((metric) => ({
+    key: metric.key,
     subject: metric.subject,
     raw: metric.raw,
     attempts: metric.attempts,
@@ -272,7 +283,7 @@ function PuttingDataPage() {
             <RadarChart data={radarData} outerRadius="70%">
               <PolarGrid stroke="var(--border)" />
               <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} />
-              <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} axisLine={false} />
+              <PolarRadiusAxis angle={90} domain={[0, 110]} tick={false} axisLine={false} />
               <Radar
                 name={selectedBenchmark.label}
                 dataKey="benchmark"
