@@ -34,7 +34,7 @@ import {
 
 type View = "total" | "driving" | "approach" | "around" | "putting";
 type Row = { subject: string; du: number; target: number; raw?: string; targetRaw?: string; hcp?: number; targetHcp?: number; placeholder?: boolean };
-
+type ChartRow = Row & { duChart: number; targetChart: number };
 type PuttingKey = "0-1" | "1-2" | "2-3" | "3-5" | "three-putt";
 
 const TABS: [View, string][] = [
@@ -47,8 +47,8 @@ const TABS: [View, string][] = [
 
 const QUICK = BENCHMARK_LEVELS.filter((level) => ["20", "10", "0", "Tour"].includes(level.label));
 const avg = (values: number[]) => values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
-const clamp = (value: number) => Math.max(0, Math.min(100, value));
-const pct = (value: number) => `${Math.round(value)}%`;
+const clamp = (value: number) => Math.max(0, Math.min(100, Number.isFinite(value) ? value : 0));
+const pct = (value: number) => `${Math.round(Number.isFinite(value) ? value : 0)}%`;
 
 const PUTTING_BMS: Record<string, { score: number; values: Record<PuttingKey, number> }> = {
   Tour: { score: 100, values: { "0-1": 99, "1-2": 82, "2-3": 50, "3-5": 30, "three-putt": 97.5 } },
@@ -58,15 +58,16 @@ const PUTTING_BMS: Record<string, { score: number; values: Record<PuttingKey, nu
 };
 
 function puttingSkill(key: PuttingKey, raw: number) {
+  const safeRaw = Number.isFinite(raw) ? raw : 0;
   const anchors = ["20", "10", "0", "Tour"]
     .map((label) => ({ raw: PUTTING_BMS[label].values[key], score: PUTTING_BMS[label].score }))
     .sort((a, b) => a.raw - b.raw);
-  if (raw >= anchors.at(-1)!.raw) return 100;
-  if (raw <= anchors[0].raw) return clamp((raw / Math.max(1, anchors[0].raw)) * anchors[0].score);
+  if (safeRaw >= anchors.at(-1)!.raw) return 100;
+  if (safeRaw <= anchors[0].raw) return clamp((safeRaw / Math.max(1, anchors[0].raw)) * anchors[0].score);
   for (let i = 0; i < anchors.length - 1; i += 1) {
     const a = anchors[i], b = anchors[i + 1];
-    if (raw >= a.raw && raw <= b.raw) {
-      const t = (raw - a.raw) / (b.raw - a.raw || 1);
+    if (safeRaw >= a.raw && safeRaw <= b.raw) {
+      const t = (safeRaw - a.raw) / (b.raw - a.raw || 1);
       return clamp(a.score + t * (b.score - a.score));
     }
   }
@@ -128,13 +129,17 @@ function approachRows(target: (typeof QUICK)[number]): Row[] {
   const benchmark = ratingFromHandicap(target.hcp);
   const inside = shots.filter((shot) => shot.target < 91.44);
   const outside = shots.filter((shot) => shot.target >= 91.44);
-  const build = (subject: string, selected: typeof shots, getter: (shot: typeof shots[number]) => number) => ({
-    subject,
-    du: selected.length ? ratingFromHandicap(handicapFromPct(avg(selected.map(getter)))) : 0,
-    target: benchmark,
-    raw: selected.length ? `${avg(selected.map(getter)).toFixed(1).replace(".", ",")} %` : "–",
-    placeholder: !selected.length,
-  });
+  const build = (subject: string, selected: typeof shots, getter: (shot: typeof shots[number]) => number): Row => {
+    const values = selected.map(getter).filter(Number.isFinite);
+    const value = avg(values);
+    return {
+      subject,
+      du: values.length ? ratingFromHandicap(handicapFromPct(value)) : 0,
+      target: benchmark,
+      raw: values.length ? `${value.toFixed(1).replace(".", ",")} %` : "–",
+      placeholder: !values.length,
+    };
+  };
   return [
     build("Inom 100 yd", inside, approachProximityPct),
     build("Över 100 yd", outside, approachProximityPct),
@@ -165,25 +170,38 @@ function puttingRows(target: (typeof QUICK)[number]): Row[] {
   const starts = collectPuttStarts();
   const lag = collectLagHoleOutStarts();
   const stats = puttingMakeStats(starts);
-  const raw: Array<{ key: PuttingKey; subject: string; value: number }> = [
-    { key: "0-1", subject: "0–1 m", value: puttBin(stats, 0, 1, true) },
-    { key: "1-2", subject: "1–2 m", value: puttBin(stats, 1, 2) },
-    { key: "2-3", subject: "2–3 m", value: puttBin(stats, 2, 3) },
-    { key: "3-5", subject: "3–5 m", value: puttBin(stats, 3, 5) },
-    { key: "three-putt", subject: "3-putt undvik.", value: lag.length ? 100 - lag.filter((row) => row.strokes >= 3).length / lag.length * 100 : 0 },
+  const raw: Array<{ key: PuttingKey; subject: string; value: number; hasData: boolean }> = [
+    { key: "0-1", subject: "0–1 m", value: puttBin(stats, 0, 1, true), hasData: stats.some((r) => r.distance >= 0 && r.distance <= 1 && r.attempts > 0) },
+    { key: "1-2", subject: "1–2 m", value: puttBin(stats, 1, 2), hasData: stats.some((r) => r.distance > 1 && r.distance <= 2 && r.attempts > 0) },
+    { key: "2-3", subject: "2–3 m", value: puttBin(stats, 2, 3), hasData: stats.some((r) => r.distance > 2 && r.distance <= 3 && r.attempts > 0) },
+    { key: "3-5", subject: "3–5 m", value: puttBin(stats, 3, 5), hasData: stats.some((r) => r.distance > 3 && r.distance <= 5 && r.attempts > 0) },
+    { key: "three-putt", subject: "3-putt undvik.", value: lag.length ? 100 - lag.filter((row) => row.strokes >= 3).length / lag.length * 100 : 0, hasData: lag.length > 0 },
   ];
   const benchmark = PUTTING_BMS[target.label] ?? PUTTING_BMS["10"];
   return raw.map((row) => ({
     subject: row.subject,
-    du: starts.length || row.key === "three-putt" && lag.length ? puttingSkill(row.key, row.value) : 0,
+    du: row.hasData ? puttingSkill(row.key, row.value) : 0,
     target: benchmark.score,
-    raw: starts.length || row.key === "three-putt" && lag.length ? pct(row.value) : "–",
+    raw: row.hasData ? pct(row.value) : "–",
     targetRaw: pct(benchmark.values[row.key]),
-    placeholder: !(starts.length || row.key === "three-putt" && lag.length),
+    placeholder: !row.hasData,
   }));
 }
 
-function RadarTooltip({ active, payload, targetLabel }: { active?: boolean; payload?: Array<{ payload?: Row }>; targetLabel: string }) {
+function chartRows(rows: Row[]): ChartRow[] {
+  const safe = rows.map((row) => ({ ...row, du: clamp(row.du), target: clamp(row.target) }));
+  const hasAnyPlayerValue = safe.some((row) => row.du > 0);
+  return safe.map((row) => ({
+    ...row,
+    // Om allt är 0 ska spelaren vara en prick exakt i mitten. När några axlar
+    // har data får nollaxlar ett minimalt visuellt radie-värde så polygonen
+    // förblir sammanhängande och läsbar istället för att degenerera till linjer.
+    duChart: hasAnyPlayerValue && row.du === 0 ? 1.5 : row.du,
+    targetChart: row.target,
+  }));
+}
+
+function RadarTooltip({ active, payload, targetLabel }: { active?: boolean; payload?: Array<{ payload?: ChartRow }>; targetLabel: string }) {
   if (!active || !payload?.length) return null;
   const row = payload[0]?.payload;
   if (!row) return null;
@@ -199,11 +217,16 @@ export function AnalysisRadarSwitcher({ cats, totalHandicap }: { cats: CategoryH
   const [target, setTarget] = useState(QUICK.find((level) => level.label === "0") ?? QUICK[0]);
 
   const data = useMemo(() => {
-    if (view === "total") return totalRows(cats, totalHandicap, target);
-    if (view === "driving") return drivingRows(target);
-    if (view === "approach") return approachRows(target);
-    if (view === "around") return aroundRows(target);
-    return puttingRows(target);
+    const rows = view === "total"
+      ? totalRows(cats, totalHandicap, target)
+      : view === "driving"
+        ? drivingRows(target)
+        : view === "approach"
+          ? approachRows(target)
+          : view === "around"
+            ? aroundRows(target)
+            : puttingRows(target);
+    return chartRows(rows);
   }, [view, cats, totalHandicap, target]);
 
   const targetLabel = target.label === "Tour" ? "Tour" : `HCP ${target.label}`;
@@ -219,8 +242,28 @@ export function AnalysisRadarSwitcher({ cats, totalHandicap }: { cats: CategoryH
             <PolarGrid stroke="var(--border)" />
             <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} />
             <PolarRadiusAxis domain={[0, 110]} tick={false} axisLine={false} />
-            <Radar name={targetLabel} dataKey="target" stroke="var(--chart-3)" fill="var(--chart-3)" fillOpacity={0.12} strokeWidth={2} isAnimationActive animationDuration={320} />
-            <Radar name="Du" dataKey="du" stroke="var(--chart-4)" fill="var(--chart-4)" fillOpacity={0.28} strokeWidth={2.5} dot={{ r: 3, fill: "var(--chart-4)" }} isAnimationActive animationDuration={320} />
+            <Radar
+              name={targetLabel}
+              dataKey="targetChart"
+              stroke="var(--chart-3)"
+              fill="var(--chart-3)"
+              fillOpacity={0.12}
+              strokeWidth={2}
+              dot={{ r: 4, fill: "var(--chart-3)", stroke: "var(--card)", strokeWidth: 1 }}
+              isAnimationActive
+              animationDuration={320}
+            />
+            <Radar
+              name="Du"
+              dataKey="duChart"
+              stroke="var(--chart-4)"
+              fill="var(--chart-4)"
+              fillOpacity={0.28}
+              strokeWidth={2.5}
+              dot={{ r: 4, fill: "var(--chart-4)", stroke: "var(--card)", strokeWidth: 1 }}
+              isAnimationActive
+              animationDuration={320}
+            />
             <Tooltip content={<RadarTooltip targetLabel={targetLabel} />} />
           </RadarChart>
         </ResponsiveContainer>
