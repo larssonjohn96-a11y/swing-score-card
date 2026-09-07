@@ -1,26 +1,235 @@
 import { useMemo, useState } from "react";
-import { PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer, Tooltip } from "recharts";
-import { ApproachRadarAnalysis } from "@/components/approach-radar-analysis";
-import { AroundGreenRadarAnalysis } from "@/components/around-green-radar-analysis";
-import { PuttingRadarAnalysis } from "@/components/putting-radar-analysis";
+import {
+  PolarAngleAxis,
+  PolarGrid,
+  PolarRadiusAxis,
+  Radar,
+  RadarChart,
+  ResponsiveContainer,
+  Tooltip,
+} from "recharts";
+import {
+  approachLateralErrorPct,
+  approachLengthErrorPct,
+  approachProximityPct,
+  collectApproachShots,
+} from "@/lib/approach-global";
+import {
+  bunkerShots,
+  collectAroundGreenShots,
+  expectedScramblingPct,
+  outside30Yards,
+  type AroundGreenBenchmarkKey,
+} from "@/lib/around-green-global";
 import { loadOffTeeSessions } from "@/lib/offtee-store";
 import { distanceToHandicap, shotHandicap } from "@/lib/offtee";
-import { BENCHMARK_LEVELS, hcpLabel, ratingFromHandicap, type CategoryHandicap } from "@/lib/sg-handicap";
+import { collectLagHoleOutStarts, collectPuttStarts, puttingMakeStats } from "@/lib/putting-global";
+import { handicapFromPct } from "@/lib/precision";
+import {
+  BENCHMARK_LEVELS,
+  hcpLabel,
+  ratingFromHandicap,
+  type CategoryHandicap,
+} from "@/lib/sg-handicap";
 
-type View="total"|"driving"|"approach"|"around"|"putting";
-const TABS:[View,string][]=[["total","Total"],["driving","Off the Tee"],["approach","Approach"],["around","Around Green"],["putting","Putting"]];
-const QUICK=BENCHMARK_LEVELS.filter(l=>["20","10","0","Tour"].includes(l.label));
+type View = "total" | "driving" | "approach" | "around" | "putting";
+type Row = { subject: string; du: number; target: number; raw?: string; targetRaw?: string; hcp?: number; targetHcp?: number; placeholder?: boolean };
 
-function TotalRadar({cats,total}:{cats:CategoryHandicap[];total:number|undefined}){
- const[target,setTarget]=useState(QUICK.find(x=>x.label==="0")??QUICK[0]);
- const data=[...cats.filter(c=>c.slug!=="speed").map(c=>({subject:c.title,du:c.handicap!==undefined?ratingFromHandicap(c.handicap):0,target:ratingFromHandicap(target.categoryHcp?.[c.slug]??target.hcp),duHcp:c.handicap,targetHcp:target.categoryHcp?.[c.slug]??target.hcp})),{subject:"Totalt",du:total!==undefined?ratingFromHandicap(total):0,target:ratingFromHandicap(target.hcp),duHcp:total,targetHcp:target.hcp}];
- return <><div className="flex flex-wrap justify-center gap-2">{QUICK.map(l=><button key={l.label} type="button" onClick={()=>setTarget(l)} className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${target.label===l.label?"border-chart-3 bg-chart-3/10 text-chart-3":"border-border text-muted-foreground"}`}>{l.label==="Tour"?"Tour":`HCP ${l.label}`}</button>)}</div><div className="mt-2 h-80 w-full"><ResponsiveContainer width="100%" height="100%"><RadarChart data={data} outerRadius="68%"><PolarGrid stroke="var(--border)"/><PolarAngleAxis dataKey="subject" tick={{fontSize:10,fill:"var(--muted-foreground)"}}/><PolarRadiusAxis domain={[0,110]} tick={false} axisLine={false}/><Radar dataKey="target" stroke="var(--chart-3)" fill="var(--chart-3)" fillOpacity={.12} strokeWidth={2}/><Radar dataKey="du" stroke="var(--chart-4)" fill="var(--chart-4)" fillOpacity={.28} strokeWidth={2.5} dot={{r:3,fill:"var(--chart-4)"}}/><Tooltip formatter={(v,n,p)=>[n==="du"?(p.payload.duHcp!==undefined?hcpLabel(p.payload.duHcp):"–"):hcpLabel(p.payload.targetHcp),n==="du"?"Du":target.label]}/></RadarChart></ResponsiveContainer></div><Legend compare={target.label==="Tour"?"Tour":`HCP ${target.label}`}/></>;
+type PuttingKey = "0-1" | "1-2" | "2-3" | "3-5" | "three-putt";
+
+const TABS: [View, string][] = [
+  ["total", "Total"],
+  ["driving", "Off the Tee"],
+  ["approach", "Approach"],
+  ["around", "Around Green"],
+  ["putting", "Putting"],
+];
+
+const QUICK = BENCHMARK_LEVELS.filter((level) => ["20", "10", "0", "Tour"].includes(level.label));
+const avg = (values: number[]) => values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
+const clamp = (value: number) => Math.max(0, Math.min(100, value));
+const pct = (value: number) => `${Math.round(value)}%`;
+
+const PUTTING_BMS: Record<string, { score: number; values: Record<PuttingKey, number> }> = {
+  Tour: { score: 100, values: { "0-1": 99, "1-2": 82, "2-3": 50, "3-5": 30, "three-putt": 97.5 } },
+  "0": { score: 85, values: { "0-1": 98, "1-2": 76, "2-3": 49, "3-5": 34, "three-putt": 92.2 } },
+  "10": { score: 65, values: { "0-1": 96, "1-2": 65, "2-3": 39, "3-5": 26, "three-putt": 88.2 } },
+  "20": { score: 45, values: { "0-1": 90, "1-2": 55, "2-3": 33, "3-5": 18, "three-putt": 80.9 } },
+};
+
+function puttingSkill(key: PuttingKey, raw: number) {
+  const anchors = ["20", "10", "0", "Tour"]
+    .map((label) => ({ raw: PUTTING_BMS[label].values[key], score: PUTTING_BMS[label].score }))
+    .sort((a, b) => a.raw - b.raw);
+  if (raw >= anchors.at(-1)!.raw) return 100;
+  if (raw <= anchors[0].raw) return clamp((raw / Math.max(1, anchors[0].raw)) * anchors[0].score);
+  for (let i = 0; i < anchors.length - 1; i += 1) {
+    const a = anchors[i], b = anchors[i + 1];
+    if (raw >= a.raw && raw <= b.raw) {
+      const t = (raw - a.raw) / (b.raw - a.raw || 1);
+      return clamp(a.score + t * (b.score - a.score));
+    }
+  }
+  return 0;
 }
-function DrivingRadar(){const[target,setTarget]=useState(QUICK.find(x=>x.label==="10")??QUICK[0]);const sessions=useMemo(()=>loadOffTeeSessions(),[]);const shots=sessions.flatMap(s=>s.shots.filter(x=>x.filled));if(!shots.length)return <Empty text="Registrera drives för att bygga analysen."/>;const avg=(a:number[])=>a.reduce((s,v)=>s+v,0)/a.length;const distHcp=distanceToHandicap(avg(shots.map(s=>s.total)));const overallHcp=avg(shots.map(s=>shotHandicap(s)));const fairway=shots.filter(s=>Math.abs(s.sidled)<=16).length/shots.length*100;const fairwayScore=Math.max(0,Math.min(100,fairway));const data=[{subject:"Längd",du:ratingFromHandicap(distHcp),target:ratingFromHandicap(target.hcp)},{subject:"Total driving",du:ratingFromHandicap(overallHcp),target:ratingFromHandicap(target.hcp)},{subject:"Fairway",du:fairwayScore,target:ratingFromHandicap(target.hcp)}];return <><div className="flex flex-wrap justify-center gap-2">{QUICK.map(l=><button key={l.label} type="button" onClick={()=>setTarget(l)} className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${target.label===l.label?"border-chart-3 bg-chart-3/10 text-chart-3":"border-border text-muted-foreground"}`}>{l.label==="Tour"?"Tour":`HCP ${l.label}`}</button>)}</div><div className="mt-2 h-80 w-full"><ResponsiveContainer width="100%" height="100%"><RadarChart data={data} outerRadius="68%"><PolarGrid stroke="var(--border)"/><PolarAngleAxis dataKey="subject" tick={{fontSize:10,fill:"var(--muted-foreground)"}}/><PolarRadiusAxis domain={[0,110]} tick={false} axisLine={false}/><Radar dataKey="target" stroke="var(--chart-3)" fill="var(--chart-3)" fillOpacity={.12} strokeWidth={2}/><Radar dataKey="du" stroke="var(--chart-4)" fill="var(--chart-4)" fillOpacity={.28} strokeWidth={2.5} dot={{r:3,fill:"var(--chart-4)"}}/></RadarChart></ResponsiveContainer></div><Legend compare={target.label==="Tour"?"Tour":`HCP ${target.label}`}/></>}
-function Legend({compare}:{compare:string}){return <div className="flex items-center justify-center gap-5 text-[11px] text-muted-foreground"><span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-chart-4"/>Du</span><span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-chart-3"/>{compare}</span></div>}
-function Empty({text}:{text:string}){return <div className="flex h-80 items-center justify-center rounded-3xl border border-border bg-card text-sm text-muted-foreground">{text}</div>}
 
-export function AnalysisRadarSwitcher({cats,totalHandicap}:{cats:CategoryHandicap[];totalHandicap:number|undefined}){
- const[view,setView]=useState<View>("total");
- return <section className="mt-6"><div className="rounded-3xl border border-border bg-card p-3">{view==="total"?<TotalRadar cats={cats} total={totalHandicap}/>:view==="driving"?<DrivingRadar/>:view==="approach"?<ApproachRadarAnalysis embedded/>:view==="around"?<AroundGreenRadarAnalysis embedded/>:<PuttingRadarAnalysis/>}</div><div className="-mx-1 mt-2 overflow-x-auto px-1 pb-1"><div className="flex w-max min-w-full justify-center gap-1.5">{TABS.map(([key,label])=><button key={key} type="button" onClick={()=>setView(key)} className={`shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-semibold transition-colors ${view===key?"border-foreground bg-foreground text-background":"border-border bg-card text-muted-foreground"}`}>{label}</button>)}</div></div></section>;
+function puttBin(rows: ReturnType<typeof puttingMakeStats>, min: number, max: number, first = false) {
+  const selected = rows.filter((row) => first ? row.distance >= min && row.distance <= max : row.distance > min && row.distance <= max);
+  const attempts = selected.reduce((sum, row) => sum + row.attempts, 0);
+  const made = selected.reduce((sum, row) => sum + row.made, 0);
+  return attempts ? (made / attempts) * 100 : 0;
+}
+
+function aroundKey(label: string): AroundGreenBenchmarkKey {
+  if (label === "Tour") return "tour";
+  if (label === "0") return "hcp0";
+  if (label === "20") return "hcp20";
+  return "hcp10";
+}
+
+function totalRows(cats: CategoryHandicap[], total: number | undefined, target: (typeof QUICK)[number]): Row[] {
+  const main = cats.filter((cat) => cat.slug !== "speed").slice(0, 4).map((cat) => ({
+    subject: cat.title,
+    du: cat.handicap !== undefined ? ratingFromHandicap(cat.handicap) : 0,
+    target: ratingFromHandicap(target.categoryHcp?.[cat.slug] ?? target.hcp),
+    hcp: cat.handicap,
+    targetHcp: target.categoryHcp?.[cat.slug] ?? target.hcp,
+  }));
+  return [...main, {
+    subject: "Totalt",
+    du: total !== undefined ? ratingFromHandicap(total) : 0,
+    target: ratingFromHandicap(target.hcp),
+    hcp: total,
+    targetHcp: target.hcp,
+  }];
+}
+
+function drivingRows(target: (typeof QUICK)[number]): Row[] {
+  const shots = loadOffTeeSessions().flatMap((session) => session.shots.filter((shot) => shot.filled));
+  const targetScore = ratingFromHandicap(target.hcp);
+  if (!shots.length) return ["Längd", "Total driving", "Fairway", "Dispersion", "Penalty avoidance"].map((subject) => ({ subject, du: 0, target: targetScore, placeholder: true }));
+  const avgTotal = avg(shots.map((shot) => shot.total));
+  const overallHcp = avg(shots.map((shot) => shotHandicap(shot)));
+  const fairway = shots.filter((shot) => Math.abs(shot.sidled) <= 16).length / shots.length * 100;
+  const meanSide = avg(shots.map((shot) => shot.sidled));
+  const dispersion = Math.sqrt(avg(shots.map((shot) => (shot.sidled - meanSide) ** 2)));
+  const penaltyAvoid = 100 - shots.filter((shot) => Math.abs(shot.sidled) > 28).length / shots.length * 100;
+  return [
+    { subject: "Längd", du: ratingFromHandicap(distanceToHandicap(avgTotal)), target: targetScore, raw: `${Math.round(avgTotal)} m` },
+    { subject: "Total driving", du: ratingFromHandicap(overallHcp), target: targetScore, hcp: overallHcp, targetHcp: target.hcp },
+    { subject: "Fairway", du: clamp(fairway), target: targetScore, raw: pct(fairway) },
+    { subject: "Dispersion", du: clamp(100 - dispersion * 2.4), target: targetScore, raw: `${dispersion.toFixed(1).replace(".", ",")} m` },
+    { subject: "Penalty avoidance", du: clamp(penaltyAvoid), target: targetScore, raw: pct(penaltyAvoid) },
+  ];
+}
+
+function approachRows(target: (typeof QUICK)[number]): Row[] {
+  const shots = collectApproachShots();
+  const benchmark = ratingFromHandicap(target.hcp);
+  const inside = shots.filter((shot) => shot.target < 91.44);
+  const outside = shots.filter((shot) => shot.target >= 91.44);
+  const build = (subject: string, selected: typeof shots, getter: (shot: typeof shots[number]) => number) => ({
+    subject,
+    du: selected.length ? ratingFromHandicap(handicapFromPct(avg(selected.map(getter)))) : 0,
+    target: benchmark,
+    raw: selected.length ? `${avg(selected.map(getter)).toFixed(1).replace(".", ",")} %` : "–",
+    placeholder: !selected.length,
+  });
+  return [
+    build("Inom 100 yd", inside, approachProximityPct),
+    build("Över 100 yd", outside, approachProximityPct),
+    build("Närhet till hål", shots, approachProximityPct),
+    build("Längdkontroll", shots, approachLengthErrorPct),
+    build("Sidledskontroll", shots, approachLateralErrorPct),
+  ];
+}
+
+function aroundRows(target: (typeof QUICK)[number]): Row[] {
+  const shots = collectAroundGreenShots();
+  const key = aroundKey(target.label);
+  const outside = outside30Yards(shots);
+  const sand = bunkerShots(shots);
+  const targetScore = ratingFromHandicap(target.hcp);
+  const scrambling = expectedScramblingPct(shots);
+  const scramblingTarget = expectedScramblingPct(shots, key);
+  return [
+    { subject: "Scrambling", du: shots.length ? scrambling : 0, target: shots.length ? scramblingTarget : targetScore, raw: shots.length ? pct(scrambling) : "–", targetRaw: shots.length ? pct(scramblingTarget) : undefined, placeholder: !shots.length },
+    { subject: "Utanför 30 yd", du: outside.length ? expectedScramblingPct(outside) : 0, target: outside.length ? expectedScramblingPct(outside, key) : targetScore, raw: outside.length ? pct(expectedScramblingPct(outside)) : "–", targetRaw: outside.length ? pct(expectedScramblingPct(outside, key)) : undefined, placeholder: !outside.length },
+    { subject: "Sand save", du: sand.length ? expectedScramblingPct(sand) : 0, target: sand.length ? expectedScramblingPct(sand, key) : targetScore, raw: sand.length ? pct(expectedScramblingPct(sand)) : "–", targetRaw: sand.length ? pct(expectedScramblingPct(sand, key)) : undefined, placeholder: !sand.length },
+    { subject: "Närhet", du: 0, target: targetScore, placeholder: true },
+    { subject: "Scoringzon", du: 0, target: targetScore, placeholder: true },
+  ];
+}
+
+function puttingRows(target: (typeof QUICK)[number]): Row[] {
+  const starts = collectPuttStarts();
+  const lag = collectLagHoleOutStarts();
+  const stats = puttingMakeStats(starts);
+  const raw: Array<{ key: PuttingKey; subject: string; value: number }> = [
+    { key: "0-1", subject: "0–1 m", value: puttBin(stats, 0, 1, true) },
+    { key: "1-2", subject: "1–2 m", value: puttBin(stats, 1, 2) },
+    { key: "2-3", subject: "2–3 m", value: puttBin(stats, 2, 3) },
+    { key: "3-5", subject: "3–5 m", value: puttBin(stats, 3, 5) },
+    { key: "three-putt", subject: "3-putt undvik.", value: lag.length ? 100 - lag.filter((row) => row.strokes >= 3).length / lag.length * 100 : 0 },
+  ];
+  const benchmark = PUTTING_BMS[target.label] ?? PUTTING_BMS["10"];
+  return raw.map((row) => ({
+    subject: row.subject,
+    du: starts.length || row.key === "three-putt" && lag.length ? puttingSkill(row.key, row.value) : 0,
+    target: benchmark.score,
+    raw: starts.length || row.key === "three-putt" && lag.length ? pct(row.value) : "–",
+    targetRaw: pct(benchmark.values[row.key]),
+    placeholder: !(starts.length || row.key === "three-putt" && lag.length),
+  }));
+}
+
+function RadarTooltip({ active, payload, targetLabel }: { active?: boolean; payload?: Array<{ payload?: Row }>; targetLabel: string }) {
+  if (!active || !payload?.length) return null;
+  const row = payload[0]?.payload;
+  if (!row) return null;
+  return <div className="rounded-xl border border-border bg-card px-3 py-2 text-xs shadow-lg">
+    <p className="font-semibold">{row.subject}</p>
+    <p className="mt-1 text-muted-foreground">Du: <span className="font-semibold text-foreground">{row.raw ?? (row.hcp !== undefined ? hcpLabel(row.hcp) : row.placeholder ? "Ingen data" : Math.round(row.du))}</span></p>
+    <p className="text-muted-foreground">{targetLabel}: <span className="font-semibold text-foreground">{row.targetRaw ?? (row.targetHcp !== undefined ? hcpLabel(row.targetHcp) : Math.round(row.target))}</span></p>
+  </div>;
+}
+
+export function AnalysisRadarSwitcher({ cats, totalHandicap }: { cats: CategoryHandicap[]; totalHandicap: number | undefined }) {
+  const [view, setView] = useState<View>("total");
+  const [target, setTarget] = useState(QUICK.find((level) => level.label === "0") ?? QUICK[0]);
+
+  const data = useMemo(() => {
+    if (view === "total") return totalRows(cats, totalHandicap, target);
+    if (view === "driving") return drivingRows(target);
+    if (view === "approach") return approachRows(target);
+    if (view === "around") return aroundRows(target);
+    return puttingRows(target);
+  }, [view, cats, totalHandicap, target]);
+
+  const targetLabel = target.label === "Tour" ? "Tour" : `HCP ${target.label}`;
+
+  return <section className="mt-6">
+    <div className="rounded-3xl border border-border bg-card p-3">
+      <div className="flex flex-wrap justify-center gap-2">
+        {QUICK.map((level) => <button key={level.label} type="button" onClick={() => setTarget(level)} className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${target.label === level.label ? "border-chart-3 bg-chart-3/10 text-chart-3" : "border-border text-muted-foreground"}`}>{level.label === "Tour" ? "Tour" : `HCP ${level.label}`}</button>)}
+      </div>
+      <div className="mt-2 h-80 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <RadarChart data={data} outerRadius="68%">
+            <PolarGrid stroke="var(--border)" />
+            <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} />
+            <PolarRadiusAxis domain={[0, 110]} tick={false} axisLine={false} />
+            <Radar name={targetLabel} dataKey="target" stroke="var(--chart-3)" fill="var(--chart-3)" fillOpacity={0.12} strokeWidth={2} isAnimationActive animationDuration={320} />
+            <Radar name="Du" dataKey="du" stroke="var(--chart-4)" fill="var(--chart-4)" fillOpacity={0.28} strokeWidth={2.5} dot={{ r: 3, fill: "var(--chart-4)" }} isAnimationActive animationDuration={320} />
+            <Tooltip content={<RadarTooltip targetLabel={targetLabel} />} />
+          </RadarChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="flex items-center justify-center gap-5 text-[11px] text-muted-foreground"><span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-chart-4" />Du</span><span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-chart-3" />{targetLabel}</span></div>
+    </div>
+
+    <div className="-mx-1 mt-2 overflow-x-auto px-1 pb-1"><div className="flex w-max min-w-full justify-center gap-1.5">
+      {TABS.map(([key, label]) => <button key={key} type="button" onClick={() => setView(key)} className={`shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-semibold transition-colors ${view === key ? "border-foreground bg-foreground text-background" : "border-border bg-card text-muted-foreground"}`}>{label}</button>)}
+    </div></div>
+  </section>;
 }
