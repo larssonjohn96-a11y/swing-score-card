@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Friendship } from "@/lib/friends-cloud";
 
 const db = supabase as any;
+let createSessionPromise: Promise<string> | null = null;
 
 export type GroupSessionStatus = "active" | "completed" | "cancelled";
 export type GroupMember = { sessionId: string; userId: string; seat: number; displayName: string };
@@ -20,10 +21,19 @@ export type GroupSession = {
 };
 
 export async function createEightBallGroupSession(friendships: Friendship[]) {
+  if (createSessionPromise) return createSessionPromise;
   const ids = friendships.slice(0, 3).map((f) => f.other.id);
-  const { data, error } = await db.rpc("create_eight_ball_group_session", { p_member_ids: ids });
-  if (error) throw new Error(error.message);
-  return data as string;
+  createSessionPromise = (async () => {
+    const { data, error } = await db.rpc("create_eight_ball_group_session", { p_member_ids: ids });
+    if (error) throw new Error(error.message);
+    if (!data || typeof data !== "string") throw new Error("Gruppsessionen skapades inte korrekt.");
+    return data;
+  })();
+  try {
+    return await createSessionPromise;
+  } finally {
+    createSessionPromise = null;
+  }
 }
 
 export async function fetchEightBallGroupSession(id: string): Promise<GroupSession | null> {
