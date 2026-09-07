@@ -15,7 +15,7 @@ import { computeStableCategoryHandicaps } from "@/lib/category-index";
 import { useSessionsVersion } from "@/lib/sessions/use-sessions";
 import { OpportunityCard } from "@/components/home-dashboard";
 import { loadCardProfile } from "@/lib/rating-card";
-import { RadarCard } from "@/components/progress-dashboard";
+import { AnalysisRadarSwitcher } from "@/components/analysis-radar-switcher";
 import { StableCategoryStatsSection } from "@/components/stable-category-stats";
 import { pushPlayerSnapshot, listFriendships } from "@/lib/friends-cloud";
 import { loadFriends } from "@/lib/friends";
@@ -99,7 +99,7 @@ function Home() {
       {data && <div className="mt-4">
         {data.real === null && data.cats.every((c) => c.count === 0) && <Link to="/konto" className="mb-4 flex items-center gap-3 rounded-2xl border border-primary/30 bg-primary/5 p-4"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary"><Gauge className="h-4 w-4" strokeWidth={1.75} /></span><span className="min-w-0 flex-1"><span className="block text-sm font-semibold leading-tight">Ange ditt officiella HCP</span><span className="block text-xs text-muted-foreground">Få en direkt baslinje i alla kategorier, helt utan att göra ett test</span></span><ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" /></Link>}
         {profile.age === undefined && !ageSaved && <div className="mb-4"><AgeInlinePrompt title="Ange din ålder" description="Se hur din ball speed i Speed Test står sig mot jämnåriga golfare" onSaved={() => setAgeSaved(true)} /></div>}
-        <div className="mt-10"><RadarCard cats={data.cats} totalHandicap={data.estimated} /></div>
+        <div className="mt-10"><AnalysisRadarSwitcher cats={data.cats} totalHandicap={data.estimated} /></div>
         <StableCategoryStatsSection />
         <OpportunityCard opportunity={data.opportunity} />
         <Link to="/tester" className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-5 font-[family-name:var(--font-display)] text-2xl text-primary-foreground">Gör ett test<ArrowRight className="h-5 w-5" /></Link>
