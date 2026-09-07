@@ -20,15 +20,44 @@ export type GroupSession = {
   scores: GroupScore[];
 };
 
+function withTimeout<T>(promise: Promise<T>, ms = 7000): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = window.setTimeout(() => reject(new Error("Sessionen tog för lång tid att öppna.")), ms);
+    promise.then((value) => {
+      window.clearTimeout(timer);
+      resolve(value);
+    }).catch((error) => {
+      window.clearTimeout(timer);
+      reject(error);
+    });
+  });
+}
+
+function mapSession(payload: any): GroupSession | null {
+  if (!payload?.id) return null;
+  return {
+    id: payload.id,
+    hostUserId: payload.host_user_id,
+    testId: payload.test_id,
+    status: payload.status,
+    currentShot: payload.current_shot,
+    currentPlayerIndex: payload.current_player_index,
+    createdAt: payload.created_at,
+    completedAt: payload.completed_at,
+    members: (payload.members ?? []).map((m: any) => ({ sessionId: m.session_id, userId: m.user_id, seat: m.seat, displayName: m.display_name })),
+    scores: (payload.scores ?? []).map((s: any) => ({ sessionId: s.session_id, userId: s.user_id, shotIndex: s.shot_index, points: s.points, createdAt: s.created_at })),
+  };
+}
+
 export async function createEightBallGroupSession(friendships: Friendship[]) {
   if (createSessionPromise) return createSessionPromise;
   const ids = friendships.slice(0, 3).map((f) => f.other.id);
-  createSessionPromise = (async () => {
+  createSessionPromise = withTimeout((async () => {
     const { data, error } = await db.rpc("create_eight_ball_group_session", { p_member_ids: ids });
     if (error) throw new Error(error.message);
     if (!data || typeof data !== "string") throw new Error("Gruppsessionen skapades inte korrekt.");
-    return data;
-  })();
+    return data as string;
+  })(), 8000);
   try {
     return await createSessionPromise;
   } finally {
@@ -37,41 +66,43 @@ export async function createEightBallGroupSession(friendships: Friendship[]) {
 }
 
 export async function fetchEightBallGroupSession(id: string): Promise<GroupSession | null> {
-  const [{ data: session, error: sessionError }, { data: members, error: memberError }, { data: scores, error: scoreError }] = await Promise.all([
+  try {
+    const { data, error } = await withTimeout(db.rpc("get_eight_ball_group_session", { p_session_id: id }));
+    if (!error && data) return mapSession(data);
+  } catch {
+    // Fall back to the original table reads while older deployments catch up
+    // with the latest multiplayer migration.
+  }
+
+  const result = await withTimeout(Promise.all([
     db.from("group_sessions").select("id,host_user_id,test_id,status,current_shot,current_player_index,created_at,completed_at").eq("id", id).maybeSingle(),
     db.from("group_session_members").select("session_id,user_id,seat,display_name").eq("session_id", id).order("seat"),
     db.from("group_session_scores").select("session_id,user_id,shot_index,points,created_at").eq("session_id", id).order("shot_index").order("created_at"),
-  ]);
+  ]));
+  const [{ data: session, error: sessionError }, { data: members, error: memberError }, { data: scores, error: scoreError }] = result;
   if (sessionError || memberError || scoreError || !session) return null;
-  return {
-    id: session.id,
-    hostUserId: session.host_user_id,
-    testId: session.test_id,
-    status: session.status,
-    currentShot: session.current_shot,
-    currentPlayerIndex: session.current_player_index,
-    createdAt: session.created_at,
-    completedAt: session.completed_at,
-    members: (members ?? []).map((m: any) => ({ sessionId: m.session_id, userId: m.user_id, seat: m.seat, displayName: m.display_name })),
-    scores: (scores ?? []).map((s: any) => ({ sessionId: s.session_id, userId: s.user_id, shotIndex: s.shot_index, points: s.points, createdAt: s.created_at })),
-  };
+  return mapSession({ ...session, members, scores });
 }
 
 export async function recordEightBallGroupScore(sessionId: string, userId: string, shotIndex: number, points: number) {
-  const { data, error } = await db.rpc("record_eight_ball_group_score", {
+  const { data, error } = await withTimeout(db.rpc("record_eight_ball_group_score", {
     p_session_id: sessionId,
     p_user_id: userId,
     p_shot_index: shotIndex,
     p_points: points,
-  });
+  }));
   if (error) throw new Error(error.message);
   return data as { status: GroupSessionStatus; currentShot: number; currentPlayerIndex: number };
 }
 
 export async function listActiveEightBallGroupSessions(): Promise<Array<{ id: string; hostUserId: string; createdAt: string }>> {
-  const { data, error } = await db.from("group_sessions").select("id,host_user_id,created_at").eq("test_id", "eight-ball").eq("status", "active").order("created_at", { ascending: false });
-  if (error || !data) return [];
-  return data.map((s: any) => ({ id: s.id, hostUserId: s.host_user_id, createdAt: s.created_at }));
+  try {
+    const { data, error } = await withTimeout(db.from("group_sessions").select("id,host_user_id,created_at").eq("test_id", "eight-ball").eq("status", "active").order("created_at", { ascending: false }));
+    if (error || !data) return [];
+    return data.map((s: any) => ({ id: s.id, hostUserId: s.host_user_id, createdAt: s.created_at }));
+  } catch {
+    return [];
+  }
 }
 
 export function subscribeEightBallGroupSession(sessionId: string, onChange: () => void) {
