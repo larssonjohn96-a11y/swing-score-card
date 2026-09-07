@@ -8,12 +8,12 @@ export const Route = createFileRoute("/tester")({
       { title: "Alla tester – SG4" },
       {
         name: "description",
-        content: "Testa din nivå inom approach, putting, off the tee och shortgame.",
+        content: "Testa din nivå, träna med syfte och kalibrera din bag.",
       },
       { property: "og:title", content: "Alla tester – SG4" },
       {
         property: "og:description",
-        content: "Välj en kategori, gör testet och få din HCP-nivå.",
+        content: "HCP-test, träningstest och bag-kalibrering på ett ställe.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -63,59 +63,71 @@ function TesterPage() {
     <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-28 pt-10">
       <header>
         <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-muted-foreground">
-          Din nivå
+          Testa · Träna · Kalibrera
         </p>
         <h1 className="mt-1 text-4xl leading-none">Tester</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          HCP-tester visar din nivå och dina svagheter. Gör testerna för att se vilken HCP-nivå ditt spel motsvarar.
+          Tre olika typer av tester med tre olika syften.
         </p>
       </header>
 
-      <section className="mt-6 space-y-3">
-        {cards.map(({ slug, eyebrow, title, description }) => (
-          <Link
-            key={slug}
-            to="/kategori/$slug"
-            params={{ slug }}
-            className="group flex items-center gap-4 overflow-hidden rounded-2xl border border-border bg-card px-5 py-4 shadow-[var(--shadow-glow)] transition-colors hover:border-primary hover:bg-tint"
-          >
-            <span aria-hidden className="-ml-5 mr-1 h-14 w-1 shrink-0 rounded-r-full bg-primary/25 transition-colors group-hover:bg-primary" />
-            <div className="min-w-0 flex-1">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                {eyebrow}
-              </p>
-              <h2 className="mt-0.5 text-2xl leading-none">{title}</h2>
-              <p className="mt-1.5 text-sm leading-snug text-muted-foreground">{description}</p>
-              <span className="mt-2 inline-flex rounded-full bg-tint-strong px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-primary">
-                HCP-test
-              </span>
-            </div>
-            <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
-          </Link>
-        ))}
+      <section className="mt-6">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">1 · HCP-tester</p>
+        <p className="mt-1 text-xs text-muted-foreground">Mäter din nivå. Påverkar SG4 HCP.</p>
+        <div className="mt-3 space-y-3">
+          {cards.map(({ slug, eyebrow, title, description }) => (
+            <Link
+              key={slug}
+              to="/kategori/$slug"
+              params={{ slug }}
+              className="group flex items-center gap-4 overflow-hidden rounded-2xl border border-border bg-card px-5 py-4 shadow-[var(--shadow-glow)] transition-colors hover:border-primary hover:bg-tint"
+            >
+              <span aria-hidden className="-ml-5 mr-1 h-14 w-1 shrink-0 rounded-r-full bg-primary/25 transition-colors group-hover:bg-primary" />
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">{eyebrow}</p>
+                <h2 className="mt-0.5 text-2xl leading-none">{title}</h2>
+                <p className="mt-1.5 text-sm leading-snug text-muted-foreground">{description}</p>
+                <span className="mt-2 inline-flex rounded-full bg-tint-strong px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-primary">HCP-test</span>
+              </div>
+              <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+            </Link>
+          ))}
+        </div>
       </section>
 
       <section className="mt-8 border-t border-border pt-6">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-          Ej HCP-grundande
-        </p>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">2 · Träningstester</p>
+        <p className="mt-1 text-xs text-muted-foreground">Mäter utveckling och PB. Påverkar aldrig HCP.</p>
         <Link
           to="/traning" search={{ category: undefined }}
           className="mt-3 flex items-center gap-3 rounded-2xl border border-border bg-card px-5 py-4 shadow-[var(--shadow-glow)] transition-colors hover:border-primary hover:bg-tint"
         >
           <div className="min-w-0 flex-1">
             <h2 className="text-2xl leading-none">Träningstester</h2>
-            <p className="mt-1.5 text-sm leading-snug text-muted-foreground">
-              Träna med syfte, gör träningen roligare och följ din utveckling över tid – utan att påverka ditt HCP.
-            </p>
+            <p className="mt-1.5 text-sm leading-snug text-muted-foreground">Träna med syfte, jaga PB och följ din utveckling över tid.</p>
           </div>
           <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
         </Link>
       </section>
 
-      <p className="mt-6 text-center text-xs font-semibold text-muted-foreground">
-        Mät din nivå. Träna med syfte. Följ din utveckling.
-      </p>
+      <section className="mt-8 border-t border-border pt-6">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">3 · Bag Calibration</p>
+        <p className="mt-1 text-xs text-muted-foreground">Kalibrerar dina stock-längder. Separat från HCP och träning.</p>
+        <Link
+          to="/map-my-bag"
+          className="mt-3 flex items-center gap-3 rounded-2xl border border-border bg-card px-5 py-4 shadow-[var(--shadow-glow)] transition-colors hover:border-primary hover:bg-tint"
+        >
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-primary">Ny kategori</p>
+            <h2 className="mt-1 text-2xl leading-none">Map My Bag</h2>
+            <p className="mt-1.5 text-sm leading-snug text-muted-foreground">Mappa carry för varje klubb, hitta gap och få en snabb Min Bag-vy på banan.</p>
+            <span className="mt-2 inline-flex rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">Påverkar inte HCP</span>
+          </div>
+          <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+        </Link>
+      </section>
+
+      <p className="mt-6 text-center text-xs font-semibold text-muted-foreground">Mät nivån. Träna. Kalibrera din bag.</p>
     </main>
   );
 }
