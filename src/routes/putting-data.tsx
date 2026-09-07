@@ -35,6 +35,7 @@ export const Route = createFileRoute("/putting-data")({
   component: PuttingDataPage,
 });
 
+const RADAR_BLUE = "var(--chart-4)";
 const RADAR_RED = "var(--chart-3)";
 const fmt = (value: number, decimals = 0) => value.toFixed(decimals).replace(".", ",");
 const clampPct = (value: number) => Math.max(0, Math.min(100, value));
@@ -58,12 +59,6 @@ type BenchmarkProfile = {
   skillScore: number;
 };
 
-/**
- * Benchmarkarna är praktiska nivåankare för SG4:s analys, inte officiella
- * handicapvärden. Make-rate-ankarna bygger främst på Shot Scope-liknande
- * handicapintervall och närmaste praktiska meterzoner. Tour är ett praktiskt
- * ShotLink/PGA Tour-ankare. 3-putt undvikande använder motsvarande nivådata.
- */
 const BENCHMARKS: Record<BenchmarkKey, BenchmarkProfile> = {
   tour: {
     label: "PGA Tour",
@@ -112,12 +107,6 @@ function totalAttempts(rows: Array<{ attempts: number }>) {
   return rows.reduce((sum, row) => sum + row.attempts, 0);
 }
 
-/**
- * Rå sänkprocent kan inte jämföras direkt mellan avstånd. 50 % från 3 m är
- * en mycket bättre prestation än 50 % från 1 m. Därför översätts varje rå
- * procent till ett gemensamt skill index 0–100 genom interpolation mellan
- * benchmarknivåerna. Den röda formen visar den normaliserade spelstyrkan.
- */
 function skillIndex(metric: MetricKey, raw: number) {
   const anchors = BENCHMARK_ORDER
     .map((key) => ({ raw: BENCHMARKS[key].values[metric], score: BENCHMARKS[key].skillScore }))
@@ -156,11 +145,8 @@ function RadarTooltip({ active, payload }: { active?: boolean; payload?: Array<{
     <div className="rounded-xl border border-border bg-card px-3 py-2 text-xs shadow-lg">
       <p className="font-semibold text-foreground">{row.subject}</p>
       <p className="mt-1 text-muted-foreground">
-        Din rådata: <span className="font-semibold text-foreground">{fmt(row.raw ?? 0)}%</span>
-        {row.attempts ? ` · ${row.attempts} försök` : ""}
-      </p>
-      <p className="text-muted-foreground">
-        Normaliserad nivå: <span className="font-semibold text-foreground">{fmt(row.value ?? 0)}/100</span>
+        Du: <span className="font-semibold text-foreground">{fmt(row.raw ?? 0)}%</span>
+        {row.attempts ? ` · ${row.attempts}` : ""}
       </p>
       <p className="text-muted-foreground">
         {row.benchmarkLabel}: <span className="font-semibold text-foreground">{fmt(row.benchmarkRaw ?? 0)}%</span>
@@ -196,7 +182,7 @@ function PuttingDataPage() {
     { key: "1-2", subject: "1–2 m", raw: shortStats[1]?.pct ?? 0, attempts: shortStats[1]?.attempts ?? 0 },
     { key: "2-3", subject: "2–3 m", raw: shortStats[2]?.pct ?? 0, attempts: shortStats[2]?.attempts ?? 0 },
     { key: "3-5", subject: "3–5 m", raw: weightedPct(shortStats.slice(3)), attempts: totalAttempts(shortStats.slice(3)) },
-    { key: "three-putt", subject: "3-putt undvik.", raw: threePuttAvoidance, attempts: lagHoleOutStarts.length },
+    { key: "three-putt", subject: "3-putt", raw: threePuttAvoidance, attempts: lagHoleOutStarts.length },
   ];
 
   const selectedBenchmark = BENCHMARKS[benchmark];
@@ -231,13 +217,10 @@ function PuttingDataPage() {
             <BarChart3 className="h-5 w-5" />
           </span>
           <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-primary">Global skill data</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-primary">Putting</p>
             <h1 className="mt-1 font-display text-4xl leading-none">Analys puttning</h1>
           </div>
         </div>
-        <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-          Här samlas kompatibel puttdata från flera tester. En putt räknas efter avstånd och utfall, inte efter vilket test den kom från.
-        </p>
       </header>
 
       <div className="mt-5 grid grid-cols-2 rounded-2xl border border-border bg-muted/50 p-1">
@@ -256,33 +239,20 @@ function PuttingDataPage() {
           Alla puttar
         </button>
       </div>
-      <p className="mt-2 text-center text-[11px] text-muted-foreground">
-        {scope === "recent"
-          ? `Senaste ${RECENT_PUTT_SAMPLE} minskar påverkan från gammal form men ger samtidigt ett större stickprov än bara de senaste testerna.`
-          : "Alla puttar använder hela din sparade historik och passar bäst för långsiktiga nivåer."}
-      </p>
 
       <section className="mt-5 grid grid-cols-2 gap-3">
         <div className="rounded-3xl border border-border bg-card p-5 text-center shadow-[var(--shadow-glow)]">
           <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Registrerade puttar</p>
           <p className="mt-1 font-display text-5xl leading-none text-primary">{totalStarts}</p>
-          <p className="mt-1 text-xs text-muted-foreground">kort/medel-data</p>
         </div>
         <div className="rounded-3xl border border-border bg-card p-5 text-center">
           <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Lagputtar</p>
           <p className="mt-1 font-display text-5xl leading-none">{lagHoleOutStarts.length}</p>
-          <p className="mt-1 text-xs text-muted-foreground">med hole-out-data</p>
         </div>
       </section>
 
       <section className="mt-6 rounded-3xl border border-border bg-card p-4">
-        <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Spindeldiagram</p>
-          <h2 className="font-display text-3xl">Analys puttning</h2>
-          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-            Den röda ytan är din normaliserade puttingnivå. Rå sänkprocent viktas efter avstånd, så en svårare putt får högre värde än samma sänkprocent från kortare avstånd.
-          </p>
-        </div>
+        <h2 className="font-display text-3xl">Analys puttning</h2>
 
         <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
           {BENCHMARK_ORDER.map((key) => (
@@ -297,12 +267,6 @@ function PuttingDataPage() {
           ))}
         </div>
 
-        <div className="mt-3 rounded-2xl bg-muted/35 p-3 text-[11px] leading-relaxed text-muted-foreground">
-          <p><span className="font-semibold text-foreground">Så läser du grafen:</span> längre ut = starkare prestation relativt svårighetsgraden.</p>
-          <p className="mt-1">Den grå linjen är vald jämförelsenivå. Exempel: 50 % från 2–3 m kan motsvara ungefär scratch/tour-nivå, medan 50 % från 0–1 m är långt under den nivån.</p>
-          <p className="mt-1">Håll eller tryck på en punkt för att se rå procent, antal försök, normaliserad nivå och benchmarkvärdet.</p>
-        </div>
-
         <div className="mt-2 h-72 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <RadarChart data={radarData} outerRadius="70%">
@@ -312,18 +276,19 @@ function PuttingDataPage() {
               <Radar
                 name={selectedBenchmark.label}
                 dataKey="benchmark"
-                stroke="var(--muted-foreground)"
-                fill="transparent"
-                strokeWidth={1.5}
+                stroke={RADAR_RED}
+                fill={RADAR_RED}
+                fillOpacity={0.12}
+                strokeWidth={2}
               />
               <Radar
                 name="Du"
                 dataKey="value"
-                stroke={RADAR_RED}
-                fill={RADAR_RED}
-                fillOpacity={0.2}
+                stroke={RADAR_BLUE}
+                fill={RADAR_BLUE}
+                fillOpacity={0.28}
                 strokeWidth={2.5}
-                dot={{ r: 3, fill: RADAR_RED }}
+                dot={{ r: 3, fill: RADAR_BLUE }}
               />
               <Tooltip content={<RadarTooltip />} />
             </RadarChart>
@@ -332,17 +297,11 @@ function PuttingDataPage() {
 
         <div className="flex items-center justify-center gap-5 text-[11px] text-muted-foreground">
           <span className="inline-flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-chart-3" />Du
+            <span className="h-2.5 w-2.5 rounded-full bg-chart-4" />Du
           </span>
           <span className="inline-flex items-center gap-1.5">
-            <span className="h-px w-4 bg-muted-foreground" />{selectedBenchmark.label}
+            <span className="h-2.5 w-2.5 rounded-full bg-chart-3" />{selectedBenchmark.label}
           </span>
-        </div>
-
-        <div className="mt-4 rounded-2xl border border-border p-3 text-[11px] leading-relaxed text-muted-foreground">
-          <p className="font-semibold text-foreground">Vad betyder 0–100?</p>
-          <p className="mt-1">Det är inte sänkprocent. Det är ett SG4-skill index som gör olika avstånd jämförbara genom att placera din rådata mellan benchmarknivåerna HCP 20, HCP 10, HCP 0 och PGA Tour.</p>
-          <p className="mt-2"><span className="font-semibold text-foreground">Benchmarkdata:</span> nivåerna är praktiska referenser byggda från externa putting-benchmarks och omräknade till SG4:s meterzoner. De ska användas som jämförelse och trend, inte som ett officiellt handicapmått.</p>
         </div>
       </section>
 
@@ -352,7 +311,6 @@ function PuttingDataPage() {
             <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Kortputt</p>
             <h2 className="font-display text-3xl">Sänkprocent</h2>
           </div>
-          <span className="text-xs text-muted-foreground">alla kompatibla tester</span>
         </div>
         <div className="mt-3 space-y-2">
           {shortStats.map((row) => (
@@ -360,7 +318,7 @@ function PuttingDataPage() {
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="font-display text-2xl">{row.label}</p>
-                  <p className="text-xs text-muted-foreground">{row.attempts ? `${row.made} satta av ${row.attempts}` : "Ingen data ännu"}</p>
+                  <p className="text-xs text-muted-foreground">{row.attempts ? `${row.made}/${row.attempts}` : "–"}</p>
                 </div>
                 <p className="font-display text-3xl text-primary">{row.attempts ? `${fmt(row.pct)}%` : "–"}</p>
               </div>
@@ -373,20 +331,19 @@ function PuttingDataPage() {
       </section>
 
       <section className="mt-7">
-        <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Lagputt · håla ut</p>
+        <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Lagputt</p>
         <h2 className="font-display text-3xl">Puttar till hål</h2>
-        <p className="mt-1 text-xs text-muted-foreground">Avstånden är sammanslagna till större zoner för stabilare statistik.</p>
 
         {(reliableRisk || highestRisk) ? (
           <div className="mt-3 rounded-2xl border border-primary/30 bg-primary/[0.04] p-4">
             <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-primary">3-putt risk</p>
             {reliableRisk ? (
               <p className="mt-1 text-sm">
-                <span className="font-semibold">Riskzon från {reliableRisk.label}</span> · {fmt(reliableRisk.threePuttPct)}% av {reliableRisk.attempts} försök blev 3-putt+.
+                <span className="font-semibold">{reliableRisk.label}</span> · {fmt(reliableRisk.threePuttPct)}%
               </p>
             ) : (
               <p className="mt-1 text-sm">
-                <span className="font-semibold">Högst hittills: {highestRisk?.label}</span> · {fmt(highestRisk?.threePuttPct ?? 0)}% 3-putt+. Mer data behövs för en stabil cutoff.
+                <span className="font-semibold">{highestRisk?.label}</span> · {fmt(highestRisk?.threePuttPct ?? 0)}%
               </p>
             )}
           </div>
@@ -398,35 +355,34 @@ function PuttingDataPage() {
               <div key={row.label} className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3">
                 <div>
                   <p className="font-display text-2xl">{row.label}</p>
-                  <p className="text-xs text-muted-foreground">{row.attempts} starter · {fmt(row.onePuttPct)}% 1-putt · {fmt(row.threePuttPct)}% 3-putt+</p>
+                  <p className="text-xs text-muted-foreground">{row.attempts} · {fmt(row.onePuttPct)}% 1-putt · {fmt(row.threePuttPct)}% 3-putt+</p>
                 </div>
                 <div className="text-right">
                   <p className="font-display text-3xl text-primary">{fmt(row.avgPutts, 2)}</p>
-                  <p className="text-[10px] text-muted-foreground">snitt puttar</p>
+                  <p className="text-[10px] text-muted-foreground">snitt</p>
                 </div>
               </div>
             ))
           ) : (
-            <p className="rounded-2xl border border-border bg-card p-4 text-sm text-muted-foreground">Ingen hole-out-data på lagputtar ännu.</p>
+            <p className="rounded-2xl border border-border bg-card p-4 text-sm text-muted-foreground">Ingen data ännu.</p>
           )}
         </div>
       </section>
 
       <section className="mt-7">
-        <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Lagputt · längdkontroll</p>
+        <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Lagputt</p>
         <h2 className="font-display text-3xl">Första putten</h2>
-        <p className="mt-1 text-xs text-muted-foreground">Samma zoner, men bara tester som mäter var första putten stannade.</p>
         <div className="mt-3 grid grid-cols-2 gap-2">
           {lagProximity.some((row) => row.attempts) ? (
             lagProximity.filter((row) => row.attempts).map((row) => (
               <div key={row.label} className="rounded-2xl border border-border bg-card p-3">
                 <p className="font-display text-2xl">{row.label}</p>
                 <p className="mt-1 text-sm font-semibold text-primary">{fmt(row.within1mPct)}% inom 1 m</p>
-                <p className="mt-1 text-[11px] text-muted-foreground">{row.attempts} puttar · {fmt(row.holedPct)}% hålade</p>
+                <p className="mt-1 text-[11px] text-muted-foreground">{row.attempts} · {fmt(row.holedPct)}% hålade</p>
               </div>
             ))
           ) : (
-            <p className="col-span-2 rounded-2xl border border-border bg-card p-4 text-sm text-muted-foreground">Ingen längdkontrolldata ännu.</p>
+            <p className="col-span-2 rounded-2xl border border-border bg-card p-4 text-sm text-muted-foreground">Ingen data ännu.</p>
           )}
         </div>
       </section>
