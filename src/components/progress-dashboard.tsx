@@ -144,6 +144,14 @@ const DEFAULT_TARGET: CompareTarget = {
 /** Alltid synliga genvägar, en delmängd av BENCHMARK_LEVELS. */
 const QUICK_LEVELS = BENCHMARK_LEVELS.filter((l) => ["20", "10", "0", "Tour"].includes(l.label));
 
+const RADAR_ANALYSIS_TABS = [
+  { label: "Total", to: "/utveckling/" as const },
+  { label: "Off the Tee", to: "/utveckling/$slug" as const, slug: "driving" },
+  { label: "Approach", to: "/utveckling/$slug" as const, slug: "approach" },
+  { label: "Around Green", to: "/utveckling/$slug" as const, slug: "around-the-green" },
+  { label: "Putting", to: "/putting-data" as const },
+] as const;
+
 export function RadarCard({
   cats,
   totalHandicap,
@@ -334,6 +342,39 @@ export function RadarCard({
           </RadarChart>
         </ResponsiveContainer>
       </div>
+
+      <div className="-mx-1 mt-2 overflow-x-auto px-1 pb-1">
+        <div className="flex w-max min-w-full justify-center gap-1.5">
+          {RADAR_ANALYSIS_TABS.map((tab, index) =>
+            index === 0 ? (
+              <span
+                key={tab.label}
+                className="shrink-0 rounded-full border border-foreground bg-foreground px-3 py-1.5 text-[11px] font-semibold text-background"
+              >
+                {tab.label}
+              </span>
+            ) : tab.to === "/utveckling/$slug" ? (
+              <Link
+                key={tab.label}
+                to={tab.to}
+                params={{ slug: tab.slug }}
+                className="shrink-0 rounded-full border border-border bg-card px-3 py-1.5 text-[11px] font-semibold text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
+              >
+                {tab.label}
+              </Link>
+            ) : (
+              <Link
+                key={tab.label}
+                to={tab.to}
+                className="shrink-0 rounded-full border border-border bg-card px-3 py-1.5 text-[11px] font-semibold text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
+              >
+                {tab.label}
+              </Link>
+            ),
+          )}
+        </div>
+      </div>
+
       <div className="mt-3 flex justify-center gap-4 text-[11px] text-muted-foreground">
         <span className="flex items-center gap-1.5">
           <span className="h-2.5 w-2.5 rounded-full bg-chart-4" />
@@ -768,7 +809,7 @@ function SelectPlayerSheet({
                 </span>
               </button>
               <button
-                onClick={() => deleteFriend(f.id)}
+                onClick={() => deleteFriend(id)}
                 aria-label={`Ta bort ${f.name}`}
                 className="p-2 text-muted-foreground hover:text-destructive"
               >
