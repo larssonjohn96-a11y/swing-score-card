@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, BarChart3, RotateCcw, Users, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 import {
   fetchEightBallGroupSession,
   groupTotals,
@@ -12,13 +13,27 @@ import {
 import { syncForUser } from "@/lib/sessions/sync";
 import { EIGHT_BALL_ROUNDS, LIGHT_SURFACE, STATION_LIST } from "./8-bollar";
 
+const BOOTSTRAP_PREFIX = "sg4:eight-ball-group:bootstrap:";
+
+function readBootstrap(sessionId: string): GroupSession | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.sessionStorage.getItem(`${BOOTSTRAP_PREFIX}${sessionId}`);
+    return raw ? JSON.parse(raw) as GroupSession : null;
+  } catch {
+    return null;
+  }
+}
+
 export const Route = createFileRoute("/8-bollar-grupp/$sessionId")({ component: GroupSessionPage });
 
 function GroupSessionPage() {
+  useHideBottomNav(true);
   const { sessionId } = Route.useParams();
   const { user, loading: authLoading } = useAuth();
-  const [session, setSession] = useState<GroupSession | null>(null);
-  const [loading, setLoading] = useState(true);
+  const initialBootstrap = useMemo(() => readBootstrap(sessionId), [sessionId]);
+  const [session, setSession] = useState<GroupSession | null>(initialBootstrap);
+  const [loading, setLoading] = useState(!initialBootstrap);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -27,7 +42,7 @@ function GroupSessionPage() {
   const refresh = useCallback(async () => {
     try {
       const next = await fetchEightBallGroupSession(sessionId);
-      setSession(next);
+      if (next) setSession(next);
       setLoadError(next ? null : "Spelet kunde inte hittas eller du har inte tillgång till det.");
     } catch (e) {
       setLoadError(e instanceof Error ? e.message : "Spelet kunde inte öppnas.");
@@ -36,7 +51,18 @@ function GroupSessionPage() {
     }
   }, [sessionId]);
 
-  useEffect(() => { void refresh(); }, [refresh]);
+  useEffect(() => {
+    // Never allow the SSR/loading shell to remain forever. If the local
+    // bootstrap exists we already render the game immediately; otherwise
+    // this watchdog guarantees a real error state instead of an endless spinner.
+    const watchdog = window.setTimeout(() => {
+      setLoading(false);
+      setLoadError((current) => current ?? "Spelet svarade inte. Försök igen.");
+    }, 3000);
+    void refresh().finally(() => window.clearTimeout(watchdog));
+    return () => window.clearTimeout(watchdog);
+  }, [refresh]);
+
   useEffect(() => subscribeEightBallGroupSession(sessionId, () => void refresh()), [sessionId, refresh]);
 
   useEffect(() => {
@@ -69,7 +95,7 @@ function GroupSessionPage() {
     }
   }
 
-  if (loading) return (
+  if (loading && !session) return (
     <main style={LIGHT_SURFACE} className="mx-auto min-h-screen w-full max-w-md bg-background px-5 pt-10 text-foreground">
       <p className="text-center text-sm text-muted-foreground">Öppnar spelet …</p>
     </main>
@@ -84,13 +110,13 @@ function GroupSessionPage() {
     </main>
   );
 
-  if (authLoading && !user) return (
+  if (authLoading && !user && !session) return (
     <main style={LIGHT_SURFACE} className="mx-auto min-h-screen w-full max-w-md bg-background px-5 pt-10 text-foreground">
       <p className="text-center text-sm text-muted-foreground">Synkar ditt konto …</p>
     </main>
   );
 
-  if (!user) return (
+  if (!user && !session) return (
     <main style={LIGHT_SURFACE} className="mx-auto min-h-screen w-full max-w-md bg-background px-5 pt-10 text-foreground">
       <p className="font-semibold">Logga in för att öppna spelet.</p>
       <Link to="/konto" className="mt-4 inline-block text-primary">Till konto ›</Link>
@@ -123,7 +149,7 @@ function GroupSessionPage() {
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Klart · 40 slag per spelare</p>
           <div className="mt-3 divide-y divide-border">{totals.map((row) => (
             <div key={row.userId} className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
-              <div><p className="text-sm font-semibold">{row.displayName}{row.userId === user.id ? " · Du" : ""}</p><p className="text-xs text-muted-foreground">40 registrerade slag</p></div>
+              <div><p className="text-sm font-semibold">{row.displayName}{row.userId === user?.id ? " · Du" : ""}</p><p className="text-xs text-muted-foreground">40 registrerade slag</p></div>
               <p className="font-display text-3xl text-primary">{row.score}<span className="ml-1 text-xs text-muted-foreground">p</span></p>
             </div>
           ))}</div>
@@ -161,7 +187,7 @@ function GroupSessionPage() {
       </div>
 
       <div className="mt-3 flex items-center justify-between border-t border-border pt-3 text-sm"><span className="text-muted-foreground">{currentMember?.displayName ?? "Spelare"} hittills</span><span className="font-semibold tabular-nums">{currentTotal} poäng</span></div>
-      <section className="mt-3 rounded-2xl border border-border bg-card px-4 py-3"><div className="flex items-center justify-between"><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Ställning</p><span className="text-[10px] text-muted-foreground">{Math.round(progress)}%</span></div><div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-2">{totals.map((row) => <div key={row.userId} className="flex items-center justify-between gap-2 text-xs"><span className="truncate font-medium">{row.displayName}{row.userId === user.id ? " · Du" : ""}</span><span className="font-semibold tabular-nums">{row.score} p</span></div>)}</div></section>
+      <section className="mt-3 rounded-2xl border border-border bg-card px-4 py-3"><div className="flex items-center justify-between"><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Ställning</p><span className="text-[10px] text-muted-foreground">{Math.round(progress)}%</span></div><div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-2">{totals.map((row) => <div key={row.userId} className="flex items-center justify-between gap-2 text-xs"><span className="truncate font-medium">{row.displayName}{row.userId === user?.id ? " · Du" : ""}</span><span className="font-semibold tabular-nums">{row.score} p</span></div>)}</div></section>
     </main>
   );
 }
