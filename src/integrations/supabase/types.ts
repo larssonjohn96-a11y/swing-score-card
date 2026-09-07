@@ -104,6 +104,107 @@ export type Database = {
         }
         Relationships: []
       }
+      group_session_members: {
+        Row: {
+          display_name: string
+          seat: number
+          session_id: string
+          user_id: string
+        }
+        Insert: {
+          display_name: string
+          seat: number
+          session_id: string
+          user_id: string
+        }
+        Update: {
+          display_name?: string
+          seat?: number
+          session_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_session_members_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "group_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_session_scores: {
+        Row: {
+          created_at: string
+          points: number
+          session_id: string
+          shot_index: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          points: number
+          session_id: string
+          shot_index: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          points?: number
+          session_id?: string
+          shot_index?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_session_scores_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "group_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_session_scores_session_id_user_id_fkey"
+            columns: ["session_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "group_session_members"
+            referencedColumns: ["session_id", "user_id"]
+          },
+        ]
+      }
+      group_sessions: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          current_player_index: number
+          current_shot: number
+          host_user_id: string
+          id: string
+          status: string
+          test_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          current_player_index?: number
+          current_shot?: number
+          host_user_id: string
+          id?: string
+          status?: string
+          test_id?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          current_player_index?: number
+          current_shot?: number
+          host_user_id?: string
+          id?: string
+          status?: string
+          test_id?: string
+        }
+        Relationships: []
+      }
       player_snapshots: {
         Row: {
           approach_hcp: number | null
@@ -113,7 +214,6 @@ export type Database = {
           est_hcp: number | null
           is_public: boolean
           putting_hcp: number | null
-          radar_profile: Json
           rating: number
           real_hcp: number | null
           speed_hcp: number | null
@@ -130,7 +230,6 @@ export type Database = {
           est_hcp?: number | null
           is_public?: boolean
           putting_hcp?: number | null
-          radar_profile?: Json
           rating?: number
           real_hcp?: number | null
           speed_hcp?: number | null
@@ -147,7 +246,6 @@ export type Database = {
           est_hcp?: number | null
           is_public?: boolean
           putting_hcp?: number | null
-          radar_profile?: Json
           rating?: number
           real_hcp?: number | null
           speed_hcp?: number | null
@@ -246,6 +344,10 @@ export type Database = {
           user_id: string
         }[]
       }
+      create_eight_ball_group_session: {
+        Args: { p_member_ids: string[] }
+        Returns: string
+      }
       drill_leaderboard: {
         Args: never
         Returns: {
@@ -256,6 +358,27 @@ export type Database = {
           sessions: number
           user_id: string
         }[]
+      }
+      get_eight_ball_group_session: {
+        Args: { p_session_id: string }
+        Returns: Json
+      }
+      is_group_session_host: {
+        Args: { p_session_id: string; p_user_id?: string }
+        Returns: boolean
+      }
+      is_group_session_member: {
+        Args: { p_session_id: string; p_user_id?: string }
+        Returns: boolean
+      }
+      record_eight_ball_group_score: {
+        Args: {
+          p_points: number
+          p_session_id: string
+          p_shot_index: number
+          p_user_id: string
+        }
+        Returns: Json
       }
     }
     Enums: {
@@ -313,14 +436,14 @@ export type TablesInsert<
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-    Insert: infer I
-  }
+      Insert: infer I
+    }
     ? I
     : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
     ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-      Insert: infer I
-    }
+        Insert: infer I
+      }
       ? I
       : never
     : never
@@ -338,14 +461,14 @@ export type TablesUpdate<
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-    Update: infer U
-  }
+      Update: infer U
+    }
     ? U
     : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
     ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-      Update: infer U
-    }
+        Update: infer U
+      }
       ? U
       : never
     : never

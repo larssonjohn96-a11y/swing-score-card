@@ -33,6 +33,8 @@ import { Route as ShotShaping9WindowHistorikRouteImport } from './routes/shot-sh
 import { Route as ShotShaping9WindowRouteImport } from './routes/shot-shaping-9-window'
 import { Route as ShotShapingRouteImport } from './routes/shot-shaping'
 import { Route as ShortPuttingTestRouteImport } from './routes/short-putting-test'
+import { Route as PuttingStreakRouteImport } from './routes/putting-streak'
+import { Route as PuttingDataRouteImport } from './routes/putting-data'
 import { Route as PuttingRouteImport } from './routes/putting'
 import { Route as PremiumRouteImport } from './routes/premium'
 import { Route as PrecisionHistorikRouteImport } from './routes/precision-historik'
@@ -46,12 +48,15 @@ import { Route as NarspelTestRouteImport } from './routes/narspel-test'
 import { Route as NarspelRouteImport } from './routes/narspel'
 import { Route as LongdriveRouteImport } from './routes/longdrive'
 import { Route as LagputtTestRouteImport } from './routes/lagputt-test'
+import { Route as LagputtLadderRouteImport } from './routes/lagputt-ladder'
 import { Route as LagputtHistorikRouteImport } from './routes/lagputt-historik'
 import { Route as LagputtRouteImport } from './routes/lagputt'
 import { Route as KortputtRouteImport } from './routes/kortputt'
 import { Route as KontoRouteImport } from './routes/konto'
+import { Route as KlockPuttRouteImport } from './routes/klock-putt'
 import { Route as GreenReadingHistorikRouteImport } from './routes/green-reading-historik'
 import { Route as GreenReadingRouteImport } from './routes/green-reading'
+import { Route as FairwayStreakRouteImport } from './routes/fairway-streak'
 import { Route as FairwayRouteImport } from './routes/fairway'
 import { Route as DriverKonsekvensHistorikRouteImport } from './routes/driver-konsekvens-historik'
 import { Route as DriverKonsekvensRouteImport } from './routes/driver-konsekvens'
@@ -68,6 +73,7 @@ import { Route as ApproachPeiHistorikRouteImport } from './routes/approach-pei-h
 import { Route as ApproachPeiRouteImport } from './routes/approach-pei'
 import { Route as ApproachRouteImport } from './routes/approach'
 import { Route as R8BollarHistorikRouteImport } from './routes/8-bollar-historik'
+import { Route as R8BollarGruppRouteImport } from './routes/8-bollar-grupp'
 import { Route as R8BollarRouteImport } from './routes/8-bollar'
 import { Route as R50BollarResultatRouteImport } from './routes/50-bollar-resultat'
 import { Route as R50BollarRouteImport } from './routes/50-bollar'
@@ -77,6 +83,7 @@ import { Route as FramstegIndexRouteImport } from './routes/framsteg.index'
 import { Route as UtvecklingSlugRouteImport } from './routes/utveckling.$slug'
 import { Route as KategoriSlugRouteImport } from './routes/kategori.$slug'
 import { Route as FramstegSlugRouteImport } from './routes/framsteg.$slug'
+import { Route as R8BollarGruppSessionIdRouteImport } from './routes/8-bollar-grupp.$sessionId'
 import { Route as FramstegSlugTestRouteImport } from './routes/framsteg.$slug.$test'
 
 const WedgeStegeHistorikRoute = WedgeStegeHistorikRouteImport.update({
@@ -202,6 +209,16 @@ const ShortPuttingTestRoute = ShortPuttingTestRouteImport.update({
   path: '/short-putting-test',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PuttingStreakRoute = PuttingStreakRouteImport.update({
+  id: '/putting-streak',
+  path: '/putting-streak',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PuttingDataRoute = PuttingDataRouteImport.update({
+  id: '/putting-data',
+  path: '/putting-data',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PuttingRoute = PuttingRouteImport.update({
   id: '/putting',
   path: '/putting',
@@ -267,6 +284,11 @@ const LagputtTestRoute = LagputtTestRouteImport.update({
   path: '/lagputt-test',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LagputtLadderRoute = LagputtLadderRouteImport.update({
+  id: '/lagputt-ladder',
+  path: '/lagputt-ladder',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LagputtHistorikRoute = LagputtHistorikRouteImport.update({
   id: '/lagputt-historik',
   path: '/lagputt-historik',
@@ -287,6 +309,11 @@ const KontoRoute = KontoRouteImport.update({
   path: '/konto',
   getParentRoute: () => rootRouteImport,
 } as any)
+const KlockPuttRoute = KlockPuttRouteImport.update({
+  id: '/klock-putt',
+  path: '/klock-putt',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const GreenReadingHistorikRoute = GreenReadingHistorikRouteImport.update({
   id: '/green-reading-historik',
   path: '/green-reading-historik',
@@ -295,6 +322,11 @@ const GreenReadingHistorikRoute = GreenReadingHistorikRouteImport.update({
 const GreenReadingRoute = GreenReadingRouteImport.update({
   id: '/green-reading',
   path: '/green-reading',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FairwayStreakRoute = FairwayStreakRouteImport.update({
+  id: '/fairway-streak',
+  path: '/fairway-streak',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FairwayRoute = FairwayRouteImport.update({
@@ -379,6 +411,11 @@ const R8BollarHistorikRoute = R8BollarHistorikRouteImport.update({
   path: '/8-bollar-historik',
   getParentRoute: () => rootRouteImport,
 } as any)
+const R8BollarGruppRoute = R8BollarGruppRouteImport.update({
+  id: '/8-bollar-grupp',
+  path: '/8-bollar-grupp',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const R8BollarRoute = R8BollarRouteImport.update({
   id: '/8-bollar',
   path: '/8-bollar',
@@ -424,6 +461,11 @@ const FramstegSlugRoute = FramstegSlugRouteImport.update({
   path: '/framsteg/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const R8BollarGruppSessionIdRoute = R8BollarGruppSessionIdRouteImport.update({
+  id: '/$sessionId',
+  path: '/$sessionId',
+  getParentRoute: () => R8BollarGruppRoute,
+} as any)
 const FramstegSlugTestRoute = FramstegSlugTestRouteImport.update({
   id: '/$test',
   path: '/$test',
@@ -435,6 +477,7 @@ export interface FileRoutesByFullPath {
   '/50-bollar': typeof R50BollarRoute
   '/50-bollar-resultat': typeof R50BollarResultatRoute
   '/8-bollar': typeof R8BollarRoute
+  '/8-bollar-grupp': typeof R8BollarGruppRouteWithChildren
   '/8-bollar-historik': typeof R8BollarHistorikRoute
   '/approach': typeof ApproachRoute
   '/approach-pei': typeof ApproachPeiRoute
@@ -451,12 +494,15 @@ export interface FileRoutesByFullPath {
   '/driver-konsekvens': typeof DriverKonsekvensRoute
   '/driver-konsekvens-historik': typeof DriverKonsekvensHistorikRoute
   '/fairway': typeof FairwayRoute
+  '/fairway-streak': typeof FairwayStreakRoute
   '/green-reading': typeof GreenReadingRoute
   '/green-reading-historik': typeof GreenReadingHistorikRoute
+  '/klock-putt': typeof KlockPuttRoute
   '/konto': typeof KontoRoute
   '/kortputt': typeof KortputtRoute
   '/lagputt': typeof LagputtRoute
   '/lagputt-historik': typeof LagputtHistorikRoute
+  '/lagputt-ladder': typeof LagputtLadderRoute
   '/lagputt-test': typeof LagputtTestRoute
   '/longdrive': typeof LongdriveRoute
   '/narspel': typeof NarspelRoute
@@ -470,6 +516,8 @@ export interface FileRoutesByFullPath {
   '/precision-historik': typeof PrecisionHistorikRoute
   '/premium': typeof PremiumRoute
   '/putting': typeof PuttingRoute
+  '/putting-data': typeof PuttingDataRoute
+  '/putting-streak': typeof PuttingStreakRoute
   '/short-putting-test': typeof ShortPuttingTestRoute
   '/shot-shaping': typeof ShotShapingRoute
   '/shot-shaping-9-window': typeof ShotShaping9WindowRoute
@@ -494,6 +542,7 @@ export interface FileRoutesByFullPath {
   '/vanner': typeof VannerRoute
   '/wedge-stege': typeof WedgeStegeRoute
   '/wedge-stege-historik': typeof WedgeStegeHistorikRoute
+  '/8-bollar-grupp/$sessionId': typeof R8BollarGruppSessionIdRoute
   '/framsteg/$slug': typeof FramstegSlugRouteWithChildren
   '/kategori/$slug': typeof KategoriSlugRoute
   '/utveckling/$slug': typeof UtvecklingSlugRoute
@@ -506,6 +555,7 @@ export interface FileRoutesByTo {
   '/50-bollar': typeof R50BollarRoute
   '/50-bollar-resultat': typeof R50BollarResultatRoute
   '/8-bollar': typeof R8BollarRoute
+  '/8-bollar-grupp': typeof R8BollarGruppRouteWithChildren
   '/8-bollar-historik': typeof R8BollarHistorikRoute
   '/approach': typeof ApproachRoute
   '/approach-pei': typeof ApproachPeiRoute
@@ -522,12 +572,15 @@ export interface FileRoutesByTo {
   '/driver-konsekvens': typeof DriverKonsekvensRoute
   '/driver-konsekvens-historik': typeof DriverKonsekvensHistorikRoute
   '/fairway': typeof FairwayRoute
+  '/fairway-streak': typeof FairwayStreakRoute
   '/green-reading': typeof GreenReadingRoute
   '/green-reading-historik': typeof GreenReadingHistorikRoute
+  '/klock-putt': typeof KlockPuttRoute
   '/konto': typeof KontoRoute
   '/kortputt': typeof KortputtRoute
   '/lagputt': typeof LagputtRoute
   '/lagputt-historik': typeof LagputtHistorikRoute
+  '/lagputt-ladder': typeof LagputtLadderRoute
   '/lagputt-test': typeof LagputtTestRoute
   '/longdrive': typeof LongdriveRoute
   '/narspel': typeof NarspelRoute
@@ -541,6 +594,8 @@ export interface FileRoutesByTo {
   '/precision-historik': typeof PrecisionHistorikRoute
   '/premium': typeof PremiumRoute
   '/putting': typeof PuttingRoute
+  '/putting-data': typeof PuttingDataRoute
+  '/putting-streak': typeof PuttingStreakRoute
   '/short-putting-test': typeof ShortPuttingTestRoute
   '/shot-shaping': typeof ShotShapingRoute
   '/shot-shaping-9-window': typeof ShotShaping9WindowRoute
@@ -565,6 +620,7 @@ export interface FileRoutesByTo {
   '/vanner': typeof VannerRoute
   '/wedge-stege': typeof WedgeStegeRoute
   '/wedge-stege-historik': typeof WedgeStegeHistorikRoute
+  '/8-bollar-grupp/$sessionId': typeof R8BollarGruppSessionIdRoute
   '/framsteg/$slug': typeof FramstegSlugRouteWithChildren
   '/kategori/$slug': typeof KategoriSlugRoute
   '/utveckling/$slug': typeof UtvecklingSlugRoute
@@ -578,6 +634,7 @@ export interface FileRoutesById {
   '/50-bollar': typeof R50BollarRoute
   '/50-bollar-resultat': typeof R50BollarResultatRoute
   '/8-bollar': typeof R8BollarRoute
+  '/8-bollar-grupp': typeof R8BollarGruppRouteWithChildren
   '/8-bollar-historik': typeof R8BollarHistorikRoute
   '/approach': typeof ApproachRoute
   '/approach-pei': typeof ApproachPeiRoute
@@ -594,12 +651,15 @@ export interface FileRoutesById {
   '/driver-konsekvens': typeof DriverKonsekvensRoute
   '/driver-konsekvens-historik': typeof DriverKonsekvensHistorikRoute
   '/fairway': typeof FairwayRoute
+  '/fairway-streak': typeof FairwayStreakRoute
   '/green-reading': typeof GreenReadingRoute
   '/green-reading-historik': typeof GreenReadingHistorikRoute
+  '/klock-putt': typeof KlockPuttRoute
   '/konto': typeof KontoRoute
   '/kortputt': typeof KortputtRoute
   '/lagputt': typeof LagputtRoute
   '/lagputt-historik': typeof LagputtHistorikRoute
+  '/lagputt-ladder': typeof LagputtLadderRoute
   '/lagputt-test': typeof LagputtTestRoute
   '/longdrive': typeof LongdriveRoute
   '/narspel': typeof NarspelRoute
@@ -613,6 +673,8 @@ export interface FileRoutesById {
   '/precision-historik': typeof PrecisionHistorikRoute
   '/premium': typeof PremiumRoute
   '/putting': typeof PuttingRoute
+  '/putting-data': typeof PuttingDataRoute
+  '/putting-streak': typeof PuttingStreakRoute
   '/short-putting-test': typeof ShortPuttingTestRoute
   '/shot-shaping': typeof ShotShapingRoute
   '/shot-shaping-9-window': typeof ShotShaping9WindowRoute
@@ -637,6 +699,7 @@ export interface FileRoutesById {
   '/vanner': typeof VannerRoute
   '/wedge-stege': typeof WedgeStegeRoute
   '/wedge-stege-historik': typeof WedgeStegeHistorikRoute
+  '/8-bollar-grupp/$sessionId': typeof R8BollarGruppSessionIdRoute
   '/framsteg/$slug': typeof FramstegSlugRouteWithChildren
   '/kategori/$slug': typeof KategoriSlugRoute
   '/utveckling/$slug': typeof UtvecklingSlugRoute
@@ -651,6 +714,7 @@ export interface FileRouteTypes {
     | '/50-bollar'
     | '/50-bollar-resultat'
     | '/8-bollar'
+    | '/8-bollar-grupp'
     | '/8-bollar-historik'
     | '/approach'
     | '/approach-pei'
@@ -667,12 +731,15 @@ export interface FileRouteTypes {
     | '/driver-konsekvens'
     | '/driver-konsekvens-historik'
     | '/fairway'
+    | '/fairway-streak'
     | '/green-reading'
     | '/green-reading-historik'
+    | '/klock-putt'
     | '/konto'
     | '/kortputt'
     | '/lagputt'
     | '/lagputt-historik'
+    | '/lagputt-ladder'
     | '/lagputt-test'
     | '/longdrive'
     | '/narspel'
@@ -686,6 +753,8 @@ export interface FileRouteTypes {
     | '/precision-historik'
     | '/premium'
     | '/putting'
+    | '/putting-data'
+    | '/putting-streak'
     | '/short-putting-test'
     | '/shot-shaping'
     | '/shot-shaping-9-window'
@@ -710,6 +779,7 @@ export interface FileRouteTypes {
     | '/vanner'
     | '/wedge-stege'
     | '/wedge-stege-historik'
+    | '/8-bollar-grupp/$sessionId'
     | '/framsteg/$slug'
     | '/kategori/$slug'
     | '/utveckling/$slug'
@@ -722,6 +792,7 @@ export interface FileRouteTypes {
     | '/50-bollar'
     | '/50-bollar-resultat'
     | '/8-bollar'
+    | '/8-bollar-grupp'
     | '/8-bollar-historik'
     | '/approach'
     | '/approach-pei'
@@ -738,12 +809,15 @@ export interface FileRouteTypes {
     | '/driver-konsekvens'
     | '/driver-konsekvens-historik'
     | '/fairway'
+    | '/fairway-streak'
     | '/green-reading'
     | '/green-reading-historik'
+    | '/klock-putt'
     | '/konto'
     | '/kortputt'
     | '/lagputt'
     | '/lagputt-historik'
+    | '/lagputt-ladder'
     | '/lagputt-test'
     | '/longdrive'
     | '/narspel'
@@ -757,6 +831,8 @@ export interface FileRouteTypes {
     | '/precision-historik'
     | '/premium'
     | '/putting'
+    | '/putting-data'
+    | '/putting-streak'
     | '/short-putting-test'
     | '/shot-shaping'
     | '/shot-shaping-9-window'
@@ -781,6 +857,7 @@ export interface FileRouteTypes {
     | '/vanner'
     | '/wedge-stege'
     | '/wedge-stege-historik'
+    | '/8-bollar-grupp/$sessionId'
     | '/framsteg/$slug'
     | '/kategori/$slug'
     | '/utveckling/$slug'
@@ -793,6 +870,7 @@ export interface FileRouteTypes {
     | '/50-bollar'
     | '/50-bollar-resultat'
     | '/8-bollar'
+    | '/8-bollar-grupp'
     | '/8-bollar-historik'
     | '/approach'
     | '/approach-pei'
@@ -809,12 +887,15 @@ export interface FileRouteTypes {
     | '/driver-konsekvens'
     | '/driver-konsekvens-historik'
     | '/fairway'
+    | '/fairway-streak'
     | '/green-reading'
     | '/green-reading-historik'
+    | '/klock-putt'
     | '/konto'
     | '/kortputt'
     | '/lagputt'
     | '/lagputt-historik'
+    | '/lagputt-ladder'
     | '/lagputt-test'
     | '/longdrive'
     | '/narspel'
@@ -828,6 +909,8 @@ export interface FileRouteTypes {
     | '/precision-historik'
     | '/premium'
     | '/putting'
+    | '/putting-data'
+    | '/putting-streak'
     | '/short-putting-test'
     | '/shot-shaping'
     | '/shot-shaping-9-window'
@@ -852,6 +935,7 @@ export interface FileRouteTypes {
     | '/vanner'
     | '/wedge-stege'
     | '/wedge-stege-historik'
+    | '/8-bollar-grupp/$sessionId'
     | '/framsteg/$slug'
     | '/kategori/$slug'
     | '/utveckling/$slug'
@@ -865,6 +949,7 @@ export interface RootRouteChildren {
   R50BollarRoute: typeof R50BollarRoute
   R50BollarResultatRoute: typeof R50BollarResultatRoute
   R8BollarRoute: typeof R8BollarRoute
+  R8BollarGruppRoute: typeof R8BollarGruppRouteWithChildren
   R8BollarHistorikRoute: typeof R8BollarHistorikRoute
   ApproachRoute: typeof ApproachRoute
   ApproachPeiRoute: typeof ApproachPeiRoute
@@ -881,12 +966,15 @@ export interface RootRouteChildren {
   DriverKonsekvensRoute: typeof DriverKonsekvensRoute
   DriverKonsekvensHistorikRoute: typeof DriverKonsekvensHistorikRoute
   FairwayRoute: typeof FairwayRoute
+  FairwayStreakRoute: typeof FairwayStreakRoute
   GreenReadingRoute: typeof GreenReadingRoute
   GreenReadingHistorikRoute: typeof GreenReadingHistorikRoute
+  KlockPuttRoute: typeof KlockPuttRoute
   KontoRoute: typeof KontoRoute
   KortputtRoute: typeof KortputtRoute
   LagputtRoute: typeof LagputtRoute
   LagputtHistorikRoute: typeof LagputtHistorikRoute
+  LagputtLadderRoute: typeof LagputtLadderRoute
   LagputtTestRoute: typeof LagputtTestRoute
   LongdriveRoute: typeof LongdriveRoute
   NarspelRoute: typeof NarspelRoute
@@ -900,6 +988,8 @@ export interface RootRouteChildren {
   PrecisionHistorikRoute: typeof PrecisionHistorikRoute
   PremiumRoute: typeof PremiumRoute
   PuttingRoute: typeof PuttingRoute
+  PuttingDataRoute: typeof PuttingDataRoute
+  PuttingStreakRoute: typeof PuttingStreakRoute
   ShortPuttingTestRoute: typeof ShortPuttingTestRoute
   ShotShapingRoute: typeof ShotShapingRoute
   ShotShaping9WindowRoute: typeof ShotShaping9WindowRoute
@@ -1101,6 +1191,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShortPuttingTestRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/putting-streak': {
+      id: '/putting-streak'
+      path: '/putting-streak'
+      fullPath: '/putting-streak'
+      preLoaderRoute: typeof PuttingStreakRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/putting-data': {
+      id: '/putting-data'
+      path: '/putting-data'
+      fullPath: '/putting-data'
+      preLoaderRoute: typeof PuttingDataRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/putting': {
       id: '/putting'
       path: '/putting'
@@ -1192,6 +1296,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LagputtTestRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lagputt-ladder': {
+      id: '/lagputt-ladder'
+      path: '/lagputt-ladder'
+      fullPath: '/lagputt-ladder'
+      preLoaderRoute: typeof LagputtLadderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lagputt-historik': {
       id: '/lagputt-historik'
       path: '/lagputt-historik'
@@ -1220,6 +1331,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof KontoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/klock-putt': {
+      id: '/klock-putt'
+      path: '/klock-putt'
+      fullPath: '/klock-putt'
+      preLoaderRoute: typeof KlockPuttRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/green-reading-historik': {
       id: '/green-reading-historik'
       path: '/green-reading-historik'
@@ -1232,6 +1350,13 @@ declare module '@tanstack/react-router' {
       path: '/green-reading'
       fullPath: '/green-reading'
       preLoaderRoute: typeof GreenReadingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/fairway-streak': {
+      id: '/fairway-streak'
+      path: '/fairway-streak'
+      fullPath: '/fairway-streak'
+      preLoaderRoute: typeof FairwayStreakRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/fairway': {
@@ -1346,6 +1471,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof R8BollarHistorikRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/8-bollar-grupp': {
+      id: '/8-bollar-grupp'
+      path: '/8-bollar-grupp'
+      fullPath: '/8-bollar-grupp'
+      preLoaderRoute: typeof R8BollarGruppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/8-bollar': {
       id: '/8-bollar'
       path: '/8-bollar'
@@ -1409,6 +1541,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FramstegSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/8-bollar-grupp/$sessionId': {
+      id: '/8-bollar-grupp/$sessionId'
+      path: '/$sessionId'
+      fullPath: '/8-bollar-grupp/$sessionId'
+      preLoaderRoute: typeof R8BollarGruppSessionIdRouteImport
+      parentRoute: typeof R8BollarGruppRoute
+    }
     '/framsteg/$slug/$test': {
       id: '/framsteg/$slug/$test'
       path: '/$test'
@@ -1418,6 +1557,18 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface R8BollarGruppRouteChildren {
+  R8BollarGruppSessionIdRoute: typeof R8BollarGruppSessionIdRoute
+}
+
+const R8BollarGruppRouteChildren: R8BollarGruppRouteChildren = {
+  R8BollarGruppSessionIdRoute: R8BollarGruppSessionIdRoute,
+}
+
+const R8BollarGruppRouteWithChildren = R8BollarGruppRoute._addFileChildren(
+  R8BollarGruppRouteChildren,
+)
 
 interface FramstegSlugRouteChildren {
   FramstegSlugTestRoute: typeof FramstegSlugTestRoute
@@ -1436,6 +1587,7 @@ const rootRouteChildren: RootRouteChildren = {
   R50BollarRoute: R50BollarRoute,
   R50BollarResultatRoute: R50BollarResultatRoute,
   R8BollarRoute: R8BollarRoute,
+  R8BollarGruppRoute: R8BollarGruppRouteWithChildren,
   R8BollarHistorikRoute: R8BollarHistorikRoute,
   ApproachRoute: ApproachRoute,
   ApproachPeiRoute: ApproachPeiRoute,
@@ -1452,12 +1604,15 @@ const rootRouteChildren: RootRouteChildren = {
   DriverKonsekvensRoute: DriverKonsekvensRoute,
   DriverKonsekvensHistorikRoute: DriverKonsekvensHistorikRoute,
   FairwayRoute: FairwayRoute,
+  FairwayStreakRoute: FairwayStreakRoute,
   GreenReadingRoute: GreenReadingRoute,
   GreenReadingHistorikRoute: GreenReadingHistorikRoute,
+  KlockPuttRoute: KlockPuttRoute,
   KontoRoute: KontoRoute,
   KortputtRoute: KortputtRoute,
   LagputtRoute: LagputtRoute,
   LagputtHistorikRoute: LagputtHistorikRoute,
+  LagputtLadderRoute: LagputtLadderRoute,
   LagputtTestRoute: LagputtTestRoute,
   LongdriveRoute: LongdriveRoute,
   NarspelRoute: NarspelRoute,
@@ -1471,6 +1626,8 @@ const rootRouteChildren: RootRouteChildren = {
   PrecisionHistorikRoute: PrecisionHistorikRoute,
   PremiumRoute: PremiumRoute,
   PuttingRoute: PuttingRoute,
+  PuttingDataRoute: PuttingDataRoute,
+  PuttingStreakRoute: PuttingStreakRoute,
   ShortPuttingTestRoute: ShortPuttingTestRoute,
   ShotShapingRoute: ShotShapingRoute,
   ShotShaping9WindowRoute: ShotShaping9WindowRoute,
