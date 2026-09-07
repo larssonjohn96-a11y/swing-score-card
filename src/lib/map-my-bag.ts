@@ -40,6 +40,44 @@ export const BAG_CLUB_LIBRARY = [
   "Driving Iron", "Mini Driver", "Driver",
 ] as const;
 
+export const INDOOR_REFERENCE_TEMPERATURE_C = 22;
+export const INDOOR_REFERENCE_ELEVATION_M = 0;
+
+// Practical estimates for carry normalization when launch/spin data is unavailable.
+// Temperature: roughly 1% carry per 10°C. Elevation: roughly 2% per 305 m (1,000 ft).
+const CARRY_PER_C = 0.001;
+const CARRY_PER_M_ELEVATION = 0.02 / 305;
+
+export type CarryConditionAdjustment = {
+  adjustedCarry: number;
+  temperatureDelta: number;
+  elevationDelta: number;
+  totalDelta: number;
+};
+
+export function adjustCarryForConditions(
+  stockCarry: number,
+  temperatureC: number,
+  elevationM: number,
+  referenceTemperatureC = INDOOR_REFERENCE_TEMPERATURE_C,
+  referenceElevationM = INDOOR_REFERENCE_ELEVATION_M,
+): CarryConditionAdjustment {
+  const safeTemp = Number.isFinite(temperatureC) ? temperatureC : referenceTemperatureC;
+  const safeElevation = Number.isFinite(elevationM) ? elevationM : referenceElevationM;
+  const tempFactor = 1 + (safeTemp - referenceTemperatureC) * CARRY_PER_C;
+  const elevationFactor = 1 + (safeElevation - referenceElevationM) * CARRY_PER_M_ELEVATION;
+  const afterTemperature = stockCarry * tempFactor;
+  const adjustedCarry = Math.max(0, afterTemperature * elevationFactor);
+  const temperatureDelta = afterTemperature - stockCarry;
+  const elevationDelta = adjustedCarry - afterTemperature;
+  return {
+    adjustedCarry,
+    temperatureDelta,
+    elevationDelta,
+    totalDelta: adjustedCarry - stockCarry,
+  };
+}
+
 function uid() {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
