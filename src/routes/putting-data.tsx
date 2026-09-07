@@ -1,7 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, BarChart3 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer } from "recharts";
+import {
+  PolarAngleAxis,
+  PolarGrid,
+  PolarRadiusAxis,
+  Radar,
+  RadarChart,
+  ResponsiveContainer,
+  Tooltip,
+} from "recharts";
 import {
   RECENT_PUTT_SAMPLE,
   collectLagHoleOutStarts,
@@ -19,13 +27,14 @@ export const Route = createFileRoute("/putting-data")({
       { title: "Puttingdata – alla tester samlat | SG4" },
       {
         name: "description",
-        content: "Samlad puttingdata från flera SG4-tester: träffprocent, lagputt, riskzon och spelarprofil.",
+        content: "Samlad puttingdata från flera SG4-tester: träffprocent, lagputt, riskzon och benchmarkad puttingprofil.",
       },
     ],
   }),
   component: PuttingDataPage,
 });
 
+const RADAR_BLUE = "#168CF8";
 const fmt = (value: number, decimals = 0) => value.toFixed(decimals).replace(".", ",");
 const clampPct = (value: number) => Math.max(0, Math.min(100, value));
 
@@ -39,6 +48,46 @@ const SHORT_PUTT_BINS = [
 
 type ShortPuttBin = { label: string; made: number; attempts: number; pct: number };
 type Scope = "recent" | "all";
+type BenchmarkKey = "tour" | "hcp0" | "hcp10" | "hcp20";
+type MetricKey = "0-1" | "1-2" | "2-3" | "3-5" | "three-putt";
+
+type BenchmarkProfile = {
+  label: string;
+  values: Record<MetricKey, number>;
+  skillScore: number;
+};
+
+/**
+ * Make-rate anchors are based primarily on Shot Scope handicap benchmark data:
+ * 0–3 ft, 3–6 ft, 6–9 ft and 9–12 ft. The SG4 metre bands are the nearest
+ * practical equivalents. Tour anchors use PGA TOUR ShotLink-like make rates.
+ * 3-putt avoidance uses Shot Scope handicap 3-putt rates; Tour is a practical
+ * PGA TOUR reference around ~2–3% three-putts.
+ */
+const BENCHMARKS: Record<BenchmarkKey, BenchmarkProfile> = {
+  tour: {
+    label: "PGA Tour",
+    skillScore: 100,
+    values: { "0-1": 99, "1-2": 82, "2-3": 50, "3-5": 30, "three-putt": 97.5 },
+  },
+  hcp0: {
+    label: "HCP 0",
+    skillScore: 85,
+    values: { "0-1": 98, "1-2": 76, "2-3": 49, "3-5": 34, "three-putt": 92.2 },
+  },
+  hcp10: {
+    label: "HCP 10",
+    skillScore: 65,
+    values: { "0-1": 96, "1-2": 65, "2-3": 39, "3-5": 26, "three-putt": 88.2 },
+  },
+  hcp20: {
+    label: "HCP 20",
+    skillScore: 45,
+    values: { "0-1": 90, "1-2": 55, "2-3": 33, "3-5": 18, "three-putt": 80.9 },
+  },
+};
+
+const BENCHMARK_ORDER: BenchmarkKey[] = ["tour", "hcp0", "hcp10", "hcp20"];
 
 function shortPuttBins(exact: ReturnType<typeof puttingMakeStats>): ShortPuttBin[] {
   return SHORT_PUTT_BINS.map((bin, index) => {
@@ -55,8 +104,62 @@ function weightedPct(rows: Array<{ made: number; attempts: number }>) {
   return attempts ? (made / attempts) * 100 : 0;
 }
 
+function totalAttempts(rows: Array<{ attempts: number }>) {
+  return rows.reduce((sum, row) => sum + row.attempts, 0);
+}
+
+/**
+ * Converts raw percentages at very different distances to a comparable 0–100
+ * skill index. A 50% make rate from ~2.5 m should be worth far more than 50%
+ * from ~1.5 m. We therefore locate the player's raw value between handicap
+ * benchmark anchors instead of plotting raw make % directly.
+ */
+function skillIndex(metric: MetricKey, raw: number) {
+  const anchors = BENCHMARK_ORDER
+    .map((key) => ({ raw: BENCHMARKS[key].values[metric], score: BENCHMARKS[key].skillScore }))
+    .sort((a, b) => a.raw - b.raw);
+
+  if (raw >= anchors[anchors.length - 1].raw) return 100;
+  if (raw <= anchors[0].raw) {
+    return clampPct((raw / Math.max(1, anchors[0].raw)) * anchors[0].score);
+  }
+
+  for (let i = 0; i < anchors.length - 1; i += 1) {
+    const lower = anchors[i];
+    const upper = anchors[i + 1];
+    if (raw >= lower.raw && raw <= upper.raw) {
+      const span = upper.raw - lower.raw || 1;
+      const t = (raw - lower.raw) / span;
+      return clampPct(lower.score + t * (upper.score - lower.score));
+    }
+  }
+  return 0;
+}
+
+function RadarTooltip({ active, payload }: { active?: boolean; payload?: Array<{ payload?: Record<string, unknown> }> }) {
+  if (!active || !payload?.length) return null;
+  const row = payload[0]?.payload as {
+    subject?: string;
+    raw?: number;
+    attempts?: number;
+    value?: number;
+    benchmarkRaw?: number;
+    benchmarkLabel?: string;
+  } | undefined;
+  if (!row) return null;
+  return (
+    <div className="rounded-xl border border-border bg-card px-3 py-2 text-xs shadow-lg">
+      <p className="font-semibold text-foreground">{row.subject}</p>
+      <p className="mt-1 text-muted-foreground">Du: <span className="font-semibold text-foreground">{fmt(row.raw ?? 0)}%</span>{row.attempts ? ` · ${row.attempts} försök` : ""}</p>
+      <p className="text-muted-foreground">Viktad nivå: <span className="font-semibold text-foreground">{fmt(row.value ?? 0)}/100</span></p>
+      <p className="text-muted-foreground">{row.benchmarkLabel}: <span className="font-semibold text-foreground">{fmt(row.benchmarkRaw ?? 0)}%</span></p>
+    </div>
+  );
+}
+
 function PuttingDataPage() {
   const [scope, setScope] = useState<Scope>("recent");
+  const [benchmark, setBenchmark] = useState<BenchmarkKey>("hcp10");
 
   const allStarts = useMemo(() => collectPuttStarts(), []);
   const allLagHoleOut = useMemo(() => collectLagHoleOutStarts(), []);
@@ -75,18 +178,25 @@ function PuttingDataPage() {
   const threePuttAvoidance = lagHoleOutStarts.length
     ? 100 - (lagHoleOutStarts.filter((row) => row.strokes >= 3).length / lagHoleOutStarts.length) * 100
     : 0;
-  const withinOneMetre = lagProximityStarts.length
-    ? (lagProximityStarts.filter((row) => row.score <= 0).length / lagProximityStarts.length) * 100
-    : 0;
 
-  const radarData = [
-    { subject: "0–1 m", value: shortStats[0]?.pct ?? 0 },
-    { subject: "1–2 m", value: shortStats[1]?.pct ?? 0 },
-    { subject: "2–3 m", value: shortStats[2]?.pct ?? 0 },
-    { subject: "3–5 m", value: weightedPct(shortStats.slice(3)) },
-    { subject: "3-putt undvik.", value: threePuttAvoidance },
-    { subject: "Lag inom 1 m", value: withinOneMetre },
+  const rawMetrics: Array<{ key: MetricKey; subject: string; raw: number; attempts: number }> = [
+    { key: "0-1", subject: "0–1 m", raw: shortStats[0]?.pct ?? 0, attempts: shortStats[0]?.attempts ?? 0 },
+    { key: "1-2", subject: "1–2 m", raw: shortStats[1]?.pct ?? 0, attempts: shortStats[1]?.attempts ?? 0 },
+    { key: "2-3", subject: "2–3 m", raw: shortStats[2]?.pct ?? 0, attempts: shortStats[2]?.attempts ?? 0 },
+    { key: "3-5", subject: "3–5 m", raw: weightedPct(shortStats.slice(3)), attempts: totalAttempts(shortStats.slice(3)) },
+    { key: "three-putt", subject: "3-putt undvik.", raw: threePuttAvoidance, attempts: lagHoleOutStarts.length },
   ];
+
+  const selectedBenchmark = BENCHMARKS[benchmark];
+  const radarData = rawMetrics.map((metric) => ({
+    subject: metric.subject,
+    raw: metric.raw,
+    attempts: metric.attempts,
+    value: skillIndex(metric.key, metric.raw),
+    benchmark: selectedBenchmark.skillScore,
+    benchmarkRaw: selectedBenchmark.values[metric.key],
+    benchmarkLabel: selectedBenchmark.label,
+  }));
 
   const reliableRisk = lagHoleOut.find((row) => row.attempts >= 5 && row.threePuttPct >= 20);
   const highestRisk = [...lagHoleOut].filter((row) => row.attempts >= 3).sort((a, b) => b.threePuttPct - a.threePuttPct)[0];
@@ -136,18 +246,39 @@ function PuttingDataPage() {
         <div>
           <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Puttingprofil</p>
           <h2 className="font-display text-3xl">Din spelbild</h2>
-          <p className="mt-1 text-xs text-muted-foreground">Bara mätvärden som faktiskt registreras i testerna. Alla axlar är 0–100 %.</p>
+          <p className="mt-1 text-xs text-muted-foreground">Avstånden viktas mot förväntad sänkprocent. Därför är t.ex. 50% från 3 m mycket starkare än 50% från 1 m.</p>
         </div>
+
+        <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
+          {BENCHMARK_ORDER.map((key) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setBenchmark(key)}
+              className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold ${benchmark === key ? "border-[#168CF8] bg-[#168CF8]/10 text-[#168CF8]" : "border-border text-muted-foreground"}`}
+            >
+              {BENCHMARKS[key].label}
+            </button>
+          ))}
+        </div>
+
         <div className="mt-2 h-72 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <RadarChart data={radarData} outerRadius="70%">
               <PolarGrid stroke="var(--border)" />
               <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} />
               <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} axisLine={false} />
-              <Radar dataKey="value" stroke="var(--primary)" fill="var(--primary)" fillOpacity={0.18} strokeWidth={2} />
+              <Radar name={selectedBenchmark.label} dataKey="benchmark" stroke="var(--muted-foreground)" fill="transparent" strokeDasharray="5 5" strokeWidth={1.5} />
+              <Radar name="Du" dataKey="value" stroke={RADAR_BLUE} fill={RADAR_BLUE} fillOpacity={0.22} strokeWidth={2.5} dot={{ r: 3, fill: RADAR_BLUE }} />
+              <Tooltip content={<RadarTooltip />} />
             </RadarChart>
           </ResponsiveContainer>
         </div>
+        <div className="flex items-center justify-center gap-5 text-[11px] text-muted-foreground">
+          <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full" style={{ background: RADAR_BLUE }} />Du</span>
+          <span className="inline-flex items-center gap-1.5"><span className="h-px w-4 border-t border-dashed border-muted-foreground" />{selectedBenchmark.label}</span>
+        </div>
+        <p className="mt-3 text-[10px] leading-relaxed text-muted-foreground">Skill index 0–100 normaliserar varje distans mot externa handicap-benchmarks i stället för att jämföra rå procent rakt av. Meterzonerna är närmaste praktiska motsvarighet till Shot Scopes fotintervall.</p>
       </section>
 
       <section className="mt-6">
