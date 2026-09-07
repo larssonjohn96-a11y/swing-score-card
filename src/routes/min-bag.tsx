@@ -9,6 +9,7 @@ export const Route = createFileRoute("/min-bag")({
 
 function MinBagPage() {
   const latest = latestCompletedBagMap();
+  const clubs = latest ? [...latest.clubs].reverse() : [];
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-28 pt-6">
@@ -34,12 +35,14 @@ function MinBagPage() {
             <span>{latest.location || "Ingen plats"}</span>
           </div>
           <section className="mt-5 overflow-hidden rounded-2xl border border-border bg-card">
-            {[...latest.clubs].reverse().map((club) => {
+            {clubs.map((club, index) => {
               const value = medianCarry(club);
+              const next = index < clubs.length - 1 ? medianCarry(clubs[index + 1]) : null;
+              const gap = value != null && next != null ? value - next : null;
               return (
                 <div key={club.id} className="flex items-center justify-between border-b border-border px-5 py-3.5 last:border-b-0">
                   <span className="text-lg font-semibold">{club.label}</span>
-                  <div><span className="font-display text-3xl tabular-nums">{value != null ? Math.round(value) : "–"}</span><span className="ml-1 text-xs text-muted-foreground">m carry</span></div>
+                  <div className="text-right"><div><span className="font-display text-3xl tabular-nums">{value != null ? Math.round(value) : "–"}</span><span className="ml-1 text-xs text-muted-foreground">m carry</span></div>{gap != null ? <p className="text-[10px] font-semibold text-muted-foreground">{Math.round(gap)} m till nästa</p> : null}</div>
                 </div>
               );
             })}
