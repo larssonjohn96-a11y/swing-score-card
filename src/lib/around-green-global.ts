@@ -25,6 +25,10 @@ const EIGHT_BALL_PROXIMITY: Record<number, number> = {
 const SHORTGAME_MIDPOINT = Object.fromEntries(INTERVALS.map((row) => [row.key, row.midpoint])) as Record<IntervalKey, number>;
 const BUNKER_MIDPOINT = Object.fromEntries(BUNKER_INTERVALS.map((row) => [row.key, row.midpoint])) as Record<BunkerIntervalKey, number>;
 
+function validAroundGreenShot(shot: AroundGreenShotRecord) {
+  return Number.isFinite(shot.startDistance) && shot.startDistance >= 0 && Number.isFinite(shot.proximity) && shot.proximity >= 0;
+}
+
 export function collectAroundGreenShots(): AroundGreenShotRecord[] {
   const rows: AroundGreenShotRecord[] = [];
 
@@ -32,39 +36,42 @@ export function collectAroundGreenShots(): AroundGreenShotRecord[] {
     session.scores?.forEach((score, index) => {
       const station = STATION_LIST[index % STATION_LIST.length];
       if (!station) return;
-      rows.push({
+      const row: AroundGreenShotRecord = {
         source: "8-bollar",
         date: session.date,
         startDistance: station.distance,
         proximity: EIGHT_BALL_PROXIMITY[score] ?? 4,
         lie: station.type === "Bunker" ? "bunker" : "other",
-      });
+      };
+      if (validAroundGreenShot(row)) rows.push(row);
     });
   });
 
   loadShortGameSessions().forEach((session) => {
     session.shots.forEach((shot) => {
       if (!shot.interval) return;
-      rows.push({
+      const row: AroundGreenShotRecord = {
         source: "Around the Green HCP",
         date: session.date,
         startDistance: shot.distanceTarget,
         proximity: SHORTGAME_MIDPOINT[shot.interval],
         lie: "other",
-      });
+      };
+      if (validAroundGreenShot(row)) rows.push(row);
     });
   });
 
   loadBunkerSessions().forEach((session) => {
     session.shots.forEach((shot) => {
       if (!shot.interval) return;
-      rows.push({
+      const row: AroundGreenShotRecord = {
         source: "Bunker HCP",
         date: session.date,
         startDistance: 15,
         proximity: BUNKER_MIDPOINT[shot.interval],
         lie: "bunker",
-      });
+      };
+      if (validAroundGreenShot(row)) rows.push(row);
     });
   });
 
@@ -89,6 +96,7 @@ const MAKE_CURVES = {
 export type AroundGreenBenchmarkKey = keyof typeof MAKE_CURVES;
 
 function interpolateCurve(distance: number, curve: readonly { d: number; p: number }[]) {
+  if (!Number.isFinite(distance)) return 0;
   if (distance <= 0) return 100;
   if (distance <= curve[0].d) return curve[0].p;
   for (let i = 0; i < curve.length - 1; i += 1) {
@@ -104,13 +112,14 @@ function interpolateCurve(distance: number, curve: readonly { d: number; p: numb
 }
 
 function personalMakeProbability(distance: number) {
+  if (!Number.isFinite(distance)) return 0;
   const starts = latestRows(collectPuttStarts(), RECENT_PUTT_PRIOR);
   const stats = puttingMakeStats(starts);
   if (!stats.length) return interpolateCurve(distance, MAKE_CURVES.hcp10);
 
   const nearby = stats
     .map((row) => ({ ...row, delta: Math.abs(row.distance - distance) }))
-    .filter((row) => row.delta <= 1.25)
+    .filter((row) => Number.isFinite(row.delta) && row.delta <= 1.25)
     .sort((a, b) => a.delta - b.delta);
 
   const attempts = nearby.reduce((sum, row) => sum + row.attempts, 0);
@@ -122,19 +131,19 @@ function personalMakeProbability(distance: number) {
 }
 
 export function expectedScramblingPct(shots: AroundGreenShotRecord[], benchmark?: AroundGreenBenchmarkKey) {
-  if (!shots.length) return 0;
-  return shots.reduce((sum, shot) => {
-    const pct = benchmark
-      ? interpolateCurve(shot.proximity, MAKE_CURVES[benchmark])
-      : personalMakeProbability(shot.proximity);
-    return sum + pct;
-  }, 0) / shots.length;
+  const valid = shots.filter(validAroundGreenShot);
+  if (!valid.length) return 0;
+  const probabilities = valid
+    .map((shot) => benchmark ? interpolateCurve(shot.proximity, MAKE_CURVES[benchmark]) : personalMakeProbability(shot.proximity))
+    .filter(Number.isFinite);
+  if (!probabilities.length) return 0;
+  return probabilities.reduce((sum, value) => sum + value, 0) / probabilities.length;
 }
 
 export function outside30Yards(shots: AroundGreenShotRecord[]) {
-  return shots.filter((shot) => shot.startDistance > YARDS_30_M);
+  return shots.filter((shot) => validAroundGreenShot(shot) && shot.startDistance > YARDS_30_M);
 }
 
 export function bunkerShots(shots: AroundGreenShotRecord[]) {
-  return shots.filter((shot) => shot.lie === "bunker");
+  return shots.filter((shot) => validAroundGreenShot(shot) && shot.lie === "bunker");
 }
