@@ -25,16 +25,38 @@ export function useAuth() {
         .maybeSingle()
         .then(({ data }) => {
           if (active) setDisplayName(data?.display_name ?? null);
+        })
+        .catch(() => {
+          if (active) setDisplayName(null);
         });
     };
 
-    supabase.auth.getSession().then(({ data }) => apply(data.session?.user ?? null));
+    let settled = false;
+    const fallback = window.setTimeout(() => {
+      if (!settled) apply(null);
+    }, 6000);
+
+    supabase.auth.getSession()
+      .then(({ data }) => {
+        settled = true;
+        window.clearTimeout(fallback);
+        apply(data.session?.user ?? null);
+      })
+      .catch(() => {
+        settled = true;
+        window.clearTimeout(fallback);
+        apply(null);
+      });
+
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      settled = true;
+      window.clearTimeout(fallback);
       apply(session?.user ?? null);
     });
 
     return () => {
       active = false;
+      window.clearTimeout(fallback);
       sub.subscription.unsubscribe();
     };
   }, []);
