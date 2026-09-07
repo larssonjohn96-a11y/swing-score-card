@@ -31,20 +31,55 @@ export const DEFAULT_BAG_CLUBS = [
   "60°", "56°", "52°", "PW", "9i", "8i", "7i", "6i", "5i", "4i", "3i", "5W", "3W", "Driver",
 ] as const;
 
+export const BAG_CLUB_LIBRARY = [
+  "64°", "62°", "60°", "58°", "56°", "54°", "52°", "50°", "48°", "46°",
+  "LW", "SW", "GW", "AW", "PW",
+  "9i", "8i", "7i", "6i", "5i", "4i", "3i", "2i", "1i",
+  "7H", "6H", "5H", "4H", "3H", "2H",
+  "11W", "9W", "7W", "5W", "4W", "3W", "2W",
+  "Driving Iron", "Mini Driver", "Driver",
+] as const;
+
 function uid() {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
-export function createBagMap(): BagMap {
+function makeClub(label: string, order: number): BagClub {
+  return { id: `${uid()}-${label}`, label, order, shots: [] };
+}
+
+export function normalizeBagOrder(map: BagMap): BagMap {
+  return { ...map, clubs: map.clubs.map((club, order) => ({ ...club, order })) };
+}
+
+export function createBagMap(labels: readonly string[] = DEFAULT_BAG_CLUBS): BagMap {
   const now = new Date().toISOString();
   return {
     id: uid(),
     status: "draft",
     createdAt: now,
     updatedAt: now,
-    clubs: DEFAULT_BAG_CLUBS.map((label, order) => ({ id: `${order}-${label}`, label, order, shots: [] })),
+    clubs: labels.map((label, order) => makeClub(label, order)),
   };
+}
+
+export function addClubToBag(map: BagMap, label: string): BagMap {
+  const clean = label.trim();
+  if (!clean) return map;
+  return normalizeBagOrder({ ...map, clubs: [...map.clubs, makeClub(clean, map.clubs.length)] });
+}
+
+export function removeClubFromBag(map: BagMap, clubId: string): BagMap {
+  return normalizeBagOrder({ ...map, clubs: map.clubs.filter((club) => club.id !== clubId) });
+}
+
+export function moveClub(map: BagMap, fromIndex: number, toIndex: number): BagMap {
+  if (fromIndex < 0 || toIndex < 0 || fromIndex >= map.clubs.length || toIndex >= map.clubs.length || fromIndex === toIndex) return map;
+  const clubs = [...map.clubs];
+  const [moved] = clubs.splice(fromIndex, 1);
+  clubs.splice(toIndex, 0, moved);
+  return normalizeBagOrder({ ...map, clubs });
 }
 
 export function loadBagDraft(): BagMap | null {
@@ -54,7 +89,7 @@ export function loadBagDraft(): BagMap | null {
 
 export function saveBagDraft(map: BagMap) {
   if (typeof window === "undefined") return;
-  localStorage.setItem(DRAFT_KEY, JSON.stringify({ ...map, updatedAt: new Date().toISOString() }));
+  localStorage.setItem(DRAFT_KEY, JSON.stringify({ ...normalizeBagOrder(map), updatedAt: new Date().toISOString() }));
 }
 
 export function clearBagDraft() {
@@ -70,8 +105,14 @@ export function loadBagHistory(): BagMap[] {
   } catch { return []; }
 }
 
-export function completeBagMap(map: BagMap): BagMap {
-  const completed: BagMap = { ...map, status: "completed", completedAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+export function completeBagMap(map: BagMap, completedOnly = false): BagMap {
+  const clubs = completedOnly ? map.clubs.filter(clubComplete) : map.clubs;
+  const completed: BagMap = {
+    ...normalizeBagOrder({ ...map, clubs }),
+    status: "completed",
+    completedAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
   if (typeof window !== "undefined") {
     const history = loadBagHistory().filter((row) => row.id !== completed.id);
     localStorage.setItem(HISTORY_KEY, JSON.stringify([completed, ...history]));
