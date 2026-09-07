@@ -77,8 +77,6 @@ export async function createEightBallGroupSession(friendships: Friendship[]) {
       EIGHT_BALL_MULTIPLAYER_ADAPTER,
       selected.map((friend) => ({ id: friend.other.id, displayName: friend.other.displayName })),
     );
-    // Temporary compatibility bridge while the 8-ball route is migrated to the
-    // generic bootstrap reader. This keeps Start -> score screen immediate.
     const coreBootstrap = readMultiplayerBootstrap<EightBallMultiplayerResult>(EIGHT_BALL_MULTIPLAYER_ADAPTER.testId, id);
     const legacyBootstrap = fromCore(coreBootstrap);
     if (legacyBootstrap) writeLegacyBootstrap(legacyBootstrap);
@@ -108,6 +106,24 @@ export async function recordEightBallGroupScore(sessionId: string, userId: strin
     currentShot: result.currentShot ?? result.currentStep ?? shotIndex,
     currentPlayerIndex: result.currentPlayerIndex,
   };
+}
+
+export async function correctEightBallGroupScore(sessionId: string, userId: string, shotIndex: number, points: number) {
+  const { error } = await withMultiplayerTimeout(db.rpc("correct_eight_ball_group_score", {
+    p_session_id: sessionId,
+    p_user_id: userId,
+    p_shot_index: shotIndex,
+    p_points: points,
+  }), 7000);
+  if (error) throw new Error(error.message);
+}
+
+export async function undoEightBallGroupScore(sessionId: string) {
+  const { data, error } = await withMultiplayerTimeout(db.rpc("undo_eight_ball_group_score", {
+    p_session_id: sessionId,
+  }), 7000);
+  if (error) throw new Error(error.message);
+  return data as { status: GroupSessionStatus; currentShot: number; currentPlayerIndex: number; userId: string };
 }
 
 export async function listActiveEightBallGroupSessions(): Promise<Array<{ id: string; hostUserId: string; createdAt: string }>> {
