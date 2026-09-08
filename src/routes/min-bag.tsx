@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { AlertTriangle, ArrowLeft, CalendarClock, CircleMinus, Clock3, MapPinned, RotateCcw, SlidersHorizontal, X } from "lucide-react";
 import { useState } from "react";
 import {
+  acceptedShots,
   adjustCarryForConditions,
   analyzeGap,
   BAG_CLUB_LIBRARY,
@@ -25,6 +26,7 @@ export const Route = createFileRoute("/min-bag")({
 
 const TEMPERATURES = Array.from({ length: 61 }, (_, index) => index - 10);
 const ELEVATIONS = Array.from({ length: 111 }, (_, index) => -500 + index * 50);
+const FULL_CONFIDENCE_SHOTS = 20;
 
 const BAG_EDITOR_GROUPS = [
   { title: "Woods", clubs: ["Driver", "Mini Driver", "2W", "3W", "4W", "5W", "7W", "9W", "11W"] },
@@ -43,6 +45,18 @@ type OpenGap = {
   targetCarry: number | null;
   seasonalLowConfidence: boolean;
 } | null;
+
+function confidenceLabel(shots: number) {
+  if (shots >= FULL_CONFIDENCE_SHOTS) return "Full";
+  if (shots >= 12) return "Hög";
+  if (shots >= 7) return "Bra";
+  return "Grund";
+}
+
+function confidencePercent(shots: number) {
+  if (shots < 3) return 0;
+  return Math.min(100, Math.round((shots / FULL_CONFIDENCE_SHOTS) * 100));
+}
 
 function seasonForDate(date: Date): Season {
   const month = date.getMonth();
@@ -193,6 +207,7 @@ function MinBagPage() {
   const [temperature, setTemperature] = useState(INDOOR_REFERENCE_TEMPERATURE_C);
   const [elevation, setElevation] = useState(INDOOR_REFERENCE_ELEVATION_M);
   const [openGap, setOpenGap] = useState<OpenGap>(null);
+  const [openConfidenceClubId, setOpenConfidenceClubId] = useState<string | null>(null);
   const [showBagEditor, setShowBagEditor] = useState(false);
   const [bagSelection, setBagSelection] = useState<string[]>([]);
   const [unmappedAfterSave, setUnmappedAfterSave] = useState<string[]>([]);
@@ -231,6 +246,7 @@ function MinBagPage() {
     setBagSelection(safeSelection);
     setLatest(rebuilt);
     setOpenGap(null);
+    setOpenConfidenceClubId(null);
     setShowBagEditor(false);
     setUnmappedAfterSave(unmapped);
   }
@@ -307,6 +323,9 @@ function MinBagPage() {
               const extremeWide = gapAnalysis?.status === "wide" && gapAnalysis.gap >= 23;
               const isUnmapped = !isPutterLabel(club.label) && stock == null;
               const shouldRefresh = !isUnmapped && !isPutterLabel(club.label) && (currentSeasonMismatch || (ageDays ?? 0) > 90);
+              const mappedShots = acceptedShots(club).length;
+              const confidence = confidencePercent(mappedShots);
+              const confidenceOpen = openConfidenceClubId === club.id;
 
               return (
                 <div key={club.id} className="border-b border-border px-5 py-3.5 last:border-b-0">
@@ -321,6 +340,24 @@ function MinBagPage() {
                           <span>{freshnessText(ageDays, updatedAt)}</span>
                         </p>
                       )}
+
+                      {!isPutterLabel(club.label) && mappedShots >= 3 ? (
+                        <button
+                          type="button"
+                          onClick={() => setOpenConfidenceClubId((current) => current === club.id ? null : club.id)}
+                          className="mt-2 w-full max-w-[210px] text-left"
+                          aria-expanded={confidenceOpen}
+                        >
+                          <div className="flex items-center justify-between gap-2 text-[10px] font-semibold">
+                            <span>Confidence · {confidenceLabel(mappedShots)}</span>
+                            <span className="text-muted-foreground">{mappedShots} slag</span>
+                          </div>
+                          <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
+                            <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${confidence}%` }} />
+                          </div>
+                        </button>
+                      ) : null}
+
                       {isUnmapped ? (
                         <button type="button" onClick={() => goToMapping(club.label)} className="mt-2 rounded-full bg-primary px-3 py-1.5 text-[11px] font-semibold text-primary-foreground">Mappa</button>
                       ) : shouldRefresh ? (
@@ -376,12 +413,36 @@ function MinBagPage() {
                       ) : null}
                     </div>
                   </div>
+
+                  {confidenceOpen && !isPutterLabel(club.label) ? (
+                    <div className="mt-3 rounded-xl border border-border bg-muted/40 p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-semibold">{mappedShots} godkända mappade slag</p>
+                          <p className="mt-0.5 text-[11px] text-muted-foreground">3 slag räcker för en aktiv och användbar carry.</p>
+                        </div>
+                        <button type="button" onClick={() => setOpenConfidenceClubId(null)} className="rounded-full p-1 text-muted-foreground"><X className="h-4 w-4" /></button>
+                      </div>
+                      <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+                        Fler registrerade slag höjer confidence utan att göra grundmappningen svårare. {mappedShots >= FULL_CONFIDENCE_SHOTS ? "Du har nått full confidence för antal slag." : `${FULL_CONFIDENCE_SHOTS - mappedShots} fler godkända slag ger full confidence vid ${FULL_CONFIDENCE_SHOTS} slag.`}
+                      </p>
+                      <div className="mt-3 grid grid-cols-4 gap-1.5 text-center text-[9px] font-semibold text-muted-foreground">
+                        <span className={mappedShots >= 3 ? "text-primary" : ""}>3 · Grund</span>
+                        <span className={mappedShots >= 7 ? "text-primary" : ""}>7 · Bra</span>
+                        <span className={mappedShots >= 12 ? "text-primary" : ""}>12 · Hög</span>
+                        <span className={mappedShots >= 20 ? "text-primary" : ""}>20 · Full</span>
+                      </div>
+                      {mappedShots < FULL_CONFIDENCE_SHOTS ? (
+                        <button type="button" onClick={() => goToMapping(club.label)} className="mt-3 w-full rounded-xl border border-border bg-card py-2.5 text-xs font-semibold">Lägg till fler slag</button>
+                      ) : null}
+                    </div>
+                  ) : null}
                 </div>
               );
             })}
           </section>
 
-          <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">Äldre siffror behålls alltid. Säsongsmarkeringar betyder bara att tre nya bollar kan göra längden mer relevant för dagens förhållanden.</p>
+          <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">3 slag räcker för att mappa en klubb. Fler slag höjer confidence över tid. Äldre siffror behålls alltid.</p>
           <Link to="/map-my-bag" className="mt-4 flex w-full items-center justify-center rounded-2xl border border-border bg-card py-4 font-semibold">Se historik / mappa om</Link>
         </>
       )}
