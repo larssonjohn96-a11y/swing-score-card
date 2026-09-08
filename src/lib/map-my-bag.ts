@@ -60,8 +60,6 @@ export const BAG_CLUB_LIBRARY = [
 export const INDOOR_REFERENCE_TEMPERATURE_C = 22;
 export const INDOOR_REFERENCE_ELEVATION_M = 0;
 
-// Practical estimates for carry normalization when launch/spin data is unavailable.
-// Temperature: roughly 1% carry per 10°C. Elevation: roughly 2% per 305 m (1,000 ft).
 const CARRY_PER_C = 0.001;
 const CARRY_PER_M_ELEVATION = 0.02 / 305;
 
@@ -222,10 +220,17 @@ export function clubAgeDays(club: BagClub, now = new Date()): number | null {
 
 export function medianCarry(club: BagClub): number | null {
   if (isPutterLabel(club.label)) return null;
-  const values = acceptedShots(club).map((shot) => shot.carry).filter(Number.isFinite).sort((a, b) => a - b);
-  if (!values.length) return null;
-  const middle = Math.floor(values.length / 2);
-  return values.length % 2 ? values[middle] : (values[middle - 1] + values[middle]) / 2;
+  const latestSession = acceptedShots(club)
+    .filter((shot) => Number.isFinite(shot.carry))
+    .sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt))
+    .slice(-3)
+    .map((shot) => shot.carry)
+    .sort((a, b) => a - b);
+  if (!latestSession.length) return null;
+  const middle = Math.floor(latestSession.length / 2);
+  return latestSession.length % 2
+    ? latestSession[middle]
+    : (latestSession[middle - 1] + latestSession[middle]) / 2;
 }
 
 export function analyzeGap(longerCarry: number, shorterCarry: number): BagGap {
