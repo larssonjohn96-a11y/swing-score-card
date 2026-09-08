@@ -32,6 +32,7 @@ import { loadCardProfile } from "@/lib/rating-card";
 import {
   fetchFriendSnapshot,
   listFriendships,
+  pushPlayerSnapshot,
   type Friendship,
 } from "@/lib/friends-cloud";
 import type { SocialRadarProfile } from "@/lib/social-radar-profile";
@@ -190,12 +191,20 @@ function friendRadarValues(target: CompareTarget, view: View): number[] | undefi
   return target.radarProfile?.puttning;
 }
 
+function hasFriendRadar(target: CompareTarget, view: View) {
+  const values = friendRadarValues(target, view);
+  return Boolean(values && values.length >= 5 && values.some((value) => Number.isFinite(value)));
+}
+
 function applyFriendRadar(rows: Row[], target: CompareTarget, view: View): Row[] {
   const values = friendRadarValues(target, view);
-  if (!values?.length) return rows;
+  if (!target.isFriend || view === "total") return rows;
+  if (!values?.length) {
+    return rows.map((row) => ({ ...row, target: 0, targetRaw: "Detaljdata saknas", targetHcp: undefined }));
+  }
   return rows.map((row, index) => {
     const value = values[index];
-    if (!Number.isFinite(value)) return row;
+    if (!Number.isFinite(value)) return { ...row, target: 0, targetRaw: "Detaljdata saknas", targetHcp: undefined };
     return {
       ...row,
       target: clamp(value),
@@ -232,6 +241,7 @@ export function AnalysisRadarSwitcher({ cats, totalHandicap }: { cats: CategoryH
   const profile = loadCardProfile();
 
   useEffect(() => {
+    void pushPlayerSnapshot();
     void listFriendships().then((result) => setFriends(result.accepted));
   }, []);
 
@@ -244,6 +254,7 @@ export function AnalysisRadarSwitcher({ cats, totalHandicap }: { cats: CategoryH
     return chartRows(applyFriendRadar(rows, target, view));
   }, [view, cats, totalHandicap, target]);
 
+  const friendDetailMissing = Boolean(target.isFriend && view !== "total" && !hasFriendRadar(target, view));
   const targetLabel = target.isFriend ? target.label : target.label === "Tour" ? "Tour" : `HCP ${target.label}`;
 
   async function pickFriend(friendship: Friendship) {
@@ -308,16 +319,18 @@ export function AnalysisRadarSwitcher({ cats, totalHandicap }: { cats: CategoryH
           <PolarGrid stroke="var(--border)" />
           <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} />
           <PolarRadiusAxis domain={[0, 110]} tick={false} axisLine={false} />
-          <Radar name={targetLabel} dataKey="targetChart" stroke="var(--chart-3)" fill="var(--chart-3)" fillOpacity={0.12} strokeWidth={2} dot={{ r: 4, fill: "var(--chart-3)", stroke: "var(--card)", strokeWidth: 1 }} isAnimationActive animationDuration={320} />
+          {!friendDetailMissing ? <Radar name={targetLabel} dataKey="targetChart" stroke="var(--chart-3)" fill="var(--chart-3)" fillOpacity={0.12} strokeWidth={2} dot={{ r: 4, fill: "var(--chart-3)", stroke: "var(--card)", strokeWidth: 1 }} isAnimationActive animationDuration={320} /> : null}
           <Radar name="Du" dataKey="duChart" stroke="var(--chart-4)" fill="var(--chart-4)" fillOpacity={0.28} strokeWidth={2.5} dot={{ r: 4, fill: "var(--chart-4)", stroke: "var(--card)", strokeWidth: 1 }} isAnimationActive animationDuration={320} />
           <Tooltip content={<RadarTooltip targetLabel={targetLabel} />} />
         </RadarChart>
       </ResponsiveContainer>
     </div>
 
+    {friendDetailMissing ? <div className="mt-2 rounded-2xl border border-amber-300/60 bg-amber-50 px-4 py-3 text-xs leading-relaxed text-amber-900">{targetLabel} saknar ännu synkad detaljdata för den här kategorin. Vi visar därför inte en falsk jämn HCP-ring. Profilen uppdateras automatiskt när spelaren öppnar den nya versionen av SG4.</div> : null}
+
     <div className="-mx-1 mt-2 overflow-x-auto px-1 pb-1"><div className="flex w-max min-w-full justify-center gap-1.5">{TABS.map(([key, label]) => <button key={key} type="button" onClick={() => setView(key)} className={`shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-semibold transition-colors ${view === key ? "border-foreground bg-foreground text-background" : "border-border bg-card text-muted-foreground"}`}>{label}</button>)}</div></div>
 
-    <div className="mt-3 flex justify-center gap-4 text-[11px] text-muted-foreground"><span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-chart-4" />Din nivå</span><span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-chart-3" />{targetLabel}</span></div>
+    <div className="mt-3 flex justify-center gap-4 text-[11px] text-muted-foreground"><span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-chart-4" />Din nivå</span>{!friendDetailMissing ? <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-chart-3" />{targetLabel}</span> : null}</div>
 
     <p className="mt-4 text-center text-sm text-muted-foreground">Vill du jämföra med andra spelare?</p>
     <button type="button" onClick={() => setPickerOpen(true)} className="mx-auto mt-2 flex w-fit items-center gap-1.5 rounded-full border border-border px-5 py-2.5 text-sm font-semibold transition-colors hover:border-primary">Jämför<span aria-hidden>›</span></button>
