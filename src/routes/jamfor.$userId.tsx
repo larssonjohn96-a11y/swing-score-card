@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, BarChart3, Dumbbell, Trophy, User } from "lucide-react";
+import { ArrowLeft, BarChart3, Check, ChevronDown, Dumbbell, Trophy, User } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
@@ -89,8 +89,12 @@ function MetricTable({ rows, hcp = false }: { rows:MetricRow[]; hcp?:boolean }) 
 }
 
 function matchRows(left: ComparisonMetric[], right: ComparisonMetric[], focus: Focus): MetricRow[] {
-  const leftFiltered = focus === "all" ? left : left.filter((item) => item.category === focus);
-  const rightFiltered = focus === "all" ? right : right.filter((item) => item.category === focus);
+  const leftFiltered = focus === "all"
+    ? left.filter((item) => item.overview !== false)
+    : left.filter((item) => item.category === focus);
+  const rightFiltered = focus === "all"
+    ? right.filter((item) => item.overview !== false)
+    : right.filter((item) => item.category === focus);
   const rightMap = new Map(rightFiltered.map((item) => [item.key, item]));
   const keys = Array.from(new Set([...leftFiltered.map((item) => item.key), ...rightFiltered.map((item) => item.key)]));
   return keys.map((key) => {
@@ -102,7 +106,7 @@ function matchRows(left: ComparisonMetric[], right: ComparisonMetric[], focus: F
 }
 
 function SectionTitle({ icon: Icon, children }: { icon: typeof BarChart3; children: React.ReactNode }) {
-  return <div className="mb-3 flex items-center gap-2"><Icon className="h-4 w-4 text-primary"/><h2 className="font-display text-2xl">{children}</h2></div>;
+  return <div className="mb-3 flex items-center justify-center gap-2 text-center"><Icon className="h-4 w-4 text-primary"/><h2 className="font-display text-2xl">{children}</h2></div>;
 }
 
 function CompareFriendPage() {
@@ -114,6 +118,7 @@ export function CompareFriendContent({ userId, onBack }: { userId:string; onBack
   useHideBottomNav(true);
   const { user, loading } = useAuth();
   const [focus,setFocus] = useState<Focus>("all");
+  const [focusOpen,setFocusOpen] = useState(false);
   const [friend,setFriend] = useState<Profile|null>(null);
   const [friendSnapshot,setFriendSnapshot] = useState<PlayerSnapshot|null>(null);
   const [selfName,setSelfName] = useState("Du");
@@ -195,13 +200,25 @@ export function CompareFriendContent({ userId, onBack }: { userId:string; onBack
       <div className="flex min-w-0 flex-col items-center text-center"><Avatar name={friend?.displayName ?? "Vän"} url={friend?.avatarUrl} side="right"/><p className="mt-2 max-w-[8rem] truncate text-sm font-bold">{friend?.displayName ?? "Vän"}</p><p className="mt-0.5 text-xs font-semibold text-red-500">HCP {formatHcp(friendSnapshot?.estHcp ?? undefined)}</p></div>
     </section>
 
-    <label className="mt-6 block">
+    <div className="relative mt-6">
       <span className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Jämför kategori</span>
-      <select value={focus} onChange={(event) => setFocus(event.target.value as Focus)} className="h-12 w-full appearance-none rounded-2xl border border-border bg-card px-4 text-sm font-semibold outline-none focus:border-primary">
-        {FOCUS_OPTIONS.map(([key,label]) => <option key={key} value={key}>{label}</option>)}
-      </select>
-      <p className="mt-2 text-xs text-muted-foreground">{focus === "all" ? "Visar hela spelprofilen." : `Visar hela head-to-head för ${focusLabel}.`}</p>
-    </label>
+      <button type="button" onClick={() => setFocusOpen((value) => !value)} className="flex h-12 w-full items-center justify-between rounded-2xl border border-border bg-card px-4 text-sm font-semibold" aria-haspopup="listbox" aria-expanded={focusOpen}>
+        <span>{focusLabel}</span>
+        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${focusOpen ? "rotate-180" : ""}`} />
+      </button>
+      {focusOpen ? (
+        <div className="absolute left-0 right-0 top-[4.6rem] z-30 overflow-hidden rounded-2xl border border-border bg-background p-1.5 shadow-xl" role="listbox" aria-label="Jämför kategori">
+          {FOCUS_OPTIONS.map(([key,label]) => {
+            const active = key === focus;
+            return <button key={key} type="button" onClick={() => { setFocus(key); setFocusOpen(false); }} className={`flex w-full items-center justify-between rounded-xl px-3 py-3 text-left text-sm font-semibold ${active ? "bg-tint-strong text-primary" : "hover:bg-muted/60"}`} role="option" aria-selected={active}>
+              <span>{label}</span>
+              {active ? <Check className="h-4 w-4" /> : null}
+            </button>;
+          })}
+        </div>
+      ) : null}
+      <p className="mt-2 text-xs text-muted-foreground">{focus === "all" ? "Visar de viktigaste statsen från hela spelet." : `Visar en djupare breakdown för ${focusLabel}.`}</p>
+    </div>
 
     {message ? <div className="mt-5 rounded-2xl border border-border bg-card p-4 text-sm text-muted-foreground">{message}</div> : null}
 
