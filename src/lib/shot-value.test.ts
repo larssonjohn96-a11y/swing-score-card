@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { approximateShotLevel, comparePuttingShot, expectedPutts, puttingShotValue, referenceKey, shotValueLabel } from "@/lib/shot-value";
+import {
+  approximateShotLevel,
+  comparePuttingShot,
+  expectedPutts,
+  formatRange,
+  puttingShotValue,
+  referenceKey,
+  roundImpactText,
+  SHOT_VALUE_SCENARIOS,
+  shotValueLabel,
+} from "@/lib/shot-value";
 
 describe("Shot Value putting model", () => {
   it("interpolates expected putts between reference points", () => {
@@ -38,5 +48,31 @@ describe("Shot Value putting model", () => {
     expect(shotValueLabel(0.4)).toBe("Mycket bra");
     expect(shotValueLabel(0)).toBe("Normalt");
     expect(shotValueLabel(-0.4)).toBe("Mycket kostsamt");
+  });
+});
+
+describe("Shot Value reference scenarios", () => {
+  it("contains browsable scenarios for all four categories", () => {
+    expect(new Set(SHOT_VALUE_SCENARIOS.map((scenario) => scenario.category))).toEqual(
+      new Set(["offtee", "approach", "around", "putting"]),
+    );
+  });
+
+  it("keeps scenario and round-impact values as ranges", () => {
+    for (const scenario of SHOT_VALUE_SCENARIOS) {
+      expect(scenario.difference[0]).toBeLessThanOrEqual(scenario.difference[1]);
+      if (scenario.roundImpact) expect(scenario.roundImpact[0]).toBeLessThanOrEqual(scenario.roundImpact[1]);
+    }
+  });
+
+  it("formats educational ranges without false decimal precision", () => {
+    expect(formatRange([2, 4])).toBe("2–4");
+    expect(formatRange([0.4, 0.8])).toBe("0,4–0,8");
+  });
+
+  it("creates broad round-impact copy from a scenario", () => {
+    const scenario = SHOT_VALUE_SCENARIOS.find((item) => item.id === "around-bunker-shortside");
+    expect(scenario).toBeDefined();
+    expect(roundImpactText(scenario!)).toContain("2–4 slag");
   });
 });
