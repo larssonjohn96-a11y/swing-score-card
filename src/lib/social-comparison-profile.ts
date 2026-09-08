@@ -1,9 +1,10 @@
 import { loadOffTeeSessions } from "@/lib/offtee-store";
 import { collectApproachShots } from "@/lib/approach-global";
 import { collectAroundGreenShots } from "@/lib/around-green-global";
-import { collectLagHoleOutStarts, collectPuttStarts, puttingMakeStats } from "@/lib/putting-global";
+import { collectLagHoleOutStarts, collectPuttStarts, groupedLagHoleOutStats, puttingMakeStats } from "@/lib/putting-global";
 import { PROGRESS_TESTS, summarize } from "@/lib/progress";
 import { topScores } from "@/lib/highlights";
+import { LEGACY_KEYS } from "@/lib/sessions/keys";
 
 export type ComparisonCategory = "driving" | "approach" | "around-the-green" | "puttning";
 
@@ -15,6 +16,7 @@ export type ComparisonMetric = {
   decimals: number;
   higherIsBetter: boolean;
   category?: ComparisonCategory;
+  overview?: boolean;
 };
 
 export type ComparisonTrainingResult = ComparisonMetric;
@@ -33,6 +35,8 @@ export type SocialComparisonProfile = {
   records: ComparisonMetric[];
 };
 
+type EightBallSession = { score?: number; scores?: number[] };
+
 const emptyCategoryActivity = (): Record<ComparisonCategory, ComparisonActivity> => ({
   driving: { tests: 0, shots: 0 },
   approach: { tests: 0, shots: 0 },
@@ -47,12 +51,25 @@ const stdDev = (values: number[]) => {
   return Math.sqrt(avg(values.map((value) => (value - mean) ** 2)));
 };
 
-function puttingOneToTwoPct() {
-  const stats = puttingMakeStats(collectPuttStarts());
-  const selected = stats.filter((row) => row.distance > 1 && row.distance <= 2);
-  const attempts = selected.reduce((sum, row) => sum + row.attempts, 0);
-  const made = selected.reduce((sum, row) => sum + row.made, 0);
+function loadEightBallSessions(): EightBallSession[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const parsed = JSON.parse(localStorage.getItem(LEGACY_KEYS.eightBall) || "[]");
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function makePctInRange(min: number, max: number, includeMin = true) {
+  const rows = puttingMakeStats(collectPuttStarts()).filter((row) => includeMin ? row.distance >= min && row.distance <= max : row.distance > min && row.distance <= max);
+  const attempts = rows.reduce((sum, row) => sum + row.attempts, 0);
+  const made = rows.reduce((sum, row) => sum + row.made, 0);
   return attempts ? (made / attempts) * 100 : undefined;
+}
+
+function puttingOneToTwoPct() {
+  return makePctInRange(1, 2, false);
 }
 
 function threePuttAvoidancePct() {
@@ -78,15 +95,36 @@ export function computeLocalComparisonProfile(): SocialComparisonProfile {
     performance.push(
       { key: "avg-drive", label: "Snittdrive", value: avg(totals), unit: "m", decimals: 0, higherIsBetter: true, category: "driving" },
       { key: "fairway", label: "Fairwayträffar", value: teeShots.filter((shot) => Math.abs(shot.sidled) <= 16).length / teeShots.length * 100, unit: "%", decimals: 0, higherIsBetter: true, category: "driving" },
-      { key: "driver-dispersion", label: "Driver dispersion", value: stdDev(sides), unit: "m", decimals: 1, higherIsBetter: false, category: "driving" },
+      { key: "driver-dispersion", label: "Driver dispersion", value: stdDev(sides), unit: "m", decimals: 1, higherIsBetter: false, category: "driving", overview: false },
     );
   }
 
   const oneToTwo = puttingOneToTwoPct();
-  if (oneToTwo !== undefined) performance.push({ key: "putting-1-2", label: "Puttning 1–2 m", value: oneToTwo, unit: "%", decimals: 0, higherIsBetter: true, category: "puttning" });
+  if (oneToTwo !== undefined) performance.push({ key: "putting-1-2", label: "Sänk% 1–2 m", value: oneToTwo, unit: "%", decimals: 0, higherIsBetter: true, category: "puttning" });
 
   const threePutt = threePuttAvoidancePct();
   if (threePutt !== undefined) performance.push({ key: "three-putt-avoid", label: "3-putt avoidance", value: threePutt, unit: "%", decimals: 0, higherIsBetter: true, category: "puttning" });
+
+  const shortPuttBuckets = [
+    { key: "putt-make-1m", label: "1-putt % · 1 m", min: 0, max: 1, includeMin: true },
+    { key: "putt-make-2m", label: "1-putt % · 2 m", min: 1, max: 2, includeMin: false },
+    { key: "putt-make-3m", label: "1-putt % · 3 m", min: 2, max: 3, includeMin: false },
+    { key: "putt-make-4-5m", label: "1-putt % · 4–5 m", min: 3, max: 5, includeMin: false },
+  ] as const;
+  for (const bucket of shortPuttBuckets) {
+    const value = makePctInRange(bucket.min, bucket.max, bucket.includeMin);
+    if (value !== undefined) performance.push({ key: bucket.key, label: bucket.label, value, unit: "%", decimals: 0, higherIsBetter: true, category: "puttning", overview: false });
+  }
+
+  for (const range of groupedLagHoleOutStats()) {
+    if (!range.attempts) continue;
+    const rangeKey = `${range.min}-${range.max}`;
+    performance.push(
+      { key: `lag-avg-${rangeKey}`, label: `Lag · snitt ${range.label}`, value: range.avgPutts, unit: "puttar", decimals: 2, higherIsBetter: false, category: "puttning", overview: false },
+      { key: `lag-1putt-${rangeKey}`, label: `Lag · 1-putt ${range.label}`, value: range.onePuttPct, unit: "%", decimals: 0, higherIsBetter: true, category: "puttning", overview: false },
+      { key: `lag-3putt-${rangeKey}`, label: `Lag · 3-putt ${range.label}`, value: range.threePuttPct, unit: "%", decimals: 0, higherIsBetter: false, category: "puttning", overview: false },
+    );
+  }
 
   for (const item of topScores()) {
     if (item.value === undefined || !Number.isFinite(item.value)) continue;
@@ -107,7 +145,7 @@ export function computeLocalComparisonProfile(): SocialComparisonProfile {
     });
   }
 
-  const training = PROGRESS_TESTS.flatMap((test) => {
+  const training: ComparisonTrainingResult[] = PROGRESS_TESTS.flatMap((test) => {
     const summary = summarize(test);
     if (summary.best === undefined || !Number.isFinite(summary.best)) return [];
     return [{
@@ -121,12 +159,20 @@ export function computeLocalComparisonProfile(): SocialComparisonProfile {
     } satisfies ComparisonTrainingResult];
   });
 
-  const tests = PROGRESS_TESTS.reduce((sum, test) => sum + test.load().length, 0);
+  const eightBallSessions = loadEightBallSessions();
+  const eightBallScores = eightBallSessions.map((session) => session.score).filter((score): score is number => typeof score === "number" && Number.isFinite(score));
+  if (eightBallScores.length) {
+    training.push({ key: "eight-ball", label: "8-bollsövningen", value: Math.max(...eightBallScores), unit: "p", decimals: 0, higherIsBetter: true, category: "around-the-green" });
+  }
+
+  const progressTests = PROGRESS_TESTS.reduce((sum, test) => sum + test.load().length, 0);
+  const tests = progressTests + eightBallSessions.length;
   const approachShots = collectApproachShots().length;
   const aroundShots = collectAroundGreenShots().length;
   const puttShots = collectPuttStarts().length;
   const lagShots = collectLagHoleOutStarts().length;
-  const shots = teeShots.length + approachShots + aroundShots + puttShots + lagShots;
+  const eightBallShots = eightBallSessions.reduce((sum, session) => sum + (Array.isArray(session.scores) ? session.scores.length : 40), 0);
+  const shots = teeShots.length + approachShots + aroundShots + puttShots + lagShots + eightBallShots;
 
   const byCategory = emptyCategoryActivity();
   for (const test of PROGRESS_TESTS) {
@@ -135,7 +181,8 @@ export function computeLocalComparisonProfile(): SocialComparisonProfile {
   }
   byCategory.driving.shots = teeShots.length;
   byCategory.approach.shots = approachShots;
-  byCategory["around-the-green"].shots = aroundShots;
+  byCategory["around-the-green"].tests += eightBallSessions.length;
+  byCategory["around-the-green"].shots = aroundShots + eightBallShots;
   byCategory.puttning.shots = puttShots + lagShots;
 
   return { activity: { tests, shots, byCategory }, performance, training, records };
@@ -163,6 +210,7 @@ export function parseComparisonProfile(value: unknown): SocialComparisonProfile 
         decimals: typeof item.decimals === "number" && Number.isFinite(item.decimals) ? item.decimals : 0,
         higherIsBetter: item.higherIsBetter !== false,
         category,
+        overview: item.overview !== false,
       }];
     });
   };
