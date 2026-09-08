@@ -52,13 +52,16 @@ export type MultiplayerTestAdapter<T = unknown> = {
 export function withMultiplayerTimeout<T>(promise: PromiseLike<T>, ms = 7000): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     const timer = window.setTimeout(() => reject(new Error("Sessionen tog för lång tid att svara.")), ms);
-    promise.then((value) => {
-      window.clearTimeout(timer);
-      resolve(value);
-    }).catch((error) => {
-      window.clearTimeout(timer);
-      reject(error);
-    });
+    Promise.resolve(promise).then(
+      (value) => {
+        window.clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        window.clearTimeout(timer);
+        reject(error);
+      },
+    );
   });
 }
 
