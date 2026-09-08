@@ -1,4 +1,5 @@
 export type ShotValueLevel = "hcp20" | "hcp10" | "scratch" | "tour";
+export type ShotValueCategory = "offtee" | "approach" | "around" | "putting";
 
 export type ShotValueResult = {
   level: ShotValueLevel;
@@ -16,6 +17,19 @@ export type SavedShotReference = {
   createdAt: string;
 };
 
+export type ShotValueScenario = {
+  id: string;
+  category: ShotValueCategory;
+  title: string;
+  situation: string;
+  goodLabel: string;
+  badLabel: string;
+  difference: [number, number];
+  roundImpact?: [number, number];
+  takeaway: string;
+  benchmarkNote: string;
+};
+
 export const SHOT_VALUE_STORAGE_KEY = "sg4:shot-value:references:v1";
 
 export const SHOT_VALUE_LEVELS: Array<{ key: ShotValueLevel; label: string }> = [
@@ -23,6 +37,105 @@ export const SHOT_VALUE_LEVELS: Array<{ key: ShotValueLevel; label: string }> = 
   { key: "hcp10", label: "HCP 10" },
   { key: "scratch", label: "Scratch" },
   { key: "tour", label: "Tour" },
+];
+
+export const SHOT_VALUE_SCENARIOS: ShotValueScenario[] = [
+  {
+    id: "ott-fairway-penalty",
+    category: "offtee",
+    title: "Tee shot · spelbar vs problem",
+    situation: "Samma hål, samma längd från tee",
+    goodLabel: "Fairway / bra vinkel",
+    badLabel: "Recovery eller pliktrisk",
+    difference: [0.5, 1.2],
+    roundImpact: [2, 5],
+    takeaway: "Att hålla bollen spelbar är ofta mycket mer värt än några extra meter.",
+    benchmarkNote: "Bred SG4-referens · exakt värde beror på distans och lie",
+  },
+  {
+    id: "ott-fairway-rough",
+    category: "offtee",
+    title: "Fairway vs lätt ruff",
+    situation: "Bra drive men olika lie",
+    goodLabel: "Fairway",
+    badLabel: "Lätt ruff",
+    difference: [0.1, 0.3],
+    roundImpact: [1, 3],
+    takeaway: "Små lägesfördelar är små per hål men kan bli tydliga över en rond.",
+    benchmarkNote: "Bred SG4-referens",
+  },
+  {
+    id: "approach-safe-shortside",
+    category: "approach",
+    title: "Miss på säkra sidan vs short-side",
+    situation: "Samma approach, två olika missar",
+    goodLabel: "Far side · mycket green",
+    badLabel: "Short-side · lite green",
+    difference: [0.3, 0.7],
+    roundImpact: [2, 4],
+    takeaway: "Säkra sidan ger ofta ett mycket enklare nästa slag även om båda missarna är lika långt från pin.",
+    benchmarkNote: "Bred SG4-referens · educational range",
+  },
+  {
+    id: "approach-fairway-rough-150",
+    category: "approach",
+    title: "150 m · fairway vs ruff",
+    situation: "Samma avstånd till pin",
+    goodLabel: "150 m från fairway",
+    badLabel: "150 m från ruff",
+    difference: [0.2, 0.5],
+    roundImpact: [1, 3],
+    takeaway: "Samma meter betyder inte samma svårighetsgrad. Lie ändrar värdet på nästa slag.",
+    benchmarkNote: "Bred SG4-referens",
+  },
+  {
+    id: "around-bunker-shortside",
+    category: "around",
+    title: "Par 3-miss · bunker",
+    situation: "Båda missarna hamnar greenside",
+    goodLabel: "Far side · mycket green",
+    badLabel: "Short-sided bunker",
+    difference: [0.4, 0.8],
+    roundImpact: [2, 4],
+    takeaway: "Short-sided bunker kan kosta nästan ett helt slag mer än en miss med green att arbeta med.",
+    benchmarkNote: "Bred SG4-referens · exakt värde beror på lie, avstånd och green",
+  },
+  {
+    id: "around-chip-shortside",
+    category: "around",
+    title: "Chip · long-side vs short-side",
+    situation: "Liknande avstånd från green",
+    goodLabel: "Mycket green att jobba med",
+    badLabel: "Kort om landningsyta",
+    difference: [0.2, 0.6],
+    roundImpact: [1, 3],
+    takeaway: "Placeringen av missen kan vara viktigare än själva missavståndet.",
+    benchmarkNote: "Bred SG4-referens",
+  },
+  {
+    id: "putt-2m-make-miss",
+    category: "putting",
+    title: "2 m putt · sänkt vs miss",
+    situation: "Kortputt där utfallet förändrar hålet direkt",
+    goodLabel: "Sänkt",
+    badLabel: "Miss · 1 m kvar",
+    difference: [0.8, 1.1],
+    roundImpact: [2, 4],
+    takeaway: "En missad kortputt kostar mycket mer än den känns eftersom du både missar chansen och fortfarande har ett slag kvar.",
+    benchmarkNote: "Putting bygger på SG4 expected-putts v1",
+  },
+  {
+    id: "putt-lag-10m",
+    category: "putting",
+    title: "10 m lag putt",
+    situation: "Samma startläge, olika fartkontroll",
+    goodLabel: "50–60 cm kvar",
+    badLabel: "2 m kvar",
+    difference: [0.2, 0.5],
+    roundImpact: [1, 3],
+    takeaway: "Bra fartkontroll ser liten ut på ett slag men minskar risken för treputtar under rundan.",
+    benchmarkNote: "Putting bygger på SG4 expected-putts v1",
+  },
 ];
 
 // SG4 reference model v1. Values are expected putts, intentionally rounded and
@@ -79,6 +192,15 @@ export function shotValueLabel(value: number) {
   if (value >= -0.1) return "Normalt";
   if (value >= -0.3) return "Kostsamt";
   return "Mycket kostsamt";
+}
+
+export function formatRange(range: [number, number]) {
+  return `${String(range[0]).replace(".", ",")}–${String(range[1]).replace(".", ",")}`;
+}
+
+export function roundImpactText(scenario: ShotValueScenario) {
+  if (!scenario.roundImpact) return null;
+  return `Om det här mönstret upprepas under en rond kostar det oftast ungefär ${formatRange(scenario.roundImpact)} slag.`;
 }
 
 function roundHalf(value: number) {
