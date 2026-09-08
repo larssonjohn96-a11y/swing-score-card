@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { AlertTriangle, ArrowLeft, Check, Clock3, MapPinned, RotateCcw } from "lucide-react";
-import { useMemo, useState } from "react";
+import { AlertTriangle, ArrowLeft, CircleMinus, Clock3, MapPinned, RotateCcw, X } from "lucide-react";
+import { useState } from "react";
 import {
   adjustCarryForConditions,
   analyzeGap,
@@ -11,6 +11,7 @@ import {
   isPutterLabel,
   latestCompletedBagMap,
   medianCarry,
+  type GapStatus,
 } from "@/lib/map-my-bag";
 
 export const Route = createFileRoute("/min-bag")({
@@ -20,6 +21,14 @@ export const Route = createFileRoute("/min-bag")({
 
 const TEMPERATURES = Array.from({ length: 61 }, (_, index) => index - 10);
 const ELEVATIONS = Array.from({ length: 111 }, (_, index) => -500 + index * 50);
+
+type OpenGap = {
+  clubLabel: string;
+  nextLabel: string;
+  gap: number;
+  status: GapStatus;
+  targetCarry: number | null;
+} | null;
 
 function signed(value: number) {
   const rounded = Math.round(value);
@@ -39,6 +48,44 @@ function freshnessClass(days: number | null) {
   if (days <= 30) return "text-primary";
   if (days <= 90) return "text-foreground";
   return "text-destructive";
+}
+
+function parseIron(label: string) {
+  const match = label.trim().match(/^(\d)i$/i);
+  return match ? Number(match[1]) : null;
+}
+
+function wedgeLoft(label: string): number | null {
+  const clean = label.trim().toUpperCase();
+  const degree = clean.match(/^(\d{2})°$/);
+  if (degree) return Number(degree[1]);
+  if (clean === "PW") return 46;
+  if (clean === "AW" || clean === "GW") return 50;
+  if (clean === "SW") return 56;
+  if (clean === "LW") return 60;
+  return null;
+}
+
+function gapRecommendation(clubLabel: string, nextLabel: string, status: GapStatus, targetCarry: number | null) {
+  if (status === "tight") {
+    return `De här två klubborna täcker nästan samma carry. Kontrollera loft och träffbild – om överlappet består kan en av platserna i bagen användas bättre någon annanstans.`;
+  }
+
+  const firstIron = parseIron(clubLabel);
+  const secondIron = parseIron(nextLabel);
+  if (firstIron != null && secondIron != null && Math.abs(firstIron - secondIron) === 2) {
+    const missing = (firstIron + secondIron) / 2;
+    return `Överväg ett ${missing}i för att fylla luckan runt ${Math.round(targetCarry ?? 0)} m.`;
+  }
+
+  const firstLoft = wedgeLoft(clubLabel);
+  const secondLoft = wedgeLoft(nextLabel);
+  if (firstLoft != null && secondLoft != null && Math.abs(firstLoft - secondLoft) >= 6) {
+    const midpoint = Math.round(((firstLoft + secondLoft) / 2) / 2) * 2;
+    return `Överväg en ${midpoint}° wedge mellan ${clubLabel} och ${nextLabel}. Sikta på ungefär ${Math.round(targetCarry ?? 0)} m carry.`;
+  }
+
+  return `Försök fylla luckan med en klubb som går ungefär ${Math.round(targetCarry ?? 0)} m carry, eller kontrollera om någon av de två befintliga carry-längderna behöver mappas om.`;
 }
 
 function NativeWheel({
@@ -79,17 +126,7 @@ function MinBagPage() {
   const [adjusted, setAdjusted] = useState(false);
   const [temperature, setTemperature] = useState(INDOOR_REFERENCE_TEMPERATURE_C);
   const [elevation, setElevation] = useState(INDOOR_REFERENCE_ELEVATION_M);
-
-  const carryRows = useMemo(() => clubs.filter((club) => medianCarry(club) != null), [clubs]);
-  const gapFlags = useMemo(() => carryRows.flatMap((club, index) => {
-    const next = carryRows[index + 1];
-    if (!next) return [];
-    const currentCarry = medianCarry(club);
-    const nextCarry = medianCarry(next);
-    if (currentCarry == null || nextCarry == null) return [];
-    const analysis = analyzeGap(currentCarry, nextCarry);
-    return analysis.flagged ? [{ club, next, analysis }] : [];
-  }), [carryRows]);
+  const [openGap, setOpenGap] = useState<OpenGap>(null);
 
   function resetConditions() {
     setTemperature(INDOOR_REFERENCE_TEMPERATURE_C);
@@ -120,39 +157,7 @@ function MinBagPage() {
             <span>{latest.location || "Ingen plats"}</span>
           </div>
 
-          {gapFlags.length ? (
-            <section className="mt-5 rounded-2xl border border-border bg-card p-4">
-              <div className="flex items-center gap-2">
-                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-muted"><AlertTriangle className="h-4 w-4" /></span>
-                <div>
-                  <p className="text-sm font-semibold">{gapFlags.length} gap att se över</p>
-                  <p className="text-[11px] text-muted-foreground">SG4 flaggar stora luckor och klubbor som går nästan lika långt.</p>
-                </div>
-              </div>
-              <div className="mt-3 space-y-2">
-                {gapFlags.map(({ club, next, analysis }) => (
-                  <div key={`${club.id}-${next.id}`} className="rounded-xl bg-muted/50 px-3 py-2.5">
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-xs font-semibold">{club.label} → {next.label}</span>
-                      <span className="text-xs font-semibold">{Math.round(analysis.gap)} m</span>
-                    </div>
-                    <p className="mt-1 text-[11px] text-muted-foreground">
-                      {analysis.status === "wide"
-                        ? `Stor lucka. Du saknar ett naturligt fullslag runt ${Math.round(analysis.targetCarry ?? 0)} m.`
-                        : "Klubborna går nästan lika långt. Du kan bära två klubbor för samma jobb."}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </section>
-          ) : carryRows.length > 1 ? (
-            <section className="mt-5 flex items-center gap-3 rounded-2xl border border-border bg-card p-4">
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary"><Check className="h-4 w-4" /></span>
-              <div><p className="text-sm font-semibold">Jämn gapping</p><p className="text-[11px] text-muted-foreground">Inga tydliga gap-problem i dina uppmätta carry-längder.</p></div>
-            </section>
-          ) : null}
-
-          <section className="mt-4 rounded-2xl border border-border bg-card p-3">
+          <section className="mt-5 rounded-2xl border border-border bg-card p-3">
             <div className="grid grid-cols-2 rounded-xl bg-muted p-1">
               <button onClick={() => setAdjusted(false)} className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${!adjusted ? "bg-background shadow-sm" : "text-muted-foreground"}`}>Stock</button>
               <button onClick={() => setAdjusted(true)} className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${adjusted ? "bg-background shadow-sm" : "text-muted-foreground"}`}>Justerat</button>
@@ -189,6 +194,7 @@ function MinBagPage() {
               const gapAnalysis = shown != null && nextShown != null ? analyzeGap(shown, nextShown) : null;
               const ageDays = clubAgeDays(club);
               const updatedAt = clubLastUpdatedAt(club);
+              const extremeWide = gapAnalysis?.status === "wide" && gapAnalysis.gap >= 23;
 
               return (
                 <div key={club.id} className="border-b border-border px-5 py-3.5 last:border-b-0">
@@ -206,16 +212,57 @@ function MinBagPage() {
                         <p className="mt-0.5 text-[10px] text-muted-foreground">Temp {signed(conditions.temperatureDelta)} m · Höjd {signed(conditions.elevationDelta)} m</p>
                       ) : null}
                     </div>
-                    <div className="shrink-0 text-right">
+                    <div className="relative shrink-0 text-right">
                       <div>
                         {adjusted && stock != null ? <span className="mr-2 text-xs text-muted-foreground line-through">{Math.round(stock)}</span> : null}
                         <span className="font-display text-3xl tabular-nums">{shown != null ? Math.round(shown) : "–"}</span>
                         <span className="ml-1 text-xs text-muted-foreground">{shown != null ? "m carry" : ""}</span>
                       </div>
-                      {gapAnalysis ? (
-                        <p className={`text-[10px] font-semibold ${gapAnalysis.flagged ? "text-destructive" : gapAnalysis.status === "healthy" ? "text-primary" : "text-muted-foreground"}`}>
-                          {gapAnalysis.flagged ? "⚠ " : gapAnalysis.status === "healthy" ? "✓ " : ""}{Math.round(gapAnalysis.gap)} m till nästa
-                        </p>
+                      {gapAnalysis?.flagged && nextClub ? (
+                        <button
+                          type="button"
+                          aria-label={`Visa gap-varning mellan ${club.label} och ${nextClub.label}`}
+                          onClick={() => setOpenGap((current) => current?.clubLabel === club.label && current?.nextLabel === nextClub.label ? null : {
+                            clubLabel: club.label,
+                            nextLabel: nextClub.label,
+                            gap: gapAnalysis.gap,
+                            status: gapAnalysis.status,
+                            targetCarry: gapAnalysis.targetCarry,
+                          })}
+                          className={`ml-auto mt-1 inline-flex h-7 items-center gap-1 rounded-full px-2 text-[10px] font-semibold ${
+                            gapAnalysis.status === "tight"
+                              ? "bg-sky-500/10 text-sky-700"
+                              : extremeWide
+                                ? "bg-red-500/10 text-red-700"
+                                : "bg-amber-400/15 text-amber-700"
+                          }`}
+                        >
+                          {gapAnalysis.status === "tight" ? <CircleMinus className="h-3.5 w-3.5" /> : <AlertTriangle className="h-3.5 w-3.5" />}
+                          {Math.round(gapAnalysis.gap)} m
+                        </button>
+                      ) : null}
+
+                      {openGap && nextClub && openGap.clubLabel === club.label && openGap.nextLabel === nextClub.label ? (
+                        <div className="absolute right-0 top-full z-20 mt-2 w-72 rounded-2xl border border-border bg-background p-4 text-left shadow-lg">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className={`text-xs font-semibold ${openGap.status === "tight" ? "text-sky-700" : openGap.gap >= 23 ? "text-red-700" : "text-amber-700"}`}>
+                                {openGap.status === "tight" ? "Klubborna överlappar" : openGap.gap >= 23 ? "Mycket stort gap" : "Stort gap"}
+                              </p>
+                              <p className="mt-1 text-sm font-semibold">{openGap.clubLabel} → {openGap.nextLabel} · {Math.round(openGap.gap)} m</p>
+                            </div>
+                            <button type="button" onClick={() => setOpenGap(null)} className="rounded-full p-1 text-muted-foreground"><X className="h-4 w-4" /></button>
+                          </div>
+                          <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+                            {openGap.status === "tight"
+                              ? "Skillnaden är så liten att klubborna i praktiken kan fylla samma funktion."
+                              : `Riktmärket är ungefär 10–14 m. Här finns en lucka på ${Math.round(openGap.gap)} m.`}
+                          </p>
+                          <div className="mt-3 rounded-xl bg-muted/60 p-3">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Rekommendation</p>
+                            <p className="mt-1 text-xs leading-relaxed">{gapRecommendation(openGap.clubLabel, openGap.nextLabel, openGap.status, openGap.targetCarry)}</p>
+                          </div>
+                        </div>
                       ) : null}
                     </div>
                   </div>
@@ -223,7 +270,7 @@ function MinBagPage() {
               );
             })}
           </section>
-          <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">Riktmärke: ungefär 10–14 m mellan fulla carry-längder. SG4 flaggar tydliga luckor över 16 m och överlapp under 8 m.</p>
+          <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">Riktmärke: ungefär 10–14 m mellan fulla carry-längder. Tryck på en markering till höger för förklaring och rekommendation.</p>
           <Link to="/map-my-bag" className="mt-4 flex w-full items-center justify-center rounded-2xl border border-border bg-card py-4 font-semibold">Se historik / mappa om</Link>
         </>
       )}
