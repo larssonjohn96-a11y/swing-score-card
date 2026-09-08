@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AlertTriangle, ArrowLeft, CircleMinus, MapPinned, RotateCcw, SlidersHorizontal, X } from "lucide-react";
 import { useState } from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   adjustCarryForConditions,
   analyzeGap,
@@ -128,18 +129,25 @@ function gapRecommendation(clubLabel: string, nextLabel: string, status: GapStat
   return `Försök fylla luckan med en klubb runt ${Math.round(targetCarry ?? 0)} m carry, eller mappa om någon av klubborna för att bekräfta gapet.`;
 }
 
-function NativeWheel({ label, value, unit, values, onChange }: { label: string; value: number; unit: string; values: number[]; onChange: (value: number) => void }) {
+function ConditionSelect({ label, value, unit, values, onChange }: { label: string; value: number; unit: string; values: number[]; onChange: (value: number) => void }) {
   return (
-    <label className="rounded-xl border border-border bg-background p-3">
+    <div className="rounded-2xl border border-border bg-background p-3">
       <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{label}</span>
-      <div className="relative mt-1">
-        <select aria-label={label} value={value} onChange={(event) => onChange(Number(event.target.value))} className="w-full appearance-none bg-transparent pr-7 text-2xl font-semibold outline-none">
-          {values.map((item) => <option key={item} value={item}>{item} {unit}</option>)}
-        </select>
-        <span className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">↕</span>
-      </div>
-      <p className="mt-1 text-[10px] text-muted-foreground">Tryck och scrolla</p>
-    </label>
+      <Select value={String(value)} onValueChange={(next) => onChange(Number(next))}>
+        <SelectTrigger aria-label={label} className="mt-2 h-12 rounded-xl border-border bg-card px-3 shadow-none focus:ring-0">
+          <SelectValue>
+            <span className="font-display text-2xl tabular-nums text-foreground">{value} {unit}</span>
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent position="popper" className="max-h-72 rounded-2xl border-border bg-popover p-1 shadow-xl">
+          {values.map((item) => (
+            <SelectItem key={item} value={String(item)} className="rounded-xl py-2.5 text-sm font-semibold">
+              {item} {unit}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
   );
 }
 
@@ -285,15 +293,15 @@ function MinBagPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Spelförhållanden</p>
-                    <p className="mt-1 text-xs text-muted-foreground">Indoor-referens: {INDOOR_REFERENCE_TEMPERATURE_C}°C · havsnivå</p>
+                    <p className="mt-1 text-xs text-muted-foreground">Referens: {INDOOR_REFERENCE_TEMPERATURE_C}°C · havsnivå</p>
                   </div>
                   <button onClick={resetConditions} className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground"><RotateCcw className="h-3.5 w-3.5" /></button>
                 </div>
                 <div className="mt-4 grid grid-cols-2 gap-3">
-                  <NativeWheel label="Temperatur" value={temperature} unit="°C" values={TEMPERATURES} onChange={setTemperature} />
-                  <NativeWheel label="Höjd" value={elevation} unit="m" values={ELEVATIONS} onChange={setElevation} />
+                  <ConditionSelect label="Temperatur" value={temperature} unit="°C" values={TEMPERATURES} onChange={setTemperature} />
+                  <ConditionSelect label="Höjd" value={elevation} unit="m" values={ELEVATIONS} onChange={setElevation} />
                 </div>
-                <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">Justeringen ändrar inte din sparade stock-bag.</p>
+                <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">Beräknad justering · cirka 0,1 % per °C och 2 % per 305 m. En uppskattning som inte ändrar din sparade stock-bag.</p>
               </div>
             ) : null}
           </section>
