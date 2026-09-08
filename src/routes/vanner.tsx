@@ -49,6 +49,12 @@ function FriendsPage() {
   const [searching, setSearching] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [groupSessions, setGroupSessions] = useState<Array<{ id: string; hostUserId: string; createdAt: string }>>([]);
+
+  useEffect(() => {
+    if (!user) { setGroupSessions([]); return; }
+    void listActiveEightBallGroupSessions().then(setGroupSessions);
+  }, [user]);
 
   const refresh = useCallback(async () => {
     if (!user) return setFriendships(EMPTY);
