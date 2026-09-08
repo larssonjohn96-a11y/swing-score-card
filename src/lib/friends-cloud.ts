@@ -17,6 +17,11 @@ import {
   computeLocalSocialRadarProfile,
   type SocialRadarProfile,
 } from "@/lib/social-radar-profile";
+import {
+  computeLocalComparisonProfile,
+  parseComparisonProfile,
+  type SocialComparisonProfile,
+} from "@/lib/social-comparison-profile";
 
 export type Profile = { id: string; displayName: string; avatarUrl: string | null };
 export type FriendshipStatus = "pending" | "accepted" | "declined";
@@ -29,6 +34,7 @@ export type PlayerSnapshot = {
   estHcp:number|null;
   categoryHcp:Partial<Record<CategorySlug,number>>;
   radarProfile: SocialRadarProfile;
+  comparisonProfile: SocialComparisonProfile;
   testCount:number;
   updatedAt:string;
 };
@@ -61,6 +67,7 @@ export async function pushPlayerSnapshot():Promise<void>{
   const cats=computeStableCategoryHandicaps(undefined,real??undefined);
   const byCat=(slug:CategorySlug)=>cats.find(c=>c.slug===slug)?.handicap??null;
   const radarProfile=computeLocalSocialRadarProfile();
+  const comparisonProfile=computeLocalComparisonProfile();
   await (supabase.from("player_snapshots") as any).upsert({
     user_id:userData.user.id,
     rating:card.rating,
@@ -73,6 +80,7 @@ export async function pushPlayerSnapshot():Promise<void>{
     putting_hcp:byCat("puttning"),
     speed_hcp:byCat("speed"),
     radar_profile: radarProfile as any,
+    comparison_profile: comparisonProfile as any,
     test_count:cats.reduce((sum,c)=>sum+c.count,0),
     updated_at:new Date().toISOString(),
   });
@@ -87,6 +95,7 @@ function mapSnapshot(d: any): PlayerSnapshot {
     estHcp:d.est_hcp,
     categoryHcp:{approach:d.approach_hcp??undefined,driving:d.driving_hcp??undefined,"around-the-green":d.around_green_hcp??undefined,puttning:d.putting_hcp??undefined,speed:d.speed_hcp??undefined},
     radarProfile:parseRadarProfile(d.radar_profile),
+    comparisonProfile:parseComparisonProfile(d.comparison_profile),
     testCount:d.test_count,
     updatedAt:d.updated_at,
   };
