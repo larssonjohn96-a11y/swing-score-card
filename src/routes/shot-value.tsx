@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Bookmark, Check, ChevronRight, Crosshair, Flag, Trash2 } from "lucide-react";
+import { ArrowLeft, Bookmark, Check, ChevronRight, Crosshair, Trash2 } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 import {
