@@ -178,8 +178,33 @@ export function loadBagHistory(): BagMap[] {
   } catch { return []; }
 }
 
+function restoreHistoricalClubData(clubs: BagClub[], history: BagMap[]) {
+  return clubs.map((club) => {
+    if (isPutterLabel(club.label) || acceptedShots(club).length > 0) return club;
+
+    const normalizedLabel = club.label.trim().toLowerCase();
+    for (const historicalMap of history) {
+      const historicalClub = historicalMap.clubs.find((candidate) =>
+        candidate.label.trim().toLowerCase() === normalizedLabel && acceptedShots(candidate).length > 0,
+      );
+      if (historicalClub) {
+        return {
+          ...club,
+          shots: historicalClub.shots.map((shot) => ({ ...shot })),
+        };
+      }
+    }
+
+    return club;
+  });
+}
+
 export function completeBagMap(map: BagMap, completedOnly = false): BagMap {
-  const clubs = completedOnly ? map.clubs.filter((club) => isPutterLabel(club.label) || clubComplete(club)) : map.clubs;
+  const history = loadBagHistory();
+  const restoredClubs = restoreHistoricalClubData(map.clubs, history);
+  const clubs = completedOnly
+    ? restoredClubs.filter((club) => isPutterLabel(club.label) || clubComplete(club))
+    : restoredClubs;
   const completed: BagMap = {
     ...normalizeBagOrder({ ...map, clubs }),
     status: "completed",
@@ -187,8 +212,8 @@ export function completeBagMap(map: BagMap, completedOnly = false): BagMap {
     updatedAt: new Date().toISOString(),
   };
   if (typeof window !== "undefined") {
-    const history = loadBagHistory().filter((row) => row.id !== completed.id);
-    localStorage.setItem(HISTORY_KEY, JSON.stringify([completed, ...history]));
+    const nextHistory = history.filter((row) => row.id !== completed.id);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify([completed, ...nextHistory]));
     localStorage.removeItem(DRAFT_KEY);
   }
   return completed;
