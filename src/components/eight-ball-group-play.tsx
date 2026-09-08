@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { ArrowLeft, BarChart3, ChevronDown, Pencil, RotateCcw, Undo2, Users, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
@@ -7,6 +7,7 @@ import {
   correctEightBallGroupScore,
   fetchEightBallGroupSession,
   groupTotals,
+  readEightBallBootstrap,
   recordEightBallGroupScore,
   subscribeEightBallGroupSession,
   undoEightBallGroupScore,
@@ -40,26 +41,20 @@ const LIGHT_SURFACE = {
   "--border": "oklch(0.905 0.016 155)",
 } as unknown as import("react").CSSProperties;
 
-function readBootstrap(sessionId: string): GroupSession | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = window.sessionStorage.getItem(`${BOOTSTRAP_PREFIX}${sessionId}`);
-    return raw ? (JSON.parse(raw) as GroupSession) : null;
-  } catch {
-    return null;
-  }
-}
+export type EightBallGroupPlayProps = {
+  sessionId: string;
+  /** Känd session direkt vid start – gör att spelet aldrig fastnar i laddning. */
+  initialSession?: GroupSession | null;
+};
 
-export const Route = createFileRoute("/8-bollar-grupp/$sessionId")({
-  ssr: false,
-  component: GroupSessionPage,
-});
+export function EightBallGroupPlay({ sessionId, initialSession = null }: EightBallGroupPlayProps) {
 
-function GroupSessionPage() {
   useHideBottomNav(true);
-  const { sessionId } = Route.useParams();
   const { user } = useAuth();
-  const bootstrap = useMemo(() => readBootstrap(sessionId), [sessionId]);
+  const bootstrap = useMemo(
+    () => initialSession ?? readEightBallBootstrap(sessionId),
+    [initialSession, sessionId],
+  );
   const [session, setSession] = useState<GroupSession | null>(bootstrap);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -70,7 +65,7 @@ function GroupSessionPage() {
 
   const refresh = useCallback(async () => {
     try {
-      const next = await fetchEightBallGroupSession(sessionId);
+      const next = await fetchEightBallGroupSession(sessionId, { live: true });
       if (next) {
         setSession(next);
         setLoadError(null);
@@ -91,7 +86,7 @@ function GroupSessionPage() {
     const timer = window.setTimeout(() => {
       if (active) setLoadError("Spelet svarade inte. Försök igen.");
     }, 3500);
-    void fetchEightBallGroupSession(sessionId)
+    void fetchEightBallGroupSession(sessionId, { live: true })
       .then((next) => {
         if (!active) return;
         if (next) setSession(next);
