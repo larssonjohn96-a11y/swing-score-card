@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
-import { ChevronRight, Home, ListChecks, Menu, Plus, Trophy, TrendingUp, Users, Golf } from "lucide-react";
+import { ChevronRight, Home, ListChecks, Menu, Plus, Trophy, TrendingUp, Users } from "lucide-react";
 import { useBottomNavVisibility } from "@/lib/bottom-nav-visibility";
 import { CATEGORIES } from "@/lib/categories";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -19,7 +19,7 @@ const RIGHT_TABS = [
 
 const MORE_LINKS = [
   { to: "/trophy", label: "Trophy Room", description: "Personliga rekord, milestones och achievements.", icon: Trophy },
-  { to: "/min-bag", label: "My Bag", description: "Öppna din mappade bag – eller starta mappning om du inte har gjort den ännu.", icon: Golf },
+  { to: "/min-bag", label: "My Bag", description: "Öppna din mappade bag – eller starta mappning om du inte har gjort den ännu.", icon: ListChecks },
   { to: "/jamfor", label: "Head-to-head", description: "Jämför din profil mot andra spelare.", icon: Users },
   { to: "/vanner", label: "Vänner", description: "Hantera vänner och sociala funktioner.", icon: Users },
 ] as const;
