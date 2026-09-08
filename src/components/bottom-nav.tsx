@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
-import { ChevronRight, Home, ListChecks, Plus, Trophy, TrendingUp } from "lucide-react";
+import { ChevronRight, Home, ListChecks, Menu, Plus, Trophy, TrendingUp, Users, Golf, Map } from "lucide-react";
 import { useBottomNavVisibility } from "@/lib/bottom-nav-visibility";
 import { CATEGORIES } from "@/lib/categories";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -16,6 +16,13 @@ const LEFT_TABS = [
 const RIGHT_TABS = [
   { to: "/utveckling", label: "Utveckling", icon: TrendingUp, exact: false },
   { to: "/trophy", label: "Trophy", icon: Trophy, exact: false },
+] as const;
+
+const MORE_LINKS = [
+  { to: "/min-bag", label: "My Bag", description: "Se och redigera klubborna i din bag.", icon: Golf },
+  { to: "/map-my-bag", label: "Map My Bag", description: "Mappa carry och gapping för klubborna.", icon: Map },
+  { to: "/jamfor", label: "Head-to-head", description: "Jämför din profil mot andra spelare.", icon: Users },
+  { to: "/vanner", label: "Vänner", description: "Hantera vänner och sociala funktioner.", icon: Users },
 ] as const;
 
 function NavLink({
@@ -56,6 +63,7 @@ export function BottomNav() {
   const { hidden } = useBottomNavVisibility();
   const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const [trophyBadge, setTrophyBadge] = useState(0);
 
   useEffect(() => {
@@ -68,7 +76,7 @@ export function BottomNav() {
   return (
     <>
       <nav className="fixed bottom-0 left-0 right-0 z-40 h-16 border-t border-border bg-card shadow-[0_-8px_24px_-24px_oklch(0.3_0.06_160/0.6)]">
-        <div className="mx-auto flex h-full w-full max-w-md items-center px-2">
+        <div className="mx-auto flex h-full w-full max-w-md items-center px-1">
           {LEFT_TABS.map((tab) => (
             <NavLink
               key={tab.to}
@@ -96,6 +104,20 @@ export function BottomNav() {
               badge={tab.to === "/trophy" ? trophyBadge : undefined}
             />
           ))}
+
+          <button
+            type="button"
+            onClick={() => setMoreOpen(true)}
+            className="flex flex-1 flex-col items-center gap-1 py-2 active:scale-95"
+            aria-label="Mer"
+          >
+            <span className={`flex h-8 w-9 items-center justify-center rounded-xl transition-colors ${moreOpen ? "bg-tint-strong text-primary" : "text-muted-foreground"}`}>
+              <Menu className="h-5 w-5" />
+            </span>
+            <span className={`text-[10px] font-medium uppercase tracking-wide ${moreOpen ? "font-semibold text-primary" : "text-muted-foreground"}`}>
+              Mer
+            </span>
+          </button>
         </div>
       </nav>
 
@@ -118,9 +140,7 @@ export function BottomNav() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <h3 className="text-lg leading-none">{c.title}</h3>
-                    <span className="rounded-full bg-tint-strong px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-primary">
-                      HCP
-                    </span>
+                    <span className="rounded-full bg-tint-strong px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-primary">HCP</span>
                   </div>
                   <p className="mt-1 text-[11px] leading-snug text-muted-foreground line-clamp-1">{c.description}</p>
                   <p className="mt-1 text-[10px] font-semibold text-flag">Gör testet · få din nivå</p>
@@ -137,17 +157,40 @@ export function BottomNav() {
                 className="group flex items-center gap-3 rounded-2xl border border-border bg-muted/55 px-4 py-3.5 transition-colors hover:border-primary hover:bg-muted/70"
               >
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-lg leading-none">Träningstester</h3>
-                    <span className="rounded-full bg-background/80 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                      Träning
-                    </span>
-                  </div>
+                  <div className="flex items-center gap-2"><h3 className="text-lg leading-none">Träningstester</h3><span className="rounded-full bg-background/80 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Träning</span></div>
                   <p className="mt-1 text-[11px] leading-snug text-muted-foreground">Träna med syfte och följ din utveckling över tid.</p>
                 </div>
                 <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
               </Link>
             </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
+        <SheetContent side="bottom" className="rounded-t-3xl px-5 pb-6 pt-5">
+          <SheetHeader className="space-y-1">
+            <SheetTitle className="text-left text-2xl">Mer</SheetTitle>
+            <p className="text-left text-xs text-muted-foreground">Snabbvägar till fler delar av SG4.</p>
+          </SheetHeader>
+          <div className="mt-4 space-y-2">
+            {MORE_LINKS.map((item) => (
+              <Link
+                key={item.to}
+                to={item.to as any}
+                onClick={() => setMoreOpen(false)}
+                className="group flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3.5 transition-colors hover:border-primary hover:bg-tint"
+              >
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-tint-strong text-primary">
+                  <item.icon className="h-5 w-5" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-base font-semibold leading-none">{item.label}</h3>
+                  <p className="mt-1 text-[11px] leading-snug text-muted-foreground">{item.description}</p>
+                </div>
+                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+              </Link>
+            ))}
           </div>
         </SheetContent>
       </Sheet>
