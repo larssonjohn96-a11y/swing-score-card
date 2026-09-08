@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, BarChart3, Bookmark, Check, ChevronRight, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { ShotRoundImpact } from "@/components/shot-round-impact";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 import {
   approximateShotLevel,
@@ -45,6 +46,14 @@ function signed(value: number) {
   return `${rounded > 0 ? "+" : rounded < 0 ? "−" : ""}${text}`;
 }
 
+function suggestedRoundFrequency(startDistance: number) {
+  if (startDistance <= 2) return 4;
+  if (startDistance <= 5) return 5;
+  if (startDistance <= 10) return 4;
+  if (startDistance <= 15) return 3;
+  return 2;
+}
+
 function ShotValuePage() {
   useHideBottomNav(true);
   const [category, setCategory] = useState<Category>("putting");
@@ -53,6 +62,7 @@ function ShotValuePage() {
   const [holed, setHoled] = useState(true);
   const [remainingDistance, setRemainingDistance] = useState(0.6);
   const [showResult, setShowResult] = useState(false);
+  const [roundFrequency, setRoundFrequency] = useState(4);
   const [saved, setSaved] = useState<SavedShotReference[]>(() => loadSavedShotReferences());
   const [savedFeedback, setSavedFeedback] = useState(false);
 
@@ -61,6 +71,17 @@ function ShotValuePage() {
   const hcp10 = result.find((row) => row.level === "hcp10")?.value ?? 0;
 
   function calculate() {
+    setRoundFrequency(suggestedRoundFrequency(startDistance));
+    setShowResult(true);
+    setSavedFeedback(false);
+  }
+
+  function openReference(start: number, holedResult: boolean, leave: number) {
+    setStartDistance(start);
+    setHoled(holedResult);
+    setRemainingDistance(leave);
+    setRoundFrequency(suggestedRoundFrequency(start));
+    setCalculatorOpen(true);
     setShowResult(true);
     setSavedFeedback(false);
   }
@@ -85,8 +106,19 @@ function ShotValuePage() {
       <section className="mt-7 text-center">
         <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-foreground text-background"><BarChart3 className="h-8 w-8" /></div>
         <h2 className="mt-5 font-display text-4xl uppercase leading-none">Vad är slaget värt?</h2>
-        <p className="mx-auto mt-3 max-w-xs text-sm leading-relaxed text-muted-foreground">Ett enkelt facit i fickan. Se ungefär vilken nivå ett enskilt slag motsvarar och hur mycket mark det vinner eller tappar mot olika spelarnivåer.</p>
-        <button type="button" onClick={() => { setCalculatorOpen(true); setShowResult(false); }} className="mt-5 w-full rounded-2xl bg-primary py-4 font-semibold text-primary-foreground">Beräkna ett slag</button>
+        <p className="mx-auto mt-3 max-w-xs text-sm leading-relaxed text-muted-foreground">Se hur bra ett slag faktiskt var, vilken nivå utfallet motsvarar och vad samma kvalitet kan betyda över en hel rond.</p>
+        <button type="button" onClick={() => { setCalculatorOpen(true); setShowResult(false); setSavedFeedback(false); }} className="mt-5 w-full rounded-2xl bg-primary py-4 font-semibold text-primary-foreground">Beräkna ett slag</button>
+
+        <div className="mt-4 overflow-hidden rounded-3xl border border-border bg-card text-left">
+          <div className="grid grid-cols-[1fr_auto_1fr_auto_1fr] items-center px-3 py-4 text-center">
+            <div><p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">1 slag</p><p className="mt-1 text-sm font-bold">+0,3</p></div>
+            <span className="text-muted-foreground">×</span>
+            <div><p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">5 lägen</p><p className="mt-1 text-sm font-bold">per rond</p></div>
+            <span className="text-muted-foreground">=</span>
+            <div><p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Rondeffekt</p><p className="mt-1 text-sm font-bold text-primary">+1,5 slag</p></div>
+          </div>
+          <p className="border-t border-border px-4 py-3 text-center text-[10px] leading-relaxed text-muted-foreground">Shot Value gör små skillnader begripliga: ett slag kan vara litet i sig men viktigt om situationen återkommer.</p>
+        </div>
       </section>
 
       <section className="mt-7">
@@ -102,7 +134,7 @@ function ShotValuePage() {
               <div className="border-b border-border px-4 py-3"><p className="text-sm font-bold">{card.title}</p><p className="mt-0.5 text-[11px] text-muted-foreground">Jämfört mot HCP 10</p></div>
               {card.outcomes.map((outcome, index) => {
                 const value = puttingShotValue(card.start, outcome.holed, outcome.leave, "hcp10");
-                return <button key={outcome.label} type="button" onClick={() => { setStartDistance(card.start); setHoled(outcome.holed); setRemainingDistance(outcome.leave); setCalculatorOpen(true); setShowResult(true); }} className={`grid w-full grid-cols-[1fr_auto] items-center gap-3 px-4 py-3 text-left ${index ? "border-t border-border/60" : ""}`}>
+                return <button key={outcome.label} type="button" onClick={() => openReference(card.start, outcome.holed, outcome.leave)} className={`grid w-full grid-cols-[1fr_auto] items-center gap-3 px-4 py-3 text-left ${index ? "border-t border-border/60" : ""}`}>
                   <div><p className="text-sm font-semibold">{outcome.label}</p><p className="mt-0.5 text-[10px] uppercase tracking-[0.12em] text-muted-foreground">{shotValueLabel(value)}</p></div>
                   <span className={`rounded-xl px-2.5 py-1.5 text-sm font-bold tabular-nums ${value > 0.1 ? "bg-primary/10 text-primary" : value < -0.1 ? "bg-red-500/10 text-red-600" : "bg-muted text-foreground"}`}>{signed(value)}</span>
                 </button>;
@@ -118,13 +150,13 @@ function ShotValuePage() {
         {saved.length ? <div className="mt-4 overflow-hidden rounded-3xl border border-border bg-card">{saved.map((item, index) => {
           const value = puttingShotValue(item.startDistanceM, item.holed, item.remainingDistanceM, "hcp10");
           return <div key={item.id} className={`flex items-center gap-3 px-4 py-3.5 ${index ? "border-t border-border/70" : ""}`}>
-            <div className="min-w-0 flex-1"><div className="flex items-center gap-2"><span className="rounded-full bg-tint-strong px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-primary">Putting</span>{item.count > 1 ? <span className="text-[10px] text-muted-foreground">×{item.count}</span> : null}</div><p className="mt-1.5 text-sm font-semibold">{item.startDistanceM} m → {item.holed ? "Sänkt" : `${item.remainingDistanceM} m kvar`}</p><p className="mt-0.5 text-[11px] text-muted-foreground">{shotValueLabel(value)} · vs HCP 10 {signed(value)}</p></div>
+            <button type="button" onClick={() => openReference(item.startDistanceM, item.holed, item.remainingDistanceM)} className="min-w-0 flex-1 text-left"><div className="flex items-center gap-2"><span className="rounded-full bg-tint-strong px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-primary">Putting</span>{item.count > 1 ? <span className="text-[10px] text-muted-foreground">×{item.count}</span> : null}</div><p className="mt-1.5 text-sm font-semibold">{item.startDistanceM} m → {item.holed ? "Sänkt" : `${item.remainingDistanceM} m kvar`}</p><p className="mt-0.5 text-[11px] text-muted-foreground">{shotValueLabel(value)} · vs HCP 10 {signed(value)} · tryck för rondeffekt</p></button>
             <button type="button" onClick={() => removeSaved(item.id)} className="inline-flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground" aria-label="Ta bort"><Trash2 className="h-4 w-4" /></button>
           </div>;
         })}</div> : <div className="mt-4 rounded-3xl border border-dashed border-border bg-card/60 p-6 text-center"><Bookmark className="mx-auto h-5 w-5 text-muted-foreground"/><p className="mt-2 text-sm font-semibold">Inga sparade referensslag ännu</p><p className="mt-1 text-xs text-muted-foreground">Beräkna ett slag och spara det som ditt eget facit.</p></div>}
       </section>
 
-      <p className="mt-7 text-center text-[10px] leading-relaxed text-muted-foreground">Shot Value v1 använder en förenklad SG4-referensmodell för putting. Resultat visas med avsiktlig avrundning och ska läsas som ungefärliga riktmärken, inte exakt strokes-gained-data.</p>
+      <p className="mt-7 text-center text-[10px] leading-relaxed text-muted-foreground">Shot Value v1 använder en förenklad SG4-referensmodell för putting. Resultat och rondeffekt visas med avsiktlig avrundning och ska läsas som ungefärliga riktmärken.</p>
 
       {calculatorOpen ? <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/45 p-3 sm:items-center" role="dialog" aria-modal="true" aria-label="Beräkna Shot Value">
         <div className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-3xl bg-background p-5 shadow-xl">
@@ -138,6 +170,9 @@ function ShotValuePage() {
             <section className="mt-5 rounded-3xl bg-foreground p-5 text-background text-center"><p className="text-[10px] font-semibold uppercase tracking-[0.18em] opacity-70">Det här enskilda slaget</p><p className="mt-2 font-display text-4xl uppercase">≈ {approximateLevel?.label ?? "–"}</p><p className="mt-2 text-sm opacity-80">{startDistance} m → {holed ? "sänkt" : `${remainingDistance} m kvar`}</p></section>
             <section className="mt-4"><div className="mb-3 text-center"><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Värde mot olika nivåer</p><h3 className="mt-1 font-display text-2xl uppercase">{shotValueLabel(hcp10)} slag</h3></div><div className="overflow-hidden rounded-3xl border border-border bg-card">{result.map((row, index) => <div key={row.level} className={`grid grid-cols-[1fr_auto] items-center gap-3 px-4 py-3.5 ${index ? "border-t border-border/70" : ""}`}><div><p className="text-sm font-semibold">mot {row.label}</p><p className="mt-0.5 text-[11px] text-muted-foreground">{row.value > 0.1 ? "Du vann mark" : row.value < -0.1 ? "Du tappade mark" : "Ungefär neutral"}</p></div><span className={`rounded-xl px-3 py-1.5 text-base font-bold tabular-nums ${row.value > 0.1 ? "bg-primary/10 text-primary" : row.value < -0.1 ? "bg-red-500/10 text-red-600" : "bg-muted"}`}>{signed(row.value)}</span></div>)}</div></section>
             <p className="mt-4 rounded-2xl bg-muted/60 p-3 text-xs leading-relaxed text-muted-foreground">{hcp10 > 0.1 ? `Bra slag — du vann ungefär ${Math.abs(Math.round(hcp10 * 10) / 10).toFixed(1).replace(".", ",")} slag mot en HCP 10-spelare.` : hcp10 < -0.1 ? `Kostsamt slag — du tappade ungefär ${Math.abs(Math.round(hcp10 * 10) / 10).toFixed(1).replace(".", ",")} slag mot en HCP 10-spelare.` : "Slaget var ungefär neutralt mot en HCP 10-spelare."}</p>
+
+            <ShotRoundImpact shotValue={hcp10} frequency={roundFrequency} onFrequencyChange={setRoundFrequency} />
+
             <div className="mt-4 grid grid-cols-2 gap-2"><button type="button" onClick={saveCurrent} className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary py-3.5 text-sm font-semibold text-primary-foreground">{savedFeedback ? <Check className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}{savedFeedback ? "Sparat" : "Spara referens"}</button><button type="button" onClick={() => setShowResult(false)} className="rounded-2xl border border-border bg-card py-3.5 text-sm font-semibold">Nytt slag</button></div>
             <Link to="/kategori/$slug" params={{ slug: "puttning" }} className="mt-3 flex w-full items-center justify-between rounded-2xl border border-border bg-card px-4 py-3.5"><div><p className="text-sm font-semibold">Liknande slag i SG4</p><p className="mt-0.5 text-xs text-muted-foreground">Öppna puttingtester och träna detta område.</p></div><span className="inline-flex items-center gap-1 text-xs font-semibold text-primary">Träna detta <ChevronRight className="h-4 w-4" /></span></Link>
           </>}
