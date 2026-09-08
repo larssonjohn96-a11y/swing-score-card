@@ -96,9 +96,13 @@ function matchRows(left: ComparisonMetric[], right: ComparisonMetric[], focus: F
 }
 
 function CompareFriendPage() {
+  const { userId } = Route.useParams();
+  return <CompareFriendContent userId={userId} />;
+}
+
+export function CompareFriendContent({ userId, onBack }: { userId:string; onBack?:()=>void }) {
   useHideBottomNav(true);
   const { user, loading } = useAuth();
-  const { userId } = Route.useParams();
   const [tab,setTab] = useState<Tab>("overview");
   const [focus,setFocus] = useState<Focus>("all");
   const [friend,setFriend] = useState<Profile|null>(null);
@@ -171,7 +175,7 @@ function CompareFriendPage() {
 
   return <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-10 pt-7">
     <header className="flex items-center justify-between">
-      <Link to="/jamfor" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card" aria-label="Tillbaka"><ArrowLeft className="h-4 w-4" /></Link>
+      {onBack ? <button type="button" onClick={onBack} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card" aria-label="Tillbaka"><ArrowLeft className="h-4 w-4" /></button> : <Link to="/jamfor" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card" aria-label="Tillbaka"><ArrowLeft className="h-4 w-4" /></Link>}
       <div className="text-center"><p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">SG4 Social</p><h1 className="font-display text-3xl">Head-to-head</h1></div>
       <span className="h-10 w-10" />
     </header>
