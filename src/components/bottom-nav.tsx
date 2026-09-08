@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
-import { ChevronRight, Home, ListChecks, Menu, Plus, Trophy, TrendingUp, Users, Golf, Map } from "lucide-react";
+import { ChevronRight, Home, ListChecks, Menu, Plus, Trophy, TrendingUp, Users, Golf } from "lucide-react";
 import { useBottomNavVisibility } from "@/lib/bottom-nav-visibility";
 import { CATEGORIES } from "@/lib/categories";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -19,8 +19,7 @@ const RIGHT_TABS = [
 ] as const;
 
 const MORE_LINKS = [
-  { to: "/min-bag", label: "My Bag", description: "Se och redigera klubborna i din bag.", icon: Golf },
-  { to: "/map-my-bag", label: "Map My Bag", description: "Mappa carry och gapping för klubborna.", icon: Map },
+  { to: "/min-bag", label: "My Bag", description: "Öppna din mappade bag – eller starta mappning om du inte har gjort den ännu.", icon: Golf },
   { to: "/jamfor", label: "Head-to-head", description: "Jämför din profil mot andra spelare.", icon: Users },
   { to: "/vanner", label: "Vänner", description: "Hantera vänner och sociala funktioner.", icon: Users },
 ] as const;
