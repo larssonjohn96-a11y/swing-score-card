@@ -6,6 +6,7 @@ import { fetchFriendSnapshot, listFriendships, type Friendship } from "@/lib/fri
 import { loadCardProfile } from "@/lib/rating-card";
 import { computeStableCategoryHandicaps } from "@/lib/category-index";
 import { computeEstimatedHandicap, loadRealHandicap } from "@/lib/sg-handicap";
+import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -18,6 +19,7 @@ function initials(name:string){return name.split(/\s+/).filter(Boolean).slice(0,
 function formatHcp(value:number|undefined|null){if(value===undefined||value===null||!Number.isFinite(value))return "–";const abs=Math.abs(value).toFixed(1).replace(".0","").replace(".",",");return value<0?`+${abs}`:abs}
 
 function ComparePickerPage(){
+  useHideBottomNav(true);
   const {user,loading}=useAuth();
   const [friends,setFriends]=useState<Friendship[]>([]);
   const [selfName,setSelfName]=useState("Du");
@@ -47,12 +49,7 @@ function ComparePickerPage(){
     setFriendHcp(snapshot?.estHcp??snapshot?.realHcp??undefined);
   }
 
-  function compare(){
-    if(!selectedFriend)return;
-    window.location.assign(`/jamfor/${selectedFriend.other.id}`);
-  }
-
-  return <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-28 pt-7">
+  return <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-10 pt-7">
     <header className="flex items-center justify-between">
       <Link to="/utveckling" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card" aria-label="Tillbaka"><ArrowLeft className="h-4 w-4"/></Link>
       <div className="text-center"><p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">SG4 Social</p><h1 className="font-display text-3xl">Jämför</h1></div>
@@ -83,7 +80,7 @@ function ComparePickerPage(){
 
     {loading?<p className="mt-6 text-center text-sm text-muted-foreground">Laddar …</p>:!user?<div className="mt-6 rounded-3xl border border-border bg-card p-5 text-center text-sm text-muted-foreground">Logga in för att jämföra med vänner.</div>:!friends.length?<div className="mt-6 rounded-3xl border border-border bg-card p-5 text-center"><p className="text-sm text-muted-foreground">Du har inga accepterade vänner ännu.</p><Link to="/vanner" className="mt-3 inline-flex rounded-full border border-border px-4 py-2 text-xs font-semibold text-primary">Lägg till vänner</Link></div>:null}
 
-    <button type="button" onClick={compare} disabled={!selectedFriend} className={`mt-7 w-full rounded-2xl py-4 font-display text-xl transition-all ${selectedFriend?"bg-foreground text-background shadow-sm active:scale-[0.99]":"bg-muted text-muted-foreground opacity-35 cursor-not-allowed"}`}>Jämför</button>
+    {selectedFriend ? <Link to={`/jamfor/${selectedFriend.other.id}` as any} className="mt-7 flex w-full items-center justify-center rounded-2xl bg-foreground py-4 font-display text-xl text-background shadow-sm transition-all active:scale-[0.99]">Jämför</Link> : <button type="button" disabled className="mt-7 w-full cursor-not-allowed rounded-2xl bg-muted py-4 font-display text-xl text-muted-foreground opacity-35">Jämför</button>}
 
     <Sheet open={pickerOpen} onOpenChange={setPickerOpen}>
       <SheetContent side="bottom" className="mx-auto max-h-[78vh] max-w-md overflow-y-auto rounded-t-3xl px-5 pb-8">
