@@ -1,16 +1,20 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { AlertTriangle, ArrowLeft, CircleMinus, Clock3, MapPinned, RotateCcw, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CircleMinus, Clock3, MapPinned, RotateCcw, SlidersHorizontal, X } from "lucide-react";
 import { useState } from "react";
 import {
   adjustCarryForConditions,
   analyzeGap,
+  BAG_CLUB_LIBRARY,
   clubAgeDays,
   clubLastUpdatedAt,
+  completeBagMap,
   INDOOR_REFERENCE_ELEVATION_M,
   INDOOR_REFERENCE_TEMPERATURE_C,
   isPutterLabel,
   latestCompletedBagMap,
+  MAX_BAG_CLUBS,
   medianCarry,
+  type BagMap,
   type GapStatus,
 } from "@/lib/map-my-bag";
 
@@ -21,6 +25,14 @@ export const Route = createFileRoute("/min-bag")({
 
 const TEMPERATURES = Array.from({ length: 61 }, (_, index) => index - 10);
 const ELEVATIONS = Array.from({ length: 111 }, (_, index) => -500 + index * 50);
+
+const BAG_EDITOR_GROUPS = [
+  { title: "Putter", clubs: ["Putter"] },
+  { title: "Woods", clubs: ["Driver", "Mini Driver", "2W", "3W", "4W", "5W", "7W", "9W", "11W"] },
+  { title: "Hybrids", clubs: ["2H", "3H", "4H", "5H", "6H", "7H"] },
+  { title: "Irons", clubs: ["1i", "2i", "3i", "4i", "5i", "6i", "7i", "8i", "9i", "Driving Iron"] },
+  { title: "Wedges", clubs: ["PW", "AW", "GW", "SW", "LW", "46°", "48°", "50°", "52°", "54°", "56°", "58°", "60°", "62°", "64°"] },
+] as const;
 
 type OpenGap = {
   clubLabel: string;
@@ -68,7 +80,7 @@ function wedgeLoft(label: string): number | null {
 
 function gapRecommendation(clubLabel: string, nextLabel: string, status: GapStatus, targetCarry: number | null) {
   if (status === "tight") {
-    return `De här två klubborna täcker nästan samma carry. Kontrollera loft och träffbild – om överlappet består kan en av platserna i bagen användas bättre någon annanstans.`;
+    return "De här två klubborna täcker nästan samma carry. Kontrollera loft och träffbild – om överlappet består kan en av platserna i bagen användas bättre någon annanstans.";
   }
 
   const firstIron = parseIron(clubLabel);
@@ -120,24 +132,95 @@ function NativeWheel({
   );
 }
 
+function rebuildBagFromSelection(current: BagMap, selectedLabels: string[]) {
+  const now = new Date().toISOString();
+  const selected = Array.from(new Set(selectedLabels));
+  if (!selected.some(isPutterLabel)) selected.push("Putter");
+
+  const retainedByLabel = new Map(current.clubs.map((club) => [club.label.toLowerCase(), club]));
+  const libraryLabels = BAG_CLUB_LIBRARY as readonly string[];
+  const known = libraryLabels.filter((label) => selected.includes(label) && !isPutterLabel(label));
+  const custom = selected.filter((label) => !libraryLabels.includes(label) && !isPutterLabel(label));
+  const orderedLabels = [...known, ...custom, "Putter"].slice(0, MAX_BAG_CLUBS);
+
+  const rebuilt: BagMap = {
+    ...current,
+    id: `${Date.now()}-bag-edit`,
+    status: "draft",
+    createdAt: now,
+    updatedAt: now,
+    completedAt: undefined,
+    clubs: orderedLabels.map((label, order) => {
+      const retained = retainedByLabel.get(label.toLowerCase());
+      return retained
+        ? { ...retained, order }
+        : { id: `${Date.now()}-${order}-${label}`, label, order, shots: [] };
+    }),
+  };
+
+  return completeBagMap(rebuilt, false);
+}
+
 function MinBagPage() {
-  const latest = latestCompletedBagMap();
+  const [latest, setLatest] = useState(() => latestCompletedBagMap());
   const clubs = latest ? [...latest.clubs].reverse() : [];
   const [adjusted, setAdjusted] = useState(false);
   const [temperature, setTemperature] = useState(INDOOR_REFERENCE_TEMPERATURE_C);
   const [elevation, setElevation] = useState(INDOOR_REFERENCE_ELEVATION_M);
   const [openGap, setOpenGap] = useState<OpenGap>(null);
+  const [showBagEditor, setShowBagEditor] = useState(false);
+  const [bagSelection, setBagSelection] = useState<string[]>([]);
 
   function resetConditions() {
     setTemperature(INDOOR_REFERENCE_TEMPERATURE_C);
     setElevation(INDOOR_REFERENCE_ELEVATION_M);
   }
 
+  function openBagEditor() {
+    if (!latest) return;
+    const labels = latest.clubs.map((club) => club.label);
+    if (!labels.some(isPutterLabel)) labels.push("Putter");
+    setBagSelection(Array.from(new Set(labels)).slice(0, MAX_BAG_CLUBS));
+    setShowBagEditor(true);
+  }
+
+  function toggleBagClub(label: string) {
+    if (isPutterLabel(label)) return;
+    setBagSelection((current) => {
+      if (current.includes(label)) return current.filter((item) => item !== label);
+      if (current.length >= MAX_BAG_CLUBS) return current;
+      return [...current, label];
+    });
+  }
+
+  function saveBagSelection() {
+    if (!latest || bagSelection.length !== MAX_BAG_CLUBS || !bagSelection.some(isPutterLabel)) return;
+    const rebuilt = rebuildBagFromSelection(latest, bagSelection);
+    setLatest(rebuilt);
+    setOpenGap(null);
+    setShowBagEditor(false);
+  }
+
+  const currentLabelsNotInPicker = latest
+    ? latest.clubs.map((club) => club.label).filter((label) => !BAG_EDITOR_GROUPS.some((group) => group.clubs.some((item) => item === label)))
+    : [];
+
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-28 pt-6">
       <header className="flex items-center justify-between gap-3">
         <Link to="/tester" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card"><ArrowLeft className="h-4 w-4" /></Link>
-        <Link to="/map-my-bag" className="rounded-full border border-border bg-card px-3 py-2 text-xs font-semibold">Map My Bag</Link>
+        <div className="flex items-center gap-2">
+          <Link to="/map-my-bag" className="rounded-full border border-border bg-card px-3 py-2 text-xs font-semibold">Map My Bag</Link>
+          {latest ? (
+            <button
+              type="button"
+              onClick={openBagEditor}
+              className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-card px-3 text-[11px] font-semibold"
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5" /> Ändra bag
+            </button>
+          ) : null}
+        </div>
       </header>
 
       <p className="mt-6 text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">Snabbvy på banan</p>
@@ -182,7 +265,7 @@ function MinBagPage() {
             ) : null}
           </section>
 
-          <section className="mt-4 overflow-hidden rounded-2xl border border-border bg-card">
+          <section className="mt-4 overflow-visible rounded-2xl border border-border bg-card">
             {clubs.map((club, index) => {
               const stock = medianCarry(club);
               const conditions = stock != null ? adjustCarryForConditions(stock, temperature, elevation) : null;
@@ -274,6 +357,91 @@ function MinBagPage() {
           <Link to="/map-my-bag" className="mt-4 flex w-full items-center justify-center rounded-2xl border border-border bg-card py-4 font-semibold">Se historik / mappa om</Link>
         </>
       )}
+
+      {showBagEditor && latest ? (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-3 sm:items-center" role="dialog" aria-modal="true" aria-label="Ändra bag">
+          <div className="max-h-[88vh] w-full max-w-md overflow-y-auto rounded-3xl bg-background p-5 shadow-xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Bygg om din bag</p>
+                <h2 className="mt-1 text-2xl font-semibold">Välj 14 klubbor</h2>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Klicka i och ur klubbor. Dina befintliga carry-värden följer med på klubbor du behåller. Nya klubbor får mappas när du vill.</p>
+              </div>
+              <button type="button" onClick={() => setShowBagEditor(false)} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border"><X className="h-4 w-4" /></button>
+            </div>
+
+            <div className="mt-4 flex items-center justify-between rounded-xl bg-muted/60 px-3 py-2.5">
+              <span className="text-xs font-semibold">Valda klubbor</span>
+              <span className={`text-sm font-semibold tabular-nums ${bagSelection.length === MAX_BAG_CLUBS ? "text-primary" : "text-foreground"}`}>{bagSelection.length}/{MAX_BAG_CLUBS}</span>
+            </div>
+
+            <div className="mt-4 space-y-5">
+              {BAG_EDITOR_GROUPS.map((group) => (
+                <section key={group.title}>
+                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{group.title}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {group.clubs.map((label) => {
+                      const selected = bagSelection.includes(label);
+                      const locked = isPutterLabel(label);
+                      const disabled = !selected && bagSelection.length >= MAX_BAG_CLUBS;
+                      return (
+                        <button
+                          key={label}
+                          type="button"
+                          disabled={locked || disabled}
+                          onClick={() => toggleBagClub(label)}
+                          className={`min-h-10 rounded-full border px-3 py-2 text-xs font-semibold transition ${
+                            selected
+                              ? "border-primary bg-primary/10 text-primary"
+                              : "border-border bg-card text-foreground"
+                          } disabled:opacity-50`}
+                        >
+                          {selected ? "✓ " : ""}{label}{locked ? " · krävs" : ""}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
+              ))}
+
+              {currentLabelsNotInPicker.length ? (
+                <section>
+                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Övriga i din bag</p>
+                  <div className="flex flex-wrap gap-2">
+                    {currentLabelsNotInPicker.map((label) => {
+                      const selected = bagSelection.includes(label);
+                      const disabled = !selected && bagSelection.length >= MAX_BAG_CLUBS;
+                      return (
+                        <button
+                          key={label}
+                          type="button"
+                          disabled={disabled}
+                          onClick={() => toggleBagClub(label)}
+                          className={`min-h-10 rounded-full border px-3 py-2 text-xs font-semibold ${selected ? "border-primary bg-primary/10 text-primary" : "border-border bg-card"} disabled:opacity-50`}
+                        >
+                          {selected ? "✓ " : ""}{label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
+              ) : null}
+            </div>
+
+            <div className="sticky bottom-0 mt-6 bg-background pt-3">
+              <button
+                type="button"
+                disabled={bagSelection.length !== MAX_BAG_CLUBS || !bagSelection.some(isPutterLabel)}
+                onClick={saveBagSelection}
+                className="flex w-full items-center justify-center rounded-2xl bg-primary py-4 text-sm font-semibold text-primary-foreground disabled:opacity-40"
+              >
+                Spara bag · {bagSelection.length}/{MAX_BAG_CLUBS}
+              </button>
+              {bagSelection.length < MAX_BAG_CLUBS ? <p className="mt-2 text-center text-[11px] text-muted-foreground">Välj {MAX_BAG_CLUBS - bagSelection.length} klubb{MAX_BAG_CLUBS - bagSelection.length === 1 ? "" : "ar"} till.</p> : null}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }
