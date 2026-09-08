@@ -25,8 +25,9 @@ describe("Shot Value putting model", () => {
   });
 
   it("returns the benchmark closest to neutral as approximate shot level", () => {
-    const level = approximateShotLevel(comparePuttingShot(5, false, 1, 0 as never));
-    expect(level === null || typeof level.label === "string").toBe(true);
+    const level = approximateShotLevel(comparePuttingShot(5, false, 1));
+    expect(level).not.toBeNull();
+    expect(typeof level?.label).toBe("string");
   });
 
   it("groups similar saved references into the same key", () => {
