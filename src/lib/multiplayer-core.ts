@@ -49,7 +49,7 @@ export type MultiplayerTestAdapter<T = unknown> = {
   mapLegacyScore?: (row: any) => T;
 };
 
-export function withMultiplayerTimeout<T>(promise: Promise<T>, ms = 7000): Promise<T> {
+export function withMultiplayerTimeout<T>(promise: PromiseLike<T>, ms = 7000): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     const timer = window.setTimeout(() => reject(new Error("Sessionen tog för lång tid att svara.")), ms);
     promise.then((value) => {

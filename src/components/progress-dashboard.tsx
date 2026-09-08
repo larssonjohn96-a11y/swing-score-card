@@ -145,7 +145,7 @@ const DEFAULT_TARGET: CompareTarget = {
 const QUICK_LEVELS = BENCHMARK_LEVELS.filter((l) => ["20", "10", "0", "Tour"].includes(l.label));
 
 const RADAR_ANALYSIS_TABS = [
-  { label: "Total", to: "/utveckling/" as const },
+  { label: "Total", to: "/utveckling" as const },
   { label: "Off the Tee", to: "/utveckling/$slug" as const, slug: "driving" },
   { label: "Approach", to: "/utveckling/$slug" as const, slug: "approach" },
   { label: "Around Green", to: "/utveckling/$slug" as const, slug: "around-the-green" },
@@ -809,7 +809,7 @@ function SelectPlayerSheet({
                 </span>
               </button>
               <button
-                onClick={() => deleteFriend(id)}
+                onClick={() => deleteFriend(f.id)}
                 aria-label={`Ta bort ${f.name}`}
                 className="p-2 text-muted-foreground hover:text-destructive"
               >

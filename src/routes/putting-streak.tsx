@@ -33,7 +33,7 @@ function PuttingStreakPage() {
   const [phase, setPhase] = useState<Phase>("ready");
   const [index, setIndex] = useState(0);
   const [lastCleared, setLastCleared] = useState(0);
-  const [lastFailed, setLastFailed] = useState(PUTTING_STREAK_DISTANCES[0]);
+  const [lastFailed, setLastFailed] = useState<number>(PUTTING_STREAK_DISTANCES[0]);
 
   const pb = useMemo(() => puttingStreakPb(sessions), [sessions]);
   const current = PUTTING_STREAK_DISTANCES[Math.min(index, PUTTING_STREAK_DISTANCES.length - 1)];
