@@ -19,15 +19,26 @@ export type ComparisonMetric = {
 
 export type ComparisonTrainingResult = ComparisonMetric;
 
+export type ComparisonActivity = {
+  tests: number;
+  shots: number;
+};
+
 export type SocialComparisonProfile = {
-  activity: {
-    tests: number;
-    shots: number;
+  activity: ComparisonActivity & {
+    byCategory: Record<ComparisonCategory, ComparisonActivity>;
   };
   performance: ComparisonMetric[];
   training: ComparisonTrainingResult[];
   records: ComparisonMetric[];
 };
+
+const emptyCategoryActivity = (): Record<ComparisonCategory, ComparisonActivity> => ({
+  driving: { tests: 0, shots: 0 },
+  approach: { tests: 0, shots: 0 },
+  "around-the-green": { tests: 0, shots: 0 },
+  puttning: { tests: 0, shots: 0 },
+});
 
 const avg = (values: number[]) => values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
 const stdDev = (values: number[]) => {
@@ -117,11 +128,21 @@ export function computeLocalComparisonProfile(): SocialComparisonProfile {
   const lagShots = collectLagHoleOutStarts().length;
   const shots = teeShots.length + approachShots + aroundShots + puttShots + lagShots;
 
-  return { activity: { tests, shots }, performance, training, records };
+  const byCategory = emptyCategoryActivity();
+  for (const test of PROGRESS_TESTS) {
+    const category = categoryForProgress(test.categorySlug);
+    if (category) byCategory[category].tests += test.load().length;
+  }
+  byCategory.driving.shots = teeShots.length;
+  byCategory.approach.shots = approachShots;
+  byCategory["around-the-green"].shots = aroundShots;
+  byCategory.puttning.shots = puttShots + lagShots;
+
+  return { activity: { tests, shots, byCategory }, performance, training, records };
 }
 
 export function parseComparisonProfile(value: unknown): SocialComparisonProfile {
-  const empty: SocialComparisonProfile = { activity: { tests: 0, shots: 0 }, performance: [], training: [], records: [] };
+  const empty: SocialComparisonProfile = { activity: { tests: 0, shots: 0, byCategory: emptyCategoryActivity() }, performance: [], training: [], records: [] };
   if (!value || typeof value !== "object" || Array.isArray(value)) return empty;
   const raw = value as Record<string, unknown>;
 
@@ -151,9 +172,22 @@ export function parseComparisonProfile(value: unknown): SocialComparisonProfile 
     : {};
   const tests = typeof activityRaw.tests === "number" && Number.isFinite(activityRaw.tests) ? Math.max(0, activityRaw.tests) : 0;
   const shots = typeof activityRaw.shots === "number" && Number.isFinite(activityRaw.shots) ? Math.max(0, activityRaw.shots) : 0;
+  const byCategory = emptyCategoryActivity();
+  const categoryRaw = activityRaw.byCategory && typeof activityRaw.byCategory === "object" && !Array.isArray(activityRaw.byCategory)
+    ? activityRaw.byCategory as Record<string, unknown>
+    : {};
+  for (const category of ["driving", "approach", "around-the-green", "puttning"] as ComparisonCategory[]) {
+    const entry = categoryRaw[category] && typeof categoryRaw[category] === "object" && !Array.isArray(categoryRaw[category])
+      ? categoryRaw[category] as Record<string, unknown>
+      : {};
+    byCategory[category] = {
+      tests: typeof entry.tests === "number" && Number.isFinite(entry.tests) ? Math.max(0, entry.tests) : 0,
+      shots: typeof entry.shots === "number" && Number.isFinite(entry.shots) ? Math.max(0, entry.shots) : 0,
+    };
+  }
 
   return {
-    activity: { tests, shots },
+    activity: { tests, shots, byCategory },
     performance: parseRows(raw.performance),
     training: parseRows(raw.training),
     records: parseRows(raw.records),
