@@ -3,11 +3,14 @@ import {
   approximateShotLevel,
   comparePuttingShot,
   expectedPutts,
+  expectedStrokes,
   formatRange,
+  getExpectedStrokePoints,
   puttingShotValue,
   referenceKey,
   roundImpactText,
   SHOT_VALUE_SCENARIOS,
+  shotValue,
   shotValueLabel,
 } from "@/lib/shot-value";
 
@@ -18,6 +21,14 @@ describe("Shot Value putting model", () => {
     const middle = expectedPutts("hcp10", 1.05);
     expect(middle).toBeGreaterThan(atOne);
     expect(middle).toBeLessThan(atTwo);
+  });
+
+  it("uses the externally published HCP10 anchor at 5 ft", () => {
+    expect(expectedPutts("hcp10", 1.524)).toBeCloseTo(1.48, 5);
+  });
+
+  it("uses the externally published HCP10 anchor at 60 ft", () => {
+    expect(expectedPutts("hcp10", 18.288)).toBeCloseTo(2.49, 5);
   });
 
   it("rewards a holed putt and penalizes a miss that leaves distance", () => {
@@ -48,6 +59,25 @@ describe("Shot Value putting model", () => {
     expect(shotValueLabel(0.4)).toBe("Mycket bra");
     expect(shotValueLabel(0)).toBe("Normalt");
     expect(shotValueLabel(-0.4)).toBe("Mycket kostsamt");
+  });
+});
+
+describe("Generic expected-strokes model", () => {
+  it("stores data as category > level > lie > distance", () => {
+    const points = getExpectedStrokePoints("putting", "hcp10", "green");
+    expect(points?.length).toBeGreaterThan(0);
+  });
+
+  it("returns null when a category/lie table is not populated yet", () => {
+    expect(expectedStrokes("approach", "hcp10", "fairway", 150)).toBeNull();
+  });
+
+  it("uses the same generic formula for a putt", () => {
+    const generic = shotValue(
+      { category: "putting", level: "hcp10", lie: "green", distanceM: 2 },
+      { category: "putting", lie: "green", distanceM: 1 },
+    );
+    expect(generic).toBeCloseTo(puttingShotValue(2, false, 1, "hcp10"), 8);
   });
 });
 
