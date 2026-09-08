@@ -128,7 +128,7 @@ export async function undoEightBallGroupScore(sessionId: string) {
 
 export async function listActiveEightBallGroupSessions(): Promise<Array<{ id: string; hostUserId: string; createdAt: string }>> {
   try {
-    const { data, error } = await withMultiplayerTimeout(
+    const { data, error } = await withMultiplayerTimeout<any>(
       db.from("group_sessions")
         .select("id,host_user_id,created_at")
         .eq("test_id", EIGHT_BALL_MULTIPLAYER_ADAPTER.testId)
