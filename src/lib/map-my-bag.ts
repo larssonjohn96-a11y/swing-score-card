@@ -24,14 +24,31 @@ export type BagMap = {
   clubs: BagClub[];
 };
 
+export type GapStatus = "tight" | "healthy" | "wide" | "neutral";
+
+export type BagGap = {
+  gap: number;
+  status: GapStatus;
+  flagged: boolean;
+  targetCarry: number | null;
+};
+
 const DRAFT_KEY = "sg4:map-my-bag:draft";
 const HISTORY_KEY = "sg4:map-my-bag:history";
 
+export const MAX_BAG_CLUBS = 14;
+export const MAX_NON_PUTTER_CLUBS = 13;
+export const HEALTHY_GAP_MIN_M = 10;
+export const HEALTHY_GAP_MAX_M = 14;
+export const GAP_FLAG_TIGHT_M = 8;
+export const GAP_FLAG_WIDE_M = 16;
+
 export const DEFAULT_BAG_CLUBS = [
-  "60°", "56°", "52°", "PW", "9i", "8i", "7i", "6i", "5i", "4i", "3i", "5W", "3W", "Driver",
+  "60°", "56°", "52°", "PW", "9i", "8i", "7i", "6i", "5i", "4i", "5W", "3W", "Driver", "Putter",
 ] as const;
 
 export const BAG_CLUB_LIBRARY = [
+  "Putter",
   "64°", "62°", "60°", "58°", "56°", "54°", "52°", "50°", "48°", "46°",
   "LW", "SW", "GW", "AW", "PW",
   "9i", "8i", "7i", "6i", "5i", "4i", "3i", "2i", "1i",
@@ -87,24 +104,44 @@ function makeClub(label: string, order: number): BagClub {
   return { id: `${uid()}-${label}`, label, order, shots: [] };
 }
 
+export function isPutterLabel(label: string) {
+  return label.trim().toLowerCase() === "putter" || label.trim().toLowerCase() === "pt";
+}
+
+export function hasPutter(map: BagMap) {
+  return map.clubs.some((club) => isPutterLabel(club.label));
+}
+
+export function canAddClubToBag(map: BagMap, label: string) {
+  const clean = label.trim();
+  if (!clean || map.clubs.length >= MAX_BAG_CLUBS) return false;
+  if (isPutterLabel(clean)) return !hasPutter(map);
+  const nonPutterCount = map.clubs.filter((club) => !isPutterLabel(club.label)).length;
+  return nonPutterCount < MAX_NON_PUTTER_CLUBS;
+}
+
 export function normalizeBagOrder(map: BagMap): BagMap {
   return { ...map, clubs: map.clubs.map((club, order) => ({ ...club, order })) };
 }
 
 export function createBagMap(labels: readonly string[] = DEFAULT_BAG_CLUBS): BagMap {
   const now = new Date().toISOString();
+  const uniqueLabels = labels.filter((label, index) => labels.indexOf(label) === index).slice(0, MAX_BAG_CLUBS);
+  const withPutter = uniqueLabels.some(isPutterLabel)
+    ? uniqueLabels
+    : [...uniqueLabels.slice(0, MAX_NON_PUTTER_CLUBS), "Putter"];
   return {
     id: uid(),
     status: "draft",
     createdAt: now,
     updatedAt: now,
-    clubs: labels.map((label, order) => makeClub(label, order)),
+    clubs: withPutter.map((label, order) => makeClub(label, order)),
   };
 }
 
 export function addClubToBag(map: BagMap, label: string): BagMap {
   const clean = label.trim();
-  if (!clean) return map;
+  if (!canAddClubToBag(map, clean)) return map;
   return normalizeBagOrder({ ...map, clubs: [...map.clubs, makeClub(clean, map.clubs.length)] });
 }
 
@@ -144,7 +181,7 @@ export function loadBagHistory(): BagMap[] {
 }
 
 export function completeBagMap(map: BagMap, completedOnly = false): BagMap {
-  const clubs = completedOnly ? map.clubs.filter(clubComplete) : map.clubs;
+  const clubs = completedOnly ? map.clubs.filter((club) => isPutterLabel(club.label) || clubComplete(club)) : map.clubs;
   const completed: BagMap = {
     ...normalizeBagOrder({ ...map, clubs }),
     status: "completed",
@@ -164,22 +201,49 @@ export function acceptedShots(club: BagClub) {
 }
 
 export function clubComplete(club: BagClub) {
+  if (isPutterLabel(club.label)) return true;
   return acceptedShots(club).length >= 3;
 }
 
+export function clubLastUpdatedAt(club: BagClub): string | null {
+  const timestamps = club.shots
+    .filter((shot) => shot.accepted && shot.createdAt)
+    .map((shot) => Date.parse(shot.createdAt))
+    .filter(Number.isFinite);
+  if (!timestamps.length) return null;
+  return new Date(Math.max(...timestamps)).toISOString();
+}
+
+export function clubAgeDays(club: BagClub, now = new Date()): number | null {
+  const updatedAt = clubLastUpdatedAt(club);
+  if (!updatedAt) return null;
+  return Math.max(0, Math.floor((now.getTime() - Date.parse(updatedAt)) / 86_400_000));
+}
+
 export function medianCarry(club: BagClub): number | null {
+  if (isPutterLabel(club.label)) return null;
   const values = acceptedShots(club).map((shot) => shot.carry).filter(Number.isFinite).sort((a, b) => a - b);
   if (!values.length) return null;
   const middle = Math.floor(values.length / 2);
   return values.length % 2 ? values[middle] : (values[middle - 1] + values[middle]) / 2;
 }
 
+export function analyzeGap(longerCarry: number, shorterCarry: number): BagGap {
+  const gap = Math.max(0, longerCarry - shorterCarry);
+  if (gap < GAP_FLAG_TIGHT_M) return { gap, status: "tight", flagged: true, targetCarry: null };
+  if (gap > GAP_FLAG_WIDE_M) return { gap, status: "wide", flagged: true, targetCarry: (longerCarry + shorterCarry) / 2 };
+  if (gap >= HEALTHY_GAP_MIN_M && gap <= HEALTHY_GAP_MAX_M) return { gap, status: "healthy", flagged: false, targetCarry: null };
+  return { gap, status: "neutral", flagged: false, targetCarry: null };
+}
+
 export function nextRecommendedClub(map: BagMap): BagClub | null {
-  return [...map.clubs].sort((a, b) => a.order - b.order).find((club) => !clubComplete(club)) ?? null;
+  return [...map.clubs]
+    .sort((a, b) => a.order - b.order)
+    .find((club) => !isPutterLabel(club.label) && !clubComplete(club)) ?? null;
 }
 
 export function completedClubCount(map: BagMap) {
-  return map.clubs.filter(clubComplete).length;
+  return map.clubs.filter((club) => !isPutterLabel(club.label) && clubComplete(club)).length;
 }
 
 export function latestCompletedBagMap() {
