@@ -140,7 +140,7 @@ export async function createMultiplayerSession<T>(
         p_config: {},
       };
 
-  const { data, error } = await withMultiplayerTimeout(db.rpc(rpc, args), 8000);
+  const { data, error } = await withMultiplayerTimeout<any>(db.rpc(rpc, args), 8000);
   if (error) throw new Error(error.message);
   if (!data || typeof data !== "string") throw new Error("Multiplayer-sessionen skapades inte korrekt.");
 
@@ -180,13 +180,13 @@ export async function fetchMultiplayerSession<T>(adapter: MultiplayerTestAdapter
 
   const rpc = adapter.fetchRpc ?? "get_multiplayer_session";
   try {
-    const { data, error } = await withMultiplayerTimeout(db.rpc(rpc, { p_session_id: id }), 5000);
+    const { data, error } = await withMultiplayerTimeout<any>(db.rpc(rpc, { p_session_id: id }), 5000);
     if (!error && data) return mapMultiplayerSession(data, adapter);
   } catch {
     // Table fallback keeps sessions readable while migrations/deployments converge.
   }
 
-  const result = await withMultiplayerTimeout(Promise.all([
+  const result = await withMultiplayerTimeout<any>(Promise.all([
     db.from("group_sessions").select("*").eq("id", id).maybeSingle(),
     db.from("group_session_members").select("session_id,user_id,seat,display_name").eq("session_id", id).order("seat"),
     db.from("group_session_scores").select("*").eq("session_id", id).order("shot_index").order("created_at"),
@@ -207,7 +207,7 @@ export async function recordMultiplayerResult<T>(
   const args = adapter.recordRpc
     ? { p_session_id: sessionId, p_user_id: userId, p_shot_index: stepIndex, ...(adapter.toRpcResult?.(result) ?? { p_result: result }) }
     : { p_session_id: sessionId, p_user_id: userId, p_step_index: stepIndex, p_result: result };
-  const { data, error } = await withMultiplayerTimeout(db.rpc(rpc, args), 7000);
+  const { data, error } = await withMultiplayerTimeout<any>(db.rpc(rpc, args), 7000);
   if (error) throw new Error(error.message);
   return data as { status: MultiplayerStatus; currentStep?: number; currentShot?: number; currentPlayerIndex: number };
 }
