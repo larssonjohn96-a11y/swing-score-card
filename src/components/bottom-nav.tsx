@@ -76,8 +76,11 @@ export function BottomNav() {
 
   return (
     <>
-      <nav className="fixed bottom-0 left-0 right-0 z-40 h-16 border-t border-border bg-card shadow-[0_-8px_24px_-24px_oklch(0.3_0.06_160/0.6)]">
-        <div className="mx-auto flex h-full w-full max-w-md items-center px-2">
+      <nav
+        className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-card shadow-[0_-8px_24px_-24px_oklch(0.3_0.06_160/0.6)]"
+        style={{ paddingBottom: "max(8px, env(safe-area-inset-bottom))" }}
+      >
+        <div className="mx-auto flex h-16 w-full max-w-md items-center px-2">
           {LEFT_TABS.map((tab) => (
             <NavLink
               key={tab.to}
