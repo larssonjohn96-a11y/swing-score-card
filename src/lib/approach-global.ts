@@ -43,7 +43,7 @@ export function collectApproachShots(): ApproachShotRecord[] {
         date: session.date,
         target: shot.target,
         actual: shot.carry,
-        lateral: Math.abs(shot.lateral),
+        lateral: Math.abs(shot.offline),
       };
       if (validShot(row)) rows.push(row);
     }

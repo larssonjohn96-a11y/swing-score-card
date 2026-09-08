@@ -46,6 +46,8 @@ import { Route as OffteeTestRouteImport } from './routes/offtee-test'
 import { Route as OffteeRouteImport } from './routes/offtee'
 import { Route as NarspelTestRouteImport } from './routes/narspel-test'
 import { Route as NarspelRouteImport } from './routes/narspel'
+import { Route as MinBagRouteImport } from './routes/min-bag'
+import { Route as MapMyBagRouteImport } from './routes/map-my-bag'
 import { Route as LongdriveRouteImport } from './routes/longdrive'
 import { Route as LagputtTestRouteImport } from './routes/lagputt-test'
 import { Route as LagputtLadderRouteImport } from './routes/lagputt-ladder'
@@ -272,6 +274,16 @@ const NarspelTestRoute = NarspelTestRouteImport.update({
 const NarspelRoute = NarspelRouteImport.update({
   id: '/narspel',
   path: '/narspel',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MinBagRoute = MinBagRouteImport.update({
+  id: '/min-bag',
+  path: '/min-bag',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MapMyBagRoute = MapMyBagRouteImport.update({
+  id: '/map-my-bag',
+  path: '/map-my-bag',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LongdriveRoute = LongdriveRouteImport.update({
@@ -505,6 +517,8 @@ export interface FileRoutesByFullPath {
   '/lagputt-ladder': typeof LagputtLadderRoute
   '/lagputt-test': typeof LagputtTestRoute
   '/longdrive': typeof LongdriveRoute
+  '/map-my-bag': typeof MapMyBagRoute
+  '/min-bag': typeof MinBagRoute
   '/narspel': typeof NarspelRoute
   '/narspel-test': typeof NarspelTestRoute
   '/offtee': typeof OffteeRoute
@@ -583,6 +597,8 @@ export interface FileRoutesByTo {
   '/lagputt-ladder': typeof LagputtLadderRoute
   '/lagputt-test': typeof LagputtTestRoute
   '/longdrive': typeof LongdriveRoute
+  '/map-my-bag': typeof MapMyBagRoute
+  '/min-bag': typeof MinBagRoute
   '/narspel': typeof NarspelRoute
   '/narspel-test': typeof NarspelTestRoute
   '/offtee': typeof OffteeRoute
@@ -662,6 +678,8 @@ export interface FileRoutesById {
   '/lagputt-ladder': typeof LagputtLadderRoute
   '/lagputt-test': typeof LagputtTestRoute
   '/longdrive': typeof LongdriveRoute
+  '/map-my-bag': typeof MapMyBagRoute
+  '/min-bag': typeof MinBagRoute
   '/narspel': typeof NarspelRoute
   '/narspel-test': typeof NarspelTestRoute
   '/offtee': typeof OffteeRoute
@@ -742,6 +760,8 @@ export interface FileRouteTypes {
     | '/lagputt-ladder'
     | '/lagputt-test'
     | '/longdrive'
+    | '/map-my-bag'
+    | '/min-bag'
     | '/narspel'
     | '/narspel-test'
     | '/offtee'
@@ -820,6 +840,8 @@ export interface FileRouteTypes {
     | '/lagputt-ladder'
     | '/lagputt-test'
     | '/longdrive'
+    | '/map-my-bag'
+    | '/min-bag'
     | '/narspel'
     | '/narspel-test'
     | '/offtee'
@@ -898,6 +920,8 @@ export interface FileRouteTypes {
     | '/lagputt-ladder'
     | '/lagputt-test'
     | '/longdrive'
+    | '/map-my-bag'
+    | '/min-bag'
     | '/narspel'
     | '/narspel-test'
     | '/offtee'
@@ -977,6 +1001,8 @@ export interface RootRouteChildren {
   LagputtLadderRoute: typeof LagputtLadderRoute
   LagputtTestRoute: typeof LagputtTestRoute
   LongdriveRoute: typeof LongdriveRoute
+  MapMyBagRoute: typeof MapMyBagRoute
+  MinBagRoute: typeof MinBagRoute
   NarspelRoute: typeof NarspelRoute
   NarspelTestRoute: typeof NarspelTestRoute
   OffteeRoute: typeof OffteeRoute
@@ -1280,6 +1306,20 @@ declare module '@tanstack/react-router' {
       path: '/narspel'
       fullPath: '/narspel'
       preLoaderRoute: typeof NarspelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/min-bag': {
+      id: '/min-bag'
+      path: '/min-bag'
+      fullPath: '/min-bag'
+      preLoaderRoute: typeof MinBagRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/map-my-bag': {
+      id: '/map-my-bag'
+      path: '/map-my-bag'
+      fullPath: '/map-my-bag'
+      preLoaderRoute: typeof MapMyBagRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/longdrive': {
@@ -1615,6 +1655,8 @@ const rootRouteChildren: RootRouteChildren = {
   LagputtLadderRoute: LagputtLadderRoute,
   LagputtTestRoute: LagputtTestRoute,
   LongdriveRoute: LongdriveRoute,
+  MapMyBagRoute: MapMyBagRoute,
+  MinBagRoute: MinBagRoute,
   NarspelRoute: NarspelRoute,
   NarspelTestRoute: NarspelTestRoute,
   OffteeRoute: OffteeRoute,

@@ -23,12 +23,14 @@ export function useAuth() {
         .select("display_name")
         .eq("id", next.id)
         .maybeSingle()
-        .then(({ data }) => {
-          if (active) setDisplayName(data?.display_name ?? null);
-        })
-        .catch(() => {
-          if (active) setDisplayName(null);
-        });
+        .then(
+          ({ data }) => {
+            if (active) setDisplayName(data?.display_name ?? null);
+          },
+          () => {
+            if (active) setDisplayName(null);
+          },
+        );
     };
 
     let settled = false;

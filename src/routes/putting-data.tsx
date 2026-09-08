@@ -48,7 +48,7 @@ const BENCHMARKS: BenchmarkProfile[] = [
 ];
 
 const ANALYSIS_TABS = [
-  { label: "Total", to: "/utveckling/" as const },
+  { label: "Total", to: "/utveckling" as const },
   { label: "Off the Tee", to: "/utveckling/$slug" as const, slug: "driving" },
   { label: "Approach", to: "/utveckling/$slug" as const, slug: "approach" },
   { label: "Short Game", to: "/utveckling/$slug" as const, slug: "around-the-green" },
@@ -157,7 +157,7 @@ function PuttingDataPage() {
   const highestRisk = [...lagHoleOut].filter((row) => row.attempts >= 3).sort((a, b) => b.threePuttPct - a.threePuttPct)[0];
 
   return <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-24 pt-8">
-    <header><Link to="/utveckling/" aria-label="Tillbaka" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-muted-foreground"><ArrowLeft className="h-4 w-4"/></Link><div className="mt-6 flex items-start gap-3"><span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary"><BarChart3 className="h-5 w-5"/></span><div><p className="text-xs uppercase tracking-[0.2em] text-primary">Putting</p><h1 className="mt-1 font-display text-4xl leading-none">Analys puttning</h1></div></div></header>
+    <header><Link to="/utveckling" aria-label="Tillbaka" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-muted-foreground"><ArrowLeft className="h-4 w-4"/></Link><div className="mt-6 flex items-start gap-3"><span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary"><BarChart3 className="h-5 w-5"/></span><div><p className="text-xs uppercase tracking-[0.2em] text-primary">Putting</p><h1 className="mt-1 font-display text-4xl leading-none">Analys puttning</h1></div></div></header>
 
     <div className="-mx-5 mt-5 overflow-x-auto px-5 pb-1"><div className="flex w-max gap-2">{ANALYSIS_TABS.map((tab)=>tab.label==="Putting"?<span key={tab.label} className="rounded-full border border-foreground bg-foreground px-5 py-2.5 text-sm font-semibold text-background">{tab.label}</span>:tab.to==="/utveckling/$slug"?<Link key={tab.label} to={tab.to} params={{slug:tab.slug}} className="rounded-full border border-border bg-card px-5 py-2.5 text-sm font-semibold text-muted-foreground">{tab.label}</Link>:<Link key={tab.label} to={tab.to} className="rounded-full border border-border bg-card px-5 py-2.5 text-sm font-semibold text-muted-foreground">{tab.label}</Link>)}</div></div>
 

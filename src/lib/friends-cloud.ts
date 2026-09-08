@@ -61,7 +61,7 @@ export async function pushPlayerSnapshot():Promise<void>{
   const cats=computeStableCategoryHandicaps(undefined,real??undefined);
   const byCat=(slug:CategorySlug)=>cats.find(c=>c.slug===slug)?.handicap??null;
   const radarProfile=computeLocalSocialRadarProfile();
-  await supabase.from("player_snapshots").upsert({
+  await (supabase.from("player_snapshots") as any).upsert({
     user_id:userData.user.id,
     rating:card.rating,
     tier_key:card.tier.key,

@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Check, Search, User, UserPlus, X } from "lucide-react";
+import { ArrowLeft, Check, ChevronRight, Search, User, UserPlus, Users, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -11,6 +11,7 @@ import {
   type Friendship,
   type Profile,
 } from "@/lib/friends-cloud";
+import { listActiveEightBallGroupSessions } from "@/lib/group-eight-ball";
 
 export const Route = createFileRoute("/vanner")({
   head: () => ({ meta: [{ title: "Vänner | SG4" }] }),
@@ -48,6 +49,12 @@ function FriendsPage() {
   const [searching, setSearching] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [groupSessions, setGroupSessions] = useState<Array<{ id: string; hostUserId: string; createdAt: string }>>([]);
+
+  useEffect(() => {
+    if (!user) { setGroupSessions([]); return; }
+    void listActiveEightBallGroupSessions().then(setGroupSessions);
+  }, [user]);
 
   const refresh = useCallback(async () => {
     if (!user) return setFriendships(EMPTY);
@@ -174,6 +181,30 @@ function FriendsPage() {
 
             {message ? <p className="mt-3 text-xs text-muted-foreground">{message}</p> : null}
           </section>
+
+          {groupSessions.length ? (
+            <section className="mt-4 rounded-3xl border border-border bg-card p-5">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-primary">Pågående gruppspel</p>
+              <div className="mt-3 space-y-2">
+                {groupSessions.map((session) => (
+                  <a
+                    key={session.id}
+                    href={`/8-bollar-grupp/${session.id}`}
+                    className="flex items-center gap-3 rounded-2xl border border-border px-3.5 py-3"
+                  >
+                    <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"><Users className="h-4 w-4" /></span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-semibold">8-bollsövningen</span>
+                      <span className="block text-[11px] text-muted-foreground">
+                        {session.hostUserId === user.id ? "Ditt spel" : "Du är med som spelare"} · startat {new Date(session.createdAt).toLocaleDateString("sv-SE")}
+                      </span>
+                    </span>
+                    <ChevronRight className="h-4 w-4 shrink-0 text-primary" />
+                  </a>
+                ))}
+              </div>
+            </section>
+          ) : null}
 
           {friendships.incoming.length ? (
             <section className="mt-4 rounded-3xl border border-border bg-card p-5">

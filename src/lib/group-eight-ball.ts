@@ -109,7 +109,7 @@ export async function recordEightBallGroupScore(sessionId: string, userId: strin
 }
 
 export async function correctEightBallGroupScore(sessionId: string, userId: string, shotIndex: number, points: number) {
-  const { error } = await withMultiplayerTimeout(db.rpc("correct_eight_ball_group_score", {
+  const { error } = await withMultiplayerTimeout<any>(db.rpc("correct_eight_ball_group_score", {
     p_session_id: sessionId,
     p_user_id: userId,
     p_shot_index: shotIndex,
@@ -119,7 +119,7 @@ export async function correctEightBallGroupScore(sessionId: string, userId: stri
 }
 
 export async function undoEightBallGroupScore(sessionId: string) {
-  const { data, error } = await withMultiplayerTimeout(db.rpc("undo_eight_ball_group_score", {
+  const { data, error } = await withMultiplayerTimeout<any>(db.rpc("undo_eight_ball_group_score", {
     p_session_id: sessionId,
   }), 7000);
   if (error) throw new Error(error.message);
@@ -128,7 +128,7 @@ export async function undoEightBallGroupScore(sessionId: string) {
 
 export async function listActiveEightBallGroupSessions(): Promise<Array<{ id: string; hostUserId: string; createdAt: string }>> {
   try {
-    const { data, error } = await withMultiplayerTimeout(
+    const { data, error } = await withMultiplayerTimeout<any>(
       db.from("group_sessions")
         .select("id,host_user_id,created_at")
         .eq("test_id", EIGHT_BALL_MULTIPLAYER_ADAPTER.testId)
