@@ -3,10 +3,13 @@
  *
  * - Inloggad användare vid start → import + restore (syncForUser).
  * - SIGNED_IN senare → samma sak för den nya användaren.
- * - Nätet kommer tillbaka → skicka väntande kö.
+ * - Efter restore → uppdatera den delade spelarprofilen så vänjämförelse får
+ *   aktuell detaljdata för driving/approach/around green/putting.
+ * - Nätet kommer tillbaka → skicka väntande kö + uppdatera spelarprofilen.
  * - Utloggad/gäst → ingenting; appen är fortsatt helt lokal.
  */
 import { supabase } from "@/integrations/supabase/client";
+import { pushPlayerSnapshot } from "@/lib/friends-cloud";
 import { flushOutbox, syncForUser } from "./sync";
 
 let started = false;
@@ -18,7 +21,12 @@ export function startSessionSync(): () => void {
   let active = true;
   const run = (userId: string | undefined) => {
     if (!active || !userId) return;
-    void syncForUser(userId).catch(() => undefined);
+    void syncForUser(userId)
+      .then(() => {
+        if (active) return pushPlayerSnapshot();
+        return undefined;
+      })
+      .catch(() => undefined);
   };
 
   supabase.auth
@@ -33,7 +41,9 @@ export function startSessionSync(): () => void {
   });
 
   const onOnline = () => {
-    void flushOutbox().catch(() => undefined);
+    void flushOutbox()
+      .then(() => pushPlayerSnapshot())
+      .catch(() => undefined);
   };
   window.addEventListener("online", onOnline);
 
