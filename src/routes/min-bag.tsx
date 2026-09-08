@@ -48,7 +48,7 @@ function signed(value: number) {
 }
 
 function freshnessText(days: number | null, updatedAt: string | null) {
-  if (days == null || !updatedAt) return "Ingen mätning ännu";
+  if (days == null || !updatedAt) return "Inte mappad";
   if (days === 0) return "Uppdaterad idag";
   if (days === 1) return "Uppdaterad igår";
   if (days < 30) return `Uppdaterad för ${days} dagar sedan`;
@@ -56,7 +56,7 @@ function freshnessText(days: number | null, updatedAt: string | null) {
 }
 
 function freshnessClass(days: number | null) {
-  if (days == null) return "text-muted-foreground";
+  if (days == null) return "text-amber-700";
   if (days <= 30) return "text-primary";
   if (days <= 90) return "text-foreground";
   return "text-destructive";
@@ -161,6 +161,13 @@ function rebuildBagFromSelection(current: BagMap, selectedLabels: string[]) {
   return completeBagMap(rebuilt, false);
 }
 
+function goToMapping(clubLabel?: string) {
+  const params = new URLSearchParams();
+  if (clubLabel) params.set("club", clubLabel);
+  else params.set("all", "1");
+  window.location.href = `/map-club?${params.toString()}`;
+}
+
 function MinBagPage() {
   const [latest, setLatest] = useState(() => latestCompletedBagMap());
   const clubs = latest ? [...latest.clubs].reverse() : [];
@@ -170,6 +177,7 @@ function MinBagPage() {
   const [openGap, setOpenGap] = useState<OpenGap>(null);
   const [showBagEditor, setShowBagEditor] = useState(false);
   const [bagSelection, setBagSelection] = useState<string[]>([]);
+  const [unmappedAfterSave, setUnmappedAfterSave] = useState<string[]>([]);
 
   function resetConditions() {
     setTemperature(INDOOR_REFERENCE_TEMPERATURE_C);
@@ -178,9 +186,8 @@ function MinBagPage() {
 
   function openBagEditor() {
     if (!latest) return;
-    const labels = latest.clubs.map((club) => club.label);
-    if (!labels.some(isPutterLabel)) labels.push("Putter");
-    setBagSelection(Array.from(new Set(labels)).slice(0, MAX_BAG_CLUBS));
+    const nonPutters = latest.clubs.map((club) => club.label).filter((label) => !isPutterLabel(label));
+    setBagSelection([...Array.from(new Set(nonPutters)).slice(0, MAX_BAG_CLUBS - 1), "Putter"]);
     setShowBagEditor(true);
   }
 
@@ -188,21 +195,30 @@ function MinBagPage() {
     if (isPutterLabel(label)) return;
     setBagSelection((current) => {
       if (current.includes(label)) return current.filter((item) => item !== label);
-      if (current.length >= MAX_BAG_CLUBS) return current;
-      return [...current, label];
+      const nonPutterCount = current.filter((item) => !isPutterLabel(item)).length;
+      if (nonPutterCount >= MAX_BAG_CLUBS - 1) return current;
+      const withoutPutter = current.filter((item) => !isPutterLabel(item));
+      return [...withoutPutter, label, "Putter"];
     });
   }
 
   function saveBagSelection() {
-    if (!latest || bagSelection.length !== MAX_BAG_CLUBS || !bagSelection.some(isPutterLabel)) return;
+    if (!latest || !bagSelection.some(isPutterLabel) || bagSelection.length > MAX_BAG_CLUBS) return;
     const rebuilt = rebuildBagFromSelection(latest, bagSelection);
+    const unmapped = rebuilt.clubs
+      .filter((club) => !isPutterLabel(club.label) && medianCarry(club) == null)
+      .map((club) => club.label);
+
     setLatest(rebuilt);
     setOpenGap(null);
     setShowBagEditor(false);
+    setUnmappedAfterSave(unmapped);
   }
 
   const currentLabelsNotInPicker = latest
-    ? latest.clubs.map((club) => club.label).filter((label) => !BAG_EDITOR_GROUPS.some((group) => group.clubs.some((item) => item === label)))
+    ? latest.clubs
+        .map((club) => club.label)
+        .filter((label) => !BAG_EDITOR_GROUPS.some((group) => group.clubs.some((item) => item === label)))
     : [];
 
   return (
@@ -278,6 +294,7 @@ function MinBagPage() {
               const ageDays = clubAgeDays(club);
               const updatedAt = clubLastUpdatedAt(club);
               const extremeWide = gapAnalysis?.status === "wide" && gapAnalysis.gap >= 23;
+              const isUnmapped = !isPutterLabel(club.label) && stock == null;
 
               return (
                 <div key={club.id} className="border-b border-border px-5 py-3.5 last:border-b-0">
@@ -291,16 +308,27 @@ function MinBagPage() {
                           <Clock3 className="h-3 w-3" /> {freshnessText(ageDays, updatedAt)}
                         </p>
                       )}
+                      {isUnmapped ? (
+                        <button
+                          type="button"
+                          onClick={() => goToMapping(club.label)}
+                          className="mt-2 block rounded-full bg-primary px-3 py-1.5 text-[11px] font-semibold text-primary-foreground"
+                        >
+                          Mappa
+                        </button>
+                      ) : null}
                       {adjusted && conditions ? (
                         <p className="mt-0.5 text-[10px] text-muted-foreground">Temp {signed(conditions.temperatureDelta)} m · Höjd {signed(conditions.elevationDelta)} m</p>
                       ) : null}
                     </div>
+
                     <div className="relative shrink-0 text-right">
                       <div>
                         {adjusted && stock != null ? <span className="mr-2 text-xs text-muted-foreground line-through">{Math.round(stock)}</span> : null}
                         <span className="font-display text-3xl tabular-nums">{shown != null ? Math.round(shown) : "–"}</span>
                         <span className="ml-1 text-xs text-muted-foreground">{shown != null ? "m carry" : ""}</span>
                       </div>
+
                       {gapAnalysis?.flagged && nextClub ? (
                         <button
                           type="button"
@@ -353,6 +381,7 @@ function MinBagPage() {
               );
             })}
           </section>
+
           <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">Riktmärke: ungefär 10–14 m mellan fulla carry-längder. Tryck på en markering till höger för förklaring och rekommendation.</p>
           <Link to="/map-my-bag" className="mt-4 flex w-full items-center justify-center rounded-2xl border border-border bg-card py-4 font-semibold">Se historik / mappa om</Link>
         </>
@@ -364,15 +393,15 @@ function MinBagPage() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Bygg om din bag</p>
-                <h2 className="mt-1 text-2xl font-semibold">Välj 14 klubbor</h2>
-                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Klicka i och ur klubbor. Dina befintliga carry-värden följer med på klubbor du behåller. Nya klubbor får mappas när du vill.</p>
+                <h2 className="mt-1 text-2xl font-semibold">Välj upp till 14 klubbor</h2>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Du kan spara även om en ny klubb saknar mappad carry. Putter är obligatorisk.</p>
               </div>
               <button type="button" onClick={() => setShowBagEditor(false)} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border"><X className="h-4 w-4" /></button>
             </div>
 
             <div className="mt-4 flex items-center justify-between rounded-xl bg-muted/60 px-3 py-2.5">
               <span className="text-xs font-semibold">Valda klubbor</span>
-              <span className={`text-sm font-semibold tabular-nums ${bagSelection.length === MAX_BAG_CLUBS ? "text-primary" : "text-foreground"}`}>{bagSelection.length}/{MAX_BAG_CLUBS}</span>
+              <span className={`text-sm font-semibold tabular-nums ${bagSelection.length <= MAX_BAG_CLUBS ? "text-primary" : "text-destructive"}`}>{bagSelection.length}/{MAX_BAG_CLUBS}</span>
             </div>
 
             <div className="mt-4 space-y-5">
@@ -383,7 +412,9 @@ function MinBagPage() {
                     {group.clubs.map((label) => {
                       const selected = bagSelection.includes(label);
                       const locked = isPutterLabel(label);
-                      const disabled = !selected && bagSelection.length >= MAX_BAG_CLUBS;
+                      const nonPutterCount = bagSelection.filter((item) => !isPutterLabel(item)).length;
+                      const disabled = !selected && !locked && nonPutterCount >= MAX_BAG_CLUBS - 1;
+
                       return (
                         <button
                           key={label}
@@ -410,7 +441,8 @@ function MinBagPage() {
                   <div className="flex flex-wrap gap-2">
                     {currentLabelsNotInPicker.map((label) => {
                       const selected = bagSelection.includes(label);
-                      const disabled = !selected && bagSelection.length >= MAX_BAG_CLUBS;
+                      const nonPutterCount = bagSelection.filter((item) => !isPutterLabel(item)).length;
+                      const disabled = !selected && nonPutterCount >= MAX_BAG_CLUBS - 1;
                       return (
                         <button
                           key={label}
@@ -431,13 +463,51 @@ function MinBagPage() {
             <div className="sticky bottom-0 mt-6 bg-background pt-3">
               <button
                 type="button"
-                disabled={bagSelection.length !== MAX_BAG_CLUBS || !bagSelection.some(isPutterLabel)}
+                disabled={!bagSelection.some(isPutterLabel) || bagSelection.length < 1 || bagSelection.length > MAX_BAG_CLUBS}
                 onClick={saveBagSelection}
                 className="flex w-full items-center justify-center rounded-2xl bg-primary py-4 text-sm font-semibold text-primary-foreground disabled:opacity-40"
               >
                 Spara bag · {bagSelection.length}/{MAX_BAG_CLUBS}
               </button>
-              {bagSelection.length < MAX_BAG_CLUBS ? <p className="mt-2 text-center text-[11px] text-muted-foreground">Välj {MAX_BAG_CLUBS - bagSelection.length} klubb{MAX_BAG_CLUBS - bagSelection.length === 1 ? "" : "ar"} till.</p> : null}
+              <p className="mt-2 text-center text-[11px] text-muted-foreground">Du kan alltid mappa nya klubbor efter att bagen är sparad.</p>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {unmappedAfterSave.length ? (
+        <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/40 p-3 sm:items-center" role="dialog" aria-modal="true" aria-label="Nya klubbor utan mappat avstånd">
+          <div className="w-full max-w-md rounded-3xl bg-background p-5 shadow-xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-700">Bagen är sparad</p>
+                <h2 className="mt-1 text-2xl font-semibold">Nya klubbor utan mappat avstånd</h2>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">Du kan mappa dem nu eller göra det senare från Min Bag.</p>
+              </div>
+              <button type="button" onClick={() => setUnmappedAfterSave([])} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border"><X className="h-4 w-4" /></button>
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              {unmappedAfterSave.map((label) => (
+                <span key={label} className="rounded-full bg-muted px-3 py-1.5 text-xs font-semibold">{label}</span>
+              ))}
+            </div>
+
+            <div className="mt-5 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => goToMapping()}
+                className="rounded-2xl bg-primary py-3.5 text-sm font-semibold text-primary-foreground"
+              >
+                Mappa direkt
+              </button>
+              <button
+                type="button"
+                onClick={() => setUnmappedAfterSave([])}
+                className="rounded-2xl border border-border bg-card py-3.5 text-sm font-semibold"
+              >
+                Senare
+              </button>
             </div>
           </div>
         </div>
