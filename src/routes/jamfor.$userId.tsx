@@ -15,7 +15,6 @@ export const Route = createFileRoute("/jamfor/$userId")({
   component: CompareFriendPage,
 });
 
-type Tab = "overview" | "performance" | "training" | "records";
 type Focus = "all" | ComparisonCategory;
 type MetricRow = { key:string; label:string; left?:number; right?:number; unit?:string; decimals?:number; higherIsBetter:boolean };
 
@@ -39,6 +38,13 @@ const FOCUS_OPTIONS: Array<[Focus,string]> = [
   ["around-the-green","Around Green"],
   ["puttning","Putting"],
 ];
+
+const SHOT_LABELS: Record<ComparisonCategory,string> = {
+  driving: "Drives registrerade",
+  approach: "Inspel registrerade",
+  "around-the-green": "Närspelsslag registrerade",
+  puttning: "Puttar registrerade",
+};
 
 function initials(name: string) {
   return name.split(/\s+/).filter(Boolean).slice(0,2).map((part) => part[0]?.toUpperCase()).join("");
@@ -69,14 +75,14 @@ function winner(row: MetricRow) {
   return leftBetter ? "left" : "right";
 }
 
-function MetricTable({ rows, hcp = false, compare = true }: { rows:MetricRow[]; hcp?:boolean; compare?:boolean }) {
+function MetricTable({ rows, hcp = false }: { rows:MetricRow[]; hcp?:boolean }) {
   return <div className="overflow-hidden rounded-3xl border border-border bg-card">
     {rows.map((row, index) => {
-      const win = compare ? winner(row) : null;
+      const win = winner(row);
       return <div key={row.key} className={`grid grid-cols-[1fr_1.35fr_1fr] items-center gap-2 px-4 py-4 ${index ? "border-t border-border/70" : ""}`}>
-        <div className="text-left"><span className={`inline-flex min-w-14 justify-center rounded-xl px-2.5 py-1.5 text-base font-bold tabular-nums ${win === "left" ? "bg-blue-500 text-white" : "text-foreground"}`}>{hcp ? formatHcp(row.left) : formatValue(row.left,row.unit,row.decimals)}</span></div>
+        <div className="text-left"><span className={`inline-flex min-w-14 justify-center rounded-xl px-2.5 py-1.5 text-base font-bold tabular-nums ${win === "left" ? "bg-blue-500 text-white" : "text-blue-500"}`}>{hcp ? formatHcp(row.left) : formatValue(row.left,row.unit,row.decimals)}</span></div>
         <div className="text-center text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">{row.label}</div>
-        <div className="text-right"><span className={`inline-flex min-w-14 justify-center rounded-xl px-2.5 py-1.5 text-base font-bold tabular-nums ${win === "right" ? "bg-red-500 text-white" : "text-foreground"}`}>{hcp ? formatHcp(row.right) : formatValue(row.right,row.unit,row.decimals)}</span></div>
+        <div className="text-right"><span className={`inline-flex min-w-14 justify-center rounded-xl px-2.5 py-1.5 text-base font-bold tabular-nums ${win === "right" ? "bg-red-500 text-white" : "text-red-500"}`}>{hcp ? formatHcp(row.right) : formatValue(row.right,row.unit,row.decimals)}</span></div>
       </div>;
     })}
   </div>;
@@ -95,6 +101,10 @@ function matchRows(left: ComparisonMetric[], right: ComparisonMetric[], focus: F
   });
 }
 
+function SectionTitle({ icon: Icon, children }: { icon: typeof BarChart3; children: React.ReactNode }) {
+  return <div className="mb-3 flex items-center gap-2"><Icon className="h-4 w-4 text-primary"/><h2 className="font-display text-2xl">{children}</h2></div>;
+}
+
 function CompareFriendPage() {
   const { userId } = Route.useParams();
   return <CompareFriendContent userId={userId} />;
@@ -103,7 +113,6 @@ function CompareFriendPage() {
 export function CompareFriendContent({ userId, onBack }: { userId:string; onBack?:()=>void }) {
   useHideBottomNav(true);
   const { user, loading } = useAuth();
-  const [tab,setTab] = useState<Tab>("overview");
   const [focus,setFocus] = useState<Focus>("all");
   const [friend,setFriend] = useState<Profile|null>(null);
   const [friendSnapshot,setFriendSnapshot] = useState<PlayerSnapshot|null>(null);
@@ -138,13 +147,21 @@ export function CompareFriendContent({ userId, onBack }: { userId:string; onBack
 
   const activityRows = useMemo<MetricRow[]>(() => {
     if (!local || !friendSnapshot) return [];
+    if (focus === "all") {
+      return [
+        { key:"tests", label:"Tester gjorda", left:local.comparison.activity.tests, right:friendSnapshot.comparisonProfile.activity.tests, higherIsBetter:true },
+        { key:"shots", label:"Slag registrerade", left:local.comparison.activity.shots, right:friendSnapshot.comparisonProfile.activity.shots, higherIsBetter:true },
+      ];
+    }
+    const left = local.comparison.activity.byCategory[focus];
+    const right = friendSnapshot.comparisonProfile.activity.byCategory[focus];
     return [
-      { key:"tests", label:"Tester gjorda", left:local.comparison.activity.tests, right:friendSnapshot.comparisonProfile.activity.tests, higherIsBetter:true },
-      { key:"shots", label:"Slag registrerade", left:local.comparison.activity.shots, right:friendSnapshot.comparisonProfile.activity.shots, higherIsBetter:true },
+      { key:`${focus}-tests`, label:"Tester gjorda", left:left.tests, right:right.tests, higherIsBetter:true },
+      { key:`${focus}-shots`, label:SHOT_LABELS[focus], left:left.shots, right:right.shots, higherIsBetter:true },
     ];
-  },[local,friendSnapshot]);
+  },[local,friendSnapshot,focus]);
 
-  const overviewRows = useMemo<MetricRow[]>(() => {
+  const levelRows = useMemo<MetricRow[]>(() => {
     if (!local || !friendSnapshot) return [];
     if (focus !== "all") {
       const selected = CATEGORY_ROWS.find((item) => item.slug === focus);
@@ -160,17 +177,9 @@ export function CompareFriendContent({ userId, onBack }: { userId:string; onBack
   const trainingRows = useMemo(() => local && friendSnapshot ? matchRows(local.comparison.training, friendSnapshot.comparisonProfile.training, focus) : [],[local,friendSnapshot,focus]);
   const recordRows = useMemo(() => local && friendSnapshot ? matchRows(local.comparison.records, friendSnapshot.comparisonProfile.records, focus) : [],[local,friendSnapshot,focus]);
 
-  const score = useMemo(() => overviewRows.filter((row) => row.key !== "total").reduce((acc,row) => {
-    const win = winner(row);
-    if (win === "left") acc.left += 1;
-    if (win === "right") acc.right += 1;
-    return acc;
-  },{left:0,right:0}),[overviewRows]);
-
   if (loading) return <main className="mx-auto min-h-screen w-full max-w-md px-5 pt-10"><p className="text-center text-sm text-muted-foreground">Laddar …</p></main>;
   if (!user) return <main className="mx-auto min-h-screen w-full max-w-md px-5 pt-10"><p className="text-center text-sm text-muted-foreground">Logga in för att jämföra med vänner.</p></main>;
 
-  const tabs: Array<[Tab,string]> = [["overview","Översikt"],["performance","Performance"],["training","Träning"],["records","Rekord"]];
   const focusLabel = FOCUS_OPTIONS.find(([key]) => key === focus)?.[1] ?? "Hela spelet";
 
   return <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-10 pt-7">
@@ -182,33 +191,46 @@ export function CompareFriendContent({ userId, onBack }: { userId:string; onBack
 
     <section className="mt-7 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
       <div className="flex min-w-0 flex-col items-center text-center"><Avatar name={selfName} url={selfAvatar} side="left"/><p className="mt-2 max-w-[8rem] truncate text-sm font-bold">{selfName}</p><p className="mt-0.5 text-xs font-semibold text-blue-500">HCP {formatHcp(local?.total)}</p></div>
-      <div className="flex flex-col items-center"><span className="rounded-xl bg-foreground px-3 py-2 font-display text-2xl text-background">VS</span>{focus !== "all" ? <span className="mt-2 font-display text-3xl tabular-nums"><span className="text-blue-500">{score.left}</span>–<span className="text-red-500">{score.right}</span></span> : null}</div>
+      <div className="flex flex-col items-center"><span className="rounded-xl bg-foreground px-3 py-2 font-display text-2xl text-background">VS</span></div>
       <div className="flex min-w-0 flex-col items-center text-center"><Avatar name={friend?.displayName ?? "Vän"} url={friend?.avatarUrl} side="right"/><p className="mt-2 max-w-[8rem] truncate text-sm font-bold">{friend?.displayName ?? "Vän"}</p><p className="mt-0.5 text-xs font-semibold text-red-500">HCP {formatHcp(friendSnapshot?.estHcp ?? undefined)}</p></div>
     </section>
 
     <label className="mt-6 block">
-      <span className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Jämför område</span>
+      <span className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Jämför kategori</span>
       <select value={focus} onChange={(event) => setFocus(event.target.value as Focus)} className="h-12 w-full appearance-none rounded-2xl border border-border bg-card px-4 text-sm font-semibold outline-none focus:border-primary">
         {FOCUS_OPTIONS.map(([key,label]) => <option key={key} value={key}>{label}</option>)}
       </select>
-      <p className="mt-2 text-xs text-muted-foreground">{focus === "all" ? "Visar hela spelprofilen." : `Visar bara detaljer för ${focusLabel}.`}</p>
+      <p className="mt-2 text-xs text-muted-foreground">{focus === "all" ? "Visar hela spelprofilen." : `Visar hela head-to-head för ${focusLabel}.`}</p>
     </label>
 
-    <div className="-mx-1 mt-5 overflow-x-auto px-1 pb-1"><div className="flex w-max min-w-full justify-center gap-1.5">{tabs.map(([key,label]) => <button key={key} type="button" onClick={() => setTab(key)} className={`shrink-0 rounded-full border px-3.5 py-2 text-xs font-semibold ${tab===key?"border-foreground bg-foreground text-background":"border-border bg-card text-muted-foreground"}`}>{label}</button>)}</div></div>
+    {message ? <div className="mt-5 rounded-2xl border border-border bg-card p-4 text-sm text-muted-foreground">{message}</div> : null}
 
-    {message ? <div className="mt-4 rounded-2xl border border-border bg-card p-4 text-sm text-muted-foreground">{message}</div> : null}
-
-    <section className="mt-4">
-      {tab === "overview" ? <>
-        {focus === "all" ? <><div className="mb-3 flex items-center gap-2"><BarChart3 className="h-4 w-4 text-primary"/><h2 className="font-display text-2xl">Aktivitet</h2></div><MetricTable rows={activityRows}/><div className="mb-3 mt-6 flex items-center gap-2"><BarChart3 className="h-4 w-4 text-primary"/><h2 className="font-display text-2xl">Nivå</h2></div></> : <div className="mb-3 flex items-center gap-2"><BarChart3 className="h-4 w-4 text-primary"/><h2 className="font-display text-2xl">{focusLabel}</h2></div>}
-        <MetricTable rows={overviewRows} hcp/>
-      </> : null}
-      {tab === "performance" ? <><div className="mb-3 flex items-center gap-2"><BarChart3 className="h-4 w-4 text-primary"/><h2 className="font-display text-2xl">Performance{focus !== "all" ? ` · ${focusLabel}` : ""}</h2></div>{performanceRows.length?<MetricTable rows={performanceRows}/>:<Empty/>}</> : null}
-      {tab === "training" ? <><div className="mb-3 flex items-center gap-2"><Dumbbell className="h-4 w-4 text-primary"/><h2 className="font-display text-2xl">Tränings-PB{focus !== "all" ? ` · ${focusLabel}` : ""}</h2></div>{trainingRows.length?<MetricTable rows={trainingRows}/>:<Empty/>}</> : null}
-      {tab === "records" ? <><div className="mb-3 flex items-center gap-2"><Trophy className="h-4 w-4 text-primary"/><h2 className="font-display text-2xl">Rekord{focus !== "all" ? ` · ${focusLabel}` : ""}</h2></div>{recordRows.length?<MetricTable rows={recordRows}/>:<Empty/>}</> : null}
+    <section className="mt-6">
+      <SectionTitle icon={BarChart3}>Aktivitet</SectionTitle>
+      <MetricTable rows={activityRows}/>
     </section>
 
-    <p className="mt-5 text-center text-[11px] leading-relaxed text-muted-foreground">Jämförelsen delar bara aggregerade resultat och personliga rekord – aldrig rå slagdata.</p>
+    <section className="mt-7">
+      <SectionTitle icon={BarChart3}>Nivå{focus !== "all" ? ` · ${focusLabel}` : ""}</SectionTitle>
+      <MetricTable rows={levelRows} hcp/>
+    </section>
+
+    <section className="mt-7">
+      <SectionTitle icon={BarChart3}>Performance{focus !== "all" ? ` · ${focusLabel}` : ""}</SectionTitle>
+      {performanceRows.length ? <MetricTable rows={performanceRows}/> : <Empty/>}
+    </section>
+
+    <section className="mt-7">
+      <SectionTitle icon={Dumbbell}>Träning{focus !== "all" ? ` · ${focusLabel}` : ""}</SectionTitle>
+      {trainingRows.length ? <MetricTable rows={trainingRows}/> : <Empty/>}
+    </section>
+
+    <section className="mt-7">
+      <SectionTitle icon={Trophy}>Rekord{focus !== "all" ? ` · ${focusLabel}` : ""}</SectionTitle>
+      {recordRows.length ? <MetricTable rows={recordRows}/> : <Empty/>}
+    </section>
+
+    <p className="mt-7 text-center text-[11px] leading-relaxed text-muted-foreground">Jämförelsen delar bara aggregerade resultat och personliga rekord – aldrig rå slagdata.</p>
   </main>;
 }
 
