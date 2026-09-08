@@ -1,11 +1,26 @@
 export type ShotValueLevel = "hcp20" | "hcp10" | "scratch" | "tour";
 export type ShotValueCategory = "offtee" | "approach" | "around" | "putting";
+export type ShotValueLie = "tee" | "fairway" | "rough" | "bunker" | "recovery" | "green" | "penalty";
+export type ShotValueSource = "sg4" | "external" | "external-model" | "model";
 
 export type ShotValueResult = {
   level: ShotValueLevel;
   label: string;
   value: number;
 };
+
+export type ExpectedStrokePoint = {
+  distanceM: number;
+  expectedStrokes: number;
+  source: ShotValueSource;
+  sampleSize?: number;
+  confidence?: "low" | "medium" | "high";
+  note?: string;
+};
+
+export type ExpectedStrokeTable = Partial<
+  Record<ShotValueCategory, Partial<Record<ShotValueLevel, Partial<Record<ShotValueLie, ExpectedStrokePoint[]>>>>>
+>;
 
 export type SavedShotReference = {
   id: string;
@@ -122,7 +137,7 @@ export const SHOT_VALUE_SCENARIOS: ShotValueScenario[] = [
     difference: [0.8, 1.1],
     roundImpact: [2, 4],
     takeaway: "En missad kortputt kostar mycket mer än den känns eftersom du både missar chansen och fortfarande har ett slag kvar.",
-    benchmarkNote: "Putting bygger på SG4 expected-putts v1",
+    benchmarkNote: "Putting bygger på SG4 expected-strokes-modell",
   },
   {
     id: "putt-lag-10m",
@@ -134,44 +149,121 @@ export const SHOT_VALUE_SCENARIOS: ShotValueScenario[] = [
     difference: [0.2, 0.5],
     roundImpact: [1, 3],
     takeaway: "Bra fartkontroll ser liten ut på ett slag men minskar risken för treputtar under rundan.",
-    benchmarkNote: "Putting bygger på SG4 expected-putts v1",
+    benchmarkNote: "Putting bygger på SG4 expected-strokes-modell",
   },
 ];
 
-// SG4 reference model v1. Values are expected putts, intentionally rounded and
-// displayed as approximate guidance rather than false precision. The table is
-// isolated here so it can later be replaced by validated SG4 population data.
-const EXPECTED_PUTTS: Record<ShotValueLevel, Array<[number, number]>> = {
-  hcp20: [[0,0],[0.3,1.02],[0.6,1.08],[0.9,1.18],[1.2,1.30],[1.5,1.42],[2,1.58],[3,1.78],[4,1.90],[5,1.99],[7.5,2.10],[10,2.18],[15,2.28],[20,2.36],[25,2.43]],
-  hcp10: [[0,0],[0.3,1.01],[0.6,1.05],[0.9,1.12],[1.2,1.22],[1.5,1.33],[2,1.48],[3,1.68],[4,1.81],[5,1.90],[7.5,2.01],[10,2.09],[15,2.19],[20,2.27],[25,2.34]],
-  scratch: [[0,0],[0.3,1.00],[0.6,1.03],[0.9,1.08],[1.2,1.16],[1.5,1.26],[2,1.40],[3,1.60],[4,1.73],[5,1.82],[7.5,1.93],[10,2.01],[15,2.11],[20,2.19],[25,2.26]],
-  tour: [[0,0],[0.3,1.00],[0.6,1.01],[0.9,1.04],[1.2,1.10],[1.5,1.20],[2,1.35],[3,1.55],[4,1.68],[5,1.76],[7.5,1.87],[10,1.94],[15,2.03],[20,2.10],[25,2.17]],
+const p = (
+  distanceM: number,
+  expectedStrokes: number,
+  source: ShotValueSource = "model",
+  confidence: ExpectedStrokePoint["confidence"] = "medium",
+  note?: string,
+): ExpectedStrokePoint => ({ distanceM, expectedStrokes, source, confidence, note });
+
+/**
+ * Generic expected-strokes store.
+ *
+ * Shape: [category][level][lie][distance].
+ * Only putting/green is populated today. Around-the-green, approach and off-the-tee
+ * can be added without changing the lookup/calculation API.
+ *
+ * HCP10 contains two externally published Arccos/Lou Stagner anchors:
+ * - 5 ft (~1.52 m): a 2-putt loses 0.52 strokes => baseline ~1.48 expected strokes.
+ * - 60 ft (~18.29 m): a 2-putt gains 0.49 strokes => baseline ~2.49 expected strokes.
+ * Remaining points are SG4 model points and should be replaced/calibrated as stronger
+ * licensed/public or SG4 population data becomes available.
+ */
+export const EXPECTED_STROKES: ExpectedStrokeTable = {
+  putting: {
+    hcp20: {
+      green: [
+        p(0, 0), p(0.3, 1.02), p(0.6, 1.08), p(0.9, 1.18), p(1.2, 1.30), p(1.5, 1.42),
+        p(2, 1.58), p(3, 1.78), p(4, 1.90), p(5, 1.99), p(7.5, 2.10), p(10, 2.18), p(15, 2.28), p(20, 2.36), p(25, 2.43),
+      ],
+    },
+    hcp10: {
+      green: [
+        p(0, 0), p(0.3, 1.01), p(0.6, 1.05), p(0.9, 1.12), p(1.2, 1.22),
+        p(1.524, 1.48, "external", "high", "Arccos/Lou Stagner: 5 ft two-putt = -0.52 SG vs HCP10"),
+        p(2, 1.58, "external-model", "medium"), p(3, 1.76, "external-model", "medium"),
+        p(5, 1.95, "external-model", "medium"), p(7.5, 2.08, "external-model", "medium"),
+        p(10, 2.18, "external-model", "medium"), p(15, 2.38, "external-model", "medium"),
+        p(18.288, 2.49, "external", "high", "Arccos/Lou Stagner: 60 ft two-putt = +0.49 SG vs HCP10"),
+        p(20, 2.53, "external-model", "medium"), p(25, 2.62, "external-model", "low"),
+      ],
+    },
+    scratch: {
+      green: [
+        p(0, 0), p(0.3, 1.00), p(0.6, 1.03), p(0.9, 1.08), p(1.2, 1.16), p(1.5, 1.26),
+        p(2, 1.40), p(3, 1.60), p(4, 1.73), p(5, 1.82), p(7.5, 1.93), p(10, 2.01), p(15, 2.11), p(20, 2.19), p(25, 2.26),
+      ],
+    },
+    tour: {
+      green: [
+        p(0, 0), p(0.3, 1.00), p(0.6, 1.01), p(0.9, 1.04), p(1.2, 1.10), p(1.5, 1.20),
+        p(2, 1.35), p(3, 1.55), p(4, 1.68), p(5, 1.76), p(7.5, 1.87), p(10, 1.94), p(15, 2.03), p(20, 2.10), p(25, 2.17),
+      ],
+    },
+  },
 };
 
-export function expectedPutts(level: ShotValueLevel, distanceM: number) {
+export function getExpectedStrokePoints(category: ShotValueCategory, level: ShotValueLevel, lie: ShotValueLie) {
+  return EXPECTED_STROKES[category]?.[level]?.[lie] ?? null;
+}
+
+export function expectedStrokes(
+  category: ShotValueCategory,
+  level: ShotValueLevel,
+  lie: ShotValueLie,
+  distanceM: number,
+) {
+  const points = getExpectedStrokePoints(category, level, lie);
+  if (!points?.length) return null;
+
   const d = Math.max(0, Number.isFinite(distanceM) ? distanceM : 0);
-  const points = EXPECTED_PUTTS[level];
-  if (d <= points[0][0]) return points[0][1];
-  if (d >= points[points.length - 1][0]) {
-    const [x1,y1] = points[points.length - 2];
-    const [x2,y2] = points[points.length - 1];
-    return y2 + (d - x2) * ((y2 - y1) / (x2 - x1));
+  if (d <= points[0].distanceM) return points[0].expectedStrokes;
+
+  if (d >= points[points.length - 1].distanceM) {
+    const a = points[points.length - 2];
+    const b = points[points.length - 1];
+    return b.expectedStrokes + (d - b.distanceM) * ((b.expectedStrokes - a.expectedStrokes) / (b.distanceM - a.distanceM));
   }
+
   for (let i = 1; i < points.length; i += 1) {
-    const [x2,y2] = points[i];
-    if (d <= x2) {
-      const [x1,y1] = points[i - 1];
-      const t = (d - x1) / (x2 - x1);
-      return y1 + (y2 - y1) * t;
+    const b = points[i];
+    if (d <= b.distanceM) {
+      const a = points[i - 1];
+      const t = (d - a.distanceM) / (b.distanceM - a.distanceM);
+      return a.expectedStrokes + (b.expectedStrokes - a.expectedStrokes) * t;
     }
   }
-  return points[points.length - 1][1];
+
+  return points[points.length - 1].expectedStrokes;
+}
+
+export function expectedPutts(level: ShotValueLevel, distanceM: number) {
+  return expectedStrokes("putting", level, "green", distanceM) ?? 0;
+}
+
+export function shotValue(
+  before: { category: ShotValueCategory; level: ShotValueLevel; lie: ShotValueLie; distanceM: number },
+  after: { category: ShotValueCategory; lie: ShotValueLie; distanceM: number } | null,
+) {
+  const beforeValue = expectedStrokes(before.category, before.level, before.lie, before.distanceM);
+  if (beforeValue == null) return null;
+  if (after == null) return beforeValue - 1;
+
+  const afterValue = expectedStrokes(after.category, before.level, after.lie, after.distanceM);
+  if (afterValue == null) return null;
+  return beforeValue - 1 - afterValue;
 }
 
 export function puttingShotValue(startDistanceM: number, holed: boolean, remainingDistanceM: number, level: ShotValueLevel) {
-  const before = expectedPutts(level, startDistanceM);
-  const after = holed ? 0 : expectedPutts(level, remainingDistanceM);
-  return before - 1 - after;
+  return shotValue(
+    { category: "putting", level, lie: "green", distanceM: startDistanceM },
+    holed ? null : { category: "putting", lie: "green", distanceM: remainingDistanceM },
+  ) ?? 0;
 }
 
 export function comparePuttingShot(startDistanceM: number, holed: boolean, remainingDistanceM: number): ShotValueResult[] {
