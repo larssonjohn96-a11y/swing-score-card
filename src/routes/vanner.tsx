@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Check, Search, User, UserPlus, X } from "lucide-react";
+import { ArrowLeft, Check, ChevronRight, Search, User, UserPlus, Users, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -11,6 +11,7 @@ import {
   type Friendship,
   type Profile,
 } from "@/lib/friends-cloud";
+import { listActiveEightBallGroupSessions } from "@/lib/group-eight-ball";
 
 export const Route = createFileRoute("/vanner")({
   head: () => ({ meta: [{ title: "Vänner | SG4" }] }),
