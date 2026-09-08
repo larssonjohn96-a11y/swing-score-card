@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, ChevronRight, User, Users } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { listFriendships, type Friendship } from "@/lib/friends-cloud";
 import { loadCardProfile } from "@/lib/rating-card";
 import { useAuth } from "@/hooks/use-auth";
@@ -19,6 +20,7 @@ function ComparePickerPage(){
   const [friends,setFriends]=useState<Friendship[]>([]);
   const [selfName,setSelfName]=useState("Du");
   const [selfAvatar,setSelfAvatar]=useState<string|null>(()=>loadCardProfile().photo??null);
+  const [pickerOpen,setPickerOpen]=useState(false);
 
   useEffect(()=>{
     if(!user)return;
@@ -45,9 +47,20 @@ function ComparePickerPage(){
     <section className="mt-7 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
       <div className="flex min-h-44 flex-col items-center justify-center rounded-3xl border border-border bg-card p-4 text-center"><Avatar name={selfName} url={selfAvatar}/><p className="mt-3 max-w-full truncate text-sm font-bold">{selfName}</p><p className="mt-1 text-[11px] text-muted-foreground">Du</p></div>
       <span className="rounded-xl bg-foreground px-2.5 py-2 font-display text-xl text-background">VS</span>
-      <div className="flex min-h-44 flex-col items-center justify-center rounded-3xl border border-dashed border-primary/45 bg-primary/5 p-4 text-center"><span className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-primary-foreground"><User className="h-7 w-7"/></span><p className="mt-3 text-sm font-bold">Välj spelare</p><p className="mt-1 text-[11px] text-muted-foreground">{friends.length} vänner</p></div>
+      <button type="button" onClick={()=>setPickerOpen(true)} className="flex min-h-44 flex-col items-center justify-center rounded-3xl border border-dashed border-primary/45 bg-primary/5 p-4 text-center transition-colors active:bg-primary/10">
+        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-primary-foreground"><User className="h-7 w-7"/></span>
+        <p className="mt-3 text-sm font-bold">Välj spelare</p>
+        <p className="mt-1 text-[11px] text-muted-foreground">{friends.length} vänner</p>
+      </button>
     </section>
 
     {loading?<p className="mt-6 text-center text-sm text-muted-foreground">Laddar …</p>:!user?<div className="mt-6 rounded-3xl border border-border bg-card p-5 text-center text-sm text-muted-foreground">Logga in för att jämföra med vänner.</div>:friends.length?<section className="mt-6 overflow-hidden rounded-3xl border border-border bg-card"><div className="px-4 py-3"><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Välj vän</p></div>{friends.map((friend,index)=><Link key={friend.id} to="/jamfor/$userId" params={{userId:friend.other.id}} className={`flex items-center gap-3 px-4 py-3.5 ${index?"border-t border-border/70":""}`}><span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-xs font-bold text-primary">{friend.other.avatarUrl?<img src={friend.other.avatarUrl} alt="" className="h-full w-full object-cover"/>:initials(friend.other.displayName)||<User className="h-4 w-4"/>}</span><span className="min-w-0 flex-1 truncate text-sm font-semibold">{friend.other.displayName}</span><ChevronRight className="h-4 w-4 text-primary"/></Link>)}</section>:<div className="mt-6 rounded-3xl border border-border bg-card p-5 text-center"><p className="text-sm text-muted-foreground">Du har inga accepterade vänner ännu.</p><Link to="/vanner" className="mt-3 inline-flex rounded-full border border-border px-4 py-2 text-xs font-semibold text-primary">Lägg till vänner</Link></div>}
+
+    <Sheet open={pickerOpen} onOpenChange={setPickerOpen}>
+      <SheetContent side="bottom" className="mx-auto max-h-[78vh] max-w-md overflow-y-auto rounded-t-3xl px-5 pb-8">
+        <SheetHeader><SheetTitle>Välj spelare</SheetTitle></SheetHeader>
+        {!user ? <div className="mt-5 rounded-2xl bg-muted/60 p-4 text-sm text-muted-foreground">Logga in för att välja en vän.</div> : friends.length ? <div className="mt-5 divide-y divide-border overflow-hidden rounded-2xl border border-border">{friends.map((friend)=><Link key={friend.id} to="/jamfor/$userId" params={{userId:friend.other.id}} onClick={()=>setPickerOpen(false)} className="flex items-center gap-3 bg-card px-3.5 py-3.5"><span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-xs font-bold text-primary">{friend.other.avatarUrl?<img src={friend.other.avatarUrl} alt="" className="h-full w-full object-cover"/>:initials(friend.other.displayName)||<User className="h-4 w-4"/>}</span><span className="min-w-0 flex-1 truncate text-sm font-semibold">{friend.other.displayName}</span><ChevronRight className="h-4 w-4 text-primary"/></Link>)}</div> : <div className="mt-5 rounded-2xl bg-muted/60 p-4 text-sm text-muted-foreground">Du har inga accepterade vänner ännu. <Link to="/vanner" onClick={()=>setPickerOpen(false)} className="font-semibold text-primary">Lägg till vänner ›</Link></div>}
+      </SheetContent>
+    </Sheet>
   </main>;
 }
