@@ -132,10 +132,14 @@ function NativeWheel({
   );
 }
 
+function normalizeBagSelection(selectedLabels: string[]) {
+  const nonPutters = Array.from(new Set(selectedLabels.filter((label) => !isPutterLabel(label))));
+  return [...nonPutters.slice(0, MAX_BAG_CLUBS - 1), "Putter"];
+}
+
 function rebuildBagFromSelection(current: BagMap, selectedLabels: string[]) {
   const now = new Date().toISOString();
-  const selected = Array.from(new Set(selectedLabels));
-  if (!selected.some(isPutterLabel)) selected.push("Putter");
+  const selected = normalizeBagSelection(selectedLabels);
 
   const retainedByLabel = new Map(current.clubs.map((club) => [club.label.toLowerCase(), club]));
   const libraryLabels = BAG_CLUB_LIBRARY as readonly string[];
@@ -179,6 +183,10 @@ function MinBagPage() {
   const [bagSelection, setBagSelection] = useState<string[]>([]);
   const [unmappedAfterSave, setUnmappedAfterSave] = useState<string[]>([]);
 
+  const normalizedSelection = normalizeBagSelection(bagSelection);
+  const selectedNonPutterCount = normalizedSelection.filter((label) => !isPutterLabel(label)).length;
+  const displayedSelectionCount = selectedNonPutterCount + 1;
+
   function resetConditions() {
     setTemperature(INDOOR_REFERENCE_TEMPERATURE_C);
     setElevation(INDOOR_REFERENCE_ELEVATION_M);
@@ -186,29 +194,32 @@ function MinBagPage() {
 
   function openBagEditor() {
     if (!latest) return;
-    const nonPutters = latest.clubs.map((club) => club.label).filter((label) => !isPutterLabel(label));
-    setBagSelection([...Array.from(new Set(nonPutters)).slice(0, MAX_BAG_CLUBS - 1), "Putter"]);
+    setBagSelection(normalizeBagSelection(latest.clubs.map((club) => club.label)));
     setShowBagEditor(true);
   }
 
   function toggleBagClub(label: string) {
     if (isPutterLabel(label)) return;
     setBagSelection((current) => {
-      if (current.includes(label)) return current.filter((item) => item !== label);
-      const nonPutterCount = current.filter((item) => !isPutterLabel(item)).length;
-      if (nonPutterCount >= MAX_BAG_CLUBS - 1) return current;
-      const withoutPutter = current.filter((item) => !isPutterLabel(item));
-      return [...withoutPutter, label, "Putter"];
+      const normalized = normalizeBagSelection(current);
+      const nonPutters = normalized.filter((item) => !isPutterLabel(item));
+      if (nonPutters.includes(label)) {
+        return normalizeBagSelection(nonPutters.filter((item) => item !== label));
+      }
+      if (nonPutters.length >= MAX_BAG_CLUBS - 1) return normalized;
+      return normalizeBagSelection([...nonPutters, label]);
     });
   }
 
   function saveBagSelection() {
-    if (!latest || !bagSelection.some(isPutterLabel) || bagSelection.length > MAX_BAG_CLUBS) return;
-    const rebuilt = rebuildBagFromSelection(latest, bagSelection);
+    if (!latest) return;
+    const safeSelection = normalizeBagSelection(bagSelection);
+    const rebuilt = rebuildBagFromSelection(latest, safeSelection);
     const unmapped = rebuilt.clubs
       .filter((club) => !isPutterLabel(club.label) && medianCarry(club) == null)
       .map((club) => club.label);
 
+    setBagSelection(safeSelection);
     setLatest(rebuilt);
     setOpenGap(null);
     setShowBagEditor(false);
@@ -394,14 +405,14 @@ function MinBagPage() {
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Bygg om din bag</p>
                 <h2 className="mt-1 text-2xl font-semibold">Välj upp till 14 klubbor</h2>
-                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Du kan spara även om en ny klubb saknar mappad carry. Putter är obligatorisk.</p>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Du kan spara även om en ny klubb saknar mappad carry. Putter är alltid reserverad och räknas som en av 14.</p>
               </div>
               <button type="button" onClick={() => setShowBagEditor(false)} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border"><X className="h-4 w-4" /></button>
             </div>
 
             <div className="mt-4 flex items-center justify-between rounded-xl bg-muted/60 px-3 py-2.5">
               <span className="text-xs font-semibold">Valda klubbor</span>
-              <span className={`text-sm font-semibold tabular-nums ${bagSelection.length <= MAX_BAG_CLUBS ? "text-primary" : "text-destructive"}`}>{bagSelection.length}/{MAX_BAG_CLUBS}</span>
+              <span className="text-sm font-semibold tabular-nums text-primary">{displayedSelectionCount}/{MAX_BAG_CLUBS}</span>
             </div>
 
             <div className="mt-4 space-y-5">
@@ -410,10 +421,9 @@ function MinBagPage() {
                   <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{group.title}</p>
                   <div className="flex flex-wrap gap-2">
                     {group.clubs.map((label) => {
-                      const selected = bagSelection.includes(label);
                       const locked = isPutterLabel(label);
-                      const nonPutterCount = bagSelection.filter((item) => !isPutterLabel(item)).length;
-                      const disabled = !selected && !locked && nonPutterCount >= MAX_BAG_CLUBS - 1;
+                      const selected = locked || normalizedSelection.includes(label);
+                      const disabled = !selected && !locked && selectedNonPutterCount >= MAX_BAG_CLUBS - 1;
 
                       return (
                         <button
@@ -440,9 +450,8 @@ function MinBagPage() {
                   <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Övriga i din bag</p>
                   <div className="flex flex-wrap gap-2">
                     {currentLabelsNotInPicker.map((label) => {
-                      const selected = bagSelection.includes(label);
-                      const nonPutterCount = bagSelection.filter((item) => !isPutterLabel(item)).length;
-                      const disabled = !selected && nonPutterCount >= MAX_BAG_CLUBS - 1;
+                      const selected = normalizedSelection.includes(label);
+                      const disabled = !selected && selectedNonPutterCount >= MAX_BAG_CLUBS - 1;
                       return (
                         <button
                           key={label}
@@ -463,11 +472,10 @@ function MinBagPage() {
             <div className="sticky bottom-0 mt-6 bg-background pt-3">
               <button
                 type="button"
-                disabled={!bagSelection.some(isPutterLabel) || bagSelection.length < 1 || bagSelection.length > MAX_BAG_CLUBS}
                 onClick={saveBagSelection}
-                className="flex w-full items-center justify-center rounded-2xl bg-primary py-4 text-sm font-semibold text-primary-foreground disabled:opacity-40"
+                className="flex w-full items-center justify-center rounded-2xl bg-primary py-4 text-sm font-semibold text-primary-foreground"
               >
-                Spara bag · {bagSelection.length}/{MAX_BAG_CLUBS}
+                Spara bag · {displayedSelectionCount}/{MAX_BAG_CLUBS}
               </button>
               <p className="mt-2 text-center text-[11px] text-muted-foreground">Du kan alltid mappa nya klubbor efter att bagen är sparad.</p>
             </div>
