@@ -38,17 +38,24 @@ function MapClubPage() {
     }
     return mappable.filter((club) => medianCarry(club) == null).map((club) => club.label);
   });
+  const [initialAcceptedByLabel] = useState<Record<string, number>>(() => {
+    if (!initial) return {};
+    return Object.fromEntries(initial.clubs.map((club) => [club.label, acceptedShots(club).length]));
+  });
+
   const targets = targetLabels
     .map((label) => map?.clubs.find((club) => club.label === label) ?? null)
     .filter((club): club is BagClub => club != null);
 
   const [targetIndex, setTargetIndex] = useState(0);
   const [carry, setCarry] = useState("");
-
   const selected = targets[targetIndex] ?? null;
-  const acceptedCount = selected ? acceptedShots(selected).length : 0;
-  const selectedComplete = acceptedCount >= 3;
+  const totalAccepted = selected ? acceptedShots(selected).length : 0;
+  const previousAccepted = selected ? (initialAcceptedByLabel[selected.label] ?? 0) : 0;
+  const sessionAccepted = Math.max(0, totalAccepted - previousAccepted);
+  const selectedComplete = sessionAccepted >= 3;
   const isLast = targetIndex >= targets.length - 1;
+  const previousCarry = selected && previousAccepted > 0 ? medianCarry({ ...selected, shots: selected.shots.slice(0, previousAccepted) }) : null;
 
   function updateSelected(updater: (club: BagClub) => BagClub) {
     if (!map || !selected) return;
@@ -62,7 +69,7 @@ function MapClubPage() {
   }
 
   function registerAccepted() {
-    if (!selected) return;
+    if (!selected || sessionAccepted >= 3) return;
     const value = Number(carry.replace(",", "."));
     if (!Number.isFinite(value) || value <= 0) return;
     updateSelected((club) => ({
@@ -73,7 +80,7 @@ function MapClubPage() {
   }
 
   function registerMiss() {
-    if (!selected) return;
+    if (!selected || sessionAccepted >= 3) return;
     updateSelected((club) => ({
       ...club,
       shots: [...club.shots, { carry: 0, accepted: false, createdAt: new Date().toISOString() }],
@@ -127,66 +134,48 @@ function MapClubPage() {
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-28 pt-6">
       <header className="flex items-center justify-between gap-3">
-        <button
-          type="button"
-          onClick={() => { window.location.href = "/min-bag"; }}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card"
-        >
+        <button type="button" onClick={() => { window.location.href = "/min-bag"; }} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card">
           <ArrowLeft className="h-4 w-4" />
         </button>
-        <span className="text-xs font-semibold text-muted-foreground">
-          {targetIndex + 1}/{targets.length} klubb{targets.length === 1 ? "" : "ar"}
-        </span>
+        <span className="text-xs font-semibold text-muted-foreground">{targetIndex + 1}/{targets.length} klubb{targets.length === 1 ? "" : "ar"}</span>
       </header>
 
       <section className="mt-6 rounded-3xl border border-border bg-card p-5 text-center">
         <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Mappa carry</p>
         <h1 className="mt-2 font-display text-6xl leading-none">{selected.label}</h1>
-        <p className="mt-2 text-sm text-muted-foreground">{Math.min(acceptedCount, 3)} av 3 godkända slag</p>
+        <p className="mt-2 text-sm text-muted-foreground">{Math.min(sessionAccepted, 3)} av 3 nya godkända slag</p>
 
-        {medianCarry(selected) != null ? (
-          <p className="mt-3 text-sm font-semibold text-primary">Median just nu: {Math.round(medianCarry(selected)!)} m</p>
+        {sessionAccepted === 0 && previousCarry != null ? (
+          <p className="mt-3 text-sm text-muted-foreground">Tidigare carry: <span className="font-semibold text-foreground">{Math.round(previousCarry)} m</span></p>
+        ) : medianCarry(selected) != null ? (
+          <p className="mt-3 text-sm font-semibold text-primary">Ny median just nu: {Math.round(medianCarry(selected)!)} m</p>
         ) : null}
 
         <div className="mt-5 flex items-center gap-2">
           <input
             inputMode="decimal"
             value={carry}
+            disabled={selectedComplete}
             onChange={(event) => setCarry(event.target.value)}
             placeholder="Carry i meter"
-            className="min-w-0 flex-1 rounded-2xl border border-border bg-background px-4 py-4 text-center text-xl font-semibold"
+            className="min-w-0 flex-1 rounded-2xl border border-border bg-background px-4 py-4 text-center text-xl font-semibold disabled:opacity-50"
           />
-          <button
-            type="button"
-            onClick={registerAccepted}
-            className="inline-flex h-[58px] w-[58px] items-center justify-center rounded-2xl bg-primary text-primary-foreground"
-          >
+          <button type="button" disabled={selectedComplete} onClick={registerAccepted} className="inline-flex h-[58px] w-[58px] items-center justify-center rounded-2xl bg-primary text-primary-foreground disabled:opacity-40">
             <Check className="h-5 w-5" />
           </button>
         </div>
 
-        <button
-          type="button"
-          onClick={registerMiss}
-          className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground"
-        >
+        <button type="button" disabled={selectedComplete} onClick={registerMiss} className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground disabled:opacity-40">
           <X className="h-3.5 w-3.5" /> Miss-träff · räknas inte
         </button>
       </section>
 
       <section className="mt-4 rounded-2xl border border-border bg-card p-4">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Det här sparas</p>
-        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-          Efter tre godkända slag används medianen som klubbans stock carry. Övriga klubbor i din bag behålls oförändrade.
-        </p>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Tre bollar räcker</p>
+        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">De tre nya godkända slagen blir klubbans aktuella stock carry. Äldre mätningar ligger kvar i historiken och raderas inte.</p>
       </section>
 
-      <button
-        type="button"
-        disabled={!selectedComplete}
-        onClick={nextClub}
-        className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-4 font-semibold text-primary-foreground disabled:opacity-40"
-      >
+      <button type="button" disabled={!selectedComplete} onClick={nextClub} className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-4 font-semibold text-primary-foreground disabled:opacity-40">
         {isLast ? <><Save className="h-4 w-4" /> Spara & tillbaka till Min Bag</> : <>Nästa klubb <ChevronRight className="h-4 w-4" /></>}
       </button>
     </main>
