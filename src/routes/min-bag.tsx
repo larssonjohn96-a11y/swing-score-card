@@ -1,8 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { AlertTriangle, ArrowLeft, CalendarClock, CircleMinus, Clock3, MapPinned, RotateCcw, SlidersHorizontal, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CircleMinus, MapPinned, RotateCcw, SlidersHorizontal, X } from "lucide-react";
 import { useState } from "react";
 import {
-  acceptedShots,
   adjustCarryForConditions,
   analyzeGap,
   BAG_CLUB_LIBRARY,
@@ -26,7 +25,6 @@ export const Route = createFileRoute("/min-bag")({
 
 const TEMPERATURES = Array.from({ length: 61 }, (_, index) => index - 10);
 const ELEVATIONS = Array.from({ length: 111 }, (_, index) => -500 + index * 50);
-const FULL_CONFIDENCE_SHOTS = 20;
 
 const BAG_EDITOR_GROUPS = [
   { title: "Woods", clubs: ["Driver", "Mini Driver", "2W", "3W", "4W", "5W", "7W", "9W", "11W"] },
@@ -37,6 +35,7 @@ const BAG_EDITOR_GROUPS = [
 ] as const;
 
 type Season = "vinter" | "vår" | "sommar" | "höst";
+type FreshnessStatus = "Bra" | "Bör uppdateras" | "Gammal data";
 type OpenGap = {
   clubLabel: string;
   nextLabel: string;
@@ -45,18 +44,6 @@ type OpenGap = {
   targetCarry: number | null;
   seasonalLowConfidence: boolean;
 } | null;
-
-function confidenceLabel(shots: number) {
-  if (shots >= FULL_CONFIDENCE_SHOTS) return "Full";
-  if (shots >= 12) return "Hög";
-  if (shots >= 7) return "Bra";
-  return "Grund";
-}
-
-function confidencePercent(shots: number) {
-  if (shots < 3) return 0;
-  return Math.min(100, Math.round((shots / FULL_CONFIDENCE_SHOTS) * 100));
-}
 
 function seasonForDate(date: Date): Season {
   const month = date.getMonth();
@@ -73,40 +60,32 @@ function seasonMismatch(updatedAt: string | null, now = new Date()) {
   return seasonForDate(measured) !== seasonForDate(now);
 }
 
-function measuredMonth(updatedAt: string) {
-  return new Intl.DateTimeFormat("sv-SE", { month: "long" }).format(new Date(updatedAt));
-}
+function bagFreshness(bag: BagMap) {
+  const mapped = bag.clubs.filter((club) => !isPutterLabel(club.label) && medianCarry(club) != null);
+  const dated = mapped.flatMap((club) => {
+    const updatedAt = clubLastUpdatedAt(club);
+    const ageDays = clubAgeDays(club);
+    if (!updatedAt || ageDays == null) return [];
+    return [{ updatedAt, ageDays, seasonMismatch: seasonMismatch(updatedAt) }];
+  });
 
-function seasonalHint(updatedAt: string, now = new Date()) {
-  const measured = new Date(updatedAt);
-  const currentSeason = seasonForDate(now);
-  const measuredSeason = seasonForDate(measured);
-  const month = measuredMonth(updatedAt);
-
-  if (currentSeason === "sommar" && measuredSeason !== "sommar") {
-    return `Uppmätt i ${month} – dina sommarsiffror går troligen längre.`;
+  if (!dated.length) {
+    return { status: "Gammal data" as FreshnessStatus, latestMappedAt: null as string | null, needsRefresh: true };
   }
-  if (currentSeason === "vinter" && measuredSeason !== "vinter") {
-    return `Uppmätt i ${month} – dina vinterlängder kan vara kortare.`;
-  }
-  return `Uppmätt i ${month} – annan säsong. Tre bollar räcker för att kontrollera.`;
-}
 
-function freshnessText(days: number | null, updatedAt: string | null) {
-  if (days == null || !updatedAt) return "Inte mappad";
-  if (seasonMismatch(updatedAt)) return seasonalHint(updatedAt);
-  if (days === 0) return "Uppdaterad idag";
-  if (days === 1) return "Uppdaterad igår";
-  if (days < 30) return `Uppdaterad för ${days} dagar sedan`;
-  return `Uppdaterad ${new Date(updatedAt).toLocaleDateString("sv-SE")}`;
-}
+  const latestMappedAt = dated
+    .map((item) => item.updatedAt)
+    .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0] ?? null;
+  const staleCount = dated.filter((item) => item.ageDays > 90 || item.seasonMismatch).length;
+  const veryOldCount = dated.filter((item) => item.ageDays > 180).length;
+  const staleShare = staleCount / dated.length;
+  const oldestDays = Math.max(...dated.map((item) => item.ageDays));
 
-function freshnessClass(days: number | null, updatedAt: string | null) {
-  if (days == null) return "text-amber-700";
-  if (updatedAt && seasonMismatch(updatedAt)) return "text-amber-700";
-  if (days <= 30) return "text-primary";
-  if (days <= 90) return "text-foreground";
-  return "text-amber-700";
+  let status: FreshnessStatus = "Bra";
+  if (veryOldCount > 0 || staleShare >= 0.5 || oldestDays > 180) status = "Gammal data";
+  else if (staleCount > 0 || oldestDays > 90) status = "Bör uppdateras";
+
+  return { status, latestMappedAt, needsRefresh: status !== "Bra" };
 }
 
 function signed(value: number) {
@@ -207,7 +186,6 @@ function MinBagPage() {
   const [temperature, setTemperature] = useState(INDOOR_REFERENCE_TEMPERATURE_C);
   const [elevation, setElevation] = useState(INDOOR_REFERENCE_ELEVATION_M);
   const [openGap, setOpenGap] = useState<OpenGap>(null);
-  const [openConfidenceClubId, setOpenConfidenceClubId] = useState<string | null>(null);
   const [showBagEditor, setShowBagEditor] = useState(false);
   const [bagSelection, setBagSelection] = useState<string[]>([]);
   const [unmappedAfterSave, setUnmappedAfterSave] = useState<string[]>([]);
@@ -215,6 +193,7 @@ function MinBagPage() {
   const normalizedSelection = normalizeBagSelection(bagSelection);
   const selectedNonPutterCount = normalizedSelection.filter((label) => !isPutterLabel(label)).length;
   const displayedSelectionCount = selectedNonPutterCount + 1;
+  const freshness = latest ? bagFreshness(latest) : null;
 
   function resetConditions() {
     setTemperature(INDOOR_REFERENCE_TEMPERATURE_C);
@@ -246,7 +225,6 @@ function MinBagPage() {
     setBagSelection(safeSelection);
     setLatest(rebuilt);
     setOpenGap(null);
-    setOpenConfidenceClubId(null);
     setShowBagEditor(false);
     setUnmappedAfterSave(unmapped);
   }
@@ -260,7 +238,7 @@ function MinBagPage() {
       <header className="flex items-center justify-between gap-3">
         <Link to="/tester" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card"><ArrowLeft className="h-4 w-4" /></Link>
         <div className="flex items-center gap-2">
-          <Link to="/map-my-bag" className="rounded-full border border-border bg-card px-3 py-2 text-xs font-semibold">Map My Bag</Link>
+          {latest ? <button type="button" onClick={() => goToMapping()} className="rounded-full border border-border bg-card px-3 py-2 text-xs font-semibold">Mappa om</button> : null}
           {latest ? <button type="button" onClick={openBagEditor} className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-card px-3 text-[11px] font-semibold"><SlidersHorizontal className="h-3.5 w-3.5" /> Ändra bag</button> : null}
         </div>
       </header>
@@ -277,12 +255,27 @@ function MinBagPage() {
         </section>
       ) : (
         <>
-          <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-            <span>Bag sparad {new Date(latest.completedAt || latest.updatedAt).toLocaleDateString("sv-SE")}</span>
-            <span>{latest.location || "Ingen plats"}</span>
-          </div>
+          <section className="mt-4 rounded-2xl border border-border bg-card p-4">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Freshness</p>
+                <p className={`mt-1 text-lg font-semibold ${freshness?.status === "Bra" ? "text-primary" : freshness?.status === "Gammal data" ? "text-red-700" : "text-amber-700"}`}>{freshness?.status}</p>
+              </div>
+              <div className="text-right text-xs text-muted-foreground">
+                <p>Senast mappad</p>
+                <p className="mt-1 font-semibold text-foreground">{freshness?.latestMappedAt ? new Date(freshness.latestMappedAt).toLocaleDateString("sv-SE") : "–"}</p>
+              </div>
+            </div>
+            {freshness?.needsRefresh ? (
+              <div className={`mt-3 rounded-xl p-3 ${freshness.status === "Gammal data" ? "bg-red-500/10" : "bg-amber-400/15"}`}>
+                <p className="text-xs font-semibold">Dina carry-längder börjar bli gamla.</p>
+                <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">Freshness bygger på klubbarnas faktiska mappningsdatum, så en nyuppdaterad klubb gör inte automatiskt hela bagen färsk.</p>
+                <button type="button" onClick={() => goToMapping()} className="mt-3 rounded-full bg-foreground px-3 py-2 text-[11px] font-semibold text-background">Mappa om bagen</button>
+              </div>
+            ) : null}
+          </section>
 
-          <section className="mt-5 rounded-2xl border border-border bg-card p-3">
+          <section className="mt-4 rounded-2xl border border-border bg-card p-3">
             <div className="grid grid-cols-2 rounded-xl bg-muted p-1">
               <button onClick={() => setAdjusted(false)} className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${!adjusted ? "bg-background shadow-sm" : "text-muted-foreground"}`}>Stock</button>
               <button onClick={() => setAdjusted(true)} className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${adjusted ? "bg-background shadow-sm" : "text-muted-foreground"}`}>Justerat</button>
@@ -315,62 +308,23 @@ function MinBagPage() {
               const nextConditions = nextStock != null ? adjustCarryForConditions(nextStock, temperature, elevation) : null;
               const nextShown = adjusted && nextConditions ? nextConditions.adjustedCarry : nextStock;
               const gapAnalysis = shown != null && nextShown != null ? analyzeGap(shown, nextShown) : null;
-              const ageDays = clubAgeDays(club);
-              const updatedAt = clubLastUpdatedAt(club);
-              const currentSeasonMismatch = seasonMismatch(updatedAt);
+              const currentUpdatedAt = clubLastUpdatedAt(club);
               const nextUpdatedAt = nextClub ? clubLastUpdatedAt(nextClub) : null;
-              const gapSeasonalLowConfidence = currentSeasonMismatch || seasonMismatch(nextUpdatedAt);
+              const gapSeasonalLowConfidence = seasonMismatch(currentUpdatedAt) || seasonMismatch(nextUpdatedAt);
               const extremeWide = gapAnalysis?.status === "wide" && gapAnalysis.gap >= 23;
               const isUnmapped = !isPutterLabel(club.label) && stock == null;
-              const shouldRefresh = !isUnmapped && !isPutterLabel(club.label) && (currentSeasonMismatch || (ageDays ?? 0) > 90);
-              const mappedShots = acceptedShots(club).length;
-              const confidence = confidencePercent(mappedShots);
-              const confidenceOpen = openConfidenceClubId === club.id;
 
               return (
-                <div key={club.id} className="border-b border-border px-5 py-3.5 last:border-b-0">
+                <div key={club.id} className="border-b border-border px-5 py-4 last:border-b-0">
                   <div className="flex items-center justify-between gap-4">
-                    <div className="min-w-0 flex-1">
+                    <button type="button" onClick={() => !isPutterLabel(club.label) && goToMapping(club.label)} className="min-w-0 flex-1 text-left">
                       <span className="text-lg font-semibold">{club.label}</span>
-                      {isPutterLabel(club.label) ? (
-                        <p className="mt-0.5 text-[10px] text-muted-foreground">Putter · carry ej relevant</p>
-                      ) : (
-                        <p className={`mt-0.5 flex max-w-[220px] items-start gap-1 text-[10px] font-medium leading-snug ${freshnessClass(ageDays, updatedAt)}`}>
-                          {currentSeasonMismatch ? <CalendarClock className="mt-0.5 h-3 w-3 shrink-0" /> : <Clock3 className="mt-0.5 h-3 w-3 shrink-0" />}
-                          <span>{freshnessText(ageDays, updatedAt)}</span>
-                        </p>
-                      )}
-
-                      {!isPutterLabel(club.label) && mappedShots >= 3 ? (
-                        <button
-                          type="button"
-                          onClick={() => setOpenConfidenceClubId((current) => current === club.id ? null : club.id)}
-                          className="mt-2 w-full max-w-[210px] text-left"
-                          aria-expanded={confidenceOpen}
-                        >
-                          <div className="flex items-center justify-between gap-2 text-[10px] font-semibold">
-                            <span>Confidence · {confidenceLabel(mappedShots)}</span>
-                            <span className="text-muted-foreground">{mappedShots} slag</span>
-                          </div>
-                          <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
-                            <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${confidence}%` }} />
-                          </div>
-                        </button>
-                      ) : null}
-
-                      {isUnmapped ? (
-                        <button type="button" onClick={() => goToMapping(club.label)} className="mt-2 rounded-full bg-primary px-3 py-1.5 text-[11px] font-semibold text-primary-foreground">Mappa</button>
-                      ) : shouldRefresh ? (
-                        <button type="button" onClick={() => goToMapping(club.label)} className="mt-2 rounded-full border border-amber-300 bg-amber-50 px-3 py-1.5 text-[11px] font-semibold text-amber-800">Uppdatera · 3 bollar</button>
-                      ) : null}
-                      {adjusted && conditions ? <p className="mt-1 text-[10px] text-muted-foreground">Temp {signed(conditions.temperatureDelta)} m · Höjd {signed(conditions.elevationDelta)} m</p> : null}
-                    </div>
-
+                    </button>
                     <div className="relative shrink-0 text-right">
-                      <div className={currentSeasonMismatch ? "opacity-75" : ""}>
+                      <div>
                         {adjusted && stock != null ? <span className="mr-2 text-xs text-muted-foreground line-through">{Math.round(stock)}</span> : null}
                         <span className="font-display text-3xl tabular-nums">{shown != null ? Math.round(shown) : "–"}</span>
-                        <span className="ml-1 text-xs text-muted-foreground">{shown != null ? "m carry" : ""}</span>
+                        <span className="ml-1 text-xs text-muted-foreground">{shown != null ? "m" : ""}</span>
                       </div>
 
                       {gapAnalysis?.flagged && nextClub ? (
@@ -385,9 +339,9 @@ function MinBagPage() {
                             targetCarry: gapAnalysis.targetCarry,
                             seasonalLowConfidence: gapSeasonalLowConfidence,
                           })}
-                          className={`ml-auto mt-1 inline-flex h-7 items-center gap-1 rounded-full px-2 text-[10px] font-semibold ${gapSeasonalLowConfidence ? "opacity-65" : ""} ${gapAnalysis.status === "tight" ? "bg-sky-500/10 text-sky-700" : extremeWide ? "bg-red-500/10 text-red-700" : "bg-amber-400/15 text-amber-700"}`}
+                          className={`ml-auto mt-1 inline-flex h-6 items-center gap-1 rounded-full px-2 text-[10px] font-semibold ${gapSeasonalLowConfidence ? "opacity-65" : ""} ${gapAnalysis.status === "tight" ? "bg-sky-500/10 text-sky-700" : extremeWide ? "bg-red-500/10 text-red-700" : "bg-amber-400/15 text-amber-700"}`}
                         >
-                          {gapAnalysis.status === "tight" ? <CircleMinus className="h-3.5 w-3.5" /> : <AlertTriangle className="h-3.5 w-3.5" />}
+                          {gapAnalysis.status === "tight" ? <CircleMinus className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />}
                           {Math.round(gapAnalysis.gap)} m
                         </button>
                       ) : null}
@@ -401,9 +355,7 @@ function MinBagPage() {
                             </div>
                             <button type="button" onClick={() => setOpenGap(null)} className="rounded-full p-1 text-muted-foreground"><X className="h-4 w-4" /></button>
                           </div>
-                          {openGap.seasonalLowConfidence ? (
-                            <div className="mt-2 rounded-xl bg-amber-50 p-2.5 text-[11px] leading-relaxed text-amber-800">Minst en av längderna är från en annan säsong. Bekräfta gärna med tre bollar innan du bygger om bagen efter gapet.</div>
-                          ) : null}
+                          {openGap.seasonalLowConfidence ? <div className="mt-2 rounded-xl bg-amber-50 p-2.5 text-[11px] leading-relaxed text-amber-800">Minst en längd är från en annan säsong. Bekräfta gärna gapet innan du ändrar bagen.</div> : null}
                           <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">{openGap.status === "tight" ? "Skillnaden är så liten att klubborna kan fylla samma funktion." : `Riktmärket är ungefär 10–14 m. Här finns en lucka på ${Math.round(openGap.gap)} m.`}</p>
                           <div className="mt-3 rounded-xl bg-muted/60 p-3">
                             <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Rekommendation</p>
@@ -413,37 +365,15 @@ function MinBagPage() {
                       ) : null}
                     </div>
                   </div>
-
-                  {confidenceOpen && !isPutterLabel(club.label) ? (
-                    <div className="mt-3 rounded-xl border border-border bg-muted/40 p-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <p className="text-xs font-semibold">{mappedShots} godkända mappade slag</p>
-                          <p className="mt-0.5 text-[11px] text-muted-foreground">3 slag räcker för en aktiv och användbar carry.</p>
-                        </div>
-                        <button type="button" onClick={() => setOpenConfidenceClubId(null)} className="rounded-full p-1 text-muted-foreground"><X className="h-4 w-4" /></button>
-                      </div>
-                      <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
-                        Fler registrerade slag höjer confidence utan att göra grundmappningen svårare. {mappedShots >= FULL_CONFIDENCE_SHOTS ? "Du har nått full confidence för antal slag." : `${FULL_CONFIDENCE_SHOTS - mappedShots} fler godkända slag ger full confidence vid ${FULL_CONFIDENCE_SHOTS} slag.`}
-                      </p>
-                      <div className="mt-3 grid grid-cols-4 gap-1.5 text-center text-[9px] font-semibold text-muted-foreground">
-                        <span className={mappedShots >= 3 ? "text-primary" : ""}>3 · Grund</span>
-                        <span className={mappedShots >= 7 ? "text-primary" : ""}>7 · Bra</span>
-                        <span className={mappedShots >= 12 ? "text-primary" : ""}>12 · Hög</span>
-                        <span className={mappedShots >= 20 ? "text-primary" : ""}>20 · Full</span>
-                      </div>
-                      {mappedShots < FULL_CONFIDENCE_SHOTS ? (
-                        <button type="button" onClick={() => goToMapping(club.label)} className="mt-3 w-full rounded-xl border border-border bg-card py-2.5 text-xs font-semibold">Lägg till fler slag</button>
-                      ) : null}
-                    </div>
-                  ) : null}
+                  {isUnmapped ? <button type="button" onClick={() => goToMapping(club.label)} className="mt-2 rounded-full bg-primary px-3 py-1.5 text-[11px] font-semibold text-primary-foreground">Mappa klubb</button> : null}
+                  {adjusted && conditions ? <p className="mt-1 text-[10px] text-muted-foreground">Temp {signed(conditions.temperatureDelta)} m · Höjd {signed(conditions.elevationDelta)} m</p> : null}
                 </div>
               );
             })}
           </section>
 
-          <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">3 slag räcker för att mappa en klubb. Fler slag höjer confidence över tid. Äldre siffror behålls alltid.</p>
-          <Link to="/map-my-bag" className="mt-4 flex w-full items-center justify-center rounded-2xl border border-border bg-card py-4 font-semibold">Se historik / mappa om</Link>
+          <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">Tryck på en klubb för att mappa om den. Din carry uppdateras när tre nya godkända slag finns.</p>
+          <Link to="/map-my-bag" className="mt-4 flex w-full items-center justify-center rounded-2xl border border-border bg-card py-4 font-semibold">Historik</Link>
         </>
       )}
 
