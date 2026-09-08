@@ -137,6 +137,7 @@ export type Database = {
         Row: {
           created_at: string
           points: number
+          result: Json
           session_id: string
           shot_index: number
           user_id: string
@@ -144,6 +145,7 @@ export type Database = {
         Insert: {
           created_at?: string
           points: number
+          result?: Json
           session_id: string
           shot_index: number
           user_id: string
@@ -151,6 +153,7 @@ export type Database = {
         Update: {
           created_at?: string
           points?: number
+          result?: Json
           session_id?: string
           shot_index?: number
           user_id?: string
@@ -175,33 +178,42 @@ export type Database = {
       group_sessions: {
         Row: {
           completed_at: string | null
+          config: Json
           created_at: string
           current_player_index: number
           current_shot: number
           host_user_id: string
           id: string
+          mode: string
           status: string
           test_id: string
+          total_steps: number
         }
         Insert: {
           completed_at?: string | null
+          config?: Json
           created_at?: string
           current_player_index?: number
           current_shot?: number
           host_user_id: string
           id?: string
+          mode?: string
           status?: string
           test_id?: string
+          total_steps?: number
         }
         Update: {
           completed_at?: string | null
+          config?: Json
           created_at?: string
           current_player_index?: number
           current_shot?: number
           host_user_id?: string
           id?: string
+          mode?: string
           status?: string
           test_id?: string
+          total_steps?: number
         }
         Relationships: []
       }
@@ -344,8 +356,27 @@ export type Database = {
           user_id: string
         }[]
       }
+      correct_eight_ball_group_score: {
+        Args: {
+          p_points: number
+          p_session_id: string
+          p_shot_index: number
+          p_user_id: string
+        }
+        Returns: undefined
+      }
       create_eight_ball_group_session: {
         Args: { p_member_ids: string[] }
+        Returns: string
+      }
+      create_multiplayer_session: {
+        Args: {
+          p_config?: Json
+          p_member_ids: string[]
+          p_mode?: string
+          p_test_id: string
+          p_total_steps: number
+        }
         Returns: string
       }
       drill_leaderboard: {
@@ -363,6 +394,7 @@ export type Database = {
         Args: { p_session_id: string }
         Returns: Json
       }
+      get_multiplayer_session: { Args: { p_session_id: string }; Returns: Json }
       is_group_session_host: {
         Args: { p_session_id: string; p_user_id?: string }
         Returns: boolean
@@ -378,6 +410,19 @@ export type Database = {
           p_shot_index: number
           p_user_id: string
         }
+        Returns: Json
+      }
+      record_multiplayer_result: {
+        Args: {
+          p_result: Json
+          p_session_id: string
+          p_step_index: number
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      undo_eight_ball_group_score: {
+        Args: { p_session_id: string }
         Returns: Json
       }
     }
