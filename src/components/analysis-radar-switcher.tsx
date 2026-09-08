@@ -34,6 +34,7 @@ import {
   listFriendships,
   type Friendship,
 } from "@/lib/friends-cloud";
+import type { SocialRadarProfile } from "@/lib/social-radar-profile";
 import {
   BENCHMARK_LEVELS,
   hcpLabel,
@@ -48,6 +49,7 @@ type CompareTarget = {
   hcp: number;
   isFriend?: boolean;
   categoryHcp?: Partial<Record<CategorySlug, number>>;
+  radarProfile?: SocialRadarProfile;
   avatarUrl?: string | null;
   initials?: string;
 };
@@ -180,6 +182,29 @@ function puttingRows(target: CompareTarget): Row[] {
   return raw.map((row) => ({ subject: row.subject, du: row.hasData ? puttingSkill(row.key, row.value) : 0, target: targetScore, raw: row.hasData ? pct(row.value) : "–", targetRaw: benchmark ? pct(benchmark.values[row.key]) : undefined, targetHcp, placeholder: !row.hasData }));
 }
 
+function friendRadarValues(target: CompareTarget, view: View): number[] | undefined {
+  if (!target.isFriend || view === "total") return undefined;
+  if (view === "driving") return target.radarProfile?.driving;
+  if (view === "approach") return target.radarProfile?.approach;
+  if (view === "around") return target.radarProfile?.["around-the-green"];
+  return target.radarProfile?.puttning;
+}
+
+function applyFriendRadar(rows: Row[], target: CompareTarget, view: View): Row[] {
+  const values = friendRadarValues(target, view);
+  if (!values?.length) return rows;
+  return rows.map((row, index) => {
+    const value = values[index];
+    if (!Number.isFinite(value)) return row;
+    return {
+      ...row,
+      target: clamp(value),
+      targetRaw: `${Math.round(clamp(value))}/100`,
+      targetHcp: undefined,
+    };
+  });
+}
+
 function chartRows(rows: Row[]): ChartRow[] {
   const safe = rows.map((row) => ({ ...row, du: clamp(row.du), target: clamp(row.target) }));
   const hasAnyPlayerValue = safe.some((row) => row.du > 0);
@@ -216,7 +241,7 @@ export function AnalysisRadarSwitcher({ cats, totalHandicap }: { cats: CategoryH
 
   const data = useMemo(() => {
     const rows = view === "total" ? totalRows(cats, totalHandicap, target) : view === "driving" ? drivingRows(target) : view === "approach" ? approachRows(target) : view === "around" ? aroundRows(target) : puttingRows(target);
-    return chartRows(rows);
+    return chartRows(applyFriendRadar(rows, target, view));
   }, [view, cats, totalHandicap, target]);
 
   const targetLabel = target.isFriend ? target.label : target.label === "Tour" ? "Tour" : `HCP ${target.label}`;
@@ -240,6 +265,7 @@ export function AnalysisRadarSwitcher({ cats, totalHandicap }: { cats: CategoryH
       hcp,
       isFriend: true,
       categoryHcp: snapshot.categoryHcp,
+      radarProfile: snapshot.radarProfile,
       avatarUrl: friendship.other.avatarUrl,
       initials: initials(friendship.other.displayName),
     });
