@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, Check, ChevronRight, Save, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
   acceptedShots,
   completeBagMap,
@@ -29,17 +29,18 @@ function MapClubPage() {
   const initial = latestCompletedBagMap();
   const query = getQuery();
   const [map, setMap] = useState<BagMap | null>(initial);
-  const targets = useMemo(() => {
-    if (!map) return [];
-    const mappable = map.clubs.filter((club) => !isPutterLabel(club.label));
-
+  const [targetLabels] = useState<string[]>(() => {
+    if (!initial) return [];
+    const mappable = initial.clubs.filter((club) => !isPutterLabel(club.label));
     if (query.club) {
       const exact = mappable.find((club) => club.label.toLowerCase() === query.club?.toLowerCase());
-      return exact ? [exact] : [];
+      return exact ? [exact.label] : [];
     }
-
-    return mappable.filter((club) => medianCarry(club) == null);
-  }, [map, query.club, query.all]);
+    return mappable.filter((club) => medianCarry(club) == null).map((club) => club.label);
+  });
+  const targets = targetLabels
+    .map((label) => map?.clubs.find((club) => club.label === label) ?? null)
+    .filter((club): club is BagClub => club != null);
 
   const [targetIndex, setTargetIndex] = useState(0);
   const [carry, setCarry] = useState("");
