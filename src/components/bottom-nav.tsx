@@ -15,10 +15,10 @@ const LEFT_TABS = [
 
 const RIGHT_TABS = [
   { to: "/utveckling", label: "Utveckling", icon: TrendingUp, exact: false },
-  { to: "/trophy", label: "Trophy", icon: Trophy, exact: false },
 ] as const;
 
 const MORE_LINKS = [
+  { to: "/trophy", label: "Trophy Room", description: "Personliga rekord, milestones och achievements.", icon: Trophy },
   { to: "/min-bag", label: "My Bag", description: "Öppna din mappade bag – eller starta mappning om du inte har gjort den ännu.", icon: Golf },
   { to: "/jamfor", label: "Head-to-head", description: "Jämför din profil mot andra spelare.", icon: Users },
   { to: "/vanner", label: "Vänner", description: "Hantera vänner och sociala funktioner.", icon: Users },
@@ -72,10 +72,12 @@ export function BottomNav() {
 
   if (hidden) return null;
 
+  const moreActive = moreOpen || MORE_LINKS.some((item) => pathname.startsWith(item.to));
+
   return (
     <>
       <nav className="fixed bottom-0 left-0 right-0 z-40 h-16 border-t border-border bg-card shadow-[0_-8px_24px_-24px_oklch(0.3_0.06_160/0.6)]">
-        <div className="mx-auto flex h-full w-full max-w-md items-center px-1">
+        <div className="mx-auto flex h-full w-full max-w-md items-center px-2">
           {LEFT_TABS.map((tab) => (
             <NavLink
               key={tab.to}
@@ -100,7 +102,6 @@ export function BottomNav() {
               key={tab.to}
               tab={tab}
               active={tab.exact ? pathname === tab.to : pathname.startsWith(tab.to)}
-              badge={tab.to === "/trophy" ? trophyBadge : undefined}
             />
           ))}
 
@@ -110,10 +111,15 @@ export function BottomNav() {
             className="flex flex-1 flex-col items-center gap-1 py-2 active:scale-95"
             aria-label="Mer"
           >
-            <span className={`flex h-8 w-9 items-center justify-center rounded-xl transition-colors ${moreOpen ? "bg-tint-strong text-primary" : "text-muted-foreground"}`}>
+            <span className={`relative flex h-8 w-9 items-center justify-center rounded-xl transition-colors ${moreActive ? "bg-tint-strong text-primary" : "text-muted-foreground"}`}>
               <Menu className="h-5 w-5" />
+              {Boolean(trophyBadge) && (
+                <span className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-flag px-1 text-[9px] font-bold text-background">
+                  {trophyBadge}
+                </span>
+              )}
             </span>
-            <span className={`text-[10px] font-medium uppercase tracking-wide ${moreOpen ? "font-semibold text-primary" : "text-muted-foreground"}`}>
+            <span className={`text-[10px] font-medium uppercase tracking-wide ${moreActive ? "font-semibold text-primary" : "text-muted-foreground"}`}>
               Mer
             </span>
           </button>
@@ -180,8 +186,9 @@ export function BottomNav() {
                 onClick={() => setMoreOpen(false)}
                 className="group flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3.5 transition-colors hover:border-primary hover:bg-tint"
               >
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-tint-strong text-primary">
+                <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-tint-strong text-primary">
                   <item.icon className="h-5 w-5" />
+                  {item.to === "/trophy" && trophyBadge ? <span className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-flag px-1 text-[9px] font-bold text-background">{trophyBadge}</span> : null}
                 </span>
                 <div className="min-w-0 flex-1">
                   <h3 className="text-base font-semibold leading-none">{item.label}</h3>
