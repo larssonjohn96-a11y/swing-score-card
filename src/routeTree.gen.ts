@@ -25,6 +25,7 @@ import { Route as TeeshotRouteImport } from './routes/teeshot'
 import { Route as SpeedTestRouteImport } from './routes/speed-test'
 import { Route as SpeedRouteImport } from './routes/speed'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as ShotValueRouteImport } from './routes/shot-value'
 import { Route as ShotShapingVaxlandeHistorikRouteImport } from './routes/shot-shaping-vaxlande-historik'
 import { Route as ShotShapingVaxlandeRouteImport } from './routes/shot-shaping-vaxlande'
 import { Route as ShotShapingKonstantHistorikRouteImport } from './routes/shot-shaping-konstant-historik'
@@ -48,6 +49,7 @@ import { Route as NarspelTestRouteImport } from './routes/narspel-test'
 import { Route as NarspelRouteImport } from './routes/narspel'
 import { Route as MinBagRouteImport } from './routes/min-bag'
 import { Route as MapMyBagRouteImport } from './routes/map-my-bag'
+import { Route as MapClubRouteImport } from './routes/map-club'
 import { Route as LongdriveRouteImport } from './routes/longdrive'
 import { Route as LagputtTestRouteImport } from './routes/lagputt-test'
 import { Route as LagputtLadderRouteImport } from './routes/lagputt-ladder'
@@ -56,6 +58,7 @@ import { Route as LagputtRouteImport } from './routes/lagputt'
 import { Route as KortputtRouteImport } from './routes/kortputt'
 import { Route as KontoRouteImport } from './routes/konto'
 import { Route as KlockPuttRouteImport } from './routes/klock-putt'
+import { Route as JamforRouteImport } from './routes/jamfor'
 import { Route as GreenReadingHistorikRouteImport } from './routes/green-reading-historik'
 import { Route as GreenReadingRouteImport } from './routes/green-reading'
 import { Route as FairwayStreakRouteImport } from './routes/fairway-streak'
@@ -84,6 +87,7 @@ import { Route as UtvecklingIndexRouteImport } from './routes/utveckling.index'
 import { Route as FramstegIndexRouteImport } from './routes/framsteg.index'
 import { Route as UtvecklingSlugRouteImport } from './routes/utveckling.$slug'
 import { Route as KategoriSlugRouteImport } from './routes/kategori.$slug'
+import { Route as JamforUserIdRouteImport } from './routes/jamfor.$userId'
 import { Route as FramstegSlugRouteImport } from './routes/framsteg.$slug'
 import { Route as R8BollarGruppSessionIdRouteImport } from './routes/8-bollar-grupp.$sessionId'
 import { Route as FramstegSlugTestRouteImport } from './routes/framsteg.$slug.$test'
@@ -166,6 +170,11 @@ const SpeedRoute = SpeedRouteImport.update({
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShotValueRoute = ShotValueRouteImport.update({
+  id: '/shot-value',
+  path: '/shot-value',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ShotShapingVaxlandeHistorikRoute =
@@ -286,6 +295,11 @@ const MapMyBagRoute = MapMyBagRouteImport.update({
   path: '/map-my-bag',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MapClubRoute = MapClubRouteImport.update({
+  id: '/map-club',
+  path: '/map-club',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LongdriveRoute = LongdriveRouteImport.update({
   id: '/longdrive',
   path: '/longdrive',
@@ -324,6 +338,11 @@ const KontoRoute = KontoRouteImport.update({
 const KlockPuttRoute = KlockPuttRouteImport.update({
   id: '/klock-putt',
   path: '/klock-putt',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JamforRoute = JamforRouteImport.update({
+  id: '/jamfor',
+  path: '/jamfor',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GreenReadingHistorikRoute = GreenReadingHistorikRouteImport.update({
@@ -468,6 +487,11 @@ const KategoriSlugRoute = KategoriSlugRouteImport.update({
   path: '/kategori/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const JamforUserIdRoute = JamforUserIdRouteImport.update({
+  id: '/$userId',
+  path: '/$userId',
+  getParentRoute: () => JamforRoute,
+} as any)
 const FramstegSlugRoute = FramstegSlugRouteImport.update({
   id: '/framsteg/$slug',
   path: '/framsteg/$slug',
@@ -509,6 +533,7 @@ export interface FileRoutesByFullPath {
   '/fairway-streak': typeof FairwayStreakRoute
   '/green-reading': typeof GreenReadingRoute
   '/green-reading-historik': typeof GreenReadingHistorikRoute
+  '/jamfor': typeof JamforRouteWithChildren
   '/klock-putt': typeof KlockPuttRoute
   '/konto': typeof KontoRoute
   '/kortputt': typeof KortputtRoute
@@ -517,6 +542,7 @@ export interface FileRoutesByFullPath {
   '/lagputt-ladder': typeof LagputtLadderRoute
   '/lagputt-test': typeof LagputtTestRoute
   '/longdrive': typeof LongdriveRoute
+  '/map-club': typeof MapClubRoute
   '/map-my-bag': typeof MapMyBagRoute
   '/min-bag': typeof MinBagRoute
   '/narspel': typeof NarspelRoute
@@ -540,6 +566,7 @@ export interface FileRoutesByFullPath {
   '/shot-shaping-konstant-historik': typeof ShotShapingKonstantHistorikRoute
   '/shot-shaping-vaxlande': typeof ShotShapingVaxlandeRoute
   '/shot-shaping-vaxlande-historik': typeof ShotShapingVaxlandeHistorikRoute
+  '/shot-value': typeof ShotValueRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
   '/speed-test': typeof SpeedTestRoute
@@ -558,6 +585,7 @@ export interface FileRoutesByFullPath {
   '/wedge-stege-historik': typeof WedgeStegeHistorikRoute
   '/8-bollar-grupp/$sessionId': typeof R8BollarGruppSessionIdRoute
   '/framsteg/$slug': typeof FramstegSlugRouteWithChildren
+  '/jamfor/$userId': typeof JamforUserIdRoute
   '/kategori/$slug': typeof KategoriSlugRoute
   '/utveckling/$slug': typeof UtvecklingSlugRoute
   '/framsteg/': typeof FramstegIndexRoute
@@ -589,6 +617,7 @@ export interface FileRoutesByTo {
   '/fairway-streak': typeof FairwayStreakRoute
   '/green-reading': typeof GreenReadingRoute
   '/green-reading-historik': typeof GreenReadingHistorikRoute
+  '/jamfor': typeof JamforRouteWithChildren
   '/klock-putt': typeof KlockPuttRoute
   '/konto': typeof KontoRoute
   '/kortputt': typeof KortputtRoute
@@ -597,6 +626,7 @@ export interface FileRoutesByTo {
   '/lagputt-ladder': typeof LagputtLadderRoute
   '/lagputt-test': typeof LagputtTestRoute
   '/longdrive': typeof LongdriveRoute
+  '/map-club': typeof MapClubRoute
   '/map-my-bag': typeof MapMyBagRoute
   '/min-bag': typeof MinBagRoute
   '/narspel': typeof NarspelRoute
@@ -620,6 +650,7 @@ export interface FileRoutesByTo {
   '/shot-shaping-konstant-historik': typeof ShotShapingKonstantHistorikRoute
   '/shot-shaping-vaxlande': typeof ShotShapingVaxlandeRoute
   '/shot-shaping-vaxlande-historik': typeof ShotShapingVaxlandeHistorikRoute
+  '/shot-value': typeof ShotValueRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
   '/speed-test': typeof SpeedTestRoute
@@ -638,6 +669,7 @@ export interface FileRoutesByTo {
   '/wedge-stege-historik': typeof WedgeStegeHistorikRoute
   '/8-bollar-grupp/$sessionId': typeof R8BollarGruppSessionIdRoute
   '/framsteg/$slug': typeof FramstegSlugRouteWithChildren
+  '/jamfor/$userId': typeof JamforUserIdRoute
   '/kategori/$slug': typeof KategoriSlugRoute
   '/utveckling/$slug': typeof UtvecklingSlugRoute
   '/framsteg': typeof FramstegIndexRoute
@@ -670,6 +702,7 @@ export interface FileRoutesById {
   '/fairway-streak': typeof FairwayStreakRoute
   '/green-reading': typeof GreenReadingRoute
   '/green-reading-historik': typeof GreenReadingHistorikRoute
+  '/jamfor': typeof JamforRouteWithChildren
   '/klock-putt': typeof KlockPuttRoute
   '/konto': typeof KontoRoute
   '/kortputt': typeof KortputtRoute
@@ -678,6 +711,7 @@ export interface FileRoutesById {
   '/lagputt-ladder': typeof LagputtLadderRoute
   '/lagputt-test': typeof LagputtTestRoute
   '/longdrive': typeof LongdriveRoute
+  '/map-club': typeof MapClubRoute
   '/map-my-bag': typeof MapMyBagRoute
   '/min-bag': typeof MinBagRoute
   '/narspel': typeof NarspelRoute
@@ -701,6 +735,7 @@ export interface FileRoutesById {
   '/shot-shaping-konstant-historik': typeof ShotShapingKonstantHistorikRoute
   '/shot-shaping-vaxlande': typeof ShotShapingVaxlandeRoute
   '/shot-shaping-vaxlande-historik': typeof ShotShapingVaxlandeHistorikRoute
+  '/shot-value': typeof ShotValueRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
   '/speed-test': typeof SpeedTestRoute
@@ -719,6 +754,7 @@ export interface FileRoutesById {
   '/wedge-stege-historik': typeof WedgeStegeHistorikRoute
   '/8-bollar-grupp/$sessionId': typeof R8BollarGruppSessionIdRoute
   '/framsteg/$slug': typeof FramstegSlugRouteWithChildren
+  '/jamfor/$userId': typeof JamforUserIdRoute
   '/kategori/$slug': typeof KategoriSlugRoute
   '/utveckling/$slug': typeof UtvecklingSlugRoute
   '/framsteg/': typeof FramstegIndexRoute
@@ -752,6 +788,7 @@ export interface FileRouteTypes {
     | '/fairway-streak'
     | '/green-reading'
     | '/green-reading-historik'
+    | '/jamfor'
     | '/klock-putt'
     | '/konto'
     | '/kortputt'
@@ -760,6 +797,7 @@ export interface FileRouteTypes {
     | '/lagputt-ladder'
     | '/lagputt-test'
     | '/longdrive'
+    | '/map-club'
     | '/map-my-bag'
     | '/min-bag'
     | '/narspel'
@@ -783,6 +821,7 @@ export interface FileRouteTypes {
     | '/shot-shaping-konstant-historik'
     | '/shot-shaping-vaxlande'
     | '/shot-shaping-vaxlande-historik'
+    | '/shot-value'
     | '/sitemap.xml'
     | '/speed'
     | '/speed-test'
@@ -801,6 +840,7 @@ export interface FileRouteTypes {
     | '/wedge-stege-historik'
     | '/8-bollar-grupp/$sessionId'
     | '/framsteg/$slug'
+    | '/jamfor/$userId'
     | '/kategori/$slug'
     | '/utveckling/$slug'
     | '/framsteg/'
@@ -832,6 +872,7 @@ export interface FileRouteTypes {
     | '/fairway-streak'
     | '/green-reading'
     | '/green-reading-historik'
+    | '/jamfor'
     | '/klock-putt'
     | '/konto'
     | '/kortputt'
@@ -840,6 +881,7 @@ export interface FileRouteTypes {
     | '/lagputt-ladder'
     | '/lagputt-test'
     | '/longdrive'
+    | '/map-club'
     | '/map-my-bag'
     | '/min-bag'
     | '/narspel'
@@ -863,6 +905,7 @@ export interface FileRouteTypes {
     | '/shot-shaping-konstant-historik'
     | '/shot-shaping-vaxlande'
     | '/shot-shaping-vaxlande-historik'
+    | '/shot-value'
     | '/sitemap.xml'
     | '/speed'
     | '/speed-test'
@@ -881,6 +924,7 @@ export interface FileRouteTypes {
     | '/wedge-stege-historik'
     | '/8-bollar-grupp/$sessionId'
     | '/framsteg/$slug'
+    | '/jamfor/$userId'
     | '/kategori/$slug'
     | '/utveckling/$slug'
     | '/framsteg'
@@ -912,6 +956,7 @@ export interface FileRouteTypes {
     | '/fairway-streak'
     | '/green-reading'
     | '/green-reading-historik'
+    | '/jamfor'
     | '/klock-putt'
     | '/konto'
     | '/kortputt'
@@ -920,6 +965,7 @@ export interface FileRouteTypes {
     | '/lagputt-ladder'
     | '/lagputt-test'
     | '/longdrive'
+    | '/map-club'
     | '/map-my-bag'
     | '/min-bag'
     | '/narspel'
@@ -943,6 +989,7 @@ export interface FileRouteTypes {
     | '/shot-shaping-konstant-historik'
     | '/shot-shaping-vaxlande'
     | '/shot-shaping-vaxlande-historik'
+    | '/shot-value'
     | '/sitemap.xml'
     | '/speed'
     | '/speed-test'
@@ -961,6 +1008,7 @@ export interface FileRouteTypes {
     | '/wedge-stege-historik'
     | '/8-bollar-grupp/$sessionId'
     | '/framsteg/$slug'
+    | '/jamfor/$userId'
     | '/kategori/$slug'
     | '/utveckling/$slug'
     | '/framsteg/'
@@ -993,6 +1041,7 @@ export interface RootRouteChildren {
   FairwayStreakRoute: typeof FairwayStreakRoute
   GreenReadingRoute: typeof GreenReadingRoute
   GreenReadingHistorikRoute: typeof GreenReadingHistorikRoute
+  JamforRoute: typeof JamforRouteWithChildren
   KlockPuttRoute: typeof KlockPuttRoute
   KontoRoute: typeof KontoRoute
   KortputtRoute: typeof KortputtRoute
@@ -1001,6 +1050,7 @@ export interface RootRouteChildren {
   LagputtLadderRoute: typeof LagputtLadderRoute
   LagputtTestRoute: typeof LagputtTestRoute
   LongdriveRoute: typeof LongdriveRoute
+  MapClubRoute: typeof MapClubRoute
   MapMyBagRoute: typeof MapMyBagRoute
   MinBagRoute: typeof MinBagRoute
   NarspelRoute: typeof NarspelRoute
@@ -1024,6 +1074,7 @@ export interface RootRouteChildren {
   ShotShapingKonstantHistorikRoute: typeof ShotShapingKonstantHistorikRoute
   ShotShapingVaxlandeRoute: typeof ShotShapingVaxlandeRoute
   ShotShapingVaxlandeHistorikRoute: typeof ShotShapingVaxlandeHistorikRoute
+  ShotValueRoute: typeof ShotValueRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SpeedRoute: typeof SpeedRoute
   SpeedTestRoute: typeof SpeedTestRoute
@@ -1159,6 +1210,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/shot-value': {
+      id: '/shot-value'
+      path: '/shot-value'
+      fullPath: '/shot-value'
+      preLoaderRoute: typeof ShotValueRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/shot-shaping-vaxlande-historik': {
@@ -1322,6 +1380,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MapMyBagRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/map-club': {
+      id: '/map-club'
+      path: '/map-club'
+      fullPath: '/map-club'
+      preLoaderRoute: typeof MapClubRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/longdrive': {
       id: '/longdrive'
       path: '/longdrive'
@@ -1376,6 +1441,13 @@ declare module '@tanstack/react-router' {
       path: '/klock-putt'
       fullPath: '/klock-putt'
       preLoaderRoute: typeof KlockPuttRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/jamfor': {
+      id: '/jamfor'
+      path: '/jamfor'
+      fullPath: '/jamfor'
+      preLoaderRoute: typeof JamforRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/green-reading-historik': {
@@ -1574,6 +1646,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof KategoriSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/jamfor/$userId': {
+      id: '/jamfor/$userId'
+      path: '/$userId'
+      fullPath: '/jamfor/$userId'
+      preLoaderRoute: typeof JamforUserIdRouteImport
+      parentRoute: typeof JamforRoute
+    }
     '/framsteg/$slug': {
       id: '/framsteg/$slug'
       path: '/framsteg/$slug'
@@ -1609,6 +1688,17 @@ const R8BollarGruppRouteChildren: R8BollarGruppRouteChildren = {
 const R8BollarGruppRouteWithChildren = R8BollarGruppRoute._addFileChildren(
   R8BollarGruppRouteChildren,
 )
+
+interface JamforRouteChildren {
+  JamforUserIdRoute: typeof JamforUserIdRoute
+}
+
+const JamforRouteChildren: JamforRouteChildren = {
+  JamforUserIdRoute: JamforUserIdRoute,
+}
+
+const JamforRouteWithChildren =
+  JamforRoute._addFileChildren(JamforRouteChildren)
 
 interface FramstegSlugRouteChildren {
   FramstegSlugTestRoute: typeof FramstegSlugTestRoute
@@ -1647,6 +1737,7 @@ const rootRouteChildren: RootRouteChildren = {
   FairwayStreakRoute: FairwayStreakRoute,
   GreenReadingRoute: GreenReadingRoute,
   GreenReadingHistorikRoute: GreenReadingHistorikRoute,
+  JamforRoute: JamforRouteWithChildren,
   KlockPuttRoute: KlockPuttRoute,
   KontoRoute: KontoRoute,
   KortputtRoute: KortputtRoute,
@@ -1655,6 +1746,7 @@ const rootRouteChildren: RootRouteChildren = {
   LagputtLadderRoute: LagputtLadderRoute,
   LagputtTestRoute: LagputtTestRoute,
   LongdriveRoute: LongdriveRoute,
+  MapClubRoute: MapClubRoute,
   MapMyBagRoute: MapMyBagRoute,
   MinBagRoute: MinBagRoute,
   NarspelRoute: NarspelRoute,
@@ -1678,6 +1770,7 @@ const rootRouteChildren: RootRouteChildren = {
   ShotShapingKonstantHistorikRoute: ShotShapingKonstantHistorikRoute,
   ShotShapingVaxlandeRoute: ShotShapingVaxlandeRoute,
   ShotShapingVaxlandeHistorikRoute: ShotShapingVaxlandeHistorikRoute,
+  ShotValueRoute: ShotValueRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SpeedRoute: SpeedRoute,
   SpeedTestRoute: SpeedTestRoute,
