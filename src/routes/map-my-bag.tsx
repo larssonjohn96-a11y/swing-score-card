@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, Check, ChevronRight, GripVertical, History, Plus, RotateCcw, Save, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { CLUB_GROUPS } from "@/lib/club-groups";
+import { CLUB_GROUPS, clubDisplayName } from "@/lib/club-groups";
 import {
   acceptedShots,
   addClubToBag,
@@ -208,7 +208,7 @@ function MapMyBagPage() {
                   </button>
                   <span className="inline-flex h-9 w-11 shrink-0 items-center justify-center rounded-lg bg-muted text-xs font-semibold tabular-nums">{club.label}</span>
                   <span className="min-w-0 flex-1 truncate text-sm font-semibold">
-                    {club.label}
+                    {clubDisplayName(club.label)}
                     {isPutterLabel(club.label) ? <span className="ml-2 text-[10px] font-semibold uppercase tracking-wide text-primary">Obligatorisk</span> : null}
                   </span>
                   <span className="shrink-0 text-sm font-semibold tabular-nums text-muted-foreground">{isPutterLabel(club.label) ? "" : carryValue != null ? `${Math.round(carryValue)} m` : "— m"}</span>
