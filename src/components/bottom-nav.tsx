@@ -101,7 +101,7 @@ export function BottomNav() {
     setTrophyBadge(count);
   }, [pathname]);
 
-  if (hidden) return null;
+  if (hidden || pathname.startsWith("/jamfor")) return null;
 
   const moreActive = moreOpen || MORE_LINKS.some((item) => pathname.startsWith(item.to));
 
