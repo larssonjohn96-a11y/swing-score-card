@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, Check, ChevronRight, GripVertical, History, Plus, RotateCcw, Save, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { CLUB_GROUPS } from "@/lib/club-groups";
 import {
   acceptedShots,
   addClubToBag,
