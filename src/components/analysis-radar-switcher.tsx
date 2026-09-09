@@ -229,7 +229,6 @@ const RADAR_LABEL_LINES: Record<string, string[]> = {
   "Närhet till hål": ["Närhet", "till hål"],
   "Utanför 30 yd": ["Utanför", "30 yd"],
   "3-putt undvik.": ["3-putt", "undvik."],
-  "Penalty avoidance": ["Penalty", "avoidance"],
 };
 
 function splitRadarLabel(label: string): string[] {
