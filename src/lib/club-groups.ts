@@ -8,3 +8,29 @@ export const CLUB_GROUPS = [
 
 export const TEMPERATURE_VALUES = Array.from({ length: 61 }, (_, index) => index - 10);
 export const ELEVATION_VALUES = Array.from({ length: 111 }, (_, index) => -500 + index * 50);
+
+const NAMES: Record<string, string> = {
+  Driver: "Driver",
+  "Mini Driver": "Mini driver",
+  "Driving Iron": "Driving iron",
+  Putter: "Putter",
+  PW: "Pitching wedge",
+  AW: "Approach wedge",
+  GW: "Gap wedge",
+  SW: "Sand wedge",
+  LW: "Lob wedge",
+};
+
+/** Readable name for a club label, e.g. "7i" -> "7-järn". */
+export function clubDisplayName(label: string): string {
+  const clean = label.trim();
+  if (NAMES[clean]) return NAMES[clean];
+  const iron = clean.match(/^(\d)i$/i);
+  if (iron) return `${iron[1]}-järn`;
+  const wood = clean.match(/^(\d{1,2})W$/i);
+  if (wood) return `${wood[1]}-wood`;
+  const hybrid = clean.match(/^(\d)H$/i);
+  if (hybrid) return `${hybrid[1]}-hybrid`;
+  if (/^\d{2}°$/.test(clean)) return `${clean} wedge`;
+  return clean;
+}
