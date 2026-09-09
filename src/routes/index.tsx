@@ -17,7 +17,7 @@ import { OpportunityCard } from "@/components/home-dashboard";
 import { loadCardProfile } from "@/lib/rating-card";
 import { AnalysisRadarSwitcher } from "@/components/analysis-radar-switcher";
 import { StableCategoryStatsSection } from "@/components/stable-category-stats";
-import { pushPlayerSnapshot, listFriendships } from "@/lib/friends-cloud";
+import { pushPlayerSnapshot, listFriendships, type Profile } from "@/lib/friends-cloud";
 import { loadFriends } from "@/lib/friends";
 import { AppStoryLauncher } from "@/components/app-story";
 import { AgeInlinePrompt } from "@/components/age-inline-prompt";
@@ -44,20 +44,37 @@ function loadHomeData(): HomeData {
   return { real, cats, estimated: computeEstimatedHandicap(cats), opportunity: computeBiggestOpportunity(cats) };
 }
 
+function FriendAvatar({ profile, index }: { profile: Profile; index: number }) {
+  const initials = profile.displayName.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join("");
+  return (
+    <span
+      className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-card bg-muted text-[10px] font-bold text-muted-foreground shadow-sm"
+      style={{ marginLeft: index === 0 ? 0 : -10, zIndex: 10 - index }}
+    >
+      {profile.avatarUrl ? <img src={profile.avatarUrl} alt="" className="h-full w-full object-cover" /> : initials || <User className="h-4 w-4" />}
+    </span>
+  );
+}
+
 function Home() {
   const { user, displayName } = useAuth();
   const [data, setData] = useState<HomeData | null>(null);
   const [ageSaved, setAgeSaved] = useState(false);
   const [friendCount, setFriendCount] = useState<number | null>(null);
+  const [friendProfiles, setFriendProfiles] = useState<Profile[]>([]);
   const sessionsVersion = useSessionsVersion();
   const profile = loadCardProfile();
 
   useEffect(() => {
     setData(loadHomeData());
     setFriendCount(loadFriends().length);
+    setFriendProfiles([]);
     if (user) {
       void pushPlayerSnapshot();
-      void listFriendships().then((f) => setFriendCount(loadFriends().length + f.accepted.length));
+      void listFriendships().then((f) => {
+        setFriendCount(loadFriends().length + f.accepted.length);
+        setFriendProfiles(f.accepted.slice(0, 3).map((friendship) => friendship.other));
+      });
     }
   }, [user, sessionsVersion]);
 
@@ -89,9 +106,20 @@ function Home() {
         <div className="min-w-0"><p className="text-sm text-muted-foreground">Låt oss spela,</p><h1 className="truncate font-[family-name:var(--font-display)] text-3xl leading-none">{displayName ?? "Golfspelare"}</h1></div>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-3">
-        <Link to="/vanner" className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"><Users className="h-4 w-4" strokeWidth={1.75} /></span><span><span className="block font-[family-name:var(--font-display)] text-2xl leading-none">{friendCount ?? "–"}</span><span className="block text-xs text-muted-foreground">Vänner</span></span></Link>
-        <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"><Gauge className="h-4 w-4" strokeWidth={1.75} /></span><span><span className="block font-[family-name:var(--font-display)] text-2xl leading-none">{data ? hcpLabel(data.real ?? data.estimated ?? 0) : "–"}</span><span className="block text-xs text-muted-foreground">HCP</span></span></div>
+      <div className="mt-5 grid grid-cols-[1.55fr_.8fr] gap-3">
+        <Link to="/vanner" className="flex min-w-0 items-center gap-3 rounded-3xl border border-border bg-card px-4 py-4 shadow-[0_12px_28px_-18px_rgba(0,0,0,0.32)] transition-transform active:scale-[0.99]">
+          <span className="flex shrink-0 items-center pl-0.5">
+            {friendProfiles.length ? friendProfiles.map((friend, index) => <FriendAvatar key={friend.id} profile={friend} index={index} />) : <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary"><Users className="h-4 w-4" /></span>}
+          </span>
+          <span className="min-w-0">
+            <span className="block font-display text-3xl leading-none text-primary">{friendCount ?? "–"}</span>
+            <span className="mt-1 block truncate text-sm font-semibold">Vänner</span>
+          </span>
+        </Link>
+        <div className="flex min-w-0 flex-col items-center justify-center rounded-3xl border border-border bg-card px-3 py-4 text-center shadow-[0_12px_28px_-18px_rgba(0,0,0,0.32)]">
+          <span className="font-display text-3xl leading-none text-primary">{data ? hcpLabel(data.real ?? data.estimated ?? 0) : "–"}</span>
+          <span className="mt-1 text-sm font-semibold text-muted-foreground">HCP</span>
+        </div>
       </div>
 
       <AppStoryLauncher />
