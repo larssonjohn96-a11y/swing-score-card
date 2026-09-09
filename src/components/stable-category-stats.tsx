@@ -13,6 +13,12 @@ import {
 const ORDER: CategorySlug[] = ["driving", "approach", "around-the-green", "puttning", "speed"];
 type SortMode = "order" | "strong" | "weak";
 
+const SORT_OPTIONS: Array<{ value: SortMode; label: string }> = [
+  { value: "order", label: "Spelordning" },
+  { value: "strong", label: "Starkast" },
+  { value: "weak", label: "Svagast" },
+];
+
 export function StableCategoryStatsSection() {
   const [cats, setCats] = useState<CategoryHandicap[]>([]);
   const [sort, setSort] = useState<SortMode>("order");
@@ -33,18 +39,34 @@ export function StableCategoryStatsSection() {
   }, [cats, sort]);
 
   return (
-    <section className="mt-12 border-t border-border pt-9">
-      <div className="flex items-end justify-between gap-4">
-        <div className="min-w-0">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-primary">Din spelprofil</p>
-          <h2 className="mt-1 font-display text-3xl leading-none">Handicap per kategori</h2>
-          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">Lägre HCP-nivå = starkare kategori</p>
+    <section className="mt-14 border-t border-border pt-10">
+      <div>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-primary">Din spelprofil</p>
+        <h2 className="mt-1 font-display text-3xl leading-none">Handicap per kategori</h2>
+        <p className="mt-2 text-xs leading-relaxed text-muted-foreground">Lägre HCP-nivå = starkare kategori</p>
+      </div>
+
+      <div className="mt-4 rounded-2xl border border-border bg-muted/45 p-1" role="group" aria-label="Sortera kategorier">
+        <div className="grid grid-cols-3 gap-1">
+          {SORT_OPTIONS.map((option) => {
+            const active = sort === option.value;
+            return (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setSort(option.value)}
+                aria-pressed={active}
+                className={`min-w-0 rounded-xl px-2 py-2.5 text-[11px] font-semibold transition-colors ${
+                  active
+                    ? "bg-foreground text-background shadow-sm"
+                    : "text-muted-foreground active:bg-card"
+                }`}
+              >
+                {option.label}
+              </button>
+            );
+          })}
         </div>
-        <select value={sort} onChange={(e) => setSort(e.target.value as SortMode)} className="shrink-0 rounded-full border border-border bg-card px-3 py-2 text-xs font-semibold outline-none">
-          <option value="order">Spelordning</option>
-          <option value="strong">Starkast först</option>
-          <option value="weak">Svagast först</option>
-        </select>
       </div>
 
       <div className="mt-5 rounded-3xl border border-border bg-card p-6 text-center shadow-[var(--shadow-glow)]">
