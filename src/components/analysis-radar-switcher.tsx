@@ -222,33 +222,50 @@ function chartRows(rows: Row[]): ChartRow[] {
 
 const RADAR_LABEL_LINES: Record<string, string[]> = {
   "Penalty avoidance": ["Penalty", "avoidance"],
+  "Bogey avoidance": ["Bogey", "avoidance"],
   "Total driving": ["Total", "driving"],
-  "Sidledskontroll": ["Sidleds-", "kontroll"],
-  "Längdkontroll": ["Längd-", "kontroll"],
+  "Sidledskontroll": ["Sidleds", "kontroll"],
+  "Längdkontroll": ["Längd", "kontroll"],
   "Närhet till hål": ["Närhet", "till hål"],
   "Utanför 30 yd": ["Utanför", "30 yd"],
   "3-putt undvik.": ["3-putt", "undvik."],
+  "Penalty avoidance": ["Penalty", "avoidance"],
 };
 
-function RadarAxisTick({ x = 0, y = 0, cx = 0, cy = 0, payload }: any) {
+function splitRadarLabel(label: string): string[] {
+  const fixed = RADAR_LABEL_LINES[label];
+  if (fixed) return fixed;
+  if (label.length <= 13) return [label];
+  const words = label.split(/\s+/).filter(Boolean);
+  if (words.length > 1) {
+    const midpoint = Math.ceil(words.length / 2);
+    return [words.slice(0, midpoint).join(" "), words.slice(midpoint).join(" ")].filter(Boolean);
+  }
+  const cut = Math.ceil(label.length / 2);
+  return [label.slice(0, cut), label.slice(cut)];
+}
+
+function RadarAxisTick({ x = 0, y = 0, payload, textAnchor = "middle" }: any) {
   const label = String(payload?.value ?? "");
-  const lines = RADAR_LABEL_LINES[label] ?? [label];
-  const isRight = x > cx + 8;
-  const isLeft = x < cx - 8;
-  const textAnchor = isRight ? "end" : isLeft ? "start" : "middle";
-  const insetX = isRight ? -7 : isLeft ? 7 : 0;
-  const insetY = y < cy - 8 ? 8 : y > cy + 8 ? -8 : 3;
+  const lines = splitRadarLabel(label);
+  const onRight = textAnchor === "start";
+  const onLeft = textAnchor === "end";
+  const safeAnchor = onRight ? "end" : onLeft ? "start" : "middle";
+  const safeX = x + (onRight ? -10 : onLeft ? 10 : 0);
+  const firstLineY = y - ((lines.length - 1) * 6);
+
   return (
     <text
-      x={x + insetX}
-      y={y + insetY}
-      textAnchor={textAnchor}
+      x={safeX}
+      y={firstLineY}
+      textAnchor={safeAnchor}
+      dominantBaseline="middle"
       fill="var(--muted-foreground)"
       fontSize={11}
       fontWeight={600}
     >
       {lines.map((line, index) => (
-        <tspan key={`${label}-${index}`} x={x + insetX} dy={index === 0 ? 0 : 12}>
+        <tspan key={`${label}-${index}`} x={safeX} dy={index === 0 ? 0 : 13}>
           {line}
         </tspan>
       ))}
@@ -349,9 +366,9 @@ export function AnalysisRadarSwitcher({ cats, totalHandicap }: { cats: CategoryH
 
     <p className="mt-4 text-center text-xs uppercase tracking-[0.25em] text-muted-foreground">Jämförelseanalys</p>
 
-    <div className="mt-4 h-96 w-full overflow-hidden rounded-3xl border border-border bg-card p-3">
+    <div className="mt-4 h-96 w-full overflow-hidden rounded-3xl border border-border bg-card px-4 py-4">
       <ResponsiveContainer width="100%" height="100%">
-        <RadarChart data={data} outerRadius="62%">
+        <RadarChart data={data} outerRadius="57%" margin={{ top: 24, right: 28, bottom: 24, left: 28 }}>
           <PolarGrid stroke="var(--border)" />
           <PolarAngleAxis dataKey="subject" tick={<RadarAxisTick />} tickLine={false} />
           <PolarRadiusAxis domain={[0, 110]} tick={false} axisLine={false} />
