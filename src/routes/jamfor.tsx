@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Check, User, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -20,6 +20,7 @@ function formatHcp(value:number|undefined|null){if(value===undefined||value===nu
 
 function ComparePickerPage(){
   useHideBottomNav(true);
+  const navigate = useNavigate();
   const {user,loading}=useAuth();
   const [friends,setFriends]=useState<Friendship[]>([]);
   const [selfName,setSelfName]=useState("Du");
@@ -47,6 +48,11 @@ function ComparePickerPage(){
     setPickerOpen(false);
     const snapshot=await fetchFriendSnapshot(friend.other.id);
     setFriendHcp(snapshot?.estHcp??snapshot?.realHcp??undefined);
+  }
+
+  function openComparison(){
+    if(!selectedFriend)return;
+    void navigate({to:"/jamfor/$userId",params:{userId:selectedFriend.other.id}});
   }
 
   return <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-10 pt-7">
@@ -80,17 +86,7 @@ function ComparePickerPage(){
 
     {loading?<p className="mt-6 text-center text-sm text-muted-foreground">Laddar …</p>:!user?<div className="mt-6 rounded-3xl border border-border bg-card p-5 text-center text-sm text-muted-foreground">Logga in för att jämföra med vänner.</div>:!friends.length?<div className="mt-6 rounded-3xl border border-border bg-card p-5 text-center"><p className="text-sm text-muted-foreground">Du har inga accepterade vänner ännu.</p><Link to="/vanner" className="mt-3 inline-flex rounded-full border border-border px-4 py-2 text-xs font-semibold text-primary">Lägg till vänner</Link></div>:null}
 
-    {selectedFriend ? (
-      <Link
-        to="/jamfor/$userId"
-        params={{ userId: selectedFriend.other.id }}
-        className="mt-7 flex w-full items-center justify-center rounded-2xl bg-foreground py-4 font-display text-xl text-background shadow-sm transition-transform active:scale-[0.99]"
-      >
-        Jämför
-      </Link>
-    ) : (
-      <button type="button" disabled className="mt-7 w-full cursor-not-allowed rounded-2xl bg-muted py-4 font-display text-xl text-muted-foreground opacity-35">Jämför</button>
-    )}
+    <button type="button" onClick={openComparison} disabled={!selectedFriend} className={`mt-7 w-full rounded-2xl py-4 font-display text-xl transition-all ${selectedFriend?"bg-foreground text-background shadow-sm active:scale-[0.99]":"cursor-not-allowed bg-muted text-muted-foreground opacity-35"}`}>Jämför</button>
 
     <Sheet open={pickerOpen} onOpenChange={setPickerOpen}>
       <SheetContent side="bottom" className="mx-auto max-h-[78vh] max-w-md overflow-y-auto rounded-t-3xl px-5 pb-8">
