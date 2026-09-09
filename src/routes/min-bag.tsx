@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AlertTriangle, ArrowLeft, CircleMinus, MapPinned, RotateCcw, SlidersHorizontal, X } from "lucide-react";
 import { useState } from "react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { WheelPicker } from "@/components/wheel-picker";
+import { CLUB_GROUPS, ELEVATION_VALUES, TEMPERATURE_VALUES } from "@/lib/club-groups";
 import {
   adjustCarryForConditions,
   analyzeGap,
@@ -124,25 +125,7 @@ function gapRecommendation(clubLabel: string, nextLabel: string, status: GapStat
 }
 
 function ConditionSelect({ label, value, unit, values, onChange }: { label: string; value: number; unit: string; values: number[]; onChange: (value: number) => void }) {
-  return (
-    <div className="rounded-2xl border border-border bg-background p-3">
-      <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{label}</span>
-      <Select value={String(value)} onValueChange={(next) => onChange(Number(next))}>
-        <SelectTrigger aria-label={label} className="mt-2 h-12 rounded-xl border-border bg-card px-3 shadow-none focus:ring-0">
-          <SelectValue>
-            <span className="font-display text-2xl tabular-nums text-foreground">{value} {unit}</span>
-          </SelectValue>
-        </SelectTrigger>
-        <SelectContent position="popper" className="max-h-72 rounded-2xl border-border bg-popover p-1 shadow-xl">
-          {values.map((item) => (
-            <SelectItem key={item} value={String(item)} className="rounded-xl py-2.5 text-sm font-semibold">
-              {item} {unit}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
-  );
+  return <WheelPicker label={label} value={value} unit={unit} values={values} onChange={onChange} />;
 }
 
 function normalizeBagSelection(selectedLabels: string[]) {
