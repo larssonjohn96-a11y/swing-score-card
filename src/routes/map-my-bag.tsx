@@ -5,7 +5,6 @@ import { CLUB_GROUPS } from "@/lib/club-groups";
 import {
   acceptedShots,
   addClubToBag,
-  BAG_CLUB_LIBRARY,
   canAddClubToBag,
   clubComplete,
   completeBagMap,
@@ -41,9 +40,7 @@ function MapMyBagPage() {
   const [showClubPicker, setShowClubPicker] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [completedView, setCompletedView] = useState<BagMap | null>(null);
-  const [customClub, setCustomClub] = useState("");
   const [dragIndex, setDragIndex] = useState<number | null>(null);
-  const [showAddClub, setShowAddClub] = useState(false);
 
   useEffect(() => { if (map.status === "draft") saveBagDraft(map); }, [map]);
 
@@ -60,7 +57,6 @@ function MapMyBagPage() {
     setMap(fresh);
     setSelectedClubId(nextRecommendedClub(fresh)?.id ?? "");
     setCompletedView(null);
-    setShowAddClub(false);
     setView("setup");
   }
 
@@ -97,8 +93,6 @@ function MapMyBagPage() {
     setMap(next);
     const added = next.clubs[next.clubs.length - 1];
     if (added && !isPutterLabel(added.label)) setSelectedClubId(added.id);
-    setCustomClub("");
-    setShowAddClub(false);
   }
 
   function removeClub(id: string) {
