@@ -59,7 +59,7 @@ type ChartRow = Row & { duChart: number; targetChart: number };
 type PuttingKey = "0-1" | "1-2" | "2-3" | "3-5" | "three-putt";
 
 const TABS: [View, string][] = [["total", "Total"], ["driving", "Off the Tee"], ["approach", "Approach"], ["around", "Around Green"], ["putting", "Putting"]];
-const QUICK = BENCHMARK_LEVELS.filter((level) => ["20", "10", "0", "Tour"].includes(level.label));
+const QUICK = BENCHMARK_LEVELS.filter((level) => ["30", "20", "10", "0", "Tour"].includes(level.label));
 const DEFAULT_LEVEL = QUICK.find((level) => level.label === "0") ?? QUICK[0];
 const defaultTarget = (): CompareTarget => ({ label: DEFAULT_LEVEL.label, hcp: DEFAULT_LEVEL.hcp, categoryHcp: DEFAULT_LEVEL.categoryHcp });
 const avg = (values: number[]) => values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
@@ -313,11 +313,11 @@ export function AnalysisRadarSwitcher({ cats, totalHandicap }: { cats: CategoryH
 
     <p className="mt-4 text-center text-xs uppercase tracking-[0.25em] text-muted-foreground">Jämförelseanalys</p>
 
-    <div className="mt-4 h-80 w-full rounded-3xl border border-border bg-card p-3">
+    <div className="mt-4 h-96 w-full overflow-hidden rounded-3xl border border-border bg-card p-3">
       <ResponsiveContainer width="100%" height="100%">
-        <RadarChart data={data} outerRadius="68%">
+        <RadarChart data={data} outerRadius="66%">
           <PolarGrid stroke="var(--border)" />
-          <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} />
+          <PolarAngleAxis dataKey="subject" tick={{ fontSize: 11, fontWeight: 600, fill: "var(--muted-foreground)" }} tickMargin={8} />
           <PolarRadiusAxis domain={[0, 110]} tick={false} axisLine={false} />
           {!friendDetailMissing ? <Radar name={targetLabel} dataKey="targetChart" stroke="var(--chart-3)" fill="var(--chart-3)" fillOpacity={0.12} strokeWidth={2} dot={{ r: 4, fill: "var(--chart-3)", stroke: "var(--card)", strokeWidth: 1 }} isAnimationActive animationDuration={320} /> : null}
           <Radar name="Du" dataKey="duChart" stroke="var(--chart-4)" fill="var(--chart-4)" fillOpacity={0.28} strokeWidth={2.5} dot={{ r: 4, fill: "var(--chart-4)", stroke: "var(--card)", strokeWidth: 1 }} isAnimationActive animationDuration={320} />
