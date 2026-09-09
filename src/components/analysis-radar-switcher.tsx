@@ -59,7 +59,7 @@ type ChartRow = Row & { duChart: number; targetChart: number };
 type PuttingKey = "0-1" | "1-2" | "2-3" | "3-5" | "three-putt";
 
 const TABS: [View, string][] = [["total", "Total"], ["driving", "Off the Tee"], ["approach", "Approach"], ["around", "Around Green"], ["putting", "Putting"]];
-const QUICK = BENCHMARK_LEVELS.filter((level) => ["30", "20", "10", "0", "Tour"].includes(level.label));
+const QUICK = BENCHMARK_LEVELS.filter((level) => ["30", "20", "10", "0", "+3", "Tour"].includes(level.label));
 const DEFAULT_LEVEL = QUICK.find((level) => level.label === "0") ?? QUICK[0];
 const defaultTarget = (): CompareTarget => ({ label: DEFAULT_LEVEL.label, hcp: DEFAULT_LEVEL.hcp, categoryHcp: DEFAULT_LEVEL.categoryHcp });
 const avg = (values: number[]) => values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
@@ -220,6 +220,42 @@ function chartRows(rows: Row[]): ChartRow[] {
   return safe.map((row) => ({ ...row, duChart: hasAnyPlayerValue && row.du === 0 ? 1.5 : row.du, targetChart: row.target }));
 }
 
+const RADAR_LABEL_LINES: Record<string, string[]> = {
+  "Penalty avoidance": ["Penalty", "avoidance"],
+  "Total driving": ["Total", "driving"],
+  "Sidledskontroll": ["Sidleds-", "kontroll"],
+  "Längdkontroll": ["Längd-", "kontroll"],
+  "Närhet till hål": ["Närhet", "till hål"],
+  "Utanför 30 yd": ["Utanför", "30 yd"],
+  "3-putt undvik.": ["3-putt", "undvik."],
+};
+
+function RadarAxisTick({ x = 0, y = 0, cx = 0, cy = 0, payload }: any) {
+  const label = String(payload?.value ?? "");
+  const lines = RADAR_LABEL_LINES[label] ?? [label];
+  const isRight = x > cx + 8;
+  const isLeft = x < cx - 8;
+  const textAnchor = isRight ? "end" : isLeft ? "start" : "middle";
+  const insetX = isRight ? -7 : isLeft ? 7 : 0;
+  const insetY = y < cy - 8 ? 8 : y > cy + 8 ? -8 : 3;
+  return (
+    <text
+      x={x + insetX}
+      y={y + insetY}
+      textAnchor={textAnchor}
+      fill="var(--muted-foreground)"
+      fontSize={11}
+      fontWeight={600}
+    >
+      {lines.map((line, index) => (
+        <tspan key={`${label}-${index}`} x={x + insetX} dy={index === 0 ? 0 : 12}>
+          {line}
+        </tspan>
+      ))}
+    </text>
+  );
+}
+
 function RadarTooltip({ active, payload, targetLabel }: { active?: boolean; payload?: Array<{ payload?: ChartRow }>; targetLabel: string }) {
   if (!active || !payload?.length) return null;
   const row = payload[0]?.payload;
@@ -315,9 +351,9 @@ export function AnalysisRadarSwitcher({ cats, totalHandicap }: { cats: CategoryH
 
     <div className="mt-4 h-96 w-full overflow-hidden rounded-3xl border border-border bg-card p-3">
       <ResponsiveContainer width="100%" height="100%">
-        <RadarChart data={data} outerRadius="66%">
+        <RadarChart data={data} outerRadius="62%">
           <PolarGrid stroke="var(--border)" />
-          <PolarAngleAxis dataKey="subject" tick={{ fontSize: 11, fontWeight: 600, fill: "var(--muted-foreground)" }} tickMargin={8} />
+          <PolarAngleAxis dataKey="subject" tick={<RadarAxisTick />} tickLine={false} />
           <PolarRadiusAxis domain={[0, 110]} tick={false} axisLine={false} />
           {!friendDetailMissing ? <Radar name={targetLabel} dataKey="targetChart" stroke="var(--chart-3)" fill="var(--chart-3)" fillOpacity={0.12} strokeWidth={2} dot={{ r: 4, fill: "var(--chart-3)", stroke: "var(--card)", strokeWidth: 1 }} isAnimationActive animationDuration={320} /> : null}
           <Radar name="Du" dataKey="duChart" stroke="var(--chart-4)" fill="var(--chart-4)" fillOpacity={0.28} strokeWidth={2.5} dot={{ r: 4, fill: "var(--chart-4)", stroke: "var(--card)", strokeWidth: 1 }} isAnimationActive animationDuration={320} />
