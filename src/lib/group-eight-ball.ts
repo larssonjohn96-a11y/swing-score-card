@@ -89,7 +89,7 @@ export async function createEightBallGroupSession(friendships: Friendship[]) {
   }
 }
 
-export async function fetchEightBallGroupSession(id: string): Promise<GroupSession | null> {
+export async function fetchEightBallGroupSession(id: string, _options?: { live?: boolean }): Promise<GroupSession | null> {
   return fromCore(await fetchMultiplayerSession(EIGHT_BALL_MULTIPLAYER_ADAPTER, id));
 }
 
