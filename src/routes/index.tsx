@@ -96,6 +96,39 @@ function Home() {
 
       <AppStoryLauncher />
 
+      <Link
+        to="/jamfor"
+        className="mt-4 block overflow-hidden rounded-3xl border border-border bg-card p-5 shadow-sm transition-transform active:scale-[0.99]"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">SG4 Social</p>
+            <h2 className="mt-1 font-display text-3xl leading-none">Head-to-head</h2>
+            <p className="mt-2 max-w-[250px] text-sm leading-relaxed text-muted-foreground">Jämför spelnivå, speldata, tränings-PB och personliga rekord med en vän.</p>
+          </div>
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-foreground text-background"><Users className="h-5 w-5" strokeWidth={1.75} /></span>
+        </div>
+
+        <div className="mt-5 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+          <div className="flex items-center gap-2 rounded-2xl border border-blue-500/30 bg-blue-500/5 p-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-blue-500 bg-blue-500/10 text-blue-500">
+              {profile.photo ? <img src={profile.photo} alt="" className="h-full w-full object-cover" /> : <User className="h-4 w-4" />}
+            </span>
+            <span className="min-w-0 truncate text-xs font-semibold">Du</span>
+          </div>
+          <span className="rounded-lg bg-foreground px-2 py-1.5 font-display text-sm text-background">VS</span>
+          <div className="flex items-center gap-2 rounded-2xl border border-red-500/30 bg-red-500/5 p-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-red-500 bg-red-500/10 text-red-500"><User className="h-4 w-4" /></span>
+            <span className="min-w-0 truncate text-xs font-semibold">Vän</span>
+          </div>
+        </div>
+
+        <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
+          <span className="text-sm font-semibold">Öppna Head-to-head</span>
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+        </div>
+      </Link>
+
       {data && <div className="mt-4">
         {data.real === null && data.cats.every((c) => c.count === 0) && <Link to="/konto" className="mb-4 flex items-center gap-3 rounded-2xl border border-primary/30 bg-primary/5 p-4"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary"><Gauge className="h-4 w-4" strokeWidth={1.75} /></span><span className="min-w-0 flex-1"><span className="block text-sm font-semibold leading-tight">Ange ditt officiella HCP</span><span className="block text-xs text-muted-foreground">Få en direkt baslinje i alla kategorier, helt utan att göra ett test</span></span><ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" /></Link>}
         {profile.age === undefined && !ageSaved && <div className="mb-4"><AgeInlinePrompt title="Ange din ålder" description="Se hur din ball speed i Speed Test står sig mot jämnåriga golfare" onSaved={() => setAgeSaved(true)} /></div>}
