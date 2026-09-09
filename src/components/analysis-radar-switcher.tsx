@@ -365,9 +365,9 @@ export function AnalysisRadarSwitcher({ cats, totalHandicap }: { cats: CategoryH
 
     <p className="mt-4 text-center text-xs uppercase tracking-[0.25em] text-muted-foreground">Jämförelseanalys</p>
 
-    <div className="mt-4 h-80 w-full overflow-hidden rounded-3xl border border-border bg-card p-3">
+    <div className="mt-4 h-96 w-full overflow-hidden rounded-3xl border border-border bg-card p-2">
       <ResponsiveContainer width="100%" height="100%">
-        <RadarChart data={data} outerRadius="64%" margin={{ top: 14, right: 20, bottom: 14, left: 20 }}>
+        <RadarChart data={data} outerRadius="68%" margin={{ top: 24, right: 34, bottom: 24, left: 34 }}>
           <PolarGrid stroke="var(--border)" />
           <PolarAngleAxis dataKey="subject" tick={<RadarAxisTick />} tickLine={false} />
           <PolarRadiusAxis domain={[0, 110]} tick={false} axisLine={false} />
