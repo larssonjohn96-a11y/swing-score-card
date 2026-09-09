@@ -60,30 +60,30 @@ function UtvecklingPage() {
 
           <Link
             to="/jamfor"
-            className="mt-7 block overflow-hidden rounded-3xl border border-border bg-card shadow-sm transition-transform active:scale-[0.99]"
+            className="mt-7 block overflow-hidden rounded-3xl border border-blue-500/30 bg-gradient-to-r from-blue-500/[0.08] via-card to-red-500/[0.08] shadow-sm transition-transform active:scale-[0.99]"
           >
-            <div className="grid grid-cols-[1fr_auto_1fr] items-stretch">
-              <div className="flex items-center gap-3 bg-blue-500/[0.08] px-4 py-4">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-blue-500 bg-blue-500/10 text-blue-500">
+            <div className="grid grid-cols-[1fr_auto_1fr] items-stretch border-b border-border/70">
+              <div className="flex items-center gap-3 bg-blue-500/10 px-4 py-4">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-blue-500 bg-blue-500/15 text-blue-600 shadow-sm">
                   <User className="h-4 w-4" />
                 </span>
                 <span className="text-xs font-bold uppercase tracking-[0.12em] text-blue-600">Du</span>
               </div>
               <div className="flex items-center justify-center bg-foreground px-3 font-display text-lg text-background">VS</div>
-              <div className="flex items-center justify-end gap-3 bg-red-500/[0.08] px-4 py-4">
+              <div className="flex items-center justify-end gap-3 bg-red-500/10 px-4 py-4">
                 <span className="text-xs font-bold uppercase tracking-[0.12em] text-red-600">Vän</span>
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-red-500 bg-red-500/10 text-red-500">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-red-500 bg-red-500/15 text-red-600 shadow-sm">
                   <User className="h-4 w-4" />
                 </span>
               </div>
             </div>
-            <div className="flex items-center gap-3 px-5 py-4">
+            <div className="flex items-center gap-3 px-5 py-5">
               <span className="min-w-0 flex-1">
-                <span className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Head-to-head</span>
+                <span className="block text-[10px] font-bold uppercase tracking-[0.18em]"><span className="text-blue-600">Head</span><span className="text-muted-foreground">-to-</span><span className="text-red-600">head</span></span>
                 <span className="mt-1 block font-display text-2xl leading-none">Vem vinner?</span>
-                <span className="mt-1.5 block text-xs leading-relaxed text-muted-foreground">Ställ din SG4-profil mot en vän – kategori för kategori.</span>
+                <span className="mt-1.5 block text-xs leading-relaxed text-muted-foreground">Jämför era styrkor sida vid sida och se vem som faktiskt har övertaget.</span>
               </span>
-              <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+              <ChevronRight className="h-5 w-5 shrink-0 text-red-500" />
             </div>
           </Link>
 
