@@ -1,10 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, Check, ChevronRight, GripVertical, History, Plus, RotateCcw, Save, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { CLUB_GROUPS, clubDisplayName } from "@/lib/club-groups";
 import {
   acceptedShots,
   addClubToBag,
-  BAG_CLUB_LIBRARY,
   canAddClubToBag,
   clubComplete,
   completeBagMap,
@@ -40,9 +40,7 @@ function MapMyBagPage() {
   const [showClubPicker, setShowClubPicker] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [completedView, setCompletedView] = useState<BagMap | null>(null);
-  const [customClub, setCustomClub] = useState("");
   const [dragIndex, setDragIndex] = useState<number | null>(null);
-  const [showAddClub, setShowAddClub] = useState(false);
 
   useEffect(() => { if (map.status === "draft") saveBagDraft(map); }, [map]);
 
@@ -59,7 +57,6 @@ function MapMyBagPage() {
     setMap(fresh);
     setSelectedClubId(nextRecommendedClub(fresh)?.id ?? "");
     setCompletedView(null);
-    setShowAddClub(false);
     setView("setup");
   }
 
@@ -96,8 +93,6 @@ function MapMyBagPage() {
     setMap(next);
     const added = next.clubs[next.clubs.length - 1];
     if (added && !isPutterLabel(added.label)) setSelectedClubId(added.id);
-    setCustomClub("");
-    setShowAddClub(false);
   }
 
   function removeClub(id: string) {
@@ -174,63 +169,96 @@ function MapMyBagPage() {
   }
 
   if (view === "setup") {
+    const nonPutterCount = map.clubs.filter((club) => !isPutterLabel(club.label)).length;
+    const totalCount = nonPutterCount + (bagHasPutter ? 1 : 0);
+    const putterSlotReserved = nonPutterCount >= MAX_BAG_CLUBS - 1;
+
     return (
-      <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-28 pt-6">
+      <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-40 pt-6">
         <header className="flex items-center justify-between"><button onClick={() => setView("landing")} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card"><ArrowLeft className="h-4 w-4" /></button><p className="text-xs font-semibold text-muted-foreground">Bygg din bag</p></header>
-        <h1 className="mt-6 text-4xl leading-none">Vilka klubbor har du?</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Max 14 klubbor. En plats är alltid reserverad för puttern, så du kan välja upp till 13 övriga klubbor.</p>
+        <h1 className="mt-6 text-4xl leading-none">Din bag</h1>
+        <p className="mt-2 text-sm text-muted-foreground">Max 14 klubbor totalt – puttern är en av dem. Du kan alltså välja upp till 13 övriga klubbor.</p>
 
         <section className="mt-5 rounded-2xl border border-border bg-card p-4">
-          <div className="mb-3 flex items-center justify-between"><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Din bag</p><span className="text-xs text-muted-foreground">{map.clubs.length}/{MAX_BAG_CLUBS} klubbor</span></div>
+          <div className="mb-3 flex items-center justify-between">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Valda klubbor</p>
+            <span className="text-sm font-semibold tabular-nums text-primary">{totalCount}/{MAX_BAG_CLUBS} klubbor</span>
+          </div>
           <div className="space-y-2" onPointerMove={handlePointerMove} onPointerUp={() => setDragIndex(null)} onPointerCancel={() => setDragIndex(null)}>
-            {map.clubs.map((club, index) => (
-              <div
-                key={club.id}
-                data-club-index={index}
-                draggable
-                onDragStart={() => setDragIndex(index)}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={() => { if (dragIndex != null) setMap((current) => moveClub(current, dragIndex, index)); setDragIndex(null); }}
-                className={`flex items-center gap-3 rounded-xl border bg-background px-3 py-3 transition ${dragIndex === index ? "border-primary bg-primary/5 shadow-sm" : "border-border"}`}
-              >
-                <button
-                  type="button"
-                  aria-label={`Flytta ${club.label}`}
-                  onPointerDown={(event) => {
-                    event.currentTarget.setPointerCapture(event.pointerId);
-                    setDragIndex(index);
-                  }}
-                  onPointerUp={() => setDragIndex(null)}
-                  className="touch-none cursor-grab rounded-lg p-1.5 text-muted-foreground active:cursor-grabbing active:bg-muted"
+            {map.clubs.map((club, index) => {
+              const carryValue = medianCarry(club);
+              return (
+                <div
+                  key={club.id}
+                  data-club-index={index}
+                  draggable
+                  onDragStart={() => setDragIndex(index)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={() => { if (dragIndex != null) setMap((current) => moveClub(current, dragIndex, index)); setDragIndex(null); }}
+                  className={`flex items-center gap-3 rounded-xl border bg-background px-3 py-3 transition ${dragIndex === index ? "border-primary bg-primary/5 shadow-sm" : "border-border"}`}
                 >
-                  <GripVertical className="h-5 w-5" />
-                </button>
-                <span className="flex-1 font-semibold">{club.label}{isPutterLabel(club.label) ? <span className="ml-2 text-[10px] font-semibold uppercase tracking-wide text-primary">Obligatorisk</span> : null}</span>
-                <button onClick={() => removeClub(club.id)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted"><Trash2 className="h-4 w-4" /></button>
-              </div>
-            ))}
+                  <button
+                    type="button"
+                    aria-label={`Flytta ${club.label}`}
+                    onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); setDragIndex(index); }}
+                    onPointerUp={() => setDragIndex(null)}
+                    className="touch-none cursor-grab rounded-lg p-1.5 text-muted-foreground active:cursor-grabbing active:bg-muted"
+                  >
+                    <GripVertical className="h-5 w-5" />
+                  </button>
+                  <span className="inline-flex h-9 w-11 shrink-0 items-center justify-center rounded-lg bg-muted text-xs font-semibold tabular-nums">{club.label}</span>
+                  <span className="min-w-0 flex-1 truncate text-sm font-semibold">
+                    {clubDisplayName(club.label)}
+                    {isPutterLabel(club.label) ? <span className="ml-2 text-[10px] font-semibold uppercase tracking-wide text-primary">Obligatorisk</span> : null}
+                  </span>
+                  <span className="shrink-0 text-sm font-semibold tabular-nums text-muted-foreground">{isPutterLabel(club.label) ? "" : carryValue != null ? `${Math.round(carryValue)} m` : "— m"}</span>
+                  {isPutterLabel(club.label) ? null : <button aria-label={`Ta bort ${club.label}`} onClick={() => removeClub(club.id)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted"><Trash2 className="h-4 w-4" /></button>}
+                </div>
+              );
+            })}
           </div>
         </section>
 
-        {!bagHasPutter ? <div className="mt-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-xs"><span className="font-semibold">Puttern saknas.</span> Lägg till Putter innan du börjar mappa.</div> : null}
+        {!bagHasPutter ? <div className="mt-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-xs"><span className="font-semibold">Puttern saknas.</span> Lägg till Putter – den krävs för en färdig bag.</div> : null}
+        {putterSlotReserved && bagHasPutter ? <div className="mt-3 rounded-xl border border-border bg-muted/50 px-4 py-3 text-xs text-muted-foreground">Bagen är full: 13 klubbor + putter.</div> : null}
 
-        <section className="mt-4 rounded-2xl border border-border bg-card p-4">
-          {!showAddClub ? (
-            <button disabled={map.clubs.length >= MAX_BAG_CLUBS} onClick={() => setShowAddClub(true)} className="flex w-full items-center justify-between rounded-xl border border-dashed border-border px-3 py-3 text-sm font-semibold disabled:opacity-40">
-              <span className="inline-flex items-center gap-2"><Plus className="h-4 w-4 text-primary" /> Lägg till en klubb</span>
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
-            </button>
-          ) : (
-            <>
-              <div className="flex items-center justify-between"><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Lägg till en klubb</p><button onClick={() => setShowAddClub(false)} className="rounded-full p-1 text-muted-foreground"><X className="h-4 w-4" /></button></div>
-              <div className="mt-3 flex gap-2"><input value={customClub} onChange={(e) => setCustomClub(e.target.value)} placeholder="T.ex. 48°, 7W, 4H" className="min-w-0 flex-1 rounded-xl border border-border bg-background px-3 py-3 text-sm" /><button disabled={!canAddClubToBag(map, customClub)} onClick={() => addClub(customClub)} className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground disabled:opacity-40"><Plus className="h-4 w-4" /></button></div>
-              <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Snabbval</p>
-              <div className="mt-2 flex max-h-36 flex-wrap gap-2 overflow-y-auto">{BAG_CLUB_LIBRARY.filter((label) => !map.clubs.some((club) => club.label === label) && canAddClubToBag(map, label)).map((label) => <button key={label} onClick={() => addClub(label)} className="rounded-full border border-border px-3 py-1.5 text-xs font-semibold">{label}</button>)}</div>
-            </>
-          )}
+        <section className="mt-4 space-y-5">
+          {CLUB_GROUPS.map((group) => (
+            <div key={group.title}>
+              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{group.title}</p>
+              <div className="flex flex-wrap gap-2">
+                {group.clubs.map((label) => {
+                  const inBag = map.clubs.find((club) => club.label.toLowerCase() === label.toLowerCase());
+                  const disabled = !inBag && !canAddClubToBag(map, label);
+                  return (
+                    <button
+                      key={label}
+                      type="button"
+                      aria-pressed={!!inBag}
+                      disabled={disabled}
+                      onClick={() => inBag ? removeClub(inBag.id) : addClub(label)}
+                      className={`min-h-11 min-w-11 rounded-full border px-4 text-xs font-semibold transition disabled:opacity-40 ${inBag ? "border-primary bg-primary text-primary-foreground shadow-sm" : "border-border bg-card text-foreground"}`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </section>
 
-        <button disabled={!mappableClubs.length || !bagHasPutter} onClick={() => { setSelectedClubId(nextRecommendedClub(map)?.id ?? mappableClubs[0]?.id ?? ""); setView("test"); }} className="mt-5 flex w-full items-center justify-center rounded-2xl bg-primary py-4 font-semibold text-primary-foreground disabled:opacity-40">Börja mappa</button>
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 px-5 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-3 backdrop-blur">
+          <div className="mx-auto w-full max-w-md">
+            <button
+              disabled={!mappableClubs.length || !bagHasPutter}
+              onClick={() => { setSelectedClubId(nextRecommendedClub(map)?.id ?? mappableClubs[0]?.id ?? ""); setView("test"); }}
+              className="flex w-full items-center justify-center rounded-2xl bg-primary py-4 font-semibold text-primary-foreground disabled:opacity-40"
+            >
+              Spara bag · {totalCount}/{MAX_BAG_CLUBS}
+            </button>
+          </div>
+        </div>
       </main>
     );
   }
