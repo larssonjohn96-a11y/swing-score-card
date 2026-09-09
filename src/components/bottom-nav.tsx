@@ -17,12 +17,20 @@ const RIGHT_TABS = [
   { to: "/utveckling", label: "Utveckling", icon: TrendingUp, exact: false },
 ] as const;
 
-const MORE_LINKS = [
-  { to: "/shot-value", label: "Shot Value", description: "Se vad ett enskilt slag faktiskt är värt mot olika spelarnivåer.", icon: BarChart3 },
-  { to: "/trophy", label: "Trophy Room", description: "Personliga rekord, milestones och achievements.", icon: Trophy },
-  { to: "/min-bag", label: "My Bag", description: "Öppna din mappade bag – eller starta mappning om du inte har gjort den ännu.", icon: ListChecks },
-  { to: "/jamfor", label: "Head-to-head", description: "Jämför din profil mot andra spelare.", icon: Users },
-  { to: "/vanner", label: "Vänner", description: "Hantera vänner och sociala funktioner.", icon: Users },
+type MoreTone = "gold" | "neutral" | "h2h";
+
+const MORE_LINKS: ReadonlyArray<{
+  to: string;
+  label: string;
+  description: string;
+  icon: typeof Home;
+  tone: MoreTone;
+}> = [
+  { to: "/trophy", label: "Trophy Room", description: "Personliga rekord, milestones och achievements.", icon: Trophy, tone: "gold" },
+  { to: "/min-bag", label: "My Bag", description: "Öppna din mappade bag – eller starta mappning om du inte har gjort den ännu.", icon: ListChecks, tone: "neutral" },
+  { to: "/jamfor", label: "Head-to-head", description: "Ställ din SG4-profil mot en vän och se vem som vinner.", icon: Users, tone: "h2h" },
+  { to: "/vanner", label: "Vänner", description: "Hantera vänner och sociala funktioner.", icon: Users, tone: "neutral" },
+  { to: "/shot-value", label: "Shot Value", description: "Se vad ett enskilt slag faktiskt är värt mot olika spelarnivåer.", icon: BarChart3, tone: "neutral" },
 ] as const;
 
 function NavLink({
@@ -57,6 +65,28 @@ function NavLink({
       </span>
     </Link>
   );
+}
+
+function moreItemClasses(tone: MoreTone) {
+  if (tone === "h2h") {
+    return {
+      card: "border-blue-500/20 bg-gradient-to-r from-blue-500/[0.06] via-card to-red-500/[0.06] hover:border-red-500/30",
+      icon: "bg-gradient-to-br from-blue-500 to-red-500 text-white shadow-sm",
+      chevron: "text-red-500/70",
+    };
+  }
+  if (tone === "gold") {
+    return {
+      card: "border-amber-500/25 bg-amber-500/[0.06] hover:border-amber-500/40",
+      icon: "border border-amber-500/30 bg-amber-500/15 text-amber-600",
+      chevron: "text-amber-600/70",
+    };
+  }
+  return {
+    card: "border-border bg-card hover:border-foreground/20 hover:bg-muted/35",
+    icon: "border border-border bg-muted text-foreground",
+    chevron: "text-muted-foreground",
+  };
 }
 
 export function BottomNav() {
@@ -183,24 +213,27 @@ export function BottomNav() {
             <p className="text-left text-xs text-muted-foreground">Snabbvägar till fler delar av SG4.</p>
           </SheetHeader>
           <div className="mt-4 space-y-2">
-            {MORE_LINKS.map((item) => (
-              <Link
-                key={item.to}
-                to={item.to as any}
-                onClick={() => setMoreOpen(false)}
-                className="group flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3.5 transition-colors hover:border-primary hover:bg-tint"
-              >
-                <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-tint-strong text-primary">
-                  <item.icon className="h-5 w-5" />
-                  {item.to === "/trophy" && trophyBadge ? <span className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-flag px-1 text-[9px] font-bold text-background">{trophyBadge}</span> : null}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <h3 className="text-base font-semibold leading-none">{item.label}</h3>
-                  <p className="mt-1 text-[11px] leading-snug text-muted-foreground">{item.description}</p>
-                </div>
-                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
-              </Link>
-            ))}
+            {MORE_LINKS.map((item) => {
+              const tone = moreItemClasses(item.tone);
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to as any}
+                  onClick={() => setMoreOpen(false)}
+                  className={`group flex items-center gap-3 rounded-2xl border px-4 py-3.5 transition-colors ${tone.card}`}
+                >
+                  <span className={`relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${tone.icon}`}>
+                    <item.icon className="h-5 w-5" />
+                    {item.to === "/trophy" && trophyBadge ? <span className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-amber-500 px-1 text-[9px] font-bold text-white">{trophyBadge}</span> : null}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-base font-semibold leading-none">{item.label}</h3>
+                    <p className="mt-1 text-[11px] leading-snug text-muted-foreground">{item.description}</p>
+                  </div>
+                  <ChevronRight className={`h-4 w-4 shrink-0 transition-transform group-hover:translate-x-0.5 ${tone.chevron}`} />
+                </Link>
+              );
+            })}
           </div>
         </SheetContent>
       </Sheet>
