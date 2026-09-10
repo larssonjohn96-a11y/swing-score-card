@@ -122,38 +122,34 @@ function Home() {
         </div>
       </div>
 
+      <Link
+        to="/jamfor"
+        aria-label="Head to Head – jämför dig mot en annan spelare"
+        className="mt-3 flex items-center gap-3 rounded-3xl border border-border bg-card px-4 py-4 shadow-[0_12px_28px_-18px_rgba(0,0,0,0.32)] transition-transform active:scale-[0.99]"
+      >
+        <span className="flex shrink-0 items-center">
+          <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-card bg-blue-500/10 text-blue-600">
+            {profile.photo ? <img src={profile.photo} alt="" className="h-full w-full object-cover" /> : <User className="h-4 w-4" />}
+          </span>
+          <span className="-ml-2.5 flex h-10 w-10 items-center justify-center rounded-full border-2 border-card bg-red-500/10 text-red-600"><User className="h-4 w-4" /></span>
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block font-display text-2xl leading-none">Head to Head</span>
+          <span className="mt-1 block truncate text-sm text-muted-foreground">Tävla mot en annan spelare</span>
+        </span>
+        <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+      </Link>
+
       <AppStoryLauncher />
+
 
       {data && <div className="mt-4">
         {data.real === null && data.cats.every((c) => c.count === 0) && <Link to="/konto" className="mb-4 flex items-center gap-3 rounded-2xl border border-primary/30 bg-primary/5 p-4"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary"><Gauge className="h-4 w-4" strokeWidth={1.75} /></span><span className="min-w-0 flex-1"><span className="block text-sm font-semibold leading-tight">Ange ditt officiella HCP</span><span className="block text-xs text-muted-foreground">Få en direkt baslinje i alla kategorier, helt utan att göra ett test</span></span><ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" /></Link>}
         {profile.age === undefined && !ageSaved && <div className="mb-4"><AgeInlinePrompt title="Ange din ålder" description="Se hur din ball speed i Speed Test står sig mot jämnåriga golfare" onSaved={() => setAgeSaved(true)} /></div>}
         <div className="mt-10"><AnalysisRadarSwitcher cats={data.cats} totalHandicap={data.estimated} /></div>
 
-        <Link
-          to="/jamfor"
-          className="mt-4 block overflow-hidden rounded-2xl border border-blue-500/25 bg-gradient-to-r from-blue-500/[0.07] via-card to-red-500/[0.07] shadow-sm transition-transform active:scale-[0.99]"
-        >
-          <div className="grid grid-cols-[1fr_auto_1fr] items-stretch">
-            <div className="flex items-center gap-2 bg-blue-500/[0.08] px-3 py-3">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-blue-500 bg-blue-500/10 text-blue-600">
-                {profile.photo ? <img src={profile.photo} alt="" className="h-full w-full object-cover" /> : <User className="h-3.5 w-3.5" />}
-              </span>
-              <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-blue-600">Du</span>
-            </div>
-            <div className="flex items-center justify-center bg-foreground px-2.5 font-display text-sm text-background">VS</div>
-            <div className="flex items-center justify-end gap-2 bg-red-500/[0.08] px-3 py-3">
-              <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-red-600">Vän</span>
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-red-500 bg-red-500/10 text-red-600"><User className="h-3.5 w-3.5" /></span>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 border-t border-border/60 px-4 py-3">
-            <span className="min-w-0 flex-1">
-              <span className="block text-[9px] font-bold uppercase tracking-[0.16em]"><span className="text-blue-600">Head</span><span className="text-muted-foreground">-to-</span><span className="text-red-600">head</span></span>
-              <span className="mt-0.5 block font-display text-xl leading-none">Vem vinner?</span>
-            </span>
-            <ChevronRight className="h-4 w-4 shrink-0 text-red-500" />
-          </div>
-        </Link>
+
+
 
         <StableCategoryStatsSection />
         <OpportunityCard opportunity={data.opportunity} />

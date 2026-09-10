@@ -59,6 +59,7 @@ import { Route as KortputtRouteImport } from './routes/kortputt'
 import { Route as KontoRouteImport } from './routes/konto'
 import { Route as KlockPuttRouteImport } from './routes/klock-putt'
 import { Route as JamforRouteImport } from './routes/jamfor'
+import { Route as HcpGoalRouteImport } from './routes/hcp-goal'
 import { Route as GreenReadingHistorikRouteImport } from './routes/green-reading-historik'
 import { Route as GreenReadingRouteImport } from './routes/green-reading'
 import { Route as FairwayStreakRouteImport } from './routes/fairway-streak'
@@ -345,6 +346,11 @@ const JamforRoute = JamforRouteImport.update({
   path: '/jamfor',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HcpGoalRoute = HcpGoalRouteImport.update({
+  id: '/hcp-goal',
+  path: '/hcp-goal',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const GreenReadingHistorikRoute = GreenReadingHistorikRouteImport.update({
   id: '/green-reading-historik',
   path: '/green-reading-historik',
@@ -533,6 +539,7 @@ export interface FileRoutesByFullPath {
   '/fairway-streak': typeof FairwayStreakRoute
   '/green-reading': typeof GreenReadingRoute
   '/green-reading-historik': typeof GreenReadingHistorikRoute
+  '/hcp-goal': typeof HcpGoalRoute
   '/jamfor': typeof JamforRouteWithChildren
   '/klock-putt': typeof KlockPuttRoute
   '/konto': typeof KontoRoute
@@ -617,6 +624,7 @@ export interface FileRoutesByTo {
   '/fairway-streak': typeof FairwayStreakRoute
   '/green-reading': typeof GreenReadingRoute
   '/green-reading-historik': typeof GreenReadingHistorikRoute
+  '/hcp-goal': typeof HcpGoalRoute
   '/jamfor': typeof JamforRouteWithChildren
   '/klock-putt': typeof KlockPuttRoute
   '/konto': typeof KontoRoute
@@ -702,6 +710,7 @@ export interface FileRoutesById {
   '/fairway-streak': typeof FairwayStreakRoute
   '/green-reading': typeof GreenReadingRoute
   '/green-reading-historik': typeof GreenReadingHistorikRoute
+  '/hcp-goal': typeof HcpGoalRoute
   '/jamfor': typeof JamforRouteWithChildren
   '/klock-putt': typeof KlockPuttRoute
   '/konto': typeof KontoRoute
@@ -788,6 +797,7 @@ export interface FileRouteTypes {
     | '/fairway-streak'
     | '/green-reading'
     | '/green-reading-historik'
+    | '/hcp-goal'
     | '/jamfor'
     | '/klock-putt'
     | '/konto'
@@ -872,6 +882,7 @@ export interface FileRouteTypes {
     | '/fairway-streak'
     | '/green-reading'
     | '/green-reading-historik'
+    | '/hcp-goal'
     | '/jamfor'
     | '/klock-putt'
     | '/konto'
@@ -956,6 +967,7 @@ export interface FileRouteTypes {
     | '/fairway-streak'
     | '/green-reading'
     | '/green-reading-historik'
+    | '/hcp-goal'
     | '/jamfor'
     | '/klock-putt'
     | '/konto'
@@ -1041,6 +1053,7 @@ export interface RootRouteChildren {
   FairwayStreakRoute: typeof FairwayStreakRoute
   GreenReadingRoute: typeof GreenReadingRoute
   GreenReadingHistorikRoute: typeof GreenReadingHistorikRoute
+  HcpGoalRoute: typeof HcpGoalRoute
   JamforRoute: typeof JamforRouteWithChildren
   KlockPuttRoute: typeof KlockPuttRoute
   KontoRoute: typeof KontoRoute
@@ -1450,6 +1463,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof JamforRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/hcp-goal': {
+      id: '/hcp-goal'
+      path: '/hcp-goal'
+      fullPath: '/hcp-goal'
+      preLoaderRoute: typeof HcpGoalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/green-reading-historik': {
       id: '/green-reading-historik'
       path: '/green-reading-historik'
@@ -1737,6 +1757,7 @@ const rootRouteChildren: RootRouteChildren = {
   FairwayStreakRoute: FairwayStreakRoute,
   GreenReadingRoute: GreenReadingRoute,
   GreenReadingHistorikRoute: GreenReadingHistorikRoute,
+  HcpGoalRoute: HcpGoalRoute,
   JamforRoute: JamforRouteWithChildren,
   KlockPuttRoute: KlockPuttRoute,
   KontoRoute: KontoRoute,
