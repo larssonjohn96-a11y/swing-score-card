@@ -50,8 +50,8 @@ const TESTS: Record<Category, TestItem[]> = {
     { to: "/driver-konsekvens", title: "Driver med konsekvens", description: "16 drives mot en 30 m fairway där kostnaden för vänster- och högermiss varierar hål för hål.", meta: "16 drives · 30 m fairway", skill: "Precision & konsekvens" },
   ],
   approach: [
-    { to: "/approach-pei-valj", title: "Approach Precision", description: "Välj Wedge Precision 50–120 m, Iron Precision 120–190 m eller Total Approach 50–220 m.", meta: "50–220 m · PEI-metod", skill: "Approachprecision" },
-    { to: "/shot-shaping", title: "Shot Shaping", description: "9 Window, konstant shape och växlande draw/fade.", meta: "3 tester · bollkontroll", skill: "Bollflykt & shape" },
+    { to: "/approach-pei-valj", title: "Approach Precision", description: "Precision från wedge till långa inspel.", meta: "50–220 m · PEI-metod", skill: "Approachprecision" },
+    { to: "/shot-shaping", title: "Shot Shaping", description: "Kontrollera höjd, draw och fade.", meta: "3 tester · bollkontroll", skill: "Bollflykt & shape" },
   ],
   "around-the-green": [
     { to: "/8-bollar", title: "8-bollsövningen", description: "Chip, pitch, lobb och bunker från åtta stationer. Fem varv.", meta: "40 slag · max 160 poäng", skill: "Slagvariation" },
@@ -82,18 +82,18 @@ function TestCard({ to, title, description, meta, skill, featured, liquidGlass =
     return (
       <Link
         to={to}
-        className="group flex w-full items-center gap-4 rounded-3xl border border-slate-200/95 bg-gradient-to-br from-slate-50/90 via-white/76 to-blue-50/55 p-4 text-left shadow-[0_18px_44px_-32px_rgba(15,23,42,.34)] backdrop-blur-2xl transition-all active:scale-[0.99]"
+        className="group flex w-full items-center gap-4 rounded-3xl border border-slate-300/80 bg-gradient-to-br from-slate-100/88 via-white/78 to-slate-100/72 p-4 text-left shadow-[0_18px_44px_-32px_rgba(15,23,42,.4)] backdrop-blur-2xl transition-all active:scale-[0.99]"
       >
-        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-blue-200/80 bg-blue-500/[0.09] text-blue-600 shadow-[0_10px_24px_-18px_rgba(37,99,235,.55)]">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-slate-300/80 bg-white/58 text-slate-700 shadow-[0_10px_24px_-18px_rgba(15,23,42,.35)]">
           <Icon className="h-5 w-5" />
         </span>
         <span className="min-w-0 flex-1">
           {skill ? <span className="block text-[9px] font-bold uppercase tracking-[0.16em] text-slate-500">{skill}</span> : null}
           <span className="mt-1 block font-display text-2xl leading-none text-slate-900">{title}</span>
           <span className="mt-1.5 block text-xs leading-relaxed text-slate-600">{description}</span>
-          <span className="mt-2 block text-[10px] font-semibold uppercase tracking-[0.14em] text-blue-600">{meta}</span>
+          <span className="mt-2 block text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-600">{meta}</span>
         </span>
-        <ChevronRight className="h-5 w-5 shrink-0 text-blue-500 transition-transform group-active:translate-x-0.5" />
+        <ChevronRight className="h-5 w-5 shrink-0 text-slate-500 transition-transform group-active:translate-x-0.5" />
       </Link>
     );
   }
@@ -149,14 +149,14 @@ function TrainingTestsPage() {
       ) : approachGlass ? (
         <section>
           <div className="flex items-center justify-between">
-            <Link to="/traning" search={{ category: undefined }} aria-label="Tillbaka" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200/90 bg-white/72 shadow-sm backdrop-blur-xl"><ArrowLeft className="h-4 w-4" /></Link>
-            <span className="rounded-full border border-slate-300/80 bg-white/72 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-600 backdrop-blur-xl">Träning</span>
+            <Link to="/traning" search={{ category: undefined }} aria-label="Tillbaka" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-300/80 bg-white/70 shadow-sm backdrop-blur-xl"><ArrowLeft className="h-4 w-4" /></Link>
+            <span className="rounded-full border border-slate-300/80 bg-slate-100/75 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-600 backdrop-blur-xl">Träning</span>
           </div>
 
-          <div className="mt-5 rounded-[30px] border border-slate-300/80 bg-white/82 p-5 shadow-[0_20px_48px_-32px_rgba(15,23,42,.42)] backdrop-blur-2xl">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">{active?.title}</p>
-            <h2 className="mt-2 font-display text-4xl leading-none">Approach</h2>
-            <p className="mt-3 max-w-[32ch] text-[13px] leading-relaxed text-slate-600">Träna och mät precision från wedge till långa inspel eller testa din kontroll över bollflykten.</p>
+          <div className="mt-5 rounded-[30px] border border-slate-300/85 bg-gradient-to-br from-slate-100/88 via-white/82 to-slate-100/74 p-5 shadow-[0_20px_48px_-32px_rgba(15,23,42,.44)] backdrop-blur-2xl">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">APPROACH</p>
+            <h2 className="mt-2 font-display text-4xl leading-none">Performance & träning</h2>
+            <p className="mt-3 text-[13px] text-slate-600">Precision och bollkontroll.</p>
           </div>
 
           <div className="mt-5 flex items-center justify-between"><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Tester</p><span className="text-[10px] font-semibold text-slate-500">2 områden</span></div>
