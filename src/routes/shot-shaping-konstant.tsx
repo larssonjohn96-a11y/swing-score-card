@@ -26,7 +26,7 @@ function ConstantShapePage() {
       historyTo="/shot-shaping-konstant-historik"
       variants={SHAPE_VARIANTS}
       variantLabel="Välj shape"
-      promptsFor={constantShapePrompts}
+      promptsFor={(variant) => constantShapePrompts(variant).map((prompt) => ({ ...prompt, secondary: undefined }))}
       options={HIT_MISS}
       runningLabel="Träffar"
       clubGroups={CLUB_GROUPS}
