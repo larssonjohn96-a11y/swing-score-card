@@ -58,13 +58,13 @@ function WindowGrid({ shots, activeIndex }: { shots: number[]; activeIndex: numb
           : value === 0
             ? "border-red-500/70 bg-red-500/70 shadow-[0_12px_28px_-18px_rgba(239,68,68,.75)]"
             : active
-              ? "border-slate-600/70 bg-slate-600/70 shadow-[0_12px_28px_-18px_rgba(51,65,85,.65)]"
+              ? "border-slate-600/75 bg-slate-600/72 shadow-[0_12px_28px_-18px_rgba(51,65,85,.65)]"
               : "border-slate-300/90 bg-slate-200/80 shadow-[inset_0_1px_0_rgba(255,255,255,.8)]";
         const textTone = active ? "text-slate-800 font-bold" : value === 1 ? "text-emerald-700 font-bold" : value === 0 ? "text-red-700 font-bold" : "text-slate-500";
         return (
           <div key={label} className="min-w-0 text-center">
             <div className={`aspect-square w-full rounded-[22px] border backdrop-blur-xl transition-all ${tone}`} />
-            <p className={`mt-1.5 truncate text-[10px] leading-none ${textTone}`}>{label}</p>
+            <p className={`mt-1.5 text-[10px] leading-tight ${textTone}`}>{label}</p>
           </div>
         );
       })}
@@ -160,7 +160,7 @@ function NineWindowPage() {
   if (phase === "intro") {
     const friendReady = !withFriend || Boolean(selectedFriend);
     return (
-      <main style={LIGHT_SURFACE} className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background px-5 pb-5 pt-4 text-foreground">
+      <main style={LIGHT_SURFACE} className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background px-5 pb-6 pt-4 text-foreground">
         <div className="flex items-center justify-between">
           <Link to="/shot-shaping" className={`inline-flex h-9 w-9 items-center justify-center rounded-full border ${glass}`}><ArrowLeft className="h-4 w-4" /></Link>
           <Link to="/shot-shaping-9-window-historik" className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs text-muted-foreground ${glass}`}><BarChart3 className="h-3.5 w-3.5" /> Analys</Link>
@@ -170,6 +170,22 @@ function NineWindowPage() {
           <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">Shot Shaping · Höjd + shape</p>
           <h1 className="mt-2 font-display text-4xl leading-none">9 Window Drill</h1>
           <p className="mt-3 text-[13px] leading-relaxed text-slate-600">Nio bollfönster: låg, medel och hög i draw, rak och fade.</p>
+        </section>
+
+        <section className={`mt-3 rounded-[30px] border p-4 ${glass}`}>
+          <div className="mb-3 flex items-end justify-between">
+            <div>
+              <p className="text-[9px] font-bold uppercase tracking-[0.17em] text-slate-500">Så fungerar testet</p>
+              <p className="mt-1 font-display text-xl">9 fönster</p>
+            </div>
+            <span className="rounded-full border border-slate-300/80 bg-white/70 px-2.5 py-1 text-[10px] font-semibold text-slate-600">Låg draw markerad</span>
+          </div>
+          <WindowGrid shots={[]} activeIndex={0} />
+          <div className="mt-3 flex items-center justify-center gap-4 text-[10px] font-semibold text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-emerald-500" /> Träff</span>
+            <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-red-500" /> Miss</span>
+            <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-slate-600" /> Aktiv</span>
+          </div>
         </section>
 
         <div className="mt-4">
@@ -194,7 +210,7 @@ function NineWindowPage() {
           <div className="mt-2 grid grid-cols-2 gap-2">{CLUB_GROUPS.map((group) => <button key={group.label} onClick={() => setClub(group.label)} className={`rounded-3xl border p-4 text-left backdrop-blur-xl ${club === group.label ? "border-blue-500/65 bg-blue-500/[0.12]" : "border-slate-300/90 bg-white/72"}`}><span className="block font-display text-xl">{group.label}</span><span className="mt-1 block text-[11px] font-semibold text-muted-foreground">{group.detail}</span></button>)}</div>
         </div> : null}
 
-        <button onClick={start} disabled={!mode || !club || (withFriend && !selectedFriend)} className="mt-auto flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-4 font-display text-xl text-primary-foreground disabled:opacity-35">Starta test <ArrowRight className="h-5 w-5" /></button>
+        <button onClick={start} disabled={!mode || !club || (withFriend && !selectedFriend)} className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-4 font-display text-xl text-primary-foreground disabled:opacity-35">Starta test <ArrowRight className="h-5 w-5" /></button>
       </main>
     );
   }
