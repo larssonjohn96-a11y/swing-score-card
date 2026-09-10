@@ -41,7 +41,12 @@ function ShotShapingFamily() {
         <ArrowRight className="h-4 w-4 text-slate-600" />
       </Link>
 
-      <div className="mt-5 space-y-3">
+      <div className="mt-5 mb-2 flex items-center justify-between">
+        <h2 className="font-display text-2xl leading-none">Tester</h2>
+        <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">3 tester</span>
+      </div>
+
+      <div className="space-y-3">
         {TESTS.map(({ to, title, meta, description, icon: Icon }) => (
           <Link key={to} to={to} className={`group flex items-center gap-4 rounded-3xl border p-4 transition-all active:scale-[0.99] ${testGlass}`}>
             <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-blue-200/80 bg-blue-500/[0.09] text-blue-600 shadow-[0_10px_24px_-18px_rgba(37,99,235,.55)]"><Icon className="h-5 w-5" /></span>
