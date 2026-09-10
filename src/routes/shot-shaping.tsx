@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, ArrowRight, Grid3x3, Repeat, Shuffle } from "lucide-react";
+import { ArrowLeft, ArrowRight, BarChart3, Grid3x3, Repeat, Shuffle } from "lucide-react";
 import { LIGHT_SURFACE } from "./8-bollar";
 
 export const Route = createFileRoute("/shot-shaping")({
@@ -46,9 +46,13 @@ function ShotShapingFamily() {
         <Link to="/traning" search={{ category: undefined }} className={`inline-flex h-10 w-10 items-center justify-center rounded-full border ${glass}`}>
           <ArrowLeft className="h-4 w-4" />
         </Link>
-        <span className="rounded-full border border-slate-200/90 bg-white/70 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground backdrop-blur-xl">
-          Ej HCP-grundande
-        </span>
+        <Link
+          to="/shot-shaping-vaxlande-historik"
+          className="inline-flex items-center gap-2 rounded-full border border-slate-300/90 bg-white/78 px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-[0_12px_30px_-24px_rgba(15,23,42,.4)] backdrop-blur-xl"
+        >
+          <BarChart3 className="h-4 w-4 text-blue-600" />
+          Samlad analys
+        </Link>
       </div>
 
       <section className="mt-5 overflow-hidden rounded-[30px] border border-slate-300/80 bg-white/82 p-5 shadow-[0_20px_48px_-32px_rgba(15,23,42,0.42)] backdrop-blur-2xl">
@@ -58,6 +62,20 @@ function ShotShapingFamily() {
           Träna kontroll över bollens form och höjd. Välj test och följ din utveckling.
         </p>
       </section>
+
+      <Link
+        to="/shot-shaping-vaxlande-historik"
+        className="mt-4 flex items-center gap-3 rounded-3xl border border-slate-300/90 bg-white/78 p-4 shadow-[0_16px_38px_-30px_rgba(15,23,42,.4)] backdrop-blur-2xl"
+      >
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-blue-200/80 bg-blue-500/[0.08] text-blue-600">
+          <BarChart3 className="h-5 w-5" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block font-display text-xl leading-none">Progress & analys</span>
+          <span className="mt-1 block text-[11px] leading-relaxed text-slate-600">Draw, fade, high scores och all Shot Shaping-data samlad.</span>
+        </span>
+        <ArrowRight className="h-4 w-4 text-blue-500" />
+      </Link>
 
       <div className="mt-5 space-y-3">
         {TESTS.map(({ to, title, meta, description, icon: Icon }) => (
