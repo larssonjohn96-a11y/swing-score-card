@@ -28,7 +28,6 @@ const TESTS = [
     meta: "10 slag · draw / fade varannat",
     description: "Byt bollform på begäran, slag efter slag. Mäter anpassningsförmåga och kontroll.",
     icon: Shuffle,
-    featured: true,
   },
   {
     to: "/shot-shaping-9-window" as const,
@@ -36,7 +35,6 @@ const TESTS = [
     meta: "9 slag · höjd + shape",
     description: "Låg, medel och hög bollflykt kombinerat med draw, rak och fade.",
     icon: Grid3x3,
-    featured: false,
   },
   {
     to: "/shot-shaping-konstant" as const,
@@ -44,7 +42,6 @@ const TESTS = [
     meta: "10 slag · draw eller fade",
     description: "Upprepa samma bollform tio gånger och mät hur repeterbar din stock shape är.",
     icon: Repeat,
-    featured: false,
   },
 ];
 
@@ -56,6 +53,7 @@ function ShotShapingFamily() {
   }, []);
 
   const glass = "border-white/60 bg-white/65 shadow-[0_18px_48px_-34px_rgba(15,23,42,0.55)] backdrop-blur-xl";
+  const blueGlass = "border-sky-200/70 bg-gradient-to-br from-blue-500/[0.11] via-white/68 to-blue-500/[0.05] shadow-[0_18px_44px_-32px_rgba(37,99,235,0.55)] backdrop-blur-xl";
 
   return (
     <main style={LIGHT_SURFACE} className="mx-auto min-h-screen w-full max-w-md bg-background px-5 pb-24 pt-6 text-foreground">
@@ -72,7 +70,7 @@ function ShotShapingFamily() {
         <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">Träningstester</p>
         <h1 className="mt-2 font-display text-4xl leading-none">Shot Shaping</h1>
         <p className="mt-3 text-[13px] leading-relaxed text-muted-foreground">
-          Träna kontroll över bollens form och höjd. Välj klubba i varje test och följ utvecklingen över tid.
+          Träna kontroll över bollens form och höjd. Välj klubbgrupp, kör solo eller med en vän och följ utvecklingen över tid.
         </p>
         <div className="mt-4 grid grid-cols-2 gap-2 text-center">
           <div className="rounded-2xl border border-white/60 bg-white/55 px-3 py-3 backdrop-blur-xl">
@@ -100,24 +98,21 @@ function ShotShapingFamily() {
       ) : null}
 
       <div className="mt-5 space-y-3">
-        {TESTS.map(({ to, title, meta, description, icon: Icon, featured }) => (
+        {TESTS.map(({ to, title, meta, description, icon: Icon }) => (
           <Link
             key={to}
             to={to}
-            className={`group flex items-center gap-4 rounded-3xl border p-4 transition-all active:scale-[0.99] ${featured ? "border-sky-200/70 bg-gradient-to-br from-blue-500/[0.11] via-white/68 to-red-500/[0.08] shadow-[0_18px_44px_-32px_rgba(37,99,235,0.55)] backdrop-blur-xl" : glass}`}
+            className={`group flex items-center gap-4 rounded-3xl border p-4 transition-all active:scale-[0.99] ${blueGlass}`}
           >
-            <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border ${featured ? "border-blue-400/20 bg-blue-500/10 text-blue-600" : "border-white/60 bg-white/60 text-foreground"}`}>
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-blue-400/20 bg-blue-500/10 text-blue-600">
               <Icon className="h-5 w-5" />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="flex items-center gap-2">
-                <span className="block font-display text-2xl leading-none">{title}</span>
-                {featured ? <span className="rounded-full bg-foreground px-2 py-1 text-[8px] font-bold uppercase tracking-[0.12em] text-background">Rekommenderad</span> : null}
-              </span>
+              <span className="block font-display text-2xl leading-none">{title}</span>
               <span className="mt-1.5 block text-xs leading-relaxed text-muted-foreground">{description}</span>
-              <span className={`mt-2 block text-[10px] font-semibold uppercase tracking-[0.14em] ${featured ? "text-blue-600" : "text-muted-foreground"}`}>{meta}</span>
+              <span className="mt-2 block text-[10px] font-semibold uppercase tracking-[0.14em] text-blue-600">{meta}</span>
             </span>
-            <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-active:translate-x-0.5" />
+            <ArrowRight className="h-4 w-4 shrink-0 text-blue-500 transition-transform group-active:translate-x-0.5" />
           </Link>
         ))}
       </div>
