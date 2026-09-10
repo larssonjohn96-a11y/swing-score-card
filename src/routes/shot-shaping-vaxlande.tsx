@@ -20,7 +20,7 @@ function AlternatingShapePage() {
       testId="shot-shaping-vaxlande"
       eyebrow="Shot Shaping · Växlande kontroll"
       title="Växlande shape"
-      intro="Växla draw och fade slag för slag. Testet visar hur snabbt du kan byta bollform på begäran – med samma klubba genom hela testet."
+      intro="Växla draw och fade slag för slag. Testet visar hur snabbt du kan byta bollform på begäran – med samma klubbgrupp genom hela testet."
       backTo="/shot-shaping"
       selfTo="/shot-shaping-vaxlande"
       historyTo="/shot-shaping-vaxlande-historik"
@@ -30,7 +30,8 @@ function AlternatingShapePage() {
       clubGroups={CLUB_GROUPS}
       liquidGlass
       hitMissColors
-      introCards={[{ title: "Testformat", rows: [{ label: "Slag", value: "10" }, { label: "Ordning", value: "Draw / Fade" }, { label: "Klubba", value: "Samma hela testet" }, { label: "Poäng", value: "1 per träff" }] }]}
+      multiplayer
+      introCards={[{ title: "Testformat", rows: [{ label: "Slag", value: "10" }, { label: "Ordning", value: "Draw / Fade" }, { label: "Klubbgrupp", value: "Samma hela testet" }, { label: "Poäng", value: "1 per träff" }] }]}
       analyze={analyzeAlternating}
     />
   );
