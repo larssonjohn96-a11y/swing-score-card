@@ -181,8 +181,8 @@ export function CompareFriendContent({ userId, onBack }: { userId:string; onBack
   const trainingRows = useMemo(() => local && friendSnapshot ? matchRows(local.comparison.training, friendSnapshot.comparisonProfile.training, focus) : [],[local,friendSnapshot,focus]);
   const recordRows = useMemo(() => local && friendSnapshot ? matchRows(local.comparison.records, friendSnapshot.comparisonProfile.records, focus) : [],[local,friendSnapshot,focus]);
 
-  if (loading) return <main className="mx-auto min-h-screen w-full max-w-md bg-background px-5 pt-10"><p className="text-center text-sm text-muted-foreground">Laddar …</p></main>;
-  if (!user) return <main className="mx-auto min-h-screen w-full max-w-md bg-background px-5 pt-10"><p className="text-center text-sm text-muted-foreground">Logga in för att jämföra med vänner.</p></main>;
+  if (loading || !user) return <Shell onBack={onBack} note={loading ? null : "Logga in för att jämföra med vänner."} />;
+
 
   const focusLabel = FOCUS_OPTIONS.find(([key]) => key === focus)?.[1] ?? "Hela spelet";
 
