@@ -1,17 +1,106 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, BarChart3, Crosshair, Target } from "lucide-react";
+import { LIGHT_SURFACE } from "./8-bollar";
 
-export const Route = createFileRoute("/approach-pei-valj")({ head: () => ({ meta: [{ title: "Approach Precision – Träningstest | SG4" }] }), component: PeiChoosePage });
+export const Route = createFileRoute("/approach-pei-valj")({
+  head: () => ({ meta: [{ title: "Approach Precision – Träningstest | SG4" }] }),
+  component: PeiChoosePage,
+});
 
 const TESTS = [
-  { to: "/approach-pei-wedge" as const, title: "Wedge Precision", range: "50–120 m", method: "PEI Wedge", description: "Mät hur nära målet du slår dina wedges över varierade avstånd." },
-  { to: "/approach-pei-iron" as const, title: "Iron Precision", range: "120–190 m", method: "PEI Iron", description: "Mät precisionen på dina järninspel över varierade avstånd." },
-  { to: "/approach-pei" as const, title: "Approach Precision", range: "50–220 m", method: "PEI Total", description: "Komplett precisionstest över hela ditt approachspel – från wedge till långa inspel." },
+  {
+    to: "/approach-pei-wedge" as const,
+    title: "Wedge Precision",
+    range: "50–120 m",
+    method: "PEI Wedge",
+    description: "Mät hur nära målet du slår dina wedges över varierade avstånd.",
+  },
+  {
+    to: "/approach-pei-iron" as const,
+    title: "Iron Precision",
+    range: "120–190 m",
+    method: "PEI Iron",
+    description: "Mät precisionen på dina järninspel över varierade avstånd.",
+  },
+  {
+    to: "/approach-pei" as const,
+    title: "Approach Precision",
+    range: "50–220 m",
+    method: "PEI Total",
+    description: "Komplett precisionstest över hela ditt approachspel – från wedge till långa inspel.",
+  },
 ];
 
-function PeiChoosePage() { return <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-16 pt-8">
-  <div className="flex items-center justify-between"><Link to="/traning" search={{category:"approach"}} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-muted-foreground"><ArrowLeft className="h-4 w-4" /></Link><span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Ej HCP-grundande</span></div>
-  <p className="mt-7 text-xs font-semibold uppercase tracking-[0.24em] text-primary">Approach · Precision</p><h1 className="mt-1 text-5xl leading-none">Approach Precision</h1><p className="mt-3 text-sm leading-relaxed text-muted-foreground">Välj den del av inspelet du vill mäta. Alla tre bygger på PEI-metoden, där lägre resultat är bättre.</p>
-  <div className="mt-7 space-y-3">{TESTS.map((test,index)=><Link key={test.to} to={test.to} className="flex items-center gap-4 rounded-3xl border border-border bg-card p-5 shadow-[var(--shadow-glow)] transition-colors hover:border-primary"><span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/[0.07] text-primary">{index===2?<Target className="h-5 w-5"/>:<Crosshair className="h-5 w-5"/>}</span><span className="min-w-0 flex-1"><span className="flex items-baseline justify-between gap-2"><span className="text-2xl leading-none">{test.title}</span><span className="shrink-0 text-xs font-semibold text-primary">{test.range}</span></span><span className="mt-1 block text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{test.method}</span><span className="mt-2 block text-xs leading-relaxed text-muted-foreground">{test.description}</span></span><ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground"/></Link>)}</div>
-  <Link to="/approach-pei-historik" className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl border border-border py-4 text-sm font-semibold"><BarChart3 className="h-4 w-4"/> Approach Precision – progress</Link>
-</main> }
+function PeiChoosePage() {
+  const glass = "border-slate-200/90 bg-white/72 shadow-[0_18px_48px_-34px_rgba(15,23,42,.38)] backdrop-blur-2xl";
+  const introGlass = "border-slate-300/80 bg-white/82 shadow-[0_20px_48px_-32px_rgba(15,23,42,.42)] backdrop-blur-2xl";
+  const testGlass = "border-slate-200/95 bg-gradient-to-br from-slate-50/90 via-white/76 to-blue-50/55 shadow-[0_18px_44px_-32px_rgba(15,23,42,.34)] backdrop-blur-2xl";
+
+  return (
+    <main style={LIGHT_SURFACE} className="mx-auto min-h-screen w-full max-w-md bg-background px-5 pb-20 pt-6 text-foreground">
+      <div className="flex items-center justify-between">
+        <Link
+          to="/traning"
+          search={{ category: "approach" }}
+          className={`inline-flex h-10 w-10 items-center justify-center rounded-full border ${glass}`}
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Link>
+        <span className="rounded-full border border-slate-300/80 bg-white/72 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-600 backdrop-blur-xl">
+          Ej HCP-grundande
+        </span>
+      </div>
+
+      <section className={`mt-5 rounded-[30px] border p-5 ${introGlass}`}>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">Approach · Precision</p>
+        <h1 className="mt-2 font-display text-4xl leading-none">Approach Precision</h1>
+        <p className="mt-3 max-w-[32ch] text-[13px] leading-relaxed text-slate-600">
+          Välj den del av inspelet du vill mäta. Alla tre bygger på PEI-metoden, där lägre resultat är bättre.
+        </p>
+      </section>
+
+      <div className="mt-5 flex items-center justify-between">
+        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Tester</p>
+        <span className="text-[10px] font-semibold text-slate-500">3 tester</span>
+      </div>
+
+      <div className="mt-2 space-y-3">
+        {TESTS.map((test, index) => (
+          <Link
+            key={test.to}
+            to={test.to}
+            className={`group flex items-center gap-4 rounded-3xl border p-4 transition-all active:scale-[0.99] ${testGlass}`}
+          >
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-blue-200/80 bg-blue-500/[0.09] text-blue-600 shadow-[0_10px_24px_-18px_rgba(37,99,235,.55)]">
+              {index === 2 ? <Target className="h-5 w-5" /> : <Crosshair className="h-5 w-5" />}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="flex items-baseline justify-between gap-2">
+                <span className="font-display text-2xl leading-none">{test.title}</span>
+                <span className="shrink-0 text-[11px] font-bold text-blue-600">{test.range}</span>
+              </span>
+              <span className="mt-1.5 block text-xs leading-relaxed text-slate-600">{test.description}</span>
+              <span className="mt-2 block text-[10px] font-semibold uppercase tracking-[0.14em] text-blue-600">{test.method}</span>
+            </span>
+            <ArrowRight className="h-4 w-4 shrink-0 text-blue-500 transition-transform group-active:translate-x-0.5" />
+          </Link>
+        ))}
+      </div>
+
+      <Link
+        to="/approach-pei-historik"
+        className="mt-4 flex items-center gap-3 rounded-3xl border border-slate-400/75 bg-gradient-to-br from-slate-200/88 via-slate-100/82 to-slate-200/70 p-4 shadow-[0_18px_42px_-30px_rgba(15,23,42,.5)] backdrop-blur-2xl"
+      >
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-slate-400/65 bg-slate-700/[0.08] text-slate-700">
+          <BarChart3 className="h-5 w-5" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[9px] font-bold uppercase tracking-[0.18em] text-slate-500">Översikt</span>
+          <span className="mt-1 block font-display text-xl leading-none text-slate-900">Progress & analys</span>
+          <span className="mt-1 block text-[11px] leading-relaxed text-slate-600">Följ PEI-resultat och utveckling över tid.</span>
+        </span>
+        <ArrowRight className="h-4 w-4 text-slate-600" />
+      </Link>
+    </main>
+  );
+}
