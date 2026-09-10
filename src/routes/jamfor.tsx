@@ -22,6 +22,7 @@ function ComparePickerPage(){
   useHideBottomNav(true);
   const {user,loading}=useAuth();
   const [friends,setFriends]=useState<Friendship[]>([]);
+  const [friendsLoading,setFriendsLoading]=useState(true);
   const [selfName,setSelfName]=useState("Du");
   const [selfAvatar,setSelfAvatar]=useState<string|null>(()=>loadCardProfile().photo??null);
   const [selfHcp,setSelfHcp]=useState<number|undefined>();
@@ -33,13 +34,29 @@ function ComparePickerPage(){
     const real=loadRealHandicap();
     const cats=computeStableCategoryHandicaps(undefined,real??undefined);
     setSelfHcp(computeEstimatedHandicap(cats));
-    if(!user)return;
-    void listFriendships().then((result)=>setFriends(result.accepted));
+
+    if(loading)return;
+    if(!user){
+      setFriends([]);
+      setFriendsLoading(false);
+      return;
+    }
+
+    let cancelled=false;
+    setFriendsLoading(true);
+    void listFriendships().then((result)=>{
+      if(cancelled)return;
+      setFriends(result.accepted);
+      setFriendsLoading(false);
+    });
     void supabase.from("profiles").select("display_name, avatar_url").eq("id",user.id).maybeSingle().then(({data})=>{
+      if(cancelled)return;
       if(data?.display_name)setSelfName(data.display_name);
       if(data?.avatar_url)setSelfAvatar(data.avatar_url);
     });
-  },[user]);
+
+    return()=>{cancelled=true};
+  },[user,loading]);
 
   async function selectFriend(friend:Friendship){
     setSelectedFriend(friend);
@@ -48,6 +65,14 @@ function ComparePickerPage(){
     const snapshot=await fetchFriendSnapshot(friend.other.id);
     setFriendHcp(snapshot?.estHcp??snapshot?.realHcp??undefined);
   }
+
+  function openComparison(){
+    const id=selectedFriend?.other.id;
+    if(!id)return;
+    window.location.assign(`/jamfor/${encodeURIComponent(id)}`);
+  }
+
+  const loadingSocial=loading||friendsLoading;
 
   return <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-10 pt-7">
     <header className="flex items-center justify-between">
@@ -71,30 +96,21 @@ function ComparePickerPage(){
 
       <span className="rounded-xl bg-foreground px-2.5 py-2 font-display text-xl text-background">VS</span>
 
-      <button type="button" onClick={()=>setPickerOpen(true)} className="flex min-h-44 flex-col items-center justify-center rounded-3xl border border-red-500/35 bg-red-500/5 p-4 text-center shadow-sm transition-colors active:bg-red-500/10">
+      <button type="button" disabled={loadingSocial||!user} onClick={()=>setPickerOpen(true)} className="flex min-h-44 flex-col items-center justify-center rounded-3xl border border-red-500/35 bg-red-500/5 p-4 text-center shadow-sm transition-colors active:bg-red-500/10 disabled:pointer-events-none disabled:opacity-70">
         <span className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-[3px] border-red-500 bg-red-500/10 font-display text-xl text-red-500">{selectedFriend?.other.avatarUrl?<img src={selectedFriend.other.avatarUrl} alt="" className="h-full w-full object-cover"/>:selectedFriend?initials(selectedFriend.other.displayName):<User className="h-7 w-7"/>}</span>
-        <p className="mt-3 max-w-full truncate text-sm font-bold">{selectedFriend?.other.displayName??"Välj spelare"}</p>
-        <p className="mt-1 text-[11px] font-semibold text-red-500">{selectedFriend?`HCP ${formatHcp(friendHcp)}`:`${friends.length} vänner`}</p>
+        <p className="mt-3 max-w-full truncate text-sm font-bold">{selectedFriend?.other.displayName??(loadingSocial?"Laddar vänner…":"Välj spelare")}</p>
+        <p className="mt-1 text-[11px] font-semibold text-red-500">{selectedFriend?`HCP ${formatHcp(friendHcp)}`:loadingSocial?" ":`${friends.length} vänner`}</p>
       </button>
     </section>
 
-    {loading?<p className="mt-6 text-center text-sm text-muted-foreground">Laddar …</p>:!user?<div className="mt-6 rounded-3xl border border-border bg-card p-5 text-center text-sm text-muted-foreground">Logga in för att jämföra med vänner.</div>:!friends.length?<div className="mt-6 rounded-3xl border border-border bg-card p-5 text-center"><p className="text-sm text-muted-foreground">Du har inga accepterade vänner ännu.</p><Link to="/vanner" className="mt-3 inline-flex rounded-full border border-border px-4 py-2 text-xs font-semibold text-primary">Lägg till vänner</Link></div>:null}
+    {!loadingSocial&&!user?<div className="mt-6 rounded-3xl border border-border bg-card p-5 text-center text-sm text-muted-foreground">Logga in för att jämföra med vänner.</div>:!loadingSocial&&user&&!friends.length?<div className="mt-6 rounded-3xl border border-border bg-card p-5 text-center"><p className="text-sm text-muted-foreground">Du har inga accepterade vänner ännu.</p><Link to="/vanner" className="mt-3 inline-flex rounded-full border border-border px-4 py-2 text-xs font-semibold text-primary">Lägg till vänner</Link></div>:null}
 
-    {selectedFriend ? (
-      <a
-        href={`/jamfor/${encodeURIComponent(selectedFriend.other.id)}`}
-        className="mt-7 flex w-full touch-manipulation items-center justify-center rounded-2xl bg-foreground py-4 font-display text-xl text-background shadow-sm transition-transform active:scale-[0.99]"
-      >
-        Jämför
-      </a>
-    ) : (
-      <button type="button" disabled className="mt-7 w-full cursor-not-allowed rounded-2xl bg-muted py-4 font-display text-xl text-muted-foreground opacity-35">Jämför</button>
-    )}
+    <button type="button" onClick={openComparison} disabled={!selectedFriend} className={`relative z-10 mt-7 w-full touch-manipulation rounded-2xl py-4 font-display text-xl transition-transform ${selectedFriend?"cursor-pointer bg-foreground text-background shadow-sm active:scale-[0.99]":"cursor-not-allowed bg-muted text-muted-foreground opacity-35"}`}>Jämför</button>
 
     <Sheet open={pickerOpen} onOpenChange={setPickerOpen}>
       <SheetContent side="bottom" className="mx-auto max-h-[78vh] max-w-md overflow-y-auto rounded-t-3xl px-5 pb-8">
         <SheetHeader><SheetTitle>Välj spelare</SheetTitle></SheetHeader>
-        {!user ? <div className="mt-5 rounded-2xl bg-muted/60 p-4 text-sm text-muted-foreground">Logga in för att välja en vän.</div> : friends.length ? <div className="mt-5 divide-y divide-border overflow-hidden rounded-2xl border border-border">{friends.map((friend)=>{
+        {loadingSocial ? <div className="mt-5 rounded-2xl bg-muted/60 p-4 text-sm text-muted-foreground">Laddar vänner …</div> : !user ? <div className="mt-5 rounded-2xl bg-muted/60 p-4 text-sm text-muted-foreground">Logga in för att välja en vän.</div> : friends.length ? <div className="mt-5 divide-y divide-border overflow-hidden rounded-2xl border border-border">{friends.map((friend)=>{
           const active=selectedFriend?.id===friend.id;
           return <button key={friend.id} type="button" onClick={()=>void selectFriend(friend)} className="flex w-full items-center gap-3 bg-card px-3.5 py-3.5 text-left">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-red-500/70 bg-red-500/10 text-xs font-bold text-red-500">{friend.other.avatarUrl?<img src={friend.other.avatarUrl} alt="" className="h-full w-full object-cover"/>:initials(friend.other.displayName)||<User className="h-4 w-4"/>}</span>
