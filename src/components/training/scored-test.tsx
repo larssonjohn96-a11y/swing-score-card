@@ -1,12 +1,13 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, BarChart3, RotateCcw, User, Users, X } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 import { LIGHT_SURFACE } from "@/routes/8-bollar";
 import { saveSession, type Analysis, type Prompt, type ScoreOption } from "@/lib/training/core";
 import type { TrainingBackRoute, TrainingHistoryRoute, TrainingTestRoute } from "@/lib/training/routes";
 import { useAuth } from "@/hooks/use-auth";
 import { listFriendships, type Friendship } from "@/lib/friends-cloud";
+import { loadCardProfile } from "@/lib/rating-card";
 
 export type TestVariant = { id: string; label: string; description?: string };
 export type ClubGroup = { label: string; clubs: string[] };
@@ -35,6 +36,7 @@ export type ScoredTestProps = {
 
 type Phase = "intro" | "test" | "result";
 type TrainingCategory = "off-the-tee" | "approach" | "around-the-green" | "putting";
+type PlayerTurn = "self" | "friend";
 
 function categoryForTest(route: TrainingTestRoute): { id: TrainingCategory; label: string } {
   if (route === "/driver-konsekvens") return { id: "off-the-tee", label: "Off the Tee" };
@@ -56,9 +58,23 @@ function shotTone(value: number | undefined, active = false) {
   return value > 0 ? "bg-emerald-500" : "bg-red-500";
 }
 
+function initials(name: string) {
+  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join("");
+}
+
+function PlayerAvatar({ name, url, side, active = false, size = "md" }: { name: string; url?: string | null; side: "self" | "friend"; active?: boolean; size?: "sm" | "md" }) {
+  const tone = side === "self"
+    ? "border-blue-500 bg-blue-500/10 text-blue-600 shadow-[0_12px_30px_-18px_rgba(37,99,235,.75)]"
+    : "border-red-500 bg-red-500/10 text-red-600 shadow-[0_12px_30px_-18px_rgba(239,68,68,.7)]";
+  const dimensions = size === "md" ? "h-14 w-14 text-base" : "h-9 w-9 text-xs";
+  return <span className={`relative flex ${dimensions} shrink-0 items-center justify-center overflow-hidden rounded-full border-2 font-bold ${tone} ${active ? "ring-4 ring-offset-2 ring-offset-background " + (side === "self" ? "ring-blue-500/20" : "ring-red-500/20") : ""}`}>{url ? <img src={url} alt="" className="h-full w-full object-cover" /> : initials(name) || <User className="h-4 w-4" />}</span>;
+}
+
 export function ScoredTest(props: ScoredTestProps) {
   useHideBottomNav(true);
-  const { user } = useAuth();
+  const { user, displayName } = useAuth();
+  const selfProfile = loadCardProfile();
+  const selfName = displayName?.trim() || "Du";
   const [phase, setPhase] = useState<Phase>("intro");
   const [variant, setVariant] = useState<string | undefined>(props.variants?.[0]?.id);
   const [club, setClub] = useState<string | undefined>();
@@ -67,7 +83,8 @@ export function ScoredTest(props: ScoredTestProps) {
   const [friends, setFriends] = useState<Friendship[]>([]);
   const [selectedFriend, setSelectedFriend] = useState<Friendship | null>(null);
   const [withFriend, setWithFriend] = useState(false);
-  const [currentPlayer, setCurrentPlayer] = useState<"self" | "friend">("self");
+  const [currentPlayer, setCurrentPlayer] = useState<PlayerTurn>("self");
+  const turnRef = useRef<PlayerTurn>("self");
 
   const prompts: Prompt[] = props.promptsFor && variant ? props.promptsFor(variant) : (props.prompts ?? []);
   const total = prompts.length;
@@ -83,30 +100,42 @@ export function ScoredTest(props: ScoredTestProps) {
     void listFriendships().then((result) => setFriends(result.accepted));
   }, [props.multiplayer, user]);
 
+  function selectMode(friendMode: boolean) {
+    setWithFriend(friendMode);
+    setSelectedFriend(null);
+    setClub(undefined);
+  }
+
   function start() {
     if (props.clubGroups && !club) return;
     if (withFriend && !selectedFriend) return;
     setShots([]);
     setFriendShots([]);
-    setCurrentPlayer("self");
+    const starter: PlayerTurn = withFriend && Math.random() < 0.5 ? "friend" : "self";
+    turnRef.current = starter;
+    setCurrentPlayer(starter);
     setPhase("test");
   }
 
   function register(value: number) {
     if (withFriend && selectedFriend) {
-      if (currentPlayer === "self") {
+      const turn = turnRef.current;
+      if (turn === "self") {
         setShots((current) => [...current, value]);
+        turnRef.current = "friend";
         setCurrentPlayer("friend");
         return;
       }
+
       const nextFriend = [...friendShots, value];
       setFriendShots(nextFriend);
-      if (nextFriend.length >= total) {
+      if (nextFriend.length >= total && shots.length >= total) {
         saveSession(props.testId, shots, variant, club);
         setPhase("result");
-      } else {
-        setCurrentPlayer("self");
+        return;
       }
+      turnRef.current = "self";
+      setCurrentPlayer("self");
       return;
     }
 
@@ -120,21 +149,18 @@ export function ScoredTest(props: ScoredTestProps) {
 
   function undo() {
     if (withFriend && selectedFriend) {
-      if (currentPlayer === "friend" && shots.length > friendShots.length) {
-        setShots((s) => s.slice(0, -1));
-        setCurrentPlayer("self");
-        return;
-      }
-      if (currentPlayer === "self" && friendShots.length) {
-        setFriendShots((s) => s.slice(0, -1));
-        setCurrentPlayer("friend");
-        return;
-      }
+      const lastPlayer: PlayerTurn = turnRef.current === "self" ? "friend" : "self";
+      if (lastPlayer === "self" && shots.length) setShots((s) => s.slice(0, -1));
+      if (lastPlayer === "friend" && friendShots.length) setFriendShots((s) => s.slice(0, -1));
+      turnRef.current = lastPlayer;
+      setCurrentPlayer(lastPlayer);
+      return;
     }
     setShots((s) => s.slice(0, -1));
   }
 
   if (phase === "intro") {
+    const friendReady = !withFriend || Boolean(selectedFriend);
     return (
       <main style={LIGHT_SURFACE} className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background px-5 pb-5 pt-4 text-foreground">
         <div className="flex shrink-0 items-center justify-between">
@@ -152,35 +178,43 @@ export function ScoredTest(props: ScoredTestProps) {
           <div className="mt-4">
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Spelläge</p>
             <div className="mt-2 grid grid-cols-2 gap-2">
-              <button type="button" onClick={() => { setWithFriend(false); setSelectedFriend(null); }} className={`rounded-3xl border p-4 text-left backdrop-blur-xl transition-all ${!withFriend ? "border-blue-500/50 bg-blue-500/12 shadow-[0_14px_34px_-26px_rgba(37,99,235,.7)]" : "border-blue-200/70 bg-blue-500/[0.05]"}`}>
+              <button type="button" onClick={() => selectMode(false)} className={`rounded-3xl border p-4 text-left backdrop-blur-xl transition-all ${!withFriend ? "border-blue-500/50 bg-blue-500/12 shadow-[0_14px_34px_-26px_rgba(37,99,235,.7)]" : "border-blue-200/70 bg-blue-500/[0.05]"}`}>
                 <User className="h-4 w-4 text-blue-600" /><span className="mt-2 block font-display text-xl">Solo</span>
               </button>
-              <button type="button" onClick={() => setWithFriend(true)} className={`rounded-3xl border p-4 text-left backdrop-blur-xl transition-all ${withFriend ? "border-blue-500/50 bg-blue-500/12 shadow-[0_14px_34px_-26px_rgba(37,99,235,.7)]" : "border-blue-200/70 bg-blue-500/[0.05]"}`}>
-                <Users className="h-4 w-4 text-blue-600" /><span className="mt-2 block font-display text-xl">Med vän</span>
+              <button type="button" onClick={() => selectMode(true)} className={`rounded-3xl border p-4 text-left backdrop-blur-xl transition-all ${withFriend ? "border-red-500/50 bg-red-500/10 shadow-[0_14px_34px_-26px_rgba(239,68,68,.65)]" : "border-blue-200/70 bg-blue-500/[0.05]"}`}>
+                <Users className={withFriend ? "h-4 w-4 text-red-600" : "h-4 w-4 text-blue-600"} /><span className="mt-2 block font-display text-xl">Med vän</span>
               </button>
             </div>
+
             {withFriend ? (
-              <div className={`mt-2 rounded-3xl border p-3 ${glass}`}>
-                <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Välj vän</p>
-                {friends.length ? <div className="mt-2 flex flex-wrap gap-2">{friends.map((friend) => <button key={friend.id} type="button" onClick={() => setSelectedFriend(friend)} className={`rounded-full border px-3 py-2 text-xs font-semibold transition-all ${selectedFriend?.id === friend.id ? "border-blue-500 bg-blue-500/15 text-blue-700" : "border-blue-200/70 bg-blue-500/[0.05]"}`}>{friend.other.displayName}</button>)}</div> : <p className="mt-2 text-xs text-muted-foreground">Inga accepterade vänner ännu. Lägg till en vän under Vänner först.</p>}
+              <div className="mt-3 rounded-3xl border border-red-300/80 bg-gradient-to-br from-red-500/[0.09] via-white/70 to-white/55 p-4 shadow-[0_16px_38px_-28px_rgba(239,68,68,.6)] backdrop-blur-2xl">
+                <p className="text-[10px] font-bold uppercase tracking-[0.17em] text-red-600">Steg 1 · Välj vän</p>
+                <p className="mt-1 font-display text-2xl">{selectedFriend ? selectedFriend.other.displayName : "Välj vem du spelar med"}</p>
+                {friends.length ? (
+                  <div className="mt-3 grid grid-cols-2 gap-2">{friends.map((friend) => {
+                    const selected = selectedFriend?.id === friend.id;
+                    return <button key={friend.id} type="button" onClick={() => { setSelectedFriend(friend); setClub(undefined); }} className={`flex items-center gap-2 rounded-2xl border px-3 py-3 text-left transition-all ${selected ? "border-red-500 bg-red-500/15 text-red-700" : "border-red-200/80 bg-white/60"}`}><PlayerAvatar name={friend.other.displayName} url={friend.other.avatarUrl} side="friend" size="sm" /><span className="min-w-0 truncate text-sm font-semibold">{friend.other.displayName}</span></button>;
+                  })}</div>
+                ) : <p className="mt-3 text-xs text-muted-foreground">Inga accepterade vänner ännu. Lägg till en vän under Vänner först.</p>}
+                {!selectedFriend ? <p className="mt-3 text-xs font-semibold text-red-600">Du måste välja en vän innan du kan välja klubbgrupp och starta.</p> : null}
               </div>
             ) : null}
           </div>
         ) : null}
 
-        {props.variants ? (
+        {props.variants && friendReady ? (
           <div className="mt-4">
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{props.variantLabel ?? "Välj variant"}</p>
             <div className="mt-2 grid grid-cols-2 gap-2">{props.variants.map((v) => <button key={v.id} type="button" onClick={() => setVariant(v.id)} className={`rounded-3xl border p-3 text-left backdrop-blur-xl transition-all ${variant === v.id ? "border-blue-500/50 bg-blue-500/12 shadow-sm" : "border-blue-200/70 bg-blue-500/[0.05]"}`}><span className="block font-display text-2xl leading-none">{v.label}</span>{v.description ? <span className="mt-1 block text-[11px] leading-snug text-muted-foreground">{v.description}</span> : null}</button>)}</div>
           </div>
         ) : null}
 
-        {props.clubGroups ? (
+        {props.clubGroups && friendReady ? (
           <div className="mt-4">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Välj klubbgrupp</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-blue-700">{withFriend ? "Steg 2 · Välj klubbgrupp" : "Välj klubbgrupp"}</p>
             <div className="mt-2 grid grid-cols-2 gap-2">{props.clubGroups.map((group) => {
               const selected = club === group.label;
-              return <button key={group.label} type="button" onClick={() => setClub(group.label)} className={`rounded-3xl border p-4 text-left backdrop-blur-xl transition-all active:scale-[0.98] ${selected ? "border-blue-500/55 bg-blue-500/15 shadow-[0_14px_34px_-24px_rgba(37,99,235,.75)]" : "border-blue-200/80 bg-blue-500/[0.055] shadow-[0_12px_30px_-27px_rgba(37,99,235,.45)]"}`}><span className="block font-display text-xl leading-none text-foreground">{group.label}</span><span className="mt-1.5 block text-[11px] font-semibold text-muted-foreground">{clubGroupDetail(group)}</span></button>;
+              return <button key={group.label} type="button" onClick={() => setClub(group.label)} className={`rounded-3xl border p-4 text-left backdrop-blur-xl transition-all active:scale-[0.98] ${selected ? "border-blue-600 bg-blue-500/18 shadow-[0_16px_36px_-22px_rgba(37,99,235,.78)] ring-1 ring-blue-500/20" : "border-blue-300/90 bg-gradient-to-br from-blue-500/[0.09] via-white/70 to-white/55 shadow-[0_13px_32px_-26px_rgba(37,99,235,.5)]"}`}><span className={`block font-display text-xl leading-none ${selected ? "text-blue-700" : "text-foreground"}`}>{group.label}</span><span className={`mt-1.5 block text-[11px] font-semibold ${selected ? "text-blue-600" : "text-muted-foreground"}`}>{clubGroupDetail(group)}</span></button>;
             })}</div>
           </div>
         ) : null}
@@ -195,7 +229,10 @@ export function ScoredTest(props: ScoredTestProps) {
     const prompt = prompts[index];
     const running = shots.reduce((a, b) => a + b, 0);
     const friendRunning = friendShots.reduce((a, b) => a + b, 0);
-    const activeName = currentPlayer === "self" ? "Du" : selectedFriend?.other.displayName ?? "Vän";
+    const friendName = selectedFriend?.other.displayName ?? "Vän";
+    const activeName = currentPlayer === "self" ? selfName : friendName;
+    const activeSide = currentPlayer === "self" ? "self" : "friend";
+    const activeAvatar = currentPlayer === "self" ? selfProfile.photo : selectedFriend?.other.avatarUrl;
 
     return (
       <main style={LIGHT_SURFACE} className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background px-5 pb-6 text-foreground">
@@ -205,9 +242,19 @@ export function ScoredTest(props: ScoredTestProps) {
         </div>
 
         {withFriend ? (
+          <section className={`mt-3 rounded-[28px] border p-4 ${currentPlayer === "self" ? "border-blue-400/60 bg-gradient-to-br from-blue-500/[0.14] via-white/70 to-white/55 shadow-[0_18px_40px_-28px_rgba(37,99,235,.7)]" : "border-red-400/60 bg-gradient-to-br from-red-500/[0.12] via-white/70 to-white/55 shadow-[0_18px_40px_-28px_rgba(239,68,68,.65)]"} backdrop-blur-2xl`}>
+            <p className={`text-center text-[10px] font-bold uppercase tracking-[0.2em] ${currentPlayer === "self" ? "text-blue-600" : "text-red-600"}`}>Nu spelar</p>
+            <div className="mt-2 flex items-center justify-center gap-3">
+              <PlayerAvatar name={activeName} url={activeAvatar} side={activeSide} active />
+              <div><p className={`font-display text-4xl leading-none ${currentPlayer === "self" ? "text-blue-700" : "text-red-700"}`}>{activeName}</p><p className="mt-1 text-xs font-semibold text-muted-foreground">{currentPlayer === "self" ? `${running} träffar` : `${friendRunning} träffar`}</p></div>
+            </div>
+          </section>
+        ) : null}
+
+        {withFriend ? (
           <div className="mt-3 grid grid-cols-2 gap-2">
-            <div className={`rounded-2xl border px-3 py-2.5 ${currentPlayer === "self" ? "border-blue-500/45 bg-blue-500/12" : "border-white/60 bg-white/55"}`}><p className="text-[9px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Du</p><p className="font-display text-xl">{running}</p></div>
-            <div className={`rounded-2xl border px-3 py-2.5 text-right ${currentPlayer === "friend" ? "border-blue-500/45 bg-blue-500/12" : "border-white/60 bg-white/55"}`}><p className="text-[9px] font-bold uppercase tracking-[0.14em] text-muted-foreground">{selectedFriend?.other.displayName}</p><p className="font-display text-xl">{friendRunning}</p></div>
+            <div className={`flex items-center gap-2 rounded-2xl border px-3 py-2.5 ${currentPlayer === "self" ? "border-blue-500/55 bg-blue-500/13" : "border-blue-200/70 bg-white/55"}`}><PlayerAvatar name={selfName} url={selfProfile.photo} side="self" size="sm" /><div className="min-w-0"><p className="truncate text-sm font-bold text-blue-700">{selfName}</p><p className="text-xs font-semibold tabular-nums text-muted-foreground">{running}</p></div></div>
+            <div className={`flex items-center justify-end gap-2 rounded-2xl border px-3 py-2.5 ${currentPlayer === "friend" ? "border-red-500/55 bg-red-500/12" : "border-red-200/70 bg-white/55"}`}><div className="min-w-0 text-right"><p className="truncate text-sm font-bold text-red-700">{friendName}</p><p className="text-xs font-semibold tabular-nums text-muted-foreground">{friendRunning}</p></div><PlayerAvatar name={friendName} url={selectedFriend?.other.avatarUrl} side="friend" size="sm" /></div>
           </div>
         ) : null}
 
@@ -217,10 +264,10 @@ export function ScoredTest(props: ScoredTestProps) {
           ) : (
             <div className="flex gap-1.5">{prompts.map((_, i) => <div key={i} className={`h-3 flex-1 rounded-full ${shotTone(shots[i], i === index)}`} />)}</div>
           )}
-          {withFriend ? <div className="mt-2 flex justify-between text-[9px] font-semibold uppercase tracking-[0.14em] text-muted-foreground"><span>Du</span><span>{selectedFriend?.other.displayName}</span></div> : null}
+          {withFriend ? <div className="mt-2 flex justify-between text-[9px] font-semibold uppercase tracking-[0.14em]"><span className="text-blue-600">{selfName}</span><span className="text-red-600">{friendName}</span></div> : null}
         </div>
 
-        <section className={`mt-3 flex h-[158px] flex-col items-center justify-center rounded-3xl border px-4 text-center ${glass}`}>{withFriend ? <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-blue-600">{activeName}s tur</p> : null}{prompt?.tag ? <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">{prompt.tag}</p> : null}<p className="mt-2 font-display text-4xl leading-none">{prompt?.primary}</p>{prompt?.secondary ? <p className="mt-2 text-sm font-semibold text-primary">{prompt.secondary}</p> : null}</section>
+        <section className={`mt-3 flex h-[158px] flex-col items-center justify-center rounded-3xl border px-4 text-center ${glass}`}>{prompt?.tag ? <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">{prompt.tag}</p> : null}<p className="mt-2 font-display text-4xl leading-none">{prompt?.primary}</p>{prompt?.secondary ? <p className="mt-2 text-sm font-semibold text-primary">{prompt.secondary}</p> : null}</section>
 
         <div className={`mt-4 grid gap-3 ${props.optionCols === 3 ? "grid-cols-3" : "grid-cols-2"}`}>{props.options.map((option) => {
           const hit = props.hitMissColors && option.value > 0;
@@ -238,6 +285,7 @@ export function ScoredTest(props: ScoredTestProps) {
   const analysis = props.analyze(shots, prompts, variant);
   const friendAnalysis = withFriend ? props.analyze(friendShots, prompts, variant) : null;
   const category = categoryForTest(props.selfTo);
+  const friendName = selectedFriend?.other.displayName ?? "Vän";
 
   return (
     <main style={LIGHT_SURFACE} className="mx-auto min-h-screen w-full max-w-md bg-background px-5 pb-16 pt-6 text-foreground">
@@ -248,8 +296,8 @@ export function ScoredTest(props: ScoredTestProps) {
 
       {withFriend && friendAnalysis ? (
         <section className="mt-5 grid grid-cols-2 gap-3">
-          <div className="rounded-3xl border border-blue-300/60 bg-gradient-to-br from-blue-500/[0.13] via-white/65 to-white/50 p-5 text-center shadow-[0_20px_46px_-34px_rgba(37,99,235,.75)] backdrop-blur-2xl"><p className="text-[10px] font-bold uppercase tracking-[0.16em] text-blue-600">Du</p><p className="mt-2 font-display text-5xl text-blue-600">{analysis.headline.value}</p></div>
-          <div className="rounded-3xl border border-blue-300/60 bg-gradient-to-br from-blue-500/[0.13] via-white/65 to-white/50 p-5 text-center shadow-[0_20px_46px_-34px_rgba(37,99,235,.75)] backdrop-blur-2xl"><p className="text-[10px] font-bold uppercase tracking-[0.16em] text-blue-600">{selectedFriend?.other.displayName}</p><p className="mt-2 font-display text-5xl text-blue-600">{friendAnalysis.headline.value}</p></div>
+          <div className="rounded-3xl border border-blue-300/70 bg-gradient-to-br from-blue-500/[0.13] via-white/65 to-white/50 p-4 text-center shadow-[0_20px_46px_-34px_rgba(37,99,235,.75)] backdrop-blur-2xl"><div className="flex justify-center"><PlayerAvatar name={selfName} url={selfProfile.photo} side="self" size="sm" /></div><p className="mt-2 truncate text-sm font-bold text-blue-700">{selfName}</p><p className="mt-2 font-display text-5xl text-blue-600">{analysis.headline.value}</p></div>
+          <div className="rounded-3xl border border-red-300/70 bg-gradient-to-br from-red-500/[0.11] via-white/65 to-white/50 p-4 text-center shadow-[0_20px_46px_-34px_rgba(239,68,68,.68)] backdrop-blur-2xl"><div className="flex justify-center"><PlayerAvatar name={friendName} url={selectedFriend?.other.avatarUrl} side="friend" size="sm" /></div><p className="mt-2 truncate text-sm font-bold text-red-700">{friendName}</p><p className="mt-2 font-display text-5xl text-red-600">{friendAnalysis.headline.value}</p></div>
         </section>
       ) : (
         <section className="mt-5 rounded-[30px] border border-blue-200/70 bg-gradient-to-br from-blue-500/[0.11] via-white/68 to-white/50 p-6 text-center shadow-[0_22px_52px_-34px_rgba(37,99,235,.55)] backdrop-blur-2xl"><p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">{analysis.headline.label}</p><p className="mt-2 font-display text-6xl leading-none text-blue-600">{analysis.headline.value}</p>{analysis.headline.hint ? <p className="mt-2 text-xs text-muted-foreground">{analysis.headline.hint}</p> : null}</section>
