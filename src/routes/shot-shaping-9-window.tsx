@@ -20,7 +20,7 @@ function NineWindowPage() {
       testId="shot-shaping-9-window"
       eyebrow="Shot Shaping · Höjd + shape"
       title="9 Window Drill"
-      intro="Träffa nio olika bollfönster: låg, medel och hög i draw, rak och fade. Välj en klubba och använd samma genom hela testet."
+      intro="Träffa nio olika bollfönster: låg, medel och hög i draw, rak och fade. Välj en klubbgrupp och använd samma genom hela testet."
       backTo="/shot-shaping"
       selfTo="/shot-shaping-9-window"
       historyTo="/shot-shaping-9-window-historik"
@@ -30,7 +30,8 @@ function NineWindowPage() {
       clubGroups={CLUB_GROUPS}
       liquidGlass
       hitMissColors
-      introCards={[{ title: "Testformat", rows: [{ label: "Höjder", value: "Låg · Medel · Hög" }, { label: "Shapes", value: "Draw · Rak · Fade" }, { label: "Klubba", value: "Samma hela testet" }, { label: "Slag", value: "9" }] }]}
+      multiplayer
+      introCards={[{ title: "Testformat", rows: [{ label: "Höjder", value: "Låg · Medel · Hög" }, { label: "Shapes", value: "Draw · Rak · Fade" }, { label: "Klubbgrupp", value: "Samma hela testet" }, { label: "Slag", value: "9" }] }]}
       analyze={analyzeNineWindow}
     />
   );
