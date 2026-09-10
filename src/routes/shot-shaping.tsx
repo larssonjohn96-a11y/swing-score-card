@@ -6,16 +6,16 @@ export const Route = createFileRoute("/shot-shaping")({
   head: () => ({
     meta: [
       { title: "Shot Shaping – Träningstester | SG4" },
-      { name: "description", content: "Tre träningstester för bollkontroll: växlande draw/fade, 9 Window Drill och konstant shape." },
+      { name: "description", content: "Tre träningstester för bollkontroll: konstant shape, växlande draw/fade och 9 Window Drill." },
     ],
   }),
   component: ShotShapingFamily,
 });
 
 const TESTS = [
+  { to: "/shot-shaping-konstant" as const, title: "Konstant shape", meta: "10 slag · draw eller fade", description: "Mät hur repeterbar din valda bollform är.", icon: Repeat },
   { to: "/shot-shaping-vaxlande" as const, title: "Växlande shape", meta: "10 slag · draw / fade varannat", description: "Byt bollform på begäran, slag efter slag.", icon: Shuffle },
   { to: "/shot-shaping-9-window" as const, title: "9 Window Drill", meta: "9 slag · höjd + shape", description: "Kontrollera både höjd och bollform i nio fönster.", icon: Grid3x3 },
-  { to: "/shot-shaping-konstant" as const, title: "Konstant shape", meta: "10 slag · draw eller fade", description: "Mät hur repeterbar din valda bollform är.", icon: Repeat },
 ];
 
 function ShotShapingFamily() {
