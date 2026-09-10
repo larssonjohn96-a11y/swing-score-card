@@ -33,7 +33,6 @@ function ConstantShapePage() {
       liquidGlass
       hitMissColors
       multiplayer
-      introCards={[{ title: "Testformat", rows: [{ label: "Slag", value: "10" }, { label: "Shape", value: "Draw eller Fade" }, { label: "Klubbgrupp", value: "Samma hela testet" }, { label: "Poäng", value: "1 per träff" }] }]}
       analyze={analyzeConstantShape}
     />
   );
