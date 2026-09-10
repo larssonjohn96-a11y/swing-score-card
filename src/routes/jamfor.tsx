@@ -9,6 +9,7 @@ import { computeEstimatedHandicap, loadRealHandicap } from "@/lib/sg-handicap";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
+import { CompareFriendContent } from "./jamfor.$userId";
 
 export const Route = createFileRoute("/jamfor")({
   head: () => ({ meta: [{ title: "Jämför med vänner | SG4" }] }),
@@ -29,6 +30,7 @@ function ComparePickerPage(){
   const [pickerOpen,setPickerOpen]=useState(false);
   const [selectedFriend,setSelectedFriend]=useState<Friendship|null>(null);
   const [friendHcp,setFriendHcp]=useState<number|undefined>();
+  const [activeFriendId,setActiveFriendId]=useState<string|null>(null);
 
   useEffect(()=>{
     const real=loadRealHandicap();
@@ -66,13 +68,11 @@ function ComparePickerPage(){
     setFriendHcp(snapshot?.estHcp??snapshot?.realHcp??undefined);
   }
 
-  function openComparison(){
-    const id=selectedFriend?.other.id;
-    if(!id)return;
-    window.location.assign(`/jamfor/${encodeURIComponent(id)}`);
-  }
-
   const loadingSocial=loading||friendsLoading;
+
+  if(activeFriendId){
+    return <CompareFriendContent userId={activeFriendId} onBack={()=>setActiveFriendId(null)}/>;
+  }
 
   return <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-10 pt-7">
     <header className="flex items-center justify-between">
@@ -105,7 +105,7 @@ function ComparePickerPage(){
 
     {!loadingSocial&&!user?<div className="mt-6 rounded-3xl border border-border bg-card p-5 text-center text-sm text-muted-foreground">Logga in för att jämföra med vänner.</div>:!loadingSocial&&user&&!friends.length?<div className="mt-6 rounded-3xl border border-border bg-card p-5 text-center"><p className="text-sm text-muted-foreground">Du har inga accepterade vänner ännu.</p><Link to="/vanner" className="mt-3 inline-flex rounded-full border border-border px-4 py-2 text-xs font-semibold text-primary">Lägg till vänner</Link></div>:null}
 
-    <button type="button" onClick={openComparison} disabled={!selectedFriend} className={`relative z-10 mt-7 w-full touch-manipulation rounded-2xl py-4 font-display text-xl transition-transform ${selectedFriend?"cursor-pointer bg-foreground text-background shadow-sm active:scale-[0.99]":"cursor-not-allowed bg-muted text-muted-foreground opacity-35"}`}>Jämför</button>
+    <button type="button" onClick={()=>selectedFriend&&setActiveFriendId(selectedFriend.other.id)} disabled={!selectedFriend} className={`relative z-10 mt-7 w-full touch-manipulation rounded-2xl py-4 font-display text-xl transition-transform ${selectedFriend?"cursor-pointer bg-foreground text-background shadow-sm active:scale-[0.99]":"cursor-not-allowed bg-muted text-muted-foreground opacity-35"}`}>Jämför</button>
 
     <Sheet open={pickerOpen} onOpenChange={setPickerOpen}>
       <SheetContent side="bottom" className="mx-auto max-h-[78vh] max-w-md overflow-y-auto rounded-t-3xl px-5 pb-8">
