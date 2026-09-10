@@ -53,10 +53,10 @@ const MATCH_TYPES: Record<MatchCategory, Array<{ id: string; title: string; desc
   ],
 };
 
-const SHORT_GAME_LIES: Array<{ id: ShortGameLie; title: string; detail: string }> = [
-  { id: "fairway", title: "Fairway", detail: "SG4 väljer 10–30 m." },
-  { id: "rough", title: "Rough", detail: "SG4 väljer 10–30 m." },
-  { id: "bunker", title: "Bunker", detail: "Ingen bestämd längd – använd flaggan som finns." },
+const SHORT_GAME_LIES: Array<{ id: ShortGameLie; title: string }> = [
+  { id: "fairway", title: "Fairway" },
+  { id: "rough", title: "Rough" },
+  { id: "bunker", title: "Bunker" },
 ];
 const POINT_ZONES = [
   { points: 4, label: "Sänkt" }, { points: 3, label: "Inom 1 m" }, { points: 2, label: "Inom 2 m" }, { points: 1, label: "Inom 3 m" }, { points: 0, label: "Över 3 m" },
@@ -70,9 +70,10 @@ function lieLabel(lie: ShortGameLie) { return lie === "fairway" ? "fairway" : li
 function bunkerLimit(length: MatchLength) { return length === 5 ? 1 : length === 9 ? 2 : 4; }
 function generateShortGameLieSequence(length: MatchLength, selected: ShortGameLie[]) {
   const grassLies = selected.filter((lie): lie is Exclude<ShortGameLie, "bunker"> => lie !== "bunker");
+  if (selected.length === 1 && selected[0] === "bunker") return Array.from({ length }, () => "bunker" as ShortGameLie);
   const fallbackGrass: Exclude<ShortGameLie, "bunker">[] = grassLies.length ? grassLies : ["fairway"];
   const sequence: ShortGameLie[] = Array.from({ length }, () => pick(fallbackGrass));
-  if (!selected.includes("bunker") || grassLies.length === 0) return sequence;
+  if (!selected.includes("bunker")) return sequence;
 
   const offset = Math.random() < 0.5 ? 0 : 1;
   const available = Array.from({ length }, (_, i) => i).filter((i) => i % 2 === offset);
@@ -196,7 +197,7 @@ function MatchPlayPage() {
   const isShortGame = category === "around-the-green";
   const isScoredHole = isPutting || isShortGame;
   const unitLabel = isScoredHole ? "Hål" : "Omgång";
-  const setupValid = shortGameLies.some((lie) => lie !== "bunker");
+  const setupValid = shortGameLies.length > 0;
 
   const glass = "border-slate-300/75 bg-white/68 shadow-[0_18px_44px_-32px_rgba(15,23,42,.42)] backdrop-blur-2xl";
   const blueGlass = "border-blue-300/55 bg-gradient-to-br from-blue-100/68 via-white/68 to-slate-100/72 shadow-[0_18px_44px_-32px_rgba(37,99,235,.46)] backdrop-blur-2xl";
@@ -333,7 +334,7 @@ function MatchPlayPage() {
 
     {step === "type" && category && !isShortGame ? <><section className="mt-5"><p className="text-[10px] font-bold uppercase text-slate-500">{selectedCategory?.title}</p><h1 className="mt-1 font-display text-4xl">Välj spel</h1>{isPutting ? <p className="mt-2 text-sm text-slate-600">Håla ut från varje avstånd. SG4 räknar resultatet automatiskt.</p> : null}</section><div className="mt-5 space-y-3">{MATCH_TYPES[category].map((i) => { const active = matchType === i.id; return <button key={i.id} onClick={() => setMatchType(i.id)} className={`flex w-full items-center gap-4 rounded-3xl border p-5 text-left ${active ? selectedGlass : glass}`}><span className="min-w-0 flex-1"><span className="block font-display text-2xl">{i.title}</span><span className="mt-1 block text-xs text-slate-600">{i.description}</span></span>{active ? <Check className="h-5 w-5 text-blue-600" /> : null}</button>; })}</div><button disabled={!matchType} onClick={() => setStep("length")} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white disabled:opacity-30">Nästa <ChevronRight className="h-5 w-5" /></button></> : null}
 
-    {step === "setup" && isShortGame ? <><section className="mt-5"><p className="text-[10px] font-bold uppercase text-slate-500">Around the Green</p><h1 className="mt-1 font-display text-4xl">Closest to the Pin</h1><p className="mt-2 text-sm text-slate-600">Spelet är förvalt. Välj vilka lies som finns på träningsområdet.</p></section><div className={`mt-5 flex items-center gap-4 rounded-3xl border p-5 ${selectedGlass}`}><span className="min-w-0 flex-1"><span className="block font-display text-2xl">Closest to the Pin</span><span className="mt-1 block text-xs text-slate-600">Ett slag per spelare · högst poäng vinner hålet.</span></span><Check className="h-5 w-5 shrink-0 text-blue-600" /></div><div className="mt-6 flex items-center justify-between"><h2 className="font-display text-2xl">Välj lies</h2><span className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">Alla förvalda</span></div><div className="mt-3 grid gap-2">{SHORT_GAME_LIES.map((item) => { const active = shortGameLies.includes(item.id); return <button key={item.id} onClick={() => toggleShortGameLie(item.id)} className={`flex items-center justify-between rounded-2xl border p-4 text-left ${active ? selectedGlass : glass}`}><span><span className="block text-sm font-bold">{item.title}</span><span className="mt-1 block text-[10px] text-slate-500">{item.detail}</span></span>{active ? <Check className="h-4 w-4 shrink-0 text-blue-600" /> : null}</button>; })}</div><p className="mt-4 text-center text-[10px] font-semibold text-slate-500">Fairway/rough 10–30 m · bunker utan fast avstånd · max 1/5, 2/9 eller 4/18 och aldrig två i rad.</p>{!setupValid ? <p className="mt-2 text-center text-[10px] font-bold text-amber-700">Välj minst Fairway eller Rough.</p> : null}<button disabled={!setupValid} onClick={() => setStep("length")} className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white disabled:opacity-30">Nästa <ChevronRight className="h-5 w-5" /></button></> : null}
+    {step === "setup" && isShortGame ? <><section className="mt-5"><p className="text-[10px] font-bold uppercase text-slate-500">Around the Green</p><h1 className="mt-1 font-display text-4xl">Setup</h1><p className="mt-2 text-sm text-slate-600">Välj vilka lies som ska ingå.</p></section><div className="mt-5 rounded-3xl border border-slate-300/80 bg-slate-100/80 p-5 text-center shadow-[0_16px_36px_-30px_rgba(15,23,42,.35)]"><p className="text-[9px] font-bold uppercase tracking-[0.16em] text-slate-500">Spelform</p><p className="mt-1 font-display text-2xl text-slate-900">Closest to the Pin</p><p className="mt-1 text-xs text-slate-600">Ett slag per spelare · högst poäng vinner hålet.</p></div><div className="mt-6 flex items-center justify-between"><h2 className="font-display text-2xl">Välj lies</h2><span className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">Alla förvalda</span></div><div className="mt-3 grid grid-cols-3 gap-2">{SHORT_GAME_LIES.map((item) => { const active = shortGameLies.includes(item.id); return <button key={item.id} onClick={() => toggleShortGameLie(item.id)} className={`flex min-h-20 items-center justify-center gap-2 rounded-2xl border px-3 py-4 text-center ${active ? selectedGlass : glass}`}><span className="text-sm font-bold">{item.title}</span>{active ? <Check className="h-4 w-4 shrink-0 text-blue-600" /> : null}</button>; })}</div><p className="mt-4 text-center text-[10px] font-semibold text-slate-500">Fairway/rough 10–30 m · bunker utan fast avstånd. Vid mix: max 1/5, 2/9 eller 4/18 bunkerhål och aldrig två i rad.</p>{!setupValid ? <p className="mt-2 text-center text-[10px] font-bold text-amber-700">Välj minst ett lie.</p> : null}<button disabled={!setupValid} onClick={() => setStep("length")} className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white disabled:opacity-30">Nästa <ChevronRight className="h-5 w-5" /></button></> : null}
 
     {step === "length" && selectedType ? <><section className="mt-5"><p className="text-[10px] font-bold uppercase text-slate-500">{scoringMode === "match" ? "Match Play" : "Stroke Play"}</p><h1 className="mt-1 font-display text-4xl">{scoringMode === "stroke" ? "Antal hål" : "Bäst av"}</h1></section><div className="mt-5 grid grid-cols-3 gap-3">{([5, 9, 18] as const).map((v) => <button key={v} onClick={() => setMatchLength(v)} className={`rounded-3xl border px-3 py-6 ${matchLength === v ? selectedGlass : glass}`}><span className="block font-display text-4xl">{v}</span><span className="text-[10px] font-bold uppercase">hål</span></button>)}</div><button onClick={startMatch} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 via-slate-900 to-red-600 py-4 font-display text-xl text-white"><Flag className="h-5 w-5" /> Starta</button></> : null}
 
