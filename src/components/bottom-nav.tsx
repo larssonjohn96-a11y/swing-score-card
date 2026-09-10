@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
-import { BarChart3, ChevronRight, Home, ListChecks, Menu, Plus, Trophy, TrendingUp, Users } from "lucide-react";
+import { BarChart3, ChevronRight, Home, ListChecks, Menu, Plus, Target, Trophy, TrendingUp, Users } from "lucide-react";
 import { useBottomNavVisibility } from "@/lib/bottom-nav-visibility";
 import { CATEGORIES } from "@/lib/categories";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -28,6 +28,7 @@ const MORE_LINKS: ReadonlyArray<{
 }> = [
   { to: "/trophy", label: "Trophy Room", description: "Personliga rekord, milestones och achievements.", icon: Trophy, tone: "gold" },
   { to: "/min-bag", label: "My Bag", description: "Öppna din mappade bag – eller starta mappning om du inte har gjort den ännu.", icon: ListChecks, tone: "neutral" },
+  { to: "/hcp-goal", label: "HCP Goal", description: "Sätt ett handicapmål och se dina tre viktigaste vägar dit.", icon: Target, tone: "h2h" },
   { to: "/jamfor", label: "Head-to-head", description: "Ställ din SG4-profil mot en vän och se vem som vinner.", icon: Users, tone: "h2h" },
   { to: "/vanner", label: "Vänner", description: "Hantera vänner och sociala funktioner.", icon: Users, tone: "neutral" },
   { to: "/shot-value", label: "Shot Value", description: "Se vad ett enskilt slag faktiskt är värt mot olika spelarnivåer.", icon: BarChart3, tone: "neutral" },
