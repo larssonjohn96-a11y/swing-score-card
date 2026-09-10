@@ -23,14 +23,12 @@ type MatchLength = 5 | 9 | 18;
 type Player = { id: string; name: string; avatarUrl?: string | null; isSelf?: boolean; isGuest?: boolean };
 type Challenge = { eyebrow: string; title: string; detail: string };
 type Hole = { challenge: Challenge; winner: HoleWinner; blueStrokes?: number; redStrokes?: number; bluePoints?: number; redPoints?: number };
-type ShortGameTechnique = "free" | "chip" | "pitch" | "lob" | "bunker" | "mixed";
-type ShortGameShot = "chip" | "pitch" | "lob" | "bunker";
-type ShortGameLie = "fairway" | "rough";
+type ShortGameLie = "fairway" | "rough" | "bunker";
 
 const CATEGORIES = [
   { id: "off-the-tee", title: "Off the Tee", subtitle: "Utslag", description: "Driver, fairway, längd och bollflykt." },
   { id: "approach", title: "Approach", subtitle: "Inspel", description: "Precision, längdkontroll och shot shaping." },
-  { id: "around-the-green", title: "Around the Green", subtitle: "Närspel", description: "Closest to Pin med valfri teknik, lie eller mix." },
+  { id: "around-the-green", title: "Around the Green", subtitle: "Närspel", description: "Closest to Pin med valbara lies och avstånd." },
   { id: "putting", title: "Puttning", subtitle: "Puttning", description: "Håla ut och låt SG4 räkna resultatet automatiskt." },
 ] as const;
 
@@ -55,19 +53,10 @@ const MATCH_TYPES: Record<MatchCategory, Array<{ id: string; title: string; desc
   ],
 };
 
-const SHORT_GAME_TECHNIQUES: Array<{ id: ShortGameTechnique; title: string; detail: string }> = [
-  { id: "free", title: "Valfri teknik", detail: "SG4 väljer avstånd + lie. Du väljer slaget." },
-  { id: "chip", title: "Chip", detail: "Bara chip." },
-  { id: "pitch", title: "Pitch", detail: "Bara pitch." },
-  { id: "lob", title: "Lob", detail: "Bara lob." },
-  { id: "bunker", title: "Bunker", detail: "Bara bunkerslag." },
-  { id: "mixed", title: "Blandat", detail: "Välj vilka slag som får ingå." },
-];
-const SHORT_GAME_SHOTS: Array<{ id: ShortGameShot; title: string }> = [
-  { id: "chip", title: "Chip" }, { id: "pitch", title: "Pitch" }, { id: "lob", title: "Lob" }, { id: "bunker", title: "Bunker" },
-];
-const SHORT_GAME_LIES: Array<{ id: ShortGameLie; title: string }> = [
-  { id: "fairway", title: "Fairway / tight lie" }, { id: "rough", title: "Rough" },
+const SHORT_GAME_LIES: Array<{ id: ShortGameLie; title: string; detail: string }> = [
+  { id: "fairway", title: "Fairway / tight lie", detail: "SG4 väljer 10–30 m." },
+  { id: "rough", title: "Rough", detail: "SG4 väljer 10–30 m." },
+  { id: "bunker", title: "Bunker", detail: "Ingen bestämd längd – använd flaggan som finns." },
 ];
 const POINT_ZONES = [
   { points: 4, label: "Sänkt" }, { points: 3, label: "≤1 m" }, { points: 2, label: "≤2 m" }, { points: 1, label: "≤3 m" }, { points: 0, label: ">3 m" },
@@ -77,32 +66,18 @@ function rand(min: number, max: number) { return Math.floor(Math.random() * (max
 function pick<T>(items: readonly T[]) { return items[Math.floor(Math.random() * items.length)]; }
 function initials(name: string) { return name.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase()).join(""); }
 function liveStatus(diff: number) { return diff === 0 ? "AS" : diff > 0 ? `${diff} UP` : `${Math.abs(diff)} DN`; }
-function shotLabel(shot: ShortGameShot) { return shot === "chip" ? "Chip" : shot === "pitch" ? "Pitch" : shot === "lob" ? "Lob" : "Bunker"; }
-function lieLabel(lie: ShortGameLie) { return lie === "fairway" ? "Fairway / tight lie" : "Rough"; }
-function shortGameDistance(shot: ShortGameShot | "free") {
-  if (shot === "chip") return rand(5, 15);
-  if (shot === "pitch") return rand(12, 30);
-  if (shot === "lob") return rand(5, 20);
-  if (shot === "bunker") return rand(5, 20);
-  return rand(5, 30);
-}
+function lieLabel(lie: ShortGameLie) { return lie === "fairway" ? "Fairway / tight lie" : lie === "rough" ? "Rough" : "Bunker"; }
 
-function generateChallenge(category: MatchCategory, typeId: string, mode: MatchMode, shortGameTechnique: ShortGameTechnique = "free", mixedTechniques: ShortGameShot[] = ["chip", "pitch", "lob", "bunker"], shortGameLies: ShortGameLie[] = ["fairway", "rough"]): Challenge {
+function generateChallenge(category: MatchCategory, typeId: string, mode: MatchMode, shortGameLies: ShortGameLie[] = ["fairway", "rough", "bunker"]): Challenge {
   const suffix = mode === "fourball" ? " · registrera lagets bästa resultat" : mode === "foursomes" ? " · laget spelar vartannat slag" : "";
   if (category === "putting") {
     const distance = typeId === "short" ? rand(1, 5) : typeId === "lag" ? rand(8, 22) : rand(1, 10);
     return { eyebrow: "Puttning", title: `${distance} m`, detail: `Håla ut · lägst antal slag vinner${suffix}` };
   }
   if (category === "around-the-green") {
-    const usableLies = shortGameLies.length ? shortGameLies : (["fairway"] as ShortGameLie[]);
-    if (shortGameTechnique === "free") {
-      const lie = pick(usableLies);
-      return { eyebrow: "Valfri teknik", title: `${shortGameDistance("free")} m · ${lieLabel(lie)}`, detail: `Ett slag · scorea avståndet till flaggan${suffix}` };
-    }
-    const shot: ShortGameShot = shortGameTechnique === "mixed" ? pick(mixedTechniques.length ? mixedTechniques : (["chip"] as ShortGameShot[])) : shortGameTechnique;
-    if (shot === "bunker") return { eyebrow: "Bunker", title: `${shortGameDistance(shot)} m · Bunker`, detail: `Ett slag · scorea avståndet till flaggan${suffix}` };
-    const lie = pick(usableLies);
-    return { eyebrow: shotLabel(shot), title: `${shortGameDistance(shot)} m · ${lieLabel(lie)}`, detail: `Ett slag · scorea avståndet till flaggan${suffix}` };
+    const lie = pick(shortGameLies.length ? shortGameLies : (["fairway"] as ShortGameLie[]));
+    if (lie === "bunker") return { eyebrow: "Bunker", title: "Bunker", detail: `Använd en tillgänglig bunker mot valfri flagga · scorea avståndet till flaggan${suffix}` };
+    return { eyebrow: "Closest to the Pin", title: `${rand(10, 30)} m · ${lieLabel(lie)}`, detail: `Ett slag · valfri teknik · scorea avståndet till flaggan${suffix}` };
   }
   if (category === "approach") {
     const d = rand(typeId === "control" ? 60 : 80, typeId === "shape" ? 170 : 180);
@@ -160,9 +135,7 @@ function MatchPlayPage() {
   const [redStrokes, setRedStrokes] = useState(1);
   const [bluePoints, setBluePoints] = useState<number | null>(null);
   const [redPoints, setRedPoints] = useState<number | null>(null);
-  const [shortGameTechnique, setShortGameTechnique] = useState<ShortGameTechnique>("free");
-  const [mixedTechniques, setMixedTechniques] = useState<ShortGameShot[]>(["chip", "pitch", "lob", "bunker"]);
-  const [shortGameLies, setShortGameLies] = useState<ShortGameLie[]>(["fairway", "rough"]);
+  const [shortGameLies, setShortGameLies] = useState<ShortGameLie[]>(["fairway", "rough", "bunker"]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [transitionMessage, setTransitionMessage] = useState<string | null>(null);
   const [editingHoleIndex, setEditingHoleIndex] = useState<number | null>(null);
@@ -207,8 +180,7 @@ function MatchPlayPage() {
   const isShortGame = category === "around-the-green";
   const isScoredHole = isPutting || isShortGame;
   const unitLabel = isScoredHole ? "Hål" : "Omgång";
-  const mixedHasNonBunker = mixedTechniques.some((shot) => shot !== "bunker");
-  const setupValid = shortGameTechnique === "bunker" || (shortGameTechnique === "mixed" ? mixedTechniques.length > 0 && (!mixedHasNonBunker || shortGameLies.length > 0) : shortGameLies.length > 0);
+  const setupValid = shortGameLies.length > 0;
 
   const glass = "border-slate-300/75 bg-white/68 shadow-[0_18px_44px_-32px_rgba(15,23,42,.42)] backdrop-blur-2xl";
   const blueGlass = "border-blue-300/55 bg-gradient-to-br from-blue-100/68 via-white/68 to-slate-100/72 shadow-[0_18px_44px_-32px_rgba(37,99,235,.46)] backdrop-blur-2xl";
@@ -226,7 +198,6 @@ function MatchPlayPage() {
       return next;
     });
   }
-  function toggleMixedTechnique(id: ShortGameShot) { setMixedTechniques((items) => items.includes(id) ? items.filter((x) => x !== id) : [...items, id]); }
   function toggleShortGameLie(id: ShortGameLie) { setShortGameLies((items) => items.includes(id) ? items.filter((x) => x !== id) : [...items, id]); }
   function addGuest() {
     const name = guestName.trim();
@@ -238,7 +209,7 @@ function MatchPlayPage() {
   function removeGuest(id: string) { setGuests((old) => old.filter((g) => g.id !== id)); if (blueMateId === id) setBlueMateId(null); }
   function startMatch() {
     if (!mode || !teamsReady || !category || !matchType || (isShortGame && !setupValid)) return;
-    setHoles(Array.from({ length: matchLength }, () => ({ challenge: generateChallenge(category, matchType, mode, shortGameTechnique, mixedTechniques, shortGameLies), winner: null })));
+    setHoles(Array.from({ length: matchLength }, () => ({ challenge: generateChallenge(category, matchType, mode, shortGameLies), winner: null })));
     setHoleIndex(0); setBlueStrokes(1); setRedStrokes(1); setBluePoints(null); setRedPoints(null); setFinalText(""); setIsSubmitting(false); setTransitionMessage(null); setEditingHoleIndex(null); setReturnHoleIndex(null); setStep("play");
   }
   function advance(next: Hole[]) {
@@ -343,7 +314,7 @@ function MatchPlayPage() {
 
     {step === "type" && category ? <><section className="mt-5"><p className="text-[10px] font-bold uppercase text-slate-500">{selectedCategory?.title}</p><h1 className="mt-1 font-display text-4xl">Välj spel</h1>{isPutting ? <p className="mt-2 text-sm text-slate-600">Håla ut från varje avstånd. SG4 räknar resultatet automatiskt.</p> : isShortGame ? <p className="mt-2 text-sm text-slate-600">Ett slag per spelare. Samma poängzoner som 8-bollsövningen.</p> : null}</section><div className="mt-5 space-y-3">{MATCH_TYPES[category].map((i) => { const active = matchType === i.id; return <button key={i.id} onClick={() => setMatchType(i.id)} className={`flex w-full items-center gap-4 rounded-3xl border p-5 text-left ${active ? selectedGlass : glass}`}><span className="min-w-0 flex-1"><span className="block font-display text-2xl">{i.title}</span><span className="mt-1 block text-xs text-slate-600">{i.description}</span></span>{active ? <Check className="h-5 w-5 text-blue-600" /> : null}</button>; })}</div>{isShortGame ? <div className={`mt-4 rounded-2xl border p-4 ${glass}`}><p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">Scoring</p><p className="mt-2 text-xs leading-relaxed text-slate-600"><b>4</b> sänkt · <b>3</b> ≤1 m · <b>2</b> ≤2 m · <b>1</b> ≤3 m · <b>0</b> &gt;3 m</p></div> : null}<button disabled={!matchType} onClick={() => setStep(isShortGame ? "setup" : "length")} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white disabled:opacity-30">Nästa <ChevronRight className="h-5 w-5" /></button></> : null}
 
-    {step === "setup" && isShortGame ? <><section className="mt-5"><p className="text-[10px] font-bold uppercase text-slate-500">Closest to the Pin</p><h1 className="mt-1 font-display text-4xl">Vad vill ni spela?</h1><p className="mt-2 text-sm text-slate-600">Välj teknik och de lies som finns på ert träningsområde.</p></section><div className="mt-5 grid grid-cols-2 gap-2">{SHORT_GAME_TECHNIQUES.map((item) => { const active = shortGameTechnique === item.id; return <button key={item.id} onClick={() => setShortGameTechnique(item.id)} className={`rounded-2xl border p-3 text-left ${active ? selectedGlass : glass}`}><span className="block text-sm font-bold">{item.title}</span><span className="mt-1 block text-[10px] leading-snug text-slate-500">{item.detail}</span></button>; })}</div>{shortGameTechnique === "mixed" ? <section className={`mt-4 rounded-3xl border p-4 ${glass}`}><p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">Slag i mixen</p><div className="mt-3 grid grid-cols-2 gap-2">{SHORT_GAME_SHOTS.map((item) => { const active = mixedTechniques.includes(item.id); return <button key={item.id} onClick={() => toggleMixedTechnique(item.id)} className={`flex items-center justify-between rounded-xl border px-3 py-3 text-sm font-bold ${active ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white/70 text-slate-600"}`}>{item.title}{active ? <Check className="h-4 w-4" /> : null}</button>; })}</div></section> : null}{shortGameTechnique !== "bunker" && (shortGameTechnique !== "mixed" || mixedHasNonBunker) ? <section className={`mt-4 rounded-3xl border p-4 ${glass}`}><p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">Tillgängliga lies</p><div className="mt-3 grid grid-cols-2 gap-2">{SHORT_GAME_LIES.map((item) => { const active = shortGameLies.includes(item.id); return <button key={item.id} onClick={() => toggleShortGameLie(item.id)} className={`flex min-h-14 items-center justify-between rounded-xl border px-3 py-3 text-left text-xs font-bold ${active ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white/70 text-slate-600"}`}>{item.title}{active ? <Check className="h-4 w-4 shrink-0" /> : null}</button>; })}</div></section> : null}<p className="mt-4 text-center text-[10px] font-semibold text-slate-500">Alla genererade slag är 5–30 m.</p><button disabled={!setupValid} onClick={() => setStep("length")} className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white disabled:opacity-30">Nästa <ChevronRight className="h-5 w-5" /></button></> : null}
+    {step === "setup" && isShortGame ? <><section className="mt-5"><p className="text-[10px] font-bold uppercase text-slate-500">Closest to the Pin</p><h1 className="mt-1 font-display text-4xl">Vilka lägen finns?</h1><p className="mt-2 text-sm text-slate-600">Välj de lies/scenarier som finns på träningsområdet. Tekniken är alltid valfri.</p></section><div className="mt-5 grid gap-2">{SHORT_GAME_LIES.map((item) => { const active = shortGameLies.includes(item.id); return <button key={item.id} onClick={() => toggleShortGameLie(item.id)} className={`flex items-center justify-between rounded-2xl border p-4 text-left ${active ? selectedGlass : glass}`}><span><span className="block text-sm font-bold">{item.title}</span><span className="mt-1 block text-[10px] text-slate-500">{item.detail}</span></span>{active ? <Check className="h-4 w-4 shrink-0 text-blue-600" /> : null}</button>; })}</div><p className="mt-4 text-center text-[10px] font-semibold text-slate-500">Fairway och rough: 10–30 m · Bunker: valfri flagga.</p><button disabled={!setupValid} onClick={() => setStep("length")} className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white disabled:opacity-30">Nästa <ChevronRight className="h-5 w-5" /></button></> : null}
 
     {step === "length" && selectedType ? <><section className="mt-5"><p className="text-[10px] font-bold uppercase text-slate-500">{scoringMode === "match" ? "Match Play" : "Stroke Play"}</p><h1 className="mt-1 font-display text-4xl">{scoringMode === "stroke" ? "Antal hål" : "Bäst av"}</h1></section><div className="mt-5 grid grid-cols-3 gap-3">{([5, 9, 18] as const).map((v) => <button key={v} onClick={() => setMatchLength(v)} className={`rounded-3xl border px-3 py-6 ${matchLength === v ? selectedGlass : glass}`}><span className="block font-display text-4xl">{v}</span><span className="text-[10px] font-bold uppercase">hål</span></button>)}</div><button onClick={startMatch} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 via-slate-900 to-red-600 py-4 font-display text-xl text-white"><Flag className="h-5 w-5" /> Starta</button></> : null}
 
