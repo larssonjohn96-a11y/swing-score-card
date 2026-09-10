@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, ChevronRight, Crosshair, Grid3x3, Users } from "lucide-react";
+import { ArrowLeft, BarChart3, ChevronRight, Crosshair, Grid3x3, Users } from "lucide-react";
 import { LIGHT_SURFACE } from "./8-bollar";
 
 type Category = "off-the-tee" | "approach" | "around-the-green" | "putting";
@@ -150,7 +150,7 @@ function TrainingTestsPage() {
         <section>
           <div className="flex items-center justify-between">
             <Link to="/traning" search={{ category: undefined }} aria-label="Tillbaka" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-300/80 bg-white/70 shadow-sm backdrop-blur-xl"><ArrowLeft className="h-4 w-4" /></Link>
-            <span className="rounded-full border border-slate-300/80 bg-slate-100/75 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-600 backdrop-blur-xl">Träning</span>
+            <Link to="/approach-pei-historik" className="inline-flex items-center gap-2 rounded-full border border-slate-400/70 bg-slate-200/75 px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-[0_12px_30px_-24px_rgba(15,23,42,.45)] backdrop-blur-xl"><BarChart3 className="h-4 w-4 text-slate-700" />Analys & framsteg</Link>
           </div>
 
           <div className="mt-5 rounded-[30px] border border-slate-300/85 bg-gradient-to-br from-slate-100/88 via-white/82 to-slate-100/74 p-5 shadow-[0_20px_48px_-32px_rgba(15,23,42,.44)] backdrop-blur-2xl">
@@ -160,7 +160,7 @@ function TrainingTestsPage() {
           </div>
 
           <div className="mb-2 mt-5 flex items-center justify-between">
-            <h2 className="font-display text-2xl leading-none">Testkategorier</h2>
+            <h2 className="font-display text-2xl leading-none">Tester</h2>
             <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">2 områden</span>
           </div>
           <div className="space-y-3">{TESTS.approach.map((test) => <TestCard key={test.to} {...test} liquidGlass />)}</div>
