@@ -224,6 +224,7 @@ const RADAR_LABEL_LINES: Record<string, string[]> = {
   "Penalty avoidance": ["Penalty", "avoidance"],
   "Bogey avoidance": ["Bogey", "avoidance"],
   "Total driving": ["Total", "driving"],
+  "Around Green": ["Around", "Green"],
   "Sidledskontroll": ["Sidleds", "kontroll"],
   "Längdkontroll": ["Längd", "kontroll"],
   "Närhet till hål": ["Närhet", "till hål"],
@@ -244,27 +245,35 @@ function splitRadarLabel(label: string): string[] {
   return [label.slice(0, cut), label.slice(cut)];
 }
 
-function RadarAxisTick({ x = 0, y = 0, payload, textAnchor = "middle" }: any) {
+function RadarAxisTick({ x = 0, y = 0, payload, index = -1, textAnchor = "middle" }: any) {
   const label = String(payload?.value ?? "");
   const lines = splitRadarLabel(label);
-  const onRight = textAnchor === "start";
-  const onLeft = textAnchor === "end";
-  const safeAnchor = onRight ? "end" : onLeft ? "start" : "middle";
-  const safeX = x + (onRight ? -10 : onLeft ? 10 : 0);
-  const firstLineY = y - ((lines.length - 1) * 6);
+
+  const positions = [
+    { dx: 0, dy: -12, anchor: "middle" as const },
+    { dx: 10, dy: -2, anchor: "start" as const },
+    { dx: 12, dy: 10, anchor: "start" as const },
+    { dx: -12, dy: 10, anchor: "end" as const },
+    { dx: -10, dy: -2, anchor: "end" as const },
+  ];
+
+  const fallbackAnchor = textAnchor === "start" ? "start" : textAnchor === "end" ? "end" : "middle";
+  const position = positions[index] ?? { dx: 0, dy: 0, anchor: fallbackAnchor };
+  const safeX = x + position.dx;
+  const firstLineY = y + position.dy - ((lines.length - 1) * 6);
 
   return (
     <text
       x={safeX}
       y={firstLineY}
-      textAnchor={safeAnchor}
+      textAnchor={position.anchor}
       dominantBaseline="middle"
       fill="var(--muted-foreground)"
       fontSize={11}
       fontWeight={600}
     >
-      {lines.map((line, index) => (
-        <tspan key={`${label}-${index}`} x={safeX} dy={index === 0 ? 0 : 13}>
+      {lines.map((line, lineIndex) => (
+        <tspan key={`${label}-${lineIndex}`} x={safeX} dy={lineIndex === 0 ? 0 : 13}>
           {line}
         </tspan>
       ))}
@@ -365,9 +374,9 @@ export function AnalysisRadarSwitcher({ cats, totalHandicap }: { cats: CategoryH
 
     <p className="mt-4 text-center text-xs uppercase tracking-[0.25em] text-muted-foreground">Jämförelseanalys</p>
 
-    <div className="mt-4 h-96 w-full overflow-hidden rounded-3xl border border-border bg-card p-3">
+    <div className="mt-4 h-96 w-full overflow-hidden rounded-3xl border border-border bg-card p-2">
       <ResponsiveContainer width="100%" height="100%">
-        <RadarChart data={data} outerRadius="66%">
+        <RadarChart data={data} outerRadius="70%">
           <PolarGrid stroke="var(--border)" />
           <PolarAngleAxis dataKey="subject" tick={<RadarAxisTick />} tickLine={false} />
           <PolarRadiusAxis domain={[0, 110]} tick={false} axisLine={false} />
