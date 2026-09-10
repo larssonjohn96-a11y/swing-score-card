@@ -20,7 +20,7 @@ function ConstantShapePage() {
       testId="shot-shaping-konstant"
       eyebrow="Shot Shaping · Repeterbar kontroll"
       title="Konstant shape"
-      intro="Välj draw eller fade och upprepa samma bollform tio gånger med samma klubba. Testet mäter hur repeterbar din shape faktiskt är."
+      intro="Välj draw eller fade och upprepa samma bollform tio gånger med samma klubbgrupp. Testet mäter hur repeterbar din shape faktiskt är."
       backTo="/shot-shaping"
       selfTo="/shot-shaping-konstant"
       historyTo="/shot-shaping-konstant-historik"
@@ -32,7 +32,8 @@ function ConstantShapePage() {
       clubGroups={CLUB_GROUPS}
       liquidGlass
       hitMissColors
-      introCards={[{ title: "Testformat", rows: [{ label: "Slag", value: "10" }, { label: "Shape", value: "Draw eller Fade" }, { label: "Klubba", value: "Samma hela testet" }, { label: "Poäng", value: "1 per träff" }] }]}
+      multiplayer
+      introCards={[{ title: "Testformat", rows: [{ label: "Slag", value: "10" }, { label: "Shape", value: "Draw eller Fade" }, { label: "Klubbgrupp", value: "Samma hela testet" }, { label: "Poäng", value: "1 per träff" }] }]}
       analyze={analyzeConstantShape}
     />
   );
