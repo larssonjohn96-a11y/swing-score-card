@@ -31,7 +31,6 @@ function NineWindowPage() {
       liquidGlass
       hitMissColors
       multiplayer
-      introCards={[{ title: "Testformat", rows: [{ label: "Höjder", value: "Låg · Medel · Hög" }, { label: "Shapes", value: "Draw · Rak · Fade" }, { label: "Klubbgrupp", value: "Samma hela testet" }, { label: "Slag", value: "9" }] }]}
       analyze={analyzeNineWindow}
     />
   );
