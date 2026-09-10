@@ -31,7 +31,6 @@ function AlternatingShapePage() {
       liquidGlass
       hitMissColors
       multiplayer
-      introCards={[{ title: "Testformat", rows: [{ label: "Slag", value: "10" }, { label: "Ordning", value: "Draw / Fade" }, { label: "Klubbgrupp", value: "Samma hela testet" }, { label: "Poäng", value: "1 per träff" }] }]}
       analyze={analyzeAlternating}
     />
   );
