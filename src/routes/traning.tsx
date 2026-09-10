@@ -118,28 +118,42 @@ function TrainingTestsPage() {
   const { category } = Route.useSearch();
   const active = CATEGORIES.find((i) => i.id === category);
   const approachGlass = category === "approach";
+  const rootGlass = !category;
 
   return (
     <main
-      style={approachGlass ? LIGHT_SURFACE : undefined}
-      className={`mx-auto min-h-screen w-full max-w-md px-5 pb-28 ${approachGlass ? "bg-background pt-6 text-foreground" : "pt-10"}`}
+      style={approachGlass || rootGlass ? LIGHT_SURFACE : undefined}
+      className={`mx-auto min-h-screen w-full max-w-md px-5 pb-28 ${approachGlass || rootGlass ? "bg-background pt-6 text-foreground" : "pt-10"}`}
     >
       {!category ? (
         <>
-          <header>
-            <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Performance & träning</p>
-            <h1 className="mt-2 font-display text-4xl leading-none">Mät. Slå PB. Bli bättre.</h1>
-            <p className="mt-3 text-sm text-muted-foreground">Här följer du rå prestation och träningsprogress. Speed, längd och övningsresultat påverkar inte Total HCP direkt.</p>
-          </header>
-          <section className="mt-7">
-            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Vad vill du mäta eller träna?</p>
-            <div className="mt-3 space-y-3">
+          <section className="rounded-[30px] border border-slate-300/80 bg-gradient-to-br from-slate-100/88 via-white/82 to-slate-100/74 p-5 shadow-[0_20px_48px_-32px_rgba(15,23,42,.42)] backdrop-blur-2xl">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">Performance & träning</p>
+            <h1 className="mt-2 font-display text-4xl leading-none text-slate-950">Mät. Slå PB. Bli bättre.</h1>
+            <p className="mt-3 max-w-[31ch] text-[13px] leading-relaxed text-slate-600">Följ prestation och träningsprogress. Resultaten påverkar inte Total HCP direkt.</p>
+          </section>
+
+          <section className="mt-6">
+            <div className="mb-2 flex items-center justify-between">
+              <h2 className="font-display text-2xl leading-none text-slate-950">Kategorier</h2>
+              <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">4 områden</span>
+            </div>
+            <div className="space-y-3">
               {CATEGORIES.map((item) => {
                 const count = TESTS[item.id].length;
                 return (
-                  <Link key={item.id} to="/traning" search={{ category: item.id }} className="flex w-full items-center gap-4 rounded-3xl border border-border bg-card p-4">
-                    <span className="min-w-0 flex-1"><span className="block font-display text-2xl leading-none">{item.title}</span><span className="mt-1 block text-xs text-muted-foreground">{item.description}</span><span className="mt-2 block text-[10px] font-semibold uppercase tracking-[0.16em] text-primary">{count} tester</span></span>
-                    <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+                  <Link
+                    key={item.id}
+                    to="/traning"
+                    search={{ category: item.id }}
+                    className="group flex w-full items-center gap-4 rounded-3xl border border-slate-300/80 bg-gradient-to-br from-slate-100/88 via-white/78 to-slate-100/72 p-4 text-left shadow-[0_18px_44px_-32px_rgba(15,23,42,.4)] backdrop-blur-2xl transition-all active:scale-[0.99]"
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-display text-2xl leading-none text-slate-950">{item.title}</span>
+                      <span className="mt-1.5 block text-xs leading-relaxed text-slate-600">{item.description}</span>
+                      <span className="mt-2 block text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-600">{count} tester</span>
+                    </span>
+                    <ChevronRight className="h-5 w-5 shrink-0 text-slate-500 transition-transform group-active:translate-x-0.5" />
                   </Link>
                 );
               })}
@@ -176,7 +190,7 @@ function TrainingTestsPage() {
         </section>
       )}
 
-      <Link to="/tester" className={`mt-8 inline-block rounded-full border px-4 py-2 text-sm ${approachGlass ? "border-slate-300/80 bg-white/65 text-slate-600 backdrop-blur-xl" : "border-border text-muted-foreground"}`}>Tillbaka till HCP-tester</Link>
+      <Link to="/tester" className={`mt-8 inline-block rounded-full border px-4 py-2 text-sm ${approachGlass || rootGlass ? "border-slate-300/80 bg-white/65 text-slate-600 backdrop-blur-xl" : "border-border text-muted-foreground"}`}>Tillbaka till HCP-tester</Link>
     </main>
   );
 }
