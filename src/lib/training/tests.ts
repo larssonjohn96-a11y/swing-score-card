@@ -148,7 +148,6 @@ export function constantShapeHistory(sessions: TrainingSession[]): AnalysisSecti
 export const ALTERNATING_PROMPTS: Prompt[] = Array.from({ length: 10 }, (_, i) => ({
   tag: `Slag ${i + 1} av 10`,
   primary: i % 2 === 0 ? "Draw" : "Fade",
-  secondary: "Byt form slag för slag",
 }));
 
 export function analyzeAlternating(shots: number[]): Analysis {
