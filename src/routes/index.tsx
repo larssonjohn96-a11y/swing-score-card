@@ -21,6 +21,7 @@ import { pushPlayerSnapshot, listFriendships, type Profile } from "@/lib/friends
 import { loadFriends } from "@/lib/friends";
 import { AppStoryLauncher } from "@/components/app-story";
 import { AgeInlinePrompt } from "@/components/age-inline-prompt";
+import { ActiveMultiplayerBanner } from "@/components/active-multiplayer-banner";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -106,6 +107,8 @@ function Home() {
         <div className="min-w-0"><p className="text-sm text-muted-foreground">Låt oss spela,</p><h1 className="truncate font-[family-name:var(--font-display)] text-3xl leading-none">{displayName ?? "Golfspelare"}</h1></div>
       </div>
 
+      <ActiveMultiplayerBanner />
+
       <div className="mt-5 grid grid-cols-[1.55fr_.8fr] gap-3">
         <Link to="/vanner" className="flex min-w-0 items-center gap-3 rounded-3xl border border-border bg-card px-4 py-4 shadow-[0_12px_28px_-18px_rgba(0,0,0,0.32)] transition-transform active:scale-[0.99]">
           <span className="flex shrink-0 items-center pl-0.5">
@@ -142,15 +145,10 @@ function Home() {
 
       <AppStoryLauncher />
 
-
       {data && <div className="mt-4">
         {data.real === null && data.cats.every((c) => c.count === 0) && <Link to="/konto" className="mb-4 flex items-center gap-3 rounded-2xl border border-primary/30 bg-primary/5 p-4"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary"><Gauge className="h-4 w-4" strokeWidth={1.75} /></span><span className="min-w-0 flex-1"><span className="block text-sm font-semibold leading-tight">Ange ditt officiella HCP</span><span className="block text-xs text-muted-foreground">Få en direkt baslinje i alla kategorier, helt utan att göra ett test</span></span><ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" /></Link>}
         {profile.age === undefined && !ageSaved && <div className="mb-4"><AgeInlinePrompt title="Ange din ålder" description="Se hur din ball speed i Speed Test står sig mot jämnåriga golfare" onSaved={() => setAgeSaved(true)} /></div>}
         <div className="mt-10"><AnalysisRadarSwitcher cats={data.cats} totalHandicap={data.estimated} /></div>
-
-
-
-
         <StableCategoryStatsSection />
         <OpportunityCard opportunity={data.opportunity} />
         <Link to="/tester" className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-5 font-[family-name:var(--font-display)] text-2xl text-primary-foreground">Gör ett test<ArrowRight className="h-5 w-5" /></Link>
