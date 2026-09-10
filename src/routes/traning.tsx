@@ -70,10 +70,10 @@ const TESTS: Record<Category, TestItem[]> = {
 };
 
 const CATEGORIES: Array<{ id: Category; title: string; description: string }> = [
-  { id: "off-the-tee", title: "Off the Tee", description: "Speed, längd och driver-performance" },
-  { id: "approach", title: "Approach", description: "Precision och shot shaping" },
-  { id: "around-the-green", title: "Around the Green", description: "Slagvariation och scoring runt green" },
-  { id: "putting", title: "Putting", description: "Challenges, putting-performance och specifika färdigheter" },
+  { id: "off-the-tee", title: "Off the Tee", description: "Utslag från tee – fart, längd och driverkontroll" },
+  { id: "approach", title: "Approach", description: "Inspel mot green – precision och bollkontroll" },
+  { id: "around-the-green", title: "Around the Green", description: "Slag runt green – chip, pitch, bunker och scoring" },
+  { id: "putting", title: "Putting", description: "Puttning på green – längdkontroll, startlinje och scoring" },
 ];
 
 function TestCard({ to, title, description, meta, skill, featured, liquidGlass = false }: TestItem & { liquidGlass?: boolean }) {
