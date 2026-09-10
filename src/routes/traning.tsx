@@ -161,12 +161,12 @@ function TrainingTestsPage() {
 
           <Link to="/approach-pei-historik" className="mt-4 flex items-center gap-3 rounded-3xl border border-slate-400/75 bg-gradient-to-br from-slate-200/88 via-slate-100/82 to-slate-200/70 p-4 shadow-[0_18px_42px_-30px_rgba(15,23,42,.5)] backdrop-blur-2xl">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-slate-400/65 bg-slate-700/[0.08] text-slate-700"><BarChart3 className="h-5 w-5" /></span>
-            <span className="min-w-0 flex-1"><span className="block text-[9px] font-bold uppercase tracking-[0.18em] text-slate-500">Översikt</span><span className="mt-1 block font-display text-xl leading-none text-slate-900">Progress & analys</span><span className="mt-1 block text-[11px] leading-relaxed text-slate-600">Följ precision, resultat och utveckling över tid.</span></span>
+            <span className="min-w-0 flex-1"><span className="block text-[9px] font-bold uppercase tracking-[0.18em] text-slate-500">Översikt</span><span className="mt-1 block font-display text-xl leading-none text-slate-900">Analys</span><span className="mt-1 block text-[11px] leading-relaxed text-slate-600">Följ precision, resultat och utveckling över tid.</span></span>
             <ArrowRight className="h-4 w-4 text-slate-600" />
           </Link>
 
           <div className="mb-2 mt-5 flex items-center justify-between">
-            <h2 className="font-display text-2xl leading-none">Tester</h2>
+            <h2 className="font-display text-2xl leading-none">Testkategorier</h2>
             <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">2 områden</span>
           </div>
           <div className="space-y-3">{TESTS.approach.map((test) => <TestCard key={test.to} {...test} liquidGlass />)}</div>
