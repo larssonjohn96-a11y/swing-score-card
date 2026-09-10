@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
-import { BarChart3, ChevronRight, Flag, Home, ListChecks, Menu, Plus, Target, Trophy, TrendingUp, Users } from "lucide-react";
+import { BarChart3, ChevronLeft, ChevronRight, Flag, Home, ListChecks, Menu, Plus, Target, Trophy, TrendingUp, Users } from "lucide-react";
 import { useBottomNavVisibility } from "@/lib/bottom-nav-visibility";
 import { CATEGORIES } from "@/lib/categories";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -18,6 +18,7 @@ const RIGHT_TABS = [
 ] as const;
 
 type MoreTone = "gold" | "neutral" | "h2h";
+type QuickView = "root" | "hcp";
 
 const MORE_LINKS: ReadonlyArray<{
   to: string;
@@ -57,6 +58,7 @@ export function BottomNav() {
   const { hidden } = useBottomNavVisibility();
   const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
+  const [quickView, setQuickView] = useState<QuickView>("root");
   const [moreOpen, setMoreOpen] = useState(false);
   const [trophyBadge, setTrophyBadge] = useState(0);
 
@@ -74,7 +76,7 @@ export function BottomNav() {
       <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-card shadow-[0_-8px_24px_-24px_oklch(0.3_0.06_160/0.6)]" style={{ paddingBottom: "max(8px, env(safe-area-inset-bottom))" }}>
         <div className="mx-auto flex h-16 w-full max-w-md items-center px-2">
           {LEFT_TABS.map((tab) => <NavLink key={tab.to} tab={tab} active={tab.exact ? pathname === tab.to : pathname.startsWith(tab.to)} />)}
-          <div className="flex flex-1 justify-center"><button type="button" onClick={() => setOpen(true)} aria-label="Starta test" className="flex h-12 w-12 -translate-y-4 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_6px_16px_-8px_oklch(0_0_0_/_0.45)] transition-transform active:scale-95"><Plus className="h-6 w-6" /></button></div>
+          <div className="flex flex-1 justify-center"><button type="button" onClick={() => { setQuickView("root"); setOpen(true); }} aria-label="Starta test" className="flex h-12 w-12 -translate-y-4 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_6px_16px_-8px_oklch(0_0_0_/_0.45)] transition-transform active:scale-95"><Plus className="h-6 w-6" /></button></div>
           {RIGHT_TABS.map((tab) => <NavLink key={tab.to} tab={tab} active={tab.exact ? pathname === tab.to : pathname.startsWith(tab.to)} />)}
           <button type="button" onClick={() => setMoreOpen(true)} className="flex flex-1 flex-col items-center gap-1 py-2 active:scale-95" aria-label="Mer">
             <span className={`relative flex h-8 w-9 items-center justify-center rounded-xl transition-colors ${moreActive ? "bg-tint-strong text-primary" : "text-muted-foreground"}`}><Menu className="h-5 w-5" />{Boolean(trophyBadge) && <span className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-flag px-1 text-[9px] font-bold text-background">{trophyBadge}</span>}</span>
@@ -83,13 +85,37 @@ export function BottomNav() {
         </div>
       </nav>
 
-      <Sheet open={open} onOpenChange={setOpen}>
+      <Sheet open={open} onOpenChange={(value) => { setOpen(value); if (!value) setQuickView("root"); }}>
         <SheetContent side="bottom" className="rounded-t-3xl px-5 pb-5 pt-5">
-          <SheetHeader className="space-y-1"><SheetTitle className="text-left text-2xl">Vad vill du göra?</SheetTitle><p className="text-left text-xs text-muted-foreground">Mät din nivå eller träna en specifik färdighet.</p></SheetHeader>
-          <div className="mt-4 space-y-2">
-            {CATEGORIES.map((c) => <Link key={c.slug} to="/kategori/$slug" params={{ slug: c.slug }} onClick={() => setOpen(false)} className="group flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 transition-colors hover:border-primary hover:bg-tint"><div className="min-w-0 flex-1"><div className="flex items-center gap-2"><h3 className="text-lg leading-none">{c.title}</h3><span className="rounded-full bg-tint-strong px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-primary">HCP</span></div><p className="mt-1 text-[11px] leading-snug text-muted-foreground line-clamp-1">{c.description}</p><p className="mt-1 text-[10px] font-semibold text-flag">Gör testet · få din nivå</p></div><ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" /></Link>)}
-            <div className="pt-1"><Link to="/traning" search={{ category: undefined }} onClick={() => setOpen(false)} className="group flex items-center gap-3 rounded-2xl border border-border bg-muted/55 px-4 py-3.5 transition-colors hover:border-primary hover:bg-muted/70"><div className="min-w-0 flex-1"><div className="flex items-center gap-2"><h3 className="text-lg leading-none">Träningstester</h3><span className="rounded-full bg-background/80 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Träning</span></div><p className="mt-1 text-[11px] leading-snug text-muted-foreground">Träna med syfte och följ din utveckling över tid.</p></div><ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" /></Link></div>
-          </div>
+          {quickView === "root" ? <>
+            <SheetHeader className="space-y-1"><SheetTitle className="text-left text-2xl">Vad vill du göra?</SheetTitle><p className="text-left text-xs text-muted-foreground">Välj mellan nivåmätning, träning eller tävling.</p></SheetHeader>
+            <div className="mt-4 space-y-2">
+              <button type="button" onClick={() => setQuickView("hcp")} className="group flex w-full items-center gap-3 rounded-2xl border border-primary/25 bg-primary/[0.045] px-4 py-4 text-left transition-colors hover:border-primary/40 hover:bg-primary/[0.07]">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-tint-strong text-primary"><Target className="h-5 w-5" /></span>
+                <div className="min-w-0 flex-1"><div className="flex items-center gap-2"><h3 className="text-lg font-semibold leading-none">Handicap-test</h3><span className="rounded-full bg-tint-strong px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-primary">HCP</span></div><p className="mt-1 text-[11px] leading-snug text-muted-foreground">Gör ett test och få ett handicapresultat i kategorin.</p></div>
+                <ChevronRight className="h-4 w-4 shrink-0 text-primary" />
+              </button>
+
+              <Link to="/traning" search={{ category: undefined }} onClick={() => setOpen(false)} className="group flex items-center gap-3 rounded-2xl border border-border bg-muted/55 px-4 py-4 transition-colors hover:border-primary hover:bg-muted/70">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border bg-background/80 text-foreground"><ListChecks className="h-5 w-5" /></span>
+                <div className="min-w-0 flex-1"><div className="flex items-center gap-2"><h3 className="text-lg font-semibold leading-none">Träningstester</h3><span className="rounded-full bg-background/80 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Träning</span></div><p className="mt-1 text-[11px] leading-snug text-muted-foreground">Träna specifika färdigheter och följ din utveckling.</p></div>
+                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+              </Link>
+
+              <Link to="/match" onClick={() => setOpen(false)} className="group flex items-center gap-3 rounded-2xl border border-blue-500/20 bg-gradient-to-r from-blue-500/[0.06] via-card to-red-500/[0.06] px-4 py-4 transition-colors hover:border-red-500/30">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-red-500 text-white shadow-sm"><Flag className="h-5 w-5" /></span>
+                <div className="min-w-0 flex-1"><div className="flex items-center gap-2"><h3 className="text-lg font-semibold leading-none">Match Play</h3><span className="rounded-full bg-red-500/[0.08] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-red-500">Tävla</span></div><p className="mt-1 text-[11px] leading-snug text-muted-foreground">Tävla mot din kompis i Singles, Fourball eller Foursomes.</p></div>
+                <ChevronRight className="h-4 w-4 shrink-0 text-red-500/70" />
+              </Link>
+            </div>
+          </> : <>
+            <SheetHeader className="space-y-1">
+              <div className="flex items-center gap-2"><button type="button" onClick={() => setQuickView("root")} className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card"><ChevronLeft className="h-4 w-4" /></button><div><SheetTitle className="text-left text-2xl">Handicap-test</SheetTitle><p className="text-left text-xs text-muted-foreground">Välj kategori och gör ett test för att få din nivå.</p></div></div>
+            </SheetHeader>
+            <div className="mt-4 space-y-2">
+              {CATEGORIES.map((c) => <Link key={c.slug} to="/kategori/$slug" params={{ slug: c.slug }} onClick={() => setOpen(false)} className="group flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3.5 transition-colors hover:border-primary hover:bg-tint"><div className="min-w-0 flex-1"><div className="flex items-center gap-2"><h3 className="text-lg leading-none">{c.title}</h3><span className="rounded-full bg-tint-strong px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-primary">HCP</span></div><p className="mt-1 text-[11px] leading-snug text-muted-foreground line-clamp-1">{c.description}</p><p className="mt-1 text-[10px] font-semibold text-flag">Gör testet · få din nivå</p></div><ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" /></Link>)}
+            </div>
+          </>}
         </SheetContent>
       </Sheet>
 
