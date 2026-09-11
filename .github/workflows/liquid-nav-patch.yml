@@ -1,0 +1,49 @@
+name: Liquid Nav Patch
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply Liquid Glass styling to bottom nav
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('src/components/bottom-nav.tsx')
+          s = p.read_text()
+
+          replacements = [
+            (
+              'className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-card shadow-[0_-8px_24px_-24px_oklch(0.3_0.06_160/0.6)]"',
+              'className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/45 bg-card/72 shadow-[0_-14px_38px_-26px_oklch(0.22_0.04_160/0.5)] backdrop-blur-2xl supports-[backdrop-filter]:bg-card/62"'
+            ),
+            (
+              '${active ? "bg-tint-strong text-primary" : "text-muted-foreground"}',
+              '${active ? "border border-white/45 bg-background/58 text-primary shadow-[inset_0_1px_0_rgba(255,255,255,.65),0_6px_18px_-14px_rgba(15,23,42,.55)] backdrop-blur-xl" : "text-muted-foreground"}'
+            ),
+            (
+              'className="flex h-12 w-12 -translate-y-4 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_6px_16px_-8px_oklch(0_0_0_/_0.45)] transition-transform active:scale-95"',
+              'className="flex h-12 w-12 -translate-y-4 items-center justify-center rounded-full border border-white/55 bg-primary/92 text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,.42),0_10px_24px_-12px_oklch(0_0_0_/_0.5)] backdrop-blur-xl ring-1 ring-black/5 transition-transform active:scale-95"'
+            ),
+            (
+              '${moreActive ? "bg-tint-strong text-primary" : "text-muted-foreground"}',
+              '${moreActive ? "border border-white/45 bg-background/58 text-primary shadow-[inset_0_1px_0_rgba(255,255,255,.65),0_6px_18px_-14px_rgba(15,23,42,.55)] backdrop-blur-xl" : "text-muted-foreground"}'
+            ),
+          ]
+
+          for old, new in replacements:
+            if old not in s:
+              raise SystemExit(f'Anchor not found: {old[:120]}')
+            s = s.replace(old, new, 1)
+
+          p.write_text(s)
+          PY
+          git config user.name github-actions
+          git config user.email actions@github.com
+          git add src/components/bottom-nav.tsx
+          git diff --cached --quiet || git commit -m "Add subtle Liquid Glass bottom navigation"
+          git push
