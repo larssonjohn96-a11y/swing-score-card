@@ -80,11 +80,11 @@ const TESTS: Record<Category, TestItem[]> = {
   ],
 };
 
-const CATEGORIES: Array<{ id: Category; title: string; description: string }> = [
-  { id: "off-the-tee", title: "Off the Tee", description: "Utslag från tee – fart, längd och driverkontroll" },
-  { id: "approach", title: "Approach", description: "Inspel mot green – precision och bollkontroll" },
-  { id: "around-the-green", title: "Around the Green", description: "Slag runt green – chip, pitch, bunker och scoring" },
-  { id: "putting", title: "Putting", description: "Puttning på green – längdkontroll, startlinje och scoring" },
+const CATEGORIES: Array<{ id: Category; title: string; description: string; hero: string }> = [
+  { id: "off-the-tee", title: "Off the Tee", description: "Utslag från tee – fart, längd och driverkontroll", hero: "Fart, längd och driverkontroll." },
+  { id: "approach", title: "Approach", description: "Inspel mot green – precision och bollkontroll", hero: "Precision och bollkontroll." },
+  { id: "around-the-green", title: "Around the Green", description: "Slag runt green – chip, pitch, bunker och scoring", hero: "Slagvariation, närspel och scoring." },
+  { id: "putting", title: "Putting", description: "Puttning på green – längdkontroll, startlinje och scoring", hero: "Träna rätt del av puttningen — från startlinje och kortputtar till green read och längdkontroll." },
 ];
 
 function matchesPuttingFilter(test: TestItem, filter: PuttingFilter) {
@@ -95,40 +95,23 @@ function matchesPuttingFilter(test: TestItem, filter: PuttingFilter) {
   return test.to === "/green-reading";
 }
 
-function TestCard({ to, title, description, meta, skill, featured, liquidGlass = false }: TestItem & { liquidGlass?: boolean }) {
-  if (liquidGlass) {
-    const Icon = to === "/shot-shaping" || to === "/tutor-test" ? Grid3x3 : Crosshair;
-    return (
-      <Link
-        to={to}
-        className="group flex w-full items-center gap-4 rounded-3xl border border-slate-300/80 bg-gradient-to-br from-slate-100/88 via-white/78 to-slate-100/72 p-4 text-left shadow-[0_18px_44px_-32px_rgba(15,23,42,.4)] backdrop-blur-2xl transition-all active:scale-[0.99]"
-      >
-        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-slate-300/80 bg-white/58 text-slate-700 shadow-[0_10px_24px_-18px_rgba(15,23,42,.35)]">
-          <Icon className="h-5 w-5" />
-        </span>
-        <span className="min-w-0 flex-1">
-          {skill ? <span className="block text-[9px] font-bold uppercase tracking-[0.16em] text-slate-500">{skill}</span> : null}
-          <span className="mt-1 block font-display text-2xl leading-none text-slate-900">{title}</span>
-          <span className="mt-1.5 block text-xs leading-relaxed text-slate-600">{description}</span>
-          <span className="mt-2 block text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-600">{meta}</span>
-        </span>
-        <ChevronRight className="h-5 w-5 shrink-0 text-slate-500 transition-transform group-active:translate-x-0.5" />
-      </Link>
-    );
-  }
-
+function TestCard({ to, title, description, meta, skill }: TestItem) {
+  const Icon = to === "/shot-shaping" || to === "/tutor-test" ? Grid3x3 : Crosshair;
   return (
     <Link
       to={to}
-      className={`flex w-full items-center gap-4 rounded-3xl border bg-card p-4 text-left shadow-[var(--shadow-glow)] transition-colors hover:border-primary ${featured ? "border-primary/35 bg-primary/[0.035]" : "border-border"}`}
+      className="group flex w-full items-center gap-4 rounded-3xl border border-slate-300/80 bg-gradient-to-br from-slate-100/88 via-white/78 to-slate-100/72 p-4 text-left shadow-[0_18px_44px_-32px_rgba(15,23,42,.4)] backdrop-blur-2xl transition-all active:scale-[0.99]"
     >
-      <span className="min-w-0 flex-1">
-        {skill ? <span className="mb-1.5 inline-flex rounded-full bg-primary/[0.08] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-primary">{skill}</span> : null}
-        <span className="block font-display text-2xl leading-none">{title}</span>
-        <span className="mt-1 block text-xs leading-snug text-muted-foreground">{description}</span>
-        <span className="mt-2 block text-[10px] font-semibold uppercase tracking-[0.16em] text-primary">{meta}</span>
+      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-slate-300/80 bg-white/58 text-slate-700 shadow-[0_10px_24px_-18px_rgba(15,23,42,.35)]">
+        <Icon className="h-5 w-5" />
       </span>
-      <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+      <span className="min-w-0 flex-1">
+        {skill ? <span className="block text-[9px] font-bold uppercase tracking-[0.16em] text-slate-500">{skill}</span> : null}
+        <span className="mt-1 block font-display text-2xl leading-none text-slate-900">{title}</span>
+        <span className="mt-1.5 block text-xs leading-relaxed text-slate-600">{description}</span>
+        <span className="mt-2 block text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-600">{meta}</span>
+      </span>
+      <ChevronRight className="h-5 w-5 shrink-0 text-slate-500 transition-transform group-active:translate-x-0.5" />
     </Link>
   );
 }
@@ -137,17 +120,10 @@ function TrainingTestsPage() {
   const { category } = Route.useSearch();
   const active = CATEGORIES.find((i) => i.id === category);
   const [puttingFilter, setPuttingFilter] = useState<PuttingFilter>("all");
-  const approachGlass = category === "approach";
-  const puttingGlass = category === "putting";
-  const liquidGlass = approachGlass || puttingGlass;
-  const rootGlass = !category;
-  const visiblePuttingTests = TESTS.putting.filter((test) => matchesPuttingFilter(test, puttingFilter));
+  const visibleTests = category === "putting" ? TESTS.putting.filter((test) => matchesPuttingFilter(test, puttingFilter)) : category ? TESTS[category] : [];
 
   return (
-    <main
-      style={liquidGlass || rootGlass ? LIGHT_SURFACE : undefined}
-      className={`mx-auto min-h-screen w-full max-w-md px-5 pb-28 ${liquidGlass || rootGlass ? "bg-background pt-6 text-foreground" : "pt-10"}`}
-    >
+    <main style={LIGHT_SURFACE} className="mx-auto min-h-screen w-full max-w-md bg-background px-5 pb-28 pt-6 text-foreground">
       {!category ? (
         <>
           <section className="rounded-[30px] border border-slate-300/80 bg-gradient-to-br from-slate-100/88 via-white/82 to-slate-100/74 p-5 shadow-[0_20px_48px_-32px_rgba(15,23,42,.42)] backdrop-blur-2xl">
@@ -162,28 +138,25 @@ function TrainingTestsPage() {
               <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">4 områden</span>
             </div>
             <div className="space-y-3">
-              {CATEGORIES.map((item) => {
-                const count = TESTS[item.id].length;
-                return (
-                  <Link
-                    key={item.id}
-                    to="/traning"
-                    search={{ category: item.id }}
-                    className="group flex w-full items-center gap-4 rounded-3xl border border-slate-300/80 bg-gradient-to-br from-slate-100/88 via-white/78 to-slate-100/72 p-4 text-left shadow-[0_18px_44px_-32px_rgba(15,23,42,.4)] backdrop-blur-2xl transition-all active:scale-[0.99]"
-                  >
-                    <span className="min-w-0 flex-1">
-                      <span className="block font-display text-2xl leading-none text-slate-950">{item.title}</span>
-                      <span className="mt-1.5 block text-xs leading-relaxed text-slate-600">{item.description}</span>
-                      <span className="mt-2 block text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-600">{count} tester</span>
-                    </span>
-                    <ChevronRight className="h-5 w-5 shrink-0 text-slate-500 transition-transform group-active:translate-x-0.5" />
-                  </Link>
-                );
-              })}
+              {CATEGORIES.map((item) => (
+                <Link
+                  key={item.id}
+                  to="/traning"
+                  search={{ category: item.id }}
+                  className="group flex w-full items-center gap-4 rounded-3xl border border-slate-300/80 bg-gradient-to-br from-slate-100/88 via-white/78 to-slate-100/72 p-4 text-left shadow-[0_18px_44px_-32px_rgba(15,23,42,.4)] backdrop-blur-2xl transition-all active:scale-[0.99]"
+                >
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-display text-2xl leading-none text-slate-950">{item.title}</span>
+                    <span className="mt-1.5 block text-xs leading-relaxed text-slate-600">{item.description}</span>
+                    <span className="mt-2 block text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-600">{TESTS[item.id].length} tester</span>
+                  </span>
+                  <ChevronRight className="h-5 w-5 shrink-0 text-slate-500 transition-transform group-active:translate-x-0.5" />
+                </Link>
+              ))}
             </div>
           </section>
         </>
-      ) : approachGlass ? (
+      ) : (
         <section>
           <div className="flex items-center justify-between">
             <Link to="/traning" search={{ category: undefined }} aria-label="Tillbaka" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-300/80 bg-white/70 shadow-sm backdrop-blur-xl"><ArrowLeft className="h-4 w-4" /></Link>
@@ -191,75 +164,62 @@ function TrainingTestsPage() {
           </div>
 
           <div className="mt-5 rounded-[30px] border border-slate-300/85 bg-gradient-to-br from-slate-100/88 via-white/82 to-slate-100/74 p-5 shadow-[0_20px_48px_-32px_rgba(15,23,42,.44)] backdrop-blur-2xl">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">APPROACH</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">{active?.title.toUpperCase()}</p>
             <h2 className="mt-2 font-display text-4xl leading-none">Performance & träning</h2>
-            <p className="mt-3 text-[13px] text-slate-600">Precision och bollkontroll.</p>
+            <p className="mt-3 text-[13px] leading-relaxed text-slate-600">{active?.hero}</p>
           </div>
+
+          {category === "putting" ? (
+            <>
+              <Link to="/putting-data" className="mt-4 flex items-center justify-between rounded-3xl border border-slate-300/80 bg-white/62 px-4 py-3.5 shadow-[0_16px_36px_-30px_rgba(15,23,42,.5)] backdrop-blur-2xl">
+                <span>
+                  <span className="block text-sm font-semibold text-slate-900">Se all puttingdata</span>
+                  <span className="mt-0.5 block text-[11px] text-slate-600">Sänkprocent, antal puttar och lagputt samlat</span>
+                </span>
+                <ChevronRight className="h-4 w-4 shrink-0 text-slate-500" />
+              </Link>
+
+              <div className="mt-5">
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Snabbfilter</p>
+                <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  {PUTTING_FILTERS.map((filter) => {
+                    const activeFilter = puttingFilter === filter.id;
+                    return (
+                      <button
+                        key={filter.id}
+                        type="button"
+                        onClick={() => setPuttingFilter(filter.id)}
+                        className={`shrink-0 rounded-full border px-4 py-2.5 text-[11px] font-bold transition-all active:scale-[0.97] ${activeFilter ? "border-slate-900 bg-slate-900 text-white shadow-sm" : "border-slate-300/85 bg-white/68 text-slate-600 backdrop-blur-xl"}`}
+                      >
+                        {filter.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
+          ) : null}
 
           <div className="mb-2 mt-5 flex items-center justify-between">
             <h2 className="font-display text-2xl leading-none">Tester</h2>
-            <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">2 områden</span>
+            <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">{category === "putting" ? `${visibleTests.length} av ${TESTS.putting.length}` : `${TESTS[category].length} områden`}</span>
           </div>
-          <div className="space-y-3">{TESTS.approach.map((test) => <TestCard key={test.to} {...test} liquidGlass />)}</div>
-        </section>
-      ) : puttingGlass ? (
-        <section>
-          <div className="flex items-center justify-between">
-            <Link to="/traning" search={{ category: undefined }} aria-label="Tillbaka" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-300/80 bg-white/70 shadow-sm backdrop-blur-xl"><ArrowLeft className="h-4 w-4" /></Link>
-            <span className="rounded-full border border-slate-300/80 bg-slate-100/75 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-600 backdrop-blur-xl">Träning</span>
-          </div>
+          <div className="space-y-3">{visibleTests.map((test) => <TestCard key={test.to} {...test} />)}</div>
 
-          <div className="mt-5 rounded-[30px] border border-slate-300/85 bg-gradient-to-br from-slate-100/88 via-white/82 to-slate-100/74 p-5 shadow-[0_20px_48px_-32px_rgba(15,23,42,.44)] backdrop-blur-2xl">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">PUTTING</p>
-            <h2 className="mt-2 font-display text-4xl leading-none">Performance & träning</h2>
-            <p className="mt-3 text-[13px] leading-relaxed text-slate-600">Träna rätt del av puttningen — från startlinje och kortputtar till green read och längdkontroll.</p>
-          </div>
-
-          <Link to="/putting-data" className="mt-4 flex items-center justify-between rounded-3xl border border-slate-300/80 bg-white/62 px-4 py-3.5 shadow-[0_16px_36px_-30px_rgba(15,23,42,.5)] backdrop-blur-2xl">
-            <span>
-              <span className="block text-sm font-semibold text-slate-900">Se all puttingdata</span>
-              <span className="mt-0.5 block text-[11px] text-slate-600">Sänkprocent, antal puttar och lagputt samlat</span>
-            </span>
-            <ChevronRight className="h-4 w-4 shrink-0 text-slate-500" />
-          </Link>
-
-          <div className="mt-5">
-            <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Snabbfilter</p>
-            <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {PUTTING_FILTERS.map((filter) => {
-                const activeFilter = puttingFilter === filter.id;
-                return (
-                  <button
-                    key={filter.id}
-                    type="button"
-                    onClick={() => setPuttingFilter(filter.id)}
-                    className={`shrink-0 rounded-full border px-4 py-2.5 text-[11px] font-bold transition-all active:scale-[0.97] ${activeFilter ? "border-slate-900 bg-slate-900 text-white shadow-sm" : "border-slate-300/85 bg-white/68 text-slate-600 backdrop-blur-xl"}`}
-                  >
-                    {filter.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="mb-2 mt-4 flex items-center justify-between">
-            <h2 className="font-display text-2xl leading-none">Tester</h2>
-            <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">{visiblePuttingTests.length} av {TESTS.putting.length}</span>
-          </div>
-          <div className="space-y-3">{visiblePuttingTests.map((test) => <TestCard key={test.to} {...test} liquidGlass />)}</div>
-        </section>
-      ) : (
-        <section className="mt-7">
-          <Link to="/traning" search={{ category: undefined }} aria-label="Tillbaka" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-muted-foreground"><ArrowLeft className="h-4 w-4" /></Link>
-          <p className="mt-5 text-xs uppercase tracking-[0.2em] text-primary">{active?.title}</p>
-          <h2 className="mt-1 font-display text-3xl leading-none">Performance & träning</h2>
-          {category === "off-the-tee" ? <p className="mt-2 text-sm leading-relaxed text-muted-foreground">Speed är en central del av din spelarprofil och visas i spindeldiagrammet, men räknas inte in i Total HCP. Följ fart, längd, streaks och driverkontroll här.</p> : null}
-          <div className="mt-4 space-y-3">{TESTS[category].map((test) => <TestCard key={test.to} {...test} />)}</div>
-          {category === "around-the-green" ? <a href="/8-bollar-grupp" className="mt-3 flex w-full items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 text-left"><span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"><Users className="h-4 w-4" /></span><span className="min-w-0 flex-1"><span className="block text-sm font-semibold">Testa 8-bollsövningen tillsammans</span><span className="mt-0.5 block text-xs text-muted-foreground">2–4 spelare · en person registrerar för gruppen</span></span><ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" /></a> : null}
+          {category === "around-the-green" ? (
+            <a href="/8-bollar-grupp" className="mt-3 flex w-full items-center gap-3 rounded-3xl border border-slate-300/80 bg-white/62 px-4 py-3.5 shadow-[0_16px_36px_-30px_rgba(15,23,42,.5)] backdrop-blur-2xl">
+              <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-300/80 bg-white/70 text-slate-700"><Users className="h-4 w-4" /></span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-semibold text-slate-900">Testa 8-bollsövningen tillsammans</span>
+                <span className="mt-0.5 block text-[11px] text-slate-600">2–4 spelare · en person registrerar för gruppen</span>
+              </span>
+              <ChevronRight className="h-4 w-4 shrink-0 text-slate-500" />
+            </a>
+          ) : null}
         </section>
       )}
 
-      <Link to="/tester" className={`mt-8 inline-block rounded-full border px-4 py-2 text-sm ${liquidGlass || rootGlass ? "border-slate-300/80 bg-white/65 text-slate-600 backdrop-blur-xl" : "border-border text-muted-foreground"}`}>Tillbaka till HCP-tester</Link>
+      <Link to="/tester" className="mt-8 inline-block rounded-full border border-slate-300/80 bg-white/65 px-4 py-2 text-sm text-slate-600 backdrop-blur-xl">Tillbaka till HCP-tester</Link>
     </main>
   );
 }
