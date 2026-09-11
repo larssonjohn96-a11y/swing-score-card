@@ -315,13 +315,14 @@ function MatchPlayPage() {
   }
   function back() {
     if (step === "teams") setStep("players");
-    else if (step === "category") setStep(mode === "singles" ? "players" : "teams");
+    else if (step === "scoring") setStep(mode === "singles" ? "players" : "teams");
+    else if (step === "category") setStep("scoring");
     else if (step === "type") setStep("category");
     else if (step === "setup") setStep("category");
     else if (step === "length") setStep(isShortGame ? "setup" : "type");
   }
 
-  const stepLabel = step === "players" ? "1 · Spelform & spelare" : step === "teams" ? "2 · Lag" : step === "category" ? "Kategori" : step === "type" ? "Spel" : step === "setup" ? "Around the Green" : "Matchlängd";
+  const stepLabel = step === "players" ? "1 · Spelform & spelare" : step === "teams" ? "2 · Lag" : step === "scoring" ? "Spelsätt" : step === "category" ? "Kategori" : step === "type" ? "Spel" : step === "setup" ? "Närspel · Setup" : "Matchlängd";
 
   return <main style={LIGHT_SURFACE} className="mx-auto min-h-screen w-full max-w-md bg-background px-5 pb-16 pt-6 text-foreground">
     {step !== "play" && step !== "result" ? <header className="flex items-center justify-between"><button onClick={back} disabled={step === "players"} aria-label="Föregående steg" className={`inline-flex h-10 w-10 items-center justify-center rounded-full border text-2xl leading-none ${glass} disabled:opacity-30`}>‹</button><div className="text-center"><p className="text-[9px] font-bold uppercase tracking-[0.22em] text-slate-500">SG4 Match</p><p className="text-[11px] font-semibold text-slate-700">{stepLabel}</p></div><Link to="/" className={`inline-flex h-10 w-10 items-center justify-center rounded-full border ${glass}`}>×</Link></header> : null}
