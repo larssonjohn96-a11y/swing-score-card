@@ -1,48 +1,41 @@
-name: Patch competition result screen
+name: CI
 
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
 
-permissions:
-  contents: write
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  patch:
-    if: github.event.head_commit.message == 'Patch competition result screen'
+  verify:
+    name: Verify
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          fetch-depth: 0
+          bun-version: latest
 
-      - name: Update result screen
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
 
-          p = Path('src/routes/match.tsx')
-          s = p.read_text()
+      - name: Typecheck
+        run: bunx tsc --noEmit
 
-          anchor = '''  function reset() {\n    setMode(null);'''
-          insert = '''  function rematch() {\n    startMatch();\n  }\n  function newCompetition() {\n    setCategory(null); setMatchType(null); setHoles([]); setHoleIndex(0); setFinalText(\"\");\n    setBlueStrokes(1); setRedStrokes(1); setBluePoints(null); setRedPoints(null);\n    setShortGameLies([]); setApproachRanges([]); setApproachTurn(\"blue\"); resetApproachInput();\n    setIsSubmitting(false); setTransitionMessage(null); setEditingHoleIndex(null); setReturnHoleIndex(null); setStep(\"category\");\n  }\n  function reset() {\n    setMode(null);'''
-          if anchor not in s:
-              raise SystemExit('reset anchor not found')
-          s = s.replace(anchor, insert, 1)
+      - name: Lint
+        run: bun run lint
 
-          pattern = re.compile(r'    \{step === "result" \? <>.*?</> : null\}\n\n    <Sheet', re.S)
-          replacement = '''    {step === "result" ? <><section className="mt-7 rounded-[34px] border border-slate-300/80 bg-gradient-to-br from-blue-100/72 via-white/84 to-red-100/64 p-6 text-center shadow-[0_24px_56px_-32px_rgba(15,23,42,.5)] backdrop-blur-2xl"><div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-slate-950 text-white shadow-lg"><Trophy className="h-7 w-7" /></div><p className="mt-4 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">{selectedCategory?.title} · Resultat</p><h1 className="mt-2 font-display text-4xl leading-tight">{finalText}</h1><div className="mt-5 grid grid-cols-2 gap-3"><div className={`rounded-2xl border p-3 ${blueGlass}`}><p className="truncate text-xs font-bold text-blue-700">{blueLabel}</p><p className="mt-1 font-display text-3xl text-blue-700">{scoringMode === "match" ? score.blue : isShortGame ? score.bluePoints : score.blueStrokes}</p><p className="text-[9px] font-bold uppercase tracking-[0.12em] text-blue-600">{scoringMode === "match" ? "vunna hål" : isShortGame ? "poäng" : "slag"}</p></div><div className={`rounded-2xl border p-3 ${redGlass}`}><p className="truncate text-xs font-bold text-red-700">{redLabel}</p><p className="mt-1 font-display text-3xl text-red-700">{scoringMode === "match" ? score.red : isShortGame ? score.redPoints : score.redStrokes}</p><p className="text-[9px] font-bold uppercase tracking-[0.12em] text-red-600">{scoringMode === "match" ? "vunna hål" : isShortGame ? "poäng" : "slag"}</p></div></div></section><section className="mt-5"><div className="mb-3 flex items-end justify-between"><div><p className="text-[9px] font-bold uppercase tracking-[0.16em] text-slate-500">Scorecard</p><h2 className="font-display text-2xl">Hela tävlingen</h2></div><p className="text-[10px] font-bold uppercase text-slate-500">{score.played} spelade</p></div><div className={`overflow-hidden rounded-[24px] border ${glass}`}><div className="overflow-x-auto"><div className="min-w-max"><div className="grid" style={{ gridTemplateColumns: `minmax(92px,1.35fr) repeat(${matchLength},48px)` }}><div className="border-b border-r border-slate-200 bg-slate-100 px-3 py-2 text-[10px] font-bold text-slate-600">Hål</div>{holes.map((_, i) => <div key={`rh-${i}`} className="border-b border-r border-slate-200 bg-slate-100 py-2 text-center text-[10px] font-bold text-slate-700">{i + 1}</div>)}<div className="border-b border-r border-slate-200 px-3 py-2 text-[10px] font-bold text-blue-700 truncate">{blueLabel}</div>{holes.map((h, i) => { const value = isShortGame ? h.bluePoints : isApproach ? h.blueApproach?.proximity : isPutting ? h.blueStrokes : undefined; return <div key={`rb-${i}`} className="flex items-center justify-center border-b border-r border-slate-200 py-2 text-xs font-bold text-blue-700"><span className={`flex h-7 min-w-7 items-center justify-center rounded-full px-1 ${h.winner === "blue" ? "bg-blue-600 text-white" : ""}`}>{typeof value === "number" ? isShortGame ? `${value}p` : isApproach ? `${value.toFixed(1)}m` : value : h.winner === "blue" ? "✓" : h.winner === "tie" ? "AS" : "–"}</span></div>; })}<div className="border-b border-r border-slate-200 px-3 py-2 text-[10px] font-bold text-red-700 truncate">{redLabel}</div>{holes.map((h, i) => { const value = isShortGame ? h.redPoints : isApproach ? h.redApproach?.proximity : isPutting ? h.redStrokes : undefined; return <div key={`rr-${i}`} className="flex items-center justify-center border-b border-r border-slate-200 py-2 text-xs font-bold text-red-700"><span className={`flex h-7 min-w-7 items-center justify-center rounded-full px-1 ${h.winner === "red" ? "bg-red-600 text-white" : ""}`}>{typeof value === "number" ? isShortGame ? `${value}p` : isApproach ? `${value.toFixed(1)}m` : value : h.winner === "red" ? "✓" : h.winner === "tie" ? "AS" : "–"}</span></div>; })}<div className="border-r border-slate-200 bg-slate-50 px-3 py-2 text-[10px] font-bold text-slate-600">Vinnare</div>{holes.map((h, i) => <div key={`rw-${i}`} className={`border-r border-slate-200 bg-slate-50 py-2 text-center text-[9px] font-bold ${h.winner === "blue" ? "text-blue-700" : h.winner === "red" ? "text-red-700" : "text-slate-600"}`}>{h.winner === "blue" ? "B" : h.winner === "red" ? "R" : "AS"}</div>)}</div></div></div></div></section><section className="mt-5 space-y-3"><button onClick={rematch} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white"><RotateCcw className="h-5 w-5" /> Rematch</button><button onClick={newCompetition} className={`flex w-full items-center justify-center gap-2 rounded-2xl border py-4 font-display text-xl text-slate-900 ${glass}`}><Trophy className="h-5 w-5" /> Ny tävling</button><Link to="/" className="flex w-full items-center justify-center rounded-2xl border border-slate-300 bg-white/70 py-4 text-sm font-bold text-slate-700 backdrop-blur-xl">Hem</Link></section></> : null}\n\n    <Sheet'''
-          s2, count = pattern.subn(replacement, s, count=1)
-          if count != 1:
-              raise SystemExit(f'result block replacement count={count}')
-          p.write_text(s2)
-          PY
+      - name: Test
+        run: bun run test
 
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add src/routes/match.tsx
-          git commit -m "Expand competition result screen"
-          git push
+      - name: Build
+        run: bun run build
