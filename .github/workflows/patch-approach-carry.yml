@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   patch:
-    if: github.event.head_commit.message == 'Add one-time approach carry patch'
+    if: github.event.head_commit.message == 'Fix approach carry patch'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -27,22 +27,20 @@ jobs:
           p = Path('src/routes/match.tsx')
           s = p.read_text()
 
-          # Keep the existing state name but reinterpret approachLong as actual carry length.
-          s = s.replace(
-              '  function resetApproachInput() { setApproachLongDirection("short"); setApproachLong(0); setApproachLateralDirection("left"); setApproachLateral(0); }',
-              '  function resetApproachInput(carry = 0) { setApproachLongDirection("short"); setApproachLong(carry); setApproachLateralDirection("left"); setApproachLateral(0); }'
-          )
+          old_reset = '  function resetApproachInput() { setApproachLongDirection("short"); setApproachLong(0); setApproachLateralDirection("left"); setApproachLateral(0); }'
+          if old_reset not in s:
+              raise SystemExit('resetApproachInput block not found')
+          s = s.replace(old_reset, '  function resetApproachInput(carry = 0) { setApproachLongDirection("short"); setApproachLong(carry); setApproachLateralDirection("left"); setApproachLateral(0); }', 1)
 
-          s = s.replace(
-              '  const approachProximityPreview = Math.sqrt(approachLong * approachLong + approachLateral * approachLateral);',
-              '  const approachTargetDistance = Number.parseInt(current?.challenge.title ?? "0", 10) || 0;\n  const approachLongitudinalPreview = Math.abs(approachLong - approachTargetDistance);\n  const approachProximityPreview = Math.sqrt(approachLongitudinalPreview * approachLongitudinalPreview + approachLateral * approachLateral);'
-          )
+          old_preview = '  const approachProximityPreview = Math.sqrt(approachLong * approachLong + approachLateral * approachLateral);'
+          if old_preview not in s:
+              raise SystemExit('approach preview line not found')
+          s = s.replace(old_preview, '  const approachTargetDistance = Number.parseInt(current?.challenge.title ?? "0", 10) || 0;\n  const approachLongitudinalPreview = Math.abs(approachLong - approachTargetDistance);\n  const approachProximityPreview = Math.sqrt(approachLongitudinalPreview * approachLongitudinalPreview + approachLateral * approachLateral);', 1)
 
-          s = s.replace(
-              'setApproachTurn("blue"); resetApproachInput(); setFinalText("");',
-              'setApproachTurn("blue"); resetApproachInput(isApproach ? (Number.parseInt(nextHoles[0]?.challenge.title ?? "0", 10) || 0) : 0); setFinalText("");',
-              1,
-          )
+          old_start = 'setApproachTurn("blue"); resetApproachInput(); setFinalText("");'
+          if old_start not in s:
+              raise SystemExit('startMatch reset sequence not found')
+          s = s.replace(old_start, 'setApproachTurn("blue"); resetApproachInput(isApproach ? (Number.parseInt(nextHoles[0]?.challenge.title ?? "0", 10) || 0) : 0); setFinalText("");', 1)
 
           old_record = '''  function recordApproach() {\n    if (isSubmitting) return;\n    const result: ApproachResult = { longitudinalDirection: approachLongDirection, longitudinal: approachLong, lateralDirection: approachLateralDirection, lateral: approachLateral, proximity: Math.sqrt(approachLong * approachLong + approachLateral * approachLateral) };\n    if (approachTurn === "blue") {\n      setHoles((items) => items.map((h, i) => i === holeIndex ? { ...h, blueApproach: result } : h));\n      setApproachTurn("red"); resetApproachInput(); return;\n    }\n    const blue = holes[holeIndex]?.blueApproach;\n    if (!blue) return;\n    setIsSubmitting(true);\n    const winner: Exclude<HoleWinner, null> = blue.proximity < result.proximity ? "blue" : result.proximity < blue.proximity ? "red" : "tie";\n    const next = holes.map((h, i) => i === holeIndex ? { ...h, redApproach: result, winner } : h);\n    setTransitionMessage(`${unitLabel} ${holeIndex + 1} registrerad`);\n    window.setTimeout(() => { advance(next); setApproachTurn("blue"); resetApproachInput(); setTransitionMessage(null); setIsSubmitting(false); }, 380);\n  }'''
           new_record = '''  function recordApproach() {\n    if (isSubmitting) return;\n    const targetDistance = Number.parseInt(current?.challenge.title ?? "0", 10) || 0;\n    const longitudinalDelta = approachLong - targetDistance;\n    const longitudinal = Math.abs(longitudinalDelta);\n    const result: ApproachResult = { longitudinalDirection: longitudinalDelta < 0 ? "short" : "long", longitudinal, lateralDirection: approachLateralDirection, lateral: approachLateral, proximity: Math.sqrt(longitudinal * longitudinal + approachLateral * approachLateral) };\n    if (approachTurn === "blue") {\n      setHoles((items) => items.map((h, i) => i === holeIndex ? { ...h, blueApproach: result } : h));\n      setApproachTurn("red"); resetApproachInput(targetDistance); return;\n    }\n    const blue = holes[holeIndex]?.blueApproach;\n    if (!blue) return;\n    setIsSubmitting(true);\n    const winner: Exclude<HoleWinner, null> = blue.proximity < result.proximity ? "blue" : result.proximity < blue.proximity ? "red" : "tie";\n    const next = holes.map((h, i) => i === holeIndex ? { ...h, redApproach: result, winner } : h);\n    const nextTargetDistance = Number.parseInt(holes[holeIndex + 1]?.challenge.title ?? "0", 10) || 0;\n    setTransitionMessage(`${unitLabel} ${holeIndex + 1} registrerad`);\n    window.setTimeout(() => { advance(next); setApproachTurn("blue"); resetApproachInput(nextTargetDistance); setTransitionMessage(null); setIsSubmitting(false); }, 380);\n  }'''
@@ -50,9 +48,8 @@ jobs:
               raise SystemExit('recordApproach block not found')
           s = s.replace(old_record, new_record, 1)
 
-          # Replace the approach length card with direct carry input while keeping side input unchanged.
-          pattern = re.compile(r'<div className="rounded-2xl bg-white/55 p-2\.5"><p className="text-\[9px\] font-bold uppercase text-slate-500">Längd</p>.*?</div><div className="rounded-2xl bg-white/55 p-2\.5"><p className="text-\[9px\] font-bold uppercase text-slate-500">Sida</p>', re.S)
-          replacement = '''<div className="rounded-2xl bg-white/55 p-3"><div className="flex items-center justify-between"><p className="text-[9px] font-bold uppercase tracking-[0.12em] text-slate-500">Carry</p><p className="text-[9px] font-semibold text-slate-400">Mål {approachTargetDistance} m</p></div><div className="mt-2 flex items-center justify-center"><p className="font-display text-4xl leading-none text-slate-950">{approachLong}<span className="ml-1 text-lg text-slate-500">m</span></p></div><div className="mt-3 grid grid-cols-4 gap-1.5"><button onClick={() => setApproachLong(Math.max(0, approachLong - 5))} className="rounded-xl border border-slate-300 bg-white py-2.5 text-sm font-bold text-slate-700">−5</button><button onClick={() => setApproachLong(Math.max(0, approachLong - 1))} className="rounded-xl border border-slate-300 bg-white py-2.5 text-sm font-bold text-slate-700">−1</button><button onClick={() => setApproachLong(Math.min(300, approachLong + 1))} className="rounded-xl border border-slate-300 bg-white py-2.5 text-sm font-bold text-slate-700">+1</button><button onClick={() => setApproachLong(Math.min(300, approachLong + 5))} className="rounded-xl border border-slate-300 bg-white py-2.5 text-sm font-bold text-slate-700">+5</button></div><p className="mt-2 text-center text-[9px] font-semibold text-slate-500">{approachLong === approachTargetDistance ? "Exakt längd" : approachLong < approachTargetDistance ? `${approachTargetDistance - approachLong} m kort` : `${approachLong - approachTargetDistance} m lång`}</p></div><div className="rounded-2xl bg-white/55 p-2.5"><p className="text-[9px] font-bold uppercase text-slate-500">Sida</p>'''
+          pattern = re.compile(r'<div><div className="flex items-center justify-between"><p className="text-\[10px\] font-bold uppercase tracking-\[0\.12em\] text-slate-500">Längdmiss</p>.*?</div><div className="my-4 h-px bg-slate-200" />', re.S)
+          replacement = '''<div><div className="flex items-center justify-between"><p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">Carry</p><p className="text-[10px] font-semibold text-slate-400">Mål {approachTargetDistance} m</p></div><div className="mt-2 flex items-center justify-center rounded-2xl bg-slate-100 py-3"><p className="font-display text-4xl leading-none text-slate-950">{approachLong}<span className="ml-1 text-lg text-slate-500">m</span></p></div><div className="mt-3 grid grid-cols-4 gap-2"><button onClick={() => setApproachLong(Math.max(0, approachLong - 5))} className="rounded-xl border border-slate-300 bg-white/90 py-3 text-sm font-bold text-slate-700">−5</button><button onClick={() => setApproachLong(Math.max(0, approachLong - 1))} className="rounded-xl border border-slate-300 bg-white/90 py-3 text-sm font-bold text-slate-700">−1</button><button onClick={() => setApproachLong(Math.min(300, approachLong + 1))} className="rounded-xl border border-slate-300 bg-white/90 py-3 text-sm font-bold text-slate-700">+1</button><button onClick={() => setApproachLong(Math.min(300, approachLong + 5))} className="rounded-xl border border-slate-300 bg-white/90 py-3 text-sm font-bold text-slate-700">+5</button></div><p className="mt-2 text-center text-[9px] font-semibold text-slate-500">{approachLong === approachTargetDistance ? "Exakt längd" : approachLong < approachTargetDistance ? `${approachTargetDistance - approachLong} m kort` : `${approachLong - approachTargetDistance} m lång`}</p></div><div className="my-4 h-px bg-slate-200" />'''
           s2, count = pattern.subn(replacement, s, count=1)
           if count != 1:
               raise SystemExit(f'carry UI replacement count={count}')
