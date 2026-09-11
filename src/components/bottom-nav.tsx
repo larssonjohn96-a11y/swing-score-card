@@ -38,12 +38,19 @@ const MORE_LINKS: ReadonlyArray<{
 
 function NavLink({ tab, active, badge }: { tab: { to: string; label: string; icon: typeof Home }; active: boolean; badge?: number }) {
   return (
-    <Link to={tab.to} className="flex flex-1 flex-col items-center gap-1 py-2 active:scale-95">
-      <span className={`relative flex h-8 w-9 items-center justify-center rounded-xl transition-colors ${active ? "border border-white/45 bg-background/58 text-primary shadow-[inset_0_1px_0_rgba(255,255,255,.65),0_6px_18px_-14px_rgba(15,23,42,.55)] backdrop-blur-xl" : "text-muted-foreground"}`}>
-        <tab.icon className="h-5 w-5" />
+    <Link
+      to={tab.to}
+      className={`mx-0.5 flex min-h-12 flex-1 flex-col items-center justify-center gap-0.5 rounded-[20px] px-1.5 py-1.5 transition-all duration-200 active:scale-[0.96] ${
+        active
+          ? "border border-white/75 bg-background/82 text-primary shadow-[inset_0_1px_0_rgba(255,255,255,.95),0_8px_24px_-15px_rgba(15,23,42,.72)] backdrop-blur-2xl ring-1 ring-black/[0.035]"
+          : "text-muted-foreground"
+      }`}
+    >
+      <span className="relative flex h-7 w-8 items-center justify-center">
+        <tab.icon className={`h-5 w-5 ${active ? "stroke-[2.35]" : "stroke-[1.9]"}`} />
         {Boolean(badge) && <span className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-flag px-1 text-[9px] font-bold text-background">{badge}</span>}
       </span>
-      <span className={`text-[10px] font-medium uppercase tracking-wide transition-colors ${active ? "font-semibold text-primary" : "text-muted-foreground"}`}>{tab.label}</span>
+      <span className={`text-[10px] uppercase tracking-wide ${active ? "font-bold text-primary" : "font-medium text-muted-foreground"}`}>{tab.label}</span>
     </Link>
   );
 }
@@ -73,14 +80,34 @@ export function BottomNav() {
 
   return (
     <>
-      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/45 bg-card/72 shadow-[0_-14px_38px_-26px_oklch(0.22_0.04_160/0.5)] backdrop-blur-2xl supports-[backdrop-filter]:bg-card/62" style={{ paddingBottom: "max(8px, env(safe-area-inset-bottom))" }}>
-        <div className="mx-auto flex h-16 w-full max-w-md items-center px-2">
+      <nav
+        className="fixed left-1/2 z-40 w-[calc(100%-24px)] max-w-md -translate-x-1/2 overflow-visible rounded-[30px] border border-white/75 bg-card/66 shadow-[0_18px_48px_-20px_rgba(15,23,42,.52),inset_0_1px_0_rgba(255,255,255,.95)] backdrop-blur-[28px] supports-[backdrop-filter]:bg-card/56"
+        style={{ bottom: "max(10px, env(safe-area-inset-bottom))" }}
+      >
+        <div className="mx-auto flex h-[68px] w-full items-center gap-0.5 px-2.5 py-1.5">
           {LEFT_TABS.map((tab) => <NavLink key={tab.to} tab={tab} active={tab.exact ? pathname === tab.to : pathname.startsWith(tab.to)} />)}
-          <div className="flex flex-1 justify-center"><button type="button" onClick={() => { setQuickView("root"); setOpen(true); }} aria-label="Öppna snabbval" className="flex h-12 w-12 -translate-y-4 items-center justify-center rounded-full border border-white/55 bg-primary/92 text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,.42),0_10px_24px_-12px_oklch(0_0_0_/_0.5)] backdrop-blur-xl ring-1 ring-black/5 transition-transform active:scale-95"><Plus className="h-6 w-6" /></button></div>
+          <div className="flex flex-1 justify-center">
+            <button
+              type="button"
+              onClick={() => { setQuickView("root"); setOpen(true); }}
+              aria-label="Öppna snabbval"
+              className="flex h-14 w-14 -translate-y-3 items-center justify-center rounded-full border border-white/75 bg-primary/94 text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,.5),0_14px_30px_-12px_rgba(15,23,42,.52)] backdrop-blur-2xl ring-1 ring-black/[0.05] transition-all active:scale-95"
+            >
+              <Plus className="h-6 w-6" />
+            </button>
+          </div>
           {RIGHT_TABS.map((tab) => <NavLink key={tab.to} tab={tab} active={tab.exact ? pathname === tab.to : pathname.startsWith(tab.to)} />)}
-          <button type="button" onClick={() => setMoreOpen(true)} className="flex flex-1 flex-col items-center gap-1 py-2 active:scale-95" aria-label="Mer">
-            <span className={`relative flex h-8 w-9 items-center justify-center rounded-xl transition-colors ${moreActive ? "border border-white/45 bg-background/58 text-primary shadow-[inset_0_1px_0_rgba(255,255,255,.65),0_6px_18px_-14px_rgba(15,23,42,.55)] backdrop-blur-xl" : "text-muted-foreground"}`}><Menu className="h-5 w-5" />{Boolean(trophyBadge) && <span className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-flag px-1 text-[9px] font-bold text-background">{trophyBadge}</span>}</span>
-            <span className={`text-[10px] font-medium uppercase tracking-wide ${moreActive ? "font-semibold text-primary" : "text-muted-foreground"}`}>Mer</span>
+          <button
+            type="button"
+            onClick={() => setMoreOpen(true)}
+            className={`mx-0.5 flex min-h-12 flex-1 flex-col items-center justify-center gap-0.5 rounded-[20px] px-1.5 py-1.5 transition-all duration-200 active:scale-[0.96] ${moreActive ? "border border-white/75 bg-background/82 text-primary shadow-[inset_0_1px_0_rgba(255,255,255,.95),0_8px_24px_-15px_rgba(15,23,42,.72)] backdrop-blur-2xl ring-1 ring-black/[0.035]" : "text-muted-foreground"}`}
+            aria-label="Mer"
+          >
+            <span className="relative flex h-7 w-8 items-center justify-center">
+              <Menu className={`h-5 w-5 ${moreActive ? "stroke-[2.35]" : "stroke-[1.9]"}`} />
+              {Boolean(trophyBadge) && <span className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-flag px-1 text-[9px] font-bold text-background">{trophyBadge}</span>}
+            </span>
+            <span className={`text-[10px] uppercase tracking-wide ${moreActive ? "font-bold text-primary" : "font-medium text-muted-foreground"}`}>Mer</span>
           </button>
         </div>
       </nav>
