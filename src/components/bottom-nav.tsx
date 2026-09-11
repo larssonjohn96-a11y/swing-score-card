@@ -39,7 +39,7 @@ const MORE_LINKS: ReadonlyArray<{
 function NavLink({ tab, active, badge }: { tab: { to: string; label: string; icon: typeof Home }; active: boolean; badge?: number }) {
   return (
     <Link to={tab.to} className="flex flex-1 flex-col items-center gap-1 py-2 active:scale-95">
-      <span className={`relative flex h-8 w-9 items-center justify-center rounded-xl transition-colors ${active ? "bg-tint-strong text-primary" : "text-muted-foreground"}`}>
+      <span className={`relative flex h-8 w-9 items-center justify-center rounded-xl transition-colors ${active ? "border border-white/45 bg-background/58 text-primary shadow-[inset_0_1px_0_rgba(255,255,255,.65),0_6px_18px_-14px_rgba(15,23,42,.55)] backdrop-blur-xl" : "text-muted-foreground"}`}>
         <tab.icon className="h-5 w-5" />
         {Boolean(badge) && <span className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-flag px-1 text-[9px] font-bold text-background">{badge}</span>}
       </span>
@@ -73,13 +73,13 @@ export function BottomNav() {
 
   return (
     <>
-      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-card shadow-[0_-8px_24px_-24px_oklch(0.3_0.06_160/0.6)]" style={{ paddingBottom: "max(8px, env(safe-area-inset-bottom))" }}>
+      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/45 bg-card/72 shadow-[0_-14px_38px_-26px_oklch(0.22_0.04_160/0.5)] backdrop-blur-2xl supports-[backdrop-filter]:bg-card/62" style={{ paddingBottom: "max(8px, env(safe-area-inset-bottom))" }}>
         <div className="mx-auto flex h-16 w-full max-w-md items-center px-2">
           {LEFT_TABS.map((tab) => <NavLink key={tab.to} tab={tab} active={tab.exact ? pathname === tab.to : pathname.startsWith(tab.to)} />)}
-          <div className="flex flex-1 justify-center"><button type="button" onClick={() => { setQuickView("root"); setOpen(true); }} aria-label="Öppna snabbval" className="flex h-12 w-12 -translate-y-4 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_6px_16px_-8px_oklch(0_0_0_/_0.45)] transition-transform active:scale-95"><Plus className="h-6 w-6" /></button></div>
+          <div className="flex flex-1 justify-center"><button type="button" onClick={() => { setQuickView("root"); setOpen(true); }} aria-label="Öppna snabbval" className="flex h-12 w-12 -translate-y-4 items-center justify-center rounded-full border border-white/55 bg-primary/92 text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,.42),0_10px_24px_-12px_oklch(0_0_0_/_0.5)] backdrop-blur-xl ring-1 ring-black/5 transition-transform active:scale-95"><Plus className="h-6 w-6" /></button></div>
           {RIGHT_TABS.map((tab) => <NavLink key={tab.to} tab={tab} active={tab.exact ? pathname === tab.to : pathname.startsWith(tab.to)} />)}
           <button type="button" onClick={() => setMoreOpen(true)} className="flex flex-1 flex-col items-center gap-1 py-2 active:scale-95" aria-label="Mer">
-            <span className={`relative flex h-8 w-9 items-center justify-center rounded-xl transition-colors ${moreActive ? "bg-tint-strong text-primary" : "text-muted-foreground"}`}><Menu className="h-5 w-5" />{Boolean(trophyBadge) && <span className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-flag px-1 text-[9px] font-bold text-background">{trophyBadge}</span>}</span>
+            <span className={`relative flex h-8 w-9 items-center justify-center rounded-xl transition-colors ${moreActive ? "border border-white/45 bg-background/58 text-primary shadow-[inset_0_1px_0_rgba(255,255,255,.65),0_6px_18px_-14px_rgba(15,23,42,.55)] backdrop-blur-xl" : "text-muted-foreground"}`}><Menu className="h-5 w-5" />{Boolean(trophyBadge) && <span className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-flag px-1 text-[9px] font-bold text-background">{trophyBadge}</span>}</span>
             <span className={`text-[10px] font-medium uppercase tracking-wide ${moreActive ? "font-semibold text-primary" : "text-muted-foreground"}`}>Mer</span>
           </button>
         </div>
