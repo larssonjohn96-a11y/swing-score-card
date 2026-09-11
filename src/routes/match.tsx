@@ -14,7 +14,7 @@ export const Route = createFileRoute("/match")({
   component: MatchPlayPage,
 });
 
-type Step = "players" | "teams" | "category" | "type" | "setup" | "length" | "play" | "result";
+type Step = "players" | "teams" | "scoring" | "category" | "type" | "setup" | "length" | "play" | "result";
 type MatchCategory = "off-the-tee" | "approach" | "around-the-green" | "putting";
 type HoleWinner = "blue" | "red" | "tie" | null;
 type MatchMode = "singles" | "fourball" | "foursomes";
@@ -26,9 +26,9 @@ type Hole = { challenge: Challenge; winner: HoleWinner; blueStrokes?: number; re
 type ShortGameLie = "fairway" | "rough" | "bunker";
 
 const CATEGORIES = [
-  { id: "off-the-tee", title: "Off the Tee", subtitle: "Utslag", description: "Driver, fairway, längd och bollflykt." },
-  { id: "approach", title: "Approach", subtitle: "Inspel", description: "Precision, längdkontroll och shot shaping." },
-  { id: "around-the-green", title: "Around the Green", subtitle: "Närspel", description: "Closest to Pin med valbara lies och avstånd." },
+  { id: "off-the-tee", title: "Utslag", subtitle: "Utslag", description: "Driver, fairway, längd och bollflykt." },
+  { id: "approach", title: "Inspel", subtitle: "Inspel", description: "Precision, längdkontroll och bollflykt." },
+  { id: "around-the-green", title: "Närspel", subtitle: "Närspel", description: "Närmast flaggan från fairway, rough och bunker." },
   { id: "putting", title: "Puttning", subtitle: "Puttning", description: "Håla ut och låt SG4 räkna resultatet automatiskt." },
 ] as const;
 
