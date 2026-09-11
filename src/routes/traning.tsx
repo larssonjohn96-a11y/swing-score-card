@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, ChevronRight, Crosshair, Grid3x3, Users } from "lucide-react";
+import { ArrowLeft, ChevronRight, Crosshair, Grid3x3 } from "lucide-react";
 import { useState } from "react";
 import { LIGHT_SURFACE } from "./8-bollar";
 
@@ -206,16 +206,6 @@ function TrainingTestsPage() {
           </div>
           <div className="space-y-3">{visibleTests.map((test) => <TestCard key={test.to} {...test} />)}</div>
 
-          {category === "around-the-green" ? (
-            <a href="/8-bollar-grupp" className="mt-3 flex w-full items-center gap-3 rounded-3xl border border-slate-300/80 bg-white/62 px-4 py-3.5 shadow-[0_16px_36px_-30px_rgba(15,23,42,.5)] backdrop-blur-2xl">
-              <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-300/80 bg-white/70 text-slate-700"><Users className="h-4 w-4" /></span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-sm font-semibold text-slate-900">Testa 8-bollsövningen tillsammans</span>
-                <span className="mt-0.5 block text-[11px] text-slate-600">2–4 spelare · en person registrerar för gruppen</span>
-              </span>
-              <ChevronRight className="h-4 w-4 shrink-0 text-slate-500" />
-            </a>
-          ) : null}
         </section>
       )}
 
