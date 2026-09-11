@@ -48,6 +48,7 @@ import { Route as OffteeRouteImport } from './routes/offtee'
 import { Route as NarspelTestRouteImport } from './routes/narspel-test'
 import { Route as NarspelRouteImport } from './routes/narspel'
 import { Route as MinBagRouteImport } from './routes/min-bag'
+import { Route as MatchRouteImport } from './routes/match'
 import { Route as MapMyBagRouteImport } from './routes/map-my-bag'
 import { Route as MapClubRouteImport } from './routes/map-club'
 import { Route as LongdriveRouteImport } from './routes/longdrive'
@@ -289,6 +290,11 @@ const NarspelRoute = NarspelRouteImport.update({
 const MinBagRoute = MinBagRouteImport.update({
   id: '/min-bag',
   path: '/min-bag',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MatchRoute = MatchRouteImport.update({
+  id: '/match',
+  path: '/match',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MapMyBagRoute = MapMyBagRouteImport.update({
@@ -551,6 +557,7 @@ export interface FileRoutesByFullPath {
   '/longdrive': typeof LongdriveRoute
   '/map-club': typeof MapClubRoute
   '/map-my-bag': typeof MapMyBagRoute
+  '/match': typeof MatchRoute
   '/min-bag': typeof MinBagRoute
   '/narspel': typeof NarspelRoute
   '/narspel-test': typeof NarspelTestRoute
@@ -636,6 +643,7 @@ export interface FileRoutesByTo {
   '/longdrive': typeof LongdriveRoute
   '/map-club': typeof MapClubRoute
   '/map-my-bag': typeof MapMyBagRoute
+  '/match': typeof MatchRoute
   '/min-bag': typeof MinBagRoute
   '/narspel': typeof NarspelRoute
   '/narspel-test': typeof NarspelTestRoute
@@ -722,6 +730,7 @@ export interface FileRoutesById {
   '/longdrive': typeof LongdriveRoute
   '/map-club': typeof MapClubRoute
   '/map-my-bag': typeof MapMyBagRoute
+  '/match': typeof MatchRoute
   '/min-bag': typeof MinBagRoute
   '/narspel': typeof NarspelRoute
   '/narspel-test': typeof NarspelTestRoute
@@ -809,6 +818,7 @@ export interface FileRouteTypes {
     | '/longdrive'
     | '/map-club'
     | '/map-my-bag'
+    | '/match'
     | '/min-bag'
     | '/narspel'
     | '/narspel-test'
@@ -894,6 +904,7 @@ export interface FileRouteTypes {
     | '/longdrive'
     | '/map-club'
     | '/map-my-bag'
+    | '/match'
     | '/min-bag'
     | '/narspel'
     | '/narspel-test'
@@ -979,6 +990,7 @@ export interface FileRouteTypes {
     | '/longdrive'
     | '/map-club'
     | '/map-my-bag'
+    | '/match'
     | '/min-bag'
     | '/narspel'
     | '/narspel-test'
@@ -1065,6 +1077,7 @@ export interface RootRouteChildren {
   LongdriveRoute: typeof LongdriveRoute
   MapClubRoute: typeof MapClubRoute
   MapMyBagRoute: typeof MapMyBagRoute
+  MatchRoute: typeof MatchRoute
   MinBagRoute: typeof MinBagRoute
   NarspelRoute: typeof NarspelRoute
   NarspelTestRoute: typeof NarspelTestRoute
@@ -1384,6 +1397,13 @@ declare module '@tanstack/react-router' {
       path: '/min-bag'
       fullPath: '/min-bag'
       preLoaderRoute: typeof MinBagRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/match': {
+      id: '/match'
+      path: '/match'
+      fullPath: '/match'
+      preLoaderRoute: typeof MatchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/map-my-bag': {
@@ -1769,6 +1789,7 @@ const rootRouteChildren: RootRouteChildren = {
   LongdriveRoute: LongdriveRoute,
   MapClubRoute: MapClubRoute,
   MapMyBagRoute: MapMyBagRoute,
+  MatchRoute: MatchRoute,
   MinBagRoute: MinBagRoute,
   NarspelRoute: NarspelRoute,
   NarspelTestRoute: NarspelTestRoute,
