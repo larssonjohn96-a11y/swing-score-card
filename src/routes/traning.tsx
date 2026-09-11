@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, ChevronRight, Crosshair, Grid3x3, Users } from "lucide-react";
+import { useState } from "react";
 import { LIGHT_SURFACE } from "./8-bollar";
 
 type Category = "off-the-tee" | "approach" | "around-the-green" | "putting";
@@ -42,6 +43,16 @@ type TestItem = {
   featured?: boolean;
 };
 
+type PuttingFilter = "all" | "short" | "start-line" | "distance" | "green-read";
+
+const PUTTING_FILTERS: Array<{ id: PuttingFilter; label: string }> = [
+  { id: "all", label: "Alla" },
+  { id: "short", label: "Kortputt" },
+  { id: "start-line", label: "Startlinje" },
+  { id: "distance", label: "Längdkontroll" },
+  { id: "green-read", label: "Green read" },
+];
+
 const TESTS: Record<Category, TestItem[]> = {
   "off-the-tee": [
     { to: "/speed", title: "Speed Test", description: "Mät ball speed och club head speed och följ hur din fart utvecklas över tid. Speed visas i din SG4-profil och spindel, men räknas inte in i Total HCP.", meta: "Ball speed · Club speed · PB", skill: "Power", featured: true },
@@ -76,9 +87,17 @@ const CATEGORIES: Array<{ id: Category; title: string; description: string }> = 
   { id: "putting", title: "Putting", description: "Puttning på green – längdkontroll, startlinje och scoring" },
 ];
 
+function matchesPuttingFilter(test: TestItem, filter: PuttingFilter) {
+  if (filter === "all") return true;
+  if (filter === "short") return ["/putting-streak", "/klock-putt", "/50-bollar", "/pga-tour-18-puttar"].includes(test.to);
+  if (filter === "start-line") return ["/tutor-test", "/klock-putt", "/50-bollar"].includes(test.to);
+  if (filter === "distance") return ["/lagputt-ladder", "/lagputt", "/putting-streak", "/pga-tour-18-puttar"].includes(test.to);
+  return test.to === "/green-reading";
+}
+
 function TestCard({ to, title, description, meta, skill, featured, liquidGlass = false }: TestItem & { liquidGlass?: boolean }) {
   if (liquidGlass) {
-    const Icon = to === "/shot-shaping" ? Grid3x3 : Crosshair;
+    const Icon = to === "/shot-shaping" || to === "/tutor-test" ? Grid3x3 : Crosshair;
     return (
       <Link
         to={to}
@@ -117,13 +136,17 @@ function TestCard({ to, title, description, meta, skill, featured, liquidGlass =
 function TrainingTestsPage() {
   const { category } = Route.useSearch();
   const active = CATEGORIES.find((i) => i.id === category);
+  const [puttingFilter, setPuttingFilter] = useState<PuttingFilter>("all");
   const approachGlass = category === "approach";
+  const puttingGlass = category === "putting";
+  const liquidGlass = approachGlass || puttingGlass;
   const rootGlass = !category;
+  const visiblePuttingTests = TESTS.putting.filter((test) => matchesPuttingFilter(test, puttingFilter));
 
   return (
     <main
-      style={approachGlass || rootGlass ? LIGHT_SURFACE : undefined}
-      className={`mx-auto min-h-screen w-full max-w-md px-5 pb-28 ${approachGlass || rootGlass ? "bg-background pt-6 text-foreground" : "pt-10"}`}
+      style={liquidGlass || rootGlass ? LIGHT_SURFACE : undefined}
+      className={`mx-auto min-h-screen w-full max-w-md px-5 pb-28 ${liquidGlass || rootGlass ? "bg-background pt-6 text-foreground" : "pt-10"}`}
     >
       {!category ? (
         <>
@@ -179,18 +202,64 @@ function TrainingTestsPage() {
           </div>
           <div className="space-y-3">{TESTS.approach.map((test) => <TestCard key={test.to} {...test} liquidGlass />)}</div>
         </section>
+      ) : puttingGlass ? (
+        <section>
+          <div className="flex items-center justify-between">
+            <Link to="/traning" search={{ category: undefined }} aria-label="Tillbaka" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-300/80 bg-white/70 shadow-sm backdrop-blur-xl"><ArrowLeft className="h-4 w-4" /></Link>
+            <span className="rounded-full border border-slate-300/80 bg-slate-100/75 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-600 backdrop-blur-xl">Träning</span>
+          </div>
+
+          <div className="mt-5 rounded-[30px] border border-slate-300/85 bg-gradient-to-br from-slate-100/88 via-white/82 to-slate-100/74 p-5 shadow-[0_20px_48px_-32px_rgba(15,23,42,.44)] backdrop-blur-2xl">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">PUTTING</p>
+            <h2 className="mt-2 font-display text-4xl leading-none">Performance & träning</h2>
+            <p className="mt-3 text-[13px] leading-relaxed text-slate-600">Träna rätt del av puttningen — från startlinje och kortputtar till green read och längdkontroll.</p>
+          </div>
+
+          <Link to="/putting-data" className="mt-4 flex items-center justify-between rounded-3xl border border-slate-300/80 bg-white/62 px-4 py-3.5 shadow-[0_16px_36px_-30px_rgba(15,23,42,.5)] backdrop-blur-2xl">
+            <span>
+              <span className="block text-sm font-semibold text-slate-900">Se all puttingdata</span>
+              <span className="mt-0.5 block text-[11px] text-slate-600">Sänkprocent, antal puttar och lagputt samlat</span>
+            </span>
+            <ChevronRight className="h-4 w-4 shrink-0 text-slate-500" />
+          </Link>
+
+          <div className="mt-5">
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Snabbfilter</p>
+            <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {PUTTING_FILTERS.map((filter) => {
+                const activeFilter = puttingFilter === filter.id;
+                return (
+                  <button
+                    key={filter.id}
+                    type="button"
+                    onClick={() => setPuttingFilter(filter.id)}
+                    className={`shrink-0 rounded-full border px-4 py-2.5 text-[11px] font-bold transition-all active:scale-[0.97] ${activeFilter ? "border-slate-900 bg-slate-900 text-white shadow-sm" : "border-slate-300/85 bg-white/68 text-slate-600 backdrop-blur-xl"}`}
+                  >
+                    {filter.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="mb-2 mt-4 flex items-center justify-between">
+            <h2 className="font-display text-2xl leading-none">Tester</h2>
+            <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">{visiblePuttingTests.length} av {TESTS.putting.length}</span>
+          </div>
+          <div className="space-y-3">{visiblePuttingTests.map((test) => <TestCard key={test.to} {...test} liquidGlass />)}</div>
+        </section>
       ) : (
         <section className="mt-7">
           <Link to="/traning" search={{ category: undefined }} aria-label="Tillbaka" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-muted-foreground"><ArrowLeft className="h-4 w-4" /></Link>
           <p className="mt-5 text-xs uppercase tracking-[0.2em] text-primary">{active?.title}</p>
           <h2 className="mt-1 font-display text-3xl leading-none">Performance & träning</h2>
-          {category === "off-the-tee" ? <p className="mt-2 text-sm leading-relaxed text-muted-foreground">Speed är en central del av din spelarprofil och visas i spindeldiagrammet, men räknas inte in i Total HCP. Följ fart, längd, streaks och driverkontroll här.</p> : category === "putting" ? <><p className="mt-2 text-sm leading-relaxed text-muted-foreground">Jaga PB i streaks och ladders eller kör scoringtester som Klockan. All kompatibel puttdata kan samtidigt räknas ihop per avstånd, oavsett vilket test putten kom från.</p><Link to="/putting-data" className="mt-4 flex items-center justify-between rounded-2xl border border-primary/30 bg-primary/[0.04] px-4 py-3"><span><span className="block text-sm font-semibold">Se all puttingdata</span><span className="mt-0.5 block text-xs text-muted-foreground">Sänkprocent, antal puttar och lagputt samlat från flera tester</span></span><ChevronRight className="h-4 w-4 shrink-0 text-primary" /></Link></> : null}
+          {category === "off-the-tee" ? <p className="mt-2 text-sm leading-relaxed text-muted-foreground">Speed är en central del av din spelarprofil och visas i spindeldiagrammet, men räknas inte in i Total HCP. Följ fart, längd, streaks och driverkontroll här.</p> : null}
           <div className="mt-4 space-y-3">{TESTS[category].map((test) => <TestCard key={test.to} {...test} />)}</div>
           {category === "around-the-green" ? <a href="/8-bollar-grupp" className="mt-3 flex w-full items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 text-left"><span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"><Users className="h-4 w-4" /></span><span className="min-w-0 flex-1"><span className="block text-sm font-semibold">Testa 8-bollsövningen tillsammans</span><span className="mt-0.5 block text-xs text-muted-foreground">2–4 spelare · en person registrerar för gruppen</span></span><ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" /></a> : null}
         </section>
       )}
 
-      <Link to="/tester" className={`mt-8 inline-block rounded-full border px-4 py-2 text-sm ${approachGlass || rootGlass ? "border-slate-300/80 bg-white/65 text-slate-600 backdrop-blur-xl" : "border-border text-muted-foreground"}`}>Tillbaka till HCP-tester</Link>
+      <Link to="/tester" className={`mt-8 inline-block rounded-full border px-4 py-2 text-sm ${liquidGlass || rootGlass ? "border-slate-300/80 bg-white/65 text-slate-600 backdrop-blur-xl" : "border-border text-muted-foreground"}`}>Tillbaka till HCP-tester</Link>
     </main>
   );
 }
