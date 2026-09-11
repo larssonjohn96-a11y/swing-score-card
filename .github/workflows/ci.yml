@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: write
+
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -19,6 +22,78 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Apply match result UX patch once
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          p = Path('src/routes/match.tsx')
+          s = p.read_text()
+
+          s = s.replace(
+              'Sänkt 4p · inom 1 m 3p · inom 2 m 2p · inom 3 m 1p · över 3 m 0p',
+              'Välj poäng efter var bollen stannade.'
+          )
+
+          start_anchor = '  function advance(next: Hole[]) {'
+          if '  function rematch() {' not in s:
+              insert = '''  function rematch() {\n    if (!mode || !category || !matchType) return;\n    const nextHoles = isShortGame\n      ? generateShortGameLieSequence(matchLength, shortGameLies).map((lie) => ({ challenge: generateChallenge(category, matchType, mode, [lie]), winner: null as HoleWinner }))\n      : Array.from({ length: matchLength }, () => ({ challenge: generateChallenge(category, matchType, mode, shortGameLies), winner: null as HoleWinner }));\n    setHoles(nextHoles);\n    setHoleIndex(0); setBlueStrokes(1); setRedStrokes(1); setBluePoints(null); setRedPoints(null); setFinalText(\"\"); setIsSubmitting(false); setTransitionMessage(null); setEditingHoleIndex(null); setReturnHoleIndex(null); setStep(\"play\");\n  }\n  function newTest() {\n    setCategory(null); setMatchType(null); setHoles([]); setHoleIndex(0); setFinalText(\"\"); setBlueStrokes(1); setRedStrokes(1); setBluePoints(null); setRedPoints(null); setShortGameLies([\"fairway\", \"rough\", \"bunker\"]); setIsSubmitting(false); setTransitionMessage(null); setEditingHoleIndex(null); setReturnHoleIndex(null); setStep(\"category\");\n  }\n'''
+              s = s.replace(start_anchor, insert + start_anchor, 1)
+
+          old_result = re.compile(r'\n    \{step === "result" \? <>.*?</> : null\}\n', re.S)
+          new_result = r'''
+    {step === "result" ? <>
+      <section className="mt-4 rounded-[34px] border border-slate-300/80 bg-gradient-to-br from-blue-100/72 via-white/80 to-red-100/64 p-6 text-center shadow-[0_24px_56px_-32px_rgba(15,23,42,.5)] backdrop-blur-2xl">
+        <Trophy className="mx-auto h-8 w-8" />
+        <p className="mt-4 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">{scoringMode === "stroke" ? "Slagspel · Resultat" : "Match · Resultat"}</p>
+        <h1 className="mt-2 font-display text-4xl leading-tight">{finalText}</h1>
+        {isPutting ? <div className="mt-5 grid grid-cols-2 gap-3"><div className={`rounded-2xl border p-3 ${blueGlass}`}><p className="truncate text-xs font-bold text-blue-700">{blueLabel}</p><p className="mt-1 font-display text-3xl text-blue-700">{score.blueStrokes}</p><p className="text-[9px] uppercase text-blue-600">slag</p></div><div className={`rounded-2xl border p-3 ${redGlass}`}><p className="truncate text-xs font-bold text-red-700">{redLabel}</p><p className="mt-1 font-display text-3xl text-red-700">{score.redStrokes}</p><p className="text-[9px] uppercase text-red-600">slag</p></div></div> : isShortGame ? <div className="mt-5 grid grid-cols-2 gap-3"><div className={`rounded-2xl border p-3 ${blueGlass}`}><p className="truncate text-xs font-bold text-blue-700">{blueLabel}</p><p className="mt-1 font-display text-3xl text-blue-700">{score.bluePoints}</p><p className="text-[9px] uppercase text-blue-600">poäng</p></div><div className={`rounded-2xl border p-3 ${redGlass}`}><p className="truncate text-xs font-bold text-red-700">{redLabel}</p><p className="mt-1 font-display text-3xl text-red-700">{score.redPoints}</p><p className="text-[9px] uppercase text-red-600">poäng</p></div></div> : null}
+      </section>
+
+      <section className="mt-6">
+        <div className="mb-3 text-center"><h2 className="font-display text-2xl">Scorekort</h2><p className="mt-1 text-[10px] font-semibold text-slate-500">Slutresultat · {score.played} spelade</p></div>
+        <div className={`overflow-hidden rounded-[24px] border ${glass}`}>
+          <div className="overflow-x-auto"><div className="min-w-max"><div className="grid" style={{ gridTemplateColumns: `minmax(94px,1.35fr) repeat(${matchLength},44px)${isShortGame ? " 58px" : ""}` }}>
+            <div className="border-b border-r border-slate-200 bg-slate-100 px-3 py-2 text-[10px] font-bold text-slate-600">{isShortGame ? "Poäng" : unitLabel}</div>
+            {holes.map((_, i) => <div key={`rh-${i}`} className="border-b border-r border-slate-200 bg-slate-100 py-2 text-center text-[10px] font-bold text-slate-700">{i + 1}</div>)}
+            {isShortGame ? <div className="border-b border-r border-slate-200 bg-slate-200 px-1 py-2 text-center text-[9px] font-bold uppercase text-slate-700">Tot</div> : null}
+            <div className="border-b border-r border-slate-200 px-3 py-2 text-[10px] font-bold text-blue-700 truncate">{blueLabel}{isShortGame ? " · p" : ""}</div>
+            {holes.map((h, i) => { const blueValue = isShortGame ? h.bluePoints : h.blueStrokes; const redValue = isShortGame ? h.redPoints : h.redStrokes; const blueWon = h.winner === "blue" || (typeof blueValue === "number" && typeof redValue === "number" && (isShortGame ? blueValue > redValue : blueValue < redValue)); return <div key={`rb-${i}`} className="flex items-center justify-center border-b border-r border-slate-200 py-2 text-center text-xs font-bold text-blue-700"><span className={`flex h-7 min-w-7 items-center justify-center rounded-full ${blueWon ? "bg-blue-600 px-1 text-white ring-2 ring-blue-200" : ""}`}>{typeof blueValue === "number" ? isShortGame ? `${blueValue}p` : blueValue : h.winner === "blue" ? "V" : h.winner === "tie" ? "AS" : "–"}</span></div>; })}
+            {isShortGame ? <div className="flex items-center justify-center border-b border-r border-slate-200 bg-blue-50/70 text-xs font-extrabold text-blue-700">{score.bluePoints}p</div> : null}
+            <div className="border-b border-r border-slate-200 px-3 py-2 text-[10px] font-bold text-red-700 truncate">{redLabel}{isShortGame ? " · p" : ""}</div>
+            {holes.map((h, i) => { const blueValue = isShortGame ? h.bluePoints : h.blueStrokes; const redValue = isShortGame ? h.redPoints : h.redStrokes; const redWon = h.winner === "red" || (typeof blueValue === "number" && typeof redValue === "number" && (isShortGame ? redValue > blueValue : redValue < blueValue)); return <div key={`rr-${i}`} className="flex items-center justify-center border-b border-r border-slate-200 py-2 text-center text-xs font-bold text-red-700"><span className={`flex h-7 min-w-7 items-center justify-center rounded-full ${redWon ? "bg-red-600 px-1 text-white ring-2 ring-red-200" : ""}`}>{typeof redValue === "number" ? isShortGame ? `${redValue}p` : redValue : h.winner === "red" ? "V" : h.winner === "tie" ? "AS" : "–"}</span></div>; })}
+            {isShortGame ? <div className="flex items-center justify-center border-b border-r border-slate-200 bg-red-50/70 text-xs font-extrabold text-red-700">{score.redPoints}p</div> : null}
+            <div className="border-r border-slate-200 bg-slate-50 px-3 py-2 text-[10px] font-bold text-slate-600">Ställning</div>
+            {holes.map((h, i) => <div key={`rs-${i}`} className="border-r border-slate-200 bg-slate-50 py-2 text-center text-[9px] font-bold text-slate-700">{h.winner === null ? "–" : scoringMode === "match" ? (() => { let d = 0; for (let x = 0; x <= i; x++) { if (holes[x]?.winner === "blue") d++; if (holes[x]?.winner === "red") d--; } return liveStatus(d); })() : isShortGame ? (() => { let b = 0; let r = 0; for (let x = 0; x <= i; x++) { b += holes[x]?.bluePoints ?? 0; r += holes[x]?.redPoints ?? 0; } const delta = b - r; return delta === 0 ? "AS" : delta > 0 ? `+${delta}` : `${delta}`; })() : "Klart"}</div>)}
+            {isShortGame ? <div className="flex items-center justify-center border-r border-slate-200 bg-slate-100 px-1 py-2 text-center text-[9px] font-bold text-slate-700">{scoringMode === "match" ? liveStatus(diff) : pointDiff === 0 ? "AS" : pointDiff > 0 ? `+${pointDiff}` : `${pointDiff}`}</div> : null}
+          </div></div></div>
+        </div>
+      </section>
+
+      <div className="mt-6 space-y-3">
+        <button onClick={rematch} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white"><RotateCcw className="h-5 w-5" /> Rematch</button>
+        <button onClick={newTest} className={`flex w-full items-center justify-center gap-2 rounded-2xl border py-4 font-display text-xl text-slate-900 ${glass}`}>Nytt test <ChevronRight className="h-5 w-5" /></button>
+        <Link to="/" className="flex w-full items-center justify-center rounded-2xl border border-slate-300 bg-white/75 py-4 font-display text-xl text-slate-700">Hem</Link>
+      </div>
+    </> : null}
+'''
+          if not old_result.search(s):
+              raise SystemExit('Result block not found')
+          s = old_result.sub('\n' + new_result + '\n', s, count=1)
+          p.write_text(s)
+          PY
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/routes/match.tsx
+          if ! git diff --cached --quiet; then
+            git commit -m "Build complete match result summary"
+            git push origin HEAD:main
+          fi
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
