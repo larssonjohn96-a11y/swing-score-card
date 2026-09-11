@@ -6,9 +6,6 @@ on:
   pull_request:
     branches: [main]
 
-permissions:
-  contents: write
-
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -22,50 +19,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Apply short game card styling once
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path('src/routes/match.tsx')
-          s = p.read_text()
-
-          s = s.replace(
-            '<section className={`mt-5 rounded-[32px] border p-6 text-center shadow-[0_18px_44px_-32px_rgba(15,23,42,.32)] backdrop-blur-2xl ${isPutting || isShortGame ? "border-slate-300/80 bg-slate-100/80" : "border-blue-300/55 bg-gradient-to-br from-blue-100/78 via-white/78 to-red-50/58"}`}>',
-            '<section className={`mt-5 rounded-[32px] border p-6 text-center shadow-[0_18px_44px_-32px_rgba(15,23,42,.32)] backdrop-blur-2xl ${isPutting || isShortGame ? "border-slate-400/80 bg-slate-200/90" : "border-blue-300/55 bg-gradient-to-br from-blue-100/78 via-white/78 to-red-50/58"}`}>',
-            1,
-          )
-
-          s = s.replace(
-            '<div className="mt-3 grid grid-cols-2 gap-3">{([[blueLabel, bluePoints, setBluePoints, "blue"], [redLabel, redPoints, setRedPoints, "red"]] as const).map(([label, value, setter, tone]) => <div key={tone} className={`rounded-[26px] border border-slate-300 bg-white/92 p-4 shadow-[0_14px_34px_-28px_rgba(15,23,42,.35)]`}>',
-            '<div className="mt-3 space-y-3">{([[blueLabel, bluePoints, setBluePoints, "blue"], [redLabel, redPoints, setRedPoints, "red"]] as const).map(([label, value, setter, tone]) => <div key={tone} className={`rounded-[24px] border p-3 ${tone === "blue" ? blueGlass : redGlass}`}>',
-            1,
-          )
-
-          s = s.replace(
-            '<div className="mt-4 grid grid-cols-2 gap-2">{POINT_ZONES.map((zone) => <button key={zone.points} disabled={isSubmitting} onClick={() => setter(zone.points)} className={`${zone.points === 4 ? "col-span-2" : ""} min-w-0 rounded-2xl border px-2 py-3 text-center ${value === zone.points ? tone === "blue" ? "border-blue-600 bg-blue-600 text-white" : "border-red-600 bg-red-600 text-white" : "border-slate-300 bg-white text-slate-700 shadow-sm"}`}>',
-            '<div className="mt-3 grid grid-cols-5 gap-1.5">{POINT_ZONES.map((zone) => <button key={zone.points} disabled={isSubmitting} onClick={() => setter(zone.points)} className={`min-w-0 rounded-xl border px-1 py-2.5 text-center ${value === zone.points ? tone === "blue" ? "border-blue-600 bg-blue-600 text-white" : "border-red-600 bg-red-600 text-white" : "border-slate-300 bg-slate-100 text-slate-700 shadow-sm"}`}>',
-            1,
-          )
-
-          s = s.replace(
-            '<span className="block font-display text-2xl leading-none">{zone.points}p</span><span className="mt-1 block text-[9px] font-bold leading-tight">{zone.label}</span>',
-            '<span className="block font-display text-xl leading-none">{zone.points}p</span><span className="mt-1 block text-[8px] font-bold leading-tight">{zone.label}</span>',
-            1,
-          )
-
-          p.write_text(s)
-          PY
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/routes/match.tsx
-          if ! git diff --cached --quiet; then
-            git commit -m "Restore stacked short game score cards"
-            git push origin HEAD:main
-          fi
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
