@@ -23,7 +23,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Apply closest-to-pin wording once
+      - name: Apply short game scoring layout once
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         shell: bash
         run: |
@@ -31,14 +31,18 @@ jobs:
           from pathlib import Path
           p = Path('src/routes/match.tsx')
           s = p.read_text()
-          s = s.replace('Ett slag per spelare · högst poäng vinner hålet.', 'Ett slag per spelare · närmast flaggan vinner hålet.')
+          s = s.replace('Sänkt 4p · inom 1 m 3p · inom 2 m 2p · inom 3 m 1p · över 3 m 0p', 'Välj var bollen stannade.')
+          s = s.replace('<div className="mt-3 space-y-3">{([[blueLabel, bluePoints, setBluePoints, "blue"], [redLabel, redPoints, setRedPoints, "red"]] as const).map(([label, value, setter, tone]) => <div key={tone} className={`rounded-[24px] border p-3 ${tone === "blue" ? blueGlass : redGlass}`}>', '<div className="mt-3 grid grid-cols-2 gap-3">{([[blueLabel, bluePoints, setBluePoints, "blue"], [redLabel, redPoints, setRedPoints, "red"]] as const).map(([label, value, setter, tone]) => <div key={tone} className={`rounded-[26px] border border-slate-300 bg-white/92 p-4 shadow-[0_14px_34px_-28px_rgba(15,23,42,.35)]`}>')
+          s = s.replace('<div className="mt-3 grid grid-cols-5 gap-1.5">{POINT_ZONES.map((zone) => <button key={zone.points} disabled={isSubmitting} onClick={() => setter(zone.points)} className={`min-w-0 rounded-xl border px-1 py-2 text-center ${value === zone.points ? tone === "blue" ? "border-blue-600 bg-blue-600 text-white" : "border-red-600 bg-red-600 text-white" : "border-slate-300 bg-slate-100 text-slate-700 shadow-sm"}`}>', '<div className="mt-4 grid grid-cols-2 gap-2">{POINT_ZONES.map((zone) => <button key={zone.points} disabled={isSubmitting} onClick={() => setter(zone.points)} className={`${zone.points === 4 ? "col-span-2" : ""} min-w-0 rounded-2xl border px-2 py-3 text-center ${value === zone.points ? tone === "blue" ? "border-blue-600 bg-blue-600 text-white" : "border-red-600 bg-red-600 text-white" : "border-slate-300 bg-white text-slate-700 shadow-sm"}`}>')
+          s = s.replace('<span className="block font-display text-xl leading-none">{zone.points}p</span><span className="mt-1 block text-[8px] font-bold leading-tight">{zone.label}</span>', '<span className="block font-display text-2xl leading-none">{zone.points}p</span><span className="mt-1 block text-[9px] font-bold leading-tight">{zone.label}</span>')
+          s = s.replace('Högst poäng vinner hålet', 'Närmast flaggan vinner hålet')
           p.write_text(s)
           PY
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add src/routes/match.tsx
           if ! git diff --cached --quiet; then
-            git commit -m "Clarify closest-to-pin winner wording"
+            git commit -m "Simplify short game scoring layout"
             git push origin HEAD:main
           fi
 
