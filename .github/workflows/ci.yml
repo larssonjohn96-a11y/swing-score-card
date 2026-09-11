@@ -1,43 +1,41 @@
-name: Patch putting score input
+name: CI
 
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
 
-permissions:
-  contents: write
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  patch:
-    if: github.event.head_commit.message == 'Patch putting score input'
+  verify:
+    name: Verify
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          fetch-depth: 0
+          bun-version: latest
 
-      - name: Update putting input
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
 
-          p = Path('src/routes/match.tsx')
-          s = p.read_text()
+      - name: Typecheck
+        run: bunx tsc --noEmit
 
-          pattern = re.compile(r'\{isPutting \? <section className="mt-5">.*?</section> : isShortGame \?', re.S)
-          replacement = '''{isPutting ? <section className="mt-5"><div className="text-center"><p className="text-[9px] font-bold uppercase tracking-[0.16em] text-slate-500">2 · Registrering</p><h2 className="mt-1 font-display text-2xl">Antal puttar</h2><p className="mt-1 text-[10px] font-semibold text-slate-500">Välj 1–4 puttar för varje spelare.</p></div><div className="mt-3 space-y-3">{([[blueLabel, blueStrokes, setBlueStrokes, "blue"], [redLabel, redStrokes, setRedStrokes, "red"]] as const).map(([label, value, setter, tone]) => <div key={tone} className={`rounded-[24px] border p-3 ${tone === "blue" ? blueGlass : redGlass}`}><div className="flex items-center justify-between"><p className={`max-w-[70%] truncate text-xs font-bold ${tone === "blue" ? "text-blue-700" : "text-red-700"}`}>{label}</p><p className={`font-display text-2xl leading-none ${tone === "blue" ? "text-blue-700" : "text-red-700"}`}>{value} {value === 1 ? "putt" : "puttar"}</p></div><div className="mt-3 grid grid-cols-4 gap-2">{([1, 2, 3, 4] as const).map((strokes) => <button key={strokes} type="button" disabled={isSubmitting} onClick={() => setter(strokes)} className={`rounded-xl border px-1 py-3 text-center transition-colors ${value === strokes ? tone === "blue" ? "border-blue-600 bg-blue-600 text-white" : "border-red-600 bg-red-600 text-white" : "border-slate-300 bg-slate-100 text-slate-700 shadow-sm"}`}><span className="block font-display text-2xl leading-none">{strokes}</span><span className="mt-1 block text-[8px] font-bold uppercase">{strokes === 1 ? "putt" : "puttar"}</span></button>)}</div></div>)}</div><button disabled={isSubmitting} onClick={recordPutting} className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white disabled:opacity-45">{isSubmitting ? (editingHoleIndex !== null ? "Sparar ändring…" : "Registrerar…") : editingHoleIndex !== null ? `Spara ${unitLabel.toLowerCase()} ${holeIndex + 1}` : `Registrera ${unitLabel.toLowerCase()} ${holeIndex + 1}`} <ChevronRight className="h-5 w-5" /></button></section> : isShortGame ?'''
+      - name: Lint
+        run: bun run lint
 
-          s2, count = pattern.subn(replacement, s, count=1)
-          if count != 1:
-              raise SystemExit(f'putting block replacement count={count}')
-          p.write_text(s2)
-          PY
+      - name: Test
+        run: bun run test
 
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add src/routes/match.tsx
-          git commit -m "Use direct putting score buttons"
-          git push
+      - name: Build
+        run: bun run build
