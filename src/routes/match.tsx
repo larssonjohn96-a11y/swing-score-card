@@ -26,10 +26,10 @@ type Hole = { challenge: Challenge; winner: HoleWinner; blueStrokes?: number; re
 type ShortGameLie = "fairway" | "rough" | "bunker";
 
 const CATEGORIES = [
-  { id: "off-the-tee", title: "Utslag", subtitle: "Utslag", description: "Driver, fairway, längd och bollflykt." },
-  { id: "approach", title: "Inspel", subtitle: "Inspel", description: "Precision, längdkontroll och bollflykt." },
-  { id: "around-the-green", title: "Närspel", subtitle: "Närspel", description: "Närmast flaggan från fairway, rough och bunker." },
-  { id: "putting", title: "Puttning", subtitle: "Puttning", description: "Håla ut och låt SG4 räkna resultatet automatiskt." },
+  { id: "off-the-tee", title: "Utslag", subtitle: "Off the Tee", description: "Driver, fairway, längd och bollflykt." },
+  { id: "approach", title: "Inspel", subtitle: "Approach", description: "Precision, längdkontroll och bollflykt." },
+  { id: "around-the-green", title: "Närspel", subtitle: "Around the Green", description: "Närmast flaggan från fairway, rough och bunker." },
+  { id: "putting", title: "Puttning", subtitle: "Putting", description: "Håla ut och låt SG4 räkna resultatet automatiskt." },
 ] as const;
 
 const MATCH_TYPES: Record<MatchCategory, Array<{ id: string; title: string; description: string }>> = {
