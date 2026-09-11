@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: write
+
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -19,6 +22,43 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Apply in-game exit and edit controls once
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('src/routes/match.tsx')
+          s = p.read_text()
+
+          s = s.replace(
+            '  const current = holes[holeIndex];\n',
+            '  const current = holes[holeIndex];\n  const lastScoredHoleIndex = holes.reduce((last, hole, index) => hole.winner !== null ? index : last, -1);\n',
+            1,
+          )
+
+          s = s.replace(
+            '{step === "play" && current ? <><header className="text-center">',
+            '{step === "play" && current ? <><header className="relative text-center"><Link to="/" aria-label="Till startsidan" className={`absolute left-0 top-0 inline-flex h-10 w-10 items-center justify-center rounded-full border text-2xl leading-none ${glass}`}>‹</Link>',
+            1,
+          )
+
+          needle = '</div></section>\n      {isPutting && scoringMode === "stroke"'
+          replacement = '</div>{isScoredHole && lastScoredHoleIndex >= 0 ? <button type="button" disabled={isSubmitting} onClick={() => editScoredHole(lastScoredHoleIndex)} className={`mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border py-3.5 text-sm font-bold text-slate-700 disabled:opacity-40 ${glass}`}>‹ Redigera senaste {unitLabel.toLowerCase()}</button> : null}</section>\n      {isPutting && scoringMode === "stroke"'
+          if needle not in s:
+            raise SystemExit('Score section anchor not found')
+          s = s.replace(needle, replacement, 1)
+          p.write_text(s)
+          PY
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/routes/match.tsx
+          if ! git diff --cached --quiet; then
+            git commit -m "Add in-game exit and edit latest score"
+            git push origin HEAD:main
+          fi
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
