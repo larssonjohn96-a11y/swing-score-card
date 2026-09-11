@@ -125,24 +125,6 @@ function Home() {
         </div>
       </div>
 
-      <Link
-        to="/jamfor"
-        aria-label="Head to Head – jämför dig mot en annan spelare"
-        className="mt-3 flex items-center gap-3 rounded-3xl border border-border bg-card px-4 py-4 shadow-[0_12px_28px_-18px_rgba(0,0,0,0.32)] transition-transform active:scale-[0.99]"
-      >
-        <span className="flex shrink-0 items-center">
-          <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-card bg-blue-500/10 text-blue-600">
-            {profile.photo ? <img src={profile.photo} alt="" className="h-full w-full object-cover" /> : <User className="h-4 w-4" />}
-          </span>
-          <span className="-ml-2.5 flex h-10 w-10 items-center justify-center rounded-full border-2 border-card bg-red-500/10 text-red-600"><User className="h-4 w-4" /></span>
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block font-display text-2xl leading-none">Head to Head</span>
-          <span className="mt-1 block truncate text-sm text-muted-foreground">Tävla mot en annan spelare</span>
-        </span>
-        <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
-      </Link>
-
       <AppStoryLauncher />
 
       {data && <div className="mt-4">
