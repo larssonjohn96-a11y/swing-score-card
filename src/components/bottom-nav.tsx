@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
-import { BarChart3, ChevronLeft, ChevronRight, Flag, Home, ListChecks, Menu, Plus, Target, Trophy, TrendingUp, Users } from "lucide-react";
+import { BarChart3, ChevronLeft, ChevronRight, Home, ListChecks, Menu, Plus, Target, Trophy, TrendingUp, User, Users } from "lucide-react";
 import { useBottomNavVisibility } from "@/lib/bottom-nav-visibility";
 import { CATEGORIES } from "@/lib/categories";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -31,7 +31,7 @@ const MORE_LINKS: ReadonlyArray<{
   { to: "/min-bag", label: "My Bag", description: "Öppna din mappade bag – eller starta mappning om du inte har gjort den ännu.", icon: ListChecks, tone: "neutral" },
   { to: "/hcp-goal", label: "HCP Goal", description: "Sätt ett handicapmål och se dina tre viktigaste vägar dit.", icon: Target, tone: "h2h" },
   { to: "/jamfor", label: "Head-to-head", description: "Ställ din SG4-profil mot en vän och se vem som vinner.", icon: Users, tone: "h2h" },
-  { to: "/match", label: "Tävla", description: "Tävla i Singles, Fourball eller Foursomes.", icon: Flag, tone: "h2h" },
+  { to: "/match", label: "Tävla", description: "Tävla i Singles, Fourball eller Foursomes.", icon: Users, tone: "h2h" },
   { to: "/vanner", label: "Vänner", description: "Hantera vänner och sociala funktioner.", icon: Users, tone: "neutral" },
   { to: "/shot-value", label: "Shot Value", description: "Se vad ett enskilt slag faktiskt är värt mot olika spelarnivåer.", icon: BarChart3, tone: "neutral" },
 ] as const;
@@ -130,7 +130,11 @@ export function BottomNav() {
               </Link>
 
               <Link to="/match" onClick={() => setOpen(false)} className="group flex items-center gap-3 rounded-2xl border border-blue-500/20 bg-gradient-to-r from-blue-500/[0.06] via-card to-red-500/[0.06] px-4 py-4 transition-colors hover:border-red-500/30">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-red-500 text-white shadow-sm"><Flag className="h-5 w-5" /></span>
+                <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white/85 shadow-sm">
+        <User className="absolute left-1 h-[18px] w-[18px] stroke-[2.35] text-blue-600" />
+        <span className="relative z-10 rounded bg-slate-950 px-1 py-0.5 text-[7px] font-extrabold leading-none text-white">VS</span>
+        <User className="absolute right-1 h-[18px] w-[18px] stroke-[2.35] text-red-600" />
+      </span>
                 <div className="min-w-0 flex-1"><div className="flex items-center gap-2"><h3 className="text-lg font-semibold leading-none">Tävla</h3><span className="rounded-full bg-red-500/[0.08] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-red-500">H2H</span></div><p className="mt-1 text-[11px] leading-snug text-muted-foreground">Tävla mot din kompis i Singles, Fourball eller Foursomes.</p></div>
                 <ChevronRight className="h-4 w-4 shrink-0 text-red-500/70" />
               </Link>
