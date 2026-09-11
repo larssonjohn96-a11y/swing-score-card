@@ -1,61 +1,16 @@
 name: CI
-
-on:
-  push:
-    branches: [main]
-
+on: [push]
 permissions:
   contents: write
-
 jobs:
-  verify:
-    name: Apply match edit glow fix
+  patch:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Patch match UI
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path('src/routes/match.tsx')
-          s = p.read_text()
-          s = s.replace('const blueGlass = "border-blue-300/55 bg-gradient-to-br from-blue-100/68 via-white/68 to-slate-100/72 shadow-[0_18px_44px_-32px_rgba(37,99,235,.46)] backdrop-blur-2xl";', 'const blueGlass = "border-blue-300/60 bg-gradient-to-br from-blue-100/58 via-white/74 to-slate-100/76 shadow-[0_10px_24px_-20px_rgba(15,23,42,.22)] backdrop-blur-2xl";')
-          s = s.replace('const redGlass = "border-red-300/55 bg-gradient-to-br from-red-100/62 via-white/68 to-slate-100/72 shadow-[0_18px_44px_-32px_rgba(239,68,68,.40)] backdrop-blur-2xl";', 'const redGlass = "border-red-300/60 bg-gradient-to-br from-red-100/54 via-white/74 to-slate-100/76 shadow-[0_10px_24px_-20px_rgba(15,23,42,.22)] backdrop-blur-2xl";')
-          old = '''  function finishScoredEdit(next: Hole[], registered: number) {
-    setHoles(next);
-    setTransitionMessage(`${unitLabel} ${registered + 1} uppdaterad`);
-    window.setTimeout(() => {
-      const target = returnHoleIndex ?? next.findIndex((h) => h.winner === null);
-      const nextIndex = target >= 0 ? target : registered;
-      setHoleIndex(nextIndex);
-      const targetHole = next[nextIndex];
-      setBlueStrokes(targetHole?.blueStrokes ?? 1); setRedStrokes(targetHole?.redStrokes ?? 1);
-      setBluePoints(typeof targetHole?.bluePoints === "number" ? targetHole.bluePoints : null); setRedPoints(typeof targetHole?.redPoints === "number" ? targetHole.redPoints : null);
-      setEditingHoleIndex(null); setReturnHoleIndex(null); setTransitionMessage(null); setIsSubmitting(false);
-    }, 380);
-  }'''
-          new = '''  function finishScoredEdit(next: Hole[], registered: number) {
-    setHoles(next);
-    const target = returnHoleIndex ?? next.findIndex((h) => h.winner === null);
-    const nextIndex = target >= 0 ? target : registered;
-    setHoleIndex(nextIndex);
-    const targetHole = next[nextIndex];
-    setBlueStrokes(targetHole?.blueStrokes ?? 1); setRedStrokes(targetHole?.redStrokes ?? 1);
-    setBluePoints(typeof targetHole?.bluePoints === "number" ? targetHole.bluePoints : null); setRedPoints(typeof targetHole?.redPoints === "number" ? targetHole.redPoints : null);
-    setEditingHoleIndex(null); setReturnHoleIndex(null); setIsSubmitting(false);
-    setTransitionMessage(`${unitLabel} ${registered + 1} uppdaterad`);
-    window.setTimeout(() => setTransitionMessage(null), 520);
-  }'''
-          if old not in s:
-            raise SystemExit('finishScoredEdit anchor not found')
-          s = s.replace(old, new, 1)
-          s = s.replace('{isSubmitting ? "Registrerar…" : editingHoleIndex !== null ? `Spara ${unitLabel.toLowerCase()} ${holeIndex + 1}` : `Registrera ${unitLabel.toLowerCase()} ${holeIndex + 1}`}', '{isSubmitting ? (editingHoleIndex !== null ? "Sparar ändring…" : "Registrerar…") : editingHoleIndex !== null ? `Spara ${unitLabel.toLowerCase()} ${holeIndex + 1}` : `Registrera ${unitLabel.toLowerCase()} ${holeIndex + 1}`}')
-          s = s.replace('{isSubmitting ? "Registrerar…" : editingHoleIndex !== null ? `Spara poäng för hål ${holeIndex + 1}` : `Registrera poäng för hål ${holeIndex + 1}`}', '{isSubmitting ? (editingHoleIndex !== null ? "Sparar ändring…" : "Registrerar…") : editingHoleIndex !== null ? `Spara poäng för hål ${holeIndex + 1}` : `Registrera poäng för hål ${holeIndex + 1}`}')
-          p.write_text(s)
-          PY
+      - uses: actions/checkout@v4
+      - run: echo 'CmZyb20gcGF0aGxpYiBpbXBvcnQgUGF0aApwPVBhdGgoJ3NyYy9yb3V0ZXMvbWF0Y2gudHN4JykKcz1wLnJlYWRfdGV4dCgpCnM9cy5yZXBsYWNlKCdjb25zdCBibHVlR2xhc3MgPSAiYm9yZGVyLWJsdWUtMzAwLzU1IGJnLWdyYWRpZW50LXRvLWJyIGZyb20tYmx1ZS0xMDAvNjggdmlhLXdoaXRlLzY4IHRvLXNsYXRlLTEwMC83MiBzaGFkb3ctWzBfMThweF80NHB4Xy0zMnB4X3JnYmEoMzcsOTksMjM1LC40NildIGJhY2tkcm9wLWJsdXItMnhsIjsnLCdjb25zdCBibHVlR2xhc3MgPSAiYm9yZGVyLWJsdWUtMzAwLzYwIGJnLWdyYWRpZW50LXRvLWJyIGZyb20tYmx1ZS0xMDAvNTggdmlhLXdoaXRlLzc0IHRvLXNsYXRlLTEwMC83NiBzaGFkb3ctWzBfMTBweF8yNHB4Xy0yMHB4X3JnYmEoMTUsMjMsNDIsLjIyKV0gYmFja2Ryb3AtYmx1ci0yeGwiOycpCnM9cy5yZXBsYWNlKCdjb25zdCByZWRHbGFzcyA9ICJib3JkZXItcmVkLTMwMC81NSBiZy1ncmFkaWVudC10by1iciBmcm9tLXJlZC0xMDAvNjIgdmlhLXdoaXRlLzY4IHRvLXNsYXRlLTEwMC83MiBzaGFkb3ctWzBfMThweF80NHB4Xy0zMnB4X3JnYmEoMjM5LDY4LDY4LC40MCldIGJhY2tkcm9wLWJsdXItMnhsIjsnLCdjb25zdCByZWRHbGFzcyA9ICJib3JkZXItcmVkLTMwMC82MCBiZy1ncmFkaWVudC10by1iciBmcm9tLXJlZC0xMDAvNTQgdmlhLXdoaXRlLzc0IHRvLXNsYXRlLTEwMC83NiBzaGFkb3ctWzBfMTBweF8yNHB4Xy0yMHB4X3JnYmEoMTUsMjMsNDIsLjIyKV0gYmFja2Ryb3AtYmx1ci0yeGwiOycpCnN0YXJ0PXMuaW5kZXgoJyAgZnVuY3Rpb24gZmluaXNoU2NvcmVkRWRpdChuZXh0OiBIb2xlW10sIHJlZ2lzdGVyZWQ6IG51bWJlcikgeycpCmVuZD1zLmluZGV4KCcgIGZ1bmN0aW9uIHJlY29yZFB1dHRpbmcoKScsIHN0YXJ0KQpuZXdfYmxvY2s9JycnICBmdW5jdGlvbiBmaW5pc2hTY29yZWRFZGl0KG5leHQ6IEhvbGVbXSwgcmVnaXN0ZXJlZDogbnVtYmVyKSB7CiAgICBzZXRIb2xlcyhuZXh0KTsKICAgIGNvbnN0IHRhcmdldCA9IHJldHVybkhvbGVJbmRleCA/PyBuZXh0LmZpbmRJbmRleCgoaCkgPT4gaC53aW5uZXIgPT09IG51bGwpOwogICAgY29uc3QgbmV4dEluZGV4ID0gdGFyZ2V0ID49IDAgPyB0YXJnZXQgOiByZWdpc3RlcmVkOwogICAgc2V0SG9sZUluZGV4KG5leHRJbmRleCk7CiAgICBjb25zdCB0YXJnZXRIb2xlID0gbmV4dFtuZXh0SW5kZXhdOwogICAgc2V0Qmx1ZVN0cm9rZXModGFyZ2V0SG9sZT8uYmx1ZVN0cm9rZXMgPz8gMSk7IHNldFJlZFN0cm9rZXModGFyZ2V0SG9sZT8ucmVkU3Ryb2tlcyA/PyAxKTsKICAgIHNldEJsdWVQb2ludHModHlwZW9mIHRhcmdldEhvbGU/LmJsdWVQb2ludHMgPT09ICJudW1iZXIiID8gdGFyZ2V0SG9sZS5ibHVlUG9pbnRzIDogbnVsbCk7IHNldFJlZFBvaW50cyh0eXBlb2YgdGFyZ2V0SG9sZT8ucmVkUG9pbnRzID09PSAibnVtYmVyIiA/IHRhcmdldEhvbGUucmVkUG9pbnRzIDogbnVsbCk7CiAgICBzZXRFZGl0aW5nSG9sZUluZGV4KG51bGwpOyBzZXRSZXR1cm5Ib2xlSW5kZXgobnVsbCk7IHNldElzU3VibWl0dGluZyhmYWxzZSk7CiAgICBzZXRUcmFuc2l0aW9uTWVzc2FnZShgJHt1bml0TGFiZWx9ICR7cmVnaXN0ZXJlZCArIDF9IHVwcGRhdGVyYWRgKTsKICAgIHdpbmRvdy5zZXRUaW1lb3V0KCgpID0+IHNldFRyYW5zaXRpb25NZXNzYWdlKG51bGwpLCA1MjApOwogIH0KJycnCnM9c1s6c3RhcnRdK25ld19ibG9jaytzW2VuZDpdCnM9cy5yZXBsYWNlKCd7aXNTdWJtaXR0aW5nID8gIlJlZ2lzdHJlcmFy4oCmIiA6IGVkaXRpbmdIb2xlSW5kZXggIT09IG51bGwgPyBgU3BhcmEgJHt1bml0TGFiZWwudG9Mb3dlckNhc2UoKX0gJHtob2xlSW5kZXggKyAxfWAgOiBgUmVnaXN0cmVyYSAke3VuaXRMYWJlbC50b0xvd2VyQ2FzZSgpfSAke2hvbGVJbmRleCArIDF9YH0nLCAne2lzU3VibWl0dGluZyA/IChlZGl0aW5nSG9sZUluZGV4ICE9PSBudWxsID8gIlNwYXJhciDDpG5kcmluZ+KApiIgOiAiUmVnaXN0cmVyYXLigKYiKSA6IGVkaXRpbmdIb2xlSW5kZXggIT09IG51bGwgPyBgU3BhcmEgJHt1bml0TGFiZWwudG9Mb3dlckNhc2UoKX0gJHtob2xlSW5kZXggKyAxfWAgOiBgUmVnaXN0cmVyYSAke3VuaXRMYWJlbC50b0xvd2VyQ2FzZSgpfSAke2hvbGVJbmRleCArIDF9YH0nKQpzPXMucmVwbGFjZSgne2lzU3VibWl0dGluZyA/ICJSZWdpc3RyZXJhcuKApiIgOiBlZGl0aW5nSG9sZUluZGV4ICE9PSBudWxsID8gYFNwYXJhIHBvw6RuZyBmw7ZyIGjDpWwgJHtob2xlSW5kZXggKyAxfWAgOiBgUmVnaXN0cmVyYSBwb8OkbmcgZsO2ciBow6VsICR7aG9sZUluZGV4ICsgMX1gfScsICd7aXNTdWJtaXR0aW5nID8gKGVkaXRpbmdIb2xlSW5kZXggIT09IG51bGwgPyAiU3BhcmFyIMOkbmRyaW5n4oCmIiA6ICJSZWdpc3RyZXJhcuKApiIpIDogZWRpdGluZ0hvbGVJbmRleCAhPT0gbnVsbCA/IGBTcGFyYSBwb8OkbmcgZsO2ciBow6VsICR7aG9sZUluZGV4ICsgMX1gIDogYFJlZ2lzdHJlcmEgcG/DpG5nIGbDtnIgaMOlbCAke2hvbGVJbmRleCArIDF9YH0nKQpwLndyaXRlX3RleHQocykK' | base64 -d | python3
+      - run: |
           git config user.name github-actions
           git config user.email actions@github.com
           git add src/routes/match.tsx
-          git diff --cached --quiet || git commit -m "Fix match edit flow and reduce team glow"
+          git diff --cached --quiet || git commit -m 'Fix match edit flow and reduce team glow'
           git push
