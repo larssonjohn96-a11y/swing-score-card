@@ -1,0 +1,29 @@
+name: Off Tee Patch
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update Off the Tee match
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('src/routes/match.tsx')
+          s=p.read_text()
+          s=s.replace('''  "off-the-tee": [\n    { id: "fairway", title: "Fairway Match", description: "Träffa spelkorridoren. Bäst kontroll vinner hålet." },\n    { id: "distance", title: "Long Drive", description: "Längsta godkända drive vinner hålet." },\n    { id: "shape", title: "Shot Shape", description: "SG4 väljer draw eller fade inför varje hål." },\n  ],''','''  "off-the-tee": [\n    { id: "fairway", title: "30 m Fairway Challenge", description: "Längsta slaget inom den 30 m breda fairwaykorridoren vinner hålet." },\n  ],''')
+          s=s.replace('return { eyebrow: "Driver", title: "Fairway Challenge", detail: `30 m spelkorridor · träff slår miss${suffix}` };','return { eyebrow: "Off the Tee", title: "30 m Fairway Challenge", detail: `Längsta slaget inom fairwaykorridoren vinner hålet${suffix}` };')
+          s=s.replace('onClick={() => { setCategory(i.id); if (i.id === "around-the-green") { setMatchType("closest"); setShortGameLies([]); } else setMatchType(null); }}','onClick={() => { setCategory(i.id); if (i.id === "around-the-green") { setMatchType("closest"); setShortGameLies([]); } else if (i.id === "off-the-tee") { setMatchType("fairway"); setScoringMode("match"); } else setMatchType(null); }}')
+          s=s.replace('onClick={() => { if (category === "around-the-green") setScoringMode("match"); setStep(category === "around-the-green" ? "setup" : "type"); }}','onClick={() => { if (category === "around-the-green" || category === "off-the-tee") setScoringMode("match"); setStep(category === "around-the-green" ? "setup" : category === "off-the-tee" ? "length" : "type"); }}')
+          s=s.replace('else if (step === "length") setStep(isShortGame ? "setup" : (category === "approach" && matchType === "closest" ? "type" : "scoring"));','else if (step === "length") setStep(isShortGame ? "setup" : category === "off-the-tee" ? "category" : (category === "approach" && matchType === "closest" ? "type" : "scoring"));')
+          p.write_text(s)
+          PY
+          git config user.name github-actions
+          git config user.email actions@github.com
+          git add src/routes/match.tsx
+          git diff --cached --quiet || git commit -m "Simplify Off the Tee fairway challenge"
+          git push
