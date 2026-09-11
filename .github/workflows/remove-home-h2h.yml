@@ -1,0 +1,30 @@
+name: Remove Home H2H
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Remove Head to Head card from home
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p = Path('src/routes/index.tsx')
+          s = p.read_text()
+          pattern = r'''\n\s*<Link\n\s*to="/jamfor"\n\s*aria-label="Head to Head – jämför dig mot en annan spelare"[\s\S]*?</Link>\n\n\s*<AppStoryLauncher />'''
+          replacement = '\n\n      <AppStoryLauncher />'
+          new, n = re.subn(pattern, replacement, s, count=1)
+          if n != 1:
+            raise SystemExit(f'Expected to remove 1 home H2H card, removed {n}')
+          p.write_text(new)
+          PY
+          git config user.name github-actions
+          git config user.email actions@github.com
+          git add src/routes/index.tsx
+          git diff --cached --quiet || git commit -m "Remove Head to Head from home"
+          git push
