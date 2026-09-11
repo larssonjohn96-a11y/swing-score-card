@@ -1,0 +1,47 @@
+name: Patch competition icon
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.event.head_commit.message == 'Add one-time competition icon patch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Replace flag with versus people icon
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path('src/components/bottom-nav.tsx')
+          s = p.read_text()
+
+          s = s.replace('BarChart3, ChevronLeft, ChevronRight, Flag, Home, ListChecks, Menu, Plus, Target, Trophy, TrendingUp, Users', 'BarChart3, ChevronLeft, ChevronRight, Home, ListChecks, Menu, Plus, Target, Trophy, TrendingUp, User, Users')
+          s = s.replace('{ to: "/match", label: "Tävla", description: "Tävla i Singles, Fourball eller Foursomes.", icon: Flag, tone: "h2h" },', '{ to: "/match", label: "Tävla", description: "Tävla i Singles, Fourball eller Foursomes.", icon: Users, tone: "h2h" },')
+          old = '<span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-red-500 text-white shadow-sm"><Flag className="h-5 w-5" /></span>'
+          new = '''<span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white/85 shadow-sm">
+                  <User className="absolute left-1 h-[18px] w-[18px] stroke-[2.35] text-blue-600" />
+                  <span className="relative z-10 rounded bg-slate-950 px-1 py-0.5 text-[7px] font-extrabold leading-none text-white">VS</span>
+                  <User className="absolute right-1 h-[18px] w-[18px] stroke-[2.35] text-red-600" />
+                </span>'''
+          if old not in s:
+              raise SystemExit('quick Tävla flag icon not found')
+          s = s.replace(old, new, 1)
+          p.write_text(s)
+          PY
+
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add src/components/bottom-nav.tsx
+          git commit -m "Replace competition flag with versus people icon"
+          git push
