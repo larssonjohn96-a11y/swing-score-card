@@ -6,9 +6,6 @@ on:
   pull_request:
     branches: [main]
 
-permissions:
-  contents: write
-
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -22,27 +19,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Apply lie selection UX once
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path('src/routes/match.tsx')
-          s = p.read_text()
-          s = s.replace('const [shortGameLies, setShortGameLies] = useState<ShortGameLie[]>(["fairway", "rough", "bunker"]);', 'const [shortGameLies, setShortGameLies] = useState<ShortGameLie[]>([]);')
-          s = s.replace('setShortGameLies(["fairway", "rough", "bunker"]);', 'setShortGameLies([]);')
-          s = s.replace('>Alla förvalda</span>', '>Välj minst en</span>')
-          p.write_text(s)
-          PY
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/routes/match.tsx
-          if ! git diff --cached --quiet; then
-            git commit -m "Require manual short game lie selection"
-            git push origin HEAD:main
-          fi
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
