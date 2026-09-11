@@ -6,9 +6,6 @@ on:
   pull_request:
     branches: [main]
 
-permissions:
-  contents: write
-
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -22,66 +19,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Apply match flow update once
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path('src/routes/match.tsx')
-          s = p.read_text()
-
-          replacements = [
-            (
-              'onClick={() => setStep(mode === "singles" ? "scoring" : "teams")}',
-              'onClick={() => setStep(mode === "singles" ? "category" : "teams")}'
-            ),
-            (
-              'onClick={() => setStep("scoring")} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white disabled:opacity-30">Nästa',
-              'onClick={() => setStep("category")} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white disabled:opacity-30">Nästa'
-            ),
-            (
-              'else if (step === "scoring") setStep(mode === "singles" ? "players" : "teams");\n    else if (step === "category") setStep("scoring");',
-              'else if (step === "scoring") setStep("type");\n    else if (step === "category") setStep(mode === "singles" ? "players" : "teams");'
-            ),
-            (
-              'else if (step === "length") setStep(isShortGame ? "setup" : "type");',
-              'else if (step === "length") setStep(isShortGame ? "setup" : (category === "approach" && matchType === "closest" ? "type" : "scoring"));'
-            ),
-            (
-              '<p className="text-[10px] font-bold uppercase text-slate-500">{scoringMode === "match" ? "Match Play" : "Slagspel"}</p><h1 className="mt-1 font-display text-4xl">Vad ska ni spela?</h1>',
-              '<p className="text-[10px] font-bold uppercase text-slate-500">Kategori</p><h1 className="mt-1 font-display text-4xl">Vad ska ni spela?</h1>'
-            ),
-            (
-              'onClick={() => setStep("category")} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 via-slate-900 to-red-600 py-4 font-display text-xl text-white">Nästa',
-              'onClick={() => setStep("length")} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 via-slate-900 to-red-600 py-4 font-display text-xl text-white">Nästa'
-            ),
-            (
-              'onClick={() => setStep("length")} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white disabled:opacity-30">Nästa',
-              'onClick={() => { if (category === "approach" && matchType === "closest") { setScoringMode("match"); setStep("length"); } else { setStep("scoring"); } }} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white disabled:opacity-30">Nästa'
-            ),
-            (
-              'onClick={() => setStep(category === "around-the-green" ? "setup" : "type")}',
-              'onClick={() => { if (category === "around-the-green") setScoringMode("match"); setStep(category === "around-the-green" ? "setup" : "type"); }}'
-            ),
-          ]
-
-          for old, new in replacements:
-            if old not in s:
-              raise SystemExit(f'Anchor not found: {old[:100]}')
-            s = s.replace(old, new, 1)
-
-          p.write_text(s)
-          PY
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/routes/match.tsx
-          if ! git diff --cached --quiet; then
-            git commit -m "Move scoring choice after game selection"
-            git push origin HEAD:main
-          fi
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
