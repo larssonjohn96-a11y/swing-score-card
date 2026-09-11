@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: write
+
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -19,6 +22,25 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Apply closest-to-pin wording once
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('src/routes/match.tsx')
+          s = p.read_text()
+          s = s.replace('Ett slag per spelare · högst poäng vinner hålet.', 'Ett slag per spelare · närmast flaggan vinner hålet.')
+          p.write_text(s)
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/routes/match.tsx
+          if ! git diff --cached --quiet; then
+            git commit -m "Clarify closest-to-pin winner wording"
+            git push origin HEAD:main
+          fi
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
