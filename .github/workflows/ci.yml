@@ -1,16 +1,41 @@
 name: CI
-on: [push]
-permissions:
-  contents: write
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  patch:
+  verify:
+    name: Verify
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+
     steps:
-      - uses: actions/checkout@v4
-      - run: echo 'CmZyb20gcGF0aGxpYiBpbXBvcnQgUGF0aApwPVBhdGgoJ3NyYy9yb3V0ZXMvbWF0Y2gudHN4JykKcz1wLnJlYWRfdGV4dCgpCnM9cy5yZXBsYWNlKCdjb25zdCBibHVlR2xhc3MgPSAiYm9yZGVyLWJsdWUtMzAwLzU1IGJnLWdyYWRpZW50LXRvLWJyIGZyb20tYmx1ZS0xMDAvNjggdmlhLXdoaXRlLzY4IHRvLXNsYXRlLTEwMC83MiBzaGFkb3ctWzBfMThweF80NHB4Xy0zMnB4X3JnYmEoMzcsOTksMjM1LC40NildIGJhY2tkcm9wLWJsdXItMnhsIjsnLCdjb25zdCBibHVlR2xhc3MgPSAiYm9yZGVyLWJsdWUtMzAwLzYwIGJnLWdyYWRpZW50LXRvLWJyIGZyb20tYmx1ZS0xMDAvNTggdmlhLXdoaXRlLzc0IHRvLXNsYXRlLTEwMC83NiBzaGFkb3ctWzBfMTBweF8yNHB4Xy0yMHB4X3JnYmEoMTUsMjMsNDIsLjIyKV0gYmFja2Ryb3AtYmx1ci0yeGwiOycpCnM9cy5yZXBsYWNlKCdjb25zdCByZWRHbGFzcyA9ICJib3JkZXItcmVkLTMwMC81NSBiZy1ncmFkaWVudC10by1iciBmcm9tLXJlZC0xMDAvNjIgdmlhLXdoaXRlLzY4IHRvLXNsYXRlLTEwMC83MiBzaGFkb3ctWzBfMThweF80NHB4Xy0zMnB4X3JnYmEoMjM5LDY4LDY4LC40MCldIGJhY2tkcm9wLWJsdXItMnhsIjsnLCdjb25zdCByZWRHbGFzcyA9ICJib3JkZXItcmVkLTMwMC82MCBiZy1ncmFkaWVudC10by1iciBmcm9tLXJlZC0xMDAvNTQgdmlhLXdoaXRlLzc0IHRvLXNsYXRlLTEwMC83NiBzaGFkb3ctWzBfMTBweF8yNHB4Xy0yMHB4X3JnYmEoMTUsMjMsNDIsLjIyKV0gYmFja2Ryb3AtYmx1ci0yeGwiOycpCnN0YXJ0PXMuaW5kZXgoJyAgZnVuY3Rpb24gZmluaXNoU2NvcmVkRWRpdChuZXh0OiBIb2xlW10sIHJlZ2lzdGVyZWQ6IG51bWJlcikgeycpCmVuZD1zLmluZGV4KCcgIGZ1bmN0aW9uIHJlY29yZFB1dHRpbmcoKScsIHN0YXJ0KQpuZXdfYmxvY2s9JycnICBmdW5jdGlvbiBmaW5pc2hTY29yZWRFZGl0KG5leHQ6IEhvbGVbXSwgcmVnaXN0ZXJlZDogbnVtYmVyKSB7CiAgICBzZXRIb2xlcyhuZXh0KTsKICAgIGNvbnN0IHRhcmdldCA9IHJldHVybkhvbGVJbmRleCA/PyBuZXh0LmZpbmRJbmRleCgoaCkgPT4gaC53aW5uZXIgPT09IG51bGwpOwogICAgY29uc3QgbmV4dEluZGV4ID0gdGFyZ2V0ID49IDAgPyB0YXJnZXQgOiByZWdpc3RlcmVkOwogICAgc2V0SG9sZUluZGV4KG5leHRJbmRleCk7CiAgICBjb25zdCB0YXJnZXRIb2xlID0gbmV4dFtuZXh0SW5kZXhdOwogICAgc2V0Qmx1ZVN0cm9rZXModGFyZ2V0SG9sZT8uYmx1ZVN0cm9rZXMgPz8gMSk7IHNldFJlZFN0cm9rZXModGFyZ2V0SG9sZT8ucmVkU3Ryb2tlcyA/PyAxKTsKICAgIHNldEJsdWVQb2ludHModHlwZW9mIHRhcmdldEhvbGU/LmJsdWVQb2ludHMgPT09ICJudW1iZXIiID8gdGFyZ2V0SG9sZS5ibHVlUG9pbnRzIDogbnVsbCk7IHNldFJlZFBvaW50cyh0eXBlb2YgdGFyZ2V0SG9sZT8ucmVkUG9pbnRzID09PSAibnVtYmVyIiA/IHRhcmdldEhvbGUucmVkUG9pbnRzIDogbnVsbCk7CiAgICBzZXRFZGl0aW5nSG9sZUluZGV4KG51bGwpOyBzZXRSZXR1cm5Ib2xlSW5kZXgobnVsbCk7IHNldElzU3VibWl0dGluZyhmYWxzZSk7CiAgICBzZXRUcmFuc2l0aW9uTWVzc2FnZShgJHt1bml0TGFiZWx9ICR7cmVnaXN0ZXJlZCArIDF9IHVwcGRhdGVyYWRgKTsKICAgIHdpbmRvdy5zZXRUaW1lb3V0KCgpID0+IHNldFRyYW5zaXRpb25NZXNzYWdlKG51bGwpLCA1MjApOwogIH0KJycnCnM9c1s6c3RhcnRdK25ld19ibG9jaytzW2VuZDpdCnM9cy5yZXBsYWNlKCd7aXNTdWJtaXR0aW5nID8gIlJlZ2lzdHJlcmFy4oCmIiA6IGVkaXRpbmdIb2xlSW5kZXggIT09IG51bGwgPyBgU3BhcmEgJHt1bml0TGFiZWwudG9Mb3dlckNhc2UoKX0gJHtob2xlSW5kZXggKyAxfWAgOiBgUmVnaXN0cmVyYSAke3VuaXRMYWJlbC50b0xvd2VyQ2FzZSgpfSAke2hvbGVJbmRleCArIDF9YH0nLCAne2lzU3VibWl0dGluZyA/IChlZGl0aW5nSG9sZUluZGV4ICE9PSBudWxsID8gIlNwYXJhciDDpG5kcmluZ+KApiIgOiAiUmVnaXN0cmVyYXLigKYiKSA6IGVkaXRpbmdIb2xlSW5kZXggIT09IG51bGwgPyBgU3BhcmEgJHt1bml0TGFiZWwudG9Mb3dlckNhc2UoKX0gJHtob2xlSW5kZXggKyAxfWAgOiBgUmVnaXN0cmVyYSAke3VuaXRMYWJlbC50b0xvd2VyQ2FzZSgpfSAke2hvbGVJbmRleCArIDF9YH0nKQpzPXMucmVwbGFjZSgne2lzU3VibWl0dGluZyA/ICJSZWdpc3RyZXJhcuKApiIgOiBlZGl0aW5nSG9sZUluZGV4ICE9PSBudWxsID8gYFNwYXJhIHBvw6RuZyBmw7ZyIGjDpWwgJHtob2xlSW5kZXggKyAxfWAgOiBgUmVnaXN0cmVyYSBwb8OkbmcgZsO2ciBow6VsICR7aG9sZUluZGV4ICsgMX1gfScsICd7aXNTdWJtaXR0aW5nID8gKGVkaXRpbmdIb2xlSW5kZXggIT09IG51bGwgPyAiU3BhcmFyIMOkbmRyaW5n4oCmIiA6ICJSZWdpc3RyZXJhcuKApiIpIDogZWRpdGluZ0hvbGVJbmRleCAhPT0gbnVsbCA/IGBTcGFyYSBwb8OkbmcgZsO2ciBow6VsICR7aG9sZUluZGV4ICsgMX1gIDogYFJlZ2lzdHJlcmEgcG/DpG5nIGbDtnIgaMOlbCAke2hvbGVJbmRleCArIDF9YH0nKQpwLndyaXRlX3RleHQocykK' | base64 -d | python3
-      - run: |
-          git config user.name github-actions
-          git config user.email actions@github.com
-          git add src/routes/match.tsx
-          git diff --cached --quiet || git commit -m 'Fix match edit flow and reduce team glow'
-          git push
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Typecheck
+        run: bunx tsc --noEmit
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Test
+        run: bun run test
+
+      - name: Build
+        run: bun run build
