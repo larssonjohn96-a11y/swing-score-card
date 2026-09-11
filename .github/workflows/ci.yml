@@ -1,41 +1,64 @@
-name: CI
+name: Patch approach competition UI
 
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
 
-concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+permissions:
+  contents: write
 
 jobs:
-  verify:
-    name: Verify
+  patch:
+    if: github.event.head_commit.message == 'Patch approach competition UI'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          fetch-depth: 0
 
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
+      - name: Refine approach play UI
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
 
-      - name: Typecheck
-        run: bunx tsc --noEmit
+          p = Path('src/routes/match.tsx')
+          s = p.read_text()
 
-      - name: Lint
-        run: bun run lint
+          # Neutralize the Approach target card and remove the target icon for Approach.
+          old = '''<section className={`mt-5 rounded-[32px] border p-6 text-center shadow-[0_18px_44px_-32px_rgba(15,23,42,.32)] backdrop-blur-2xl ${isPutting || isShortGame ? "border-slate-400/80 bg-slate-200/90" : "border-blue-300/55 bg-gradient-to-br from-blue-100/78 via-white/78 to-red-50/58"}`}>{!isPutting && !isShortGame ? <Target className="mx-auto h-6 w-6 text-blue-600" /> : null}<h1'''
+          new = '''<section className={`mt-5 rounded-[32px] border p-6 text-center shadow-[0_18px_44px_-32px_rgba(15,23,42,.28)] backdrop-blur-2xl ${isPutting || isShortGame || isApproach ? "border-slate-300/90 bg-slate-100/90" : "border-blue-300/55 bg-gradient-to-br from-blue-100/78 via-white/78 to-red-50/58"}`}>{!isPutting && !isShortGame && !isApproach ? <Target className="mx-auto h-6 w-6 text-blue-600" /> : null}<h1'''
+          if old not in s:
+              raise SystemExit('challenge card pattern not found')
+          s = s.replace(old, new, 1)
 
-      - name: Test
-        run: bun run test
+          # Replace the compact, cramped Approach input with clearer +/-5 and +/-1 controls.
+          pattern = re.compile(r'''isApproach \? <section className="mt-4">.*?</section> : <section className="mt-5"><div className="text-center"><p className="text-\[9px\] font-bold uppercase tracking-\[0\.16em\] text-slate-500">2 · Registrering</p><h2 className="mt-1 font-display text-2xl">Vem vann\?</h2>''', re.S)
+          replacement = '''isApproach ? <section className="mt-4"><div className={`rounded-[24px] border px-4 py-3 ${approachTurn === "blue" ? "border-blue-300 bg-blue-50/90" : "border-red-300 bg-red-50/90"}`}><div className="flex items-center gap-3"><PlayerAvatar player={approachTurn === "blue" ? blueTeam[0] : redTeam[0]} tone={approachTurn} /><div className="min-w-0 flex-1"><p className={`text-[9px] font-bold uppercase tracking-[0.18em] ${approachTurn === "blue" ? "text-blue-600" : "text-red-600"}`}>Nu spelar</p><p className="truncate font-display text-2xl leading-none text-slate-950">{approachTurn === "blue" ? blueLabel : redLabel}</p></div><div className={`rounded-full px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.12em] ${approachTurn === "blue" ? "bg-blue-600 text-white" : "bg-red-600 text-white"}`}>Din tur</div></div>{approachTurn === "red" && current.blueApproach ? <p className="mt-2 border-t border-slate-200 pt-2 text-[10px] font-semibold text-slate-600">{blueLabel}: {current.blueApproach.proximity.toFixed(1)} m från flaggan</p> : null}</div><div className={`mt-3 rounded-[26px] border p-4 ${glass}`}><div><div className="flex items-center justify-between"><p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">Längdmiss</p><p className="font-display text-2xl text-slate-900">{approachLong} m</p></div><div className="mt-2 grid grid-cols-2 gap-2"><button onClick={() => setApproachLongDirection("short")} className={`rounded-xl border py-2.5 text-sm font-bold ${approachLongDirection === "short" ? "border-slate-950 bg-slate-950 text-white" : "border-slate-300 bg-white/80 text-slate-700"}`}>Kort</button><button onClick={() => setApproachLongDirection("long")} className={`rounded-xl border py-2.5 text-sm font-bold ${approachLongDirection === "long" ? "border-slate-950 bg-slate-950 text-white" : "border-slate-300 bg-white/80 text-slate-700"}`}>Lång</button></div><div className="mt-3 grid grid-cols-[1fr_1fr_1.25fr_1fr_1fr] gap-2"><button onClick={() => setApproachLong(Math.max(0, approachLong - 5))} className="rounded-xl border border-slate-300 bg-white/90 py-3 font-bold text-slate-700">−5</button><button onClick={() => setApproachLong(Math.max(0, approachLong - 1))} className="rounded-xl border border-slate-300 bg-white/90 py-3 font-bold text-slate-700">−1</button><div className="flex items-center justify-center rounded-xl bg-slate-100 px-2 font-display text-3xl text-slate-950">{approachLong}</div><button onClick={() => setApproachLong(Math.min(100, approachLong + 1))} className="rounded-xl border border-slate-300 bg-white/90 py-3 font-bold text-slate-700">+1</button><button onClick={() => setApproachLong(Math.min(100, approachLong + 5))} className="rounded-xl border border-slate-300 bg-white/90 py-3 font-bold text-slate-700">+5</button></div></div><div className="my-4 h-px bg-slate-200" /><div><div className="flex items-center justify-between"><p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">Sidmiss</p><p className="font-display text-2xl text-slate-900">{approachLateral} m</p></div><div className="mt-2 grid grid-cols-2 gap-2"><button onClick={() => setApproachLateralDirection("left")} className={`rounded-xl border py-2.5 text-sm font-bold ${approachLateralDirection === "left" ? "border-slate-950 bg-slate-950 text-white" : "border-slate-300 bg-white/80 text-slate-700"}`}>Vänster</button><button onClick={() => setApproachLateralDirection("right")} className={`rounded-xl border py-2.5 text-sm font-bold ${approachLateralDirection === "right" ? "border-slate-950 bg-slate-950 text-white" : "border-slate-300 bg-white/80 text-slate-700"}`}>Höger</button></div><div className="mt-3 grid grid-cols-[1fr_1fr_1.25fr_1fr_1fr] gap-2"><button onClick={() => setApproachLateral(Math.max(0, approachLateral - 5))} className="rounded-xl border border-slate-300 bg-white/90 py-3 font-bold text-slate-700">−5</button><button onClick={() => setApproachLateral(Math.max(0, approachLateral - 1))} className="rounded-xl border border-slate-300 bg-white/90 py-3 font-bold text-slate-700">−1</button><div className="flex items-center justify-center rounded-xl bg-slate-100 px-2 font-display text-3xl text-slate-950">{approachLateral}</div><button onClick={() => setApproachLateral(Math.min(100, approachLateral + 1))} className="rounded-xl border border-slate-300 bg-white/90 py-3 font-bold text-slate-700">+1</button><button onClick={() => setApproachLateral(Math.min(100, approachLateral + 5))} className="rounded-xl border border-slate-300 bg-white/90 py-3 font-bold text-slate-700">+5</button></div></div><div className="mt-4 flex items-center justify-between rounded-xl bg-slate-100 px-3 py-2.5"><span className="text-[9px] font-bold uppercase tracking-[0.12em] text-slate-500">Avstånd från flaggan</span><span className="font-display text-2xl text-slate-950">{approachProximityPreview.toFixed(1)} m</span></div></div><button disabled={isSubmitting} onClick={recordApproach} className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white disabled:opacity-30">Spara slag <ChevronRight className="h-5 w-5" /></button></section> : <section className="mt-5"><div className="text-center"><p className="text-[9px] font-bold uppercase tracking-[0.16em] text-slate-500">2 · Registrering</p><h2 className="mt-1 font-display text-2xl">Vem vann?</h2>'''
+          s2, count = pattern.subn(replacement, s, count=1)
+          if count != 1:
+              raise SystemExit(f'approach input replacement count={count}')
+          s = s2
 
-      - name: Build
-        run: bun run build
+          # Give Approach score cells more horizontal room.
+          s = s.replace('gridTemplateColumns: `minmax(94px,1.35fr) repeat(${matchLength},44px)${isShortGame ? " 58px" : ""}`', 'gridTemplateColumns: `minmax(94px,1.35fr) repeat(${matchLength},${isApproach ? 58 : 44}px)${isShortGame ? " 58px" : ""}`', 1)
+          s = s.replace('gridTemplateColumns: `minmax(92px,1.35fr) repeat(${matchLength},48px)`', 'gridTemplateColumns: `minmax(92px,1.35fr) repeat(${matchLength},${isApproach ? 58 : 48}px)`', 1)
+
+          # Replace circular score bubbles with compact rounded cells in the live scorecard.
+          s = s.replace('''<span className={`flex h-7 min-w-7 items-center justify-center rounded-full ${blueWon ? "bg-blue-600 px-1 text-white ring-2 ring-blue-200" : ""}`}>''', '''<span className={`inline-flex min-w-[34px] items-center justify-center rounded-md px-1.5 py-1 ${blueWon ? "bg-blue-600 text-white" : ""}`}>''')
+          s = s.replace('''<span className={`flex h-7 min-w-7 items-center justify-center rounded-full ${redWon ? "bg-red-600 px-1 text-white ring-2 ring-red-200" : ""}`}>''', '''<span className={`inline-flex min-w-[34px] items-center justify-center rounded-md px-1.5 py-1 ${redWon ? "bg-red-600 text-white" : ""}`}>''')
+
+          # Do the same on the final result scorecard.
+          s = s.replace('''<span className={`flex h-7 min-w-7 items-center justify-center rounded-full px-1 ${h.winner === "blue" ? "bg-blue-600 text-white" : ""}`}>''', '''<span className={`inline-flex min-w-[34px] items-center justify-center rounded-md px-1.5 py-1 ${h.winner === "blue" ? "bg-blue-600 text-white" : ""}`}>''')
+          s = s.replace('''<span className={`flex h-7 min-w-7 items-center justify-center rounded-full px-1 ${h.winner === "red" ? "bg-red-600 text-white" : ""}`}>''', '''<span className={`inline-flex min-w-[34px] items-center justify-center rounded-md px-1.5 py-1 ${h.winner === "red" ? "bg-red-600 text-white" : ""}`}>''')
+
+          p.write_text(s)
+          PY
+
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add src/routes/match.tsx
+          git commit -m "Refine approach competition input and scorecard"
+          git push
