@@ -40,17 +40,17 @@ function NavLink({ tab, active, badge }: { tab: { to: string; label: string; ico
   return (
     <Link
       to={tab.to}
-      className={`mx-0.5 flex min-h-12 flex-1 flex-col items-center justify-center gap-0.5 rounded-[20px] px-1.5 py-1.5 transition-all duration-200 active:scale-[0.96] ${
+      className={`mx-0.5 flex min-h-12 flex-1 flex-col items-center justify-center gap-0.5 rounded-[20px] px-1.5 py-1.5 transition-[background-color,border-color,color,box-shadow,transform] duration-300 ease-out active:scale-[0.96] ${
         active
-          ? "border border-white/75 bg-background/82 text-primary shadow-[inset_0_1px_0_rgba(255,255,255,.95),0_8px_24px_-15px_rgba(15,23,42,.72)] backdrop-blur-2xl ring-1 ring-black/[0.035]"
+          ? "border border-white/70 bg-black/[0.09] text-primary shadow-[inset_0_1px_0_rgba(255,255,255,.72),0_10px_26px_-15px_rgba(15,23,42,.78)] backdrop-blur-2xl ring-1 ring-black/[0.05] dark:bg-white/[0.12]"
           : "text-muted-foreground"
       }`}
     >
       <span className="relative flex h-7 w-8 items-center justify-center">
-        <tab.icon className={`h-5 w-5 ${active ? "stroke-[2.35]" : "stroke-[1.9]"}`} />
+        <tab.icon className={`h-5 w-5 transition-[stroke-width,color,transform] duration-300 ease-out ${active ? "scale-[1.04] stroke-[2.35]" : "scale-100 stroke-[1.9]"}`} />
         {Boolean(badge) && <span className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-flag px-1 text-[9px] font-bold text-background">{badge}</span>}
       </span>
-      <span className={`text-[10px] uppercase tracking-wide ${active ? "font-bold text-primary" : "font-medium text-muted-foreground"}`}>{tab.label}</span>
+      <span className={`text-[10px] uppercase tracking-wide transition-colors duration-300 ease-out ${active ? "font-bold text-primary" : "font-medium text-muted-foreground"}`}>{tab.label}</span>
     </Link>
   );
 }
@@ -100,14 +100,14 @@ export function BottomNav() {
           <button
             type="button"
             onClick={() => setMoreOpen(true)}
-            className={`mx-0.5 flex min-h-12 flex-1 flex-col items-center justify-center gap-0.5 rounded-[20px] px-1.5 py-1.5 transition-all duration-200 active:scale-[0.96] ${moreActive ? "border border-white/75 bg-background/82 text-primary shadow-[inset_0_1px_0_rgba(255,255,255,.95),0_8px_24px_-15px_rgba(15,23,42,.72)] backdrop-blur-2xl ring-1 ring-black/[0.035]" : "text-muted-foreground"}`}
+            className={`mx-0.5 flex min-h-12 flex-1 flex-col items-center justify-center gap-0.5 rounded-[20px] px-1.5 py-1.5 transition-[background-color,border-color,color,box-shadow,transform] duration-300 ease-out active:scale-[0.96] ${moreActive ? "border border-white/70 bg-black/[0.09] text-primary shadow-[inset_0_1px_0_rgba(255,255,255,.72),0_10px_26px_-15px_rgba(15,23,42,.78)] backdrop-blur-2xl ring-1 ring-black/[0.05] dark:bg-white/[0.12]" : "text-muted-foreground"}`}
             aria-label="Mer"
           >
             <span className="relative flex h-7 w-8 items-center justify-center">
-              <Menu className={`h-5 w-5 ${moreActive ? "stroke-[2.35]" : "stroke-[1.9]"}`} />
+              <Menu className={`h-5 w-5 transition-[stroke-width,color,transform] duration-300 ease-out ${moreActive ? "scale-[1.04] stroke-[2.35]" : "scale-100 stroke-[1.9]"}`} />
               {Boolean(trophyBadge) && <span className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-flag px-1 text-[9px] font-bold text-background">{trophyBadge}</span>}
             </span>
-            <span className={`text-[10px] uppercase tracking-wide ${moreActive ? "font-bold text-primary" : "font-medium text-muted-foreground"}`}>Mer</span>
+            <span className={`text-[10px] uppercase tracking-wide transition-colors duration-300 ease-out ${moreActive ? "font-bold text-primary" : "font-medium text-muted-foreground"}`}>Mer</span>
           </button>
         </div>
       </nav>
