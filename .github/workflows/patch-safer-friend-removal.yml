@@ -1,0 +1,52 @@
+name: Safer friend removal
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.event.head_commit.message == 'Add safer friend removal patch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch friends UX
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('src/routes/vanner.tsx')
+          s = p.read_text()
+
+          s = s.replace(
+            '  const [groupSessions, setGroupSessions] = useState<Array<{ id: string; hostUserId: string; createdAt: string }>>([]);',
+            '  const [groupSessions, setGroupSessions] = useState<Array<{ id: string; hostUserId: string; createdAt: string }>>([]);\n  const [manageFriendsOpen, setManageFriendsOpen] = useState(false);\n  const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);'
+          )
+
+          s = s.replace(
+            '    setMessage(`${friendship.other.displayName} togs bort från dina vänner.`);\n    await refresh();',
+            '    setMessage(`${friendship.other.displayName} togs bort från dina vänner.`);\n    setConfirmRemoveId(null);\n    setManageFriendsOpen(false);\n    await refresh();'
+          )
+
+          old = '''                    <div key={friendship.id} className="flex items-center gap-3 px-4 py-4">\n                      <Avatar profile={friendship.other} size="lg" />\n                      <div className="min-w-0 flex-1">\n                        <p className="truncate text-base font-semibold">{friendship.other.displayName}</p>\n                        <p className="mt-1 truncate text-xs text-muted-foreground">Klubb ej angiven{hcp !== undefined ? ` · HCP ${hcpLabel(hcp)}` : ""}</p>\n                      </div>\n                      <button type="button" disabled={busyId === friendship.id} onClick={() => remove(friendship)} className="rounded-full px-2 py-1 text-lg leading-none text-muted-foreground" aria-label={`Ta bort ${friendship.other.displayName}`}>•••</button>\n                    </div>'''
+          new = '''                    <Link\n                      key={friendship.id}\n                      to="/jamfor/$userId"\n                      params={{ userId: friendship.other.id }}\n                      className="group flex items-center gap-3 px-4 py-4 transition-colors hover:bg-muted/35"\n                    >\n                      <Avatar profile={friendship.other} size="lg" />\n                      <div className="min-w-0 flex-1">\n                        <p className="truncate text-base font-semibold">{friendship.other.displayName}</p>\n                        <p className="mt-1 truncate text-xs text-muted-foreground">Klubb ej angiven{hcp !== undefined ? ` · HCP ${hcpLabel(hcp)}` : ""}</p>\n                      </div>\n                      <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-active:translate-x-0.5" />\n                    </Link>'''
+          if old not in s:
+              raise SystemExit('friend row block not found')
+          s = s.replace(old, new)
+
+          marker = '''          <a href="#friend-search" className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-4 text-base font-semibold text-primary-foreground shadow-[0_12px_26px_-18px_rgba(0,0,0,0.35)]">\n            <UserPlus className="h-5 w-5" />\n            Lägg till nya vänner\n          </a>\n'''
+          addition = marker + '''\n          {friendships.accepted.length ? (\n            <section className="mt-7 border-t border-border pt-5">\n              {!manageFriendsOpen ? (\n                <button\n                  type="button"\n                  onClick={() => setManageFriendsOpen(true)}\n                  className="w-full py-2 text-center text-xs font-medium text-muted-foreground/75 underline-offset-4 hover:underline"\n                >\n                  Hantera vänner\n                </button>\n              ) : (\n                <div className="rounded-3xl border border-border bg-card p-4 shadow-sm">\n                  <div className="flex items-center justify-between gap-3">\n                    <div>\n                      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Inställningar</p>\n                      <h3 className="mt-1 font-display text-2xl">Hantera vänner</h3>\n                    </div>\n                    <button\n                      type="button"\n                      onClick={() => { setManageFriendsOpen(false); setConfirmRemoveId(null); }}\n                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground"\n                      aria-label="Stäng vänhantering"\n                    >\n                      <X className="h-4 w-4" />\n                    </button>\n                  </div>\n                  <p className="mt-2 text-xs leading-relaxed text-muted-foreground">Här kan du ändra vänskaper. Att ta bort en vän kräver alltid en extra bekräftelse.</p>\n\n                  <div className="mt-4 space-y-2">\n                    {friendships.accepted.map((friendship) => {\n                      const confirming = confirmRemoveId === friendship.id;\n                      return (\n                        <div key={friendship.id} className="rounded-2xl border border-border bg-muted/30 p-3">\n                          <div className="flex items-center gap-3">\n                            <Avatar profile={friendship.other} size="sm" />\n                            <span className="min-w-0 flex-1 truncate text-sm font-semibold">{friendship.other.displayName}</span>\n                            {!confirming ? (\n                              <button\n                                type="button"\n                                onClick={() => setConfirmRemoveId(friendship.id)}\n                                className="rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground"\n                              >\n                                Hantera\n                              </button>\n                            ) : null}\n                          </div>\n\n                          {confirming ? (\n                            <div className="mt-3 rounded-2xl border border-red-500/30 bg-red-500/[0.06] p-3">\n                              <p className="text-sm font-semibold text-red-600">Ta bort {friendship.other.displayName}?</p>\n                              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Vänskapen tas bort direkt. Om ni vill bli vänner igen behöver en ny vänförfrågan skickas och accepteras.</p>\n                              <div className="mt-3 grid grid-cols-2 gap-2">\n                                <button\n                                  type="button"\n                                  onClick={() => setConfirmRemoveId(null)}\n                                  className="rounded-xl border border-border bg-background px-3 py-2.5 text-sm font-semibold"\n                                >\n                                  Avbryt\n                                </button>\n                                <button\n                                  type="button"\n                                  disabled={busyId === friendship.id}\n                                  onClick={() => remove(friendship)}\n                                  className="rounded-xl bg-red-600 px-3 py-2.5 text-sm font-semibold text-white disabled:opacity-50"\n                                >\n                                  {busyId === friendship.id ? "Tar bort …" : "Ja, ta bort vän"}\n                                </button>\n                              </div>\n                            </div>\n                          ) : null}\n                        </div>\n                      );\n                    })}\n                  </div>\n                </div>\n              )}\n            </section>\n          ) : null}\n'''
+          if marker not in s:
+              raise SystemExit('add friend marker not found')
+          s = s.replace(marker, addition)
+
+          p.write_text(s)
+          PY
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add src/routes/vanner.tsx
+          git commit -m "Make friend removal deliberate and safe"
+          git push
