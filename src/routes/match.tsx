@@ -341,7 +341,7 @@ function MatchPlayPage() {
   const approachTargetDistance = Number.parseInt(current?.challenge.title ?? "0", 10) || 0;
   const approachLongitudinalPreview = Math.abs(approachLong - approachTargetDistance);
   const approachProximityPreview = Math.sqrt(approachLongitudinalPreview * approachLongitudinalPreview + approachLateral * approachLateral);
-  const compact = Boolean(pressureNotice && scoringMode === "match");
+  const compact = step === "play";
 
   const glass = "border-slate-300/75 bg-white/68 shadow-[0_18px_44px_-32px_rgba(15,23,42,.42)] backdrop-blur-2xl";
   const blueGlass = "border-blue-300/60 bg-gradient-to-br from-blue-100/58 via-white/74 to-slate-100/76 shadow-[0_10px_24px_-20px_rgba(15,23,42,.22)] backdrop-blur-2xl";
