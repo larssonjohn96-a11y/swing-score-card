@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { ArrowRight, ChevronRight, Gauge, Share2, User, Users } from "lucide-react";
+import { ArrowRight, ChevronDown, ChevronRight, Gauge, Share2, User, Users } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { ThemeToggle } from "@/components/theme-toggle";
 import {
@@ -63,6 +63,7 @@ function Home() {
   const [ageSaved, setAgeSaved] = useState(false);
   const [friendCount, setFriendCount] = useState<number | null>(null);
   const [friendProfiles, setFriendProfiles] = useState<Profile[]>([]);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const sessionsVersion = useSessionsVersion();
   const profile = loadCardProfile();
 
@@ -96,7 +97,29 @@ function Home() {
         <div className="flex shrink-0 items-center gap-2">
           <ThemeToggle />
           <button type="button" onClick={shareProfile} aria-label="Dela" className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:text-foreground"><Share2 className="h-4 w-4" /></button>
-          <Link to="/konto" className="rounded-full border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">{displayName ?? (user ? "Konto" : "Logga in")}</Link>
+          {user ? (
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setProfileMenuOpen((open) => !open)}
+                aria-expanded={profileMenuOpen}
+                className="flex items-center gap-1 rounded-full border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+              >
+                {displayName ?? "Konto"}
+                <ChevronDown className={`h-3.5 w-3.5 transition-transform ${profileMenuOpen ? "rotate-180" : ""}`} />
+              </button>
+              {profileMenuOpen ? (
+                <div className="absolute right-0 z-50 mt-2 w-44 overflow-hidden rounded-2xl border border-border bg-card p-1.5 shadow-xl">
+                  <button type="button" onClick={() => setProfileMenuOpen(false)} className="flex w-full items-center rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-primary">Spelarvy</button>
+                  <Link to="/coach" onClick={() => setProfileMenuOpen(false)} className="flex w-full items-center rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors hover:bg-muted">Coachvy</Link>
+                  <div className="my-1 border-t border-border" />
+                  <Link to="/konto" onClick={() => setProfileMenuOpen(false)} className="flex w-full items-center rounded-xl px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">Konto</Link>
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <Link to="/konto" className="rounded-full border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">Logga in</Link>
+          )}
         </div>
       </div>
 
