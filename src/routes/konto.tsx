@@ -145,13 +145,6 @@ function AccountPage() {
               <span>Vänner</span>
               <span className="text-primary">Lägg till & hantera ›</span>
             </Link>
-            <Link
-              to="/min-coach"
-              className="flex w-full items-center justify-between rounded-2xl border border-border px-4 py-3 text-sm font-semibold"
-            >
-              <span>Coach</span>
-              <span className="text-primary">Min coach ›</span>
-            </Link>
             <button
               onClick={signOut}
               className="w-full rounded-2xl border border-border py-3 text-sm text-muted-foreground"
