@@ -1,0 +1,33 @@
+name: Reorder putting match card
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.event.head_commit.message == 'Add one-time putting match card patch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reorder and rename putting match option
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('src/routes/match.tsx')
+          s = p.read_text()
+          old = '''  putting: [\n    { id: "short", title: "Korta puttar", description: "1–5 meter" },\n    { id: "mix", title: "Mixade avstånd", description: "1–10 meter" },\n    { id: "lag", title: "Långa puttar", description: "8–22 meter" },\n    { id: "pga-tour", title: "PGA Tour Putting", description: "Hela puttspelet · PGA Tour-avstånd · 9 eller 18 hål" },\n  ],'''
+          new = '''  putting: [\n    { id: "pga-tour", title: "Hela puttspelet", description: "Baserat på PGA Tour-avstånd · mix av korta, mellanlånga och långa puttar · 9 eller 18 hål" },\n    { id: "short", title: "Korta puttar", description: "1–5 meter" },\n    { id: "mix", title: "Mixade avstånd", description: "1–10 meter" },\n    { id: "lag", title: "Långa puttar", description: "8–22 meter" },\n  ],'''
+          if old not in s:
+              raise SystemExit('Putting match block not found')
+          p.write_text(s.replace(old, new, 1))
+          PY
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add src/routes/match.tsx
+          git commit -m "Prioritize full putting game option"
+          git push
