@@ -45,10 +45,10 @@ const MATCH_TYPES: Record<MatchCategory, Array<{ id: string; title: string; desc
     { id: "closest", title: "Closest to the Pin", description: "Ett slag mot flaggan. Poäng efter avståndszon – högst poäng vinner hålet." },
   ],
   putting: [
+    { id: "pga-tour", title: "Hela puttspelet", description: "Baserat på PGA Tour-avstånd · mix av korta, mellanlånga och långa puttar · 9 eller 18 hål" },
     { id: "short", title: "Korta puttar", description: "1–5 meter" },
     { id: "mix", title: "Mixade avstånd", description: "1–10 meter" },
     { id: "lag", title: "Långa puttar", description: "8–22 meter" },
-    { id: "pga-tour", title: "PGA Tour Putting", description: "Hela puttspelet · PGA Tour-avstånd · 9 eller 18 hål" },
   ],
 };
 
