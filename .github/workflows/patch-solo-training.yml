@@ -1,0 +1,89 @@
+name: Patch solo training
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Make training solo only and reorder menus
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          # 1) Remove multiplayer/group mode from 8-ball training test.
+          p = Path('src/routes/8-bollar.tsx')
+          s = p.read_text()
+          s = s.replace('import { ArrowLeft, ArrowRight, BarChart3, Check, RotateCcw, Trophy, UserPlus, Users, X } from "lucide-react";', 'import { ArrowLeft, ArrowRight, BarChart3, RotateCcw, Trophy, X } from "lucide-react";')
+          s = s.replace('import { useAuth } from "@/hooks/use-auth";\nimport { listFriendships, type Friendship } from "@/lib/friends-cloud";\nimport { createEightBallGroupSession } from "@/lib/group-eight-ball";\n', '')
+          s = s.replace('  const { user } = useAuth();\n', '')
+          for line in [
+            '  const [friends, setFriends] = useState<Friendship[]>([]);\n',
+            '  const [selectedFriends, setSelectedFriends] = useState<Friendship[]>([]);\n',
+            '  const [showPlayers, setShowPlayers] = useState(false);\n',
+            '  const [startingGroup, setStartingGroup] = useState(false);\n',
+            '  const [groupError, setGroupError] = useState<string | null>(null);\n',
+          ]:
+            s = s.replace(line, '')
+          s = re.sub(r'\n  useEffect\(\(\) => \{\n    if \(!user\).*?\n  \}, \[user\]\);\n', '\n', s, flags=re.S)
+          s = re.sub(r'\n  function toggleFriend\(friend: Friendship\) \{.*?\n  \}\n', '\n', s, flags=re.S)
+          old_start = '''  async function start() {\n    clearFeedback();\n    setGroupError(null);\n    if (selectedFriends.length) {\n      setStartingGroup(true);\n      try {\n        const id = await createEightBallGroupSession(selectedFriends);\n        window.location.assign(`/8-bollar-grupp/${id}`);\n        return;\n      } catch (error) {\n        setGroupError(error instanceof Error ? error.message : "Det gick inte att starta testet.");\n        setStartingGroup(false);\n        return;\n      }\n    }\n    setShot(0); setScores([]); setResult(null); setPhase("test");\n  }'''
+          new_start = '''  function start() {\n    clearFeedback();\n    setShot(0); setScores([]); setResult(null); setPhase("test");\n  }'''
+          if old_start not in s:
+            raise SystemExit('8-ball start block not found')
+          s = s.replace(old_start, new_start, 1)
+          player_block = re.compile(r'\n      <section className="mt-3 rounded-2xl border border-border bg-card p-4">\n        <div className="flex items-center justify-between gap-3">\n          <div>\n            <p className="text-\[10px\].*?\n      </section>\n\n      \{groupError \? <p.*?\n      <button onClick=\{start\} disabled=\{startingGroup\} className="mt-auto.*?</button>', re.S)
+          replacement = '''\n      <button onClick={start} className="mt-auto flex w-full shrink-0 items-center justify-center gap-2 rounded-2xl bg-primary py-4 font-display text-xl text-primary-foreground">Starta test <ArrowRight className="h-5 w-5" /></button>'''
+          s2, n = player_block.subn(replacement, s, count=1)
+          if n != 1:
+            raise SystemExit('8-ball multiplayer intro block not found')
+          s = s2
+          p.write_text(s)
+
+          # 2) Reorder Testa page: Handicap -> Match -> Training.
+          p = Path('src/routes/tester.tsx')
+          s = p.read_text()
+          training = re.search(r'\n        <Link\n          to="/traning".*?\n        </Link>\n', s, re.S)
+          match = re.search(r'\n        <Link\n          to="/match".*?\n        </Link>\n', s, re.S)
+          if not training or not match:
+            raise SystemExit('Tester training/match cards not found')
+          if training.start() < match.start():
+            before = s[:training.start()]
+            middle = s[training.end():match.start()]
+            after = s[match.end():]
+            s = before + match.group(0) + middle + training.group(0) + after
+          p.write_text(s)
+
+          # 3) Quick action menu: Handicap -> Match -> Training, and remove social training wording.
+          p = Path('src/components/bottom-nav.tsx')
+          s = p.read_text()
+          s = s.replace('Välj mellan att testa, träna eller tävla.', 'Välj mellan att testa, tävla eller träna.')
+          s = s.replace('Träna själv eller tillsammans med en kompis, slå PB och följ din utveckling över tid.', 'Träna själv, slå PB och följ din utveckling över tid.')
+          training = re.search(r'\n              <Link to="/traning".*?\n              </Link>\n', s, re.S)
+          match = re.search(r'\n              <Link to="/match".*?\n              </Link>\n', s, re.S)
+          if not training or not match:
+            raise SystemExit('Quick action training/match blocks not found')
+          if training.start() < match.start():
+            before = s[:training.start()]
+            middle = s[training.end():match.start()]
+            after = s[match.end():]
+            s = before + match.group(0) + middle + training.group(0) + after
+          p.write_text(s)
+          PY
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/routes/8-bollar.tsx src/routes/tester.tsx src/components/bottom-nav.tsx
+          git commit -m "Make training solo only and reorder actions"
+          git push
