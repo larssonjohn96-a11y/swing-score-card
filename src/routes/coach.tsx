@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Check, ChevronRight, Heart, Target, UserRound, Users } from "lucide-react";
+import { ArrowLeft, Check, ChevronRight, Target, UserRound } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,14 +12,12 @@ type ActionType = "focus" | "goal" | "session" | "comment" | "reaction";
 type CoachProfile = { user_id: string; display_name: string; club_name: string | null; invite_code: string };
 type Relationship = { id: string; player_id: string; coach_id: string; status: string; share_training_data: boolean };
 type CoachAction = { id: string; action_type: ActionType; title: string; body: string | null; route: string | null; completed_at: string | null; created_at: string };
-
 type PlayerRow = { relationship: Relationship; name: string; snapshot?: { est_hcp?: number | null; approach_hcp?: number | null; driving_hcp?: number | null; around_green_hcp?: number | null; putting_hcp?: number | null; test_count?: number } };
 
 function CoachPage() {
   const { user, displayName, loading } = useAuth();
   const [tab, setTab] = useState<Tab>("player");
   const [coachProfile, setCoachProfile] = useState<CoachProfile | null>(null);
-  const [myRelationship, setMyRelationship] = useState<Relationship | null>(null);
   const [myCoach, setMyCoach] = useState<CoachProfile | null>(null);
   const [actions, setActions] = useState<CoachAction[]>([]);
   const [players, setPlayers] = useState<PlayerRow[]>([]);
@@ -44,7 +42,6 @@ function CoachPage() {
     setCoachProfile(cp ?? null);
     const allRels = (rels ?? []) as Relationship[];
     const playerRel = allRels.find((r) => r.player_id === user.id) ?? null;
-    setMyRelationship(playerRel);
     if (playerRel) {
       const [{ data: coach }, { data: myActions }] = await Promise.all([
         db.from("coach_profiles").select("*").eq("user_id", playerRel.coach_id).maybeSingle(),
