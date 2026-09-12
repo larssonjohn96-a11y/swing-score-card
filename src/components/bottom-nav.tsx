@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
-import { BarChart3, ChevronLeft, ChevronRight, Home, ListChecks, Menu, Plus, Target, Trophy, TrendingUp, User, Users } from "lucide-react";
+import { BarChart3, Bot, ChevronLeft, ChevronRight, Home, ListChecks, Menu, Swords, Target, Trophy, TrendingUp, User, Users } from "lucide-react";
 import { useBottomNavVisibility } from "@/lib/bottom-nav-visibility";
 import { CATEGORIES } from "@/lib/categories";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -14,11 +14,11 @@ const LEFT_TABS = [
 ] as const;
 
 const RIGHT_TABS = [
-  { to: "/utveckling", label: "Analys", icon: TrendingUp, exact: false },
+  { to: "/vanner", label: "Vänner", icon: Users, exact: false },
 ] as const;
 
 type MoreTone = "gold" | "neutral" | "h2h";
-type QuickView = "root" | "hcp";
+type QuickView = "match" | "hcp";
 
 const MORE_LINKS: ReadonlyArray<{
   to: string;
@@ -27,12 +27,11 @@ const MORE_LINKS: ReadonlyArray<{
   icon: typeof Home;
   tone: MoreTone;
 }> = [
+  { to: "/utveckling", label: "Analys", description: "Se utveckling, styrkor, svagheter och dina kategoriresultat.", icon: TrendingUp, tone: "neutral" },
   { to: "/trophy", label: "Trophy Room", description: "Personliga rekord, milestones och achievements.", icon: Trophy, tone: "gold" },
   { to: "/min-bag", label: "My Bag", description: "Öppna din mappade bag – eller starta mappning om du inte har gjort den ännu.", icon: ListChecks, tone: "neutral" },
   { to: "/hcp-goal", label: "HCP Goal", description: "Sätt ett handicapmål och se dina tre viktigaste vägar dit.", icon: Target, tone: "h2h" },
   { to: "/jamfor", label: "Head-to-head", description: "Ställ din SG4-profil mot en vän och se vem som vinner.", icon: Users, tone: "h2h" },
-  { to: "/match", label: "Tävla", description: "Utmana en kompis head-to-head eller spela lagmatch i Fourball och Foursomes.", icon: Users, tone: "h2h" },
-  { to: "/vanner", label: "Vänner", description: "Hantera vänner och sociala funktioner.", icon: Users, tone: "neutral" },
   { to: "/shot-value", label: "Shot Value", description: "Se vad ett enskilt slag faktiskt är värt mot olika spelarnivåer.", icon: BarChart3, tone: "neutral" },
 ] as const;
 
@@ -61,11 +60,29 @@ function moreItemClasses(tone: MoreTone) {
   return { card: "border-border bg-card hover:border-foreground/20 hover:bg-muted/35", icon: "border border-border bg-muted text-foreground", chevron: "text-muted-foreground" };
 }
 
+function MatchOption({ icon: Icon, title, description, badge, disabled, onClick }: { icon: typeof Home; title: string; description: string; badge?: string; disabled?: boolean; onClick?: () => void }) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className={`flex min-h-[88px] w-full items-center gap-4 rounded-3xl border px-5 py-4 text-left transition-all ${disabled ? "border-border bg-muted/35 opacity-65" : "border-border bg-card active:scale-[0.99] hover:border-primary/35"}`}
+    >
+      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-border bg-background text-primary"><Icon className="h-6 w-6" /></span>
+      <span className="min-w-0 flex-1">
+        <span className="flex items-center gap-2"><span className="text-lg font-semibold leading-none">{title}</span>{badge ? <span className="rounded-full bg-muted px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-muted-foreground">{badge}</span> : null}</span>
+        <span className="mt-2 block text-sm leading-snug text-muted-foreground">{description}</span>
+      </span>
+      {!disabled ? <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" /> : null}
+    </button>
+  );
+}
+
 export function BottomNav() {
   const { hidden } = useBottomNavVisibility();
   const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
-  const [quickView, setQuickView] = useState<QuickView>("root");
+  const [quickView, setQuickView] = useState<QuickView>("match");
   const [moreOpen, setMoreOpen] = useState(false);
   const [trophyBadge, setTrophyBadge] = useState(0);
 
@@ -89,11 +106,12 @@ export function BottomNav() {
           <div className="flex flex-1 justify-center">
             <button
               type="button"
-              onClick={() => { setQuickView("root"); setOpen(true); }}
-              aria-label="Öppna snabbval"
-              className="flex h-14 w-14 -translate-y-3 items-center justify-center rounded-full border border-white/75 bg-primary/94 text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,.5),0_14px_30px_-12px_rgba(15,23,42,.52)] backdrop-blur-2xl ring-1 ring-black/[0.05] transition-all active:scale-95"
+              onClick={() => { setQuickView("match"); setOpen(true); }}
+              aria-label="Öppna Match"
+              className="flex h-[62px] w-[62px] -translate-y-3 flex-col items-center justify-center rounded-full border border-white/75 bg-primary/96 text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,.5),0_14px_30px_-12px_rgba(15,23,42,.52)] backdrop-blur-2xl ring-1 ring-black/[0.05] transition-all active:scale-95"
             >
-              <Plus className="h-6 w-6" />
+              <Swords className="h-6 w-6" />
+              <span className="mt-0.5 text-[8px] font-extrabold uppercase tracking-[0.08em]">Match</span>
             </button>
           </div>
           {RIGHT_TABS.map((tab) => <NavLink key={tab.to} tab={tab} active={tab.exact ? pathname === tab.to : pathname.startsWith(tab.to)} />)}
@@ -112,39 +130,27 @@ export function BottomNav() {
         </div>
       </nav>
 
-      <Sheet open={open} onOpenChange={(value) => { setOpen(value); if (!value) setQuickView("root"); }}>
+      <Sheet open={open} onOpenChange={(value) => { setOpen(value); if (!value) setQuickView("match"); }}>
         <SheetContent side="bottom" className="rounded-t-[32px] px-5 pb-7 pt-6">
-          {quickView === "root" ? <>
-            <SheetHeader className="space-y-1.5"><SheetTitle className="text-left text-[28px] leading-none">Vad vill du göra?</SheetTitle><p className="text-left text-sm text-muted-foreground">Välj mellan att testa, tävla eller träna.</p></SheetHeader>
+          {quickView === "match" ? <>
+            <SheetHeader className="space-y-1.5"><SheetTitle className="text-left text-[30px] leading-none">Match</SheetTitle><p className="text-left text-sm text-muted-foreground">Välj hur du vill tävla.</p></SheetHeader>
             <div className="mt-5 space-y-3">
-              <button type="button" onClick={() => setQuickView("hcp")} className="group flex min-h-[92px] w-full items-center gap-4 rounded-3xl border border-primary/25 bg-primary/[0.045] px-5 py-5 text-left transition-colors hover:border-primary/40 hover:bg-primary/[0.07]">
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-tint-strong text-sm font-extrabold tracking-[-0.02em] text-primary">HCP</span>
-                <div className="min-w-0 flex-1"><div className="flex items-center gap-2"><h3 className="text-xl font-semibold leading-none">Handicap-test</h3><span className="rounded-full bg-tint-strong px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-primary">HCP</span></div><p className="mt-2 text-sm leading-snug text-muted-foreground">Testa din nivå och få ett handicapresultat i vald kategori.</p></div>
-                <ChevronRight className="h-4 w-4 shrink-0 text-primary" />
-              </button>
-
-              <Link to="/match" onClick={() => setOpen(false)} className="group flex min-h-[92px] items-center gap-4 rounded-3xl border border-blue-500/20 bg-gradient-to-r from-blue-500/[0.06] via-card to-red-500/[0.06] px-5 py-5 transition-colors hover:border-red-500/30">
-                <span className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white/85 shadow-sm">
-                  <User className="absolute left-1.5 h-[20px] w-[20px] stroke-[2.35] text-blue-600" />
-                  <span className="relative z-10 rounded bg-slate-950 px-1 py-0.5 text-[7px] font-extrabold leading-none text-white">VS</span>
-                  <User className="absolute right-1.5 h-[20px] w-[20px] stroke-[2.35] text-red-600" />
-                </span>
-                <div className="min-w-0 flex-1"><div className="flex items-center gap-2"><h3 className="text-xl font-semibold leading-none">Match</h3><span className="rounded-full bg-slate-900 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-white">TÄVLA</span></div><p className="mt-2 text-sm leading-snug text-muted-foreground">Utmana en kompis head-to-head eller spela lagmatch i Fourball och Foursomes.</p></div>
-                <ChevronRight className="h-4 w-4 shrink-0 text-red-500/70" />
+              <Link to="/match" onClick={() => setOpen(false)} className="flex min-h-[92px] items-center gap-4 rounded-3xl border border-blue-500/20 bg-gradient-to-r from-blue-500/[0.07] via-card to-red-500/[0.07] px-5 py-4 transition-all active:scale-[0.99]">
+                <span className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white/90 shadow-sm"><User className="absolute left-1.5 h-[20px] w-[20px] stroke-[2.35] text-blue-600" /><span className="relative z-10 rounded bg-slate-950 px-1 py-0.5 text-[7px] font-extrabold leading-none text-white">VS</span><User className="absolute right-1.5 h-[20px] w-[20px] stroke-[2.35] text-red-600" /></span>
+                <span className="min-w-0 flex-1"><span className="text-xl font-semibold leading-none">Mot vän</span><span className="mt-2 block text-sm leading-snug text-muted-foreground">Head-to-head, Fourball och Foursomes med en kompis.</span></span><ChevronRight className="h-4 w-4 shrink-0 text-red-500/70" />
               </Link>
 
-              <Link to="/traning" search={{ category: undefined }} onClick={() => setOpen(false)} className="group flex min-h-[92px] items-center gap-4 rounded-3xl border border-border bg-muted/55 px-5 py-5 transition-colors hover:border-primary hover:bg-muted/70">
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-border bg-background/80 text-foreground"><ListChecks className="h-6 w-6" /></span>
-                <div className="min-w-0 flex-1"><div className="flex items-center gap-2"><h3 className="text-xl font-semibold leading-none">Träning</h3><span className="rounded-full bg-background/80 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Träna</span></div><p className="mt-2 text-sm leading-snug text-muted-foreground">Träna själv, slå PB och följ din utveckling över tid.</p></div>
-                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-              </Link>
+              <MatchOption icon={Bot} title="Mot bot" description="Spela mot HCP-botar, dina egna ghosts och senare vänners bot-profiler." badge="Nästa" disabled />
+              <MatchOption icon={Trophy} title="Turnering" description="Tävla i återkommande challenges och turneringar mot andra spelare." badge="Nästa" disabled />
+              <MatchOption icon={Target} title="HCP-utmaning" description="Spela en challenge mot en definierad handicapnivå." onClick={() => setQuickView("hcp")} />
             </div>
+            <Link to="/traning" search={{ category: undefined }} onClick={() => setOpen(false)} className="mt-4 flex items-center justify-between rounded-2xl border border-border bg-muted/35 px-4 py-3 text-sm font-medium"><span>Fri träning & PB</span><ChevronRight className="h-4 w-4 text-muted-foreground" /></Link>
           </> : <>
             <SheetHeader className="space-y-1">
-              <div className="flex items-center gap-2"><button type="button" onClick={() => setQuickView("root")} className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card"><ChevronLeft className="h-4 w-4" /></button><div><SheetTitle className="text-left text-2xl">Handicap-test</SheetTitle><p className="text-left text-xs text-muted-foreground">Välj kategori och gör ett test för att få din nivå.</p></div></div>
+              <div className="flex items-center gap-2"><button type="button" onClick={() => setQuickView("match")} className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card"><ChevronLeft className="h-4 w-4" /></button><div><SheetTitle className="text-left text-2xl">HCP-utmaning</SheetTitle><p className="text-left text-xs text-muted-foreground">Välj kategori. Nuvarande HCP-testmotor behålls som grunden.</p></div></div>
             </SheetHeader>
             <div className="mt-4 space-y-2">
-              {CATEGORIES.map((c) => <Link key={c.slug} to="/kategori/$slug" params={{ slug: c.slug }} onClick={() => setOpen(false)} className="group flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3.5 transition-colors hover:border-primary hover:bg-tint"><div className="min-w-0 flex-1"><div className="flex items-center gap-2"><h3 className="text-lg leading-none">{c.title}</h3><span className="rounded-full bg-tint-strong px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-primary">HCP</span></div><p className="mt-1 text-[11px] leading-snug text-muted-foreground line-clamp-1">{c.description}</p><p className="mt-1 text-[10px] font-semibold text-flag">Gör testet · få din nivå</p></div><ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" /></Link>)}
+              {CATEGORIES.map((c) => <Link key={c.slug} to="/kategori/$slug" params={{ slug: c.slug }} onClick={() => setOpen(false)} className="group flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3.5 transition-colors hover:border-primary hover:bg-tint"><div className="min-w-0 flex-1"><div className="flex items-center gap-2"><h3 className="text-lg leading-none">{c.title}</h3><span className="rounded-full bg-tint-strong px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-primary">HCP</span></div><p className="mt-1 text-[11px] leading-snug text-muted-foreground line-clamp-1">{c.description}</p><p className="mt-1 text-[10px] font-semibold text-flag">Spela · få din nivå</p></div><ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" /></Link>)}
             </div>
           </>}
         </SheetContent>
@@ -152,7 +158,7 @@ export function BottomNav() {
 
       <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
         <SheetContent side="bottom" className="rounded-t-3xl px-5 pb-6 pt-5">
-          <SheetHeader className="space-y-1"><SheetTitle className="text-left text-2xl">Mer</SheetTitle><p className="text-left text-xs text-muted-foreground">Snabbvägar till fler delar av SG4.</p></SheetHeader>
+          <SheetHeader className="space-y-1"><SheetTitle className="text-left text-2xl">Mer</SheetTitle><p className="text-left text-xs text-muted-foreground">Analys och alla verktyg vi redan byggt finns kvar här.</p></SheetHeader>
           <div className="mt-4 space-y-2">
             {MORE_LINKS.map((item) => { const tone = moreItemClasses(item.tone); return <Link key={item.to} to={item.to as any} onClick={() => setMoreOpen(false)} className={`group flex items-center gap-3 rounded-2xl border px-4 py-3.5 transition-colors ${tone.card}`}><span className={`relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${tone.icon}`}><item.icon className="h-5 w-5" />{item.to === "/trophy" && trophyBadge ? <span className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-amber-500 px-1 text-[9px] font-bold text-white">{trophyBadge}</span> : null}</span><div className="min-w-0 flex-1"><h3 className="text-base font-semibold leading-none">{item.label}</h3><p className="mt-1 text-[11px] leading-snug text-muted-foreground">{item.description}</p></div><ChevronRight className={`h-4 w-4 shrink-0 ${tone.chevron}`} /></Link>; })}
           </div>
