@@ -32,6 +32,7 @@ type TestRoute =
   | "/approach-pei-valj"
   | "/green-reading"
   | "/upp-och-in"
+  | "/bunker-traning"
   | "/shot-shaping";
 
 type TestItem = {
@@ -66,7 +67,8 @@ const TESTS: Record<Category, TestItem[]> = {
   ],
   "around-the-green": [
     { to: "/8-bollar", title: "8-bollsövningen", description: "Chip, pitch, lobb och bunker från åtta stationer. Fem varv.", meta: "40 slag · max 160 poäng", skill: "Slagvariation" },
-    { to: "/upp-och-in", title: "Up & Down Challenge", description: "10 lägen runt green. Spela slaget, putta ut och räkna dina up and downs.", meta: "10 situationer · konvertering %", skill: "Scoring" },
+    { to: "/upp-och-in", title: "Up & Down Challenge", description: "10 lägen runt green. Spela slaget och följ hur nära flaggan bollen stannar.", meta: "10 situationer · närhet till flaggan", skill: "Scoring" },
+    { to: "/bunker-traning", title: "Bunkerträning", description: "Bygg en bunker-session med olika lies och avstånd. Resultatet baseras bara på var bollen stannar efter slaget.", meta: "5, 10 eller 20 slag · valbara lies", skill: "Bunkerprecision" },
   ],
   putting: [
     { to: "/putting-streak", title: "Putting Streak", description: "En putt per nivå från 1 till 10 meter. Sätt den för att gå vidare. Första missen avslutar testet.", meta: "1 liv · progressiv stege · PB", skill: "Challenge", featured: true },
