@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, BarChart3, ChevronRight, Crosshair, Grid3x3 } from "lucide-react";
+import { ArrowLeft, BarChart3, Check, ChevronRight, Crosshair, Grid3x3 } from "lucide-react";
 import { useState } from "react";
 import { LIGHT_SURFACE } from "./8-bollar";
 
@@ -127,6 +127,7 @@ function TestCard({ to, title, description, meta, skill }: TestItem) {
 function TrainingTestsPage() {
   const { category } = Route.useSearch();
   const active = CATEGORIES.find((i) => i.id === category);
+  const [selectedTrainingCategory, setSelectedTrainingCategory] = useState<Category | null>(null);
   const [puttingFilter, setPuttingFilter] = useState<PuttingFilter>("all");
   const visibleTests = category === "putting" ? TESTS.putting.filter((test) => matchesPuttingFilter(test, puttingFilter)) : category ? TESTS[category] : [];
 
@@ -141,30 +142,60 @@ function TrainingTestsPage() {
           </section>
 
           <section className="mt-6">
-            <div className="mb-2 flex items-center justify-between">
-              <h2 className="font-display text-2xl leading-none text-slate-950">Kategorier</h2>
+            <div className="mb-3 flex items-end justify-between">
+              <div>
+                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-500">Kategori</p>
+                <h2 className="mt-1 font-display text-3xl leading-none text-slate-950">Vad vill du träna?</h2>
+              </div>
               <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">4 områden</span>
             </div>
+
             <div className="grid grid-cols-2 gap-3">
-              {CATEGORIES.map((item) => (
-                <Link
-                  key={item.id}
-                  to="/traning"
-                  search={{ category: item.id }}
-                  className="group flex min-h-[174px] flex-col justify-between rounded-3xl border border-slate-300/80 bg-gradient-to-br from-slate-100/88 via-white/78 to-slate-100/72 p-4 text-left shadow-[0_18px_44px_-32px_rgba(15,23,42,.4)] backdrop-blur-2xl transition-all active:scale-[0.99]"
-                >
-                  <span className="block min-h-[102px]">
-                    <span className="block min-h-[14px] text-[9px] font-semibold uppercase tracking-[0.16em] text-slate-500">{item.title}</span>
-                    <span className="mt-1 block min-h-[30px] font-display text-[26px] leading-none text-slate-950">{item.svTitle}</span>
-                    <span className="mt-2 block min-h-[34px] text-[11px] leading-snug text-slate-600">{item.description}</span>
-                  </span>
-                  <span className="mt-4 flex items-center justify-between">
-                    <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-slate-600">{TESTS[item.id].length} tester</span>
-                    <ChevronRight className="h-4 w-4 shrink-0 text-slate-500 transition-transform group-active:translate-x-0.5" />
-                  </span>
-                </Link>
-              ))}
+              {CATEGORIES.map((item) => {
+                const selected = selectedTrainingCategory === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setSelectedTrainingCategory(item.id)}
+                    className={`group relative flex min-h-[174px] flex-col justify-between rounded-3xl border p-4 text-left backdrop-blur-2xl transition-all active:scale-[0.99] ${selected ? "border-blue-300/90 bg-gradient-to-br from-blue-100/72 via-white/82 to-sky-50/74 shadow-[0_20px_46px_-30px_rgba(37,99,235,.48)] ring-2 ring-blue-400/45" : "border-slate-300/80 bg-gradient-to-br from-slate-100/88 via-white/78 to-slate-100/72 shadow-[0_18px_44px_-32px_rgba(15,23,42,.4)]"}`}
+                  >
+                    {selected ? (
+                      <span className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full border border-blue-200 bg-white/90 text-blue-600 shadow-sm">
+                        <Check className="h-3.5 w-3.5" />
+                      </span>
+                    ) : null}
+                    <span className="block min-h-[102px] pr-5">
+                      <span className="block min-h-[14px] text-[9px] font-semibold uppercase tracking-[0.16em] text-slate-500">{item.title}</span>
+                      <span className="mt-1 block min-h-[30px] font-display text-[26px] leading-none text-slate-950">{item.svTitle}</span>
+                      <span className="mt-2 block min-h-[34px] text-[11px] leading-snug text-slate-600">{item.description}</span>
+                    </span>
+                    <span className="mt-4 flex items-center justify-between">
+                      <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-slate-600">{TESTS[item.id].length} tester</span>
+                      <ChevronRight className={`h-4 w-4 shrink-0 transition-all ${selected ? "translate-x-0.5 text-blue-600" : "text-slate-500"}`} />
+                    </span>
+                  </button>
+                );
+              })}
             </div>
+
+            {selectedTrainingCategory ? (
+              <Link
+                to="/traning"
+                search={{ category: selectedTrainingCategory }}
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-sky-300/80 bg-gradient-to-r from-sky-100/92 via-blue-100/88 to-cyan-100/82 py-4 font-display text-xl text-sky-900 shadow-[0_18px_38px_-26px_rgba(14,165,233,.6)] backdrop-blur-2xl transition-all active:scale-[0.99]"
+              >
+                Nästa <ChevronRight className="h-5 w-5" />
+              </Link>
+            ) : (
+              <button
+                type="button"
+                disabled
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-sky-200/60 bg-sky-100/35 py-4 font-display text-xl text-sky-500/55 opacity-55 backdrop-blur-2xl"
+              >
+                Nästa <ChevronRight className="h-5 w-5" />
+              </button>
+            )}
 
             <Link
               to="/traning-progress"
