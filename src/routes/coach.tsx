@@ -51,12 +51,13 @@ function CoachPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [roleMenuOpen, setRoleMenuOpen] = useState(false);
 
-  const visiblePlayers = isJohnMaster && players.length === 0 ? DEMO_PLAYERS : players;
-  const visibleSessions = isJohnMaster && players.length === 0 ? DEMO_SESSIONS : sessions;
+  const hasRealCoachStudents = players.some((player) => player.relationship.id !== "preview-self-john");
+  const visiblePlayers = isJohnMaster && !hasRealCoachStudents ? [...players, ...DEMO_PLAYERS] : players;
+  const visibleSessions = isJohnMaster && !hasRealCoachStudents ? { ...DEMO_SESSIONS, ...sessions } : sessions;
   const effectiveProfile = profile ?? (isJohnMaster ? { user_id: user?.id ?? "demo-john", display_name: "Coach John", club_name: null, invite_code: "JOHN" } : null);
   const selectedPlayer = useMemo(() => visiblePlayers.find((p) => p.relationship.player_id === selectedPlayerId) ?? null, [visiblePlayers, selectedPlayerId]);
   const selectedSessions = selectedPlayerId ? visibleSessions[selectedPlayerId] ?? [] : [];
-  const usingDemo = isJohnMaster && players.length === 0;
+  const selectedIsPreview = selectedPlayer?.relationship.id === "preview-self-john" || selectedPlayer?.relationship.id.startsWith("demo-");
 
   useEffect(() => { if (user) void loadCoachData(); }, [user]);
   useEffect(() => {
@@ -72,24 +73,33 @@ function CoachPage() {
     ]);
     setProfile(coachProfile ?? null);
     const coachRels = (rels ?? []) as Relationship[];
-    if (!coachRels.length) {
+    const ids = [...new Set([...(isJohnMaster ? [user.id] : []), ...coachRels.map((r) => r.player_id)])];
+
+    if (!ids.length) {
       setPlayers([]);
       setSessions({});
       return;
     }
 
-    const ids = coachRels.map((r) => r.player_id);
     const [{ data: profiles }, { data: snapshots }, { data: training }] = await Promise.all([
       db.from("profiles").select("id,display_name").in("id", ids),
       db.from("player_snapshots").select("*").in("user_id", ids),
       db.from("test_sessions").select("id,user_id,test_id,category,played_at,score,test_handicap,metrics").in("user_id", ids).eq("test_type", "training").order("played_at", { ascending: false }).limit(60),
     ]);
 
-    setPlayers(coachRels.map((relationship) => ({
+    const realStudents = coachRels.map((relationship) => ({
       relationship,
       name: profiles?.find((p: any) => p.id === relationship.player_id)?.display_name ?? "Spelare",
       snapshot: snapshots?.find((s: any) => s.user_id === relationship.player_id),
-    })));
+    }));
+
+    const johnPreview: PlayerRow[] = isJohnMaster ? [{
+      relationship: { id: "preview-self-john", player_id: user.id, coach_id: user.id, status: "accepted", share_training_data: true },
+      name: profiles?.find((p: any) => p.id === user.id)?.display_name ?? displayName ?? "John",
+      snapshot: snapshots?.find((s: any) => s.user_id === user.id),
+    }] : [];
+
+    setPlayers([...johnPreview, ...realStudents]);
 
     const grouped: Record<string, TrainingSession[]> = {};
     for (const session of training ?? []) {
@@ -108,11 +118,11 @@ function CoachPage() {
 
   async function addAction() {
     if (!user || !selectedPlayer || !title.trim()) return;
-    if (usingDemo) {
+    if (selectedIsPreview) {
       setTitle("");
       setBody("");
       setSelectedSessionId(null);
-      setMessage("Preview: skickat till spelaren.");
+      setMessage(selectedPlayer.relationship.id === "preview-self-john" ? "Preview: åtgärden mot John sparas inte som coachmeddelande." : "Preview: skickat till spelaren.");
       return;
     }
     const { error } = await db.from("coach_actions").insert({
@@ -183,11 +193,12 @@ function CoachPage() {
           <div className="space-y-2.5">
             {visiblePlayers.map((player) => {
               const active = selectedPlayerId === player.relationship.player_id;
+              const isRealJohn = player.relationship.id === "preview-self-john";
               return (
                 <button key={player.relationship.id} onClick={() => setSelectedPlayerId(player.relationship.player_id)} className={`flex w-full items-center justify-between rounded-[24px] px-4 py-4 text-left transition-all active:scale-[.99] ${active ? "border border-sky-200/80 bg-sky-100/55 shadow-[0_14px_36px_-24px_rgba(14,116,144,.5),inset_0_1px_0_rgba(255,255,255,.9)] backdrop-blur-2xl dark:border-sky-400/20 dark:bg-sky-400/10" : glass}`}>
                   <span className="flex min-w-0 items-center gap-3.5">
                     <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-medium ${active ? "bg-sky-600 text-white" : "bg-slate-200/70 text-slate-600 dark:bg-white/10 dark:text-slate-300"}`}>{player.name.slice(0, 1).toUpperCase()}</span>
-                    <span className="min-w-0"><span className="block truncate text-[15px] font-medium tracking-[-.02em]">{player.name}</span><span className="mt-1 block text-xs text-slate-400">{player.snapshot?.test_count ?? 0} tester · HCP {player.snapshot?.est_hcp ?? "–"}</span></span>
+                    <span className="min-w-0"><span className="flex items-center gap-2"><span className="block truncate text-[15px] font-medium tracking-[-.02em]">{player.name}</span>{isRealJohn ? <span className="rounded-full bg-sky-100/80 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[.12em] text-sky-700 dark:bg-sky-400/10 dark:text-sky-300">Live data</span> : null}</span><span className="mt-1 block text-xs text-slate-400">{player.snapshot?.test_count ?? 0} tester · HCP {player.snapshot?.est_hcp ?? "–"}</span></span>
                   </span>
                   <ChevronRight className={`h-4 w-4 shrink-0 ${active ? "text-sky-700 dark:text-sky-300" : "text-slate-400"}`} />
                 </button>
