@@ -1,12 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, ArrowRight, BarChart3, Check, RotateCcw, Trophy, UserPlus, Users, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, BarChart3, RotateCcw, Trophy, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 import { LEGACY_KEYS } from "@/lib/sessions/keys";
 import { recordSessionDeleted, recordSessionSaved } from "@/lib/sessions/sync";
-import { useAuth } from "@/hooks/use-auth";
-import { listFriendships, type Friendship } from "@/lib/friends-cloud";
-import { createEightBallGroupSession } from "@/lib/group-eight-ball";
 
 export const Route = createFileRoute("/8-bollar")({
   head: () => ({ meta: [{ title: "8-bollsövningen – Around the Green | SG4" }] }),
@@ -70,23 +67,13 @@ function getRoundTotals(values: number[]) {
 
 function EightBallPage() {
   useHideBottomNav(true);
-  const { user } = useAuth();
   const [phase, setPhase] = useState<Phase>("intro");
   const [shot, setShot] = useState(0);
   const [scores, setScores] = useState<number[]>([]);
   const [result, setResult] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<number | null>(null);
-  const [friends, setFriends] = useState<Friendship[]>([]);
-  const [selectedFriends, setSelectedFriends] = useState<Friendship[]>([]);
-  const [showPlayers, setShowPlayers] = useState(false);
-  const [startingGroup, setStartingGroup] = useState(false);
-  const [groupError, setGroupError] = useState<string | null>(null);
   const feedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    if (!user) { setFriends([]); setSelectedFriends([]); return; }
-    void listFriendships().then((result) => setFriends(result.accepted));
-  }, [user]);
 
   const stationIndex = shot % STATIONS.length;
   const station = stationIndex + 1;
@@ -99,27 +86,9 @@ function EightBallPage() {
     setFeedback(null);
   }
 
-  function toggleFriend(friend: Friendship) {
-    setSelectedFriends((current) => current.some((item) => item.id === friend.id)
-      ? current.filter((item) => item.id !== friend.id)
-      : current.length < 3 ? [...current, friend] : current);
-  }
 
-  async function start() {
+  function start() {
     clearFeedback();
-    setGroupError(null);
-    if (selectedFriends.length) {
-      setStartingGroup(true);
-      try {
-        const id = await createEightBallGroupSession(selectedFriends);
-        window.location.assign(`/8-bollar-grupp/${id}`);
-        return;
-      } catch (error) {
-        setGroupError(error instanceof Error ? error.message : "Det gick inte att starta testet.");
-        setStartingGroup(false);
-        return;
-      }
-    }
     setShot(0); setScores([]); setResult(null); setPhase("test");
   }
 
@@ -179,39 +148,7 @@ function EightBallPage() {
         </p>
       </section>
 
-      <section className="mt-3 rounded-2xl border border-border bg-card p-4">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Spelare</p>
-            <p className="mt-1 text-sm font-semibold">Du{selectedFriends.length ? ` + ${selectedFriends.length}` : ""}</p>
-          </div>
-          <button type="button" onClick={() => setShowPlayers((value) => !value)} className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-2 text-xs font-semibold">
-            <UserPlus className="h-3.5 w-3.5" /> Lägg till spelare
-          </button>
-        </div>
-
-        {selectedFriends.length ? (
-          <div className="mt-3 flex flex-wrap gap-2">
-            {selectedFriends.map((friend) => <button key={friend.id} type="button" onClick={() => toggleFriend(friend)} className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary"><Check className="h-3 w-3" />{friend.other.displayName}<X className="h-3 w-3" /></button>)}
-          </div>
-        ) : null}
-
-        {showPlayers ? (
-          <div className="mt-3 border-t border-border pt-3">
-            {!user ? <p className="text-xs text-muted-foreground">Logga in för att lägga till vänner i testet. <Link to="/konto" className="font-semibold text-primary">Logga in ›</Link></p> : friends.length ? (
-              <div className="space-y-1">
-                {friends.map((friend) => {
-                  const active = selectedFriends.some((item) => item.id === friend.id);
-                  return <button key={friend.id} type="button" onClick={() => toggleFriend(friend)} className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-muted/60"><span className={`inline-flex h-8 w-8 items-center justify-center rounded-full border ${active ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}>{active ? <Check className="h-4 w-4" /> : <Users className="h-4 w-4 text-muted-foreground" />}</span><span className="min-w-0 flex-1 truncate text-sm font-semibold">{friend.other.displayName}</span></button>;
-                })}
-              </div>
-            ) : <p className="text-xs text-muted-foreground">Du har inga accepterade vänner ännu. <Link to="/vanner" className="font-semibold text-primary">Lägg till vän ›</Link></p>}
-          </div>
-        ) : null}
-      </section>
-
-      {groupError ? <p className="mt-3 text-center text-xs text-destructive">{groupError}</p> : null}
-      <button onClick={start} disabled={startingGroup} className="mt-auto flex w-full shrink-0 items-center justify-center gap-2 rounded-2xl bg-primary py-4 font-display text-xl text-primary-foreground disabled:opacity-50">{startingGroup ? "Startar …" : selectedFriends.length ? `Starta test · ${selectedFriends.length + 1} spelare` : "Starta test"} <ArrowRight className="h-5 w-5" /></button>
+      <button onClick={start} className="mt-auto flex w-full shrink-0 items-center justify-center gap-2 rounded-2xl bg-primary py-4 font-display text-xl text-primary-foreground">Starta test <ArrowRight className="h-5 w-5" /></button>
     </main>
   );
 

@@ -115,19 +115,13 @@ export function BottomNav() {
       <Sheet open={open} onOpenChange={(value) => { setOpen(value); if (!value) setQuickView("root"); }}>
         <SheetContent side="bottom" className="rounded-t-[32px] px-5 pb-7 pt-6">
           {quickView === "root" ? <>
-            <SheetHeader className="space-y-1.5"><SheetTitle className="text-left text-[28px] leading-none">Vad vill du göra?</SheetTitle><p className="text-left text-sm text-muted-foreground">Välj mellan att testa, träna eller tävla.</p></SheetHeader>
+            <SheetHeader className="space-y-1.5"><SheetTitle className="text-left text-[28px] leading-none">Vad vill du göra?</SheetTitle><p className="text-left text-sm text-muted-foreground">Välj mellan att testa, tävla eller träna.</p></SheetHeader>
             <div className="mt-5 space-y-3">
               <button type="button" onClick={() => setQuickView("hcp")} className="group flex min-h-[92px] w-full items-center gap-4 rounded-3xl border border-primary/25 bg-primary/[0.045] px-5 py-5 text-left transition-colors hover:border-primary/40 hover:bg-primary/[0.07]">
                 <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-tint-strong text-sm font-extrabold tracking-[-0.02em] text-primary">HCP</span>
                 <div className="min-w-0 flex-1"><div className="flex items-center gap-2"><h3 className="text-xl font-semibold leading-none">Handicap-test</h3><span className="rounded-full bg-tint-strong px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-primary">HCP</span></div><p className="mt-2 text-sm leading-snug text-muted-foreground">Testa din nivå och få ett handicapresultat i vald kategori.</p></div>
                 <ChevronRight className="h-4 w-4 shrink-0 text-primary" />
               </button>
-
-              <Link to="/traning" search={{ category: undefined }} onClick={() => setOpen(false)} className="group flex min-h-[92px] items-center gap-4 rounded-3xl border border-border bg-muted/55 px-5 py-5 transition-colors hover:border-primary hover:bg-muted/70">
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-border bg-background/80 text-foreground"><ListChecks className="h-6 w-6" /></span>
-                <div className="min-w-0 flex-1"><div className="flex items-center gap-2"><h3 className="text-xl font-semibold leading-none">Träning</h3><span className="rounded-full bg-background/80 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Träna</span></div><p className="mt-2 text-sm leading-snug text-muted-foreground">Träna själv eller tillsammans med en kompis, slå PB och följ din utveckling över tid.</p></div>
-                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-              </Link>
 
               <Link to="/match" onClick={() => setOpen(false)} className="group flex min-h-[92px] items-center gap-4 rounded-3xl border border-blue-500/20 bg-gradient-to-r from-blue-500/[0.06] via-card to-red-500/[0.06] px-5 py-5 transition-colors hover:border-red-500/30">
                 <span className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white/85 shadow-sm">
@@ -137,6 +131,12 @@ export function BottomNav() {
                 </span>
                 <div className="min-w-0 flex-1"><div className="flex items-center gap-2"><h3 className="text-xl font-semibold leading-none">Match</h3><span className="rounded-full bg-slate-900 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-white">TÄVLA</span></div><p className="mt-2 text-sm leading-snug text-muted-foreground">Utmana en kompis head-to-head eller spela lagmatch i Fourball och Foursomes.</p></div>
                 <ChevronRight className="h-4 w-4 shrink-0 text-red-500/70" />
+              </Link>
+
+              <Link to="/traning" search={{ category: undefined }} onClick={() => setOpen(false)} className="group flex min-h-[92px] items-center gap-4 rounded-3xl border border-border bg-muted/55 px-5 py-5 transition-colors hover:border-primary hover:bg-muted/70">
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-border bg-background/80 text-foreground"><ListChecks className="h-6 w-6" /></span>
+                <div className="min-w-0 flex-1"><div className="flex items-center gap-2"><h3 className="text-xl font-semibold leading-none">Träning</h3><span className="rounded-full bg-background/80 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Träna</span></div><p className="mt-2 text-sm leading-snug text-muted-foreground">Träna själv, slå PB och följ din utveckling över tid.</p></div>
+                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
               </Link>
             </div>
           </> : <>

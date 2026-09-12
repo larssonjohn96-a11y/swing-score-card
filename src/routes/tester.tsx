@@ -81,6 +81,23 @@ function TesterPage() {
         </button>
 
         <Link
+          to="/match"
+          className="flex items-center gap-4 rounded-3xl border border-blue-500/20 bg-gradient-to-r from-blue-500/[0.055] via-card to-red-500/[0.055] px-5 py-5 shadow-[var(--shadow-glow)] transition-colors hover:border-red-500/30"
+        >
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-red-500 text-white shadow-sm">
+            <Flag className="h-6 w-6" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <h2 className="text-2xl leading-none">Tävla</h2>
+              <span className="rounded-full bg-red-500/[0.08] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-red-500">H2H</span>
+            </div>
+            <p className="mt-1.5 text-sm leading-snug text-muted-foreground">Utmana en vän i Off the Tee, Approach, Närspel eller Putting.</p>
+          </div>
+          <ChevronRight className="h-5 w-5 shrink-0 text-red-500/70" />
+        </Link>
+
+        <Link
           to="/traning"
           search={{ category: undefined }}
           className="flex items-center gap-4 rounded-3xl border border-border bg-card px-5 py-5 shadow-[var(--shadow-glow)] transition-colors hover:border-primary hover:bg-tint/50"
@@ -96,23 +113,6 @@ function TesterPage() {
             <p className="mt-1.5 text-sm leading-snug text-muted-foreground">Träna med syfte, gör träningen roligare och mät dina framsteg över tid.</p>
           </div>
           <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
-        </Link>
-
-        <Link
-          to="/match"
-          className="flex items-center gap-4 rounded-3xl border border-blue-500/20 bg-gradient-to-r from-blue-500/[0.055] via-card to-red-500/[0.055] px-5 py-5 shadow-[var(--shadow-glow)] transition-colors hover:border-red-500/30"
-        >
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-red-500 text-white shadow-sm">
-            <Flag className="h-6 w-6" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <h2 className="text-2xl leading-none">Tävla</h2>
-              <span className="rounded-full bg-red-500/[0.08] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-red-500">H2H</span>
-            </div>
-            <p className="mt-1.5 text-sm leading-snug text-muted-foreground">Utmana en vän i Off the Tee, Approach, Närspel eller Putting.</p>
-          </div>
-          <ChevronRight className="h-5 w-5 shrink-0 text-red-500/70" />
         </Link>
       </section>
 
