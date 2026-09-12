@@ -110,9 +110,6 @@ function Home() {
               </button>
               {profileMenuOpen ? (
                 <div className="absolute right-0 z-50 mt-2 w-44 overflow-hidden rounded-2xl border border-border bg-card p-1.5 shadow-xl">
-                  <button type="button" onClick={() => setProfileMenuOpen(false)} className="flex w-full items-center rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-primary">Spelarvy</button>
-                  <Link to="/coach" onClick={() => setProfileMenuOpen(false)} className="flex w-full items-center rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors hover:bg-muted">Coachvy</Link>
-                  <div className="my-1 border-t border-border" />
                   <Link to="/konto" onClick={() => setProfileMenuOpen(false)} className="flex w-full items-center rounded-xl px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">Konto</Link>
                 </div>
               ) : null}
