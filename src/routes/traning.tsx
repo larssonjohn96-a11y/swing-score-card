@@ -80,11 +80,19 @@ const TESTS: Record<Category, TestItem[]> = {
   ],
 };
 
-const CATEGORIES: Array<{ id: Category; title: string; description: string; hero: string }> = [
-  { id: "off-the-tee", title: "Off the Tee", description: "Fart, längd och driverkontroll", hero: "Fart, längd och driverkontroll." },
-  { id: "approach", title: "Approach", description: "Precision och bollkontroll", hero: "Precision och bollkontroll." },
-  { id: "around-the-green", title: "Around the Green", description: "Närspel och scoring", hero: "Slagvariation, närspel och scoring." },
-  { id: "putting", title: "Putting", description: "Startlinje och längdkontroll", hero: "Träna rätt del av puttningen — från startlinje och kortputtar till green read och längdkontroll." },
+type CategoryItem = {
+  id: Category;
+  title: string;
+  svTitle: string;
+  description: string;
+  hero: string;
+};
+
+const CATEGORIES: CategoryItem[] = [
+  { id: "off-the-tee", title: "Off the Tee", svTitle: "Utslag", description: "Fart, längd och driverkontroll", hero: "Fart, längd och driverkontroll." },
+  { id: "approach", title: "Approach", svTitle: "Inspel", description: "Precision och bollkontroll", hero: "Precision och bollkontroll." },
+  { id: "around-the-green", title: "Around the Green", svTitle: "Närspel", description: "Närspel och scoring", hero: "Slagvariation, närspel och scoring." },
+  { id: "putting", title: "Putting", svTitle: "Puttning", description: "Startlinje och längdkontroll", hero: "Träna rätt del av puttningen — från startlinje och kortputtar till green read och längdkontroll." },
 ];
 
 function matchesPuttingFilter(test: TestItem, filter: PuttingFilter) {
@@ -143,11 +151,12 @@ function TrainingTestsPage() {
                   key={item.id}
                   to="/traning"
                   search={{ category: item.id }}
-                  className="group flex min-h-[154px] flex-col justify-between rounded-3xl border border-slate-300/80 bg-gradient-to-br from-slate-100/88 via-white/78 to-slate-100/72 p-4 text-left shadow-[0_18px_44px_-32px_rgba(15,23,42,.4)] backdrop-blur-2xl transition-all active:scale-[0.99]"
+                  className="group flex min-h-[174px] flex-col justify-between rounded-3xl border border-slate-300/80 bg-gradient-to-br from-slate-100/88 via-white/78 to-slate-100/72 p-4 text-left shadow-[0_18px_44px_-32px_rgba(15,23,42,.4)] backdrop-blur-2xl transition-all active:scale-[0.99]"
                 >
-                  <span>
-                    <span className="block font-display text-[26px] leading-[0.95] text-slate-950">{item.title}</span>
-                    <span className="mt-2 block text-[11px] leading-snug text-slate-600">{item.description}</span>
+                  <span className="block min-h-[102px]">
+                    <span className="block min-h-[14px] text-[9px] font-semibold uppercase tracking-[0.16em] text-slate-500">{item.title}</span>
+                    <span className="mt-1 block min-h-[30px] font-display text-[26px] leading-none text-slate-950">{item.svTitle}</span>
+                    <span className="mt-2 block min-h-[34px] text-[11px] leading-snug text-slate-600">{item.description}</span>
                   </span>
                   <span className="mt-4 flex items-center justify-between">
                     <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-slate-600">{TESTS[item.id].length} tester</span>
@@ -166,7 +175,7 @@ function TrainingTestsPage() {
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-semibold text-slate-950">Analys & framsteg</span>
-                <span className="mt-1 block text-[11px] leading-snug text-slate-600">Se utveckling, historik och analys för dina träningstester.</span>
+                <span className="mt-1 block text-[11px] leading-snug text-slate-600">En central analyssida per kategori med utveckling, historik och data samlat.</span>
               </span>
               <ChevronRight className="h-5 w-5 shrink-0 text-slate-500" />
             </Link>
@@ -181,7 +190,7 @@ function TrainingTestsPage() {
 
           <div className="mt-5 rounded-[30px] border border-slate-300/85 bg-gradient-to-br from-slate-100/88 via-white/82 to-slate-100/74 p-5 shadow-[0_20px_48px_-32px_rgba(15,23,42,.44)] backdrop-blur-2xl">
             <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">{active?.title.toUpperCase()}</p>
-            <h2 className="mt-2 font-display text-4xl leading-none">Performance & träning</h2>
+            <h2 className="mt-2 font-display text-4xl leading-none">{active?.svTitle}</h2>
             <p className="mt-3 text-[13px] leading-relaxed text-slate-600">{active?.hero}</p>
           </div>
 
@@ -189,8 +198,8 @@ function TrainingTestsPage() {
             <>
               <Link to="/putting-data" className="mt-4 flex items-center justify-between rounded-3xl border border-slate-300/80 bg-white/62 px-4 py-3.5 shadow-[0_16px_36px_-30px_rgba(15,23,42,.5)] backdrop-blur-2xl">
                 <span>
-                  <span className="block text-sm font-semibold text-slate-900">Se all puttingdata</span>
-                  <span className="mt-0.5 block text-[11px] text-slate-600">Sänkprocent, antal puttar och lagputt samlat</span>
+                  <span className="block text-sm font-semibold text-slate-900">Se central puttinganalys</span>
+                  <span className="mt-0.5 block text-[11px] text-slate-600">Sänkprocent, längdkontroll, 3-putt-risk och puttingdata samlat</span>
                 </span>
                 <ChevronRight className="h-4 w-4 shrink-0 text-slate-500" />
               </Link>
