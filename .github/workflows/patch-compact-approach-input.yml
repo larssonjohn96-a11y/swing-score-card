@@ -49,3 +49,5 @@ jobs:
           git add src/routes/match.tsx
           git commit -m "Compact approach input without removing controls"
           git push
+
+# trigger
