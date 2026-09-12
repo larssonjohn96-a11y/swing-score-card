@@ -1,0 +1,59 @@
+from pathlib import Path
+
+p = Path('src/routes/match.tsx')
+s = p.read_text()
+
+replacements = []
+
+replacements.append((
+'''function generatePgaPuttingDistances(length: 9 | 18) {
+  const short = shuffleValues(PGA_PUTTING_DISTANCES.filter((d) => d <= 2.4));
+  const medium = shuffleValues(PGA_PUTTING_DISTANCES.filter((d) => d > 2.4 && d <= 6));
+  const long = shuffleValues(PGA_PUTTING_DISTANCES.filter((d) => d > 6));
+  if (length === 9) return shuffleValues([...short.slice(0, 3), ...medium.slice(0, 3), ...long.slice(0, 3)]);
+  const queues = [short, medium, long];''',
+'''function generatePgaPuttingDistances(length: 5 | 9 | 18) {
+  const short = shuffleValues(PGA_PUTTING_DISTANCES.filter((d) => d <= 2.4));
+  const medium = shuffleValues(PGA_PUTTING_DISTANCES.filter((d) => d > 2.4 && d <= 6));
+  const long = shuffleValues(PGA_PUTTING_DISTANCES.filter((d) => d > 6));
+  if (length === 5) return shuffleValues([...short.slice(0, 2), ...medium.slice(0, 1), ...long.slice(0, 2)]);
+  if (length === 9) return shuffleValues([...short.slice(0, 3), ...medium.slice(0, 3), ...long.slice(0, 3)]);
+  const queues = [short, medium, long];'''))
+
+replacements.append((
+'      ? generatePgaPuttingDistances(matchLength === 18 ? 18 : 9).map((distance) => ({ challenge: generateChallenge(category, matchType, mode, shortGameLies, distance), winner: null as HoleWinner }))',
+'      ? generatePgaPuttingDistances(matchLength).map((distance) => ({ challenge: generateChallenge(category, matchType, mode, shortGameLies, distance), winner: null as HoleWinner }))'))
+
+replacements.append((
+'''  const holesRemaining = Math.max(0, matchLength - score.played);
+  const isPutting = category === "putting";''',
+'''  const holesRemaining = Math.max(0, matchLength - score.played);
+  const matchLeader = diff > 0 ? "blue" : diff < 0 ? "red" : null;
+  const trailingLabel = diff > 0 ? redLabel : diff < 0 ? blueLabel : "";
+  const pressureNotice = scoringMode !== "match" || holesRemaining <= 0 ? null
+    : diff === 0 && holesRemaining === 1
+      ? "Sista hålet avgör matchen."
+      : Math.abs(diff) === holesRemaining
+        ? `${trailingLabel} måste vinna nästa hål – annars är matchen över.`
+        : Math.abs(diff) === holesRemaining - 1 && Math.abs(diff) > 0
+          ? `${trailingLabel} måste vinna eller dela nästa hål för att hålla matchen vid liv.`
+          : null;
+  const isPutting = category === "putting";'''))
+
+replacements.append((
+'''{step === "length" && selectedType ? <><section className="mt-5"><p className="text-[10px] font-bold uppercase text-slate-500">{isPgaPutting ? "PGA Tour Putting" : scoringMode === "match" ? "Match Play" : "Slagspel"}</p><h1 className="mt-1 font-display text-4xl">{isPgaPutting ? "Matchlängd" : scoringMode === "stroke" ? "Antal hål" : "Bäst av"}</h1>{isPgaPutting ? <p className="mt-2 text-sm text-slate-600">Välj halv eller full match. Båda får en balanserad mix av korta, mellanlånga och långa PGA Tour-avstånd.</p> : null}</section><div className={`mt-5 grid gap-3 ${isPgaPutting ? "grid-cols-2" : "grid-cols-3"}`}>{(isPgaPutting ? ([9, 18] as const) : ([5, 9, 18] as const)).map((v) => <button key={v} onClick={() => setMatchLength(v)} className={`rounded-3xl border px-3 py-6 ${matchLength === v ? selectedGlass : glass}`}><span className="block font-display text-4xl">{v}</span><span className="text-[10px] font-bold uppercase">{isPgaPutting ? (v === 9 ? "hål · halv match" : "hål · full match") : "hål"}</span></button>)}</div>''',
+'''{step === "length" && selectedType ? <><section className="mt-5"><p className="text-[10px] font-bold uppercase text-slate-500">{isPgaPutting ? "PGA Tour Putting" : scoringMode === "match" ? "Match Play" : "Slagspel"}</p><h1 className="mt-1 font-display text-4xl">{isPgaPutting ? "Matchlängd" : scoringMode === "stroke" ? "Antal hål" : "Bäst av"}</h1>{isPgaPutting ? <p className="mt-2 text-sm text-slate-600">Välj 5, 9 eller 18 hål. Alla längder får en mix av korta, mellanlånga och långa PGA Tour-avstånd.</p> : null}</section><div className="mt-5 grid grid-cols-3 gap-3">{([5, 9, 18] as const).map((v) => <button key={v} onClick={() => setMatchLength(v)} className={`rounded-3xl border px-3 py-6 ${matchLength === v ? selectedGlass : glass}`}><span className="block font-display text-4xl">{v}</span><span className="text-[10px] font-bold uppercase">{isPgaPutting ? (v === 5 ? "hål · snabb" : v === 9 ? "hål · halv match" : "hål · full match") : "hål"}</span></button>)}</div>'''))
+
+replacements.append((
+'''{step === "play" && current ? <><header className="relative text-center"><Link to="/" aria-label="Till startsidan" className={`absolute left-0 top-0 inline-flex h-10 w-10 items-center justify-center rounded-full border text-2xl leading-none ${glass}`}>‹</Link><p className="text-[9px] font-bold uppercase tracking-[0.18em] text-slate-500">{scoringMode === "match" ? "Match Play" : "Slagspel"} · {selectedCategory?.title}</p><div className="mt-2 inline-flex items-baseline gap-2 rounded-full border border-slate-300/80 bg-white/70 px-5 py-2.5 shadow-sm backdrop-blur-xl"><span className="font-display text-2xl">{unitLabel} {holeIndex + 1}</span><span className="text-xs font-semibold text-slate-500">av {matchLength}</span></div>{editingHoleIndex !== null ? <div className="mx-auto mt-3 w-fit rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-bold text-amber-700">Redigerar {unitLabel.toLowerCase()} {holeIndex + 1}</div> : null}</header>
+      <section className={`mt-5 rounded-[32px] border p-6 text-center''',
+'''{step === "play" && current ? <><header className="relative text-center"><Link to="/" aria-label="Till startsidan" className={`absolute left-0 top-0 inline-flex h-10 w-10 items-center justify-center rounded-full border text-2xl leading-none ${glass}`}>‹</Link><p className="text-[9px] font-bold uppercase tracking-[0.18em] text-slate-500">{scoringMode === "match" ? "Match Play" : "Slagspel"} · {selectedCategory?.title}</p><div className="mt-2 inline-flex items-baseline gap-2 rounded-full border border-slate-300/80 bg-white/70 px-5 py-2.5 shadow-sm backdrop-blur-xl"><span className="font-display text-2xl">{unitLabel} {holeIndex + 1}</span><span className="text-xs font-semibold text-slate-500">av {matchLength}</span></div>{editingHoleIndex !== null ? <div className="mx-auto mt-3 w-fit rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-bold text-amber-700">Redigerar {unitLabel.toLowerCase()} {holeIndex + 1}</div> : null}</header>
+      {scoringMode === "match" ? <section className="mt-4"><div className="grid grid-cols-[1fr_auto_1fr] items-center rounded-2xl border border-slate-300/85 bg-white/76 px-3 py-2.5 shadow-[0_12px_30px_-26px_rgba(15,23,42,.5)] backdrop-blur-2xl"><div className="flex min-w-0 items-center justify-end gap-2 text-right">{matchLeader === "blue" ? <span className="h-0 w-0 shrink-0 border-y-[5px] border-r-[8px] border-y-transparent border-r-red-500" /> : null}<span className={`truncate text-xs font-bold ${matchLeader === "blue" ? "text-slate-950" : "text-slate-500"}`}>{blueLabel}</span></div><div className="mx-3 min-w-16 rounded-xl bg-slate-950 px-3 py-2 text-center text-white"><span className="block font-display text-lg leading-none">{diff === 0 ? "AS" : `${Math.abs(diff)} UP`}</span></div><div className="flex min-w-0 items-center gap-2 text-left"><span className={`truncate text-xs font-bold ${matchLeader === "red" ? "text-slate-950" : "text-slate-500"}`}>{redLabel}</span>{matchLeader === "red" ? <span className="h-0 w-0 shrink-0 border-y-[5px] border-l-[8px] border-y-transparent border-l-red-500" /> : null}</div></div>{pressureNotice ? <div className="mt-2 rounded-2xl border border-red-200 bg-red-50/90 px-3 py-2.5 text-center"><p className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-red-600">Pressläge</p><p className="mt-1 text-[11px] font-semibold leading-snug text-red-800">{pressureNotice}</p></div> : null}</section> : null}
+      <section className={`mt-5 rounded-[32px] border p-6 text-center'''))
+
+for index, (old, new) in enumerate(replacements, 1):
+    if old not in s:
+        raise SystemExit(f'anchor {index} not found')
+    s = s.replace(old, new, 1)
+
+p.write_text(s)
