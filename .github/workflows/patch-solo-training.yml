@@ -87,3 +87,5 @@ jobs:
           git add src/routes/8-bollar.tsx src/routes/tester.tsx src/components/bottom-nav.tsx
           git commit -m "Make training solo only and reorder actions"
           git push
+
+# trigger
