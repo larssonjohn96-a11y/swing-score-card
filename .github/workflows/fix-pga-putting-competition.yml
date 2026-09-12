@@ -1,0 +1,211 @@
+name: Fix PGA putting competition
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.event.head_commit.message == 'Add one-time PGA putting competition fix'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Restore training test and add competition format
+        shell: bash
+        run: |
+          cat > src/routes/pga-tour-18-puttar.tsx <<'EOF'
+          import { createFileRoute } from "@tanstack/react-router";
+          import { ScoredTest } from "@/components/training/scored-test";
+          import type { Analysis, Prompt, ScoreOption } from "@/lib/training/core";
+
+          export const Route = createFileRoute("/pga-tour-18-puttar")({
+            head: () => ({
+              meta: [
+                { title: "PGA Tour – 18 Puttar | SG4" },
+                { name: "description", content: "18 puttar på PGA Tour-liknande avstånd. Håla varje boll och jämför totalen mot PGA Tour-referenser." },
+              ],
+            }),
+            component: PgaTour18PuttsPage,
+          });
+
+          const DISTANCES = [1.5, 12, 0.6, 4, 1.2, 16, 8, 3, 6, 9, 0.9, 7, 2.1, 3.5, 10, 1.8, 5, 2.4];
+
+          const PROMPTS: Prompt[] = DISTANCES.map((distance, index) => ({
+            tag: `Hål ${index + 1} av 18`,
+            primary: `${String(distance).replace(".", ",")} m`,
+            secondary: "Håla bollen · räkna alla puttar",
+          }));
+
+          const OPTIONS: ScoreOption[] = [
+            { value: 1, label: "1 putt", hint: "Sänkt direkt" },
+            { value: 2, label: "2 puttar", hint: "Tvåputt" },
+            { value: 3, label: "3 puttar", hint: "Treputt" },
+            { value: 4, label: "4 puttar", hint: "Fyra eller fler" },
+          ];
+
+          function analyze(shots: number[]): Analysis {
+            const total = shots.reduce((sum, value) => sum + value, 0);
+            const onePutts = shots.filter((value) => value === 1).length;
+            const threePlus = shots.filter((value) => value >= 3).length;
+            const tourAvg = 29.2;
+            const diff = total - tourAvg;
+            const comparison = diff === 0 ? "På PGA-snitt" : diff < 0 ? `${Math.abs(diff).toFixed(1).replace(".", ",")} bättre` : `${diff.toFixed(1).replace(".", ",")} sämre`;
+
+            const short = shots.filter((_, i) => DISTANCES[i] <= 2.4);
+            const medium = shots.filter((_, i) => DISTANCES[i] > 2.4 && DISTANCES[i] <= 6);
+            const long = shots.filter((_, i) => DISTANCES[i] > 6);
+            const sum = (values: number[]) => values.reduce((a, b) => a + b, 0);
+
+            return {
+              headline: { label: "Totalt antal puttar", value: String(total), hint: "Lägre är bättre" },
+              metrics: [
+                { label: "Mot PGA-snitt", value: comparison, hint: "PGA Tour snitt 29,2" },
+                { label: "1-puttar", value: String(onePutts), hint: "Av 18 hål" },
+                { label: "3+ puttar", value: String(threePlus), hint: "Undvik stora tapp" },
+                { label: "Snitt per hål", value: (total / 18).toFixed(2).replace(".", ",") },
+              ],
+              sections: [
+                {
+                  title: "PGA Tour-referens",
+                  rows: [
+                    { label: "Bäst PGA Tour", value: "28,5" },
+                    { label: "Snitt PGA Tour", value: "29,2" },
+                    { label: "Sämst PGA Tour", value: "30,2" },
+                    { label: "Ditt resultat", value: String(total) },
+                  ],
+                },
+                {
+                  title: "Avståndsgrupper",
+                  rows: [
+                    { label: "Kort · ≤ 2,4 m", value: `${sum(short)} puttar` },
+                    { label: "Mellan · 3–6 m", value: `${sum(medium)} puttar` },
+                    { label: "Lång · 7–16 m", value: `${sum(long)} puttar` },
+                  ],
+                },
+              ],
+            };
+          }
+
+          function PgaTour18PuttsPage() {
+            return (
+              <ScoredTest
+                testId="pga-tour-18-puttar"
+                eyebrow="Putting · Träningstest"
+                title="PGA Tour – 18 Puttar"
+                intro="Slå en putt i taget från de 18 fasta PGA Tour-avstånden och spela varje boll tills den är hålad. Variera brytning, uppför och nedför och kör full tävlingsrutin på varje putt."
+                backTo="/traning"
+                selfTo="/pga-tour-18-puttar"
+                historyTo="/pga-tour-18-puttar-historik"
+                prompts={PROMPTS}
+                options={OPTIONS}
+                optionCols={2}
+                runningLabel="Puttar hittills"
+                introCards={[
+                  {
+                    title: "Upplägg",
+                    rows: [
+                      { label: "Hål", value: "18" },
+                      { label: "Avstånd", value: "0,6–16 m" },
+                      { label: "Mål", value: "Håla alla" },
+                      { label: "Score", value: "Totala puttar" },
+                    ],
+                    note: "Variera åt vilket håll putten bryter samt uppför/nedför. Läs linjen och gör din normala rutin som på tävling.",
+                  },
+                  {
+                    title: "PGA Tour-referens",
+                    rows: [
+                      { label: "Bäst", value: "28,5" },
+                      { label: "Snitt", value: "29,2" },
+                      { label: "Sämst", value: "30,2" },
+                    ],
+                    note: "Lägre total är bättre.",
+                  },
+                ]}
+                analyze={analyze}
+              />
+            );
+          }
+          EOF
+
+          python3 - <<'PY'
+          from pathlib import Path
+
+          # Restore the Putting training card exactly to the prior PGA 18-putt test.
+          p = Path('src/routes/traning.tsx')
+          s = p.read_text()
+          new_card = '{ to: "/pga-tour-18-puttar", title: "PGA Tour Putting", description: "Tränar hela puttspelet med en mix från riktigt korta till riktigt långa puttar. Välj 9 hål eller fulla 18.", meta: "9 eller 18 hål · 0,6–16 m", skill: "Hela puttspelet" },'
+          old_card = '{ to: "/pga-tour-18-puttar", title: "PGA Tour – 18 Puttar", description: "18 fasta avstånd från 0,6 till 16 meter. Håla ut och jämför total putting-score mot PGA Tour.", meta: "18 hål · 0,6–16 m", skill: "Total putting-performance" },'
+          if new_card not in s:
+              raise SystemExit('Modified PGA training card not found')
+          p.write_text(s.replace(new_card, old_card))
+
+          p = Path('src/routes/match.tsx')
+          s = p.read_text()
+
+          old = '    { id: "lag", title: "Långa puttar", description: "8–22 meter" },\n'
+          new = old + '    { id: "pga-tour", title: "PGA Tour Putting", description: "Hela puttspelet · PGA Tour-avstånd · 9 eller 18 hål" },\n'
+          if old not in s:
+              raise SystemExit('Putting match types anchor not found')
+          s = s.replace(old, new, 1)
+
+          anchor = 'const POINT_ZONES = [\n  { points: 4, label: "Sänkt" }, { points: 3, label: "Inom 1 m" }, { points: 2, label: "Inom 2 m" }, { points: 1, label: "Inom 3 m" }, { points: 0, label: "Över 3 m" },\n] as const;\n'
+          addition = anchor + '''\nconst PGA_PUTTING_DISTANCES = [1.5, 12, 0.6, 4, 1.2, 16, 8, 3, 6, 9, 0.9, 7, 2.1, 3.5, 10, 1.8, 5, 2.4] as const;\nfunction shuffleValues<T>(items: readonly T[]) {\n  const next = [...items];\n  for (let i = next.length - 1; i > 0; i--) {\n    const j = Math.floor(Math.random() * (i + 1));\n    [next[i], next[j]] = [next[j], next[i]];\n  }\n  return next;\n}\nfunction generatePgaPuttingDistances(length: 9 | 18) {\n  const short = shuffleValues(PGA_PUTTING_DISTANCES.filter((d) => d <= 2.4));\n  const medium = shuffleValues(PGA_PUTTING_DISTANCES.filter((d) => d > 2.4 && d <= 6));\n  const long = shuffleValues(PGA_PUTTING_DISTANCES.filter((d) => d > 6));\n  if (length === 9) return shuffleValues([...short.slice(0, 3), ...medium.slice(0, 3), ...long.slice(0, 3)]);\n  const queues = [short, medium, long];\n  const result: number[] = [];\n  while (result.length < 18) {\n    for (const groupIndex of shuffleValues([0, 1, 2])) {\n      const value = queues[groupIndex].shift();\n      if (value !== undefined) result.push(value);\n    }\n  }\n  return result;\n}\n'''
+          if anchor not in s:
+              raise SystemExit('Point zones anchor not found')
+          s = s.replace(anchor, addition, 1)
+
+          old = '    const distance = typeId === "short" ? rand(1, 5) : typeId === "lag" ? rand(8, 22) : rand(1, 10);\n    return { eyebrow: "Puttning", title: `${distance} m`, detail: `Håla ut · lägst antal slag vinner${suffix}` };'
+          new = '    const distance = typeId === "pga-tour" ? (approachDistance ?? 1.5) : typeId === "short" ? rand(1, 5) : typeId === "lag" ? rand(8, 22) : rand(1, 10);\n    return { eyebrow: typeId === "pga-tour" ? "PGA Tour Putting" : "Puttning", title: `${distance} m`, detail: `${typeId === "pga-tour" ? "PGA Tour-avstånd · " : ""}Håla ut · lägst antal slag vinner${suffix}` };'
+          if old not in s:
+              raise SystemExit('Putting challenge anchor not found')
+          s = s.replace(old, new, 1)
+
+          old = '  const isPutting = category === "putting";\n  const isShortGame = category === "around-the-green";'
+          new = '  const isPutting = category === "putting";\n  const isPgaPutting = isPutting && matchType === "pga-tour";\n  const isShortGame = category === "around-the-green";'
+          if old not in s:
+              raise SystemExit('isPutting anchor not found')
+          s = s.replace(old, new, 1)
+
+          old = '    const nextHoles = isShortGame\n      ? generateShortGameLieSequence(matchLength, shortGameLies).map((lie) => ({ challenge: generateChallenge(category, matchType, mode, [lie]), winner: null as HoleWinner }))'
+          new = '    const nextHoles = isPgaPutting\n      ? generatePgaPuttingDistances(matchLength === 18 ? 18 : 9).map((distance) => ({ challenge: generateChallenge(category, matchType, mode, shortGameLies, distance), winner: null as HoleWinner }))\n      : isShortGame\n      ? generateShortGameLieSequence(matchLength, shortGameLies).map((lie) => ({ challenge: generateChallenge(category, matchType, mode, [lie]), winner: null as HoleWinner }))'
+          if old not in s:
+              raise SystemExit('startMatch anchor not found')
+          s = s.replace(old, new, 1)
+
+          old = '    else if (step === "length") setStep(isShortGame ? "setup" : isApproach ? "approach-setup" : category === "off-the-tee" ? "category" : "scoring");'
+          new = '    else if (step === "length") setStep(isShortGame ? "setup" : isApproach ? "approach-setup" : category === "off-the-tee" ? "category" : isPgaPutting ? "type" : "scoring");'
+          if old not in s:
+              raise SystemExit('back length anchor not found')
+          s = s.replace(old, new, 1)
+
+          old = 'onClick={() => setMatchType(i.id)} className={`flex w-full items-center gap-4 rounded-3xl border p-5 text-left ${active ? selectedGlass : glass}`}'
+          new = 'onClick={() => { setMatchType(i.id); if (i.id === "pga-tour") { setScoringMode("match"); setMatchLength(9); } }} className={`flex w-full items-center gap-4 rounded-3xl border p-5 text-left ${active ? selectedGlass : glass}`}'
+          if old not in s:
+              raise SystemExit('match type selection anchor not found')
+          s = s.replace(old, new, 1)
+
+          old = '<button disabled={!matchType} onClick={() => setStep("scoring")} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white disabled:opacity-30">Nästa <ChevronRight className="h-5 w-5" /></button>'
+          new = '<button disabled={!matchType} onClick={() => { if (isPgaPutting) { setScoringMode("match"); setMatchLength(9); setStep("length"); } else setStep("scoring"); }} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white disabled:opacity-30">Nästa <ChevronRight className="h-5 w-5" /></button>'
+          if old not in s:
+              raise SystemExit('type next anchor not found')
+          s = s.replace(old, new, 1)
+
+          old = '{step === "length" && selectedType ? <><section className="mt-5"><p className="text-[10px] font-bold uppercase text-slate-500">{scoringMode === "match" ? "Match Play" : "Slagspel"}</p><h1 className="mt-1 font-display text-4xl">{scoringMode === "stroke" ? "Antal hål" : "Bäst av"}</h1></section><div className="mt-5 grid grid-cols-3 gap-3">{([5, 9, 18] as const).map((v) => <button key={v} onClick={() => setMatchLength(v)} className={`rounded-3xl border px-3 py-6 ${matchLength === v ? selectedGlass : glass}`}><span className="block font-display text-4xl">{v}</span><span className="text-[10px] font-bold uppercase">hål</span></button>)}</div><button onClick={startMatch}'
+          new = '{step === "length" && selectedType ? <><section className="mt-5"><p className="text-[10px] font-bold uppercase text-slate-500">{isPgaPutting ? "PGA Tour Putting" : scoringMode === "match" ? "Match Play" : "Slagspel"}</p><h1 className="mt-1 font-display text-4xl">{isPgaPutting ? "Matchlängd" : scoringMode === "stroke" ? "Antal hål" : "Bäst av"}</h1>{isPgaPutting ? <p className="mt-2 text-sm text-slate-600">Välj halv eller full match. Båda får en balanserad mix av korta, mellanlånga och långa PGA Tour-avstånd.</p> : null}</section><div className={`mt-5 grid gap-3 ${isPgaPutting ? "grid-cols-2" : "grid-cols-3"}`}>{(isPgaPutting ? ([9, 18] as const) : ([5, 9, 18] as const)).map((v) => <button key={v} onClick={() => setMatchLength(v)} className={`rounded-3xl border px-3 py-6 ${matchLength === v ? selectedGlass : glass}`}><span className="block font-display text-4xl">{v}</span><span className="text-[10px] font-bold uppercase">{isPgaPutting ? (v === 9 ? "hål · halv match" : "hål · full match") : "hål"}</span></button>)}</div><button onClick={startMatch}'
+          if old not in s:
+              raise SystemExit('length UI anchor not found')
+          s = s.replace(old, new, 1)
+
+          p.write_text(s)
+          PY
+
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add src/routes/pga-tour-18-puttar.tsx src/routes/traning.tsx src/routes/match.tsx
+          git commit -m "Restore PGA training test and add PGA putting match"
+          git push
