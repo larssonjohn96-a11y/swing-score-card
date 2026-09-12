@@ -18,6 +18,7 @@ import { SubscriptionProvider } from "@/lib/subscription";
 import { DevPlanSwitcher } from "@/components/dev-plan-switcher";
 import { SplashScreen, useSplash } from "@/components/splash-screen";
 import { startSessionSync } from "@/lib/sessions/startup";
+import { ActiveMultiplayerBanner } from "@/components/active-multiplayer-banner";
 
 function NotFoundComponent() {
   return (
@@ -192,6 +193,6 @@ function RootComponent() {
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}><SubscriptionProvider><BottomNavVisibilityProvider><div className="relative min-h-screen pb-20"><Outlet /><BottomNav /><DevPlanSwitcher /></div>{show && <SplashScreen onDismiss={dismiss} />}</BottomNavVisibilityProvider></SubscriptionProvider></QueryClientProvider>
+    <QueryClientProvider client={queryClient}><SubscriptionProvider><BottomNavVisibilityProvider><div className="relative min-h-screen pb-20"><Outlet /><ActiveMultiplayerBanner /><BottomNav /><DevPlanSwitcher /></div>{show && <SplashScreen onDismiss={dismiss} />}</BottomNavVisibilityProvider></SubscriptionProvider></QueryClientProvider>
   );
 }
