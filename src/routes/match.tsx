@@ -319,7 +319,7 @@ function MatchPlayPage() {
       ? pointDiff > 0 ? "blue" : pointDiff < 0 ? "red" : null
       : strokeDiff > 0 ? "blue" : strokeDiff < 0 ? "red" : null;
   const resultScoreText = scoringMode === "match"
-    ? diff === 0 ? "AS" : holesRemaining > 0 ? `${Math.abs(diff)}&${holesRemaining}` : `${Math.abs(diff)} UP`
+    ? diff === 0 ? "AS" : `${Math.abs(diff)}&${holesRemaining}`
     : category === "around-the-green"
       ? `${score.bluePoints}–${score.redPoints}`
       : `${score.blueStrokes}–${score.redStrokes}`;
