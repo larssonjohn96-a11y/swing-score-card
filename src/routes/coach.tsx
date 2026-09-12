@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ChevronDown, ChevronRight, MessageCircle, Target, ThumbsUp } from "lucide-react";
+import { ChevronDown, ChevronRight, MessageCircle, Target, ThumbsUp, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,6 +33,8 @@ const DEMO_SESSIONS: Record<string, TrainingSession[]> = {
     { id: "demo-session-sara-1", test_id: "8-bollar", category: "around-the-green", played_at: "2026-09-12T09:45:00Z", score: 11, test_handicap: 25.9, metrics: null },
   ],
 };
+
+const glass = "border border-white/65 bg-white/54 shadow-[0_20px_60px_-30px_rgba(61,84,120,.32),inset_0_1px_0_rgba(255,255,255,.92)] backdrop-blur-[28px] dark:border-white/10 dark:bg-white/[0.07]";
 
 function CoachPage() {
   useHideBottomNav(true);
@@ -130,80 +132,129 @@ function CoachPage() {
     }
   }
 
-  if (loading) return <main className="mx-auto min-h-screen max-w-md p-5">Laddar…</main>;
-  if (!user) return <main className="mx-auto min-h-screen max-w-md p-5"><Link to="/konto" className="font-semibold text-primary">Logga in för att använda coachvyn →</Link></main>;
+  if (loading) return <main className="min-h-screen bg-[#edf1f4] p-5 text-slate-900 dark:bg-[#101419] dark:text-slate-100">Laddar…</main>;
+  if (!user) return <main className="min-h-screen bg-[#edf1f4] p-5 dark:bg-[#101419]"><Link to="/konto" className="font-medium text-sky-700 dark:text-sky-300">Logga in för att använda coachvyn →</Link></main>;
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-10 pt-6">
-      <div className="flex items-center justify-between">
-        <span className="font-display text-2xl leading-none tracking-wide">SG4 Coach</span>
-        <div className="relative">
-          <button type="button" onClick={() => setRoleMenuOpen((open) => !open)} className="flex items-center gap-1 rounded-full border border-border px-4 py-2 text-sm font-semibold">
-            {isJohnMaster ? "Coach John" : effectiveProfile?.display_name ?? "Coach"}
-            <ChevronDown className={`h-3.5 w-3.5 transition-transform ${roleMenuOpen ? "rotate-180" : ""}`} />
-          </button>
-          {roleMenuOpen ? (
-            <div className="absolute right-0 z-50 mt-2 w-44 rounded-2xl border border-border bg-card p-1.5 shadow-xl">
-              <Link to="/" onClick={() => setRoleMenuOpen(false)} className="flex w-full items-center rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors hover:bg-muted">Byt till spelarvy</Link>
-            </div>
-          ) : null}
-        </div>
-      </div>
+    <main className="relative min-h-screen overflow-hidden bg-[#edf1f4] text-slate-900 dark:bg-[#101419] dark:text-slate-100">
+      <div className="pointer-events-none absolute -left-20 -top-24 h-72 w-72 rounded-full bg-sky-200/70 blur-3xl dark:bg-sky-500/10" />
+      <div className="pointer-events-none absolute -right-24 top-52 h-80 w-80 rounded-full bg-blue-100/80 blur-3xl dark:bg-blue-400/10" />
+      <div className="pointer-events-none absolute bottom-16 left-1/4 h-64 w-64 rounded-full bg-slate-200/90 blur-3xl dark:bg-slate-700/20" />
 
-      <section className="mt-6 rounded-[30px] border border-border bg-card p-5">
-        <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-muted-foreground">Coachdashboard</p>
-        <h1 className="mt-2 font-display text-4xl leading-none">Dina spelare.</h1>
-        <p className="mt-3 text-sm text-muted-foreground">Följ träning, ge feedback och styr nästa fokus.</p>
-      </section>
-
-      {effectiveProfile ? <div className="mt-4 rounded-3xl border border-border bg-card p-4"><p className="text-[10px] font-bold uppercase tracking-[.16em] text-muted-foreground">Elevkod</p><p className="mt-1 font-display text-3xl tracking-wider">{isJohnMaster ? "JOHN" : effectiveProfile.invite_code}</p></div> : null}
-      {message ? <p className="mt-3 rounded-2xl bg-muted px-4 py-3 text-sm">{message}</p> : null}
-
-      <section className="mt-6">
-        <div className="mb-3 flex items-center justify-between"><h2 className="font-display text-2xl">Elever</h2><span className="text-xs text-muted-foreground">{visiblePlayers.length}</span></div>
-        <div className="space-y-2">
-          {visiblePlayers.map((player) => (
-            <button key={player.relationship.id} onClick={() => setSelectedPlayerId(player.relationship.player_id)} className={`flex w-full items-center justify-between rounded-2xl border p-4 text-left ${selectedPlayerId === player.relationship.player_id ? "border-primary bg-primary/5" : "border-border bg-card"}`}>
-              <span><span className="block font-semibold">{player.name}</span><span className="text-xs text-muted-foreground">{player.snapshot?.test_count ?? 0} tester · HCP {player.snapshot?.est_hcp ?? "–"}</span></span>
-              <ChevronRight className="h-4 w-4" />
+      <div className="relative mx-auto w-full max-w-md px-5 pb-12 pt-6">
+        <header className="flex items-center justify-between">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[.24em] text-slate-500 dark:text-slate-400">SG4</p>
+            <span className="mt-0.5 block text-[22px] font-semibold tracking-[-.04em]">Coach</span>
+          </div>
+          <div className="relative">
+            <button type="button" onClick={() => setRoleMenuOpen((open) => !open)} className={`flex items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-medium text-slate-700 transition active:scale-[.98] dark:text-slate-200 ${glass}`}>
+              {isJohnMaster ? "Coach John" : effectiveProfile?.display_name ?? "Coach"}
+              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${roleMenuOpen ? "rotate-180" : ""}`} />
             </button>
-          ))}
-        </div>
-      </section>
-
-      {selectedPlayer ? <>
-        <section className="mt-6">
-          <div className="mb-3 flex items-center justify-between"><h2 className="font-display text-2xl">Senaste träningen</h2><span className="text-xs text-muted-foreground">{selectedSessions.length} pass</span></div>
-          <div className="space-y-3">
-            {selectedSessions.length ? selectedSessions.map((session) => (
-              <div key={session.id} className={`rounded-3xl border bg-card p-4 ${selectedSessionId === session.id ? "border-primary" : "border-border"}`}>
-                <SessionSummary session={session} />
-                <div className="mt-3 grid grid-cols-2 gap-2">
-                  <button onClick={() => prepareFeedback(session, "comment")} className="flex items-center justify-center gap-2 rounded-2xl border border-border py-2.5 text-sm font-semibold"><MessageCircle className="h-4 w-4" />Kommentera</button>
-                  <button onClick={() => prepareFeedback(session, "reaction")} className="flex items-center justify-center gap-2 rounded-2xl border border-border py-2.5 text-sm font-semibold"><ThumbsUp className="h-4 w-4" />Peppa</button>
-                </div>
+            {roleMenuOpen ? (
+              <div className={`absolute right-0 z-50 mt-2 w-48 rounded-[22px] p-1.5 ${glass}`}>
+                <Link to="/" onClick={() => setRoleMenuOpen(false)} className="flex w-full items-center rounded-2xl px-3 py-3 text-sm font-medium text-slate-700 transition hover:bg-white/60 dark:text-slate-200 dark:hover:bg-white/10">Byt till spelarvy</Link>
               </div>
-            )) : <p className="text-sm text-muted-foreground">Inga synkade träningspass ännu.</p>}
+            ) : null}
+          </div>
+        </header>
+
+        <section className={`mt-6 overflow-hidden rounded-[34px] p-6 ${glass}`}>
+          <div className="flex items-center justify-between">
+            <span className="rounded-full border border-sky-200/70 bg-sky-100/60 px-3 py-1 text-[10px] font-semibold uppercase tracking-[.16em] text-sky-800 dark:border-sky-400/15 dark:bg-sky-400/10 dark:text-sky-200">Coachdashboard</span>
+            <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/70 bg-white/50 text-sky-700 shadow-sm dark:border-white/10 dark:bg-white/[.06] dark:text-sky-300"><Users className="h-4.5 w-4.5" /></span>
+          </div>
+          <h1 className="mt-5 text-[38px] font-medium leading-[.98] tracking-[-.055em]">Dina spelare.</h1>
+          <p className="mt-3 max-w-[280px] text-[14px] leading-6 text-slate-500 dark:text-slate-400">Följ träning, ge feedback och styr nästa fokus.</p>
+          <div className="mt-6 flex items-end justify-between border-t border-white/60 pt-4 dark:border-white/10">
+            <div><p className="text-[10px] font-medium uppercase tracking-[.16em] text-slate-400">Elever</p><p className="mt-1 text-2xl font-medium tracking-[-.04em]">{visiblePlayers.length}</p></div>
+            {effectiveProfile ? <div className="text-right"><p className="text-[10px] font-medium uppercase tracking-[.16em] text-slate-400">Elevkod</p><p className="mt-1 text-lg font-medium tracking-[.08em]">{isJohnMaster ? "JOHN" : effectiveProfile.invite_code}</p></div> : null}
           </div>
         </section>
 
-        <section className="mt-6 rounded-3xl border border-border bg-card p-5">
-          <div className="flex items-center gap-2"><Target className="h-4 w-4 text-primary" /><h3 className="font-semibold">Styr nästa steg för {selectedPlayer.name}</h3></div>
-          {selectedSessionId ? <button onClick={() => setSelectedSessionId(null)} className="mt-3 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary">Feedback på valt pass · ta bort ×</button> : null}
-          <div className="mt-4 grid grid-cols-5 gap-1">
-            {(["focus", "goal", "session", "comment", "reaction"] as ActionType[]).map((type) => <button key={type} onClick={() => { setActionType(type); if (type !== "comment" && type !== "reaction") setSelectedSessionId(null); }} className={`rounded-xl px-2 py-2 text-[10px] font-bold ${actionType === type ? "bg-primary text-primary-foreground" : "bg-muted"}`}>{shortLabel(type)}</button>)}
+        {message ? <p className={`mt-4 rounded-[22px] px-4 py-3 text-sm text-slate-600 dark:text-slate-300 ${glass}`}>{message}</p> : null}
+
+        <section className="mt-7">
+          <div className="mb-3 flex items-center justify-between px-1">
+            <div><p className="text-[10px] font-semibold uppercase tracking-[.18em] text-slate-400">Spelare</p><h2 className="mt-1 text-xl font-medium tracking-[-.035em]">Dina elever</h2></div>
+            <span className="text-xs text-slate-400">{visiblePlayers.length} st</span>
           </div>
-          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={placeholderFor(actionType)} className="mt-4 w-full rounded-2xl border border-border bg-background px-4 py-3" />
-          <textarea value={body} onChange={(e) => setBody(e.target.value)} placeholder="Kort kommentar (valfritt)" rows={3} className="mt-2 w-full resize-none rounded-2xl border border-border bg-background px-4 py-3" />
-          <button onClick={addAction} className="mt-3 w-full rounded-2xl bg-primary py-3 font-semibold text-primary-foreground">Skicka till spelaren</button>
+          <div className="space-y-2.5">
+            {visiblePlayers.map((player) => {
+              const active = selectedPlayerId === player.relationship.player_id;
+              return (
+                <button key={player.relationship.id} onClick={() => setSelectedPlayerId(player.relationship.player_id)} className={`flex w-full items-center justify-between rounded-[24px] px-4 py-4 text-left transition-all active:scale-[.99] ${active ? "border border-sky-200/80 bg-sky-100/55 shadow-[0_14px_36px_-24px_rgba(14,116,144,.5),inset_0_1px_0_rgba(255,255,255,.9)] backdrop-blur-2xl dark:border-sky-400/20 dark:bg-sky-400/10" : glass}`}>
+                  <span className="flex min-w-0 items-center gap-3.5">
+                    <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-medium ${active ? "bg-sky-600 text-white" : "bg-slate-200/70 text-slate-600 dark:bg-white/10 dark:text-slate-300"}`}>{player.name.slice(0, 1).toUpperCase()}</span>
+                    <span className="min-w-0"><span className="block truncate text-[15px] font-medium tracking-[-.02em]">{player.name}</span><span className="mt-1 block text-xs text-slate-400">{player.snapshot?.test_count ?? 0} tester · HCP {player.snapshot?.est_hcp ?? "–"}</span></span>
+                  </span>
+                  <ChevronRight className={`h-4 w-4 shrink-0 ${active ? "text-sky-700 dark:text-sky-300" : "text-slate-400"}`} />
+                </button>
+              );
+            })}
+          </div>
         </section>
-      </> : null}
+
+        {selectedPlayer ? <>
+          <section className="mt-8">
+            <div className="mb-3 flex items-end justify-between px-1">
+              <div><p className="text-[10px] font-semibold uppercase tracking-[.18em] text-slate-400">{selectedPlayer.name}</p><h2 className="mt-1 text-xl font-medium tracking-[-.035em]">Senaste träningen</h2></div>
+              <span className="text-xs text-slate-400">{selectedSessions.length} pass</span>
+            </div>
+            <div className="space-y-3">
+              {selectedSessions.length ? selectedSessions.map((session) => (
+                <div key={session.id} className={`rounded-[28px] p-4 transition ${selectedSessionId === session.id ? "border border-sky-200/90 bg-sky-100/55 shadow-[0_18px_48px_-28px_rgba(14,116,144,.5)] backdrop-blur-2xl dark:border-sky-400/20 dark:bg-sky-400/10" : glass}`}>
+                  <SessionSummary session={session} />
+                  <div className="mt-4 grid grid-cols-2 gap-2">
+                    <button onClick={() => prepareFeedback(session, "comment")} className="flex items-center justify-center gap-2 rounded-[18px] border border-white/70 bg-white/45 py-2.5 text-[13px] font-medium text-slate-600 transition active:scale-[.98] dark:border-white/10 dark:bg-white/[.05] dark:text-slate-300"><MessageCircle className="h-4 w-4" />Kommentera</button>
+                    <button onClick={() => prepareFeedback(session, "reaction")} className="flex items-center justify-center gap-2 rounded-[18px] border border-sky-200/60 bg-sky-100/45 py-2.5 text-[13px] font-medium text-sky-800 transition active:scale-[.98] dark:border-sky-400/15 dark:bg-sky-400/10 dark:text-sky-200"><ThumbsUp className="h-4 w-4" />Peppa</button>
+                  </div>
+                </div>
+              )) : <div className={`rounded-[26px] p-5 text-sm text-slate-400 ${glass}`}>Inga synkade träningspass ännu.</div>}
+            </div>
+          </section>
+
+          <section className={`mt-8 rounded-[32px] p-5 ${glass}`}>
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-sky-100/70 text-sky-700 dark:bg-sky-400/10 dark:text-sky-300"><Target className="h-4 w-4" /></span>
+              <div><p className="text-[10px] font-semibold uppercase tracking-[.16em] text-slate-400">Nästa steg</p><h3 className="mt-0.5 text-[17px] font-medium tracking-[-.025em]">Styr träningen för {selectedPlayer.name}</h3></div>
+            </div>
+
+            {selectedSessionId ? <button onClick={() => setSelectedSessionId(null)} className="mt-4 rounded-full border border-sky-200/70 bg-sky-100/55 px-3 py-1.5 text-xs font-medium text-sky-800 dark:border-sky-400/15 dark:bg-sky-400/10 dark:text-sky-200">Kopplad till valt pass · ta bort ×</button> : null}
+
+            <div className="mt-5 grid grid-cols-5 gap-1.5 rounded-[20px] bg-slate-200/55 p-1.5 dark:bg-black/20">
+              {(["focus", "goal", "session", "comment", "reaction"] as ActionType[]).map((type) => (
+                <button key={type} onClick={() => { setActionType(type); if (type !== "comment" && type !== "reaction") setSelectedSessionId(null); }} className={`rounded-[14px] px-1.5 py-2 text-[10px] font-medium transition ${actionType === type ? "bg-white text-sky-800 shadow-sm dark:bg-white/10 dark:text-sky-200" : "text-slate-500 dark:text-slate-400"}`}>{shortLabel(type)}</button>
+              ))}
+            </div>
+
+            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={placeholderFor(actionType)} className="mt-4 w-full rounded-[20px] border border-white/70 bg-white/48 px-4 py-3.5 text-sm text-slate-800 outline-none placeholder:text-slate-400 focus:border-sky-300 dark:border-white/10 dark:bg-white/[.05] dark:text-slate-100" />
+            <textarea value={body} onChange={(e) => setBody(e.target.value)} placeholder="Kort kommentar (valfritt)" rows={3} className="mt-2 w-full resize-none rounded-[20px] border border-white/70 bg-white/48 px-4 py-3.5 text-sm text-slate-800 outline-none placeholder:text-slate-400 focus:border-sky-300 dark:border-white/10 dark:bg-white/[.05] dark:text-slate-100" />
+            <button onClick={addAction} className="mt-3 w-full rounded-[20px] border border-sky-500/20 bg-sky-600 py-3.5 text-sm font-medium text-white shadow-[0_14px_28px_-16px_rgba(2,132,199,.75)] transition active:scale-[.99] dark:bg-sky-500">Skicka till spelaren</button>
+          </section>
+        </> : null}
+      </div>
     </main>
   );
 }
 
 function SessionSummary({ session }: { session: TrainingSession }) {
-  return <div><div className="flex items-start justify-between gap-3"><div><p className="text-[10px] font-bold uppercase tracking-[.16em] text-muted-foreground">{categoryLabel(session.category)}</p><p className="mt-1 font-semibold">{testLabel(session.test_id)}</p></div><span className="shrink-0 text-xs text-muted-foreground">{new Date(session.played_at).toLocaleDateString("sv-SE")}</span></div><div className="mt-3 flex gap-2">{session.score !== null ? <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">Score {formatNumber(session.score)}</span> : null}{session.test_handicap !== null ? <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold">Test-HCP {formatNumber(session.test_handicap)}</span> : null}</div></div>;
+  return (
+    <div>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[.16em] text-slate-400">{categoryLabel(session.category)}</p>
+          <p className="mt-1.5 text-[15px] font-medium tracking-[-.02em] text-slate-800 dark:text-slate-100">{testLabel(session.test_id)}</p>
+        </div>
+        <span className="shrink-0 text-[11px] text-slate-400">{new Date(session.played_at).toLocaleDateString("sv-SE")}</span>
+      </div>
+      <div className="mt-3 flex gap-2">
+        {session.score !== null ? <span className="rounded-full border border-sky-200/60 bg-sky-100/45 px-3 py-1 text-[11px] font-medium text-sky-800 dark:border-sky-400/15 dark:bg-sky-400/10 dark:text-sky-200">Score {formatNumber(session.score)}</span> : null}
+        {session.test_handicap !== null ? <span className="rounded-full border border-white/60 bg-white/40 px-3 py-1 text-[11px] font-medium text-slate-500 dark:border-white/10 dark:bg-white/[.05] dark:text-slate-300">Test-HCP {formatNumber(session.test_handicap)}</span> : null}
+      </div>
+    </div>
+  );
 }
 
 function formatNumber(value: number) { return Number.isInteger(value) ? String(value) : value.toFixed(1); }
