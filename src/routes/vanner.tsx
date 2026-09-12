@@ -55,6 +55,8 @@ function FriendsPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [friendHcp, setFriendHcp] = useState<Record<string, number | undefined>>({});
   const [groupSessions, setGroupSessions] = useState<Array<{ id: string; hostUserId: string; createdAt: string }>>([]);
+  const [manageFriendsOpen, setManageFriendsOpen] = useState(false);
+  const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
 
   const ownHcp = useMemo(() => {
     const real = loadRealHandicap();
@@ -128,6 +130,8 @@ function FriendsPage() {
     setBusyId(null);
     if (!ok) return setMessage("Det gick inte att ta bort vänskapen.");
     setMessage(`${friendship.other.displayName} togs bort från dina vänner.`);
+    setConfirmRemoveId(null);
+    setManageFriendsOpen(false);
     await refresh();
   }
 
@@ -243,14 +247,19 @@ function FriendsPage() {
                 {friendships.accepted.map((friendship) => {
                   const hcp = friendHcp[friendship.other.id];
                   return (
-                    <div key={friendship.id} className="flex items-center gap-3 px-4 py-4">
+                    <Link
+                      key={friendship.id}
+                      to="/jamfor/$userId"
+                      params={{ userId: friendship.other.id }}
+                      className="group flex items-center gap-3 px-4 py-4 transition-colors hover:bg-muted/35"
+                    >
                       <Avatar profile={friendship.other} size="lg" />
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-base font-semibold">{friendship.other.displayName}</p>
                         <p className="mt-1 truncate text-xs text-muted-foreground">Klubb ej angiven{hcp !== undefined ? ` · HCP ${hcpLabel(hcp)}` : ""}</p>
                       </div>
-                      <button type="button" disabled={busyId === friendship.id} onClick={() => remove(friendship)} className="rounded-full px-2 py-1 text-lg leading-none text-muted-foreground" aria-label={`Ta bort ${friendship.other.displayName}`}>•••</button>
-                    </div>
+                      <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-active:translate-x-0.5" />
+                    </Link>
                   );
                 })}
               </div>
@@ -263,6 +272,85 @@ function FriendsPage() {
             <UserPlus className="h-5 w-5" />
             Lägg till nya vänner
           </a>
+
+          {friendships.accepted.length ? (
+            <section className="mt-7 border-t border-border pt-5">
+              {!manageFriendsOpen ? (
+                <button
+                  type="button"
+                  onClick={() => setManageFriendsOpen(true)}
+                  className="w-full py-2 text-center text-xs font-medium text-muted-foreground/75 underline-offset-4 hover:underline"
+                >
+                  Hantera vänner
+                </button>
+              ) : (
+                <div className="rounded-3xl border border-border bg-card p-4 shadow-sm">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Inställningar</p>
+                      <h3 className="mt-1 font-display text-2xl">Hantera vänner</h3>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => { setManageFriendsOpen(false); setConfirmRemoveId(null); }}
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground"
+                      aria-label="Stäng vänhantering"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <p className="mt-2 text-xs leading-relaxed text-muted-foreground">Här kan du ändra vänskaper. Att ta bort en vän kräver alltid en extra bekräftelse.</p>
+
+                  <div className="mt-4 space-y-2">
+                    {friendships.accepted.map((friendship) => {
+                      const confirming = confirmRemoveId === friendship.id;
+                      return (
+                        <div key={friendship.id} className="rounded-2xl border border-border bg-muted/30 p-3">
+                          <div className="flex items-center gap-3">
+                            <Avatar profile={friendship.other} size="sm" />
+                            <span className="min-w-0 flex-1 truncate text-sm font-semibold">{friendship.other.displayName}</span>
+                            {!confirming ? (
+                              <button
+                                type="button"
+                                onClick={() => setConfirmRemoveId(friendship.id)}
+                                className="rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground"
+                              >
+                                Hantera
+                              </button>
+                            ) : null}
+                          </div>
+
+                          {confirming ? (
+                            <div className="mt-3 rounded-2xl border border-red-500/30 bg-red-500/[0.06] p-3">
+                              <p className="text-sm font-semibold text-red-600">Ta bort {friendship.other.displayName}?</p>
+                              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Vänskapen tas bort direkt. Om ni vill bli vänner igen behöver en ny vänförfrågan skickas och accepteras.</p>
+                              <div className="mt-3 grid grid-cols-2 gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setConfirmRemoveId(null)}
+                                  className="rounded-xl border border-border bg-background px-3 py-2.5 text-sm font-semibold"
+                                >
+                                  Avbryt
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={busyId === friendship.id}
+                                  onClick={() => remove(friendship)}
+                                  className="rounded-xl bg-red-600 px-3 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+                                >
+                                  {busyId === friendship.id ? "Tar bort …" : "Ja, ta bort vän"}
+                                </button>
+                              </div>
+                            </div>
+                          ) : null}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </section>
+          ) : null}
 
           {groupSessions.length ? (
             <section className="mt-5 rounded-3xl border border-border bg-card p-5">
