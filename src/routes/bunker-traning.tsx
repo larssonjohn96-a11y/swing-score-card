@@ -14,6 +14,7 @@ type LieId = "normal" | "plugged" | "uphill" | "downhill" | "ball-above" | "ball
 type ZoneId = "holed" | "under-1" | "1-2" | "2-3" | "3-5" | "5-plus";
 type GreenOutcome = "green" | "miss";
 type Step = "setup" | "play" | "result";
+type ShotCount = 3 | 6 | 12;
 type ShotPlan = { lie: LieId };
 type ShotResult = ShotPlan & { zone?: ZoneId; outcome?: GreenOutcome };
 
@@ -35,28 +36,44 @@ const ZONES: Array<{ id: ZoneId; label: string; short: string; rank: number; wit
   { id: "5-plus", label: "5+ m", short: "5+ m", rank: 5, within3: false },
 ];
 
-function pick<T>(items: T[]) {
-  return items[Math.floor(Math.random() * items.length)];
+function shuffle<T>(items: T[]) {
+  const next = [...items];
+  for (let i = next.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [next[i], next[j]] = [next[j], next[i]];
+  }
+  return next;
 }
 
-function makeAdvancedPlan(lies: LieId[], count: number) {
-  const plans: ShotPlan[] = [];
+function makeAdvancedPlan(lies: LieId[], count: number): ShotPlan[] {
+  if (!lies.length || count <= 0) return [];
+
+  const planned: LieId[] = [];
   let previous: LieId | null = null;
-  for (let i = 0; i < count; i++) {
-    let lie = pick(lies);
-    let tries = 0;
-    while (lie === previous && lies.length > 1 && tries < 10) {
-      lie = pick(lies);
-      tries++;
+
+  while (planned.length < count) {
+    let round = shuffle(lies);
+    const remaining = count - planned.length;
+
+    if (previous && round.length > 1 && round[0] === previous) {
+      const swapIndex = round.findIndex((lie) => lie !== previous);
+      if (swapIndex > 0) [round[0], round[swapIndex]] = [round[swapIndex], round[0]];
     }
-    plans.push({ lie });
-    previous = lie;
+
+    round = round.slice(0, remaining);
+    planned.push(...round);
+    previous = planned[planned.length - 1] ?? previous;
   }
-  return plans;
+
+  return planned.map((lie) => ({ lie }));
 }
 
 function SelectedCheck() {
-  return <span className="absolute right-2.5 top-2.5 flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm"><Check className="h-3.5 w-3.5" /></span>;
+  return (
+    <span className="absolute right-2.5 top-2.5 flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm">
+      <Check className="h-3.5 w-3.5" />
+    </span>
+  );
 }
 
 function BunkerTrainingPage() {
@@ -64,7 +81,7 @@ function BunkerTrainingPage() {
   const [mode, setMode] = useState<Mode>("standard");
   const [scoringMethod, setScoringMethod] = useState<ScoringMethod>("green");
   const [selectedLies, setSelectedLies] = useState<LieId[]>(["normal"]);
-  const [shotCount, setShotCount] = useState<3 | 5 | 10>(3);
+  const [shotCount, setShotCount] = useState<ShotCount>(3);
   const [plan, setPlan] = useState<ShotPlan[]>([]);
   const [results, setResults] = useState<ShotResult[]>([]);
   const [shotIndex, setShotIndex] = useState(0);
@@ -94,7 +111,7 @@ function BunkerTrainingPage() {
   const greenHitPct = results.length ? Math.round((greenHits / results.length) * 100) : 0;
 
   function toggleLie(id: LieId) {
-    setSelectedLies((items) => items.includes(id) ? items.filter((item) => item !== id) : [...items, id]);
+    setSelectedLies((items) => (items.includes(id) ? items.filter((item) => item !== id) : [...items, id]));
   }
 
   function startTraining() {
@@ -226,7 +243,7 @@ function BunkerTrainingPage() {
             <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-slate-500">{mode === "standard" ? "Session" : "3 · Session"}</p>
             <h2 className="mt-1 font-display text-2xl">Antal slag</h2>
             <div className="mt-3 grid grid-cols-3 gap-3">
-              {([3, 5, 10] as const).map((count) => {
+              {([3, 6, 12] as const).map((count) => {
                 const selected = shotCount === count;
                 return (
                   <button key={count} type="button" onClick={() => setShotCount(count)} className={`relative rounded-2xl border py-5 text-center transition-all ${selected ? selectedClass : glass}`}>
