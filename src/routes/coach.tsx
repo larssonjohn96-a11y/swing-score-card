@@ -15,8 +15,29 @@ type CoachAction = { id: string; action_type: ActionType; title: string; body: s
 type TrainingSession = { id: string; test_id: string; category: string; played_at: string; score: number | null; test_handicap: number | null; metrics: Record<string, unknown> | null };
 type PlayerRow = { relationship: Relationship; name: string; snapshot?: { est_hcp?: number | null; test_count?: number } };
 
+const DEMO_PLAYERS: PlayerRow[] = [
+  { relationship: { id: "demo-rel-emma", player_id: "demo-emma", coach_id: "demo-john", status: "accepted", share_training_data: true }, name: "Emma", snapshot: { est_hcp: 18.4, test_count: 14 } },
+  { relationship: { id: "demo-rel-oskar", player_id: "demo-oskar", coach_id: "demo-john", status: "accepted", share_training_data: true }, name: "Oskar", snapshot: { est_hcp: 9.7, test_count: 23 } },
+  { relationship: { id: "demo-rel-sara", player_id: "demo-sara", coach_id: "demo-john", status: "accepted", share_training_data: true }, name: "Sara", snapshot: { est_hcp: 27.1, test_count: 8 } },
+];
+
+const DEMO_SESSIONS: Record<string, TrainingSession[]> = {
+  "demo-emma": [
+    { id: "demo-session-emma-1", test_id: "approach-precision", category: "approach", played_at: "2026-09-12T14:30:00Z", score: 72, test_handicap: 17.8, metrics: null },
+    { id: "demo-session-emma-2", test_id: "fairway-streak", category: "driving", played_at: "2026-09-10T16:10:00Z", score: 7, test_handicap: null, metrics: null },
+  ],
+  "demo-oskar": [
+    { id: "demo-session-oskar-1", test_id: "driver-konsekvens", category: "driving", played_at: "2026-09-11T17:20:00Z", score: 81, test_handicap: 8.9, metrics: null },
+    { id: "demo-session-oskar-2", test_id: "lagputt-ladder", category: "puttning", played_at: "2026-09-09T15:00:00Z", score: 15, test_handicap: null, metrics: null },
+  ],
+  "demo-sara": [
+    { id: "demo-session-sara-1", test_id: "8-bollar", category: "around-the-green", played_at: "2026-09-12T09:45:00Z", score: 11, test_handicap: 25.9, metrics: null },
+  ],
+};
+
 function CoachPage() {
   const { user, displayName, loading } = useAuth();
+  const isJohnMaster = (displayName ?? "").trim().toLowerCase() === "john";
   const [tab, setTab] = useState<Tab>("player");
   const [coachProfile, setCoachProfile] = useState<CoachProfile | null>(null);
   const [myCoach, setMyCoach] = useState<CoachProfile | null>(null);
@@ -33,12 +54,21 @@ function CoachPage() {
   const [body, setBody] = useState("");
   const [message, setMessage] = useState<string | null>(null);
 
-  const selectedPlayer = useMemo(() => players.find((p) => p.relationship.player_id === selectedPlayerId) ?? null, [players, selectedPlayerId]);
-  const selectedPlayerSessions = selectedPlayerId ? playerSessions[selectedPlayerId] ?? [] : [];
+  const visiblePlayers = isJohnMaster && players.length === 0 ? DEMO_PLAYERS : players;
+  const visibleSessions = isJohnMaster && players.length === 0 ? DEMO_SESSIONS : playerSessions;
+  const effectiveCoachProfile: CoachProfile | null = coachProfile ?? (isJohnMaster ? { user_id: user?.id ?? "demo-john", display_name: "Coach John", club_name: "SG4 Coach Preview", invite_code: "JOHN-DEMO" } : null);
+  const selectedPlayer = useMemo(() => visiblePlayers.find((p) => p.relationship.player_id === selectedPlayerId) ?? null, [visiblePlayers, selectedPlayerId]);
+  const selectedPlayerSessions = selectedPlayerId ? visibleSessions[selectedPlayerId] ?? [] : [];
   const generalActions = actions.filter((a) => !a.session_id);
+  const usingDemoCoach = isJohnMaster && players.length === 0;
 
   useEffect(() => { if (user) void loadAll(); }, [user]);
   useEffect(() => { setSelectedSessionId(null); }, [selectedPlayerId]);
+  useEffect(() => {
+    if (!isJohnMaster) return;
+    setTab("coach");
+    if (!selectedPlayerId) setSelectedPlayerId(DEMO_PLAYERS[0].relationship.player_id);
+  }, [isJohnMaster]);
 
   async function loadAll() {
     if (!user) return;
@@ -69,7 +99,8 @@ function CoachPage() {
     if (!coachRels.length) {
       setPlayers([]);
       setPlayerSessions({});
-      setSelectedPlayerId(null);
+      if (isJohnMaster) setSelectedPlayerId(DEMO_PLAYERS[0].relationship.player_id);
+      else setSelectedPlayerId(null);
       return;
     }
 
@@ -122,6 +153,13 @@ function CoachPage() {
 
   async function addAction() {
     if (!user || !selectedPlayer || !title.trim()) return;
+    if (usingDemoCoach) {
+      setTitle("");
+      setBody("");
+      setSelectedSessionId(null);
+      setMessage("Preview: skickat till spelaren.");
+      return;
+    }
     const { error } = await db.from("coach_actions").insert({
       relationship_id: selectedPlayer.relationship.id,
       player_id: selectedPlayer.relationship.player_id,
@@ -150,7 +188,10 @@ function CoachPage() {
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-28 pt-6">
-      <div className="flex items-center justify-between"><Link to="/konto" aria-label="Tillbaka" className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card"><ArrowLeft className="h-4 w-4" /></Link><span className="text-xs font-semibold uppercase tracking-[.18em] text-muted-foreground">SG4 Coach</span></div>
+      <div className="flex items-center justify-between">
+        <Link to="/" aria-label="Tillbaka till spelarvy" className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card"><ArrowLeft className="h-4 w-4" /></Link>
+        <div className="text-right"><span className="block text-xs font-semibold uppercase tracking-[.18em] text-muted-foreground">SG4 Coach</span>{isJohnMaster ? <span className="mt-1 block text-sm font-semibold text-foreground">Coach John</span> : null}</div>
+      </div>
       <section className="mt-5 rounded-[30px] border border-border bg-card p-5"><p className="text-[10px] font-semibold uppercase tracking-[.2em] text-muted-foreground">Coach + spelare</p><h1 className="mt-2 font-display text-4xl leading-none">Bättre mellan lektionerna.</h1><p className="mt-3 text-sm text-muted-foreground">Fokus → träning → resultat → nästa fokus.</p></section>
 
       <div className="mt-5 grid grid-cols-2 gap-2 rounded-2xl border border-border bg-card p-1">
@@ -165,13 +206,8 @@ function CoachPage() {
           {myCoach ? (
             <>
               <div className="rounded-3xl border border-border bg-card p-5"><div className="flex items-center gap-3"><div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary"><UserRound className="h-5 w-5" /></div><div><p className="font-semibold">{myCoach.display_name}</p><p className="text-xs text-muted-foreground">{myCoach.club_name ?? "Din coach"}</p></div></div><p className="mt-4 text-xs text-muted-foreground">Dina träningstester delas med coachen så länge kopplingen är aktiv.</p></div>
-
               {generalActions.length ? <div><h2 className="mb-3 font-display text-2xl">Från din coach</h2><div className="space-y-3">{generalActions.map((a) => <ActionCard key={a.id} action={a} onComplete={completeAction} />)}</div></div> : null}
-
-              <div><h2 className="mb-3 font-display text-2xl">Senaste träningen</h2><div className="space-y-3">{mySessions.length ? mySessions.map((session) => {
-                const feedback = actions.filter((a) => a.session_id === session.id);
-                return <div key={session.id} className="rounded-3xl border border-border bg-card p-4"><SessionSummary session={session} />{feedback.length ? <div className="mt-3 space-y-2 border-t border-border pt-3">{feedback.map((a) => <div key={a.id} className="rounded-2xl bg-muted p-3"><p className="text-[10px] font-bold uppercase tracking-[.16em] text-primary">{labelFor(a.action_type)}</p><p className="mt-1 text-sm font-semibold">{a.title}</p>{a.body ? <p className="mt-1 text-xs text-muted-foreground">{a.body}</p> : null}</div>)}</div> : null}</div>;
-              }) : <p className="text-sm text-muted-foreground">Inga synkade träningstester ännu.</p>}</div></div>
+              <div><h2 className="mb-3 font-display text-2xl">Senaste träningen</h2><div className="space-y-3">{mySessions.length ? mySessions.map((session) => { const feedback = actions.filter((a) => a.session_id === session.id); return <div key={session.id} className="rounded-3xl border border-border bg-card p-4"><SessionSummary session={session} />{feedback.length ? <div className="mt-3 space-y-2 border-t border-border pt-3">{feedback.map((a) => <div key={a.id} className="rounded-2xl bg-muted p-3"><p className="text-[10px] font-bold uppercase tracking-[.16em] text-primary">{labelFor(a.action_type)}</p><p className="mt-1 text-sm font-semibold">{a.title}</p>{a.body ? <p className="mt-1 text-xs text-muted-foreground">{a.body}</p> : null}</div>)}</div> : null}</div>; }) : <p className="text-sm text-muted-foreground">Inga synkade träningstester ännu.</p>}</div></div>
             </>
           ) : (
             <div className="rounded-3xl border border-border bg-card p-5"><h2 className="font-display text-2xl">Lägg till coach</h2><p className="mt-2 text-sm text-muted-foreground">Be din coach om SG4-koden.</p><input value={inviteCode} onChange={(e) => setInviteCode(e.target.value.toUpperCase())} placeholder="COACH-AB12" className="mt-4 w-full rounded-2xl border border-border bg-background px-4 py-3 uppercase" /><button onClick={connectCoach} className="mt-3 w-full rounded-2xl bg-primary py-3 font-semibold text-primary-foreground">Lägg till coach</button></div>
@@ -179,13 +215,13 @@ function CoachPage() {
         </section>
       ) : (
         <section className="mt-5 space-y-5">
-          {!coachProfile ? (
+          {!effectiveCoachProfile ? (
             <div className="rounded-3xl border border-border bg-card p-5"><h2 className="font-display text-2xl">Skapa coachprofil</h2><p className="mt-2 text-sm text-muted-foreground">För PGA-pros och tränare som vill följa sina elever mellan lektionerna.</p><input value={clubName} onChange={(e) => setClubName(e.target.value)} placeholder="Klubb / verksamhet (valfritt)" className="mt-4 w-full rounded-2xl border border-border bg-background px-4 py-3" /><button onClick={createCoachProfile} className="mt-3 w-full rounded-2xl bg-primary py-3 font-semibold text-primary-foreground">Aktivera coachvy</button></div>
           ) : (
             <>
-              <div className="rounded-3xl border border-border bg-card p-5"><p className="text-xs uppercase tracking-[.18em] text-muted-foreground">Din elevkod</p><p className="mt-2 font-display text-4xl tracking-wider">{coachProfile.invite_code}</p><p className="mt-2 text-xs text-muted-foreground">Eleven anger koden under Min coach.</p></div>
+              <div className="rounded-3xl border border-border bg-card p-5"><div className="flex items-center justify-between gap-3"><div><p className="text-xs uppercase tracking-[.18em] text-muted-foreground">Coach</p><p className="mt-1 font-display text-3xl">{effectiveCoachProfile.display_name}</p><p className="mt-1 text-xs text-muted-foreground">{effectiveCoachProfile.club_name}</p></div>{usingDemoCoach ? <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">Preview</span> : null}</div><div className="mt-4 border-t border-border pt-4"><p className="text-xs uppercase tracking-[.18em] text-muted-foreground">Din elevkod</p><p className="mt-1 font-display text-3xl tracking-wider">{effectiveCoachProfile.invite_code}</p></div></div>
 
-              <div><div className="mb-3 flex items-center justify-between"><h2 className="font-display text-2xl">Elever</h2><span className="text-xs text-muted-foreground">{players.length}</span></div><div className="space-y-2">{players.map((p) => <button key={p.relationship.id} onClick={() => setSelectedPlayerId(p.relationship.player_id)} className={`flex w-full items-center justify-between rounded-2xl border p-4 text-left ${selectedPlayerId === p.relationship.player_id ? "border-primary bg-primary/5" : "border-border bg-card"}`}><span><span className="block font-semibold">{p.name}</span><span className="text-xs text-muted-foreground">{p.snapshot?.test_count ?? 0} tester · HCP {p.snapshot?.est_hcp ?? "–"}</span></span><ChevronRight className="h-4 w-4" /></button>)}</div></div>
+              <div><div className="mb-3 flex items-center justify-between"><h2 className="font-display text-2xl">Elever</h2><span className="text-xs text-muted-foreground">{visiblePlayers.length}</span></div><div className="space-y-2">{visiblePlayers.map((p) => <button key={p.relationship.id} onClick={() => setSelectedPlayerId(p.relationship.player_id)} className={`flex w-full items-center justify-between rounded-2xl border p-4 text-left ${selectedPlayerId === p.relationship.player_id ? "border-primary bg-primary/5" : "border-border bg-card"}`}><span><span className="block font-semibold">{p.name}</span><span className="text-xs text-muted-foreground">{p.snapshot?.test_count ?? 0} tester · HCP {p.snapshot?.est_hcp ?? "–"}</span></span><ChevronRight className="h-4 w-4" /></button>)}</div></div>
 
               {selectedPlayer ? <>
                 <div><div className="mb-3 flex items-center justify-between"><h2 className="font-display text-2xl">Senaste träningen</h2><span className="text-xs text-muted-foreground">{selectedPlayerSessions.length} pass</span></div><div className="space-y-3">{selectedPlayerSessions.length ? selectedPlayerSessions.map((session) => <div key={session.id} className={`rounded-3xl border bg-card p-4 ${selectedSessionId === session.id ? "border-primary" : "border-border"}`}><SessionSummary session={session} /><div className="mt-3 grid grid-cols-2 gap-2"><button onClick={() => prepareSessionFeedback(session, "comment")} className="flex items-center justify-center gap-2 rounded-2xl border border-border py-2.5 text-sm font-semibold"><MessageCircle className="h-4 w-4" />Kommentera</button><button onClick={() => prepareSessionFeedback(session, "reaction")} className="flex items-center justify-center gap-2 rounded-2xl border border-border py-2.5 text-sm font-semibold"><ThumbsUp className="h-4 w-4" />Peppa</button></div></div>) : <p className="text-sm text-muted-foreground">Eleven har inga synkade träningstester ännu.</p>}</div></div>
