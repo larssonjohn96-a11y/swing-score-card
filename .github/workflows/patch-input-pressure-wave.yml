@@ -1,0 +1,97 @@
+name: Patch input reset and pressure wave
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Patch match input state and pressure wave
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('src/routes/match.tsx')
+          s = p.read_text()
+
+          replacements = [
+            (
+              '  const [blueStrokes, setBlueStrokes] = useState(1);\n  const [redStrokes, setRedStrokes] = useState(1);',
+              '  const [blueStrokes, setBlueStrokes] = useState(1);\n  const [redStrokes, setRedStrokes] = useState(1);\n  const [blueStrokesSelected, setBlueStrokesSelected] = useState(false);\n  const [redStrokesSelected, setRedStrokesSelected] = useState(false);'
+            ),
+            (
+              '        setBlueStrokes(1); setRedStrokes(1); setBluePoints(null); setRedPoints(null);',
+              '        setBlueStrokes(1); setRedStrokes(1); setBlueStrokesSelected(false); setRedStrokesSelected(false); setBluePoints(null); setRedPoints(null);'
+            ),
+            (
+              '    setHoleIndex(0); setBlueStrokes(1); setRedStrokes(1); setBluePoints(null); setRedPoints(null); setApproachTurn("blue");',
+              '    setHoleIndex(0); setBlueStrokes(1); setRedStrokes(1); setBlueStrokesSelected(false); setRedStrokesSelected(false); setBluePoints(null); setRedPoints(null); setApproachTurn("blue");'
+            ),
+            (
+              '    setBlueStrokes(1); setRedStrokes(1); setBluePoints(null); setRedPoints(null);\n  }\n  function recordWinner',
+              '    setBlueStrokes(1); setRedStrokes(1); setBlueStrokesSelected(false); setRedStrokesSelected(false); setBluePoints(null); setRedPoints(null);\n  }\n  function recordWinner'
+            ),
+            (
+              '    setBlueStrokes(targetHole?.blueStrokes ?? 1); setRedStrokes(targetHole?.redStrokes ?? 1);\n    setBluePoints(typeof targetHole?.bluePoints === "number" ? targetHole.bluePoints : null);',
+              '    setBlueStrokes(targetHole?.blueStrokes ?? 1); setRedStrokes(targetHole?.redStrokes ?? 1);\n    setBlueStrokesSelected(typeof targetHole?.blueStrokes === "number"); setRedStrokesSelected(typeof targetHole?.redStrokes === "number");\n    setBluePoints(typeof targetHole?.bluePoints === "number" ? targetHole.bluePoints : null);'
+            ),
+            (
+              '  function recordPutting() {\n    if (isSubmitting) return;',
+              '  function recordPutting() {\n    if (isSubmitting || !blueStrokesSelected || !redStrokesSelected) return;'
+            ),
+            (
+              '    setBlueStrokes(hole.blueStrokes ?? 1); setRedStrokes(hole.redStrokes ?? 1);\n    setBluePoints(typeof hole.bluePoints === "number" ? hole.bluePoints : null);',
+              '    setBlueStrokes(hole.blueStrokes ?? 1); setRedStrokes(hole.redStrokes ?? 1);\n    setBlueStrokesSelected(typeof hole.blueStrokes === "number"); setRedStrokesSelected(typeof hole.redStrokes === "number");\n    setBluePoints(typeof hole.bluePoints === "number" ? hole.bluePoints : null);'
+            ),
+            (
+              '    setBlueStrokes(1); setRedStrokes(1); setBluePoints(null); setRedPoints(null);\n    setShortGameLies([]);',
+              '    setBlueStrokes(1); setRedStrokes(1); setBlueStrokesSelected(false); setRedStrokesSelected(false); setBluePoints(null); setRedPoints(null);\n    setShortGameLies([]);'
+            ),
+            (
+              '    setScoringMode("match"); setMatchLength(5); setHoles([]); setHoleIndex(0); setFinalText(""); setBlueStrokes(1); setRedStrokes(1); setBluePoints(null); setRedPoints(null);',
+              '    setScoringMode("match"); setMatchLength(5); setHoles([]); setHoleIndex(0); setFinalText(""); setBlueStrokes(1); setRedStrokes(1); setBlueStrokesSelected(false); setRedStrokesSelected(false); setBluePoints(null); setRedPoints(null);'
+            ),
+            (
+              'onClick={() => setter(strokes)} className={`rounded-xl border px-1 py-3 text-center transition-colors ${value === strokes ? tone === "blue" ? "border-blue-600 bg-blue-600 text-white" : "border-red-600 bg-red-600 text-white" : "border-slate-300 bg-slate-100 text-slate-700 shadow-sm"}`}',
+              'onClick={() => { setter(strokes); if (tone === "blue") setBlueStrokesSelected(true); else setRedStrokesSelected(true); }} className={`rounded-xl border px-1 py-3 text-center transition-colors focus:outline-none ${value === strokes && (tone === "blue" ? blueStrokesSelected : redStrokesSelected) ? tone === "blue" ? "border-blue-600 bg-blue-600 text-white" : "border-red-600 bg-red-600 text-white" : "border-slate-300 bg-slate-100 text-slate-700 shadow-sm"}`}'
+            ),
+            (
+              '{value} {value === 1 ? "putt" : "puttar"}',
+              '{(tone === "blue" ? blueStrokesSelected : redStrokesSelected) ? `${value} ${value === 1 ? "putt" : "puttar"}` : "–"}'
+            ),
+            (
+              '<button disabled={isSubmitting} onClick={recordPutting}',
+              '<button disabled={isSubmitting || !blueStrokesSelected || !redStrokesSelected} onClick={recordPutting}'
+            ),
+            (
+              '12%{opacity:.12}48%{opacity:.34}78%{opacity:.12}',
+              '12%{opacity:.18}48%{opacity:.62}78%{opacity:.18}'
+            ),
+            (
+              'w-[42%] bg-gradient-to-r from-transparent via-white/65 to-transparent blur-[1px]" style={{ animation: "sg4PressureWave 1.05s',
+              'w-[52%] bg-gradient-to-r from-transparent via-white/90 to-transparent blur-[1px]" style={{ animation: "sg4PressureWave 1.18s'
+            ),
+          ]
+
+          for old, new in replacements:
+            if old not in s:
+              raise SystemExit(f'Target not found:\n{old[:180]}')
+            s = s.replace(old, new, 1)
+
+          p.write_text(s)
+          PY
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/routes/match.tsx
+          git commit -m "Reset score inputs and strengthen pressure wave"
+          git push
