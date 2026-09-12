@@ -125,7 +125,7 @@ export function BottomNav() {
 
               <Link to="/traning" search={{ category: undefined }} onClick={() => setOpen(false)} className="group flex min-h-[92px] items-center gap-4 rounded-3xl border border-border bg-muted/55 px-5 py-5 transition-colors hover:border-primary hover:bg-muted/70">
                 <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-border bg-background/80 text-foreground"><ListChecks className="h-6 w-6" /></span>
-                <div className="min-w-0 flex-1"><div className="flex items-center gap-2"><h3 className="text-xl font-semibold leading-none">Träning</h3><span className="rounded-full bg-background/80 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Träna</span></div><p className="mt-2 text-sm leading-snug text-muted-foreground">Välj träningsområde, slå PB och följ din utveckling över tid.</p></div>
+                <div className="min-w-0 flex-1"><div className="flex items-center gap-2"><h3 className="text-xl font-semibold leading-none">Träning</h3><span className="rounded-full bg-background/80 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Träna</span></div><p className="mt-2 text-sm leading-snug text-muted-foreground">Träna själv eller tillsammans med en kompis, slå PB och följ din utveckling över tid.</p></div>
                 <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
               </Link>
 
