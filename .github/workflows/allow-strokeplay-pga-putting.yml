@@ -1,0 +1,51 @@
+name: Allow strokeplay in PGA putting
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.event.head_commit.message == 'Add one-time PGA putting scoring patch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Update PGA putting competition flow
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('src/routes/match.tsx')
+          s = p.read_text()
+
+          old = 'onClick={() => { setMatchType(i.id); if (i.id === "pga-tour") { setScoringMode("match"); setMatchLength(9); } }} className={`flex w-full items-center gap-4 rounded-3xl border p-5 text-left ${active ? selectedGlass : glass}`}'
+          new = 'onClick={() => { setMatchType(i.id); if (i.id === "pga-tour") setMatchLength(9); }} className={`flex w-full items-center gap-4 rounded-3xl border p-5 text-left ${active ? selectedGlass : glass}`}'
+          if old not in s:
+              raise SystemExit('PGA type selection anchor not found')
+          s = s.replace(old, new, 1)
+
+          old = '<button disabled={!matchType} onClick={() => { if (isPgaPutting) { setScoringMode("match"); setMatchLength(9); setStep("length"); } else setStep("scoring"); }} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white disabled:opacity-30">Nästa <ChevronRight className="h-5 w-5" /></button>'
+          new = '<button disabled={!matchType} onClick={() => setStep("scoring")} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white disabled:opacity-30">Nästa <ChevronRight className="h-5 w-5" /></button>'
+          if old not in s:
+              raise SystemExit('PGA type next anchor not found')
+          s = s.replace(old, new, 1)
+
+          old = '    else if (step === "length") setStep(isShortGame ? "setup" : isApproach ? "approach-setup" : category === "off-the-tee" ? "category" : isPgaPutting ? "type" : "scoring");'
+          new = '    else if (step === "length") setStep(isShortGame ? "setup" : isApproach ? "approach-setup" : category === "off-the-tee" ? "category" : "scoring");'
+          if old not in s:
+              raise SystemExit('Length back anchor not found')
+          s = s.replace(old, new, 1)
+
+          p.write_text(s)
+          PY
+
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add src/routes/match.tsx
+          git commit -m "Allow Match Play or strokeplay in PGA putting"
+          git push
