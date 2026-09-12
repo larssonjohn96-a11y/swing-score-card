@@ -95,3 +95,5 @@ jobs:
           git add src/routes/match.tsx
           git commit -m "Reset score inputs and strengthen pressure wave"
           git push
+
+# trigger
