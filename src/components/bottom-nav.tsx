@@ -31,7 +31,7 @@ const MORE_LINKS: ReadonlyArray<{
   { to: "/min-bag", label: "My Bag", description: "Öppna din mappade bag – eller starta mappning om du inte har gjort den ännu.", icon: ListChecks, tone: "neutral" },
   { to: "/hcp-goal", label: "HCP Goal", description: "Sätt ett handicapmål och se dina tre viktigaste vägar dit.", icon: Target, tone: "h2h" },
   { to: "/jamfor", label: "Head-to-head", description: "Ställ din SG4-profil mot en vän och se vem som vinner.", icon: Users, tone: "h2h" },
-  { to: "/match", label: "Match", description: "Spela Singles eller lagmatch i Fourball och Foursomes.", icon: Users, tone: "h2h" },
+  { to: "/match", label: "Tävla", description: "Utmana en kompis head-to-head eller spela lagmatch i Fourball och Foursomes.", icon: Users, tone: "h2h" },
   { to: "/vanner", label: "Vänner", description: "Hantera vänner och sociala funktioner.", icon: Users, tone: "neutral" },
   { to: "/shot-value", label: "Shot Value", description: "Se vad ett enskilt slag faktiskt är värt mot olika spelarnivåer.", icon: BarChart3, tone: "neutral" },
 ] as const;
@@ -115,10 +115,10 @@ export function BottomNav() {
       <Sheet open={open} onOpenChange={(value) => { setOpen(value); if (!value) setQuickView("root"); }}>
         <SheetContent side="bottom" className="rounded-t-[32px] px-5 pb-7 pt-6">
           {quickView === "root" ? <>
-            <SheetHeader className="space-y-1.5"><SheetTitle className="text-left text-[28px] leading-none">Vad vill du göra?</SheetTitle><p className="text-left text-sm text-muted-foreground">Välj mellan att testa, träna eller spela match.</p></SheetHeader>
+            <SheetHeader className="space-y-1.5"><SheetTitle className="text-left text-[28px] leading-none">Vad vill du göra?</SheetTitle><p className="text-left text-sm text-muted-foreground">Välj mellan att testa, träna eller tävla.</p></SheetHeader>
             <div className="mt-5 space-y-3">
               <button type="button" onClick={() => setQuickView("hcp")} className="group flex min-h-[92px] w-full items-center gap-4 rounded-3xl border border-primary/25 bg-primary/[0.045] px-5 py-5 text-left transition-colors hover:border-primary/40 hover:bg-primary/[0.07]">
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-tint-strong text-primary"><Target className="h-6 w-6" /></span>
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-tint-strong text-sm font-extrabold tracking-[-0.02em] text-primary">HCP</span>
                 <div className="min-w-0 flex-1"><div className="flex items-center gap-2"><h3 className="text-xl font-semibold leading-none">Handicap-test</h3><span className="rounded-full bg-tint-strong px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-primary">HCP</span></div><p className="mt-2 text-sm leading-snug text-muted-foreground">Testa din nivå och få ett handicapresultat i vald kategori.</p></div>
                 <ChevronRight className="h-4 w-4 shrink-0 text-primary" />
               </button>
@@ -131,11 +131,11 @@ export function BottomNav() {
 
               <Link to="/match" onClick={() => setOpen(false)} className="group flex min-h-[92px] items-center gap-4 rounded-3xl border border-blue-500/20 bg-gradient-to-r from-blue-500/[0.06] via-card to-red-500/[0.06] px-5 py-5 transition-colors hover:border-red-500/30">
                 <span className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white/85 shadow-sm">
-        <User className="absolute left-1.5 h-[20px] w-[20px] stroke-[2.35] text-blue-600" />
-        <span className="relative z-10 rounded bg-slate-950 px-1 py-0.5 text-[7px] font-extrabold leading-none text-white">VS</span>
-        <User className="absolute right-1.5 h-[20px] w-[20px] stroke-[2.35] text-red-600" />
-      </span>
-                <div className="min-w-0 flex-1"><div className="flex items-center gap-2"><h3 className="text-xl font-semibold leading-none">Match</h3><span className="rounded-full bg-slate-900 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-white">MATCH</span></div><p className="mt-2 text-sm leading-snug text-muted-foreground">Spela Singles 1 mot 1 eller lagmatch i Fourball och Foursomes.</p></div>
+                  <User className="absolute left-1.5 h-[20px] w-[20px] stroke-[2.35] text-blue-600" />
+                  <span className="relative z-10 rounded bg-slate-950 px-1 py-0.5 text-[7px] font-extrabold leading-none text-white">VS</span>
+                  <User className="absolute right-1.5 h-[20px] w-[20px] stroke-[2.35] text-red-600" />
+                </span>
+                <div className="min-w-0 flex-1"><div className="flex items-center gap-2"><h3 className="text-xl font-semibold leading-none">Match</h3><span className="rounded-full bg-slate-900 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-white">TÄVLA</span></div><p className="mt-2 text-sm leading-snug text-muted-foreground">Utmana en kompis head-to-head eller spela lagmatch i Fourball och Foursomes.</p></div>
                 <ChevronRight className="h-4 w-4 shrink-0 text-red-500/70" />
               </Link>
             </div>
