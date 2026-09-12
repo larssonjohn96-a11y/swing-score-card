@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, ChevronRight, Crosshair, Grid3x3 } from "lucide-react";
+import { ArrowLeft, BarChart3, ChevronRight, Crosshair, Grid3x3 } from "lucide-react";
 import { useState } from "react";
 import { LIGHT_SURFACE } from "./8-bollar";
 
@@ -81,10 +81,10 @@ const TESTS: Record<Category, TestItem[]> = {
 };
 
 const CATEGORIES: Array<{ id: Category; title: string; description: string; hero: string }> = [
-  { id: "off-the-tee", title: "Off the Tee", description: "Utslag från tee – fart, längd och driverkontroll", hero: "Fart, längd och driverkontroll." },
-  { id: "approach", title: "Approach", description: "Inspel mot green – precision och bollkontroll", hero: "Precision och bollkontroll." },
-  { id: "around-the-green", title: "Around the Green", description: "Slag runt green – chip, pitch, bunker och scoring", hero: "Slagvariation, närspel och scoring." },
-  { id: "putting", title: "Putting", description: "Puttning på green – längdkontroll, startlinje och scoring", hero: "Träna rätt del av puttningen — från startlinje och kortputtar till green read och längdkontroll." },
+  { id: "off-the-tee", title: "Off the Tee", description: "Fart, längd och driverkontroll", hero: "Fart, längd och driverkontroll." },
+  { id: "approach", title: "Approach", description: "Precision och bollkontroll", hero: "Precision och bollkontroll." },
+  { id: "around-the-green", title: "Around the Green", description: "Närspel och scoring", hero: "Slagvariation, närspel och scoring." },
+  { id: "putting", title: "Putting", description: "Startlinje och längdkontroll", hero: "Träna rätt del av puttningen — från startlinje och kortputtar till green read och längdkontroll." },
 ];
 
 function matchesPuttingFilter(test: TestItem, filter: PuttingFilter) {
@@ -137,23 +137,39 @@ function TrainingTestsPage() {
               <h2 className="font-display text-2xl leading-none text-slate-950">Kategorier</h2>
               <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">4 områden</span>
             </div>
-            <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
               {CATEGORIES.map((item) => (
                 <Link
                   key={item.id}
                   to="/traning"
                   search={{ category: item.id }}
-                  className="group flex w-full items-center gap-4 rounded-3xl border border-slate-300/80 bg-gradient-to-br from-slate-100/88 via-white/78 to-slate-100/72 p-4 text-left shadow-[0_18px_44px_-32px_rgba(15,23,42,.4)] backdrop-blur-2xl transition-all active:scale-[0.99]"
+                  className="group flex min-h-[154px] flex-col justify-between rounded-3xl border border-slate-300/80 bg-gradient-to-br from-slate-100/88 via-white/78 to-slate-100/72 p-4 text-left shadow-[0_18px_44px_-32px_rgba(15,23,42,.4)] backdrop-blur-2xl transition-all active:scale-[0.99]"
                 >
-                  <span className="min-w-0 flex-1">
-                    <span className="block font-display text-2xl leading-none text-slate-950">{item.title}</span>
-                    <span className="mt-1.5 block text-xs leading-relaxed text-slate-600">{item.description}</span>
-                    <span className="mt-2 block text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-600">{TESTS[item.id].length} tester</span>
+                  <span>
+                    <span className="block font-display text-[26px] leading-[0.95] text-slate-950">{item.title}</span>
+                    <span className="mt-2 block text-[11px] leading-snug text-slate-600">{item.description}</span>
                   </span>
-                  <ChevronRight className="h-5 w-5 shrink-0 text-slate-500 transition-transform group-active:translate-x-0.5" />
+                  <span className="mt-4 flex items-center justify-between">
+                    <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-slate-600">{TESTS[item.id].length} tester</span>
+                    <ChevronRight className="h-4 w-4 shrink-0 text-slate-500 transition-transform group-active:translate-x-0.5" />
+                  </span>
                 </Link>
               ))}
             </div>
+
+            <Link
+              to="/traning-progress"
+              className="mt-4 flex w-full items-center gap-4 rounded-3xl border border-slate-300/80 bg-white/72 p-4 text-left shadow-[0_18px_44px_-32px_rgba(15,23,42,.35)] backdrop-blur-2xl transition-all active:scale-[0.99]"
+            >
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-slate-300/80 bg-slate-100/80 text-slate-700">
+                <BarChart3 className="h-5 w-5" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-semibold text-slate-950">Analys & framsteg</span>
+                <span className="mt-1 block text-[11px] leading-snug text-slate-600">Se utveckling, historik och analys för dina träningstester.</span>
+              </span>
+              <ChevronRight className="h-5 w-5 shrink-0 text-slate-500" />
+            </Link>
           </section>
         </>
       ) : (
@@ -205,11 +221,8 @@ function TrainingTestsPage() {
             <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">{category === "putting" ? `${visibleTests.length} av ${TESTS.putting.length}` : `${TESTS[category].length} områden`}</span>
           </div>
           <div className="space-y-3">{visibleTests.map((test) => <TestCard key={test.to} {...test} />)}</div>
-
         </section>
       )}
-
-      <Link to="/tester" className="mt-8 inline-block rounded-full border border-slate-300/80 bg-white/65 px-4 py-2 text-sm text-slate-600 backdrop-blur-xl">Tillbaka till HCP-tester</Link>
     </main>
   );
 }
