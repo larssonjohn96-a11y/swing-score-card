@@ -25,10 +25,10 @@ export const Route = createFileRoute("/match-bot")({
   component: BotMatchPage,
 });
 
-type Step = "bot" | "category" | "setup" | "length" | "play" | "result";
+type Step = "bot" | "category" | "setup" | "length" | "play" | "sudden-death" | "result";
 type Category = "off-the-tee" | "approach" | "around-the-green" | "putting";
 type Winner = "you" | "bot" | "tie";
-type MatchLength = 5 | 9 | 18;
+type MatchLength = 3 | 5 | 7;
 type TurnState = "you" | "bot-thinking" | "reveal";
 type BotEvent = "start" | "bot-win" | "player-win" | "tie" | "pressure";
 type BotChat = Record<BotEvent, string[]>;
@@ -176,7 +176,7 @@ function BotMatchPage() {
   const [step, setStep] = useState<Step>("bot");
   const [botId, setBotId] = useState("zach");
   const [category, setCategory] = useState<Category | null>(null);
-  const [length, setLength] = useState<MatchLength>(9);
+  const [length, setLength] = useState<MatchLength>(5);
   const [holes, setHoles] = useState<Hole[]>([]);
   const [holeIndex, setHoleIndex] = useState(0);
   const [yourValue, setYourValue] = useState<number | null>(null);
@@ -185,6 +185,9 @@ function BotMatchPage() {
   const [approachDistance, setApproachDistance] = useState(0);
   const [approachLateral, setApproachLateral] = useState(0);
   const [approachSide, setApproachSide] = useState<ApproachSide>("right");
+  const [suddenDeathRound, setSuddenDeathRound] = useState(1);
+  const [sdBotText, setSdBotText] = useState("");
+  const [sdBusy, setSdBusy] = useState(false);
 
   const selectedBot = BOTS.find((item) => item.id === botId);
   const bot = selectedBot && !selectedBot.locked ? selectedBot : BOTS.find((item) => !item.locked) ?? BOTS[0];
@@ -240,6 +243,7 @@ function BotMatchPage() {
     setHoleIndex(0);
     resetShotInput(category === "approach" ? next[0]?.distance ?? 0 : 0);
     setTurnState("you");
+    setSuddenDeathRound(1); setSdBotText(""); setSdBusy(false);
     setStep("play");
   }
 
@@ -322,12 +326,44 @@ function BotMatchPage() {
     setTurnState("you");
     if (holeIndex >= holes.length - 1) {
       resetShotInput();
-      setStep("result");
+      const finalYou = score.you + (winner === "you" ? 1 : 0);
+      const finalBot = score.bot + (winner === "bot" ? 1 : 0);
+      if (finalYou === finalBot) { setSuddenDeathRound(1); setSdBotText(""); setStep("sudden-death"); }
+      else setStep("result");
     } else {
       const nextIndex = holeIndex + 1;
       resetShotInput(category === "approach" ? holes[nextIndex]?.distance ?? 0 : 0);
       setHoleIndex(nextIndex);
     }
+  }
+
+  function simulateSuddenDeathBot() {
+    const skillHcp = bot.hcp - bot.putting;
+    const makeChance = clamp(0.22 - skillHcp * 0.0045, 0.035, 0.32);
+    if (Math.random() < makeChance) return { sunk: true, distance: 0 };
+    const spread = clamp(2.2 + skillHcp * 0.045, 0.8, 4.8);
+    return { sunk: false, distance: Math.max(0.2, Math.round((0.2 + Math.random() * spread) * 10) / 10) };
+  }
+
+  async function playSuddenDeath(yourDistance: number | null) {
+    if (sdBusy) return;
+    const yourSunk = yourDistance === null;
+    setSdBusy(true); setSdBotText(`${bot.name} slår från 11 m…`);
+    await sleep(rand(2000, 3000));
+    const b = simulateSuddenDeathBot();
+    setSdBotText(b.sunk ? `${bot.name}: sänkt` : `${bot.name}: ${b.distance.toFixed(1)} m från flaggan`);
+    const tied = (yourSunk && b.sunk) || (!yourSunk && !b.sunk && yourDistance === b.distance);
+    if (tied) {
+      await sleep(1000);
+      setSdBotText("Lika igen · ny straff från 11 m");
+      await sleep(900);
+      setSuddenDeathRound((r) => r + 1); setSdBotText(""); setSdBusy(false);
+      return;
+    }
+    const youWin = yourSunk || (!b.sunk && !yourSunk && (yourDistance ?? Infinity) < b.distance);
+    await sleep(900);
+    setBotComment(youWin ? randomLine(bot.chat["player-win"]) : randomLine(bot.chat["bot-win"]));
+    setStep("result"); setSdBusy(false);
   }
 
   function back() {
@@ -358,7 +394,7 @@ function BotMatchPage() {
 
   return (
     <main style={LIGHT_SURFACE} className={`mx-auto min-h-screen w-full max-w-md bg-background px-5 ${approachPlay ? "pt-4 pb-8" : step === "bot" ? "pt-6 pb-40" : "pt-6 pb-16"} text-foreground`}>
-      {step !== "play" && step !== "result" ? (
+      {step !== "play" && step !== "sudden-death" && step !== "result" ? (
         <header className="flex items-center justify-between">
           {step === "bot" ? (
             <Link to="/" className={`inline-flex h-10 w-10 items-center justify-center rounded-full border text-xl ${glass}`}>‹</Link>
@@ -434,7 +470,7 @@ function BotMatchPage() {
         ) : (
           <>
             <section className="mt-5"><p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">{bot.name} · HCP {formatHcp(bot.hcp)}</p><h1 className="mt-1 font-display text-4xl">Bäst av</h1></section>
-            <div className="mt-5 grid grid-cols-3 gap-3">{([5, 9, 18] as const).map((v) => <button key={v} onClick={() => setLength(v)} className={`relative rounded-3xl border px-2 py-6 ${length === v ? selected : glass}`}><span className="font-display text-3xl">{v}</span><span className="mt-1 block text-[9px] font-black uppercase text-slate-500">hål</span></button>)}</div>
+            <div className="mt-5 grid grid-cols-3 gap-3">{([3, 5, 7] as const).map((v) => <button key={v} onClick={() => setLength(v)} className={`relative rounded-3xl border px-2 py-6 ${length === v ? selected : glass}`}><span className="font-display text-3xl">{v}</span><span className="mt-1 block text-[9px] font-black uppercase text-slate-500">hål</span></button>)}</div>
             <button onClick={buildHoles} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 via-slate-950 to-emerald-700 py-4 font-display text-xl text-white"><Flag className="h-5 w-5" /> Starta match</button>
           </>
         )
@@ -486,6 +522,15 @@ function BotMatchPage() {
             )}
             <button disabled={!canRegister || turnState !== "you"} onClick={register} className={`${approachPlay ? "mt-3 py-3.5 text-lg" : "mt-3 py-4 text-xl"} flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 font-display text-white disabled:opacity-35`}>{category === "approach" ? "Registrera slag" : "Spela mitt slag"} <ChevronRight className="h-5 w-5" /></button>
           </section>
+        </>
+      ) : null}
+
+      {step === "sudden-death" ? (
+        <>
+          <section className="pt-4 text-center"><p className="text-[11px] font-black uppercase tracking-[0.28em] text-red-600">Sudden death</p><h1 className="mt-2 font-display text-5xl">11 meter</h1><p className="mt-2 text-sm font-semibold text-slate-700">1 slag · närmast flaggan vinner allt</p><p className="mt-1 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Straff {suddenDeathRound}</p></section>
+          <section className={`mt-6 rounded-[28px] border p-5 ${glass}`}><p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Ditt resultat</p><p className="mt-1 text-sm text-slate-600">Tryck på avståndet bollen stannade från flaggan.</p><button disabled={sdBusy} onClick={() => void playSuddenDeath(null)} className="mt-4 w-full rounded-2xl bg-emerald-600 py-3 font-black text-white disabled:opacity-40">Sänkt</button><div className="mt-2 grid grid-cols-4 gap-2">{[0.5, 1, 1.5, 2, 3, 5, 8, 11].map((v) => <button disabled={sdBusy} key={v} onClick={() => void playSuddenDeath(v)} className="rounded-xl border border-slate-200 bg-white/90 py-3 text-xs font-bold disabled:opacity-40">{v} m</button>)}</div></section>
+          {sdBotText ? <div className="mt-4 rounded-2xl bg-slate-950 p-4 text-center text-sm font-bold text-white">{sdBotText}</div> : null}
+          <div className="mt-4 flex items-start gap-2"><span className="text-3xl">{bot.avatar}</span><div className={`rounded-2xl border p-3 text-sm ${glass}`}>“{sdBusy ? "Nu gäller det." : botComment}”</div></div>
         </>
       ) : null}
 
