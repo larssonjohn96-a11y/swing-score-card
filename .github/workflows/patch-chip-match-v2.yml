@@ -1,0 +1,96 @@
+name: Apply standardized Chip Match
+
+on:
+  push:
+    paths:
+      - .github/workflows/patch-chip-match-v2.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Patch Chip Match
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def once(t, old, new, label):
+              if old not in t:
+                  raise SystemExit(f'pattern not found: {label}')
+              return t.replace(old, new, 1)
+
+          p = Path('src/routes/match.tsx')
+          t = p.read_text()
+          t = once(t, 'import { PUTTING_MATCH_FORMATS, PUTTING_MATCH_RULES, formatPuttingDistance, generatePuttingMatchDistances } from "@/lib/putting-match";\n', 'import { PUTTING_MATCH_FORMATS, PUTTING_MATCH_RULES, formatPuttingDistance, generatePuttingMatchDistances } from "@/lib/putting-match";\nimport { CHIP_MATCH_FORMATS, CHIP_MATCH_RULES, CHIP_POINT_ZONES, generateChipMatchDistances } from "@/lib/chip-match";\n', 'match import')
+          t = t.replace('{ id: "around-the-green", title: "Närspel", subtitle: "Around the Green", description: "Närmast flaggan från fairway, rough och bunker." },', '{ id: "around-the-green", title: "Närspel", subtitle: "Chip Match", description: "Chip Match · 8–30 m · närmast flaggan ger poäng." },')
+          t = t.replace('{ id: "closest", title: "Closest to the Pin", description: "Ett slag mot flaggan. Poäng efter avståndszon – högst poäng vinner hålet." },', '{ id: "chip", title: "Chip Match", description: "Ett chip från 8–30 m. Högst poängzon vinner hålet." },')
+          t = once(t, 'const POINT_ZONES = [\n  { points: 4, label: "Sänkt" }, { points: 3, label: "Inom 1 m" }, { points: 2, label: "Inom 2 m" }, { points: 1, label: "Inom 3 m" }, { points: 0, label: "Över 3 m" },\n] as const;', 'const POINT_ZONES = CHIP_POINT_ZONES;', 'zones')
+          old = '''  if (category === "around-the-green") {\n    const lie = pick(shortGameLies.length ? shortGameLies : (["fairway"] as ShortGameLie[]));\n    if (lie === "bunker") return { eyebrow: "Bunker", title: "Bunker", detail: `Slå så nära flaggan som möjligt.${suffix}` };\n    return { eyebrow: "Closest to the Pin", title: `${rand(10, 30)} m från ${lieLabel(lie)}`, detail: `Slå så nära flaggan som möjligt.${suffix}` };\n  }'''
+          new = '''  if (category === "around-the-green") {\n    const distance = approachDistance ?? rand(8, 30);\n    return { eyebrow: "Chip Match", title: `${distance} m`, detail: `Ett chip · välj poängzon · högst poäng vinner hålet${suffix}` };\n  }'''
+          t = once(t, old, new, 'challenge')
+          t = t.replace('if (!mode || !teamsReady || !category || !matchType || (isShortGame && !setupValid)) return;', 'if (!mode || !teamsReady || !category || !matchType) return;')
+          t = once(t, '      : isShortGame\n      ? generateShortGameLieSequence(matchLength, shortGameLies).map((lie) => ({ challenge: generateChallenge(category, matchType, mode, [lie]), winner: null as HoleWinner }))', '      : isShortGame\n      ? generateChipMatchDistances(matchLength).map((distance) => ({ challenge: generateChallenge(category, matchType, mode, [], distance), winner: null as HoleWinner }))', 'distances')
+          t = once(t, 'if (i.id === "around-the-green") { setMatchType("closest"); setShortGameLies([]); }', 'if (i.id === "around-the-green") { setMatchType("chip"); setScoringMode("match"); setMatchLength(5); }', 'category')
+          t = once(t, 'setStep(category === "around-the-green" ? "setup" : category === "approach" ? "approach-setup" : "length");', 'setStep(category === "approach" ? "approach-setup" : "length");', 'skip setup')
+          t = t.replace('else if (step === "length") setStep(isShortGame ? "setup" : isApproach ? "approach-setup" : category === "off-the-tee" || isPutting ? "category" : "scoring");', 'else if (step === "length") setStep(isApproach ? "approach-setup" : category === "off-the-tee" || isPutting || isShortGame ? "category" : "scoring");')
+          t = once(t, '{step === "length" && selectedType ? <>{isPutting ? <>', '{step === "length" && selectedType ? <>{isPutting || isShortGame ? <>', 'format branch')
+          t = t.replace('<p className="text-[10px] font-bold uppercase text-slate-500">Putting Match</p><h1 className="mt-1 font-display text-4xl">Välj format</h1><p className="mt-2 text-sm text-slate-600">Samma spel varje gång – bara längden skiljer. Båda spelar exakt samma positioner.</p>', '<p className="text-[10px] font-bold uppercase text-slate-500">{isShortGame ? "Chip Match" : "Putting Match"}</p><h1 className="mt-1 font-display text-4xl">Välj format</h1><p className="mt-2 text-sm text-slate-600">{isShortGame ? "Samma spel varje gång · 8–30 m · båda chippar från exakt samma avstånd." : "Samma spel varje gång – bara längden skiljer. Båda spelar exakt samma positioner."}</p>')
+          t = t.replace('{PUTTING_MATCH_FORMATS.map((f) => <button key={f.length}', '{(isShortGame ? CHIP_MATCH_FORMATS : PUTTING_MATCH_FORMATS).map((f) => <button key={f.length}', 1)
+          t = t.replace('Så spelas Putting Match</p><ul className="mt-2 space-y-1">{PUTTING_MATCH_RULES.map((rule)', '{isShortGame ? "Så spelas Chip Match" : "Så spelas Putting Match"}</p><ul className="mt-2 space-y-1">{(isShortGame ? CHIP_MATCH_RULES : PUTTING_MATCH_RULES).map((rule)', 1)
+          t = t.replace('const setupValid = shortGameLies.length > 0;', 'const setupValid = true;')
+          t = t.replace('setSdMessage("Lika igen · ny straff från 11 m");', 'setSdMessage(isShortGame ? "Lika igen · nytt avgörande chip från 11 m" : "Lika igen · ny straff från 11 m");')
+          t = t.replace('Straff {suddenDeathRound}', '{isShortGame ? "Chip" : "Straff"} {suddenDeathRound}')
+          t = t.replace('1 slag · närmast flaggan vinner allt', '{isShortGame ? "Ett chip var · närmast flaggan vinner" : "1 slag · närmast flaggan vinner allt"}')
+          p.write_text(t)
+
+          p = Path('src/routes/match-bot.tsx')
+          t = p.read_text()
+          t = once(t, '} from "@/lib/putting-match";\nimport {\n  APPROACH_MATCH_FORMATS,', '} from "@/lib/putting-match";\nimport { CHIP_MATCH_FORMATS, CHIP_MATCH_RULES, CHIP_POINT_ZONES, generateChipMatchDistances } from "@/lib/chip-match";\nimport {\n  APPROACH_MATCH_FORMATS,', 'bot import')
+          t = t.replace('{ id: "around-the-green", title: "Närspel", sub: "Around the Green" },', '{ id: "around-the-green", title: "Närspel", sub: "Chip Match" },')
+          old = '''function shortGameBotPoints(bot: BotProfile) {\n  const skillHcp = bot.hcp - bot.shortGame;\n  const roll = Math.random();\n  const skill = clamp(1 - skillHcp / 40, 0.25, 1.15);\n  if (roll < 0.05 * skill) return 4;\n  if (roll < 0.2 + 0.22 * skill) return 3;\n  if (roll < 0.52 + 0.22 * skill) return 2;\n  if (roll < 0.82 + 0.08 * skill) return 1;\n  return 0;\n}'''
+          new = '''function shortGameBotPoints(bot: BotProfile, distance: number) {\n  const skillHcp = bot.hcp - bot.shortGame;\n  const difficulty = (distance - 8) / 22;\n  const skill = clamp(1 - skillHcp / 42, 0.2, 1.18);\n  const roll = Math.random();\n  const holeOut = clamp(0.018 + 0.035 * skill - 0.012 * difficulty, 0.008, 0.07);\n  const within1 = clamp(0.10 + 0.22 * skill - 0.08 * difficulty, 0.06, 0.34);\n  const within2 = clamp(0.28 + 0.28 * skill - 0.10 * difficulty, 0.18, 0.58);\n  const within5 = clamp(0.68 + 0.24 * skill - 0.10 * difficulty, 0.48, 0.94);\n  if (roll < holeOut) return 4;\n  if (roll < within1) return 3;\n  if (roll < within2) return 2;\n  if (roll < within5) return 1;\n  return 0;\n}'''
+          t = once(t, old, new, 'bot points')
+          t = once(t, 'const puttingDistances = category === "putting" ? generatePuttingMatchDistances(length) : [];\n    const approachDistances = category === "approach" ? generateApproachMatchDistances(length) : [];', 'const puttingDistances = category === "putting" ? generatePuttingMatchDistances(length) : [];\n    const chipDistances = category === "around-the-green" ? generateChipMatchDistances(length) : [];\n    const approachDistances = category === "approach" ? generateApproachMatchDistances(length) : [];', 'bot distance list')
+          t = once(t, '''      if (category === "around-the-green") {\n        const d = rand(10, 30);\n        return { title: `${d} m`, distance: d, detail: "Ett slag · högst zonpoäng vinner" };\n      }''', '''      if (category === "around-the-green") {\n        const d = chipDistances[holeNr] ?? 15;\n        return { title: `${d} m`, distance: d, detail: "Ett chip · välj poängzon · högst poäng vinner" };\n      }''', 'bot holes')
+          t = t.replace('if (category === "around-the-green") return { value: shortGameBotPoints(bot), hit: true, approachResult: undefined };', 'if (category === "around-the-green") return { value: shortGameBotPoints(bot, hole.distance ?? 15), hit: true, approachResult: undefined };')
+          t = once(t, 'onClick={() => setCategory(item.id)} className={`relative min-h-32', 'onClick={() => { setCategory(item.id); if (item.id === "around-the-green") setLength(5); }} className={`relative min-h-32', 'bot category')
+          t = once(t, 'onClick={() => setStep(category === "around-the-green" ? "setup" : "length")}', 'onClick={() => setStep("length")}', 'bot skip setup')
+          t = t.replace('else if (step === "length") setStep(category === "around-the-green" ? "setup" : "category");', 'else if (step === "length") setStep("category");')
+          t = once(t, 'category === "putting" || category === "approach" ? (', 'category === "putting" || category === "approach" || category === "around-the-green" ? (', 'bot format')
+          t = t.replace('{category === "putting" ? "Putting Match" : "Approach Match"}', '{category === "putting" ? "Putting Match" : category === "around-the-green" ? "Chip Match" : "Approach Match"}', 1)
+          t = t.replace('{category === "putting" ? `Samma spel varje gång – bara längden skiljer. Du och ${bot.name} puttar från exakt samma positioner.` : `Samma spel varje gång – bara längden skiljer. Du och ${bot.name} slår från exakt samma avstånd.`}', '{category === "putting" ? `Samma spel varje gång – bara längden skiljer. Du och ${bot.name} puttar från exakt samma positioner.` : category === "around-the-green" ? `Samma Chip Match varje gång · 8–30 m. Du och ${bot.name} chippar från exakt samma avstånd.` : `Samma spel varje gång – bara längden skiljer. Du och ${bot.name} slår från exakt samma avstånd.`}', 1)
+          t = t.replace('(category === "putting" ? PUTTING_MATCH_FORMATS : APPROACH_MATCH_FORMATS).map((f)', '(category === "putting" ? PUTTING_MATCH_FORMATS : category === "around-the-green" ? CHIP_MATCH_FORMATS : APPROACH_MATCH_FORMATS).map((f)', 1)
+          marker = '''            ) : (\n              <div className={`mt-4 rounded-3xl border p-4 ${glass}`}><p className="text-[9px] font-black uppercase tracking-[0.16em] text-slate-500">Så spelas Approach Match</p>'''
+          repl = '''            ) : category === "around-the-green" ? (\n              <div className={`mt-4 rounded-3xl border p-4 ${glass}`}><p className="text-[9px] font-black uppercase tracking-[0.16em] text-slate-500">Så spelas Chip Match</p><ul className="mt-2 space-y-1">{CHIP_MATCH_RULES.map((rule) => <li key={rule} className="text-[11px] leading-relaxed text-slate-600">· {rule}</li>)}</ul></div>\n            ) : (\n              <div className={`mt-4 rounded-3xl border p-4 ${glass}`}><p className="text-[9px] font-black uppercase tracking-[0.16em] text-slate-500">Så spelas Approach Match</p>'''
+          t = once(t, marker, repl, 'bot rules')
+          t = once(t, '''              <div className="mt-2 grid grid-cols-5 gap-2">{[0, 1, 2, 3, 4].map((v) => <button key={v} disabled={turnState !== "you"} onClick={() => setYourValue(v)} className={`rounded-xl border py-4 font-display text-xl disabled:opacity-50 ${yourValue === v ? "border-blue-600 bg-blue-600 text-white" : glass}`}>{v}p</button>)}</div>''', '''              <div className="mt-2 grid grid-cols-1 gap-2">{CHIP_POINT_ZONES.map((zone) => <button key={zone.points} disabled={turnState !== "you"} onClick={() => setYourValue(zone.points)} className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-left disabled:opacity-50 ${yourValue === zone.points ? "border-blue-600 bg-blue-600 text-white" : glass}`}><span className="text-sm font-bold">{zone.label}</span><span className="font-display text-xl">{zone.points} p</span></button>)}</div>''', 'bot input')
+          t = t.replace('const skillHcp = bot.hcp - bot.putting;\n    const makeChance = clamp(0.22 - skillHcp * 0.0045, 0.035, 0.32);', 'const skillHcp = bot.hcp - (category === "around-the-green" ? bot.shortGame : bot.putting);\n    const makeChance = clamp((category === "around-the-green" ? 0.07 : 0.22) - skillHcp * (category === "around-the-green" ? 0.0015 : 0.0045), category === "around-the-green" ? 0.01 : 0.035, category === "around-the-green" ? 0.10 : 0.32);', 1)
+          t = t.replace('setSdBotText("Lika igen · ny straff från 11 m");', 'setSdBotText(category === "around-the-green" ? "Lika igen · nytt avgörande chip från 11 m" : "Lika igen · ny straff från 11 m");')
+          t = t.replace('<p className="mt-2 text-sm font-semibold text-slate-700">1 slag · närmast flaggan vinner allt</p><p className="mt-1 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Straff {suddenDeathRound}</p>', '<p className="mt-2 text-sm font-semibold text-slate-700">{category === "around-the-green" ? "Ett chip var · närmast flaggan vinner" : "1 slag · närmast flaggan vinner allt"}</p><p className="mt-1 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">{category === "around-the-green" ? "Chip" : "Straff"} {suddenDeathRound}</p>')
+          p.write_text(t)
+          PY
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Validate
+        run: |
+          bun install --frozen-lockfile
+          bun run build
+          bunx tsc --noEmit
+          bun run lint
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/routes/match.tsx src/routes/match-bot.tsx
+          git commit -m "Standardize Chip Match gameplay"
+          git push origin HEAD:main
