@@ -14,6 +14,7 @@ import { CHIP_POINT_ZONES, generateChipMatchDistances, getChipDistanceBand } fro
 import { chipPerformanceFromPoints, puttingPerformanceFromStrokes, recordEngineOutcome, selectNextEngineDistance, type EngineSkill } from "@/lib/sg4-engine";
 import { getRecommendationsForSkill } from "@/lib/sg4-surface-recommendations";
 import { recordRecommendationCompletion, recordRecommendationImpressions, recordRecommendationOpen } from "@/lib/sg4-recommender";
+import { simulateChipBotResult, simulateDriveBotResult, simulatePuttingBotStrokes, type BotCategoryHandicaps } from "@/lib/bot-skill-model";
 import {
   APPROACH_MATCH_FORMATS,
   type ApproachResult,
@@ -46,10 +47,7 @@ type BotProfile = {
   tier: "Nybörjare" | "Klubbspelare" | "Avancerad" | "Elit";
   avatar: string;
   intro: string;
-  putting: number;
-  shortGame: number;
-  approach: number;
-  driving: number;
+  categoryHcp: BotCategoryHandicaps;
   locked?: boolean;
   unlockText?: string;
   chat: BotChat;
@@ -64,6 +62,7 @@ type Hole = {
   yourValue?: number;
   yourHit?: boolean;
   botApproach?: ApproachResult;
+  botResultText?: string;
   yourApproach?: ApproachResult;
   winner?: Winner;
 };
@@ -79,7 +78,7 @@ const genericChat: BotChat = {
 const BOTS: BotProfile[] = [
   {
     id: "margaret", name: "Margaret", hcp: 42, gender: "Kvinna", role: "Grandma golfer", tier: "Nybörjare", avatar: "👵🏻",
-    intro: "Jag spelar lugnt, men underskatta inte mina korta puttar.", putting: 4, shortGame: 2, approach: -2, driving: -6,
+    intro: "Jag spelar lugnt, men underskatta inte mina korta puttar.", categoryHcp: { putting: 34, chipping: 39, approach: 48, driving: 52 },
     chat: {
       start: ["Ta det lugnt nu, vi har gott om tid.", "Nu ska vi se om gammal är äldst."],
       "bot-win": ["Där satt den, precis som förr.", "Man behöver inte slå långt för att vinna."],
@@ -88,11 +87,11 @@ const BOTS: BotProfile[] = [
       pressure: ["Nu gäller det att hålla huvudet kallt.", "De sista är alltid roligast."],
     },
   },
-  { id: "leo", name: "Leo", hcp: 34, gender: "Man", role: "Ny golfare", tier: "Nybörjare", avatar: "🧑🏻", intro: "Jag började nyligen. Några riktigt bra slag dyker upp ibland.", putting: -1, shortGame: -1, approach: 0, driving: 3, chat: genericChat },
-  { id: "sarah", name: "Sarah", hcp: 27, gender: "Kvinna", role: "Weekend golfer", tier: "Nybörjare", avatar: "👩🏼", intro: "Helggolfare. Stabil när jag hittar rytmen.", putting: 2, shortGame: 0, approach: 0, driving: 1, chat: genericChat },
+  { id: "leo", name: "Leo", hcp: 34, gender: "Man", role: "Ny golfare", tier: "Nybörjare", avatar: "🧑🏻", intro: "Jag började nyligen. Några riktigt bra slag dyker upp ibland.", categoryHcp: { putting: 36, chipping: 38, approach: 34, driving: 29 }, chat: genericChat },
+  { id: "sarah", name: "Sarah", hcp: 27, gender: "Kvinna", role: "Weekend golfer", tier: "Nybörjare", avatar: "👩🏼", intro: "Helggolfare. Stabil när jag hittar rytmen.", categoryHcp: { putting: 30, chipping: 27, approach: 29, driving: 25 }, chat: genericChat },
   {
     id: "zach", name: "Zach", hcp: 22, gender: "Man", role: "Weekend golfer", tier: "Klubbspelare", avatar: "🧔🏻",
-    intro: "Jag gillar att slå långt. Precisionen får vi se hur det går med.", putting: -2, shortGame: -1, approach: 0, driving: 5,
+    intro: "Jag gillar att slå långt. Precisionen får vi se hur det går med.", categoryHcp: { putting: 27, chipping: 25, approach: 22, driving: 15 },
     chat: {
       start: ["Hoppas du värmde upp.", "Okej, visa vad du har."],
       "bot-win": ["För enkelt.", "Den såg jag komma."],
@@ -101,15 +100,15 @@ const BOTS: BotProfile[] = [
       pressure: ["Nu börjar pressen kännas, va?", "Sista hålen. Inga gratispoäng nu."],
     },
   },
-  { id: "anna", name: "Anna", hcp: 16, gender: "Kvinna", role: "Klubbspelare", tier: "Klubbspelare", avatar: "👩🏻", intro: "Jag ger sällan bort ett hål. Du får vinna det.", putting: 2, shortGame: 2, approach: 1, driving: 0, chat: genericChat },
-  { id: "marcus", name: "Marcus", hcp: 11, gender: "Man", role: "Tävlingsgolfare", tier: "Klubbspelare", avatar: "👨🏽", intro: "Jag spelar aggressivt och går för flaggan.", putting: -1, shortGame: 1, approach: 3, driving: 3, chat: genericChat },
-  { id: "emma", name: "Emma", hcp: 7, gender: "Kvinna", role: "Singelhandicap", tier: "Avancerad", avatar: "👩🏼‍🦱", intro: "Fairways, greener och tålamod. Jag gör inte många stora misstag.", putting: 2, shortGame: 2, approach: 2, driving: 1, chat: genericChat },
-  { id: "ryan", name: "Ryan", hcp: 3, gender: "Man", role: "College player", tier: "Avancerad", avatar: "🧑🏽", intro: "Collegegolf. Jag kommer att pressa dig från första slaget.", putting: 2, shortGame: 2, approach: 4, driving: 5, locked: true, unlockText: "Vinn matcher för att låsa upp", chat: genericChat },
-  { id: "maya", name: "Maya", hcp: 0, gender: "Kvinna", role: "Elitamatör", tier: "Avancerad", avatar: "👩🏾", intro: "Scratch. Jag räknar med att du träffar ditt bästa slag.", putting: 3, shortGame: 4, approach: 4, driving: 3, locked: true, unlockText: "Vinn matcher för att låsa upp", chat: genericChat },
-  { id: "noah", name: "Noah", hcp: -2, gender: "Man", role: "College standout", tier: "Elit", avatar: "🧑🏼‍🦰", intro: "Jag spelar för att vinna. Pars räcker inte alltid.", putting: 4, shortGame: 3, approach: 5, driving: 5, locked: true, unlockText: "Vinn matcher för att låsa upp", chat: genericChat },
+  { id: "anna", name: "Anna", hcp: 16, gender: "Kvinna", role: "Klubbspelare", tier: "Klubbspelare", avatar: "👩🏻", intro: "Jag ger sällan bort ett hål. Du får vinna det.", categoryHcp: { putting: 13, chipping: 14, approach: 17, driving: 20 }, chat: genericChat },
+  { id: "marcus", name: "Marcus", hcp: 11, gender: "Man", role: "Tävlingsgolfare", tier: "Klubbspelare", avatar: "👨🏽", intro: "Jag spelar aggressivt och går för flaggan.", categoryHcp: { putting: 14, chipping: 10, approach: 8, driving: 8 }, chat: genericChat },
+  { id: "emma", name: "Emma", hcp: 7, gender: "Kvinna", role: "Singelhandicap", tier: "Avancerad", avatar: "👩🏼‍🦱", intro: "Fairways, greener och tålamod. Jag gör inte många stora misstag.", categoryHcp: { putting: 5, chipping: 6, approach: 7, driving: 10 }, chat: genericChat },
+  { id: "ryan", name: "Ryan", hcp: 3, gender: "Man", role: "College player", tier: "Avancerad", avatar: "🧑🏽", intro: "Collegegolf. Jag kommer att pressa dig från första slaget.", categoryHcp: { putting: 3, chipping: 4, approach: 1, driving: 0 }, locked: true, unlockText: "Vinn matcher för att låsa upp", chat: genericChat },
+  { id: "maya", name: "Maya", hcp: 0, gender: "Kvinna", role: "Elitamatör", tier: "Avancerad", avatar: "👩🏾", intro: "Scratch. Jag räknar med att du träffar ditt bästa slag.", categoryHcp: { putting: 1, chipping: -1, approach: 0, driving: 1 }, locked: true, unlockText: "Vinn matcher för att låsa upp", chat: genericChat },
+  { id: "noah", name: "Noah", hcp: -2, gender: "Man", role: "College standout", tier: "Elit", avatar: "🧑🏼‍🦰", intro: "Jag spelar för att vinna. Pars räcker inte alltid.", categoryHcp: { putting: -1, chipping: 0, approach: -3, driving: -4 }, locked: true, unlockText: "Vinn matcher för att låsa upp", chat: genericChat },
   {
     id: "sofia", name: "Sofia", hcp: -4, gender: "Kvinna", role: "Tour prospect", tier: "Elit", avatar: "👩🏻‍🦰",
-    intro: "Små marginaler. Ett svagt slag och jag tar hålet.", putting: 5, shortGame: 5, approach: 5, driving: 4,
+    intro: "Små marginaler. Ett svagt slag och jag tar hålet.", categoryHcp: { putting: -5, chipping: -5, approach: -4, driving: -2 },
     locked: true, unlockText: "Vinn matcher för att låsa upp",
     chat: {
       start: ["Små marginaler från första hålet.", "Jag tänker inte ge bort något idag."],
@@ -121,7 +120,7 @@ const BOTS: BotProfile[] = [
   },
   {
     id: "alex", name: "Alex", hcp: -6, gender: "Man", role: "Tour level", tier: "Elit", avatar: "👨🏻",
-    intro: "Tour-nivå. Du behöver spela nära ditt tak för att slå mig.", putting: 5, shortGame: 5, approach: 6, driving: 6,
+    intro: "Tour-nivå. Du behöver spela nära ditt tak för att slå mig.", categoryHcp: { putting: -6, chipping: -7, approach: -7, driving: -8 },
     locked: true, unlockText: "Vinn matcher för att låsa upp",
     chat: {
       start: ["Spela ditt bästa. Det kommer behövas.", "Nu ser vi hur ditt spel håller under press."],
@@ -155,31 +154,11 @@ function engineSkillForBotCategory(category: Category | null): EngineSkill | nul
 }
 
 function puttingBotStrokes(distance: number, bot: BotProfile) {
-  const skillHcp = bot.hcp - bot.putting;
-  const makeChance = clamp(0.94 - distance * 0.055 - skillHcp * 0.006, 0.08, 0.96);
-  if (Math.random() < makeChance) return 1;
-  const threePuttChance = clamp(0.03 + Math.max(0, distance - 7) * 0.018 + skillHcp * 0.004, 0.01, 0.4);
-  return Math.random() < threePuttChance ? 3 : 2;
-}
-
-function shortGameBotPoints(bot: BotProfile) {
-  const skillHcp = bot.hcp - bot.shortGame;
-  const roll = Math.random();
-  const skill = clamp(1 - skillHcp / 40, 0.25, 1.15);
-  if (roll < 0.05 * skill) return 5;
-  if (roll < 0.18 + 0.18 * skill) return 4;
-  if (roll < 0.42 + 0.18 * skill) return 3;
-  if (roll < 0.65 + 0.14 * skill) return 2;
-  if (roll < 0.88 + 0.06 * skill) return 1;
-  return 0;
+  return simulatePuttingBotStrokes(distance, bot.categoryHcp.putting);
 }
 
 function drivingBotScore(bot: BotProfile) {
-  const skillHcp = bot.hcp - bot.driving;
-  const fairwayChance = clamp(0.74 - skillHcp * 0.009, 0.36, 0.82);
-  const hit = Math.random() < fairwayChance;
-  const carry = Math.round(258 - skillHcp * 1.35 + rand(-10, 10));
-  return { hit, carry };
+  return simulateDriveBotResult(bot.categoryHcp.driving);
 }
 
 function BotMatchPage() {
@@ -300,13 +279,16 @@ function BotMatchPage() {
   function simulateBot(hole: Hole) {
     if (!category) return { value: 0, hit: true, approachResult: undefined as ApproachResult | undefined };
     if (category === "putting") return { value: puttingBotStrokes(hole.distance ?? 3, bot), hit: true, approachResult: undefined };
-    if (category === "around-the-green") return { value: shortGameBotPoints(bot), hit: true, approachResult: undefined };
+    if (category === "around-the-green") {
+      const chip = simulateChipBotResult(hole.distance ?? 15, bot.categoryHcp.chipping);
+      return { value: chip.points, hit: true, approachResult: undefined, resultText: chip.description };
+    }
     if (category === "approach") {
-      const approachResult = simulateApproachResult(bot.hcp, bot.approach, hole.distance ?? 120);
-      return { value: approachProximity(approachResult, hole.distance ?? 120), hit: true, approachResult };
+      const approachResult = simulateApproachResult(bot.categoryHcp.approach, 0, hole.distance ?? 120);
+      return { value: approachProximity(approachResult, hole.distance ?? 120), hit: true, approachResult, resultText: undefined };
     }
     const result = drivingBotScore(bot);
-    return { value: result.carry, hit: result.hit, approachResult: undefined };
+    return { value: result.carry, hit: result.hit, approachResult: undefined, resultText: result.strike === "top" ? `Toppad · ${result.carry} m` : result.strike === "wild" ? `Grov miss · ${result.carry} m` : undefined };
   }
 
   function decideWinner(userValue: number, userHit: boolean, botValue: number, botHit: boolean): Winner {
@@ -398,7 +380,7 @@ function BotMatchPage() {
 
     setHoles((prev) => prev.map((h, i) =>
       i === holeIndex
-        ? { ...h, botValue: simulated.value, botHit: simulated.hit, botApproach: simulated.approachResult, winner }
+        ? { ...h, botValue: simulated.value, botHit: simulated.hit, botApproach: simulated.approachResult, botResultText: simulated.resultText, winner }
         : h,
     ));
 
@@ -422,7 +404,7 @@ function BotMatchPage() {
   }
 
   function simulateSuddenDeathBot() {
-    const skillHcp = bot.hcp - bot.putting;
+    const skillHcp = bot.categoryHcp.putting;
     const makeChance = clamp(0.22 - skillHcp * 0.0045, 0.035, 0.32);
     if (Math.random() < makeChance) return { sunk: true, distance: 0 };
     const spread = clamp(2.2 + skillHcp * 0.045, 0.8, 4.8);
@@ -465,7 +447,10 @@ function BotMatchPage() {
     const value = side === "you" ? hole.yourValue : hole.botValue;
     const hit = side === "you" ? hole.yourHit : hole.botHit;
     const approach = side === "you" ? hole.yourApproach : hole.botApproach;
-    if (category === "around-the-green") return typeof value === "number" ? CHIP_POINT_ZONES.find((zone) => zone.points === value)?.label ?? "–" : "–";
+    if (category === "around-the-green") {
+      if (side === "bot" && hole.botResultText) return hole.botResultText;
+      return typeof value === "number" ? CHIP_POINT_ZONES.find((zone) => zone.points === value)?.label ?? "–" : "–";
+    }
     if (category === "approach") return approach ? formatApproachResult(approach) : "–";
     if (category === "putting") return typeof value === "number" ? `${value}` : "–";
     if (typeof value !== "number") return "–";
