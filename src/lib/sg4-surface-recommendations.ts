@@ -16,6 +16,7 @@ const CATALOG: SurfaceActivity[] = [
   { id: "play-bot", href: "/match-bot", title: "Spela mot bot", detail: "Snabb match mot en golfpersona på din nivå.", label: "Match", family: "play", basePriority: 0.84 },
   { id: "play-friend", href: "/match?flow=friend", title: "Utmana en vän", detail: "Head to head i putting, chip, inspel eller driver.", label: "Match", family: "play", basePriority: 0.8 },
   { id: "play-team", href: "/match?flow=team", title: "Lagspel", detail: "Fourball eller Foursomes med fyra spelare.", label: "Match", family: "play", basePriority: 0.62 },
+  { id: "play-cup", href: "/cup", title: "Putting Club Cup", detail: "8 spelare · 5 hål · knockout till final.", label: "Cup", family: "play", basePriority: 0.76 },
   { id: "/putting-streak", href: "/putting-streak", title: "Putting Streak", detail: "Sätt putten för att gå vidare. Första missen avslutar.", label: "Challenge", family: "challenge", engineSkill: "putting", basePriority: 0.78 },
   { id: "/lagputt-ladder", href: "/lagputt-ladder", title: "Lag Putt Ladder", detail: "Klättra från 8 meter och håll dig på två puttar.", label: "Challenge", family: "challenge", engineSkill: "putting", basePriority: 0.67 },
   { id: "/klock-putt", href: "/klock-putt", title: "Klockan", detail: "12 puttar från fyra riktningar och tre avstånd.", label: "Putting", family: "training", engineSkill: "putting", basePriority: 0.58 },
@@ -86,6 +87,11 @@ function diversifiedTop(scored: Array<{ item: SurfaceActivity; score: number; in
 
 export function getHomeRecommendations(limit = 3) {
   return diversifiedTop(scoreCandidates(CATALOG, "balanced"), limit);
+}
+
+export function getPlayRecommendations(limit = 2, excludeIds: string[] = []) {
+  const candidates = CATALOG.filter((item) => item.family === "play" && !excludeIds.includes(item.id));
+  return diversifiedTop(scoreCandidates(candidates, "fun"), limit);
 }
 
 export function getRecommendationsForSkill(skill: EngineSkill, limit = 2, excludeIds: string[] = []) {
