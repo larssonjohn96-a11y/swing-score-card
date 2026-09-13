@@ -17,7 +17,7 @@ jobs:
           ref: main
           fetch-depth: 0
       - name: Apply bot archetype patch
-        run: python scripts/apply_bot_archetypes.py
+        run: python scripts/run_bot_archetypes_fixed.py
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
