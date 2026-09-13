@@ -1,0 +1,42 @@
+name: Fix chip copy
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/fix-chip-copy.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update chipping copy
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          changed=[]
+          for p in Path('src').rglob('*'):
+              if p.suffix not in {'.ts','.tsx'}:
+                  continue
+              s=p.read_text()
+              old=s
+              s=s.replace('`${band.label} · ${band.range} · samma avstånd för båda`', '"Närmast flaggan vinner."')
+              s=s.replace('`${band.range} · samma avstånd för båda · högst poäng vinner hålet`', '"Närmast flaggan vinner."')
+              s=s.replace('"8–14 m · samma avstånd för båda · högst poäng vinner hålet"', '"Närmast flaggan vinner."')
+              s=s.replace('"15–22 m · samma avstånd för båda · högst poäng vinner hålet"', '"Närmast flaggan vinner."')
+              s=s.replace('"23–30 m · samma avstånd för båda · högst poäng vinner hålet"', '"Närmast flaggan vinner."')
+              if s!=old:
+                  p.write_text(s)
+                  changed.append(str(p))
+          print('Changed:', changed)
+          if not changed:
+              raise SystemExit('No matching chipping copy found')
+          PY
+      - name: Commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src
+          git commit -m 'Simplify chipping match copy'
+          git push
