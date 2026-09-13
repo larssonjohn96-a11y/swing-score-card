@@ -22,17 +22,22 @@ export const CHIP_MATCH_RULES = [
   "Korta 8–14 m · Medel 15–22 m · Långa 23–30 m.",
   "Avstånden och ordningen slumpas inför varje ny match. Samma exakta meter kan förekomma flera gånger.",
   "Båda spelarna chippar från exakt samma avstånd på varje hål.",
-  "Ett slag per spelare. Välj poängzon efter var bollen stannar.",
-  "Högst poäng vinner hålet, lika poäng delar hålet.",
+  "Ett slag per spelare. Välj bara hur nära hålet bollen stannade.",
+  "Bäst avståndszon vinner hålet, samma zon delar hålet.",
 ];
 
 export const CHIP_POINT_ZONES = [
-  { points: 4, label: "Sänkt" },
-  { points: 3, label: "Inom 1 m" },
-  { points: 2, label: "Inom 2 m" },
+  { points: 5, label: "Sänkt" },
+  { points: 4, label: "Inom 1 m" },
+  { points: 3, label: "Inom 2 m" },
+  { points: 2, label: "Inom 3 m" },
   { points: 1, label: "Inom 5 m" },
   { points: 0, label: "Över 5 m" },
 ] as const;
+
+export function getChipPointZone(points: number | null | undefined) {
+  return CHIP_POINT_ZONES.find((zone) => zone.points === points);
+}
 
 function rand(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
