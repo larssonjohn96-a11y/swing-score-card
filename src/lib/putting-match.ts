@@ -1,12 +1,12 @@
 /**
  * Gemensam regelkälla för SG4:s standardiserade Putting Match.
  *
- * Ett enda spelformat – bara matchlängden (5/9/18 hål) skiljer, likt
- * Quick/Rapid/Classical i schack. Återanvänds av bot, vän, turnering
- * och framtida ranked-läge. Gäller INTE tränings-/diagnostiska puttingtester.
+ * Ett enda spelformat – bara matchlängden (3/5/7 hål) skiljer.
+ * Återanvänds av bot, vän, turnering och framtida ranked-läge.
+ * Gäller INTE tränings-/diagnostiska puttingtester.
  */
 
-export type PuttingMatchLength = 5 | 9 | 18;
+export type PuttingMatchLength = 3 | 5 | 7;
 
 export const PUTTING_MATCH_FORMATS: Array<{
   length: PuttingMatchLength;
@@ -15,16 +15,17 @@ export const PUTTING_MATCH_FORMATS: Array<{
   detail: string;
   recommended?: boolean;
 }> = [
-  { length: 5, name: "Snabb · 5 hål", label: "", detail: "" },
-  { length: 9, name: "Standard · 9 hål", label: "", detail: "", recommended: true },
-  { length: 18, name: "Full match · 18 hål", label: "", detail: "" },
+  { length: 3, name: "Snabb · 3 hål", label: "", detail: "" },
+  { length: 5, name: "Standard · 5 hål", label: "", detail: "", recommended: true },
+  { length: 7, name: "Lång · 7 hål", label: "", detail: "" },
 ];
 
 export const PUTTING_MATCH_RULES = [
   "Varje hål är en puttposition – båda spelarna puttar från exakt samma avstånd.",
   "Du puttar först, därefter motståndaren.",
   "Håla ut. Färre puttar vinner hålet, lika antal delar hålet.",
-  "Flest vunna hål efter matchens längd vinner.",
+  "Flest vunna hål efter ordinarie matchlängd vinner.",
+  "Vid lika blir det sudden death från 11 m: ett slag var, närmast flaggan vinner. Lika eller båda sänkta innebär en ny omgång.",
 ];
 
 function shuffle<T>(items: readonly T[]) {
@@ -45,7 +46,7 @@ function takeRandomUnique(min: number, max: number, count: number) {
  * mellanlånga och långa puttar. Avstånden är unika inom respektive match.
  */
 export function generatePuttingMatchDistances(length: PuttingMatchLength): number[] {
-  const quotas = length === 5 ? [2, 1, 2] : length === 9 ? [3, 3, 3] : [6, 6, 6];
+  const quotas = length === 3 ? [1, 1, 1] : length === 5 ? [2, 1, 2] : [2, 3, 2];
   const distances = [
     ...takeRandomUnique(1, 7, quotas[0]),
     ...takeRandomUnique(8, 14, quotas[1]),
