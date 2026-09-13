@@ -87,6 +87,20 @@ export const BOT_PERSONALITIES: Record<string, BotPersonality> = {
       rematch: ["Sure. En till."],
     },
   },
+  george: {
+    type: "grumpy-old-guy", label: "Grumpy old guy", oneLiner: "Old-school klubbveteranen som tillrättavisar allt från klubbval till tempo och nästan alltid låter lite irriterad.",
+    talkRate: .9, praiseRate: .08, correctionRate: .96, tiltRate: .54, trashTalk: .42, memory: "Minns dina dåliga beslut och påminner dig gärna om dem nästa gång.",
+    phrases: {
+      start: ["Jaha. Då ska vi se om det blir golf eller bara svingande idag.", "Försök hålla tempot nu. Vi har inte hela dagen."],
+      botWin: ["Precis. Man behöver inte göra det svårare än det är.", "Det där lärde man sig innan folk började filma varje sving."],
+      playerWin: ["Jo jo. En blind höna hittar också ett korn.", "Det där var faktiskt okej. Bli inte för nöjd nu."],
+      tie: ["Delat. Kunde varit bättre från båda."],
+      pressure: ["Nu får vi se om du kan slå när det faktiskt gäller."],
+      playerBad: ["Vad var det där? Du försöker ju hjälpa bollen.", "Alldeles för bråttom. Jag sa ju det."],
+      botBad: ["Mattan tog den. Sånt där händer inte på riktigt gräs.", "Hmpf. Dålig studs."],
+      rematch: ["En till då. Och den här gången: tänk innan du slår."],
+    },
+  },
   zach: {
     type: "trash-talker", label: "Trash talkern", oneLiner: "Slår hårt, pratar ännu större och älskar att påminna dig om senaste missen.",
     talkRate: .88, praiseRate: .2, correctionRate: .08, tiltRate: .42, trashTalk: .95, memory: "Håller koll på vem som leder rivaliteten.",
