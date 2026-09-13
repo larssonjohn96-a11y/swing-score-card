@@ -28,6 +28,12 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      # Vite/TanStack generates src/routeTree.gen.ts from the file-based routes.
+      # Run the build before tsc so newly added route files are present in the
+      # generated route types during CI.
+      - name: Build
+        run: bun run build
+
       - name: Typecheck
         run: bunx tsc --noEmit
 
@@ -36,6 +42,3 @@ jobs:
 
       - name: Test
         run: bun run test
-
-      - name: Build
-        run: bun run build
