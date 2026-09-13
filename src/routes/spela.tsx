@@ -1,5 +1,5 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { Bot, ChevronRight, Flag, Swords, Target, Trophy } from "lucide-react";
+import { Bot, ChevronRight, Flag, Swords, Target, Trophy, Users } from "lucide-react";
 
 export const Route = createFileRoute("/spela")({
   head: () => ({ meta: [{ title: "Spela – SG4" }] }),
@@ -22,10 +22,16 @@ function PlayPage() {
           <ChevronRight className="h-5 w-5 text-muted-foreground" />
         </Link>
 
-        <Link to="/match" className="flex min-h-[108px] items-center gap-4 rounded-[28px] border border-blue-500/20 bg-gradient-to-r from-blue-500/[.07] via-card to-red-500/[.07] p-5 shadow-[var(--shadow-glow)] active:scale-[.99]">
+        <Link to="/match?flow=friend" className="flex min-h-[108px] items-center gap-4 rounded-[28px] border border-blue-500/20 bg-gradient-to-r from-blue-500/[.07] via-card to-red-500/[.07] p-5 shadow-[var(--shadow-glow)] active:scale-[.99]">
           <span className="flex h-13 w-13 shrink-0 items-center justify-center rounded-2xl bg-slate-950 text-white"><Swords className="h-6 w-6" /></span>
-          <span className="min-w-0 flex-1"><span className="block font-display text-2xl">Mot vän</span><span className="mt-1 block text-sm text-muted-foreground">Head-to-head, Fourball och Foursomes.</span></span>
+          <span className="min-w-0 flex-1"><span className="block font-display text-2xl">Mot vän</span><span className="mt-1 block text-sm text-muted-foreground">Välj en kompis och spela 1 mot 1.</span></span>
           <ChevronRight className="h-5 w-5 text-red-500/70" />
+        </Link>
+
+        <Link to="/match?flow=team" className="flex min-h-[108px] items-center gap-4 rounded-[28px] border border-violet-500/20 bg-violet-500/[.06] p-5 shadow-[var(--shadow-glow)] active:scale-[.99]">
+          <span className="flex h-13 w-13 shrink-0 items-center justify-center rounded-2xl bg-violet-600 text-white"><Users className="h-6 w-6" /></span>
+          <span className="min-w-0 flex-1"><span className="block font-display text-2xl">Lagspel</span><span className="mt-1 block text-sm text-muted-foreground">Fourball, Foursomes och 2 mot 2.</span></span>
+          <ChevronRight className="h-5 w-5 text-violet-500/70" />
         </Link>
 
         <Link to="/tester" className="flex min-h-[96px] items-center gap-4 rounded-[26px] border border-border bg-card p-5 shadow-[var(--shadow-glow)] active:scale-[.99]">
