@@ -1,0 +1,99 @@
+name: Patch Chip Match input UI
+
+on:
+  push:
+    paths:
+      - .github/workflows/patch-chip-input-ui.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Patch chip input UI
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          p = Path('src/routes/match.tsx')
+          t = p.read_text()
+          t = t.replace(
+            'import { generateChipMatchDistances, getChipDistanceBand } from "@/lib/chip-match";',
+            'import { CHIP_POINT_ZONES, generateChipMatchDistances, getChipDistanceBand, getChipPointZone } from "@/lib/chip-match";',
+            1,
+          )
+          old_zones = '''const POINT_ZONES = [
+  { points: 4, label: "Sänkt" }, { points: 3, label: "Inom 1 m" }, { points: 2, label: "Inom 2 m" }, { points: 1, label: "Inom 3 m" }, { points: 0, label: "Över 3 m" },
+] as const;
+'''
+          t = t.replace(old_zones, '', 1)
+
+          old_ui = '''<div className="text-center"><h2 className="font-display text-2xl">Registrera poäng</h2>{compact ? null : <p className="mt-1 text-[10px] font-semibold text-slate-600">Välj var bollen stannade.</p>}</div><div className={`space-y-2 ${tight ? "mt-1" : compact ? "mt-2" : "mt-3"}`}>{([[blueLabel, bluePoints, setBluePoints, "blue"], [redLabel, redPoints, setRedPoints, "red"]] as const).map(([label, value, setter, tone]) => <div key={tone} className={`rounded-[24px] border ${tight ? "p-1.5" : compact ? "p-2" : "p-3"} ${tone === "blue" ? blueGlass : redGlass}`}><div className="flex items-center justify-between"><p className={`max-w-[70%] truncate text-xs font-bold ${tone === "blue" ? "text-blue-700" : "text-red-700"}`}>{label}</p><div className="text-right"><p className={`font-display text-2xl leading-none ${tone === "blue" ? "text-blue-700" : "text-red-700"}`}>{value === null ? "–" : `${value} p`}</p></div></div><div className={`grid grid-cols-5 gap-1.5 ${compact ? "mt-1.5" : "mt-3"}`}>{POINT_ZONES.map((zone) => <button key={zone.points} disabled={isSubmitting} onClick={() => setter(zone.points)} className={`min-w-0 rounded-xl border px-1 text-center ${compact ? "py-1.5" : "py-2.5"} ${value === zone.points ? tone === "blue" ? "border-blue-600 bg-blue-600 text-white" : "border-red-600 bg-red-600 text-white" : "border-slate-300 bg-slate-100 text-slate-700 shadow-sm"}`}><span className="block font-display text-xl leading-none">{zone.points}p</span><span className="mt-1 block text-[8px] font-bold leading-tight">{zone.label}</span></button>)}</div></div>)}</div>{compact ? null : <p className="mt-3 text-center text-[10px] font-bold text-slate-600">Närmast flaggan vinner hålet</p>}'''
+          new_ui = '''<div className="text-center"><h2 className="font-display text-2xl">Hur nära hålet?</h2>{compact ? null : <p className="mt-1 text-[10px] font-semibold text-slate-600">Välj zonen där bollen stannade.</p>}</div><div className={`space-y-3 ${tight ? "mt-2" : compact ? "mt-3" : "mt-4"}`}>{([[blueLabel, bluePoints, setBluePoints, "blue"], [redLabel, redPoints, setRedPoints, "red"]] as const).map(([label, value, setter, tone]) => <div key={tone} className={`rounded-[26px] border ${tight ? "p-2.5" : compact ? "p-3" : "p-4"} ${tone === "blue" ? blueGlass : redGlass}`}><div className="flex items-center justify-between gap-3"><p className={`max-w-[55%] truncate font-display text-2xl leading-none ${tone === "blue" ? "text-blue-700" : "text-red-700"}`}>{label}</p><p className={`text-right text-sm font-bold leading-tight ${tone === "blue" ? "text-blue-700" : "text-red-700"}`}>{value === null ? "Välj avstånd" : getChipPointZone(value)?.label}</p></div><div className={`grid grid-cols-3 gap-2.5 ${compact ? "mt-2.5" : "mt-3.5"}`}>{CHIP_POINT_ZONES.map((zone) => <button key={zone.points} disabled={isSubmitting} onClick={() => setter(zone.points)} className={`min-w-0 rounded-2xl border px-2 text-center font-display text-base leading-tight transition-colors ${compact ? "min-h-[54px] py-3" : "min-h-[64px] py-4"} ${value === zone.points ? tone === "blue" ? "border-blue-600 bg-blue-600 text-white" : "border-red-600 bg-red-600 text-white" : "border-slate-300 bg-white/90 text-slate-800 shadow-sm"}`}>{zone.label}</button>)}</div></div>)}</div>{compact ? null : <p className="mt-3 text-center text-[10px] font-bold text-slate-600">Samma zon delar hålet · bättre zon vinner</p>}'''
+          if old_ui not in t:
+            raise SystemExit('match.tsx chip UI block not found')
+          t = t.replace(old_ui, new_ui, 1)
+          p.write_text(t)
+
+          p = Path('src/routes/match-bot.tsx')
+          t = p.read_text()
+          t = t.replace(
+            'import { generateChipMatchDistances, getChipDistanceBand } from "@/lib/chip-match";',
+            'import { CHIP_POINT_ZONES, generateChipMatchDistances, getChipDistanceBand } from "@/lib/chip-match";',
+            1,
+          )
+          old_bot_points = '''function shortGameBotPoints(bot: BotProfile) {
+  const skillHcp = bot.hcp - bot.shortGame;
+  const roll = Math.random();
+  const skill = clamp(1 - skillHcp / 40, 0.25, 1.15);
+  if (roll < 0.05 * skill) return 4;
+  if (roll < 0.2 + 0.22 * skill) return 3;
+  if (roll < 0.52 + 0.22 * skill) return 2;
+  if (roll < 0.82 + 0.08 * skill) return 1;
+  return 0;
+}
+'''
+          new_bot_points = '''function shortGameBotPoints(bot: BotProfile) {
+  const skillHcp = bot.hcp - bot.shortGame;
+  const roll = Math.random();
+  const skill = clamp(1 - skillHcp / 40, 0.25, 1.15);
+  if (roll < 0.05 * skill) return 5;
+  if (roll < 0.18 + 0.18 * skill) return 4;
+  if (roll < 0.42 + 0.18 * skill) return 3;
+  if (roll < 0.65 + 0.14 * skill) return 2;
+  if (roll < 0.88 + 0.06 * skill) return 1;
+  return 0;
+}
+'''
+          if old_bot_points not in t:
+            raise SystemExit('match-bot.tsx bot points block not found')
+          t = t.replace(old_bot_points, new_bot_points, 1)
+          old_bot_ui = '''<div className="mt-2 grid grid-cols-5 gap-2">{[0, 1, 2, 3, 4].map((v) => <button key={v} disabled={turnState !== "you"} onClick={() => setYourValue(v)} className={`rounded-xl border py-4 font-display text-xl disabled:opacity-50 ${yourValue === v ? "border-blue-600 bg-blue-600 text-white" : glass}`}>{v}p</button>)}</div>'''
+          new_bot_ui = '''<div className="mt-3 grid grid-cols-3 gap-2.5">{CHIP_POINT_ZONES.map((zone) => <button key={zone.points} disabled={turnState !== "you"} onClick={() => setYourValue(zone.points)} className={`min-h-[64px] rounded-2xl border px-2 py-4 text-center font-display text-base leading-tight disabled:opacity-50 ${yourValue === zone.points ? "border-blue-600 bg-blue-600 text-white" : glass}`}>{zone.label}</button>)}</div>'''
+          if old_bot_ui not in t:
+            raise SystemExit('match-bot.tsx chip input block not found')
+          t = t.replace(old_bot_ui, new_bot_ui, 1)
+          p.write_text(t)
+          PY
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+      - name: Commit app changes
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/routes/match.tsx src/routes/match-bot.tsx
+          git commit -m "Improve Chip Match input zones"
+          git push origin main
