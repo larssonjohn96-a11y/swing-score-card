@@ -98,7 +98,7 @@ function Home() {
     <section className="mt-5">
       <div className="mb-3 flex items-end justify-between"><div><p className="text-[10px] font-black uppercase tracking-[.18em] text-muted-foreground">SG4</p><h2 className="mt-1 font-display text-3xl">Välj aktivitet</h2></div></div>
       <div className="grid grid-cols-2 gap-3">
-        {ACTIVITIES.map((item) => <Link key={item.to} to={item.to} search={item.to === "/traning" ? { category: undefined } : undefined as never} className={`flex min-h-[138px] flex-col justify-between rounded-[27px] border p-4 shadow-[0_12px_30px_-24px_rgba(0,0,0,.4)] active:scale-[.99] ${activityTone(item.tone)}`}>
+        {ACTIVITIES.map((item) => <Link key={item.to} to={item.to} className={`flex min-h-[138px] flex-col justify-between rounded-[27px] border p-4 shadow-[0_12px_30px_-24px_rgba(0,0,0,.4)] active:scale-[.99] ${activityTone(item.tone)}`}>
           <span className={`flex h-10 w-10 items-center justify-center rounded-2xl ${item.tone === "primary" ? "bg-primary text-primary-foreground" : item.tone === "gold" ? "bg-amber-500/15 text-amber-600" : item.tone === "flag" ? "bg-slate-950 text-white" : "bg-muted text-foreground"}`}><item.icon className="h-5 w-5" /></span>
           <span><span className="block font-display text-2xl">{item.title}</span><span className="mt-1 block text-xs leading-snug text-muted-foreground">{item.detail}</span></span>
         </Link>)}
