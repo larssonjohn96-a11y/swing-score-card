@@ -12,7 +12,7 @@ import {
 } from "@/lib/putting-match";
 import { CHIP_POINT_ZONES, generateChipMatchDistances, getChipDistanceBand } from "@/lib/chip-match";
 import { chipPerformanceFromPoints, puttingPerformanceFromStrokes, recordEngineOutcome, selectNextEngineDistance, type EngineSkill } from "@/lib/sg4-engine";
-import { getRecommendationsForSkill } from "@/lib/sg4-surface-recommendations";
+import { getPlayRecommendations } from "@/lib/sg4-surface-recommendations";
 import { recordRecommendationCompletion, recordRecommendationImpressions, recordRecommendationOpen, recordRecommendationSignal } from "@/lib/sg4-recommender";
 import { simulateChipBotResult, simulateDriveBotResult, simulatePuttingBotStrokes, type BotCategoryHandicaps } from "@/lib/bot-skill-model";
 import { archetypeLabels, effectiveCategoryHcp, type BotArchetype } from "@/lib/bot-archetypes";
@@ -231,8 +231,7 @@ function BotMatchPage() {
   const topScoreText = matchDiff === 0 ? "AS" : `${Math.abs(matchDiff)} UP`;
   const pressureNotice = getPlayerPressureNotice(matchDiff, holesRemaining, bot.name);
   const resultLeader: "blue" | "red" | null = suddenDeathWinner === "you" ? "blue" : suddenDeathWinner === "bot" ? "red" : liveLeader;
-  const resultEngineSkill = engineSkillForBotCategory(category);
-  const resultRecommendation = resultEngineSkill ? getRecommendationsForSkill(resultEngineSkill, 1)[0] : undefined;
+  const resultRecommendation = getPlayRecommendations(1, ["play-bot"])[0];
   const resultOutcome: "player" | "bot" = suddenDeathWinner === "you" ? "player" : suddenDeathWinner === "bot" ? "bot" : score.you > score.bot ? "player" : "bot";
   const resultMargin = suddenDeathWinner ? 1 : Math.max(1, Math.abs(score.you - score.bot));
   const resultNextStep = category ? chooseBotNextStep({
