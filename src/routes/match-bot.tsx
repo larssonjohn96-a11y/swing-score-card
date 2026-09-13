@@ -17,6 +17,7 @@ import { recordRecommendationCompletion, recordRecommendationImpressions, record
 import { simulateChipBotResult, simulateDriveBotResult, simulatePuttingBotStrokes, type BotCategoryHandicaps } from "@/lib/bot-skill-model";
 import { archetypeLabels, effectiveCategoryHcp, type BotArchetype } from "@/lib/bot-archetypes";
 import { getPlayerPressureNotice } from "@/lib/bot-match-pressure";
+import { BOT_PERSONALITIES, getBotRelationship, personalityLine, recordBotMatch, relationshipLine } from "@/lib/bot-personality";
 import {
   APPROACH_MATCH_FORMATS,
   type ApproachResult,
@@ -92,6 +93,7 @@ const BOTS: BotProfile[] = [
   },
   { id: "leo", name: "Leo", hcp: 34, gender: "Man", role: "Ny golfare", tier: "Nybörjare", avatar: "🧑🏻", intro: "Jag började nyligen. Några riktigt bra slag dyker upp ibland.", categoryHcp: { putting: 36, chipping: 38, approach: 34, driving: 29 }, archetype: { label: "Nybörjaren", playStyle: "balanced", temperament: "streaky", communication: "social", aggression: 0.42, consistency: 0.25, clutch: 0.32, traits: ["Kan blixtra till"] }, chat: genericChat },
   { id: "sarah", name: "Sarah", hcp: 27, gender: "Kvinna", role: "Weekend golfer", tier: "Nybörjare", avatar: "👩🏼", intro: "Helggolfare. Stabil när jag hittar rytmen.", categoryHcp: { putting: 30, chipping: 27, approach: 29, driving: 25 }, archetype: { label: "Helggolfaren", playStyle: "balanced", temperament: "streaky", communication: "social", aggression: 0.48, consistency: 0.42, clutch: 0.40, traits: ["Rytmspelare"] }, chat: genericChat },
+  { id: "george", name: "George", hcp: 24, gender: "Man", role: "Klubbveteran", tier: "Klubbspelare", avatar: "👴🏻", intro: "Har spelat här längre än du. Har också en åsikt om hur du gör det.", categoryHcp: { putting: 20, chipping: 19, approach: 26, driving: 31 }, archetype: { label: "Old-school grinder", playStyle: "conservative", temperament: "competitive", communication: "terse", aggression: 0.22, consistency: 0.62, clutch: 0.58, traits: ["Kortspel & åsikter"] }, chat: genericChat },
   {
     id: "zach", name: "Zach", hcp: 22, gender: "Man", role: "Weekend golfer", tier: "Klubbspelare", avatar: "🧔🏻",
     intro: "Jag gillar att slå långt. Precisionen får vi se hur det går med.", categoryHcp: { putting: 27, chipping: 25, approach: 22, driving: 15 }, archetype: { label: "Bombaren", playStyle: "aggressive", temperament: "competitive", communication: "cocky", aggression: 0.88, consistency: 0.34, clutch: 0.47, traits: ["Lång från tee"] },
@@ -190,7 +192,7 @@ function BotMatchPage() {
 
   const selectedBot = BOTS.find((item) => item.id === botId);
   const bot = selectedBot && !selectedBot.locked ? selectedBot : BOTS.find((item) => !item.locked) ?? BOTS[0];
-  const [botComment, setBotComment] = useState(() => randomLine((selectedBot && !selectedBot.locked ? selectedBot : BOTS[3]).chat.start));
+  const [botComment, setBotComment] = useState(() => { const initial = selectedBot && !selectedBot.locked ? selectedBot : BOTS[3]; return personalityLine(initial.id, "start") ?? randomLine(initial.chat.start); });
 
   useEffect(() => {
     if (step !== "sudden-death") return;
@@ -239,7 +241,7 @@ function BotMatchPage() {
   function chooseBot(item: BotProfile) {
     if (item.locked) return;
     setBotId(item.id);
-    setBotComment(randomLine(item.chat.start));
+    setBotComment(personalityLine(item.id, "start") ?? randomLine(item.chat.start));
   }
 
   function buildHoles() {
@@ -263,7 +265,7 @@ function BotMatchPage() {
       }
       return { title: "30 m Fairway Challenge", detail: "Samma fairway och samma slag för båda spelarna" };
     });
-    setBotComment(randomLine(bot.chat.start));
+    setBotComment(personalityLine(bot.id, "start") ?? randomLine(bot.chat.start));
     setHoles(next);
     setHoleIndex(0);
     resetShotInput(category === "approach" ? next[0]?.distance ?? 0 : 0);
@@ -385,7 +387,10 @@ function BotMatchPage() {
 
     const isPressure = Boolean(pressureNotice);
     const event: BotEvent = isPressure ? "pressure" : winner === "bot" ? "bot-win" : winner === "you" ? "player-win" : "tie";
-    setBotComment(randomLine(bot.chat[event]));
+    const playerBad = (category === "putting" && lockedYourValue >= 3) || (category === "around-the-green" && lockedYourValue <= 1) || (category === "off-the-tee" && !lockedDriveHit);
+    const botBad = (category === "putting" && simulated.value >= 3) || (category === "around-the-green" && simulated.value <= 1) || (category === "off-the-tee" && !simulated.hit);
+    const personalityEvent = isPressure ? "pressure" : playerBad ? "player-bad" : botBad ? "bot-bad" : event;
+    setBotComment(personalityLine(bot.id, personalityEvent) ?? randomLine(bot.chat[event]));
     setTurnState("reveal");
     await sleep(1400);
     setTurnState("you");
@@ -394,7 +399,7 @@ function BotMatchPage() {
       const finalYou = score.you + (winner === "you" ? 1 : 0);
       const finalBot = score.bot + (winner === "bot" ? 1 : 0);
       if (finalYou === finalBot) { setSuddenDeathRound(1); setSdBotText(""); setStep("sudden-death"); }
-      else { setWinnerCelebration(finalYou > finalBot ? "you" : "bot"); await sleep(2300); setWinnerCelebration(null); setStep("result"); }
+      else { const matchWinner = finalYou > finalBot ? "you" : "bot"; recordBotMatch(bot.id, matchWinner === "you" ? "player" : "bot"); setWinnerCelebration(matchWinner); await sleep(2300); setWinnerCelebration(null); setStep("result"); }
     } else {
       const nextIndex = holeIndex + 1;
       resetShotInput(category === "approach" ? holes[nextIndex]?.distance ?? 0 : 0);
@@ -429,6 +434,7 @@ function BotMatchPage() {
     await sleep(900);
     setBotComment(youWin ? randomLine(bot.chat["player-win"]) : randomLine(bot.chat["bot-win"]));
     setSuddenDeathWinner(youWin ? "you" : "bot");
+    recordBotMatch(bot.id, youWin ? "player" : "bot");
     setWinnerCelebration(youWin ? "you" : "bot");
     await sleep(2300);
     setWinnerCelebration(null); setStep("result"); setSdBusy(false);
@@ -499,7 +505,7 @@ function BotMatchPage() {
                         <span className="mt-3 block font-display text-2xl">{item.name}</span>
                         <span className="mt-1 block text-xs font-bold text-slate-700">HCP {formatHcp(item.hcp)}</span>
                         <span className="mt-1 block text-[11px] text-slate-500">{item.gender} · {item.role}</span>
-                        <span className="mt-2 block text-[10px] font-black uppercase tracking-[0.12em] text-red-700">{item.archetype.label}</span>
+                        <span className="mt-2 block text-[10px] font-black uppercase tracking-[0.12em] text-red-700">{BOT_PERSONALITIES[item.id]?.label ?? item.archetype.label}</span><span className="mt-1 block text-[10px] text-slate-500">{BOT_PERSONALITIES[item.id]?.oneLiner}</span>
                         {item.locked ? <span className="mt-3 block text-[10px] font-black uppercase tracking-[0.12em] text-slate-700">Låst</span> : null}
                         {item.locked && item.unlockText ? <span className="mt-1 block text-[10px] leading-snug text-slate-500">{item.unlockText}</span> : null}
                       </button>
@@ -509,7 +515,7 @@ function BotMatchPage() {
               </section>
             ))}
           </div>
-          <section className={`mt-6 rounded-[28px] border p-4 ${glass}`}><div className="flex items-start gap-3"><span className="text-4xl">{bot.avatar}</span><div><p className="font-display text-xl">{bot.name}</p><p className="text-xs font-bold text-red-700">HCP {formatHcp(bot.hcp)} · {bot.role}</p><p className="mt-1 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">{bot.archetype.label}</p><p className="mt-2 text-sm leading-5 text-slate-600">“{bot.intro}”</p><div className="mt-3 flex flex-wrap gap-1.5">{archetypeLabels(bot.archetype).map((trait) => <span key={trait} className="rounded-full border border-slate-200 bg-white/80 px-2 py-1 text-[9px] font-bold text-slate-600">{trait}</span>)}</div></div></div></section>
+          <section className={`mt-6 rounded-[28px] border p-4 ${glass}`}><div className="flex items-start gap-3"><span className="text-4xl">{bot.avatar}</span><div><p className="font-display text-xl">{bot.name}</p><p className="text-xs font-bold text-red-700">HCP {formatHcp(bot.hcp)} · {bot.role}</p><p className="mt-1 text-[10px] font-black uppercase tracking-[0.14em] text-red-700">{BOT_PERSONALITIES[bot.id]?.label ?? bot.archetype.label}</p><p className="mt-1 text-xs leading-5 text-slate-500">{BOT_PERSONALITIES[bot.id]?.oneLiner}</p><p className="mt-2 text-sm leading-5 text-slate-600">“{bot.intro}”</p>{relationshipLine(bot.id, bot.name) ? <p className="mt-2 text-[11px] font-semibold text-slate-500">{relationshipLine(bot.id, bot.name)}</p> : null}<div className="mt-3 flex flex-wrap gap-1.5">{archetypeLabels(bot.archetype).map((trait) => <span key={trait} className="rounded-full border border-slate-200 bg-white/80 px-2 py-1 text-[9px] font-bold text-slate-600">{trait}</span>)}</div></div></div></section>
           <div className="fixed bottom-0 left-1/2 z-40 w-full max-w-md -translate-x-1/2 bg-gradient-to-t from-white via-white/95 to-white/0 px-5 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-8">
             <button onClick={() => setStep("category")} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white shadow-xl">Spela mot {bot.name} <ChevronRight className="h-5 w-5" /></button>
           </div>
