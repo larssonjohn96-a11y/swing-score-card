@@ -1,0 +1,201 @@
+name: Apply Chip Match distance randomization
+
+on:
+  push:
+    paths:
+      - .github/workflows/apply-chip-distance-randomization.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Apply Chip Match changes
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          helper = '''/**
+           * Gemensam regelkälla för SG4:s Chip Match.
+           * Ett enda spel – bara matchlängden (3/5/7 hål) skiljer.
+           */
+
+          export type ChipMatchLength = 3 | 5 | 7;
+          export type ChipDistanceBandId = "short" | "medium" | "long";
+
+          export const CHIP_MATCH_FORMATS: Array<{
+            length: ChipMatchLength;
+            name: string;
+            label: string;
+            detail: string;
+            recommended?: boolean;
+          }> = [
+            { length: 3, name: "3 hål", label: "", detail: "" },
+            { length: 5, name: "5 hål", label: "", detail: "", recommended: true },
+            { length: 7, name: "7 hål", label: "", detail: "" },
+          ];
+
+          export const CHIP_DISTANCE_BANDS = [
+            { id: "short", label: "Kort chip", range: "8–14 m", min: 8, max: 14 },
+            { id: "medium", label: "Medel chip", range: "15–22 m", min: 15, max: 22 },
+            { id: "long", label: "Lång chip", range: "23–30 m", min: 23, max: 30 },
+          ] as const;
+
+          export const CHIP_MATCH_RULES = [
+            "Korta 8–14 m · Medel 15–22 m · Långa 23–30 m.",
+            "Avstånden och ordningen slumpas inför varje ny match. Samma exakta meter kan förekomma flera gånger.",
+            "Båda spelarna chippar från exakt samma avstånd på varje hål.",
+            "Ett slag per spelare. Välj poängzon efter var bollen stannar.",
+            "Högst poäng vinner hålet, lika poäng delar hålet.",
+          ];
+
+          export const CHIP_POINT_ZONES = [
+            { points: 4, label: "Sänkt" },
+            { points: 3, label: "Inom 1 m" },
+            { points: 2, label: "Inom 2 m" },
+            { points: 1, label: "Inom 5 m" },
+            { points: 0, label: "Över 5 m" },
+          ] as const;
+
+          function rand(min: number, max: number) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+          }
+
+          function shuffle<T>(items: readonly T[]) {
+            const next = [...items];
+            for (let i = next.length - 1; i > 0; i--) {
+              const j = Math.floor(Math.random() * (i + 1));
+              [next[i], next[j]] = [next[j], next[i]];
+            }
+            return next;
+          }
+
+          export function getChipDistanceBand(distance: number) {
+            if (distance <= 14) return CHIP_DISTANCE_BANDS[0];
+            if (distance <= 22) return CHIP_DISTANCE_BANDS[1];
+            return CHIP_DISTANCE_BANDS[2];
+          }
+
+          /**
+           * Skapar en balanserad mix av korta, medel och långa chippar och
+           * slumpar därefter ordningen. Varje håls meter slumpas oberoende,
+           * så samma exakta avstånd får förekomma flera gånger i samma match.
+           */
+          export function generateChipMatchDistances(length: ChipMatchLength): number[] {
+            const quotas = length === 3 ? [1, 1, 1] : length === 5 ? [2, 1, 2] : [2, 3, 2];
+            const distances = CHIP_DISTANCE_BANDS.flatMap((band, index) =>
+              Array.from({ length: quotas[index] }, () => rand(band.min, band.max)),
+            );
+            return shuffle(distances);
+          }
+          '''
+          Path('src/lib/chip-match.ts').write_text(helper)
+
+          p = Path('src/routes/match.tsx')
+          t = p.read_text()
+          putting_import = 'import { formatPuttingDistance, generatePuttingMatchDistances } from "@/lib/putting-match";\n'
+          chip_import = 'import { generateChipMatchDistances, getChipDistanceBand } from "@/lib/chip-match";\n'
+          if chip_import not in t:
+            if putting_import not in t:
+              raise SystemExit('match.tsx: putting import anchor not found')
+            t = t.replace(putting_import, putting_import + chip_import, 1)
+
+          old_challenge = '''  if (category === "around-the-green") {
+            return { eyebrow: "Chippning", title: `${rand(10, 30)} m`, detail: `Närmast hålet vinner.${suffix}` };
+          }'''
+          new_challenge = '''  if (category === "around-the-green") {
+            const distance = approachDistance ?? rand(8, 30);
+            const band = getChipDistanceBand(distance);
+            return { eyebrow: band.label, title: `${distance} m`, detail: `${band.range} · samma avstånd för båda · högst poäng vinner hålet${suffix}` };
+          }'''
+          if old_challenge in t:
+            t = t.replace(old_challenge, new_challenge, 1)
+          elif new_challenge not in t:
+            raise SystemExit('match.tsx: chip challenge anchor not found')
+
+          old_holes = ''': isShortGame
+              ? Array.from({ length: matchLength }, () => ({ challenge: generateChallenge(category, matchType, mode), winner: null as HoleWinner }))'''
+          new_holes = ''': isShortGame
+              ? generateChipMatchDistances(matchLength).map((distance) => ({ challenge: generateChallenge(category, matchType, mode, shortGameLies, distance), winner: null as HoleWinner }))'''
+          if old_holes in t:
+            t = t.replace(old_holes, new_holes, 1)
+          elif new_holes not in t:
+            raise SystemExit('match.tsx: chip hole generation anchor not found')
+
+          old_heading = '''<h1 className="mt-1 font-display text-4xl">{isPgaPutting ? "Matchlängd" : scoringMode === "stroke" ? "Antal hål" : "Bäst av"}</h1>{isPgaPutting ? <p className="mt-2 text-sm text-slate-600">Välj 3, 5 eller 7 hål. Alla längder får en mix av korta, mellanlånga och långa PGA Tour-avstånd.</p> : null}'''
+          new_heading = '''<h1 className="mt-1 font-display text-4xl">{isShortGame ? "Välj antal hål" : isPgaPutting ? "Matchlängd" : scoringMode === "stroke" ? "Antal hål" : "Bäst av"}</h1>{isShortGame ? <p className="mt-2 text-sm text-slate-600">Korta 8–14 m · Medel 15–22 m · Långa 23–30 m. Avstånden slumpas inför varje match.</p> : isPgaPutting ? <p className="mt-2 text-sm text-slate-600">Välj 3, 5 eller 7 hål. Alla längder får en mix av korta, mellanlånga och långa PGA Tour-avstånd.</p> : null}'''
+          if old_heading in t:
+            t = t.replace(old_heading, new_heading, 1)
+          elif new_heading not in t:
+            raise SystemExit('match.tsx: length heading anchor not found')
+          p.write_text(t)
+
+          p = Path('src/routes/match-bot.tsx')
+          t = p.read_text()
+          approach_anchor = '} from "@/lib/putting-match";\nimport {\n  APPROACH_MATCH_FORMATS,'
+          bot_chip_import = '} from "@/lib/putting-match";\nimport { generateChipMatchDistances, getChipDistanceBand } from "@/lib/chip-match";\nimport {\n  APPROACH_MATCH_FORMATS,'
+          if 'from "@/lib/chip-match"' not in t:
+            if approach_anchor not in t:
+              raise SystemExit('match-bot.tsx: import anchor not found')
+            t = t.replace(approach_anchor, bot_chip_import, 1)
+
+          old_lists = '''    const puttingDistances = category === "putting" ? generatePuttingMatchDistances(length) : [];
+              const approachDistances = category === "approach" ? generateApproachMatchDistances(length) : [];'''
+          new_lists = '''    const puttingDistances = category === "putting" ? generatePuttingMatchDistances(length) : [];
+              const chipDistances = category === "around-the-green" ? generateChipMatchDistances(length) : [];
+              const approachDistances = category === "approach" ? generateApproachMatchDistances(length) : [];'''
+          if old_lists in t:
+            t = t.replace(old_lists, new_lists, 1)
+          elif 'const chipDistances = category === "around-the-green" ? generateChipMatchDistances(length) : [];' not in t:
+            raise SystemExit('match-bot.tsx: distance list anchor not found')
+
+          old_bot_hole = '''      if (category === "around-the-green") {
+                const d = rand(10, 30);
+                return { title: `${d} m`, distance: d, detail: "Ett slag · högst zonpoäng vinner" };
+              }'''
+          new_bot_hole = '''      if (category === "around-the-green") {
+                const d = chipDistances[holeNr] ?? 15;
+                const band = getChipDistanceBand(d);
+                return { title: `${d} m`, distance: d, detail: `${band.label} · ${band.range} · samma avstånd för båda` };
+              }'''
+          if old_bot_hole in t:
+            t = t.replace(old_bot_hole, new_bot_hole, 1)
+          elif new_bot_hole not in t:
+            raise SystemExit('match-bot.tsx: chip hole anchor not found')
+          p.write_text(t)
+          PY
+
+      - name: Verify build
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build
+        run: bun run build
+
+      - name: Typecheck
+        run: bunx tsc --noEmit
+
+      - name: Commit changes
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/lib/chip-match.ts src/routes/match.tsx src/routes/match-bot.tsx
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "Improve Chip Match distances"
+          git push origin main
