@@ -63,7 +63,7 @@ export type DistanceDecision = {
 
 export type RankedActivity = {
   id: string;
-  skill: EngineSkill;
+  engineSkill: EngineSkill;
 };
 
 const STORAGE_KEY = "sg4-player-engine-v1";
@@ -496,7 +496,7 @@ export function rankEngineActivities<T extends RankedActivity>(
     .map((item, index) => {
       const profile = model.activities[item.id];
       const affinity = profile?.affinity ?? 0.42;
-      const learningNeed = skillLearningNeed(model, item.skill);
+      const learningNeed = skillLearningNeed(model, item.engineSkill);
       const novelty = 0.7 + dayNoise(item.id) * 0.3;
       const funScore = affinity * 0.58 + novelty * 0.42;
       const learningScore = learningNeed * 0.78 + novelty * 0.22;

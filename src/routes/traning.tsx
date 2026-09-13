@@ -141,7 +141,7 @@ function TrainingTestsPage() {
   const baseVisibleTests = category === "putting" ? TESTS.putting.filter((test) => matchesPuttingFilter(test, puttingFilter)) : category ? TESTS[category] : [];
   const visibleTests = category
     ? rankEngineActivities(
-        baseVisibleTests.map((test) => ({ ...test, id: test.to, skill: CATEGORY_ENGINE_SKILL[category] })),
+        baseVisibleTests.map((test) => ({ ...test, id: test.to, engineSkill: CATEGORY_ENGINE_SKILL[category] })),
         "learning",
       )
     : [];
