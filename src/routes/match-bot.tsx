@@ -202,10 +202,10 @@ function BotMatchPage() {
   const glass = "border-slate-300/80 bg-white/78 shadow-[0_18px_44px_-32px_rgba(15,23,42,.42)] backdrop-blur-2xl";
   const selected = "border-emerald-500 bg-emerald-50/95 ring-2 ring-emerald-500/25";
 
-  function resetShotInput() {
+  function resetShotInput(targetDistance = 0) {
     setYourValue(null);
     setDriveHit(true);
-    setApproachDistance(0);
+    setApproachDistance(targetDistance);
     setApproachLateral(0);
     setApproachSide("right");
   }
@@ -231,14 +231,14 @@ function BotMatchPage() {
       }
       if (category === "approach") {
         const d = approachDistances[holeNr] ?? 120;
-        return { title: `${d} m`, distance: d, detail: "Ställ in längd och sidled · 0 m sidled = rakt" };
+        return { title: `${d} m`, distance: d, detail: "Justera faktisk längd från målavståndet · 0 m sidled = rakt" };
       }
       return { title: "30 m Fairway Challenge", detail: "Samma fairway och samma slag för båda spelarna" };
     });
     setBotComment(randomLine(bot.chat.start));
     setHoles(next);
     setHoleIndex(0);
-    resetShotInput();
+    resetShotInput(category === "approach" ? next[0]?.distance ?? 0 : 0);
     setTurnState("you");
     setStep("play");
   }
@@ -319,10 +319,15 @@ function BotMatchPage() {
     setBotComment(randomLine(bot.chat[event]));
     setTurnState("reveal");
     await sleep(1400);
-    resetShotInput();
     setTurnState("you");
-    if (holeIndex >= holes.length - 1) setStep("result");
-    else setHoleIndex((i) => i + 1);
+    if (holeIndex >= holes.length - 1) {
+      resetShotInput();
+      setStep("result");
+    } else {
+      const nextIndex = holeIndex + 1;
+      resetShotInput(category === "approach" ? holes[nextIndex]?.distance ?? 0 : 0);
+      setHoleIndex(nextIndex);
+    }
   }
 
   function back() {
@@ -352,7 +357,7 @@ function BotMatchPage() {
   const approachPlay = step === "play" && category === "approach";
 
   return (
-    <main style={LIGHT_SURFACE} className={`mx-auto min-h-screen w-full max-w-md bg-background px-5 ${approachPlay ? "pt-3 pb-6" : step === "bot" ? "pt-6 pb-40" : "pt-6 pb-16"} text-foreground`}>
+    <main style={LIGHT_SURFACE} className={`mx-auto min-h-screen w-full max-w-md bg-background px-5 ${approachPlay ? "pt-4 pb-8" : step === "bot" ? "pt-6 pb-40" : "pt-6 pb-16"} text-foreground`}>
       {step !== "play" && step !== "result" ? (
         <header className="flex items-center justify-between">
           {step === "bot" ? (
@@ -422,7 +427,7 @@ function BotMatchPage() {
             {category === "putting" ? (
               <div className={`mt-4 rounded-3xl border p-4 ${glass}`}><p className="text-[9px] font-black uppercase tracking-[0.16em] text-slate-500">Så spelas Putting Match</p><ul className="mt-2 space-y-1">{PUTTING_MATCH_RULES.map((rule) => <li key={rule} className="text-[11px] leading-relaxed text-slate-600">· {rule}</li>)}</ul></div>
             ) : (
-              <div className={`mt-4 rounded-3xl border p-4 ${glass}`}><p className="text-[9px] font-black uppercase tracking-[0.16em] text-slate-500">Så spelas Approach Match</p><p className="mt-2 text-[11px] leading-relaxed text-slate-600">· Ett slag per hål från samma målavstånd.</p><p className="text-[11px] leading-relaxed text-slate-600">· Ställ in längd och sidled. 0 m sidled = rakt.</p><p className="text-[11px] leading-relaxed text-slate-600">· Närmast flaggan vinner hålet.</p></div>
+              <div className={`mt-4 rounded-3xl border p-4 ${glass}`}><p className="text-[9px] font-black uppercase tracking-[0.16em] text-slate-500">Så spelas Approach Match</p><p className="mt-2 text-[11px] leading-relaxed text-slate-600">· Ett slag per hål från samma målavstånd.</p><p className="text-[11px] leading-relaxed text-slate-600">· Längden startar på målavståndet. Justera till faktisk TrackMan-längd med ±5/±1.</p><p className="text-[11px] leading-relaxed text-slate-600">· Sidled startar på 0 m. Närmast flaggan vinner hålet.</p></div>
             )}
             <button onClick={buildHoles} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 via-slate-950 to-emerald-700 py-4 font-display text-xl text-white"><Flag className="h-5 w-5" /> Starta match</button>
           </>
@@ -437,43 +442,49 @@ function BotMatchPage() {
 
       {step === "play" && current ? (
         <>
-          <header className="flex items-center justify-between"><Link to="/" className={`inline-flex ${approachPlay ? "h-8 w-8" : "h-9 w-9"} items-center justify-center rounded-full border ${glass}`}>‹</Link><div className="text-center"><p className="text-[9px] font-black uppercase tracking-[0.18em] text-slate-500">Mot {bot.name}</p><p className="text-[10px] font-bold text-slate-700">HCP {formatHcp(bot.hcp)}</p></div><span className={approachPlay ? "text-2xl" : "text-3xl"}>{bot.avatar}</span></header>
-          <section className={`${approachPlay ? "mt-1 rounded-[20px]" : "mt-3 rounded-[24px]"} overflow-hidden border ${glass}`}><div className="grid grid-cols-3 text-center"><div className={approachPlay ? "p-2" : "p-3"}><p className="text-[10px] font-black uppercase text-blue-600">{playerName}</p><p className={`${approachPlay ? "text-2xl" : "mt-1 text-3xl"} font-display text-blue-700`}>{score.you}</p></div><div className={`${approachPlay ? "p-2" : "p-3"} border-x border-slate-200`}><p className="text-[9px] font-black uppercase text-slate-500">Hål</p><p className={`${approachPlay ? "text-2xl" : "mt-1 text-3xl"} font-display`}>{holeIndex + 1}/{length}</p></div><div className={approachPlay ? "p-2" : "p-3"}><p className="text-[10px] font-black uppercase text-emerald-700">{bot.name}</p><p className={`${approachPlay ? "text-2xl" : "mt-1 text-3xl"} font-display text-emerald-700`}>{score.bot}</p></div></div></section>
-          <div className={`${approachPlay ? "mt-1" : "mt-3"} flex items-start gap-2`}><span className={approachPlay ? "text-2xl" : "text-3xl"}>{bot.avatar}</span><div className={`relative max-w-[82%] rounded-2xl rounded-tl-md border border-slate-200 bg-white/90 ${approachPlay ? "px-2.5 py-1.5" : "px-3 py-2"} shadow-sm`}><p className="text-[9px] font-black uppercase tracking-[0.12em] text-slate-500">{bot.name}</p><p className={`${approachPlay ? "text-xs" : "mt-0.5 text-sm"} leading-snug text-slate-700`}>“{botComment}”</p></div></div>
-          <section className={`${approachPlay ? "mt-1 rounded-[22px] p-3" : "mt-3 rounded-[30px] p-5"} border text-center ${glass}`}><p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">{category}</p><h1 className={`${approachPlay ? "mt-0.5 text-3xl" : "mt-2 text-5xl"} font-display`}>{current.title}</h1><p className={`${approachPlay ? "mt-0.5 text-[10px]" : "mt-2 text-xs"} text-slate-600`}>{current.detail}</p>{turnState === "you" && !approachPlay ? <div className="mt-4 rounded-2xl bg-blue-50 p-3"><p className="text-[9px] font-black uppercase tracking-[0.14em] text-blue-600">Din tur</p><p className="mt-1 text-sm font-bold text-blue-900">Du spelar först</p></div> : null}{turnState === "bot-thinking" ? <div className={`${approachPlay ? "mt-2 p-2.5" : "mt-4 p-4"} rounded-2xl bg-emerald-50`}><div className="flex items-center justify-center gap-3"><span className={approachPlay ? "text-2xl" : "text-3xl"}>{bot.avatar}</span><div className="text-left"><p className="text-[9px] font-black uppercase tracking-[0.14em] text-emerald-700">{bot.name} spelar…</p><div className="mt-2 flex gap-1"><span className="h-2 w-2 animate-bounce rounded-full bg-emerald-600 [animation-delay:-0.3s]" /><span className="h-2 w-2 animate-bounce rounded-full bg-emerald-600 [animation-delay:-0.15s]" /><span className="h-2 w-2 animate-bounce rounded-full bg-emerald-600" /></div></div></div></div> : null}{turnState === "reveal" && current.botValue != null ? <div className={`${approachPlay ? "mt-2 p-2.5" : "mt-4 p-4"} rounded-2xl bg-emerald-50`}><p className="text-[9px] font-black uppercase tracking-[0.14em] text-emerald-700">{bot.name}s resultat</p><p className={`${approachPlay ? "text-xl" : "mt-1 text-2xl"} font-display text-emerald-800`}>{resultLabel(current)}</p><p className={`${approachPlay ? "mt-1 text-xs" : "mt-2 text-sm"} font-bold text-slate-800`}>{current.winner === "you" ? `${playerName} vinner hålet` : current.winner === "bot" ? `${bot.name} vinner hålet` : "Hålet delas"}</p></div> : null}</section>
+          <header className="flex items-center justify-between"><Link to="/" className={`inline-flex ${approachPlay ? "h-9 w-9" : "h-9 w-9"} items-center justify-center rounded-full border ${glass}`}>‹</Link><div className="text-center"><p className="text-[9px] font-black uppercase tracking-[0.18em] text-slate-500">Mot {bot.name}</p><p className="text-[10px] font-bold text-slate-700">HCP {formatHcp(bot.hcp)}</p></div><span className="text-3xl">{bot.avatar}</span></header>
+          <section className={`${approachPlay ? "mt-2 rounded-[22px]" : "mt-3 rounded-[24px]"} overflow-hidden border ${glass}`}><div className="grid grid-cols-3 text-center"><div className={approachPlay ? "p-2.5" : "p-3"}><p className="text-[10px] font-black uppercase text-blue-600">{playerName}</p><p className="mt-1 font-display text-3xl text-blue-700">{score.you}</p></div><div className={`${approachPlay ? "p-2.5" : "p-3"} border-x border-slate-200`}><p className="text-[9px] font-black uppercase text-slate-500">Hål</p><p className="mt-1 font-display text-3xl">{holeIndex + 1}/{length}</p></div><div className={approachPlay ? "p-2.5" : "p-3"}><p className="text-[10px] font-black uppercase text-emerald-700">{bot.name}</p><p className="mt-1 font-display text-3xl text-emerald-700">{score.bot}</p></div></div></section>
+          <div className={`${approachPlay ? "mt-2" : "mt-3"} flex items-start gap-2`}><span className="text-3xl">{bot.avatar}</span><div className={`relative max-w-[82%] rounded-2xl rounded-tl-md border border-slate-200 bg-white/90 ${approachPlay ? "px-3 py-2" : "px-3 py-2"} shadow-sm`}><p className="text-[9px] font-black uppercase tracking-[0.12em] text-slate-500">{bot.name}</p><p className="mt-0.5 text-sm leading-snug text-slate-700">“{botComment}”</p></div></div>
+          <section className={`${approachPlay ? "mt-2 rounded-[24px] p-4" : "mt-3 rounded-[30px] p-5"} border text-center ${glass}`}><p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">{category}</p><h1 className={`${approachPlay ? "mt-1 text-4xl" : "mt-2 text-5xl"} font-display`}>{current.title}</h1><p className={`${approachPlay ? "mt-1 text-[11px]" : "mt-2 text-xs"} text-slate-600`}>{current.detail}</p>{turnState === "you" && !approachPlay ? <div className="mt-4 rounded-2xl bg-blue-50 p-3"><p className="text-[9px] font-black uppercase tracking-[0.14em] text-blue-600">Din tur</p><p className="mt-1 text-sm font-bold text-blue-900">Du spelar först</p></div> : null}{turnState === "bot-thinking" ? <div className={`${approachPlay ? "mt-2 p-3" : "mt-4 p-4"} rounded-2xl bg-emerald-50`}><div className="flex items-center justify-center gap-3"><span className="text-3xl">{bot.avatar}</span><div className="text-left"><p className="text-[9px] font-black uppercase tracking-[0.14em] text-emerald-700">{bot.name} spelar…</p><div className="mt-2 flex gap-1"><span className="h-2 w-2 animate-bounce rounded-full bg-emerald-600 [animation-delay:-0.3s]" /><span className="h-2 w-2 animate-bounce rounded-full bg-emerald-600 [animation-delay:-0.15s]" /><span className="h-2 w-2 animate-bounce rounded-full bg-emerald-600" /></div></div></div></div> : null}{turnState === "reveal" && current.botValue != null ? <div className={`${approachPlay ? "mt-2 p-3" : "mt-4 p-4"} rounded-2xl bg-emerald-50`}><p className="text-[9px] font-black uppercase tracking-[0.14em] text-emerald-700">{bot.name}s resultat</p><p className="mt-1 font-display text-2xl text-emerald-800">{resultLabel(current)}</p><p className="mt-2 text-sm font-bold text-slate-800">{current.winner === "you" ? `${playerName} vinner hålet` : current.winner === "bot" ? `${bot.name} vinner hålet` : "Hålet delas"}</p></div> : null}</section>
 
-          <section className={approachPlay ? "mt-1" : "mt-3"}>
+          <section className={approachPlay ? "mt-2" : "mt-3"}>
             <p className="text-center text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Ditt resultat</p>
             {category === "putting" ? (
               <div className="mt-2 grid grid-cols-4 gap-2">{[1, 2, 3, 4].map((v) => <button key={v} disabled={turnState !== "you"} onClick={() => setYourValue(v)} className={`rounded-2xl border py-4 font-display text-2xl disabled:opacity-50 ${yourValue === v ? "border-blue-600 bg-blue-600 text-white" : glass}`}>{v}</button>)}</div>
             ) : category === "around-the-green" ? (
               <div className="mt-2 grid grid-cols-5 gap-2">{[0, 1, 2, 3, 4].map((v) => <button key={v} disabled={turnState !== "you"} onClick={() => setYourValue(v)} className={`rounded-xl border py-4 font-display text-xl disabled:opacity-50 ${yourValue === v ? "border-blue-600 bg-blue-600 text-white" : glass}`}>{v}p</button>)}</div>
             ) : category === "approach" ? (
-              <div className={`mt-1 rounded-[22px] border p-2.5 ${glass}`}>
-                <div className="flex items-center justify-between rounded-xl bg-slate-950 px-3 py-1.5 text-white"><span className="text-[9px] font-black uppercase tracking-[0.14em] text-slate-300">Mål</span><span className="font-display text-xl">{current.distance} m</span></div>
-                <div className="mt-2 grid grid-cols-2 gap-2">
-                  <div className="rounded-xl border border-slate-200 bg-white p-2">
-                    <p className="text-center text-[9px] font-black uppercase tracking-[0.12em] text-slate-500">Längd</p>
-                    <p className="text-center font-display text-3xl text-slate-950">{approachDistance}<span className="ml-1 text-sm text-slate-400">m</span></p>
-                    <div className="mt-1 grid grid-cols-4 gap-1">
-                      {[-5, -1, 1, 5].map((delta) => <button key={delta} disabled={turnState !== "you"} onClick={() => adjustApproachDistance(delta)} className="rounded-lg border bg-white py-1.5 text-[11px] font-black disabled:opacity-40">{delta > 0 ? `+${delta}` : delta}</button>)}
+              <div className={`mt-2 rounded-[24px] border p-3.5 ${glass}`}>
+                <div className="flex items-center justify-between rounded-2xl bg-slate-950 px-4 py-2 text-white"><span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-300">Mål</span><span className="font-display text-2xl">{current.distance} m</span></div>
+                <div className="mt-3 grid grid-cols-2 gap-3">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-3">
+                    <p className="text-center text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">Total längd</p>
+                    <p className="mt-1 text-center font-display text-4xl text-slate-950">{approachDistance}<span className="ml-1 text-base text-slate-400">m</span></p>
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                      {[-5, 5].map((delta) => <button key={delta} disabled={turnState !== "you"} onClick={() => adjustApproachDistance(delta)} className="min-h-11 rounded-xl border bg-white py-2.5 text-sm font-black disabled:opacity-40">{delta > 0 ? `+${delta}` : delta}</button>)}
+                    </div>
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                      {[-1, 1].map((delta) => <button key={delta} disabled={turnState !== "you"} onClick={() => adjustApproachDistance(delta)} className="min-h-11 rounded-xl border bg-slate-50 py-2.5 text-sm font-black disabled:opacity-40">{delta > 0 ? `+${delta}` : delta}</button>)}
                     </div>
                   </div>
-                  <div className="rounded-xl border border-slate-200 bg-white p-2">
-                    <p className="text-center text-[9px] font-black uppercase tracking-[0.12em] text-slate-500">Sidled</p>
-                    <p className="text-center font-display text-3xl text-slate-950">{approachLateral}<span className="ml-1 text-sm text-slate-400">m</span></p>
-                    <div className="mt-1 grid grid-cols-4 gap-1">
-                      {[-5, -1, 1, 5].map((delta) => <button key={delta} disabled={turnState !== "you"} onClick={() => adjustApproachLateral(delta)} className="rounded-lg border bg-white py-1.5 text-[11px] font-black disabled:opacity-40">{delta > 0 ? `+${delta}` : delta}</button>)}
+                  <div className="rounded-2xl border border-slate-200 bg-white p-3">
+                    <p className="text-center text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">Sidled</p>
+                    <p className="mt-1 text-center font-display text-4xl text-slate-950">{approachLateral}<span className="ml-1 text-base text-slate-400">m</span></p>
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                      {[-5, 5].map((delta) => <button key={delta} disabled={turnState !== "you"} onClick={() => adjustApproachLateral(delta)} className="min-h-11 rounded-xl border bg-white py-2.5 text-sm font-black disabled:opacity-40">{delta > 0 ? `+${delta}` : delta}</button>)}
                     </div>
-                    {approachLateral > 0 ? <div className="mt-1 grid grid-cols-2 gap-1">{(["left", "right"] as const).map((side) => <button key={side} disabled={turnState !== "you"} onClick={() => chooseApproachSide(side)} className={`rounded-lg border py-1.5 text-[10px] font-bold disabled:opacity-50 ${approachSide === side ? "border-blue-600 bg-blue-600 text-white" : "bg-white text-slate-700"}`}>{side === "left" ? "Vänster" : "Höger"}</button>)}</div> : <p className="mt-1 text-center text-[9px] text-slate-400">0 m = rakt</p>}
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                      {[-1, 1].map((delta) => <button key={delta} disabled={turnState !== "you"} onClick={() => adjustApproachLateral(delta)} className="min-h-11 rounded-xl border bg-slate-50 py-2.5 text-sm font-black disabled:opacity-40">{delta > 0 ? `+${delta}` : delta}</button>)}
+                    </div>
+                    {approachLateral > 0 ? <div className="mt-2 grid grid-cols-2 gap-2">{(["left", "right"] as const).map((side) => <button key={side} disabled={turnState !== "you"} onClick={() => chooseApproachSide(side)} className={`min-h-10 rounded-xl border py-2 text-xs font-bold disabled:opacity-50 ${approachSide === side ? "border-blue-600 bg-blue-600 text-white" : "bg-white text-slate-700"}`}>{side === "left" ? "Vänster" : "Höger"}</button>)}</div> : <p className="mt-2 text-center text-[10px] text-slate-400">0 m = rakt</p>}
                   </div>
                 </div>
-                <p className="mt-1.5 truncate text-center text-[10px] font-bold text-blue-950">{approachSummary}</p>
+                <p className="mt-2 text-center text-[11px] font-bold text-blue-950">{approachSummary}</p>
               </div>
             ) : (
               <div className={`mt-2 rounded-3xl border p-4 ${glass}`}><div className="grid grid-cols-2 gap-2"><button disabled={turnState !== "you"} onClick={() => setDriveHit(true)} className={`rounded-2xl border py-3 text-sm font-bold disabled:opacity-50 ${driveHit ? "border-blue-600 bg-blue-600 text-white" : "bg-white"}`}>Fairway</button><button disabled={turnState !== "you"} onClick={() => setDriveHit(false)} className={`rounded-2xl border py-3 text-sm font-bold disabled:opacity-50 ${!driveHit ? "border-slate-900 bg-slate-900 text-white" : "bg-white"}`}>Miss</button></div><p className="mt-4 text-center font-display text-4xl">{yourValue ?? 220}<span className="ml-1 text-xl text-slate-500">m</span></p><div className="mt-3 grid grid-cols-4 gap-2"><button disabled={turnState !== "you"} onClick={() => setYourValue(Math.max(0, (yourValue ?? 220) - 10))} className="rounded-xl border bg-white py-3 disabled:opacity-50">−10</button><button disabled={turnState !== "you"} onClick={() => setYourValue(Math.max(0, (yourValue ?? 220) - 1))} className="rounded-xl border bg-white py-3 disabled:opacity-50">−1</button><button disabled={turnState !== "you"} onClick={() => setYourValue((yourValue ?? 220) + 1)} className="rounded-xl border bg-white py-3 disabled:opacity-50">+1</button><button disabled={turnState !== "you"} onClick={() => setYourValue((yourValue ?? 220) + 10)} className="rounded-xl border bg-white py-3 disabled:opacity-50">+10</button></div></div>
             )}
-            <button disabled={!canRegister || turnState !== "you"} onClick={register} className={`${approachPlay ? "mt-2 py-3 text-lg" : "mt-3 py-4 text-xl"} flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 font-display text-white disabled:opacity-35`}>{category === "approach" ? "Registrera slag" : "Spela mitt slag"} <ChevronRight className="h-5 w-5" /></button>
+            <button disabled={!canRegister || turnState !== "you"} onClick={register} className={`${approachPlay ? "mt-3 py-3.5 text-lg" : "mt-3 py-4 text-xl"} flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 font-display text-white disabled:opacity-35`}>{category === "approach" ? "Registrera slag" : "Spela mitt slag"} <ChevronRight className="h-5 w-5" /></button>
           </section>
         </>
       ) : null}
