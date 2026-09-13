@@ -1,0 +1,37 @@
+name: Wire SG4 recommender
+
+"on":
+  push:
+    paths:
+      - .github/workflows/wire-sg4-recommender.yml
+
+permissions:
+  contents: write
+
+jobs:
+  wire:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Apply recommender wiring
+        run: python scripts/wire_sg4_recommender.py
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+      - run: bunx vitest run src/lib/sg4-engine.test.ts src/lib/sg4-recommender.test.ts
+
+      - name: Commit recommender wiring
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/lib/sg4-engine.ts src/routes/traning.tsx
+          git commit -m "Wire TikTok-style SG4 recommender"
+          git push origin main
