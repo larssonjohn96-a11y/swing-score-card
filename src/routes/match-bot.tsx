@@ -190,6 +190,7 @@ function BotMatchPage() {
   const [sdBusy, setSdBusy] = useState(false);
   const [suddenDeathWinner, setSuddenDeathWinner] = useState<"you" | "bot" | null>(null);
   const [showSuddenDeathIntro, setShowSuddenDeathIntro] = useState(false);
+  const [winnerCelebration, setWinnerCelebration] = useState<"you" | "bot" | null>(null);
 
   const selectedBot = BOTS.find((item) => item.id === botId);
   const bot = selectedBot && !selectedBot.locked ? selectedBot : BOTS.find((item) => !item.locked) ?? BOTS[0];
@@ -338,7 +339,7 @@ function BotMatchPage() {
       const finalYou = score.you + (winner === "you" ? 1 : 0);
       const finalBot = score.bot + (winner === "bot" ? 1 : 0);
       if (finalYou === finalBot) { setSuddenDeathRound(1); setSdBotText(""); setStep("sudden-death"); }
-      else setStep("result");
+      else { setWinnerCelebration(finalYou > finalBot ? "you" : "bot"); await sleep(2300); setWinnerCelebration(null); setStep("result"); }
     } else {
       const nextIndex = holeIndex + 1;
       resetShotInput(category === "approach" ? holes[nextIndex]?.distance ?? 0 : 0);
@@ -373,7 +374,9 @@ function BotMatchPage() {
     await sleep(900);
     setBotComment(youWin ? randomLine(bot.chat["player-win"]) : randomLine(bot.chat["bot-win"]));
     setSuddenDeathWinner(youWin ? "you" : "bot");
-    setStep("result"); setSdBusy(false);
+    setWinnerCelebration(youWin ? "you" : "bot");
+    await sleep(2300);
+    setWinnerCelebration(null); setStep("result"); setSdBusy(false);
   }
 
   function back() {
@@ -562,6 +565,13 @@ function BotMatchPage() {
           <div className="mt-4 flex items-start gap-2"><span className="text-3xl">{bot.avatar}</span><div className={`rounded-2xl border p-3 text-sm ${glass}`}>“{sdBusy ? "Nu gäller det." : botComment}”</div></div>
                   </>
       ) : null}
+
+      {winnerCelebration ? <div className={`fixed inset-0 z-[70] overflow-hidden ${winnerCelebration === "you" ? "bg-[#061d57]" : "bg-[#5f1018]"}`}>
+        <style>{`@keyframes botWinIn{0%{opacity:0;transform:scale(1.04)}100%{opacity:1;transform:scale(1)}}@keyframes botWinCard{0%{opacity:0;transform:translateY(24px) scale(.92)}55%{opacity:1;transform:translateY(-3px) scale(1.03)}100%{opacity:1;transform:none}}@keyframes botWinShard{0%{opacity:0;transform:translateY(-14vh) rotate(0)}12%{opacity:1}100%{opacity:0;transform:translate3d(var(--bx),112vh,0) rotate(var(--br))}}`}</style>
+        <div className={`absolute inset-0 ${winnerCelebration === "you" ? "bg-[radial-gradient(circle_at_50%_38%,rgba(147,197,253,.46),transparent_34%),linear-gradient(145deg,#2563eb,#071b4f)]" : "bg-[radial-gradient(circle_at_50%_38%,rgba(254,202,202,.42),transparent_34%),linear-gradient(215deg,#ef4444,#591019)]"}`} style={{animation:'botWinIn 620ms ease-out both'}} />
+        {Array.from({length:26}).map((_,i)=><span key={i} className="absolute top-[-8%] h-3 w-1 rounded-full bg-white/85" style={{left:`${4+(i*17)%92}%`,['--bx' as any]:`${(i%2?1:-1)*(16+(i%5)*10)}px`,['--br' as any]:`${180+(i%7)*60}deg`,animation:`botWinShard ${1.45+(i%5)*.13}s ${(i%9)*.06}s ease-out both`}} />)}
+        <div className="relative z-10 flex min-h-screen items-center justify-center px-6 text-center text-white"><div className="relative overflow-hidden rounded-[40px] border border-white/25 bg-white/[.11] px-8 py-9 shadow-[inset_0_1px_0_rgba(255,255,255,.38),0_36px_110px_rgba(0,0,0,.35)] backdrop-blur-3xl" style={{animation:'botWinCard 820ms 180ms cubic-bezier(.2,.8,.2,1) both'}}><span className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/90 to-transparent"/><p className="text-[10px] font-black uppercase tracking-[0.34em] text-white/65">MATCH AVGJORD</p><p className="mt-4 font-display text-6xl leading-none">{winnerCelebration === "you" ? playerName : bot.name}</p><div className="mx-auto mt-5 h-px w-20 bg-white/45"/><p className="mt-5 font-display text-4xl">VINNER</p></div></div>
+      </div> : null}
 
       {step === "result" ? (
         <>
