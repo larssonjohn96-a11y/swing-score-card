@@ -182,8 +182,8 @@ function BotMatchPage() {
   const [yourValue, setYourValue] = useState<number | null>(null);
   const [driveHit, setDriveHit] = useState(true);
   const [turnState, setTurnState] = useState<TurnState>("you");
-  const [approachDistance, setApproachDistance] = useState("");
-  const [approachLateral, setApproachLateral] = useState("");
+  const [approachDistance, setApproachDistance] = useState(0);
+  const [approachLateral, setApproachLateral] = useState(0);
   const [approachSide, setApproachSide] = useState<ApproachSide>("center");
 
   const selectedBot = BOTS.find((item) => item.id === botId);
@@ -205,8 +205,8 @@ function BotMatchPage() {
   function resetShotInput() {
     setYourValue(null);
     setDriveHit(true);
-    setApproachDistance("");
-    setApproachLateral("");
+    setApproachDistance(0);
+    setApproachLateral(0);
     setApproachSide("center");
   }
 
@@ -231,7 +231,7 @@ function BotMatchPage() {
       }
       if (category === "approach") {
         const d = approachDistances[holeNr] ?? 120;
-        return { title: `${d} m`, distance: d, detail: "Skriv in TrackMan-värdena · närmast flaggan vinner" };
+        return { title: `${d} m`, distance: d, detail: "Ställ in TrackMan-längd och sidled · närmast flaggan vinner" };
       }
       return { title: "30 m Fairway Challenge", detail: "Samma fairway och samma slag för båda spelarna" };
     });
@@ -266,14 +266,24 @@ function BotMatchPage() {
     return userValue < botValue ? "you" : userValue > botValue ? "bot" : "tie";
   }
 
-  const parsedApproachDistance = Number(approachDistance);
-  const parsedApproachLateral = approachSide === "center" ? 0 : Number(approachLateral);
-  const approachReady =
-    category === "approach" &&
-    Number.isFinite(parsedApproachDistance) &&
-    parsedApproachDistance > 0 &&
-    (approachSide === "center" || (Number.isFinite(parsedApproachLateral) && parsedApproachLateral >= 0));
+  const approachReady = category === "approach" && approachDistance > 0;
   const canRegister = category === "approach" ? approachReady : yourValue !== null;
+
+  function adjustApproachDistance(delta: number) {
+    if (turnState !== "you") return;
+    setApproachDistance((value) => Math.max(0, value + delta));
+  }
+
+  function adjustApproachLateral(delta: number) {
+    if (turnState !== "you") return;
+    setApproachLateral((value) => Math.max(0, value + delta));
+  }
+
+  function chooseApproachSide(side: ApproachSide) {
+    if (turnState !== "you") return;
+    setApproachSide(side);
+    if (side === "center") setApproachLateral(0);
+  }
 
   async function register() {
     if (!current || !category || turnState !== "you" || !canRegister) return;
@@ -282,9 +292,9 @@ function BotMatchPage() {
     let lockedApproach: ApproachResult | undefined;
     if (category === "approach") {
       lockedApproach = {
-        actualDistance: Math.round(parsedApproachDistance),
-        lateral: Math.round(Math.abs(parsedApproachLateral)),
-        side: parsedApproachLateral === 0 ? "center" : approachSide,
+        actualDistance: Math.round(approachDistance),
+        lateral: approachSide === "center" ? 0 : Math.round(approachLateral),
+        side: approachSide === "center" || approachLateral === 0 ? "center" : approachSide,
       };
       lockedYourValue = approachProximity(lockedApproach, current.distance ?? 120);
     }
@@ -330,6 +340,15 @@ function BotMatchPage() {
     if (category === "putting") return `${hole.botValue} puttar`;
     return hole.botHit ? `${hole.botValue} m · fairway` : `${hole.botValue} m · miss`;
   };
+
+  const approachSummary =
+    approachDistance > 0
+      ? formatApproachResult({
+          actualDistance: approachDistance,
+          lateral: approachSide === "center" ? 0 : approachLateral,
+          side: approachSide === "center" || approachLateral === 0 ? "center" : approachSide,
+        })
+      : "Ställ in slaglängden";
 
   return (
     <main style={LIGHT_SURFACE} className={`mx-auto min-h-screen w-full max-w-md bg-background px-5 pt-6 text-foreground ${step === "bot" ? "pb-40" : "pb-16"}`}>
@@ -402,7 +421,7 @@ function BotMatchPage() {
             {category === "putting" ? (
               <div className={`mt-4 rounded-3xl border p-4 ${glass}`}><p className="text-[9px] font-black uppercase tracking-[0.16em] text-slate-500">Så spelas Putting Match</p><ul className="mt-2 space-y-1">{PUTTING_MATCH_RULES.map((rule) => <li key={rule} className="text-[11px] leading-relaxed text-slate-600">· {rule}</li>)}</ul></div>
             ) : (
-              <div className={`mt-4 rounded-3xl border p-4 ${glass}`}><p className="text-[9px] font-black uppercase tracking-[0.16em] text-slate-500">Så spelas Approach Match</p><p className="mt-2 text-[11px] leading-relaxed text-slate-600">· Ett slag per hål från samma målavstånd.</p><p className="text-[11px] leading-relaxed text-slate-600">· Skriv in längd och sidled direkt från TrackMan.</p><p className="text-[11px] leading-relaxed text-slate-600">· Närmast flaggan vinner hålet.</p></div>
+              <div className={`mt-4 rounded-3xl border p-4 ${glass}`}><p className="text-[9px] font-black uppercase tracking-[0.16em] text-slate-500">Så spelas Approach Match</p><p className="mt-2 text-[11px] leading-relaxed text-slate-600">· Ett slag per hål från samma målavstånd.</p><p className="text-[11px] leading-relaxed text-slate-600">· Ställ in faktisk längd och sidled från TrackMan med knapparna.</p><p className="text-[11px] leading-relaxed text-slate-600">· Närmast flaggan vinner hålet.</p></div>
             )}
             <button onClick={buildHoles} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 via-slate-950 to-emerald-700 py-4 font-display text-xl text-white"><Flag className="h-5 w-5" /> Starta match</button>
           </>
@@ -430,13 +449,33 @@ function BotMatchPage() {
               <div className="mt-2 grid grid-cols-5 gap-2">{[0, 1, 2, 3, 4].map((v) => <button key={v} disabled={turnState !== "you"} onClick={() => setYourValue(v)} className={`rounded-xl border py-4 font-display text-xl disabled:opacity-50 ${yourValue === v ? "border-blue-600 bg-blue-600 text-white" : glass}`}>{v}p</button>)}</div>
             ) : category === "approach" ? (
               <div className={`mt-2 rounded-[28px] border p-4 ${glass}`}>
-                <div className="mb-4 rounded-2xl bg-slate-950 px-4 py-3 text-center text-white"><p className="text-[9px] font-black uppercase tracking-[0.14em] text-slate-300">Mål</p><p className="mt-0.5 font-display text-3xl">{current.distance} m</p></div>
-                <div className="grid grid-cols-2 gap-3">
-                  <label className="block"><span className="mb-2 block text-center text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Längd</span><div className="relative"><input type="number" inputMode="numeric" pattern="[0-9]*" min="1" disabled={turnState !== "you"} value={approachDistance} onChange={(e) => setApproachDistance(e.target.value)} placeholder="83" className="h-20 w-full rounded-2xl border border-slate-300 bg-white px-3 pr-8 text-center font-display text-4xl outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100 disabled:opacity-50" /><span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">m</span></div><span className="mt-1 block text-center text-[10px] text-slate-500">TrackMan-längd</span></label>
-                  <label className="block"><span className="mb-2 block text-center text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Sidled</span><div className="relative"><input type="number" inputMode="numeric" pattern="[0-9]*" min="0" disabled={turnState !== "you" || approachSide === "center"} value={approachSide === "center" ? "0" : approachLateral} onChange={(e) => setApproachLateral(e.target.value)} placeholder="7" className="h-20 w-full rounded-2xl border border-slate-300 bg-white px-3 pr-8 text-center font-display text-4xl outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100 disabled:opacity-50" /><span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">m</span></div><span className="mt-1 block text-center text-[10px] text-slate-500">Avvikelse</span></label>
+                <div className="rounded-2xl bg-slate-950 px-4 py-3 text-center text-white"><p className="text-[9px] font-black uppercase tracking-[0.14em] text-slate-300">Mål</p><p className="mt-0.5 font-display text-3xl">{current.distance} m</p></div>
+
+                <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-3">
+                  <p className="text-center text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Längd</p>
+                  <p className="mt-1 text-center font-display text-5xl text-slate-950">{approachDistance}<span className="ml-1 text-xl text-slate-400">m</span></p>
+                  <div className="mt-3 grid grid-cols-4 gap-2">
+                    <button disabled={turnState !== "you"} onClick={() => adjustApproachDistance(-5)} className="rounded-xl border bg-white py-3 text-sm font-black disabled:opacity-40">−5</button>
+                    <button disabled={turnState !== "you"} onClick={() => adjustApproachDistance(-1)} className="rounded-xl border bg-white py-3 text-sm font-black disabled:opacity-40">−1</button>
+                    <button disabled={turnState !== "you"} onClick={() => adjustApproachDistance(1)} className="rounded-xl border bg-white py-3 text-sm font-black disabled:opacity-40">+1</button>
+                    <button disabled={turnState !== "you"} onClick={() => adjustApproachDistance(5)} className="rounded-xl border bg-white py-3 text-sm font-black disabled:opacity-40">+5</button>
+                  </div>
+                  <p className="mt-2 text-center text-[10px] text-slate-500">Faktisk längd från TrackMan</p>
                 </div>
-                <div className="mt-4 grid grid-cols-3 gap-2">{(["left", "center", "right"] as const).map((side) => <button key={side} disabled={turnState !== "you"} onClick={() => { setApproachSide(side); if (side === "center") setApproachLateral(""); }} className={`rounded-2xl border py-3 text-sm font-bold disabled:opacity-50 ${approachSide === side ? "border-blue-600 bg-blue-600 text-white" : "bg-white text-slate-700"}`}>{side === "left" ? "Vänster" : side === "center" ? "Rakt" : "Höger"}</button>)}</div>
-                <p className="mt-3 text-center text-[11px] text-slate-500">Skriv bara av siffrorna du ser på TrackMan.</p>
+
+                <div className="mt-3 rounded-2xl border border-slate-200 bg-white p-3">
+                  <p className="text-center text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Sidled</p>
+                  <p className="mt-1 text-center font-display text-5xl text-slate-950">{approachSide === "center" ? 0 : approachLateral}<span className="ml-1 text-xl text-slate-400">m</span></p>
+                  <div className="mt-3 grid grid-cols-4 gap-2">
+                    <button disabled={turnState !== "you" || approachSide === "center"} onClick={() => adjustApproachLateral(-5)} className="rounded-xl border bg-white py-3 text-sm font-black disabled:opacity-40">−5</button>
+                    <button disabled={turnState !== "you" || approachSide === "center"} onClick={() => adjustApproachLateral(-1)} className="rounded-xl border bg-white py-3 text-sm font-black disabled:opacity-40">−1</button>
+                    <button disabled={turnState !== "you" || approachSide === "center"} onClick={() => adjustApproachLateral(1)} className="rounded-xl border bg-white py-3 text-sm font-black disabled:opacity-40">+1</button>
+                    <button disabled={turnState !== "you" || approachSide === "center"} onClick={() => adjustApproachLateral(5)} className="rounded-xl border bg-white py-3 text-sm font-black disabled:opacity-40">+5</button>
+                  </div>
+                  <div className="mt-3 grid grid-cols-3 gap-2">{(["left", "center", "right"] as const).map((side) => <button key={side} disabled={turnState !== "you"} onClick={() => chooseApproachSide(side)} className={`rounded-2xl border py-3 text-sm font-bold disabled:opacity-50 ${approachSide === side ? "border-blue-600 bg-blue-600 text-white" : "bg-white text-slate-700"}`}>{side === "left" ? "Vänster" : side === "center" ? "Rakt" : "Höger"}</button>)}</div>
+                </div>
+
+                <div className="mt-3 rounded-2xl bg-blue-50 px-3 py-3 text-center"><p className="text-[9px] font-black uppercase tracking-[0.14em] text-blue-600">Resultat</p><p className="mt-1 text-sm font-bold text-blue-950">{approachSummary}</p></div>
               </div>
             ) : (
               <div className={`mt-2 rounded-3xl border p-4 ${glass}`}><div className="grid grid-cols-2 gap-2"><button disabled={turnState !== "you"} onClick={() => setDriveHit(true)} className={`rounded-2xl border py-3 text-sm font-bold disabled:opacity-50 ${driveHit ? "border-blue-600 bg-blue-600 text-white" : "bg-white"}`}>Fairway</button><button disabled={turnState !== "you"} onClick={() => setDriveHit(false)} className={`rounded-2xl border py-3 text-sm font-bold disabled:opacity-50 ${!driveHit ? "border-slate-900 bg-slate-900 text-white" : "bg-white"}`}>Miss</button></div><p className="mt-4 text-center font-display text-4xl">{yourValue ?? 220}<span className="ml-1 text-xl text-slate-500">m</span></p><div className="mt-3 grid grid-cols-4 gap-2"><button disabled={turnState !== "you"} onClick={() => setYourValue(Math.max(0, (yourValue ?? 220) - 10))} className="rounded-xl border bg-white py-3 disabled:opacity-50">−10</button><button disabled={turnState !== "you"} onClick={() => setYourValue(Math.max(0, (yourValue ?? 220) - 1))} className="rounded-xl border bg-white py-3 disabled:opacity-50">−1</button><button disabled={turnState !== "you"} onClick={() => setYourValue((yourValue ?? 220) + 1)} className="rounded-xl border bg-white py-3 disabled:opacity-50">+1</button><button disabled={turnState !== "you"} onClick={() => setYourValue((yourValue ?? 220) + 10)} className="rounded-xl border bg-white py-3 disabled:opacity-50">+10</button></div></div>
