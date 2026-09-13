@@ -1,0 +1,37 @@
+name: Apply SG4 smart surfaces
+
+"on":
+  push:
+    paths:
+      - .github/workflows/apply-sg4-surfaces.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Apply recommendation surfaces
+        run: python scripts/apply_sg4_surfaces.py
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+      - run: bunx vitest run src/lib/sg4-engine.test.ts src/lib/sg4-recommender.test.ts
+
+      - name: Commit smart surfaces
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/routes/index.tsx src/routes/spela.tsx src/routes/match.tsx src/routes/match-bot.tsx
+          git commit -m "Apply SG4 brain across key surfaces"
+          git push origin main
