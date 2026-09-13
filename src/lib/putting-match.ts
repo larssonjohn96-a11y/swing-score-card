@@ -1,9 +1,11 @@
+import { selectNextEngineDistance } from "@/lib/sg4-engine";
+
 /**
- * Gemensam regelkälla för SG4:s standardiserade Putting Match.
+ * Gemensam regelkälla för SG4:s Putting Match.
  *
  * Ett enda spelformat – bara matchlängden (3/5/7 hål) skiljer.
  * Återanvänds av bot, vän, turnering och framtida ranked-läge.
- * Gäller INTE tränings-/diagnostiska puttingtester.
+ * Gäller INTE standardiserade HCP-tester.
  */
 
 export type PuttingMatchLength = 3 | 5 | 7;
@@ -28,6 +30,12 @@ export const PUTTING_MATCH_RULES = [
   "Vid lika blir det sudden death från 11 m: ett slag var, närmast flaggan vinner. Lika eller båda sänkta innebär en ny omgång.",
 ];
 
+const PUTTING_DISTANCE_BANDS = [
+  { min: 1, max: 7 },
+  { min: 8, max: 14 },
+  { min: 15, max: 22 },
+] as const;
+
 function shuffle<T>(items: readonly T[]) {
   const next = [...items];
   for (let i = next.length - 1; i > 0; i--) {
@@ -37,23 +45,41 @@ function shuffle<T>(items: readonly T[]) {
   return next;
 }
 
-function takeRandomUnique(min: number, max: number, count: number) {
-  return shuffle(Array.from({ length: max - min + 1 }, (_, index) => min + index)).slice(0, count);
-}
-
 /**
- * Slumpar hela meter mellan 1 och 22 med balanserad spridning över korta,
- * mellanlånga och långa puttar. Avstånden är unika inom respektive match.
+ * Behåller kort/medel/lång-spridningen, men SG4-motorn väljer exakt avstånd
+ * utifrån spelarens historik och aktuell balans mellan flow och inlärning.
+ * Avstånden hålls unika inom matchen när intervallet tillåter det.
  */
 export function generatePuttingMatchDistances(length: PuttingMatchLength): number[] {
   const quotas = length === 3 ? [1, 1, 1] : length === 5 ? [2, 1, 2] : [2, 3, 2];
-  const distances = [
-    ...takeRandomUnique(1, 7, quotas[0]),
-    ...takeRandomUnique(8, 14, quotas[1]),
-    ...takeRandomUnique(15, 22, quotas[2]),
-  ];
+  const slots = shuffle(
+    PUTTING_DISTANCE_BANDS.flatMap((band, index) =>
+      Array.from({ length: quotas[index] }, () => band),
+    ),
+  );
+  const distances: number[] = [];
 
-  return shuffle(distances);
+  for (const band of slots) {
+    const unused = Array.from(
+      { length: band.max - band.min + 1 },
+      (_, index) => band.min + index,
+    ).filter((distance) => !distances.includes(distance));
+    const allowedDistances = unused.length
+      ? unused
+      : Array.from({ length: band.max - band.min + 1 }, (_, index) => band.min + index);
+
+    distances.push(
+      selectNextEngineDistance({
+        skill: "putting",
+        objective: "balanced",
+        min: band.min,
+        max: band.max,
+        previousDistance: distances.at(-1),
+        allowedDistances,
+      }),
+    );
+  }
+  return distances;
 }
 
 export function formatPuttingDistance(distance: number) {
