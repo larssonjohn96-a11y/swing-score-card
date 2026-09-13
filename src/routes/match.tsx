@@ -181,6 +181,7 @@ function MatchPlayPage() {
   const [sdBlueSunk, setSdBlueSunk] = useState(false);
   const [sdRedSunk, setSdRedSunk] = useState(false);
   const [sdMessage, setSdMessage] = useState("");
+  const [showSuddenDeathIntro, setShowSuddenDeathIntro] = useState(false);
   const [blueStrokes, setBlueStrokes] = useState(1);
   const [redStrokes, setRedStrokes] = useState(1);
   const [blueStrokesSelected, setBlueStrokesSelected] = useState(false);
@@ -197,6 +198,13 @@ function MatchPlayPage() {
   const [approachLateralDirection, setApproachLateralDirection] = useState<"left" | "right">("left");
   const [approachLateral, setApproachLateral] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (step !== "sudden-death") return;
+    setShowSuddenDeathIntro(true);
+    const timer = window.setTimeout(() => setShowSuddenDeathIntro(false), 1450);
+    return () => window.clearTimeout(timer);
+  }, [step, suddenDeathRound]);
   const [transitionMessage, setTransitionMessage] = useState<string | null>(null);
   const [editingHoleIndex, setEditingHoleIndex] = useState<number | null>(null);
   const [returnHoleIndex, setReturnHoleIndex] = useState<number | null>(null);
@@ -533,16 +541,16 @@ function MatchPlayPage() {
     setBluePoints(typeof hole.bluePoints === "number" ? hole.bluePoints : null); setRedPoints(typeof hole.redPoints === "number" ? hole.redPoints : null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
-  function recordSuddenDeath() {
-    if ((!sdBlueSunk && sdBlue === null) || (!sdRedSunk && sdRed === null)) return;
-    const tied = (sdBlueSunk && sdRedSunk) || (!sdBlueSunk && !sdRedSunk && sdBlue === sdRed);
-    if (tied) {
-      setSdMessage("Lika igen · ny straff från 11 m");
-      window.setTimeout(() => { setSuddenDeathRound((r) => r + 1); setSdBlue(null); setSdRed(null); setSdBlueSunk(false); setSdRedSunk(false); setSdMessage(""); }, 850);
+  function recordSuddenDeath(outcome: "blue" | "red" | "tie") {
+    if (outcome === "tie") {
+      setSdMessage("Båda satte den · vi fortsätter");
+      window.setTimeout(() => {
+        setSuddenDeathRound((r) => r + 1);
+        setSdMessage("");
+      }, 900);
       return;
     }
-    const blueWins = sdBlueSunk || (!sdRedSunk && !sdBlueSunk && (sdBlue ?? Infinity) < (sdRed ?? Infinity));
-    setFinalText(`${blueWins ? blueLabel : redLabel} vinner i sudden death · 11 m`);
+    setFinalText(`${outcome === "blue" ? blueLabel : redLabel} vinner i sudden death · närmast hålet`);
     setStep("result");
   }
 
@@ -619,13 +627,41 @@ function MatchPlayPage() {
       {isScoredHole && lastScoredHoleIndex >= 0 ? <button type="button" disabled={isSubmitting} onClick={() => editScoredHole(lastScoredHoleIndex)} className="mt-2 w-full py-2 text-center text-[10px] font-bold text-slate-500 underline decoration-slate-300 underline-offset-4 disabled:opacity-40">Redigera senaste {unitLabel.toLowerCase()}</button> : null}</> : null}
 
     {step === "sudden-death" ? <>
-      <section className="pt-4 text-center"><p className="text-[11px] font-black uppercase tracking-[0.28em] text-red-600">Sudden death</p><h1 className="mt-2 font-display text-5xl">11 meter</h1><p className="mt-2 text-sm font-semibold text-slate-700">1 slag · närmast flaggan vinner allt</p><p className="mt-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">Straff {suddenDeathRound}</p></section>
-      <div className="mt-6 grid grid-cols-2 gap-3">
-        <section className={`rounded-[26px] border p-4 ${blueGlass}`}><p className="text-center text-xs font-black text-blue-700">{blueLabel}</p><button onClick={() => { setSdBlueSunk(true); setSdBlue(null); }} className={`mt-3 w-full rounded-2xl border py-3 text-sm font-black ${sdBlueSunk ? "border-blue-600 bg-blue-600 text-white" : "border-blue-200 bg-white/80 text-blue-700"}`}>Sänkt</button><div className="mt-2 grid grid-cols-2 gap-1.5">{[0.5, 1, 1.5, 2, 3, 5, 8].map((v) => <button key={v} onClick={() => { setSdBlueSunk(false); setSdBlue(v); }} className={`rounded-xl border px-1 py-2 text-xs font-bold ${!sdBlueSunk && sdBlue === v ? "border-blue-600 bg-blue-600 text-white" : "border-slate-200 bg-white/80"}`}>{v} m</button>)}</div></section>
-        <section className={`rounded-[26px] border p-4 ${redGlass}`}><p className="text-center text-xs font-black text-red-700">{redLabel}</p><button onClick={() => { setSdRedSunk(true); setSdRed(null); }} className={`mt-3 w-full rounded-2xl border py-3 text-sm font-black ${sdRedSunk ? "border-red-600 bg-red-600 text-white" : "border-red-200 bg-white/80 text-red-700"}`}>Sänkt</button><div className="mt-2 grid grid-cols-2 gap-1.5">{[0.5, 1, 1.5, 2, 3, 5, 8].map((v) => <button key={v} onClick={() => { setSdRedSunk(false); setSdRed(v); }} className={`rounded-xl border px-1 py-2 text-xs font-bold ${!sdRedSunk && sdRed === v ? "border-red-600 bg-red-600 text-white" : "border-slate-200 bg-white/80"}`}>{v} m</button>)}</div></section>
-      </div>
-      {sdMessage ? <div className="mt-4 rounded-2xl bg-amber-50 p-3 text-center text-sm font-bold text-amber-800">{sdMessage}</div> : null}
-      <button disabled={(!sdBlueSunk && sdBlue === null) || (!sdRedSunk && sdRed === null)} onClick={recordSuddenDeath} className="mt-5 w-full rounded-2xl bg-slate-950 py-4 font-display text-xl text-white disabled:opacity-30">Avgör straffen</button>
+      {showSuddenDeathIntro ? <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/95 px-6 text-center backdrop-blur-md">
+        <div className="animate-in zoom-in-75 fade-in duration-500">
+          <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full border border-red-400/40 bg-red-500/10 shadow-[0_0_60px_rgba(239,68,68,0.35)]"><Target className="h-9 w-9 animate-pulse text-red-400" /></div>
+          <p className="text-[11px] font-black uppercase tracking-[0.38em] text-red-400">Matchen är lika</p>
+          <h1 className="mt-3 font-display text-6xl leading-none text-white">SUDDEN<br/>DEATH</h1>
+          <p className="mt-4 text-sm font-bold text-slate-300">Ett slag. Närmast hålet vinner allt.</p>
+        </div>
+      </div> : null}
+      <section className="pt-3 text-center">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-50 ring-1 ring-red-100"><Target className="h-6 w-6 text-red-600" /></div>
+        <p className="mt-4 text-[10px] font-black uppercase tracking-[0.32em] text-red-600">Sudden death</p>
+        <h1 className="mt-1 font-display text-5xl leading-none">11 meter</h1>
+        <p className="mt-3 text-sm font-semibold text-slate-700">Ett slag var · närmast hålet vinner matchen</p>
+        <div className="mx-auto mt-3 inline-flex rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Avgörande {suddenDeathRound}</div>
+      </section>
+
+      <section className={`mt-6 rounded-[30px] border p-4 shadow-xl shadow-slate-200/50 ${glass}`}>
+        <p className="text-center text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Vem var närmast hålet?</p>
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <button onClick={() => recordSuddenDeath("blue")} className={`min-h-28 rounded-[24px] border p-4 text-center transition active:scale-[0.98] ${blueGlass}`}>
+            <span className="block text-[9px] font-black uppercase tracking-[0.16em] text-blue-500">Närmast</span>
+            <span className="mt-2 block font-display text-2xl leading-tight text-blue-700">{blueLabel}</span>
+          </button>
+          <button onClick={() => recordSuddenDeath("red")} className={`min-h-28 rounded-[24px] border p-4 text-center transition active:scale-[0.98] ${redGlass}`}>
+            <span className="block text-[9px] font-black uppercase tracking-[0.16em] text-red-500">Närmast</span>
+            <span className="mt-2 block font-display text-2xl leading-tight text-red-700">{redLabel}</span>
+          </button>
+        </div>
+        <button onClick={() => recordSuddenDeath("tie")} className="mt-3 w-full rounded-[22px] border border-slate-300 bg-white/90 px-4 py-4 text-center transition active:scale-[0.99]">
+          <span className="block font-display text-xl text-slate-950">Lika</span>
+          <span className="mt-0.5 block text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">Båda satte den</span>
+        </button>
+      </section>
+      {sdMessage ? <div className="mt-4 animate-pulse rounded-2xl border border-amber-200 bg-amber-50 p-3 text-center text-sm font-black text-amber-800">{sdMessage}</div> : null}
+      <p className="mt-4 text-center text-[10px] font-semibold text-slate-400">Sudden Death avgör endast matchen och räknas inte in i ordinarie statistik.</p>
     </> : null}
 
     {step === "result" ? <><section className="mt-6 overflow-hidden rounded-[28px] border border-slate-300/85 bg-white/90 shadow-[0_22px_52px_-30px_rgba(15,23,42,.5)] backdrop-blur-2xl"><div className="px-4 pt-4 text-center"><p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">{selectedCategory?.title} · Matchresultat</p></div><div className="mt-3 grid min-h-[104px] grid-cols-[1fr_88px_1fr] items-stretch"><div style={resultLeader === "blue" ? { clipPath: "polygon(0 0,86% 0,100% 50%,86% 100%,0 100%)" } : undefined} className={`flex min-w-0 flex-col items-center justify-center px-3 pr-5 text-center ${resultLeader === "blue" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-700"}`}><p className="truncate text-[11px] font-black uppercase">{blueLabel}</p><p className={`mt-2 font-display text-3xl ${resultLeader === "blue" ? "text-white" : "text-blue-700"}`}>{scoringMode === "match" ? score.blue : isShortGame ? score.bluePoints : score.blueStrokes}</p><p className={`text-[8px] font-bold uppercase tracking-[0.13em] ${resultLeader === "blue" ? "text-blue-100" : "text-slate-500"}`}>{scoringMode === "match" ? "vunna hål" : isShortGame ? "poäng" : "slag"}</p></div><div className="relative z-10 flex flex-col items-center justify-center bg-white px-1 text-center"><Trophy className="mb-1 h-4 w-4 text-amber-500" /><p className="font-display text-[26px] leading-none text-slate-950">{resultScoreText}</p><p className="mt-1 text-[8px] font-black uppercase tracking-[0.12em] text-slate-500">Slutresultat</p></div><div style={resultLeader === "red" ? { clipPath: "polygon(14% 0,100% 0,100% 100%,14% 100%,0 50%)" } : undefined} className={`flex min-w-0 flex-col items-center justify-center px-3 pl-5 text-center ${resultLeader === "red" ? "bg-red-600 text-white" : "bg-slate-100 text-slate-700"}`}><p className="truncate text-[11px] font-black uppercase">{redLabel}</p><p className={`mt-2 font-display text-3xl ${resultLeader === "red" ? "text-white" : "text-red-700"}`}>{scoringMode === "match" ? score.red : isShortGame ? score.redPoints : score.redStrokes}</p><p className={`text-[8px] font-bold uppercase tracking-[0.13em] ${resultLeader === "red" ? "text-red-100" : "text-slate-500"}`}>{scoringMode === "match" ? "vunna hål" : isShortGame ? "poäng" : "slag"}</p></div></div><div className="border-t border-slate-200 px-4 py-3 text-center"><p className="text-xs font-bold text-slate-800">{finalText}</p>{scoringMode === "match" ? <p className="mt-1 text-[10px] font-semibold text-slate-500">{blueLabel} vann {score.blue} hål · {redLabel} vann {score.red} hål{tiedHoles ? ` · ${tiedHoles} delade` : ""}</p> : null}</div></section><section className="mt-5"><div className="mb-3 flex items-end justify-between"><div><p className="text-[9px] font-bold uppercase tracking-[0.16em] text-slate-500">Scorecard</p><h2 className="font-display text-2xl">Hela tävlingen</h2></div><p className="text-[10px] font-bold uppercase text-slate-500">{score.played} spelade</p></div><div className={`overflow-hidden rounded-[24px] border ${glass}`}><div className="overflow-x-auto"><div className="min-w-max"><div className="grid" style={{ gridTemplateColumns: `minmax(92px,1.35fr) repeat(${matchLength},${isApproach ? 58 : 48}px)` }}><div className="border-b border-r border-slate-200 bg-slate-100 px-3 py-2 text-[10px] font-bold text-slate-600">Hål</div>{holes.map((_, i) => <div key={`rh-${i}`} className="border-b border-r border-slate-200 bg-slate-100 py-2 text-center text-[10px] font-bold text-slate-700">{i + 1}</div>)}<div className="border-b border-r border-slate-200 px-3 py-2 text-[10px] font-bold text-blue-700 truncate">{blueLabel}</div>{holes.map((h, i) => { const value = isShortGame ? h.bluePoints : isApproach ? h.blueApproach?.proximity : isPutting ? h.blueStrokes : undefined; return <div key={`rb-${i}`} className="flex items-center justify-center border-b border-r border-slate-200 py-2 text-xs font-bold text-blue-700"><span className={`inline-flex min-w-[34px] items-center justify-center rounded-md px-1.5 py-1 ${h.winner === "blue" ? "bg-blue-600 text-white" : ""}`}>{typeof value === "number" ? isShortGame ? `${value}p` : isApproach ? `${value.toFixed(1)}m` : value : h.winner === "blue" ? "✓" : h.winner === "tie" ? "AS" : "–"}</span></div>; })}<div className="border-b border-r border-slate-200 px-3 py-2 text-[10px] font-bold text-red-700 truncate">{redLabel}</div>{holes.map((h, i) => { const value = isShortGame ? h.redPoints : isApproach ? h.redApproach?.proximity : isPutting ? h.redStrokes : undefined; return <div key={`rr-${i}`} className="flex items-center justify-center border-b border-r border-slate-200 py-2 text-xs font-bold text-red-700"><span className={`inline-flex min-w-[34px] items-center justify-center rounded-md px-1.5 py-1 ${h.winner === "red" ? "bg-red-600 text-white" : ""}`}>{typeof value === "number" ? isShortGame ? `${value}p` : isApproach ? `${value.toFixed(1)}m` : value : h.winner === "red" ? "✓" : h.winner === "tie" ? "AS" : "–"}</span></div>; })}<div className="border-r border-slate-200 bg-slate-50 px-3 py-2 text-[10px] font-bold text-slate-600">Vinnare</div>{holes.map((h, i) => <div key={`rw-${i}`} className={`border-r border-slate-200 bg-slate-50 py-2 text-center text-[9px] font-bold ${h.winner === "blue" ? "text-blue-700" : h.winner === "red" ? "text-red-700" : "text-slate-600"}`}>{h.winner === "blue" ? "B" : h.winner === "red" ? "R" : "AS"}</div>)}</div></div></div></div></section><section className="mt-5 space-y-3"><button onClick={rematch} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white"><RotateCcw className="h-5 w-5" /> Rematch</button><button onClick={newCompetition} className={`flex w-full items-center justify-center gap-2 rounded-2xl border py-4 font-display text-xl text-slate-900 ${glass}`}><Trophy className="h-5 w-5" /> Ny tävling</button><Link to="/" className="flex w-full items-center justify-center rounded-2xl border border-slate-300 bg-white/70 py-4 text-sm font-bold text-slate-700 backdrop-blur-xl">Hem</Link></section></> : null}
