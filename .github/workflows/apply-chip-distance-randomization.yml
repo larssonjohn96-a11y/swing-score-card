@@ -22,8 +22,11 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+          import re
+          import textwrap
 
-          helper = '''/**
+          helper = textwrap.dedent('''\
+          /**
            * Gemensam regelkälla för SG4:s Chip Match.
            * Ett enda spel – bara matchlängden (3/5/7 hål) skiljer.
            */
@@ -31,17 +34,11 @@ jobs:
           export type ChipMatchLength = 3 | 5 | 7;
           export type ChipDistanceBandId = "short" | "medium" | "long";
 
-          export const CHIP_MATCH_FORMATS: Array<{
-            length: ChipMatchLength;
-            name: string;
-            label: string;
-            detail: string;
-            recommended?: boolean;
-          }> = [
+          export const CHIP_MATCH_FORMATS = [
             { length: 3, name: "3 hål", label: "", detail: "" },
             { length: 5, name: "5 hål", label: "", detail: "", recommended: true },
             { length: 7, name: "7 hål", label: "", detail: "" },
-          ];
+          ] as const;
 
           export const CHIP_DISTANCE_BANDS = [
             { id: "short", label: "Kort chip", range: "8–14 m", min: 8, max: 14 },
@@ -84,11 +81,6 @@ jobs:
             return CHIP_DISTANCE_BANDS[2];
           }
 
-          /**
-           * Skapar en balanserad mix av korta, medel och långa chippar och
-           * slumpar därefter ordningen. Varje håls meter slumpas oberoende,
-           * så samma exakta avstånd får förekomma flera gånger i samma match.
-           */
           export function generateChipMatchDistances(length: ChipMatchLength): number[] {
             const quotas = length === 3 ? [1, 1, 1] : length === 5 ? [2, 1, 2] : [2, 3, 2];
             const distances = CHIP_DISTANCE_BANDS.flatMap((band, index) =>
@@ -96,96 +88,83 @@ jobs:
             );
             return shuffle(distances);
           }
-          '''
+          ''')
           Path('src/lib/chip-match.ts').write_text(helper)
 
           p = Path('src/routes/match.tsx')
           t = p.read_text()
-          putting_import = 'import { formatPuttingDistance, generatePuttingMatchDistances } from "@/lib/putting-match";\n'
-          chip_import = 'import { generateChipMatchDistances, getChipDistanceBand } from "@/lib/chip-match";\n'
-          if chip_import not in t:
-            if putting_import not in t:
-              raise SystemExit('match.tsx: putting import anchor not found')
-            t = t.replace(putting_import, putting_import + chip_import, 1)
+          if 'from "@/lib/chip-match"' not in t:
+            t = t.replace(
+              'import { formatPuttingDistance, generatePuttingMatchDistances } from "@/lib/putting-match";\n',
+              'import { formatPuttingDistance, generatePuttingMatchDistances } from "@/lib/putting-match";\nimport { generateChipMatchDistances, getChipDistanceBand } from "@/lib/chip-match";\n',
+              1,
+            )
 
-          old_challenge = '''  if (category === "around-the-green") {
-            return { eyebrow: "Chippning", title: `${rand(10, 30)} m`, detail: `Närmast hålet vinner.${suffix}` };
-          }'''
-          new_challenge = '''  if (category === "around-the-green") {
-            const distance = approachDistance ?? rand(8, 30);
-            const band = getChipDistanceBand(distance);
-            return { eyebrow: band.label, title: `${distance} m`, detail: `${band.range} · samma avstånd för båda · högst poäng vinner hålet${suffix}` };
-          }'''
-          if old_challenge in t:
-            t = t.replace(old_challenge, new_challenge, 1)
-          elif new_challenge not in t:
-            raise SystemExit('match.tsx: chip challenge anchor not found')
+          t, n1 = re.subn(
+            r'  if \(category === "around-the-green"\) \{\n\s*return \{ eyebrow: "Chippning", title: `\$\{rand\(10, 30\)\} m`, detail: `Närmast hålet vinner\.\$\{suffix\}` \};\n\s*\}',
+            '  if (category === "around-the-green") {\n    const distance = approachDistance ?? rand(8, 30);\n    const band = getChipDistanceBand(distance);\n    return { eyebrow: band.label, title: `${distance} m`, detail: `${band.range} · samma avstånd för båda · högst poäng vinner hålet${suffix}` };\n  }',
+            t,
+            count=1,
+          )
+          if n1 == 0 and 'const band = getChipDistanceBand(distance);' not in t:
+            raise SystemExit('match.tsx: challenge pattern not found')
 
-          old_holes = ''': isShortGame
-              ? Array.from({ length: matchLength }, () => ({ challenge: generateChallenge(category, matchType, mode), winner: null as HoleWinner }))'''
-          new_holes = ''': isShortGame
-              ? generateChipMatchDistances(matchLength).map((distance) => ({ challenge: generateChallenge(category, matchType, mode, shortGameLies, distance), winner: null as HoleWinner }))'''
-          if old_holes in t:
-            t = t.replace(old_holes, new_holes, 1)
-          elif new_holes not in t:
-            raise SystemExit('match.tsx: chip hole generation anchor not found')
+          t, n2 = re.subn(
+            r': isShortGame\n\s*\? Array\.from\(\{ length: matchLength \}, \(\) => \(\{ challenge: generateChallenge\(category, matchType, mode\), winner: null as HoleWinner \}\)\)',
+            ': isShortGame\n      ? generateChipMatchDistances(matchLength).map((distance) => ({ challenge: generateChallenge(category, matchType, mode, shortGameLies, distance), winner: null as HoleWinner }))',
+            t,
+            count=1,
+          )
+          if n2 == 0 and 'generateChipMatchDistances(matchLength).map((distance)' not in t:
+            raise SystemExit('match.tsx: hole generation pattern not found')
 
-          old_heading = '''<h1 className="mt-1 font-display text-4xl">{isPgaPutting ? "Matchlängd" : scoringMode === "stroke" ? "Antal hål" : "Bäst av"}</h1>{isPgaPutting ? <p className="mt-2 text-sm text-slate-600">Välj 3, 5 eller 7 hål. Alla längder får en mix av korta, mellanlånga och långa PGA Tour-avstånd.</p> : null}'''
-          new_heading = '''<h1 className="mt-1 font-display text-4xl">{isShortGame ? "Välj antal hål" : isPgaPutting ? "Matchlängd" : scoringMode === "stroke" ? "Antal hål" : "Bäst av"}</h1>{isShortGame ? <p className="mt-2 text-sm text-slate-600">Korta 8–14 m · Medel 15–22 m · Långa 23–30 m. Avstånden slumpas inför varje match.</p> : isPgaPutting ? <p className="mt-2 text-sm text-slate-600">Välj 3, 5 eller 7 hål. Alla längder får en mix av korta, mellanlånga och långa PGA Tour-avstånd.</p> : null}'''
-          if old_heading in t:
-            t = t.replace(old_heading, new_heading, 1)
-          elif new_heading not in t:
-            raise SystemExit('match.tsx: length heading anchor not found')
+          old = '<h1 className="mt-1 font-display text-4xl">{isPgaPutting ? "Matchlängd" : scoringMode === "stroke" ? "Antal hål" : "Bäst av"}</h1>{isPgaPutting ? <p className="mt-2 text-sm text-slate-600">Välj 3, 5 eller 7 hål. Alla längder får en mix av korta, mellanlånga och långa PGA Tour-avstånd.</p> : null}'
+          new = '<h1 className="mt-1 font-display text-4xl">{isShortGame ? "Välj antal hål" : isPgaPutting ? "Matchlängd" : scoringMode === "stroke" ? "Antal hål" : "Bäst av"}</h1>{isShortGame ? <p className="mt-2 text-sm text-slate-600">Korta 8–14 m · Medel 15–22 m · Långa 23–30 m. Avstånden slumpas inför varje match.</p> : isPgaPutting ? <p className="mt-2 text-sm text-slate-600">Välj 3, 5 eller 7 hål. Alla längder får en mix av korta, mellanlånga och långa PGA Tour-avstånd.</p> : null}'
+          if old in t:
+            t = t.replace(old, new, 1)
+          elif new not in t:
+            raise SystemExit('match.tsx: length heading pattern not found')
           p.write_text(t)
 
           p = Path('src/routes/match-bot.tsx')
           t = p.read_text()
-          approach_anchor = '} from "@/lib/putting-match";\nimport {\n  APPROACH_MATCH_FORMATS,'
-          bot_chip_import = '} from "@/lib/putting-match";\nimport { generateChipMatchDistances, getChipDistanceBand } from "@/lib/chip-match";\nimport {\n  APPROACH_MATCH_FORMATS,'
           if 'from "@/lib/chip-match"' not in t:
-            if approach_anchor not in t:
-              raise SystemExit('match-bot.tsx: import anchor not found')
-            t = t.replace(approach_anchor, bot_chip_import, 1)
+            t = t.replace(
+              '} from "@/lib/putting-match";\nimport {\n  APPROACH_MATCH_FORMATS,',
+              '} from "@/lib/putting-match";\nimport { generateChipMatchDistances, getChipDistanceBand } from "@/lib/chip-match";\nimport {\n  APPROACH_MATCH_FORMATS,',
+              1,
+            )
 
-          old_lists = '''    const puttingDistances = category === "putting" ? generatePuttingMatchDistances(length) : [];
-              const approachDistances = category === "approach" ? generateApproachMatchDistances(length) : [];'''
-          new_lists = '''    const puttingDistances = category === "putting" ? generatePuttingMatchDistances(length) : [];
-              const chipDistances = category === "around-the-green" ? generateChipMatchDistances(length) : [];
-              const approachDistances = category === "approach" ? generateApproachMatchDistances(length) : [];'''
-          if old_lists in t:
-            t = t.replace(old_lists, new_lists, 1)
-          elif 'const chipDistances = category === "around-the-green" ? generateChipMatchDistances(length) : [];' not in t:
-            raise SystemExit('match-bot.tsx: distance list anchor not found')
-
-          old_bot_hole = '''      if (category === "around-the-green") {
+          t = t.replace(
+            '    const puttingDistances = category === "putting" ? generatePuttingMatchDistances(length) : [];\n    const approachDistances = category === "approach" ? generateApproachMatchDistances(length) : [];',
+            '    const puttingDistances = category === "putting" ? generatePuttingMatchDistances(length) : [];\n    const chipDistances = category === "around-the-green" ? generateChipMatchDistances(length) : [];\n    const approachDistances = category === "approach" ? generateApproachMatchDistances(length) : [];',
+            1,
+          )
+          old_bot = '''      if (category === "around-the-green") {
                 const d = rand(10, 30);
                 return { title: `${d} m`, distance: d, detail: "Ett slag · högst zonpoäng vinner" };
               }'''
-          new_bot_hole = '''      if (category === "around-the-green") {
-                const d = chipDistances[holeNr] ?? 15;
-                const band = getChipDistanceBand(d);
-                return { title: `${d} m`, distance: d, detail: `${band.label} · ${band.range} · samma avstånd för båda` };
-              }'''
-          if old_bot_hole in t:
-            t = t.replace(old_bot_hole, new_bot_hole, 1)
-          elif new_bot_hole not in t:
-            raise SystemExit('match-bot.tsx: chip hole anchor not found')
+          # Match actual indentation flexibly instead.
+          t, n3 = re.subn(
+            r'      if \(category === "around-the-green"\) \{\n\s*const d = rand\(10, 30\);\n\s*return \{ title: `\$\{d\} m`, distance: d, detail: "Ett slag · högst zonpoäng vinner" \};\n\s*\}',
+            '      if (category === "around-the-green") {\n        const d = chipDistances[holeNr] ?? 15;\n        const band = getChipDistanceBand(d);\n        return { title: `${d} m`, distance: d, detail: `${band.label} · ${band.range} · samma avstånd för båda` };\n      }',
+            t,
+            count=1,
+          )
+          if n3 == 0 and 'const d = chipDistances[holeNr] ?? 15;' not in t:
+            raise SystemExit('match-bot.tsx: chip hole pattern not found')
+          if 'const chipDistances = category === "around-the-green" ? generateChipMatchDistances(length) : [];' not in t:
+            raise SystemExit('match-bot.tsx: chip distance list not inserted')
           p.write_text(t)
           PY
 
-      - name: Verify build
-        uses: oven-sh/setup-bun@v2
+      - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
 
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-
-      - name: Build
-        run: bun run build
-
-      - name: Typecheck
-        run: bunx tsc --noEmit
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+      - run: bunx tsc --noEmit
 
       - name: Commit changes
         shell: bash
