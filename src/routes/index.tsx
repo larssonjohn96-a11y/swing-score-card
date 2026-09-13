@@ -73,10 +73,10 @@ function Home() {
         <span className="font-display text-2xl leading-none tracking-wide text-foreground">SG4</span>
         <div className="flex shrink-0 items-center gap-2">
           <ThemeToggle />
-          <button type="button" onClick={shareProfile} aria-label="Dela" className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground"><Share2 className="h-4 w-4" /></button>
+          <button type="button" onClick={shareProfile} aria-label="Dela" className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-background text-muted-foreground"><Share2 className="h-4 w-4" /></button>
           {user ? (
             <div className="relative">
-              <button type="button" onClick={() => setProfileMenuOpen((open) => !open)} className="flex items-center gap-1 rounded-full border border-border px-3.5 py-2 text-sm font-medium text-muted-foreground">{displayName ?? "Konto"}<ChevronDown className={`h-3.5 w-3.5 ${profileMenuOpen ? "rotate-180" : ""}`} /></button>
+              <button type="button" onClick={() => setProfileMenuOpen((open) => !open)} className="flex items-center gap-1 rounded-full border border-border bg-background px-3.5 py-2 text-sm font-medium text-muted-foreground">{displayName ?? "Konto"}<ChevronDown className={`h-3.5 w-3.5 ${profileMenuOpen ? "rotate-180" : ""}`} /></button>
               {profileMenuOpen ? <div className="absolute right-0 z-50 mt-2 w-44 overflow-hidden rounded-2xl border border-border bg-card p-1.5 shadow-xl"><Link to="/konto" onClick={() => setProfileMenuOpen(false)} className="flex w-full items-center rounded-xl px-3 py-2.5 text-sm text-muted-foreground">Konto</Link></div> : null}
             </div>
           ) : <Link to="/konto" className="rounded-full border border-border px-4 py-2 text-sm font-medium text-muted-foreground">Logga in</Link>}
@@ -92,26 +92,43 @@ function Home() {
       <ActiveMultiplayerBanner />
 
       <section className="mt-5">
-        <Link to="/spela" onClick={() => recordRecommendationOpen("play-friend")} className="group block overflow-hidden rounded-[34px] border border-slate-800 bg-slate-950 p-5 text-white shadow-[0_26px_60px_-30px_rgba(15,23,42,.75)] active:scale-[.99]">
-          <div className="flex items-start justify-between gap-4">
-            <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-slate-950"><Swords className="h-6 w-6" /></span>
-            <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[9px] font-black uppercase tracking-[.16em] text-white/75">Head to Head</span>
+        <Link to="/spela" onClick={() => recordRecommendationOpen("play-friend")} className="group block overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-[0_18px_44px_-30px_rgba(15,23,42,.22)] active:scale-[.99]">
+          <div className="grid grid-cols-[1fr_76px_1fr] border-b border-slate-200">
+            <div className="flex min-h-[108px] items-center gap-3 bg-gradient-to-br from-blue-100 via-blue-50 to-white px-4">
+              <span className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-blue-400 bg-blue-100 text-blue-600 shadow-sm"><User className="h-5 w-5" /></span>
+              <span className="text-sm font-black uppercase tracking-[.12em] text-blue-600">Du</span>
+            </div>
+            <div className="flex min-h-[108px] items-center justify-center bg-[#071b14] font-display text-2xl text-white">VS</div>
+            <div className="flex min-h-[108px] items-center justify-end gap-3 bg-gradient-to-bl from-red-100 via-red-50 to-white px-4">
+              <span className="text-sm font-black uppercase tracking-[.12em] text-red-600">Rival</span>
+              <span className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-red-400 bg-red-100 text-red-600 shadow-sm"><User className="h-5 w-5" /></span>
+            </div>
           </div>
-          <div className="mt-12 flex items-end justify-between gap-4">
-            <div><p className="text-[10px] font-black uppercase tracking-[.18em] text-white/50">Spela nu</p><h2 className="mt-1 font-display text-5xl leading-[.9]">HEAD<br />TO HEAD</h2><p className="mt-3 max-w-[26ch] text-sm leading-relaxed text-white/65">Mot vän, bot eller lag. Välj match och börja spela.</p></div>
-            <span className="mb-1 flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white text-slate-950 transition-transform group-active:translate-x-1"><ChevronRight className="h-5 w-5" /></span>
+          <div className="relative overflow-hidden bg-gradient-to-r from-blue-50/55 via-white to-red-50/55 px-5 py-6">
+            <div className="absolute inset-y-0 left-0 w-[22%] bg-blue-50/30" />
+            <div className="relative flex items-end gap-4">
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-black uppercase tracking-[.19em]"><span className="text-blue-600">Head</span><span className="text-slate-500">-to-</span><span className="text-red-600">Head</span></p>
+                <h2 className="mt-2 font-display text-4xl leading-none text-[#071b14]">SPELA EN MATCH</h2>
+                <p className="mt-3 max-w-[30ch] text-sm leading-relaxed text-slate-600">Mot vän, bot eller lag. Välj spel och börja direkt.</p>
+              </div>
+              <span className="mb-2 flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-red-500 shadow-sm transition-transform group-active:translate-x-1"><ChevronRight className="h-5 w-5" /></span>
+            </div>
           </div>
         </Link>
       </section>
 
-      <section className="mt-3 grid grid-cols-2 gap-3">
-        <Link to="/match-bot" onClick={() => recordRecommendationOpen("play-bot")} className="flex min-h-[132px] flex-col justify-between rounded-[27px] border border-primary/20 bg-primary/[.07] p-4 active:scale-[.99]">
-          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary text-primary-foreground"><Bot className="h-5 w-5" /></span>
-          <span><span className="block font-display text-2xl">Mot bot</span><span className="mt-1 block text-xs leading-snug text-muted-foreground">Välj rival och spela direkt.</span></span>
+      <section className="mt-4 overflow-hidden rounded-[24px] border border-border bg-white">
+        <Link to="/match-bot" onClick={() => recordRecommendationOpen("play-bot")} className="flex items-center gap-3 px-4 py-4 active:bg-muted/40">
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50 text-emerald-700"><Bot className="h-5 w-5" /></span>
+          <span className="min-w-0 flex-1"><span className="block text-sm font-black text-foreground">Mot bot</span><span className="mt-0.5 block text-xs text-muted-foreground">Välj rival och spela direkt</span></span>
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
         </Link>
-        <Link to="/cup" onClick={() => recordRecommendationOpen("play-cup")} className="flex min-h-[132px] flex-col justify-between rounded-[27px] border border-amber-500/25 bg-amber-500/[.08] p-4 active:scale-[.99]">
-          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-600"><Trophy className="h-5 w-5" /></span>
-          <span><span className="block font-display text-2xl">Putting Cup</span><span className="mt-1 block text-xs leading-snug text-muted-foreground">Kvartsfinal → final.</span></span>
+        <div className="mx-4 border-t border-border" />
+        <Link to="/cup" onClick={() => recordRecommendationOpen("play-cup")} className="flex items-center gap-3 px-4 py-4 active:bg-muted/40">
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-50 text-amber-600"><Trophy className="h-5 w-5" /></span>
+          <span className="min-w-0 flex-1"><span className="block text-sm font-black text-foreground">Putting Cup</span><span className="mt-0.5 block text-xs text-muted-foreground">Kvartsfinal → semifinal → final</span></span>
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
         </Link>
       </section>
 
