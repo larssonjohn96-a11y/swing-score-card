@@ -15,6 +15,7 @@ import {
   updateMatchMultiplayerState,
   type MatchCloudState,
 } from "@/lib/match-multiplayer";
+import { PUTTING_MATCH_FORMATS, PUTTING_MATCH_RULES, formatPuttingDistance, generatePuttingMatchDistances } from "@/lib/putting-match";
 
 export const Route = createFileRoute("/match")({
   head: () => ({ meta: [{ title: "Match Play | SG4" }] }),
@@ -52,10 +53,7 @@ const MATCH_TYPES: Record<MatchCategory, Array<{ id: string; title: string; desc
     { id: "closest", title: "Closest to the Pin", description: "Ett slag mot flaggan. Poäng efter avståndszon – högst poäng vinner hålet." },
   ],
   putting: [
-    { id: "pga-tour", title: "Hela puttspelet", description: "Baserat på PGA Tour-avstånd · mix av korta, mellanlånga och långa puttar · 5, 9 eller 18 hål" },
-    { id: "short", title: "Korta puttar", description: "1–5 meter" },
-    { id: "mix", title: "Mixade avstånd", description: "1–10 meter" },
-    { id: "lag", title: "Långa puttar", description: "8–22 meter" },
+    { id: "standard", title: "Putting Match", description: "Standardiserat format · samma position för båda · färre puttar vinner hålet" },
   ],
 };
 
@@ -67,32 +65,6 @@ const SHORT_GAME_LIES: Array<{ id: ShortGameLie; title: string }> = [
 const POINT_ZONES = [
   { points: 4, label: "Sänkt" }, { points: 3, label: "Inom 1 m" }, { points: 2, label: "Inom 2 m" }, { points: 1, label: "Inom 3 m" }, { points: 0, label: "Över 3 m" },
 ] as const;
-
-const PGA_PUTTING_DISTANCES = [1.5, 12, 0.6, 4, 1.2, 16, 8, 3, 6, 9, 0.9, 7, 2.1, 3.5, 10, 1.8, 5, 2.4] as const;
-function shuffleValues<T>(items: readonly T[]) {
-  const next = [...items];
-  for (let i = next.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [next[i], next[j]] = [next[j], next[i]];
-  }
-  return next;
-}
-function generatePgaPuttingDistances(length: 5 | 9 | 18) {
-  const short = shuffleValues(PGA_PUTTING_DISTANCES.filter((d) => d <= 2.4));
-  const medium = shuffleValues(PGA_PUTTING_DISTANCES.filter((d) => d > 2.4 && d <= 6));
-  const long = shuffleValues(PGA_PUTTING_DISTANCES.filter((d) => d > 6));
-  if (length === 5) return shuffleValues([...short.slice(0, 2), ...medium.slice(0, 1), ...long.slice(0, 2)]);
-  if (length === 9) return shuffleValues([...short.slice(0, 3), ...medium.slice(0, 3), ...long.slice(0, 3)]);
-  const queues = [short, medium, long];
-  const result: number[] = [];
-  while (result.length < 18) {
-    for (const groupIndex of shuffleValues([0, 1, 2])) {
-      const value = queues[groupIndex].shift();
-      if (value !== undefined) result.push(value);
-    }
-  }
-  return result;
-}
 
 function rand(min: number, max: number) { return Math.floor(Math.random() * (max - min + 1)) + min; }
 function pick<T>(items: readonly T[]) { return items[Math.floor(Math.random() * items.length)]; }
@@ -140,8 +112,8 @@ function generateShortGameLieSequence(length: MatchLength, selected: ShortGameLi
 function generateChallenge(category: MatchCategory, typeId: string, mode: MatchMode, shortGameLies: ShortGameLie[] = ["fairway", "rough", "bunker"], approachDistance?: number): Challenge {
   const suffix = mode === "fourball" ? " · registrera lagets bästa resultat" : mode === "foursomes" ? " · laget spelar vartannat slag" : "";
   if (category === "putting") {
-    const distance = typeId === "pga-tour" ? (approachDistance ?? 1.5) : typeId === "short" ? rand(1, 5) : typeId === "lag" ? rand(8, 22) : rand(1, 10);
-    return { eyebrow: typeId === "pga-tour" ? "PGA Tour Putting" : "Puttning", title: `${distance} m`, detail: `${typeId === "pga-tour" ? "PGA Tour-avstånd · " : ""}Håla ut · lägst antal slag vinner${suffix}` };
+    const distance = approachDistance ?? 1.5;
+    return { eyebrow: "Putting Match", title: formatPuttingDistance(distance), detail: `Samma position för båda · håla ut · färre puttar vinner hålet${suffix}` };
   }
   if (category === "around-the-green") {
     const lie = pick(shortGameLies.length ? shortGameLies : (["fairway"] as ShortGameLie[]));
@@ -331,7 +303,7 @@ function MatchPlayPage() {
       : `${score.blueStrokes}–${score.redStrokes}`;
   const tiedHoles = Math.max(0, score.played - score.blue - score.red);
   const isPutting = category === "putting";
-  const isPgaPutting = isPutting && matchType === "pga-tour";
+  const isPgaPutting = isPutting;
   const isShortGame = category === "around-the-green";
   const isApproach = category === "approach";
   const isScoredHole = isPutting || isShortGame;
@@ -413,7 +385,7 @@ function MatchPlayPage() {
   function startMatch() {
     if (!mode || !teamsReady || !category || !matchType || (isShortGame && !setupValid)) return;
     const nextHoles = isPgaPutting
-      ? generatePgaPuttingDistances(matchLength).map((distance) => ({ challenge: generateChallenge(category, matchType, mode, shortGameLies, distance), winner: null as HoleWinner }))
+      ? generatePuttingMatchDistances(matchLength).map((distance) => ({ challenge: generateChallenge(category, matchType, mode, shortGameLies, distance), winner: null as HoleWinner }))
       : isShortGame
       ? generateShortGameLieSequence(matchLength, shortGameLies).map((lie) => ({ challenge: generateChallenge(category, matchType, mode, [lie]), winner: null as HoleWinner }))
       : isApproach
@@ -564,7 +536,7 @@ function MatchPlayPage() {
     else if (step === "type") setStep("category");
     else if (step === "setup") setStep("category");
     else if (step === "approach-setup") setStep("category");
-    else if (step === "length") setStep(isShortGame ? "setup" : isApproach ? "approach-setup" : category === "off-the-tee" ? "category" : "scoring");
+    else if (step === "length") setStep(isShortGame ? "setup" : isApproach ? "approach-setup" : category === "off-the-tee" || isPutting ? "category" : "scoring");
   }
 
   const stepLabel = step === "players" ? "1 · Spelform & spelare" : step === "teams" ? "2 · Lag" : step === "scoring" ? "Spelsätt" : step === "category" ? "Kategori" : step === "type" ? "Spel" : step === "setup" ? "Närspel · Setup" : step === "approach-setup" ? "Inspel · Avstånd" : "Matchlängd";
@@ -579,7 +551,7 @@ function MatchPlayPage() {
 
     {step === "scoring" ? <><section className="mt-5"><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Spelsätt</p><h1 className="mt-1 font-display text-4xl leading-none">Hur räknas resultatet?</h1></section><div className="mt-5 grid grid-cols-1 gap-3"><button onClick={() => setScoringMode("match")} className={`relative rounded-[28px] border p-5 text-left ${scoringMode === "match" ? selectedRing : glass}`}>{scoringMode === "match" ? <SelectedCheck /> : null}<span className="block font-display text-2xl">Match Play</span><span className="mt-2 block text-xs text-slate-600">Ni spelar hål mot hål. Ställningen visas som AS, 1 UP eller 2 UP.</span></button><button onClick={() => setScoringMode("stroke")} className={`relative rounded-[28px] border p-5 text-left ${scoringMode === "stroke" ? selectedRing : glass}`}>{scoringMode === "stroke" ? <SelectedCheck /> : null}<span className="block font-display text-2xl">Slagspel</span><span className="mt-2 block text-xs text-slate-600">Alla resultat räknas ihop. Bäst totalt vinner.</span></button></div><button onClick={() => setStep("length")} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 via-slate-900 to-red-600 py-4 font-display text-xl text-white">Nästa <ChevronRight className="h-5 w-5" /></button></> : null}
 
-    {step === "category" ? <><section className="mt-5"><p className="text-[10px] font-bold uppercase text-slate-500">Kategori</p><h1 className="mt-1 font-display text-4xl">Vad ska ni spela?</h1></section><div className="mt-5 grid grid-cols-2 gap-3">{CATEGORIES.map((i) => { const active = category === i.id; return <button key={i.id} onClick={() => { setCategory(i.id); if (i.id === "around-the-green") { setMatchType("closest"); setShortGameLies([]); } else if (i.id === "off-the-tee") { setMatchType("fairway"); setScoringMode("match"); } else if (i.id === "approach") { setMatchType("closest"); setScoringMode("match"); setApproachRanges([]); } else setMatchType(null); }} className={`relative min-h-36 rounded-[26px] border p-4 text-left ${active ? selectedGlass : glass}`}><span className="block text-[9px] font-bold uppercase tracking-[0.16em] text-slate-500">{i.subtitle}</span><span className="mt-2 block font-display text-2xl leading-none">{i.title}</span><span className="mt-2 block text-[11px] leading-relaxed text-slate-600">{i.description}</span>{active ? <SelectedCheck /> : null}</button>; })}</div><button disabled={!category} onClick={() => { if (category === "around-the-green" || category === "off-the-tee" || category === "approach") setScoringMode("match"); setStep(category === "around-the-green" ? "setup" : category === "approach" ? "approach-setup" : category === "off-the-tee" ? "length" : "type"); }} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 via-slate-900 to-red-600 py-4 font-display text-xl text-white disabled:opacity-30">Nästa <ChevronRight className="h-5 w-5" /></button></> : null}
+    {step === "category" ? <><section className="mt-5"><p className="text-[10px] font-bold uppercase text-slate-500">Kategori</p><h1 className="mt-1 font-display text-4xl">Vad ska ni spela?</h1></section><div className="mt-5 grid grid-cols-2 gap-3">{CATEGORIES.map((i) => { const active = category === i.id; return <button key={i.id} onClick={() => { setCategory(i.id); if (i.id === "around-the-green") { setMatchType("closest"); setShortGameLies([]); } else if (i.id === "off-the-tee") { setMatchType("fairway"); setScoringMode("match"); } else if (i.id === "approach") { setMatchType("closest"); setScoringMode("match"); setApproachRanges([]); } else { setMatchType("standard"); setScoringMode("match"); } }} className={`relative min-h-36 rounded-[26px] border p-4 text-left ${active ? selectedGlass : glass}`}><span className="block text-[9px] font-bold uppercase tracking-[0.16em] text-slate-500">{i.subtitle}</span><span className="mt-2 block font-display text-2xl leading-none">{i.title}</span><span className="mt-2 block text-[11px] leading-relaxed text-slate-600">{i.description}</span>{active ? <SelectedCheck /> : null}</button>; })}</div><button disabled={!category} onClick={() => { setScoringMode("match"); setStep(category === "around-the-green" ? "setup" : category === "approach" ? "approach-setup" : "length"); }} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 via-slate-900 to-red-600 py-4 font-display text-xl text-white disabled:opacity-30">Nästa <ChevronRight className="h-5 w-5" /></button></> : null}
 
     {step === "type" && category && !isShortGame && !isApproach ? <><section className="mt-5"><p className="text-[10px] font-bold uppercase text-slate-500">{selectedCategory?.title}</p><h1 className="mt-1 font-display text-4xl">Välj spel</h1>{isPutting ? <p className="mt-2 text-sm text-slate-600">Håla ut från varje avstånd. SG4 räknar resultatet automatiskt.</p> : null}</section><div className="mt-5 space-y-3">{MATCH_TYPES[category].map((i) => { const active = matchType === i.id; return <button key={i.id} onClick={() => { setMatchType(i.id); if (i.id === "pga-tour") setMatchLength(5); }} className={`flex w-full items-center gap-4 rounded-3xl border p-5 text-left ${active ? selectedRing : glass}`}><span className="min-w-0 flex-1"><span className="block font-display text-2xl">{i.title}</span><span className="mt-1 block text-xs text-slate-600">{i.description}</span></span>{active ? <SelectedCheck className="" /> : null}</button>; })}</div><button disabled={!matchType} onClick={() => setStep("scoring")} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white disabled:opacity-30">Nästa <ChevronRight className="h-5 w-5" /></button></> : null}
 
