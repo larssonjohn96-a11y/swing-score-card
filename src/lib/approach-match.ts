@@ -1,4 +1,4 @@
-export type ApproachMatchLength = 5 | 9 | 18;
+export type ApproachMatchLength = 3 | 5 | 7;
 export type ApproachSide = "left" | "center" | "right";
 
 export type ApproachResult = {
@@ -13,9 +13,9 @@ export const APPROACH_MATCH_FORMATS: Array<{
   label: string;
   recommended?: boolean;
 }> = [
-  { length: 5, name: "Snabb", label: "5 hål" },
-  { length: 9, name: "Standard", label: "9 hål", recommended: true },
-  { length: 18, name: "Full match", label: "18 hål" },
+  { length: 3, name: "Snabb", label: "3 hål" },
+  { length: 5, name: "Standard", label: "5 hål", recommended: true },
+  { length: 7, name: "Lång", label: "7 hål" },
 ];
 
 export function approachProximity(result: ApproachResult, targetDistance: number) {
