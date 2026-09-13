@@ -17,6 +17,7 @@ import { recordRecommendationCompletion, recordRecommendationImpressions, record
 import { simulateChipBotResult, simulateDriveBotResult, simulatePuttingBotStrokes, type BotCategoryHandicaps } from "@/lib/bot-skill-model";
 import { archetypeLabels, effectiveCategoryHcp, type BotArchetype } from "@/lib/bot-archetypes";
 import { getPlayerPressureNotice } from "@/lib/bot-match-pressure";
+import { getActiveCupMatch, recordActiveCupResult } from "@/lib/cup-engine";
 import { chooseBotNextStep } from "@/lib/bot-next-step";
 import { recordBotCategoryMatch } from "@/lib/bot-match-history";
 import { getSmartBotResultReaction } from "@/lib/bot-smart-result";
@@ -174,8 +175,10 @@ function drivingBotScore(bot: BotProfile, lateMatch = false) {
 function BotMatchPage() {
   useHideBottomNav(true);
   const { displayName } = useAuth();
-  const [step, setStep] = useState<Step>("bot");
-  const [botId, setBotId] = useState("zach");
+  const [cupContext] = useState(() => getActiveCupMatch());
+  const [cupRecorded, setCupRecorded] = useState(false);
+  const [step, setStep] = useState<Step>(() => cupContext ? "category" : "bot");
+  const [botId, setBotId] = useState(() => cupContext?.botId ?? "zach");
   const [category, setCategory] = useState<Category | null>(null);
   const [length, setLength] = useState<MatchLength>(5);
   const [holes, setHoles] = useState<Hole[]>([]);
@@ -246,7 +249,11 @@ function BotMatchPage() {
     if (step !== "result") return;
     recordRecommendationCompletion("play-bot");
     if (resultRecommendation) recordRecommendationImpressions([resultRecommendation.id]);
-  }, [step, resultRecommendation?.id]);
+    if (cupContext && !cupRecorded) {
+      recordActiveCupResult(bot.id, resultOutcome);
+      setCupRecorded(true);
+    }
+  }, [step, resultRecommendation?.id, cupContext, cupRecorded, bot.id, resultOutcome]);
   const glass = "border-slate-300/80 bg-white/78 shadow-[0_18px_44px_-32px_rgba(15,23,42,.42)] backdrop-blur-2xl";
   const blueGlass = "border-blue-300/60 bg-gradient-to-br from-blue-100/58 via-white/74 to-slate-100/76 shadow-[0_10px_24px_-20px_rgba(15,23,42,.22)] backdrop-blur-2xl";
   const redGlass = "border-red-300/60 bg-gradient-to-br from-red-100/58 via-white/74 to-slate-100/76 shadow-[0_10px_24px_-20px_rgba(15,23,42,.22)] backdrop-blur-2xl";
@@ -464,7 +471,7 @@ function BotMatchPage() {
   }
 
   function back() {
-    if (step === "category") setStep("bot");
+    if (step === "category") { if (cupContext) window.location.assign("/cup"); else setStep("bot"); }
     else if (step === "setup") setStep("category");
     else if (step === "length") setStep(category === "around-the-green" ? "setup" : "category");
   }
@@ -703,6 +710,15 @@ function BotMatchPage() {
             </div>
             <div className="border-t border-slate-200 px-4 py-3 text-center"><p className="text-xs font-bold text-slate-800">{suddenDeathWinner === "you" ? `${playerName} vinner i sudden death` : suddenDeathWinner === "bot" ? `${bot.name} vinner i sudden death` : score.you > score.bot ? `${playerName} vinner över ${bot.name}` : score.bot > score.you ? `${bot.name} vinner` : "Matchen slutar delad"}</p><p className="mt-1 text-[10px] font-semibold text-slate-500">Blue · {playerName} · {score.you} hål&nbsp;&nbsp;•&nbsp;&nbsp;Red · {bot.name} · HCP {formatHcp(bot.hcp)} · {score.bot} hål{score.tie ? ` · ${score.tie} delade` : ""}</p></div>
           </section>
+
+          {cupContext ? (
+            <section className="mt-4 overflow-hidden rounded-[26px] border border-amber-300 bg-amber-50/90 p-4 text-center shadow-sm">
+              <p className="text-[9px] font-black uppercase tracking-[0.16em] text-amber-700">Club Cup · {cupContext.round === "quarterfinal" ? "Kvartsfinal" : cupContext.round === "semifinal" ? "Semifinal" : "Final"}</p>
+              <p className="mt-2 font-display text-2xl text-slate-950">{resultOutcome === "player" ? "Du är vidare" : "Du är utslagen"}</p>
+              <p className="mt-1 text-xs text-slate-600">Resultatet är registrerat i bracketen.</p>
+              <a href="/cup" className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-amber-500 py-3.5 font-display text-lg text-slate-950 shadow-sm">Till bracket <ChevronRight className="h-4 w-4" /></a>
+            </section>
+          ) : null}
 
           <section className={`mt-4 overflow-hidden rounded-[26px] border ${redGlass}`}>
             <div className="flex items-start gap-3 p-4">
