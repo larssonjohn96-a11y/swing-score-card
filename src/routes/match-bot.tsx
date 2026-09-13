@@ -11,13 +11,14 @@ import { useMemo, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 import { LIGHT_SURFACE } from "./8-bollar";
+import { PUTTING_MATCH_FORMATS, PUTTING_MATCH_RULES, formatPuttingDistance, generatePuttingMatchDistances } from "@/lib/putting-match";
 
 export const Route = createFileRoute("/match-bot")({
   head: () => ({ meta: [{ title: "Spela mot bot | SG4" }] }),
   component: BotMatchPage,
 });
 
-type Step = "bot" | "category" | "type" | "setup" | "length" | "play" | "result";
+type Step = "bot" | "category" | "setup" | "length" | "play" | "result";
 type Category = "off-the-tee" | "approach" | "around-the-green" | "putting";
 type Winner = "you" | "bot" | "tie";
 type MatchLength = 5 | 9 | 18;
@@ -73,12 +74,6 @@ const CATEGORIES = [
   { id: "putting", title: "Puttning", sub: "Putting" },
 ] as const;
 
-const PUTTING_TYPES = [
-  { id: "short", title: "Korta puttar", detail: "1–5 meter" },
-  { id: "mix", title: "Mixade avstånd", detail: "1–10 meter" },
-  { id: "lag", title: "Långa puttar", detail: "8–22 meter" },
-] as const;
-
 function rand(min: number, max: number) { return Math.floor(Math.random() * (max - min + 1)) + min; }
 function clamp(n: number, min: number, max: number) { return Math.min(max, Math.max(min, n)); }
 function formatHcp(hcp: number) { return hcp < 0 ? `+${Math.abs(hcp)}` : `${hcp}`; }
@@ -124,8 +119,7 @@ function BotMatchPage() {
   const [step, setStep] = useState<Step>("bot");
   const [botId, setBotId] = useState("zach");
   const [category, setCategory] = useState<Category | null>(null);
-  const [puttingType, setPuttingType] = useState("mix");
-  const [length, setLength] = useState<MatchLength>(5);
+  const [length, setLength] = useState<MatchLength>(9);
   const [holes, setHoles] = useState<Hole[]>([]);
   const [holeIndex, setHoleIndex] = useState(0);
   const [yourValue, setYourValue] = useState<number | null>(null);
@@ -147,10 +141,11 @@ function BotMatchPage() {
 
   function buildHoles() {
     if (!category) return;
-    const next: Hole[] = Array.from({ length }, () => {
+    const puttingDistances = category === "putting" ? generatePuttingMatchDistances(length) : [];
+    const next: Hole[] = Array.from({ length }, (_unused, holeNr) => {
       if (category === "putting") {
-        const d = puttingType === "short" ? rand(1, 5) : puttingType === "lag" ? rand(8, 22) : rand(1, 10);
-        return { title: `${d} m`, distance: d, detail: "Håla ut · lägst antal puttar vinner" };
+        const d = puttingDistances[holeNr] ?? 3;
+        return { title: formatPuttingDistance(d), distance: d, detail: "Samma position för båda · färre puttar vinner hålet" };
       }
       if (category === "around-the-green") {
         const d = rand(10, 30);
@@ -204,11 +199,11 @@ function BotMatchPage() {
 
   function back() {
     if (step === "category") setStep("bot");
-    else if (step === "type" || step === "setup") setStep("category");
-    else if (step === "length") setStep(category === "putting" ? "type" : category === "around-the-green" ? "setup" : "category");
+    else if (step === "setup") setStep("category");
+    else if (step === "length") setStep(category === "around-the-green" ? "setup" : "category");
   }
 
-  const label = step === "bot" ? "Motståndare" : step === "category" ? "Kategori" : step === "type" ? "Spel" : step === "setup" ? "Setup" : "Matchlängd";
+  const label = step === "bot" ? "Motståndare" : step === "category" ? "Kategori" : step === "setup" ? "Setup" : category === "putting" ? "Format" : "Matchlängd";
   const resultLabel = (hole: Hole) => {
     if (hole.botValue == null || !category) return "";
     if (category === "around-the-green") return `${hole.botValue} p`;
@@ -237,13 +232,17 @@ function BotMatchPage() {
       <button onClick={() => setStep("category")} className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white">Spela mot {bot.name} <ChevronRight className="h-5 w-5" /></button>
     </> : null}
 
-    {step === "category" ? <><section className="mt-5"><div className="flex items-center gap-3"><span className="text-4xl">{bot.avatar}</span><div><p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">{bot.name} · HCP {formatHcp(bot.hcp)}</p><h1 className="mt-1 font-display text-4xl">Vad vill du spela?</h1></div></div></section><div className="mt-5 grid grid-cols-2 gap-3">{CATEGORIES.map((item) => <button key={item.id} onClick={() => setCategory(item.id)} className={`relative min-h-32 rounded-[26px] border p-4 text-left ${category === item.id ? selected : glass}`}><span className="text-[9px] font-black uppercase tracking-[0.14em] text-slate-500">{item.sub}</span><span className="mt-2 block font-display text-2xl">{item.title}</span>{category === item.id ? <Check className="absolute right-3 top-3 h-5 w-5 text-emerald-600" /> : null}</button>)}</div><button disabled={!category} onClick={() => setStep(category === "putting" ? "type" : category === "around-the-green" ? "setup" : "length")} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white disabled:opacity-30">Nästa <ChevronRight className="h-5 w-5" /></button></> : null}
+    {step === "category" ? <><section className="mt-5"><div className="flex items-center gap-3"><span className="text-4xl">{bot.avatar}</span><div><p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">{bot.name} · HCP {formatHcp(bot.hcp)}</p><h1 className="mt-1 font-display text-4xl">Vad vill du spela?</h1></div></div></section><div className="mt-5 grid grid-cols-2 gap-3">{CATEGORIES.map((item) => <button key={item.id} onClick={() => setCategory(item.id)} className={`relative min-h-32 rounded-[26px] border p-4 text-left ${category === item.id ? selected : glass}`}><span className="text-[9px] font-black uppercase tracking-[0.14em] text-slate-500">{item.sub}</span><span className="mt-2 block font-display text-2xl">{item.title}</span>{category === item.id ? <Check className="absolute right-3 top-3 h-5 w-5 text-emerald-600" /> : null}</button>)}</div><button disabled={!category} onClick={() => setStep(category === "around-the-green" ? "setup" : "length")} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white disabled:opacity-30">Nästa <ChevronRight className="h-5 w-5" /></button></> : null}
 
-    {step === "type" ? <><section className="mt-5"><p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Puttning</p><h1 className="mt-1 font-display text-4xl">Välj spel</h1></section><div className="mt-5 space-y-3">{PUTTING_TYPES.map((item) => <button key={item.id} onClick={() => setPuttingType(item.id)} className={`flex w-full items-center justify-between rounded-3xl border p-5 text-left ${puttingType === item.id ? selected : glass}`}><span><span className="block font-display text-2xl">{item.title}</span><span className="mt-1 block text-xs text-slate-500">{item.detail}</span></span>{puttingType === item.id ? <Check className="h-5 w-5 text-emerald-600" /> : null}</button>)}</div><button onClick={() => setStep("length")} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white">Nästa <ChevronRight className="h-5 w-5" /></button></> : null}
 
     {step === "setup" ? <><section className="mt-5"><p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Närspel</p><h1 className="mt-1 font-display text-4xl">Closest to Pin</h1><p className="mt-2 text-sm text-slate-600">Du spelar först. Därefter slår {bot.name} från exakt samma avstånd.</p></section><div className={`mt-5 rounded-3xl border p-5 ${glass}`}><Target className="h-5 w-5 text-emerald-600" /><p className="mt-3 font-display text-2xl">10–30 meter</p><p className="mt-1 text-xs text-slate-500">Varierade närspelsavstånd.</p></div><button onClick={() => setStep("length")} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white">Nästa <ChevronRight className="h-5 w-5" /></button></> : null}
 
-    {step === "length" ? <><section className="mt-5"><p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">{bot.name} · HCP {formatHcp(bot.hcp)}</p><h1 className="mt-1 font-display text-4xl">Bäst av</h1></section><div className="mt-5 grid grid-cols-3 gap-3">{([5,9,18] as const).map((v) => <button key={v} onClick={() => setLength(v)} className={`relative rounded-3xl border px-2 py-6 ${length === v ? selected : glass}`}><span className="font-display text-3xl">{v}</span><span className="mt-1 block text-[9px] font-black uppercase text-slate-500">hål</span></button>)}</div><button onClick={buildHoles} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 via-slate-950 to-emerald-700 py-4 font-display text-xl text-white"><Flag className="h-5 w-5" /> Starta match</button></> : null}
+    {step === "length" ? <>{category === "putting" ? <>
+      <section className="mt-5"><p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Putting Match</p><h1 className="mt-1 font-display text-4xl">Välj format</h1><p className="mt-2 text-sm text-slate-600">Samma spel varje gång – bara längden skiljer. Du och {bot.name} puttar från exakt samma positioner.</p></section>
+      <div className="mt-5 space-y-3">{PUTTING_MATCH_FORMATS.map((f) => <button key={f.length} onClick={() => setLength(f.length)} className={`flex w-full items-center justify-between gap-4 rounded-[28px] border p-5 text-left ${length === f.length ? selected : glass}`}><span className="min-w-0"><span className="flex items-center gap-2"><span className="font-display text-2xl">{f.name}</span>{f.recommended ? <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.14em] text-white">Standard</span> : null}</span><span className="mt-1 block text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">{f.label}</span><span className="mt-1 block text-xs text-slate-500">{f.detail}</span></span>{length === f.length ? <Check className="h-5 w-5 shrink-0 text-emerald-600" /> : null}</button>)}</div>
+      <div className={`mt-4 rounded-3xl border p-4 ${glass}`}><p className="text-[9px] font-black uppercase tracking-[0.16em] text-slate-500">Så spelas Putting Match</p><ul className="mt-2 space-y-1">{PUTTING_MATCH_RULES.map((rule) => <li key={rule} className="text-[11px] leading-relaxed text-slate-600">· {rule}</li>)}</ul></div>
+      <button onClick={buildHoles} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 via-slate-950 to-emerald-700 py-4 font-display text-xl text-white"><Flag className="h-5 w-5" /> Starta match</button>
+    </> : <><section className="mt-5"><p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">{bot.name} · HCP {formatHcp(bot.hcp)}</p><h1 className="mt-1 font-display text-4xl">Bäst av</h1></section><div className="mt-5 grid grid-cols-3 gap-3">{([5,9,18] as const).map((v) => <button key={v} onClick={() => setLength(v)} className={`relative rounded-3xl border px-2 py-6 ${length === v ? selected : glass}`}><span className="font-display text-3xl">{v}</span><span className="mt-1 block text-[9px] font-black uppercase text-slate-500">hål</span></button>)}</div><button onClick={buildHoles} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 via-slate-950 to-emerald-700 py-4 font-display text-xl text-white"><Flag className="h-5 w-5" /> Starta match</button></>}</> : null}
 
     {step === "play" && current ? <><header className="flex items-center justify-between"><Link to="/" className={`inline-flex h-9 w-9 items-center justify-center rounded-full border ${glass}`}>‹</Link><div className="text-center"><p className="text-[9px] font-black uppercase tracking-[0.18em] text-slate-500">Mot {bot.name}</p><p className="text-[10px] font-bold text-slate-700">HCP {formatHcp(bot.hcp)}</p></div><span className="text-3xl">{bot.avatar}</span></header>
       <section className={`mt-3 overflow-hidden rounded-[24px] border ${glass}`}><div className="grid grid-cols-3 text-center"><div className="p-3"><p className="text-[10px] font-black uppercase text-blue-600">{playerName}</p><p className="mt-1 font-display text-3xl text-blue-700">{score.you}</p></div><div className="border-x border-slate-200 p-3"><p className="text-[9px] font-black uppercase text-slate-500">Hål</p><p className="mt-1 font-display text-3xl">{holeIndex + 1}/{length}</p></div><div className="p-3"><p className="text-[10px] font-black uppercase text-emerald-700">{bot.name}</p><p className="mt-1 font-display text-3xl text-emerald-700">{score.bot}</p></div></div></section>
