@@ -1,0 +1,32 @@
+name: Apply bot character engine
+
+"on":
+  push:
+    paths:
+      - .github/workflows/apply-bot-character-engine.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - run: python scripts/apply_bot_character_engine.py
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+      - run: bunx vitest run src/lib/bot-match-pressure.test.ts src/lib/bot-skill-model.test.ts src/lib/sg4-engine.test.ts src/lib/sg4-recommender.test.ts
+      - name: Commit character engine
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/routes/match-bot.tsx
+          git commit -m "Turn golf bots into persistent club characters"
+          git push origin main
