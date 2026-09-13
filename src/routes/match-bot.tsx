@@ -10,6 +10,7 @@ import {
   formatPuttingDistance,
   generatePuttingMatchDistances,
 } from "@/lib/putting-match";
+import { generateChipMatchDistances, getChipDistanceBand } from "@/lib/chip-match";
 import {
   APPROACH_MATCH_FORMATS,
   type ApproachResult,
@@ -232,6 +233,7 @@ function BotMatchPage() {
   function buildHoles() {
     if (!category || bot.locked) return;
     const puttingDistances = category === "putting" ? generatePuttingMatchDistances(length) : [];
+    const chipDistances = category === "around-the-green" ? generateChipMatchDistances(length) : [];
     const approachDistances = category === "approach" ? generateApproachMatchDistances(length) : [];
     const next: Hole[] = Array.from({ length }, (_unused, holeNr) => {
       if (category === "putting") {
@@ -239,8 +241,9 @@ function BotMatchPage() {
         return { title: formatPuttingDistance(d), distance: d, detail: "Samma position för båda · färre puttar vinner hålet" };
       }
       if (category === "around-the-green") {
-        const d = rand(10, 30);
-        return { title: `${d} m`, distance: d, detail: "Ett slag · högst zonpoäng vinner" };
+        const d = chipDistances[holeNr] ?? 15;
+        const band = getChipDistanceBand(d);
+        return { title: `${d} m`, distance: d, detail: `${band.label} · ${band.range} · samma avstånd för båda` };
       }
       if (category === "approach") {
         const d = approachDistances[holeNr] ?? 120;
