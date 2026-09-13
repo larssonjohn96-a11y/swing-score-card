@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, BarChart3, Check, ChevronRight, Crosshair, Grid3x3 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { rankEngineActivities, type EngineSkill } from "@/lib/sg4-engine";
+import { recordRecommendationImpressions, recordRecommendationOpen } from "@/lib/sg4-recommender";
 import { LIGHT_SURFACE } from "./8-bollar";
 
 type Category = "off-the-tee" | "approach" | "around-the-green" | "putting";
@@ -117,6 +118,7 @@ function TestCard({ to, title, description, meta, skill }: TestItem) {
   return (
     <Link
       to={to}
+      onClick={() => recordRecommendationOpen(to)}
       className="group flex w-full items-center gap-4 rounded-3xl border border-slate-300/80 bg-gradient-to-br from-slate-100/88 via-white/78 to-slate-100/72 p-4 text-left shadow-[0_18px_44px_-32px_rgba(15,23,42,.4)] backdrop-blur-2xl transition-all active:scale-[0.99]"
     >
       <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-slate-300/80 bg-white/58 text-slate-700 shadow-[0_10px_24px_-18px_rgba(15,23,42,.35)]">
@@ -145,6 +147,10 @@ function TrainingTestsPage() {
         "learning",
       )
     : [];
+  const visibleTestKey = visibleTests.map((test) => test.to).join("|");
+  useEffect(() => {
+    if (visibleTestKey) recordRecommendationImpressions(visibleTestKey.split("|"));
+  }, [visibleTestKey]);
 
   return (
     <main style={LIGHT_SURFACE} className="mx-auto min-h-screen w-full max-w-md bg-background px-5 pb-28 pt-6 text-foreground">

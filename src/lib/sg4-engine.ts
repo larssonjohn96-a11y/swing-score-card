@@ -1,4 +1,5 @@
 import type { TestSession } from "@/lib/sessions/types";
+import { getBehaviorRecommendationScore, recordRecommendationCompletion, recordRecommendationSignal } from "@/lib/sg4-recommender";
 
 /**
  * SG4:s interna spelarmotor.
@@ -192,6 +193,7 @@ export function recordEngineOutcome(outcome: EngineOutcome) {
     model.buckets[globalKey] = updateBucket(model.buckets[globalKey], value);
   }
   recordActivity(model, outcome.activityId);
+  if (outcome.activityId) recordRecommendationSignal(outcome.activityId, "engage");
 
   if (typeof outcome.distance === "number") {
     model.recentChallenges = [
@@ -238,6 +240,7 @@ export function recordEngineSession(session: TestSession) {
 
   model.seenSessionIds = [...model.seenSessionIds, session.id].slice(-SESSION_ID_LIMIT);
   recordActivity(model, session.testId);
+  recordRecommendationCompletion(session.testId);
 
   const skill = skillFromSession(session);
   if (skill && typeof session.testHandicap === "number" && Number.isFinite(session.testHandicap)) {
@@ -497,14 +500,25 @@ export function rankEngineActivities<T extends RankedActivity>(
       const profile = model.activities[item.id];
       const affinity = profile?.affinity ?? 0.42;
       const learningNeed = skillLearningNeed(model, item.engineSkill);
-      const novelty = 0.7 + dayNoise(item.id) * 0.3;
-      const funScore = affinity * 0.58 + novelty * 0.42;
-      const learningScore = learningNeed * 0.78 + novelty * 0.22;
+      const behavior = getBehaviorRecommendationScore(item.id);
+      const dayVariation = 0.85 + dayNoise(item.id) * 0.15;
+      const funScore =
+        behavior.affinity * 0.44 +
+        behavior.novelty * 0.18 +
+        behavior.exploration * 0.18 +
+        affinity * 0.15 +
+        dayVariation * 0.05;
+      const learningScore =
+        learningNeed * 0.62 +
+        behavior.exploration * 0.16 +
+        behavior.completionRate * 0.1 +
+        behavior.novelty * 0.08 +
+        dayVariation * 0.04;
       const score = objective === "fun"
         ? funScore
         : objective === "learning"
           ? learningScore
-          : funScore * 0.45 + learningScore * 0.55;
+          : funScore * 0.52 + learningScore * 0.48;
       return { item, score, index };
     })
     .sort((a, b) => b.score - a.score || a.index - b.index)
