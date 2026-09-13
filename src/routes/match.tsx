@@ -18,7 +18,7 @@ import {
 import { formatPuttingDistance, generatePuttingMatchDistances } from "@/lib/putting-match";
 import { CHIP_POINT_ZONES, generateChipMatchDistances, getChipDistanceBand, getChipPointZone } from "@/lib/chip-match";
 import { chipPerformanceFromPoints, puttingPerformanceFromStrokes, recordEngineOutcome, selectNextEngineDistance, type EngineSkill } from "@/lib/sg4-engine";
-import { getRecommendationsForSkill } from "@/lib/sg4-surface-recommendations";
+import { getPlayRecommendations } from "@/lib/sg4-surface-recommendations";
 import { recordRecommendationCompletion, recordRecommendationImpressions, recordRecommendationOpen } from "@/lib/sg4-recommender";
 
 export const Route = createFileRoute("/match")({
@@ -346,9 +346,8 @@ function MatchPlayPage() {
   const teamsReady = mode === "singles" || (mode !== null && blueTeam.length === 2 && redTeam.length === 2);
   const selectedCategory = CATEGORIES.find((i) => i.id === category);
   const selectedType = category ? MATCH_TYPES[category].find((i) => i.id === matchType) : null;
-  const resultEngineSkill = engineSkillForMatchCategory(category);
-  const resultRecommendation = resultEngineSkill ? getRecommendationsForSkill(resultEngineSkill, 1)[0] : undefined;
   const playActivityId = mode === "singles" ? "play-friend" : mode ? "play-team" : null;
+  const resultRecommendation = getPlayRecommendations(1, playActivityId ? [playActivityId] : [])[0];
   useEffect(() => {
     if (step !== "result") return;
     if (playActivityId) recordRecommendationCompletion(playActivityId);
