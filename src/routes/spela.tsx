@@ -50,11 +50,7 @@ function MatchCard({
     </>
   );
 
-  return href.includes("?") ? (
-    <a href={href} onClick={onClick} className={classes}>{content}</a>
-  ) : (
-    <Link to={href} onClick={onClick} className={classes}>{content}</Link>
-  );
+  return <a href={href} onClick={onClick} className={classes}>{content}</a>;
 }
 
 function PlayPage() {
