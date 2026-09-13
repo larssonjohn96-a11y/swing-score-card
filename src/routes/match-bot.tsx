@@ -15,6 +15,8 @@ import { chipPerformanceFromPoints, puttingPerformanceFromStrokes, recordEngineO
 import { getRecommendationsForSkill } from "@/lib/sg4-surface-recommendations";
 import { recordRecommendationCompletion, recordRecommendationImpressions, recordRecommendationOpen } from "@/lib/sg4-recommender";
 import { simulateChipBotResult, simulateDriveBotResult, simulatePuttingBotStrokes, type BotCategoryHandicaps } from "@/lib/bot-skill-model";
+import { archetypeLabels, effectiveCategoryHcp, type BotArchetype } from "@/lib/bot-archetypes";
+import { getPlayerPressureNotice } from "@/lib/bot-match-pressure";
 import {
   APPROACH_MATCH_FORMATS,
   type ApproachResult,
@@ -48,6 +50,7 @@ type BotProfile = {
   avatar: string;
   intro: string;
   categoryHcp: BotCategoryHandicaps;
+  archetype: BotArchetype;
   locked?: boolean;
   unlockText?: string;
   chat: BotChat;
@@ -78,7 +81,7 @@ const genericChat: BotChat = {
 const BOTS: BotProfile[] = [
   {
     id: "margaret", name: "Margaret", hcp: 42, gender: "Kvinna", role: "Grandma golfer", tier: "Nybörjare", avatar: "👵🏻",
-    intro: "Jag spelar lugnt, men underskatta inte mina korta puttar.", categoryHcp: { putting: 34, chipping: 39, approach: 48, driving: 52 },
+    intro: "Jag spelar lugnt, men underskatta inte mina korta puttar.", categoryHcp: { putting: 34, chipping: 39, approach: 48, driving: 52 }, archetype: { label: "Klubbveteranen", playStyle: "conservative", temperament: "calm", communication: "warm", aggression: 0.20, consistency: 0.58, clutch: 0.66, traits: ["Kortspelsräv"] },
     chat: {
       start: ["Ta det lugnt nu, vi har gott om tid.", "Nu ska vi se om gammal är äldst."],
       "bot-win": ["Där satt den, precis som förr.", "Man behöver inte slå långt för att vinna."],
@@ -87,11 +90,11 @@ const BOTS: BotProfile[] = [
       pressure: ["Nu gäller det att hålla huvudet kallt.", "De sista är alltid roligast."],
     },
   },
-  { id: "leo", name: "Leo", hcp: 34, gender: "Man", role: "Ny golfare", tier: "Nybörjare", avatar: "🧑🏻", intro: "Jag började nyligen. Några riktigt bra slag dyker upp ibland.", categoryHcp: { putting: 36, chipping: 38, approach: 34, driving: 29 }, chat: genericChat },
-  { id: "sarah", name: "Sarah", hcp: 27, gender: "Kvinna", role: "Weekend golfer", tier: "Nybörjare", avatar: "👩🏼", intro: "Helggolfare. Stabil när jag hittar rytmen.", categoryHcp: { putting: 30, chipping: 27, approach: 29, driving: 25 }, chat: genericChat },
+  { id: "leo", name: "Leo", hcp: 34, gender: "Man", role: "Ny golfare", tier: "Nybörjare", avatar: "🧑🏻", intro: "Jag började nyligen. Några riktigt bra slag dyker upp ibland.", categoryHcp: { putting: 36, chipping: 38, approach: 34, driving: 29 }, archetype: { label: "Nybörjaren", playStyle: "balanced", temperament: "streaky", communication: "social", aggression: 0.42, consistency: 0.25, clutch: 0.32, traits: ["Kan blixtra till"] }, chat: genericChat },
+  { id: "sarah", name: "Sarah", hcp: 27, gender: "Kvinna", role: "Weekend golfer", tier: "Nybörjare", avatar: "👩🏼", intro: "Helggolfare. Stabil när jag hittar rytmen.", categoryHcp: { putting: 30, chipping: 27, approach: 29, driving: 25 }, archetype: { label: "Helggolfaren", playStyle: "balanced", temperament: "streaky", communication: "social", aggression: 0.48, consistency: 0.42, clutch: 0.40, traits: ["Rytmspelare"] }, chat: genericChat },
   {
     id: "zach", name: "Zach", hcp: 22, gender: "Man", role: "Weekend golfer", tier: "Klubbspelare", avatar: "🧔🏻",
-    intro: "Jag gillar att slå långt. Precisionen får vi se hur det går med.", categoryHcp: { putting: 27, chipping: 25, approach: 22, driving: 15 },
+    intro: "Jag gillar att slå långt. Precisionen får vi se hur det går med.", categoryHcp: { putting: 27, chipping: 25, approach: 22, driving: 15 }, archetype: { label: "Bombaren", playStyle: "aggressive", temperament: "competitive", communication: "cocky", aggression: 0.88, consistency: 0.34, clutch: 0.47, traits: ["Lång från tee"] },
     chat: {
       start: ["Hoppas du värmde upp.", "Okej, visa vad du har."],
       "bot-win": ["För enkelt.", "Den såg jag komma."],
@@ -100,15 +103,15 @@ const BOTS: BotProfile[] = [
       pressure: ["Nu börjar pressen kännas, va?", "Sista hålen. Inga gratispoäng nu."],
     },
   },
-  { id: "anna", name: "Anna", hcp: 16, gender: "Kvinna", role: "Klubbspelare", tier: "Klubbspelare", avatar: "👩🏻", intro: "Jag ger sällan bort ett hål. Du får vinna det.", categoryHcp: { putting: 13, chipping: 14, approach: 17, driving: 20 }, chat: genericChat },
-  { id: "marcus", name: "Marcus", hcp: 11, gender: "Man", role: "Tävlingsgolfare", tier: "Klubbspelare", avatar: "👨🏽", intro: "Jag spelar aggressivt och går för flaggan.", categoryHcp: { putting: 14, chipping: 10, approach: 8, driving: 8 }, chat: genericChat },
-  { id: "emma", name: "Emma", hcp: 7, gender: "Kvinna", role: "Singelhandicap", tier: "Avancerad", avatar: "👩🏼‍🦱", intro: "Fairways, greener och tålamod. Jag gör inte många stora misstag.", categoryHcp: { putting: 5, chipping: 6, approach: 7, driving: 10 }, chat: genericChat },
-  { id: "ryan", name: "Ryan", hcp: 3, gender: "Man", role: "College player", tier: "Avancerad", avatar: "🧑🏽", intro: "Collegegolf. Jag kommer att pressa dig från första slaget.", categoryHcp: { putting: 3, chipping: 4, approach: 1, driving: 0 }, locked: true, unlockText: "Vinn matcher för att låsa upp", chat: genericChat },
-  { id: "maya", name: "Maya", hcp: 0, gender: "Kvinna", role: "Elitamatör", tier: "Avancerad", avatar: "👩🏾", intro: "Scratch. Jag räknar med att du träffar ditt bästa slag.", categoryHcp: { putting: 1, chipping: -1, approach: 0, driving: 1 }, locked: true, unlockText: "Vinn matcher för att låsa upp", chat: genericChat },
-  { id: "noah", name: "Noah", hcp: -2, gender: "Man", role: "College standout", tier: "Elit", avatar: "🧑🏼‍🦰", intro: "Jag spelar för att vinna. Pars räcker inte alltid.", categoryHcp: { putting: -1, chipping: 0, approach: -3, driving: -4 }, locked: true, unlockText: "Vinn matcher för att låsa upp", chat: genericChat },
+  { id: "anna", name: "Anna", hcp: 16, gender: "Kvinna", role: "Klubbspelare", tier: "Klubbspelare", avatar: "👩🏻", intro: "Jag ger sällan bort ett hål. Du får vinna det.", categoryHcp: { putting: 13, chipping: 14, approach: 17, driving: 20 }, archetype: { label: "Klubbmaskinen", playStyle: "conservative", temperament: "calm", communication: "focused", aggression: 0.30, consistency: 0.74, clutch: 0.62, traits: ["Ger bort få hål"] }, chat: genericChat },
+  { id: "marcus", name: "Marcus", hcp: 11, gender: "Man", role: "Tävlingsgolfare", tier: "Klubbspelare", avatar: "👨🏽", intro: "Jag spelar aggressivt och går för flaggan.", categoryHcp: { putting: 14, chipping: 10, approach: 8, driving: 8 }, archetype: { label: "Pin huntern", playStyle: "aggressive", temperament: "competitive", communication: "cocky", aggression: 0.82, consistency: 0.57, clutch: 0.61, traits: ["Går för flaggan"] }, chat: genericChat },
+  { id: "emma", name: "Emma", hcp: 7, gender: "Kvinna", role: "Singelhandicap", tier: "Avancerad", avatar: "👩🏼‍🦱", intro: "Fairways, greener och tålamod. Jag gör inte många stora misstag.", categoryHcp: { putting: 5, chipping: 6, approach: 7, driving: 10 }, archetype: { label: "Fairway-maskinen", playStyle: "conservative", temperament: "calm", communication: "focused", aggression: 0.28, consistency: 0.84, clutch: 0.72, traits: ["Stabil tee till green"] }, chat: genericChat },
+  { id: "ryan", name: "Ryan", hcp: 3, gender: "Man", role: "College player", tier: "Avancerad", avatar: "🧑🏽", intro: "Collegegolf. Jag kommer att pressa dig från första slaget.", categoryHcp: { putting: 3, chipping: 4, approach: 1, driving: 0 }, archetype: { label: "College grindern", playStyle: "aggressive", temperament: "competitive", communication: "focused", aggression: 0.72, consistency: 0.82, clutch: 0.84, traits: ["Pressar hela vägen"] }, locked: true, unlockText: "Vinn matcher för att låsa upp", chat: genericChat },
+  { id: "maya", name: "Maya", hcp: 0, gender: "Kvinna", role: "Elitamatör", tier: "Avancerad", avatar: "👩🏾", intro: "Scratch. Jag räknar med att du träffar ditt bästa slag.", categoryHcp: { putting: 1, chipping: -1, approach: 0, driving: 1 }, archetype: { label: "Scratch-taktikern", playStyle: "balanced", temperament: "ice-cold", communication: "terse", aggression: 0.55, consistency: 0.91, clutch: 0.91, traits: ["Nästan inga gratis slag"] }, locked: true, unlockText: "Vinn matcher för att låsa upp", chat: genericChat },
+  { id: "noah", name: "Noah", hcp: -2, gender: "Man", role: "College standout", tier: "Elit", avatar: "🧑🏼‍🦰", intro: "Jag spelar för att vinna. Pars räcker inte alltid.", categoryHcp: { putting: -1, chipping: 0, approach: -3, driving: -4 }, archetype: { label: "College-killern", playStyle: "aggressive", temperament: "ice-cold", communication: "terse", aggression: 0.78, consistency: 0.89, clutch: 0.93, traits: ["Attack under press"] }, locked: true, unlockText: "Vinn matcher för att låsa upp", chat: genericChat },
   {
     id: "sofia", name: "Sofia", hcp: -4, gender: "Kvinna", role: "Tour prospect", tier: "Elit", avatar: "👩🏻‍🦰",
-    intro: "Små marginaler. Ett svagt slag och jag tar hålet.", categoryHcp: { putting: -5, chipping: -5, approach: -4, driving: -2 },
+    intro: "Små marginaler. Ett svagt slag och jag tar hålet.", categoryHcp: { putting: -5, chipping: -5, approach: -4, driving: -2 }, archetype: { label: "Tour prospect", playStyle: "balanced", temperament: "ice-cold", communication: "focused", aggression: 0.60, consistency: 0.95, clutch: 0.96, traits: ["Små marginaler"] },
     locked: true, unlockText: "Vinn matcher för att låsa upp",
     chat: {
       start: ["Små marginaler från första hålet.", "Jag tänker inte ge bort något idag."],
@@ -120,7 +123,7 @@ const BOTS: BotProfile[] = [
   },
   {
     id: "alex", name: "Alex", hcp: -6, gender: "Man", role: "Tour level", tier: "Elit", avatar: "👨🏻",
-    intro: "Tour-nivå. Du behöver spela nära ditt tak för att slå mig.", categoryHcp: { putting: -6, chipping: -7, approach: -7, driving: -8 },
+    intro: "Tour-nivå. Du behöver spela nära ditt tak för att slå mig.", categoryHcp: { putting: -6, chipping: -7, approach: -7, driving: -8 }, archetype: { label: "Tour-proffset", playStyle: "balanced", temperament: "ice-cold", communication: "terse", aggression: 0.64, consistency: 0.97, clutch: 0.98, traits: ["Komplett spel"] },
     locked: true, unlockText: "Vinn matcher för att låsa upp",
     chat: {
       start: ["Spela ditt bästa. Det kommer behövas.", "Nu ser vi hur ditt spel håller under press."],
@@ -153,12 +156,14 @@ function engineSkillForBotCategory(category: Category | null): EngineSkill | nul
   return null;
 }
 
-function puttingBotStrokes(distance: number, bot: BotProfile) {
-  return simulatePuttingBotStrokes(distance, bot.categoryHcp.putting);
+function puttingBotStrokes(distance: number, bot: BotProfile, lateMatch = false) {
+  const hcp = effectiveCategoryHcp(bot.categoryHcp.putting, bot.archetype, lateMatch);
+  return simulatePuttingBotStrokes(distance, hcp, Math.random, bot.archetype);
 }
 
-function drivingBotScore(bot: BotProfile) {
-  return simulateDriveBotResult(bot.categoryHcp.driving);
+function drivingBotScore(bot: BotProfile, lateMatch = false) {
+  const hcp = effectiveCategoryHcp(bot.categoryHcp.driving, bot.archetype, lateMatch);
+  return simulateDriveBotResult(hcp, Math.random, bot.archetype);
 }
 
 function BotMatchPage() {
@@ -209,16 +214,7 @@ function BotMatchPage() {
   const holesRemaining = Math.max(0, length - playedHoles);
   const liveLeader: "blue" | "red" | null = matchDiff > 0 ? "blue" : matchDiff < 0 ? "red" : null;
   const topScoreText = matchDiff === 0 ? "AS" : `${Math.abs(matchDiff)} UP`;
-  const leadingName = matchDiff > 0 ? playerName : bot.name;
-  const trailingName = matchDiff > 0 ? bot.name : playerName;
-  const pressureNotice = holesRemaining <= 0 ? null
-    : matchDiff === 0 && holesRemaining === 1
-      ? "Sista hålet avgör matchen."
-      : Math.abs(matchDiff) === holesRemaining
-        ? `${leadingName} kan avgöra matchen nu. ${trailingName} måste vinna hålet.`
-        : Math.abs(matchDiff) === holesRemaining - 1 && Math.abs(matchDiff) > 0
-          ? `${trailingName} måste vinna eller dela hålet för att hålla matchen vid liv.`
-          : null;
+  const pressureNotice = getPlayerPressureNotice(matchDiff, holesRemaining, bot.name);
   const resultLeader: "blue" | "red" | null = suddenDeathWinner === "you" ? "blue" : suddenDeathWinner === "bot" ? "red" : liveLeader;
   const resultEngineSkill = engineSkillForBotCategory(category);
   const resultRecommendation = resultEngineSkill ? getRecommendationsForSkill(resultEngineSkill, 1)[0] : undefined;
@@ -277,17 +273,20 @@ function BotMatchPage() {
   }
 
   function simulateBot(hole: Hole) {
+    const lateMatch = holesRemaining <= 2;
     if (!category) return { value: 0, hit: true, approachResult: undefined as ApproachResult | undefined };
-    if (category === "putting") return { value: puttingBotStrokes(hole.distance ?? 3, bot), hit: true, approachResult: undefined };
+    if (category === "putting") return { value: puttingBotStrokes(hole.distance ?? 3, bot, lateMatch), hit: true, approachResult: undefined };
     if (category === "around-the-green") {
-      const chip = simulateChipBotResult(hole.distance ?? 15, bot.categoryHcp.chipping);
+      const chipHcp = effectiveCategoryHcp(bot.categoryHcp.chipping, bot.archetype, lateMatch);
+      const chip = simulateChipBotResult(hole.distance ?? 15, chipHcp, Math.random, bot.archetype);
       return { value: chip.points, hit: true, approachResult: undefined, resultText: chip.description };
     }
     if (category === "approach") {
-      const approachResult = simulateApproachResult(bot.categoryHcp.approach, 0, hole.distance ?? 120);
+      const approachHcp = effectiveCategoryHcp(bot.categoryHcp.approach, bot.archetype, lateMatch);
+      const approachResult = simulateApproachResult(approachHcp, 0, hole.distance ?? 120);
       return { value: approachProximity(approachResult, hole.distance ?? 120), hit: true, approachResult, resultText: undefined };
     }
-    const result = drivingBotScore(bot);
+    const result = drivingBotScore(bot, lateMatch);
     return { value: result.carry, hit: result.hit, approachResult: undefined, resultText: result.strike === "top" ? `Toppad · ${result.carry} m` : result.strike === "wild" ? `Grov miss · ${result.carry} m` : undefined };
   }
 
@@ -384,7 +383,7 @@ function BotMatchPage() {
         : h,
     ));
 
-    const isPressure = holeIndex >= holes.length - 3;
+    const isPressure = Boolean(pressureNotice);
     const event: BotEvent = isPressure ? "pressure" : winner === "bot" ? "bot-win" : winner === "you" ? "player-win" : "tie";
     setBotComment(randomLine(bot.chat[event]));
     setTurnState("reveal");
@@ -500,6 +499,7 @@ function BotMatchPage() {
                         <span className="mt-3 block font-display text-2xl">{item.name}</span>
                         <span className="mt-1 block text-xs font-bold text-slate-700">HCP {formatHcp(item.hcp)}</span>
                         <span className="mt-1 block text-[11px] text-slate-500">{item.gender} · {item.role}</span>
+                        <span className="mt-2 block text-[10px] font-black uppercase tracking-[0.12em] text-red-700">{item.archetype.label}</span>
                         {item.locked ? <span className="mt-3 block text-[10px] font-black uppercase tracking-[0.12em] text-slate-700">Låst</span> : null}
                         {item.locked && item.unlockText ? <span className="mt-1 block text-[10px] leading-snug text-slate-500">{item.unlockText}</span> : null}
                       </button>
@@ -509,7 +509,7 @@ function BotMatchPage() {
               </section>
             ))}
           </div>
-          <section className={`mt-6 rounded-[28px] border p-4 ${glass}`}><div className="flex items-start gap-3"><span className="text-4xl">{bot.avatar}</span><div><p className="font-display text-xl">{bot.name}</p><p className="text-xs font-bold text-red-700">HCP {formatHcp(bot.hcp)} · {bot.role}</p><p className="mt-2 text-sm leading-5 text-slate-600">“{bot.intro}”</p></div></div></section>
+          <section className={`mt-6 rounded-[28px] border p-4 ${glass}`}><div className="flex items-start gap-3"><span className="text-4xl">{bot.avatar}</span><div><p className="font-display text-xl">{bot.name}</p><p className="text-xs font-bold text-red-700">HCP {formatHcp(bot.hcp)} · {bot.role}</p><p className="mt-1 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">{bot.archetype.label}</p><p className="mt-2 text-sm leading-5 text-slate-600">“{bot.intro}”</p><div className="mt-3 flex flex-wrap gap-1.5">{archetypeLabels(bot.archetype).map((trait) => <span key={trait} className="rounded-full border border-slate-200 bg-white/80 px-2 py-1 text-[9px] font-bold text-slate-600">{trait}</span>)}</div></div></div></section>
           <div className="fixed bottom-0 left-1/2 z-40 w-full max-w-md -translate-x-1/2 bg-gradient-to-t from-white via-white/95 to-white/0 px-5 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-8">
             <button onClick={() => setStep("category")} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white shadow-xl">Spela mot {bot.name} <ChevronRight className="h-5 w-5" /></button>
           </div>
