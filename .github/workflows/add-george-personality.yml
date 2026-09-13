@@ -1,0 +1,32 @@
+name: Add George personality
+
+"on":
+  push:
+    paths:
+      - .github/workflows/add-george-personality.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - run: python scripts/add_george_personality.py
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+      - run: bunx vitest run src/lib/bot-match-pressure.test.ts src/lib/bot-skill-model.test.ts src/lib/sg4-engine.test.ts src/lib/sg4-recommender.test.ts
+      - name: Commit George personality
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/lib/bot-personality.ts
+          git commit -m "Give George a grumpy old guy personality"
+          git push origin main
