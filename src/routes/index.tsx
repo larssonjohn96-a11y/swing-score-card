@@ -12,6 +12,8 @@ import { loadFriends } from "@/lib/friends";
 import { AppStoryLauncher } from "@/components/app-story";
 import { AgeInlinePrompt } from "@/components/age-inline-prompt";
 import { ActiveMultiplayerBanner } from "@/components/active-multiplayer-banner";
+import { getHomeRecommendations } from "@/lib/sg4-surface-recommendations";
+import { recordRecommendationImpressions, recordRecommendationOpen } from "@/lib/sg4-recommender";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -65,6 +67,14 @@ function Home() {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const sessionsVersion = useSessionsVersion();
   const profile = loadCardProfile();
+  const recommendations = getHomeRecommendations(3);
+  const primaryRecommendation = recommendations[0];
+  const secondaryRecommendations = recommendations.slice(1);
+  const recommendationKey = recommendations.map((item) => item.id).join("|");
+
+  useEffect(() => {
+    if (recommendationKey) recordRecommendationImpressions(recommendationKey.split("|"));
+  }, [recommendationKey]);
 
   useEffect(() => {
     setData(loadHomeData());
@@ -95,8 +105,19 @@ function Home() {
 
     <ActiveMultiplayerBanner />
 
+    {primaryRecommendation ? <section className="mt-5">
+      <div className="mb-3 flex items-end justify-between"><div><p className="text-[10px] font-black uppercase tracking-[.18em] text-muted-foreground">Fortsätt</p><h2 className="mt-1 font-display text-3xl">Kör nästa</h2></div></div>
+      <a href={primaryRecommendation.href} onClick={() => recordRecommendationOpen(primaryRecommendation.id)} className="group block overflow-hidden rounded-[30px] border border-primary/25 bg-gradient-to-br from-primary/[.12] via-card to-primary/[.04] p-5 shadow-[0_24px_50px_-32px_rgba(0,0,0,.5)] active:scale-[.99]">
+        <div className="flex items-center justify-between"><span className="rounded-full bg-primary px-2.5 py-1 text-[9px] font-black uppercase tracking-[.14em] text-primary-foreground">{primaryRecommendation.label}</span><ChevronRight className="h-5 w-5 text-primary transition-transform group-active:translate-x-1" /></div>
+        <h3 className="mt-6 font-display text-4xl leading-none">{primaryRecommendation.title}</h3>
+        <p className="mt-2 max-w-[32ch] text-sm leading-relaxed text-muted-foreground">{primaryRecommendation.detail}</p>
+        <span className="mt-5 inline-flex items-center gap-2 text-sm font-black text-primary">Starta <ChevronRight className="h-4 w-4" /></span>
+      </a>
+      {secondaryRecommendations.length ? <div className="mt-3 grid grid-cols-2 gap-3">{secondaryRecommendations.map((item) => <a key={item.id} href={item.href} onClick={() => recordRecommendationOpen(item.id)} className="flex min-h-[126px] flex-col justify-between rounded-[26px] border border-border bg-card p-4 shadow-[0_12px_30px_-24px_rgba(0,0,0,.4)] active:scale-[.99]"><span className="text-[9px] font-black uppercase tracking-[.14em] text-muted-foreground">{item.label}</span><span><span className="block font-display text-[22px] leading-none">{item.title}</span><span className="mt-2 block text-[11px] leading-snug text-muted-foreground">{item.detail}</span></span></a>)}</div> : null}
+    </section> : null}
+
     <section className="mt-5">
-      <div className="mb-3 flex items-end justify-between"><div><p className="text-[10px] font-black uppercase tracking-[.18em] text-muted-foreground">SG4</p><h2 className="mt-1 font-display text-3xl">Välj aktivitet</h2></div></div>
+      <div className="mb-3 flex items-end justify-between"><div><p className="text-[10px] font-black uppercase tracking-[.18em] text-muted-foreground">Utforska</p><h2 className="mt-1 font-display text-3xl">Allt i SG4</h2></div></div>
       <div className="grid grid-cols-2 gap-3">
         {ACTIVITIES.map((item) => <Link key={item.to} to={item.to} className={`flex min-h-[138px] flex-col justify-between rounded-[27px] border p-4 shadow-[0_12px_30px_-24px_rgba(0,0,0,.4)] active:scale-[.99] ${activityTone(item.tone)}`}>
           <span className={`flex h-10 w-10 items-center justify-center rounded-2xl ${item.tone === "primary" ? "bg-primary text-primary-foreground" : item.tone === "gold" ? "bg-amber-500/15 text-amber-600" : item.tone === "flag" ? "bg-slate-950 text-white" : "bg-muted text-foreground"}`}><item.icon className="h-5 w-5" /></span>

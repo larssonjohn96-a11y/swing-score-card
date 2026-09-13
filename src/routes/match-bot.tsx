@@ -11,7 +11,9 @@ import {
   generatePuttingMatchDistances,
 } from "@/lib/putting-match";
 import { CHIP_POINT_ZONES, generateChipMatchDistances, getChipDistanceBand } from "@/lib/chip-match";
-import { chipPerformanceFromPoints, puttingPerformanceFromStrokes, recordEngineOutcome, selectNextEngineDistance } from "@/lib/sg4-engine";
+import { chipPerformanceFromPoints, puttingPerformanceFromStrokes, recordEngineOutcome, selectNextEngineDistance, type EngineSkill } from "@/lib/sg4-engine";
+import { getRecommendationsForSkill } from "@/lib/sg4-surface-recommendations";
+import { recordRecommendationCompletion, recordRecommendationImpressions, recordRecommendationOpen } from "@/lib/sg4-recommender";
 import {
   APPROACH_MATCH_FORMATS,
   type ApproachResult,
@@ -144,6 +146,13 @@ function clamp(n: number, min: number, max: number) { return Math.min(max, Math.
 function formatHcp(hcp: number) { return hcp < 0 ? `+${Math.abs(hcp)}` : `${hcp}`; }
 function sleep(ms: number) { return new Promise((resolve) => window.setTimeout(resolve, ms)); }
 function randomLine(lines: string[]) { return lines[rand(0, lines.length - 1)] ?? ""; }
+function engineSkillForBotCategory(category: Category | null): EngineSkill | null {
+  if (category === "putting") return "putting";
+  if (category === "around-the-green") return "chip";
+  if (category === "approach") return "approach";
+  if (category === "off-the-tee") return "driver";
+  return null;
+}
 
 function puttingBotStrokes(distance: number, bot: BotProfile) {
   const skillHcp = bot.hcp - bot.putting;
@@ -215,6 +224,13 @@ function BotMatchPage() {
 
   const current = holes[holeIndex];
   const playerName = displayName ?? "Du";
+  const resultEngineSkill = engineSkillForBotCategory(category);
+  const resultRecommendation = resultEngineSkill ? getRecommendationsForSkill(resultEngineSkill, 1)[0] : undefined;
+  useEffect(() => {
+    if (step !== "result") return;
+    recordRecommendationCompletion("play-bot");
+    if (resultRecommendation) recordRecommendationImpressions([resultRecommendation.id]);
+  }, [step, resultRecommendation?.id]);
   const glass = "border-slate-300/80 bg-white/78 shadow-[0_18px_44px_-32px_rgba(15,23,42,.42)] backdrop-blur-2xl";
   const selected = "border-emerald-500 bg-emerald-50/95 ring-2 ring-emerald-500/25";
 
@@ -615,7 +631,7 @@ function BotMatchPage() {
       {step === "result" ? (
         <>
           <section className={`mt-6 rounded-[30px] border p-5 text-center ${glass}`}><span className="text-5xl">{bot.avatar}</span><Trophy className="mx-auto mt-3 h-6 w-6 text-amber-500" /><p className="mt-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Slutresultat</p><h1 className="mt-2 font-display text-5xl">{suddenDeathWinner ? "SD" : `${score.you}–${score.bot}`}</h1><p className="mt-2 text-sm font-bold">{suddenDeathWinner === "you" ? `${playerName} vinner i sudden death` : suddenDeathWinner === "bot" ? `${bot.name} vinner i sudden death` : score.you > score.bot ? `${playerName} vinner över ${bot.name}` : score.bot > score.you ? `${bot.name} vinner` : "Matchen slutar delad"}</p>{suddenDeathWinner ? <p className="mt-1 text-xs font-semibold text-red-600">11 m · 1 slag · närmast flaggan</p> : null}<p className="mt-1 text-xs text-slate-500">{bot.name} · HCP {formatHcp(bot.hcp)}</p><p className="mt-1 text-xs text-slate-500">{score.tie ? `${score.tie} delade hål` : `${length} hål spelade`}</p></section>
-          <div className="mt-5 space-y-3"><button onClick={buildHoles} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white"><RotateCcw className="h-5 w-5" /> Rematch mot {bot.name}</button><button onClick={() => { setCategory(null); setStep("bot"); }} className={`flex w-full items-center justify-center gap-2 rounded-2xl border py-4 font-display text-xl ${glass}`}><Target className="h-5 w-5" /> Välj ny motståndare</button><Link to="/" className="flex w-full items-center justify-center rounded-2xl border border-slate-300 bg-white/75 py-4 text-sm font-bold">Hem</Link></div>
+          {resultRecommendation ? <a href={resultRecommendation.href} onClick={() => recordRecommendationOpen(resultRecommendation.id)} className={`mt-5 flex items-center gap-4 rounded-[26px] border p-4 text-left ${glass}`}><span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-600 text-white"><Target className="h-5 w-5" /></span><span className="min-w-0 flex-1"><span className="text-[9px] font-black uppercase tracking-[0.15em] text-slate-500">Nästa</span><span className="mt-1 block font-display text-2xl">{resultRecommendation.title}</span><span className="mt-1 block text-xs text-slate-600">{resultRecommendation.detail}</span></span><ChevronRight className="h-5 w-5 shrink-0 text-slate-500" /></a> : null}<div className="mt-5 space-y-3"><button onClick={() => { recordRecommendationOpen("play-bot"); buildHoles(); }} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white"><RotateCcw className="h-5 w-5" /> Rematch mot {bot.name}</button><button onClick={() => { setCategory(null); setStep("bot"); }} className={`flex w-full items-center justify-center gap-2 rounded-2xl border py-4 font-display text-xl ${glass}`}><Target className="h-5 w-5" /> Välj ny motståndare</button><Link to="/" className="flex w-full items-center justify-center rounded-2xl border border-slate-300 bg-white/75 py-4 text-sm font-bold">Hem</Link></div>
         </>
       ) : null}
     </main>

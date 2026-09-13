@@ -1,5 +1,7 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { Bot, ChevronRight, Flag, Swords, Target, Trophy, Users } from "lucide-react";
+import { useEffect } from "react";
+import { recordRecommendationImpressions, recordRecommendationOpen } from "@/lib/sg4-recommender";
 
 export const Route = createFileRoute("/spela")({
   head: () => ({ meta: [{ title: "Spela – SG4" }] }),
@@ -7,6 +9,7 @@ export const Route = createFileRoute("/spela")({
 });
 
 function PlayPage() {
+  useEffect(() => { recordRecommendationImpressions(["play-bot", "play-friend", "play-team"]); }, []);
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-28 pt-8">
       <header>
@@ -16,19 +19,19 @@ function PlayPage() {
       </header>
 
       <section className="mt-6 space-y-3">
-        <Link to="/match-bot" className="flex min-h-[108px] items-center gap-4 rounded-[28px] border border-primary/20 bg-primary/[.06] p-5 shadow-[var(--shadow-glow)] active:scale-[.99]">
+        <Link to="/match-bot" onClick={() => recordRecommendationOpen("play-bot")} className="flex min-h-[108px] items-center gap-4 rounded-[28px] border border-primary/20 bg-primary/[.06] p-5 shadow-[var(--shadow-glow)] active:scale-[.99]">
           <span className="flex h-13 w-13 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground"><Bot className="h-6 w-6" /></span>
           <span className="min-w-0 flex-1"><span className="block font-display text-2xl">Mot bot</span><span className="mt-1 block text-sm text-muted-foreground">Välj en golfpersona och spela direkt.</span></span>
           <ChevronRight className="h-5 w-5 text-muted-foreground" />
         </Link>
 
-        <a href="/match?flow=friend" className="flex min-h-[108px] items-center gap-4 rounded-[28px] border border-blue-500/20 bg-gradient-to-r from-blue-500/[.07] via-card to-red-500/[.07] p-5 shadow-[var(--shadow-glow)] active:scale-[.99]">
+        <a href="/match?flow=friend" onClick={() => recordRecommendationOpen("play-friend")} className="flex min-h-[108px] items-center gap-4 rounded-[28px] border border-blue-500/20 bg-gradient-to-r from-blue-500/[.07] via-card to-red-500/[.07] p-5 shadow-[var(--shadow-glow)] active:scale-[.99]">
           <span className="flex h-13 w-13 shrink-0 items-center justify-center rounded-2xl bg-slate-950 text-white"><Swords className="h-6 w-6" /></span>
           <span className="min-w-0 flex-1"><span className="block font-display text-2xl">Mot vän</span><span className="mt-1 block text-sm text-muted-foreground">Välj en kompis och spela 1 mot 1.</span></span>
           <ChevronRight className="h-5 w-5 text-red-500/70" />
         </a>
 
-        <a href="/match?flow=team" className="flex min-h-[108px] items-center gap-4 rounded-[28px] border border-violet-500/20 bg-violet-500/[.06] p-5 shadow-[var(--shadow-glow)] active:scale-[.99]">
+        <a href="/match?flow=team" onClick={() => recordRecommendationOpen("play-team")} className="flex min-h-[108px] items-center gap-4 rounded-[28px] border border-violet-500/20 bg-violet-500/[.06] p-5 shadow-[var(--shadow-glow)] active:scale-[.99]">
           <span className="flex h-13 w-13 shrink-0 items-center justify-center rounded-2xl bg-violet-600 text-white"><Users className="h-6 w-6" /></span>
           <span className="min-w-0 flex-1"><span className="block font-display text-2xl">Lagspel</span><span className="mt-1 block text-sm text-muted-foreground">Fourball, Foursomes och 2 mot 2.</span></span>
           <ChevronRight className="h-5 w-5 text-violet-500/70" />
