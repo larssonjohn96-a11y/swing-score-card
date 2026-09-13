@@ -15,12 +15,19 @@ export type MatchCloudState = {
   categoryTitle: string;
   matchType: string;
   scoringMode: "match" | "stroke";
-  matchLength: 5 | 9 | 18;
+  matchLength: 3 | 5 | 7;
   holes: unknown[];
   holeIndex: number;
   finalText: string;
   blueTeam: MatchPlayerSnapshot[];
   redTeam: MatchPlayerSnapshot[];
+  step?: "play" | "sudden-death" | "result";
+  suddenDeathRound?: number;
+  sdBlue?: number | null;
+  sdRed?: number | null;
+  sdBlueSunk?: boolean;
+  sdRedSunk?: boolean;
+  sdMessage?: string;
 };
 
 export type MatchCloudSession = {
