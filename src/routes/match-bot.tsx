@@ -198,7 +198,7 @@ function BotMatchPage() {
   useEffect(() => {
     if (step !== "sudden-death") return;
     setShowSuddenDeathIntro(true);
-    const timer = window.setTimeout(() => setShowSuddenDeathIntro(false), 1450);
+    const timer = window.setTimeout(() => setShowSuddenDeathIntro(false), 2400);
     return () => window.clearTimeout(timer);
   }, [step, suddenDeathRound]);
 
@@ -537,20 +537,30 @@ function BotMatchPage() {
 
       {step === "sudden-death" ? (
         <>
-          {showSuddenDeathIntro ? <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/95 px-6 text-center backdrop-blur-md">
-            <div className="animate-in zoom-in-75 fade-in duration-500">
-              <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full border border-red-400/40 bg-red-500/10 shadow-[0_0_60px_rgba(239,68,68,0.35)]"><Target className="h-9 w-9 animate-pulse text-red-400" /></div>
-              <p className="text-[11px] font-black uppercase tracking-[0.38em] text-red-400">Matchen är lika</p>
-              <h1 className="mt-3 font-display text-6xl leading-none text-white">SUDDEN<br/>DEATH</h1>
-              <p className="mt-4 text-sm font-bold text-slate-300">Ett slag. Närmast hålet vinner allt.</p>
+          {showSuddenDeathIntro ? <div className="fixed inset-0 z-50 overflow-hidden bg-slate-950/95 backdrop-blur-md">
+            <style>{`@keyframes sdBlueRush{0%{transform:translateX(-115%)}38%{transform:translateX(5%)}52%{transform:translateX(-2%)}64%{transform:translateX(2%)}100%{transform:translateX(0)}}@keyframes sdRedRush{0%{transform:translateX(115%)}38%{transform:translateX(-5%)}52%{transform:translateX(2%)}64%{transform:translateX(-2%)}100%{transform:translateX(0)}}@keyframes sdClash{0%,34%{opacity:0;transform:scale(.2) rotate(0deg)}45%{opacity:1;transform:scale(1.5) rotate(25deg)}62%{opacity:.95;transform:scale(.9) rotate(-15deg)}100%{opacity:.35;transform:scale(1.2) rotate(15deg)}}@keyframes sdTitle{0%,54%{opacity:0;transform:scale(.82) translateY(12px)}72%{opacity:1;transform:scale(1.06) translateY(0)}100%{opacity:1;transform:scale(1)}}@keyframes sdSparkL{0%,38%{opacity:0;transform:translate(0,0) scale(.4)}50%{opacity:1}100%{opacity:0;transform:translate(-42px,-34px) scale(1.25)}}@keyframes sdSparkR{0%,38%{opacity:0;transform:translate(0,0) scale(.4)}50%{opacity:1}100%{opacity:0;transform:translate(42px,34px) scale(1.25)}}`}</style>
+            <div className="absolute inset-y-0 left-0 w-[56%] bg-gradient-to-r from-blue-700 via-blue-600 to-blue-500/80" style={{animation:'sdBlueRush 1.35s cubic-bezier(.22,.8,.28,1) both',clipPath:'polygon(0 0,88% 0,100% 50%,88% 100%,0 100%)'}} />
+            <div className="absolute inset-y-0 right-0 w-[56%] bg-gradient-to-l from-red-700 via-red-600 to-red-500/80" style={{animation:'sdRedRush 1.35s cubic-bezier(.22,.8,.28,1) both',clipPath:'polygon(12% 0,100% 0,100% 100%,12% 100%,0 50%)'}} />
+            <div className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 text-amber-200" style={{animation:'sdClash 1.8s ease-out both'}}>
+          <span className="block text-7xl drop-shadow-[0_0_22px_rgba(253,224,71,.9)]">✦</span>
+          <span className="absolute -left-2 top-4 text-xl" style={{animation:'sdSparkL 1.5s .15s ease-out both'}}>✦</span>
+          <span className="absolute -right-2 bottom-2 text-lg" style={{animation:'sdSparkR 1.5s .12s ease-out both'}}>✦</span>
+          <span className="absolute left-3 -top-2 text-sm" style={{animation:'sdSparkR 1.35s .2s ease-out both'}}>✦</span>
+          <span className="absolute right-2 top-0 text-base" style={{animation:'sdSparkL 1.4s .18s ease-out both'}}>✦</span>
+        </div>
+            <div className="absolute inset-0 z-20 flex items-center justify-center px-6 text-center" style={{animation:'sdTitle 2.15s ease-out both'}}>
+          <div className="rounded-[32px] border border-white/20 bg-slate-950/50 px-7 py-6 shadow-2xl backdrop-blur-xl">
+            <p className="text-[10px] font-black uppercase tracking-[0.38em] text-white/70">AVGÖRANDE</p>
+            <h1 className="mt-2 font-display text-6xl leading-none text-white">SUDDEN<br/>DEATH</h1>
+            <p className="mt-4 text-sm font-black text-white">Närmast hålet vinner matchen</p>
+          </div>
             </div>
           </div> : null}
           <section className="pt-3 text-center"><div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-50 ring-1 ring-red-100"><Target className="h-6 w-6 text-red-600" /></div><p className="mt-4 text-[10px] font-black uppercase tracking-[0.32em] text-red-600">Sudden death</p><h1 className="mt-1 font-display text-5xl leading-none">11 meter</h1><p className="mt-3 text-sm font-semibold text-slate-700">Du slår först · {bot.name} svarar efteråt</p><div className="mx-auto mt-3 inline-flex rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Avgörande {suddenDeathRound}</div></section>
           <section className={`mt-6 rounded-[28px] border p-5 shadow-xl shadow-slate-200/50 ${glass}`}><p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Ditt slag</p><p className="mt-1 text-sm text-slate-600">Registrera hur nära hålet du kom. Resultatet används bara för att avgöra matchen.</p><button disabled={sdBusy} onClick={() => void playSuddenDeath(null)} className="mt-4 w-full rounded-2xl bg-emerald-600 py-3 font-black text-white disabled:opacity-40">Sänkt</button><div className="mt-2 grid grid-cols-4 gap-2">{[0.5, 1, 1.5, 2, 3, 5, 8, 11].map((v) => <button disabled={sdBusy} key={v} onClick={() => void playSuddenDeath(v)} className="rounded-xl border border-slate-200 bg-white/90 py-3 text-xs font-bold disabled:opacity-40">{v} m</button>)}</div></section>
           {sdBotText ? <div className="mt-4 rounded-2xl bg-slate-950 p-4 text-center text-sm font-bold text-white">{sdBotText}</div> : null}
           <div className="mt-4 flex items-start gap-2"><span className="text-3xl">{bot.avatar}</span><div className={`rounded-2xl border p-3 text-sm ${glass}`}>“{sdBusy ? "Nu gäller det." : botComment}”</div></div>
-          <p className="mt-4 text-center text-[10px] font-semibold text-slate-400">Sudden Death avgör endast matchen och räknas inte in i ordinarie statistik.</p>
-        </>
+                  </>
       ) : null}
 
       {step === "result" ? (
