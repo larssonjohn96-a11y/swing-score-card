@@ -39,7 +39,7 @@ const LOCAL_MATCH_KEY = "sg4.active-match.v1";
 
 const CATEGORIES = [
   { id: "putting", title: "Puttning", subtitle: "Putting Match", description: "Spela en riktig puttingmatch hål för hål. Färre puttar vinner hålet." },
-  { id: "around-the-green", title: "Chipp", subtitle: "Chipping", description: "Chippingmatch mot samma mål. Närmast hålet vinner." },
+  { id: "around-the-green", title: "Chippning", subtitle: "Chipping", description: "Chippingmatch mot samma mål. Närmast hålet vinner." },
   { id: "approach", title: "Closest to Pin", subtitle: "Inspel", description: "Slå mot samma mål från varierade avstånd. Närmast flaggan vinner." },
   { id: "off-the-tee", title: "30 m Fairway Challenge", subtitle: "Driver", description: "Längsta godkända drive inom en 30 meter bred fairway vinner." },
 ] as const;
@@ -118,9 +118,7 @@ function generateChallenge(category: MatchCategory, typeId: string, mode: MatchM
     return { eyebrow: "Putting Match", title: formatPuttingDistance(distance), detail: `Samma position för båda · håla ut · färre puttar vinner hålet${suffix}` };
   }
   if (category === "around-the-green") {
-    const lie = pick(shortGameLies.length ? shortGameLies : (["fairway"] as ShortGameLie[]));
-    if (lie === "bunker") return { eyebrow: "Bunker", title: "Bunker", detail: `Slå så nära flaggan som möjligt.${suffix}` };
-    return { eyebrow: "Closest to the Pin", title: `${rand(10, 30)} m från ${lieLabel(lie)}`, detail: `Slå så nära flaggan som möjligt.${suffix}` };
+    return { eyebrow: "Chippning", title: `${rand(10, 30)} m`, detail: `Närmast hålet vinner.${suffix}` };
   }
   if (category === "approach") {
     const d = approachDistance ?? rand(100, 150);
@@ -486,11 +484,11 @@ function MatchPlayPage() {
   }
   function removeGuest(id: string) { setGuests((old) => old.filter((g) => g.id !== id)); if (blueMateId === id) setBlueMateId(null); }
   function startMatch() {
-    if (!mode || !teamsReady || !category || !matchType || (isShortGame && !setupValid)) return;
+    if (!mode || !teamsReady || !category || !matchType) return;
     const nextHoles = isPgaPutting
       ? generatePuttingMatchDistances(matchLength).map((distance) => ({ challenge: generateChallenge(category, matchType, mode, shortGameLies, distance), winner: null as HoleWinner }))
       : isShortGame
-      ? generateShortGameLieSequence(matchLength, shortGameLies).map((lie) => ({ challenge: generateChallenge(category, matchType, mode, [lie]), winner: null as HoleWinner }))
+      ? Array.from({ length: matchLength }, () => ({ challenge: generateChallenge(category, matchType, mode), winner: null as HoleWinner }))
       : isApproach
         ? generateApproachDistances(matchLength, approachRanges, approachCustomMin, approachCustomMax).map((distance) => ({ challenge: generateChallenge(category, matchType, mode, shortGameLies, distance), winner: null as HoleWinner }))
         : Array.from({ length: matchLength }, () => ({ challenge: generateChallenge(category, matchType, mode, shortGameLies), winner: null as HoleWinner }));
@@ -658,10 +656,10 @@ function MatchPlayPage() {
     else if (step === "type") setStep("category");
     else if (step === "setup") setStep("category");
     else if (step === "approach-setup") setStep("category");
-    else if (step === "length") setStep(isShortGame ? "setup" : isApproach ? "approach-setup" : category === "off-the-tee" || isPutting ? "category" : "scoring");
+    else if (step === "length") setStep(isApproach ? "approach-setup" : category === "off-the-tee" || isPutting || isShortGame ? "category" : "scoring");
   }
 
-  const stepLabel = step === "players" ? (entryFlow === "friend" ? "Välj kompis" : "Lagspel · Format & spelare") : step === "teams" ? "2 · Lag" : step === "scoring" ? "Spelsätt" : step === "category" ? "Kategori" : step === "type" ? "Spel" : step === "setup" ? "Chipp · Setup" : step === "approach-setup" ? "Inspel · Avstånd" : "Matchlängd";
+  const stepLabel = step === "players" ? (entryFlow === "friend" ? "Välj kompis" : "Lagspel · Format & spelare") : step === "teams" ? "2 · Lag" : step === "scoring" ? "Spelsätt" : step === "category" ? "Kategori" : step === "type" ? "Spel" : step === "setup" ? "Chippning" : step === "approach-setup" ? "Inspel · Avstånd" : "Matchlängd";
 
   return <main style={LIGHT_SURFACE} className={`mx-auto min-h-screen w-full max-w-md bg-background px-5 text-foreground ${step === "play" ? "pb-4 pt-2" : "pb-16 pt-6"}`}>
     {step !== "play" && step !== "sudden-death" && step !== "result" ? <header className="flex items-center justify-between">{step === "players" ? <Link to="/spela" aria-label="Tillbaka" className={`inline-flex h-10 w-10 items-center justify-center rounded-full border text-2xl leading-none ${glass}`}>‹</Link> : <button onClick={back} aria-label="Föregående steg" className={`inline-flex h-10 w-10 items-center justify-center rounded-full border text-2xl leading-none ${glass}`}>‹</button>}<div className="text-center"><p className="text-[9px] font-bold uppercase tracking-[0.22em] text-slate-500">SG4 Match</p><p className="text-[11px] font-semibold text-slate-700">{stepLabel}</p></div>{step === "players" ? <span aria-hidden="true" className="h-10 w-10" /> : <Link to="/" className={`inline-flex h-10 w-10 items-center justify-center rounded-full border ${glass}`}>×</Link>}</header> : null}
@@ -683,7 +681,23 @@ function MatchPlayPage() {
 
     {step === "scoring" ? <><section className="mt-5"><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Spelsätt</p><h1 className="mt-1 font-display text-4xl leading-none">Hur räknas resultatet?</h1></section><div className="mt-5 grid grid-cols-1 gap-3"><button onClick={() => setScoringMode("match")} className={`relative rounded-[28px] border p-5 text-left ${scoringMode === "match" ? selectedRing : glass}`}>{scoringMode === "match" ? <SelectedCheck /> : null}<span className="block font-display text-2xl">Match Play</span><span className="mt-2 block text-xs text-slate-600">Ni spelar hål mot hål. Ställningen visas som AS, 1 UP eller 2 UP.</span></button><button onClick={() => setScoringMode("stroke")} className={`relative rounded-[28px] border p-5 text-left ${scoringMode === "stroke" ? selectedRing : glass}`}>{scoringMode === "stroke" ? <SelectedCheck /> : null}<span className="block font-display text-2xl">Slagspel</span><span className="mt-2 block text-xs text-slate-600">Alla resultat räknas ihop. Bäst totalt vinner.</span></button></div><button onClick={() => setStep("length")} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 via-slate-900 to-red-600 py-4 font-display text-xl text-white">Nästa <ChevronRight className="h-5 w-5" /></button></> : null}
 
-    {step === "category" ? <><section className="mt-5"><p className="text-[10px] font-bold uppercase text-slate-500">Kategori</p><h1 className="mt-1 font-display text-4xl">Vad ska ni spela?</h1></section><div className="mt-5 grid grid-cols-2 gap-3">{CATEGORIES.map((i) => { const active = category === i.id; return <button key={i.id} onClick={() => { setCategory(i.id); if (i.id === "around-the-green") { setMatchType("closest"); setShortGameLies([]); } else if (i.id === "off-the-tee") { setMatchType("fairway"); setScoringMode("match"); } else if (i.id === "approach") { setMatchType("closest"); setScoringMode("match"); setApproachRanges([]); } else { setMatchType("standard"); setScoringMode("match"); setMatchLength(5); } }} className={`relative min-h-36 rounded-[26px] border p-4 text-left ${active ? selectedGlass : glass}`}><span className="block text-[9px] font-bold uppercase tracking-[0.16em] text-slate-500">{i.subtitle}</span><span className="mt-2 block font-display text-2xl leading-none">{i.title}</span><span className="mt-2 block text-[11px] leading-relaxed text-slate-600">{i.description}</span>{active ? <SelectedCheck /> : null}</button>; })}</div><button disabled={!category} onClick={() => { setScoringMode("match"); setStep(category === "around-the-green" ? "setup" : category === "approach" ? "approach-setup" : "length"); }} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 via-slate-900 to-red-600 py-4 font-display text-xl text-white disabled:opacity-30">Nästa <ChevronRight className="h-5 w-5" /></button></> : null}
+    {step === "category" ? <>
+      <section className="mt-6">
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Match</p>
+        <h1 className="mt-1 font-display text-4xl">Vad ska ni tävla i?</h1>
+      </section>
+      <div className="mt-6 space-y-4">{CATEGORIES.map((i) => <button key={i.id} onClick={() => {
+        setCategory(i.id);
+        setScoringMode("match");
+        if (i.id === "putting") { setMatchType("standard"); setMatchLength(5); setStep("length"); return; }
+        if (i.id === "around-the-green") { setMatchType("closest"); setMatchLength(5); setStep("length"); return; }
+        if (i.id === "approach") { setMatchType("closest"); setApproachRanges([]); setStep("approach-setup"); return; }
+        setMatchType("fairway"); setStep("length");
+      }} className={`group relative flex min-h-28 w-full items-center justify-between overflow-hidden rounded-[30px] border px-6 py-6 text-left transition active:scale-[.985] ${glass}`}>
+        <span className="font-display text-3xl leading-none text-slate-950">{i.title}</span>
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-slate-300/80 bg-white/75 text-2xl text-slate-700 shadow-sm backdrop-blur-xl transition group-active:translate-x-0.5">›</span>
+      </button>)}</div>
+    </> : null}
 
     {step === "type" && category && !isShortGame && !isApproach ? <><section className="mt-5"><p className="text-[10px] font-bold uppercase text-slate-500">{selectedCategory?.title}</p><h1 className="mt-1 font-display text-4xl">Välj spel</h1>{isPutting ? <p className="mt-2 text-sm text-slate-600">Håla ut från varje avstånd. SG4 räknar resultatet automatiskt.</p> : null}</section><div className="mt-5 space-y-3">{MATCH_TYPES[category].map((i) => { const active = matchType === i.id; return <button key={i.id} onClick={() => { setMatchType(i.id); }} className={`flex w-full items-center gap-4 rounded-3xl border p-5 text-left ${active ? selectedRing : glass}`}><span className="min-w-0 flex-1"><span className="block font-display text-2xl">{i.title}</span><span className="mt-1 block text-xs text-slate-600">{i.description}</span></span>{active ? <SelectedCheck className="" /> : null}</button>; })}</div><button disabled={!matchType} onClick={() => setStep("scoring")} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white disabled:opacity-30">Nästa <ChevronRight className="h-5 w-5" /></button></> : null}
 
