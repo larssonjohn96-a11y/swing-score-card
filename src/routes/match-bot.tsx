@@ -292,7 +292,7 @@ function BotMatchPage() {
       if (category === "around-the-green") {
         const d = chipDistances[holeNr] ?? 15;
         const band = getChipDistanceBand(d);
-        return { title: `${d} m`, distance: d, detail: `${band.label} · ${band.range} · samma avstånd för båda` };
+        return { title: `${d} m`, distance: d, detail: "Närmast flaggan vinner." };
       }
       if (category === "approach") {
         const d = approachDistances[holeNr] ?? 120;
@@ -404,7 +404,7 @@ function BotMatchPage() {
           return { ...h, title: formatPuttingDistance(adaptiveNextDistance), distance: adaptiveNextDistance, detail: "Samma position för båda · färre puttar vinner hålet" };
         }
         const band = getChipDistanceBand(adaptiveNextDistance);
-        return { ...h, title: `${adaptiveNextDistance} m`, distance: adaptiveNextDistance, detail: `${band.label} · ${band.range} · samma avstånd för båda` };
+        return { ...h, title: `${adaptiveNextDistance} m`, distance: adaptiveNextDistance, detail: "Närmast flaggan vinner." };
       }
       return h;
     }));
