@@ -1,0 +1,87 @@
+name: Apply separated match flow
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-match-flow.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch-match-flow:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Patch match flow
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('src/routes/match.tsx')
+          text = path.read_text()
+
+          old = '''  const { user, loading } = useAuth();
+  const [step, setStep] = useState<Step>("players");
+  const [mode, setMode] = useState<MatchMode | null>(null);'''
+          new = '''  const { user, loading } = useAuth();
+  const [entryFlow] = useState<"friend" | "team">(() => new URLSearchParams(window.location.search).get("flow") === "team" ? "team" : "friend");
+  const [step, setStep] = useState<Step>("players");
+  const [mode, setMode] = useState<MatchMode | null>(() => entryFlow === "friend" ? "singles" : null);'''
+          if old not in text:
+              raise SystemExit('state initializer block not found')
+          text = text.replace(old, new, 1)
+
+          text = text.replace('setMode(null); setSelectedFriendIds([]);', 'setMode(entryFlow === "friend" ? "singles" : null); setSelectedFriendIds([]);', 1)
+          text = text.replace('window.history.replaceState(window.history.state, "", "/match");', 'window.history.replaceState(window.history.state, "", `/match?flow=${entryFlow}`);')
+
+          old_label = '  const stepLabel = step === "players" ? "1 · Spelform & spelare" : step === "teams" ? "2 · Lag" : step === "scoring" ? "Spelsätt" : step === "category" ? "Kategori" : step === "type" ? "Spel" : step === "setup" ? "Närspel · Setup" : step === "approach-setup" ? "Inspel · Avstånd" : "Matchlängd";'
+          new_label = '  const stepLabel = step === "players" ? (entryFlow === "friend" ? "Välj kompis" : "Lagspel · Format & spelare") : step === "teams" ? "2 · Lag" : step === "scoring" ? "Spelsätt" : step === "category" ? "Kategori" : step === "type" ? "Spel" : step === "setup" ? "Närspel · Setup" : step === "approach-setup" ? "Inspel · Avstånd" : "Matchlängd";'
+          if old_label not in text:
+              raise SystemExit('stepLabel not found')
+          text = text.replace(old_label, new_label, 1)
+          text = text.replace('step === "players" ? <Link to="/" aria-label="Tillbaka"', 'step === "players" ? <Link to="/spela" aria-label="Tillbaka"', 1)
+
+          start_marker = '    {step === "players" ? <>'
+          end_marker = '    {step === "teams" ? <>'
+          start = text.find(start_marker)
+          end = text.find(end_marker, start)
+          if start < 0 or end < 0:
+              raise SystemExit('players UI markers not found')
+
+          players = '''    {step === "players" ? <>
+      {entryFlow === "friend" ? <>
+        <section className="mt-5"><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">1 mot 1</p><h1 className="mt-1 font-display text-4xl leading-none">Välj kompis</h1><p className="mt-2 text-sm text-slate-600">Välj vem du vill möta. Singles är redan valt.</p></section>
+        <section className="mt-5 grid grid-cols-[1fr_auto_1fr] items-center gap-2"><div className={`flex min-h-44 flex-col items-center justify-center rounded-[28px] border p-4 text-center ${blueGlass}`}><PlayerAvatar player={selfPlayer} tone="blue" large /><p className="mt-3 max-w-full truncate text-sm font-bold">{selfName}</p><p className="mt-1 text-[10px] font-bold uppercase tracking-[0.14em] text-blue-600">Du · Blue</p></div><span className="rounded-xl bg-slate-950 px-2.5 py-2 font-display text-xl text-white">VS</span>{selectedOthers[0] ? <button onClick={() => setPickerOpen(true)} className={`relative flex min-h-44 flex-col items-center justify-center rounded-[28px] border p-4 text-center ${redGlass}`}><PlayerAvatar player={selectedOthers[0]} tone="red" large /><p className="mt-3 max-w-full truncate text-sm font-bold">{selectedOthers[0].name}</p><p className="mt-1 text-[10px] font-bold uppercase tracking-[0.14em] text-red-600">Red · tryck för att ändra</p>{selectedOthers[0].isGuest ? <span onClick={(e) => { e.stopPropagation(); removeGuest(selectedOthers[0].id); }} className="absolute right-3 top-3 rounded-full bg-white/75 p-1.5 text-slate-500"><X className="h-3.5 w-3.5" /></span> : null}</button> : <button onClick={() => setPickerOpen(true)} className={`flex min-h-44 flex-col items-center justify-center rounded-[28px] border p-4 text-center ${redGlass}`}><span className="flex h-16 w-16 items-center justify-center rounded-full border-[3px] border-dashed border-red-400 text-red-500"><Plus className="h-6 w-6" /></span><p className="mt-3 font-display text-xl">Välj kompis</p><p className="mt-1 text-[10px] text-slate-500">Vän eller gäst</p></button>}</section>
+        <button disabled={!canContinuePlayers} onClick={() => setStep("category")} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 via-slate-900 to-red-600 py-4 font-display text-xl text-white disabled:opacity-30">Nästa <ChevronRight className="h-5 w-5" /></button>
+      </> : <>
+        <section className="mt-5"><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Lagspel</p><h1 className="mt-1 font-display text-4xl leading-none">Välj lagformat</h1><p className="mt-2 text-sm text-slate-600">Välj Fourball eller Foursomes och därefter tre spelare.</p></section>
+        <div className="mt-5 grid grid-cols-2 gap-3"><button onClick={() => chooseMode("fourball")} className={`relative rounded-3xl border p-4 text-center ${mode === "fourball" ? selectedRing : glass}`}>{mode === "fourball" ? <SelectedCheck className="absolute right-2 top-2" /> : null}<span className="block font-display text-xl">Fourball</span><span className="mt-1 block text-[9px] font-bold uppercase text-slate-500">2 mot 2 · bästa boll</span></button><button onClick={() => chooseMode("foursomes")} className={`relative rounded-3xl border p-4 text-center ${mode === "foursomes" ? selectedRing : glass}`}>{mode === "foursomes" ? <SelectedCheck className="absolute right-2 top-2" /> : null}<span className="block font-display text-xl">Foursomes</span><span className="mt-1 text-[9px] font-bold uppercase text-slate-500">2 mot 2 · vartannat slag</span></button></div>
+        {mode ? <><div className="mt-6 flex items-center justify-between"><h2 className="font-display text-2xl">Spelare</h2><span className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">4 spelare</span></div><button onClick={() => setPickerOpen(true)} className={`mt-3 flex w-full items-center gap-4 rounded-3xl border p-4 text-left ${selectedOthers.length ? redGlass : glass}`}><Users className="h-5 w-5 text-red-600" /><span className="min-w-0 flex-1"><span className="block font-display text-xl">Välj tre spelare</span><span className="text-[10px] text-slate-500">{selectedOthers.length}/3 valda</span></span><ChevronRight className="h-5 w-5 text-slate-500" /></button><button disabled={!canContinuePlayers} onClick={() => setStep("teams")} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 via-slate-900 to-red-600 py-4 font-display text-xl text-white disabled:opacity-30">Nästa <ChevronRight className="h-5 w-5" /></button></> : null}
+      </>}
+    </> : null}
+
+'''
+          text = text[:start] + players + text[end:]
+
+          text = text.replace('<SheetHeader><SheetTitle>Välj spelare</SheetTitle></SheetHeader>', '<SheetHeader><SheetTitle>{entryFlow === "friend" ? "Välj kompis" : "Välj spelare"}</SheetTitle></SheetHeader>', 1)
+
+          path.write_text(text)
+          PY
+      - name: Build
+        run: npm ci && npm run build
+      - name: Typecheck
+        run: npm run typecheck --if-present
+      - name: Commit patch
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/routes/match.tsx
+          git diff --cached --quiet && exit 0
+          git commit -m "Separate friend and team match flows"
+          git push origin HEAD:main
