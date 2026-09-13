@@ -10,7 +10,7 @@ import {
   formatPuttingDistance,
   generatePuttingMatchDistances,
 } from "@/lib/putting-match";
-import { generateChipMatchDistances, getChipDistanceBand } from "@/lib/chip-match";
+import { CHIP_POINT_ZONES, generateChipMatchDistances, getChipDistanceBand } from "@/lib/chip-match";
 import {
   APPROACH_MATCH_FORMATS,
   type ApproachResult,
@@ -156,10 +156,11 @@ function shortGameBotPoints(bot: BotProfile) {
   const skillHcp = bot.hcp - bot.shortGame;
   const roll = Math.random();
   const skill = clamp(1 - skillHcp / 40, 0.25, 1.15);
-  if (roll < 0.05 * skill) return 4;
-  if (roll < 0.2 + 0.22 * skill) return 3;
-  if (roll < 0.52 + 0.22 * skill) return 2;
-  if (roll < 0.82 + 0.08 * skill) return 1;
+  if (roll < 0.05 * skill) return 5;
+  if (roll < 0.18 + 0.18 * skill) return 4;
+  if (roll < 0.42 + 0.18 * skill) return 3;
+  if (roll < 0.65 + 0.14 * skill) return 2;
+  if (roll < 0.88 + 0.06 * skill) return 1;
   return 0;
 }
 
@@ -504,7 +505,7 @@ function BotMatchPage() {
             {category === "putting" ? (
               <div className="mt-2 grid grid-cols-4 gap-2">{[1, 2, 3, 4].map((v) => <button key={v} disabled={turnState !== "you"} onClick={() => setYourValue(v)} className={`rounded-2xl border py-4 font-display text-2xl disabled:opacity-50 ${yourValue === v ? "border-blue-600 bg-blue-600 text-white" : glass}`}>{v}</button>)}</div>
             ) : category === "around-the-green" ? (
-              <div className="mt-2 grid grid-cols-5 gap-2">{[0, 1, 2, 3, 4].map((v) => <button key={v} disabled={turnState !== "you"} onClick={() => setYourValue(v)} className={`rounded-xl border py-4 font-display text-xl disabled:opacity-50 ${yourValue === v ? "border-blue-600 bg-blue-600 text-white" : glass}`}>{v}p</button>)}</div>
+              <div className="mt-3 grid grid-cols-3 gap-2.5">{CHIP_POINT_ZONES.map((zone) => <button key={zone.points} disabled={turnState !== "you"} onClick={() => setYourValue(zone.points)} className={`min-h-[64px] rounded-2xl border px-2 py-4 text-center font-display text-base leading-tight disabled:opacity-50 ${yourValue === zone.points ? "border-blue-600 bg-blue-600 text-white" : glass}`}>{zone.label}</button>)}</div>
             ) : category === "approach" ? (
               <div className={`mt-2 rounded-[24px] border p-3.5 ${glass}`}>
                 <div className="flex items-center justify-between rounded-2xl bg-slate-950 px-4 py-2 text-white"><span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-300">Mål</span><span className="font-display text-2xl">{current.distance} m</span></div>
