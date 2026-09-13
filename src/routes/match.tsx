@@ -242,9 +242,12 @@ function MatchPlayPage() {
         setHoles(state.holes as Hole[]);
         setHoleIndex(Math.min(state.holeIndex, Math.max(0, state.matchLength - 1)));
         setFinalText(state.finalText ?? "");
+        setSuddenDeathRound(state.suddenDeathRound ?? 1);
+        setSdBlue(state.sdBlue ?? null); setSdRed(state.sdRed ?? null);
+        setSdBlueSunk(Boolean(state.sdBlueSunk)); setSdRedSunk(Boolean(state.sdRedSunk)); setSdMessage(state.sdMessage ?? "");
         setBlueStrokes(1); setRedStrokes(1); setBlueStrokesSelected(false); setRedStrokesSelected(false); setBluePoints(null); setRedPoints(null);
         setApproachTurn("blue");
-        setStep(session.status === "completed" || Boolean(state.finalText) ? "result" : "play");
+        setStep(session.status === "completed" || state.step === "result" || Boolean(state.finalText) ? "result" : state.step === "sudden-death" ? "sudden-death" : "play");
       } catch {
         // If a stale session link cannot be loaded, keep the normal match flow available.
       }
@@ -341,13 +344,20 @@ function MatchPlayPage() {
       holes: nextHoles,
       holeIndex: nextHoleIndex,
       finalText: nextFinalText,
+      step: step === "sudden-death" ? "sudden-death" : step === "result" ? "result" : "play",
+      suddenDeathRound,
+      sdBlue,
+      sdRed,
+      sdBlueSunk,
+      sdRedSunk,
+      sdMessage,
       blueTeam: blueTeam.map(({ id, name, avatarUrl }) => ({ id, name, avatarUrl })),
       redTeam: redTeam.map(({ id, name, avatarUrl }) => ({ id, name, avatarUrl })),
     };
   }
 
   useEffect(() => {
-    if (!matchSessionId || !user || matchSessionHostId !== user.id || (step !== "play" && step !== "result")) return;
+    if (!matchSessionId || !user || matchSessionHostId !== user.id || (step !== "play" && step !== "sudden-death" && step !== "result")) return;
     const state = makeCloudState();
     if (!state) return;
     const timer = window.setTimeout(() => {
@@ -359,7 +369,7 @@ function MatchPlayPage() {
       ).catch(() => undefined);
     }, 120);
     return () => window.clearTimeout(timer);
-  }, [matchSessionId, matchSessionHostId, user?.id, step, holes, holeIndex, finalText, mode, category, matchType, scoringMode, matchLength, blueLabel, redLabel, score.played]);
+  }, [matchSessionId, matchSessionHostId, user?.id, step, holes, holeIndex, finalText, suddenDeathRound, sdBlue, sdRed, sdBlueSunk, sdRedSunk, sdMessage, mode, category, matchType, scoringMode, matchLength, blueLabel, redLabel, score.played]);
 
   function chooseMode(next: MatchMode) { setMode(next); setSelectedFriendIds([]); setGuests([]); setGuestName(""); setBlueMateId(null); }
   function toggleFriend(id: string) {

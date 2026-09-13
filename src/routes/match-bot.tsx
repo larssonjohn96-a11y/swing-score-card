@@ -188,6 +188,7 @@ function BotMatchPage() {
   const [suddenDeathRound, setSuddenDeathRound] = useState(1);
   const [sdBotText, setSdBotText] = useState("");
   const [sdBusy, setSdBusy] = useState(false);
+  const [suddenDeathWinner, setSuddenDeathWinner] = useState<"you" | "bot" | null>(null);
 
   const selectedBot = BOTS.find((item) => item.id === botId);
   const bot = selectedBot && !selectedBot.locked ? selectedBot : BOTS.find((item) => !item.locked) ?? BOTS[0];
@@ -243,7 +244,7 @@ function BotMatchPage() {
     setHoleIndex(0);
     resetShotInput(category === "approach" ? next[0]?.distance ?? 0 : 0);
     setTurnState("you");
-    setSuddenDeathRound(1); setSdBotText(""); setSdBusy(false);
+    setSuddenDeathRound(1); setSdBotText(""); setSdBusy(false); setSuddenDeathWinner(null);
     setStep("play");
   }
 
@@ -363,6 +364,7 @@ function BotMatchPage() {
     const youWin = yourSunk || (!b.sunk && !yourSunk && (yourDistance ?? Infinity) < b.distance);
     await sleep(900);
     setBotComment(youWin ? randomLine(bot.chat["player-win"]) : randomLine(bot.chat["bot-win"]));
+    setSuddenDeathWinner(youWin ? "you" : "bot");
     setStep("result"); setSdBusy(false);
   }
 
@@ -536,7 +538,7 @@ function BotMatchPage() {
 
       {step === "result" ? (
         <>
-          <section className={`mt-6 rounded-[30px] border p-5 text-center ${glass}`}><span className="text-5xl">{bot.avatar}</span><Trophy className="mx-auto mt-3 h-6 w-6 text-amber-500" /><p className="mt-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Slutresultat</p><h1 className="mt-2 font-display text-5xl">{score.you}–{score.bot}</h1><p className="mt-2 text-sm font-bold">{score.you > score.bot ? `${playerName} vinner över ${bot.name}` : score.bot > score.you ? `${bot.name} vinner` : "Matchen slutar delad"}</p><p className="mt-1 text-xs text-slate-500">{bot.name} · HCP {formatHcp(bot.hcp)}</p><p className="mt-1 text-xs text-slate-500">{score.tie ? `${score.tie} delade hål` : `${length} hål spelade`}</p></section>
+          <section className={`mt-6 rounded-[30px] border p-5 text-center ${glass}`}><span className="text-5xl">{bot.avatar}</span><Trophy className="mx-auto mt-3 h-6 w-6 text-amber-500" /><p className="mt-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Slutresultat</p><h1 className="mt-2 font-display text-5xl">{suddenDeathWinner ? "SD" : `${score.you}–${score.bot}`}</h1><p className="mt-2 text-sm font-bold">{suddenDeathWinner === "you" ? `${playerName} vinner i sudden death` : suddenDeathWinner === "bot" ? `${bot.name} vinner i sudden death` : score.you > score.bot ? `${playerName} vinner över ${bot.name}` : score.bot > score.you ? `${bot.name} vinner` : "Matchen slutar delad"}</p>{suddenDeathWinner ? <p className="mt-1 text-xs font-semibold text-red-600">11 m · 1 slag · närmast flaggan</p> : null}<p className="mt-1 text-xs text-slate-500">{bot.name} · HCP {formatHcp(bot.hcp)}</p><p className="mt-1 text-xs text-slate-500">{score.tie ? `${score.tie} delade hål` : `${length} hål spelade`}</p></section>
           <div className="mt-5 space-y-3"><button onClick={buildHoles} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white"><RotateCcw className="h-5 w-5" /> Rematch mot {bot.name}</button><button onClick={() => { setCategory(null); setStep("bot"); }} className={`flex w-full items-center justify-center gap-2 rounded-2xl border py-4 font-display text-xl ${glass}`}><Target className="h-5 w-5" /> Välj ny motståndare</button><Link to="/" className="flex w-full items-center justify-center rounded-2xl border border-slate-300 bg-white/75 py-4 text-sm font-bold">Hem</Link></div>
         </>
       ) : null}
