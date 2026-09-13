@@ -748,17 +748,18 @@ function MatchPlayPage() {
         <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Match</p>
         <h1 className="mt-1 font-display text-4xl">Vad ska ni tävla i?</h1>
       </section>
-      <div className="mt-6 space-y-4">{CATEGORIES.map((i) => <button key={i.id} onClick={() => {
-        setCategory(i.id);
+      <div className="mt-6 grid grid-cols-2 gap-3">{CATEGORIES.map((i) => { const active = category === i.id; return <button key={i.id} onClick={() => { setCategory(i.id); setScoringMode("match"); }} className={`relative flex min-h-32 w-full items-center rounded-[26px] border p-4 text-left transition active:scale-[.985] ${active ? selectedRing : glass}`}>
+        {active ? <SelectedCheck /> : null}
+        <span className={`font-display text-[27px] leading-[.95] ${active ? "text-blue-700" : "text-slate-950"}`}>{i.title}</span>
+      </button>; })}</div>
+      <button disabled={!category} onClick={() => {
+        if (!category) return;
         setScoringMode("match");
-        if (i.id === "putting") { setMatchType("standard"); setMatchLength(5); setStep("length"); return; }
-        if (i.id === "around-the-green") { setMatchType("closest"); setMatchLength(5); setStep("length"); return; }
-        if (i.id === "approach") { setMatchType("closest"); setApproachRanges([]); setStep("approach-setup"); return; }
+        if (category === "putting") { setMatchType("standard"); setMatchLength(5); setStep("length"); return; }
+        if (category === "around-the-green") { setMatchType("closest"); setMatchLength(5); setStep("length"); return; }
+        if (category === "approach") { setMatchType("closest"); setApproachRanges([]); setStep("approach-setup"); return; }
         setMatchType("fairway"); setStep("length");
-      }} className={`group relative flex min-h-28 w-full items-center justify-between overflow-hidden rounded-[30px] border px-6 py-6 text-left transition active:scale-[.985] ${glass}`}>
-        <span className="font-display text-3xl leading-none text-slate-950">{i.title}</span>
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-slate-300/80 bg-white/75 text-2xl text-slate-700 shadow-sm backdrop-blur-xl transition group-active:translate-x-0.5">›</span>
-      </button>)}</div>
+      }} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 via-slate-900 to-red-600 py-4 font-display text-xl text-white disabled:opacity-30">Nästa <ChevronRight className="h-5 w-5" /></button>
     </> : null}
 
     {step === "type" && category && !isShortGame && !isApproach ? <><section className="mt-5"><p className="text-[10px] font-bold uppercase text-slate-500">{selectedCategory?.title}</p><h1 className="mt-1 font-display text-4xl">Välj spel</h1>{isPutting ? <p className="mt-2 text-sm text-slate-600">Håla ut från varje avstånd. SG4 räknar resultatet automatiskt.</p> : null}</section><div className="mt-5 space-y-3">{MATCH_TYPES[category].map((i) => { const active = matchType === i.id; return <button key={i.id} onClick={() => { setMatchType(i.id); }} className={`flex w-full items-center gap-4 rounded-3xl border p-5 text-left ${active ? selectedRing : glass}`}><span className="min-w-0 flex-1"><span className="block font-display text-2xl">{i.title}</span><span className="mt-1 block text-xs text-slate-600">{i.description}</span></span>{active ? <SelectedCheck className="" /> : null}</button>; })}</div><button disabled={!matchType} onClick={() => setStep("scoring")} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white disabled:opacity-30">Nästa <ChevronRight className="h-5 w-5" /></button></> : null}
