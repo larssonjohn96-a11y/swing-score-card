@@ -1,10 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, BarChart3, Check, ChevronRight, Crosshair, Grid3x3 } from "lucide-react";
 import { useState } from "react";
+import { rankEngineActivities, type EngineSkill } from "@/lib/sg4-engine";
 import { LIGHT_SURFACE } from "./8-bollar";
 
 type Category = "off-the-tee" | "approach" | "around-the-green" | "putting";
 const CATEGORY_IDS: Category[] = ["off-the-tee", "approach", "around-the-green", "putting"];
+const CATEGORY_ENGINE_SKILL: Record<Category, EngineSkill> = {
+  "off-the-tee": "driver",
+  approach: "approach",
+  "around-the-green": "chip",
+  putting: "putting",
+};
 
 export const Route = createFileRoute("/traning")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -131,7 +138,13 @@ function TrainingTestsPage() {
   const active = CATEGORIES.find((i) => i.id === category);
   const [selectedTrainingCategory, setSelectedTrainingCategory] = useState<Category | null>(null);
   const [puttingFilter, setPuttingFilter] = useState<PuttingFilter>("all");
-  const visibleTests = category === "putting" ? TESTS.putting.filter((test) => matchesPuttingFilter(test, puttingFilter)) : category ? TESTS[category] : [];
+  const baseVisibleTests = category === "putting" ? TESTS.putting.filter((test) => matchesPuttingFilter(test, puttingFilter)) : category ? TESTS[category] : [];
+  const visibleTests = category
+    ? rankEngineActivities(
+        baseVisibleTests.map((test) => ({ ...test, id: test.to, skill: CATEGORY_ENGINE_SKILL[category] })),
+        "learning",
+      )
+    : [];
 
   return (
     <main style={LIGHT_SURFACE} className="mx-auto min-h-screen w-full max-w-md bg-background px-5 pb-28 pt-6 text-foreground">

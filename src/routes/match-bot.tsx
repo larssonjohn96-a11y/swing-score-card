@@ -11,6 +11,7 @@ import {
   generatePuttingMatchDistances,
 } from "@/lib/putting-match";
 import { CHIP_POINT_ZONES, generateChipMatchDistances, getChipDistanceBand } from "@/lib/chip-match";
+import { chipPerformanceFromPoints, puttingPerformanceFromStrokes, recordEngineOutcome, selectNextEngineDistance } from "@/lib/sg4-engine";
 import {
   APPROACH_MATCH_FORMATS,
   type ApproachResult,
@@ -317,9 +318,43 @@ function BotMatchPage() {
     }
 
     const lockedDriveHit = driveHit;
-    setHoles((prev) => prev.map((h, i) =>
-      i === holeIndex ? { ...h, yourValue: lockedYourValue, yourHit: lockedDriveHit, yourApproach: lockedApproach } : h,
-    ));
+    const engineSkill = category === "putting" ? "putting" : category === "around-the-green" ? "chip" : null;
+    const enginePerformance = category === "putting"
+      ? puttingPerformanceFromStrokes(lockedYourValue)
+      : category === "around-the-green"
+        ? chipPerformanceFromPoints(lockedYourValue)
+        : null;
+    let adaptiveNextDistance: number | null = null;
+    if (engineSkill && enginePerformance !== null) {
+      recordEngineOutcome({
+        skill: engineSkill,
+        distance: current.distance,
+        performance: enginePerformance,
+        context: "game",
+        activityId: engineSkill === "putting" ? "putting-match" : "chip-match",
+      });
+      if (holeIndex < holes.length - 1 && typeof current.distance === "number") {
+        adaptiveNextDistance = selectNextEngineDistance({
+          skill: engineSkill,
+          objective: "balanced",
+          min: engineSkill === "putting" ? 1 : 8,
+          max: engineSkill === "putting" ? 22 : 30,
+          previousDistance: current.distance,
+          previousPerformance: enginePerformance,
+        });
+      }
+    }
+    setHoles((prev) => prev.map((h, i) => {
+      if (i === holeIndex) return { ...h, yourValue: lockedYourValue, yourHit: lockedDriveHit, yourApproach: lockedApproach };
+      if (i === holeIndex + 1 && adaptiveNextDistance !== null) {
+        if (engineSkill === "putting") {
+          return { ...h, title: formatPuttingDistance(adaptiveNextDistance), distance: adaptiveNextDistance, detail: "Samma position för båda · färre puttar vinner hålet" };
+        }
+        const band = getChipDistanceBand(adaptiveNextDistance);
+        return { ...h, title: `${adaptiveNextDistance} m`, distance: adaptiveNextDistance, detail: `${band.label} · ${band.range} · samma avstånd för båda` };
+      }
+      return h;
+    }));
 
     setTurnState("bot-thinking");
     await sleep(rand(2000, 3000));

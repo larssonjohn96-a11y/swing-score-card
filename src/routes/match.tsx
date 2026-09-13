@@ -17,6 +17,7 @@ import {
 } from "@/lib/match-multiplayer";
 import { formatPuttingDistance, generatePuttingMatchDistances } from "@/lib/putting-match";
 import { CHIP_POINT_ZONES, generateChipMatchDistances, getChipDistanceBand, getChipPointZone } from "@/lib/chip-match";
+import { chipPerformanceFromPoints, puttingPerformanceFromStrokes, recordEngineOutcome, selectNextEngineDistance } from "@/lib/sg4-engine";
 
 export const Route = createFileRoute("/match")({
   head: () => ({ meta: [{ title: "Match Play | SG4" }] }),
@@ -72,6 +73,10 @@ function initials(name: string) { return name.split(/\s+/).filter(Boolean).slice
 function liveStatus(diff: number) { return diff === 0 ? "AS" : diff > 0 ? `${diff} UP` : `${Math.abs(diff)} DN`; }
 function lieLabel(lie: ShortGameLie) { return lie === "fairway" ? "fairway" : lie === "rough" ? "rough" : "bunker"; }
 function bunkerLimit(length: MatchLength) { return length === 3 ? 1 : length === 5 ? 1 : 2; }
+function holeDistance(hole?: Hole) {
+  const value = Number.parseFloat(hole?.challenge.title ?? "");
+  return Number.isFinite(value) ? value : undefined;
+}
 function approachRangeBounds(id: ApproachRangeId, customMin: number, customMax: number): [number, number] {
   if (id === "50-100") return [50, 100];
   if (id === "100-150") return [100, 150];
@@ -573,12 +578,40 @@ function MatchPlayPage() {
     setTransitionMessage(`${unitLabel} ${registered + 1} uppdaterad`);
     window.setTimeout(() => setTransitionMessage(null), 520);
   }
+  function adaptNextChallenge(next: Hole[], registered: number, performance: number) {
+    if (!category || !mode || registered >= next.length - 1) return next;
+    if (category !== "putting" && category !== "around-the-green") return next;
+    const currentDistance = holeDistance(next[registered]);
+    if (typeof currentDistance !== "number") return next;
+    const skill = category === "putting" ? "putting" : "chip";
+    const nextDistance = selectNextEngineDistance({
+      skill,
+      objective: "balanced",
+      min: category === "putting" ? 1 : 8,
+      max: category === "putting" ? 22 : 30,
+      previousDistance: currentDistance,
+      previousPerformance: performance,
+    });
+    const nextIndex = registered + 1;
+    const adapted = [...next];
+    adapted[nextIndex] = {
+      ...adapted[nextIndex],
+      challenge: generateChallenge(category, matchType ?? "closest", mode, shortGameLies, nextDistance),
+    };
+    return adapted;
+  }
   function recordPutting() {
     if (isSubmitting || !blueStrokesSelected || !redStrokesSelected) return;
     setIsSubmitting(true);
     const registered = holeIndex;
     const winner: Exclude<HoleWinner, null> = blueStrokes < redStrokes ? "blue" : redStrokes < blueStrokes ? "red" : "tie";
-    const next = holes.map((h, i) => i === registered ? { ...h, winner, blueStrokes, redStrokes } : h);
+    const selfPerformance = puttingPerformanceFromStrokes(blueStrokes);
+    if (editingHoleIndex === null) {
+      recordEngineOutcome({ skill: "putting", distance: holeDistance(holes[registered]), performance: selfPerformance, context: "game", activityId: "putting-match" });
+    }
+    const scored = holes.map((h, i) => i === registered ? { ...h, winner, blueStrokes, redStrokes } : h);
+    const matchPerformance = (selfPerformance + puttingPerformanceFromStrokes(redStrokes)) / 2;
+    const next = editingHoleIndex === null ? adaptNextChallenge(scored, registered, matchPerformance) : scored;
     if (editingHoleIndex !== null) { finishScoredEdit(next, registered); return; }
     setTransitionMessage(`${unitLabel} ${registered + 1} registrerad`);
     window.setTimeout(() => { advance(next); setTransitionMessage(null); setIsSubmitting(false); }, 380);
@@ -588,7 +621,13 @@ function MatchPlayPage() {
     setIsSubmitting(true);
     const registered = holeIndex;
     const winner: Exclude<HoleWinner, null> = bluePoints > redPoints ? "blue" : redPoints > bluePoints ? "red" : "tie";
-    const next = holes.map((h, i) => i === registered ? { ...h, winner, bluePoints, redPoints } : h);
+    const selfPerformance = chipPerformanceFromPoints(bluePoints);
+    if (editingHoleIndex === null) {
+      recordEngineOutcome({ skill: "chip", distance: holeDistance(holes[registered]), performance: selfPerformance, context: "game", activityId: "chip-match" });
+    }
+    const scored = holes.map((h, i) => i === registered ? { ...h, winner, bluePoints, redPoints } : h);
+    const matchPerformance = (selfPerformance + chipPerformanceFromPoints(redPoints)) / 2;
+    const next = editingHoleIndex === null ? adaptNextChallenge(scored, registered, matchPerformance) : scored;
     if (editingHoleIndex !== null) { finishScoredEdit(next, registered); return; }
     setTransitionMessage(`${unitLabel} ${registered + 1} registrerad`);
     window.setTimeout(() => { advance(next); setTransitionMessage(null); setIsSubmitting(false); }, 380);

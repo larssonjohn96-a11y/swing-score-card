@@ -13,6 +13,7 @@
  * den lokala historiken och blir kvar i outboxen tills nästa försök lyckas.
  */
 import { cloudIdFor } from "./ids";
+import { recordEngineSession, recordEngineSessions } from "@/lib/sg4-engine";
 import {
   SESSIONS_SCHEMA_VERSION,
   canonicalize,
@@ -101,6 +102,7 @@ export function recordSessionSaved(testId: string, record: LegacyRecord): TestSe
   if (!hasStorage()) return null;
   const session = canonicalize(testId, record);
   if (!session) return null;
+  recordEngineSession(session);
   enqueueUpsert(session);
   emit();
   void flushOutbox().catch(() => undefined);
@@ -235,6 +237,7 @@ async function doSync(userId: string): Promise<SyncReport> {
 
     // 3. Hämta molnet och fyll på lokala historiker där något saknas.
     const cloud = await gateway.fetchAll(userId);
+    recordEngineSessions(cloud);
     report.fetched = cloud.length;
     report.merge = mergeIntoLegacyStores(cloud, pendingDeleteIds());
 
