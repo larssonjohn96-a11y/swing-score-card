@@ -12,16 +12,19 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as WedgeStegeHistorikRouteImport } from './routes/wedge-stege-historik'
 import { Route as WedgeStegeRouteImport } from './routes/wedge-stege'
 import { Route as VannerRouteImport } from './routes/vanner'
+import { Route as UtmaningarRouteImport } from './routes/utmaningar'
 import { Route as UppOchInHistorikRouteImport } from './routes/upp-och-in-historik'
 import { Route as UppOchInRouteImport } from './routes/upp-och-in'
 import { Route as TutorTestHistorikRouteImport } from './routes/tutor-test-historik'
 import { Route as TutorTestRouteImport } from './routes/tutor-test'
+import { Route as TurneringarRouteImport } from './routes/turneringar'
 import { Route as TrophyRouteImport } from './routes/trophy'
 import { Route as TraningProgressRouteImport } from './routes/traning-progress'
 import { Route as TraningRouteImport } from './routes/traning'
 import { Route as TornadoRouteImport } from './routes/tornado'
 import { Route as TesterRouteImport } from './routes/tester'
 import { Route as TeeshotRouteImport } from './routes/teeshot'
+import { Route as SpelaRouteImport } from './routes/spela'
 import { Route as SpeedTestRouteImport } from './routes/speed-test'
 import { Route as SpeedRouteImport } from './routes/speed'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
@@ -48,6 +51,7 @@ import { Route as OffteeRouteImport } from './routes/offtee'
 import { Route as NarspelTestRouteImport } from './routes/narspel-test'
 import { Route as NarspelRouteImport } from './routes/narspel'
 import { Route as MinBagRouteImport } from './routes/min-bag'
+import { Route as MatchBotRouteImport } from './routes/match-bot'
 import { Route as MatchRouteImport } from './routes/match'
 import { Route as MapMyBagRouteImport } from './routes/map-my-bag'
 import { Route as MapClubRouteImport } from './routes/map-club'
@@ -69,6 +73,7 @@ import { Route as DriverKonsekvensHistorikRouteImport } from './routes/driver-ko
 import { Route as DriverKonsekvensRouteImport } from './routes/driver-konsekvens'
 import { Route as CombineRouteImport } from './routes/combine'
 import { Route as ChipRouteImport } from './routes/chip'
+import { Route as BunkerTraningRouteImport } from './routes/bunker-traning'
 import { Route as BunkerTestRouteImport } from './routes/bunker-test'
 import { Route as BunkerRouteImport } from './routes/bunker'
 import { Route as ApproachPeiWedgeHistorikRouteImport } from './routes/approach-pei-wedge-historik'
@@ -109,6 +114,11 @@ const VannerRoute = VannerRouteImport.update({
   path: '/vanner',
   getParentRoute: () => rootRouteImport,
 } as any)
+const UtmaningarRoute = UtmaningarRouteImport.update({
+  id: '/utmaningar',
+  path: '/utmaningar',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const UppOchInHistorikRoute = UppOchInHistorikRouteImport.update({
   id: '/upp-och-in-historik',
   path: '/upp-och-in-historik',
@@ -127,6 +137,11 @@ const TutorTestHistorikRoute = TutorTestHistorikRouteImport.update({
 const TutorTestRoute = TutorTestRouteImport.update({
   id: '/tutor-test',
   path: '/tutor-test',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TurneringarRoute = TurneringarRouteImport.update({
+  id: '/turneringar',
+  path: '/turneringar',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TrophyRoute = TrophyRouteImport.update({
@@ -157,6 +172,11 @@ const TesterRoute = TesterRouteImport.update({
 const TeeshotRoute = TeeshotRouteImport.update({
   id: '/teeshot',
   path: '/teeshot',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SpelaRoute = SpelaRouteImport.update({
+  id: '/spela',
+  path: '/spela',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SpeedTestRoute = SpeedTestRouteImport.update({
@@ -292,6 +312,11 @@ const MinBagRoute = MinBagRouteImport.update({
   path: '/min-bag',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MatchBotRoute = MatchBotRouteImport.update({
+  id: '/match-bot',
+  path: '/match-bot',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MatchRoute = MatchRouteImport.update({
   id: '/match',
   path: '/match',
@@ -396,6 +421,11 @@ const CombineRoute = CombineRouteImport.update({
 const ChipRoute = ChipRouteImport.update({
   id: '/chip',
   path: '/chip',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BunkerTraningRoute = BunkerTraningRouteImport.update({
+  id: '/bunker-traning',
+  path: '/bunker-traning',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BunkerTestRoute = BunkerTestRouteImport.update({
@@ -537,6 +567,7 @@ export interface FileRoutesByFullPath {
   '/approach-pei-wedge-historik': typeof ApproachPeiWedgeHistorikRoute
   '/bunker': typeof BunkerRoute
   '/bunker-test': typeof BunkerTestRoute
+  '/bunker-traning': typeof BunkerTraningRoute
   '/chip': typeof ChipRoute
   '/combine': typeof CombineRoute
   '/driver-konsekvens': typeof DriverKonsekvensRoute
@@ -558,6 +589,7 @@ export interface FileRoutesByFullPath {
   '/map-club': typeof MapClubRoute
   '/map-my-bag': typeof MapMyBagRoute
   '/match': typeof MatchRoute
+  '/match-bot': typeof MatchBotRoute
   '/min-bag': typeof MinBagRoute
   '/narspel': typeof NarspelRoute
   '/narspel-test': typeof NarspelTestRoute
@@ -584,16 +616,19 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
   '/speed-test': typeof SpeedTestRoute
+  '/spela': typeof SpelaRoute
   '/teeshot': typeof TeeshotRoute
   '/tester': typeof TesterRoute
   '/tornado': typeof TornadoRoute
   '/traning': typeof TraningRoute
   '/traning-progress': typeof TraningProgressRoute
   '/trophy': typeof TrophyRoute
+  '/turneringar': typeof TurneringarRoute
   '/tutor-test': typeof TutorTestRoute
   '/tutor-test-historik': typeof TutorTestHistorikRoute
   '/upp-och-in': typeof UppOchInRoute
   '/upp-och-in-historik': typeof UppOchInHistorikRoute
+  '/utmaningar': typeof UtmaningarRoute
   '/vanner': typeof VannerRoute
   '/wedge-stege': typeof WedgeStegeRoute
   '/wedge-stege-historik': typeof WedgeStegeHistorikRoute
@@ -623,6 +658,7 @@ export interface FileRoutesByTo {
   '/approach-pei-wedge-historik': typeof ApproachPeiWedgeHistorikRoute
   '/bunker': typeof BunkerRoute
   '/bunker-test': typeof BunkerTestRoute
+  '/bunker-traning': typeof BunkerTraningRoute
   '/chip': typeof ChipRoute
   '/combine': typeof CombineRoute
   '/driver-konsekvens': typeof DriverKonsekvensRoute
@@ -644,6 +680,7 @@ export interface FileRoutesByTo {
   '/map-club': typeof MapClubRoute
   '/map-my-bag': typeof MapMyBagRoute
   '/match': typeof MatchRoute
+  '/match-bot': typeof MatchBotRoute
   '/min-bag': typeof MinBagRoute
   '/narspel': typeof NarspelRoute
   '/narspel-test': typeof NarspelTestRoute
@@ -670,16 +707,19 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
   '/speed-test': typeof SpeedTestRoute
+  '/spela': typeof SpelaRoute
   '/teeshot': typeof TeeshotRoute
   '/tester': typeof TesterRoute
   '/tornado': typeof TornadoRoute
   '/traning': typeof TraningRoute
   '/traning-progress': typeof TraningProgressRoute
   '/trophy': typeof TrophyRoute
+  '/turneringar': typeof TurneringarRoute
   '/tutor-test': typeof TutorTestRoute
   '/tutor-test-historik': typeof TutorTestHistorikRoute
   '/upp-och-in': typeof UppOchInRoute
   '/upp-och-in-historik': typeof UppOchInHistorikRoute
+  '/utmaningar': typeof UtmaningarRoute
   '/vanner': typeof VannerRoute
   '/wedge-stege': typeof WedgeStegeRoute
   '/wedge-stege-historik': typeof WedgeStegeHistorikRoute
@@ -710,6 +750,7 @@ export interface FileRoutesById {
   '/approach-pei-wedge-historik': typeof ApproachPeiWedgeHistorikRoute
   '/bunker': typeof BunkerRoute
   '/bunker-test': typeof BunkerTestRoute
+  '/bunker-traning': typeof BunkerTraningRoute
   '/chip': typeof ChipRoute
   '/combine': typeof CombineRoute
   '/driver-konsekvens': typeof DriverKonsekvensRoute
@@ -731,6 +772,7 @@ export interface FileRoutesById {
   '/map-club': typeof MapClubRoute
   '/map-my-bag': typeof MapMyBagRoute
   '/match': typeof MatchRoute
+  '/match-bot': typeof MatchBotRoute
   '/min-bag': typeof MinBagRoute
   '/narspel': typeof NarspelRoute
   '/narspel-test': typeof NarspelTestRoute
@@ -757,16 +799,19 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
   '/speed-test': typeof SpeedTestRoute
+  '/spela': typeof SpelaRoute
   '/teeshot': typeof TeeshotRoute
   '/tester': typeof TesterRoute
   '/tornado': typeof TornadoRoute
   '/traning': typeof TraningRoute
   '/traning-progress': typeof TraningProgressRoute
   '/trophy': typeof TrophyRoute
+  '/turneringar': typeof TurneringarRoute
   '/tutor-test': typeof TutorTestRoute
   '/tutor-test-historik': typeof TutorTestHistorikRoute
   '/upp-och-in': typeof UppOchInRoute
   '/upp-och-in-historik': typeof UppOchInHistorikRoute
+  '/utmaningar': typeof UtmaningarRoute
   '/vanner': typeof VannerRoute
   '/wedge-stege': typeof WedgeStegeRoute
   '/wedge-stege-historik': typeof WedgeStegeHistorikRoute
@@ -798,6 +843,7 @@ export interface FileRouteTypes {
     | '/approach-pei-wedge-historik'
     | '/bunker'
     | '/bunker-test'
+    | '/bunker-traning'
     | '/chip'
     | '/combine'
     | '/driver-konsekvens'
@@ -819,6 +865,7 @@ export interface FileRouteTypes {
     | '/map-club'
     | '/map-my-bag'
     | '/match'
+    | '/match-bot'
     | '/min-bag'
     | '/narspel'
     | '/narspel-test'
@@ -845,16 +892,19 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/speed'
     | '/speed-test'
+    | '/spela'
     | '/teeshot'
     | '/tester'
     | '/tornado'
     | '/traning'
     | '/traning-progress'
     | '/trophy'
+    | '/turneringar'
     | '/tutor-test'
     | '/tutor-test-historik'
     | '/upp-och-in'
     | '/upp-och-in-historik'
+    | '/utmaningar'
     | '/vanner'
     | '/wedge-stege'
     | '/wedge-stege-historik'
@@ -884,6 +934,7 @@ export interface FileRouteTypes {
     | '/approach-pei-wedge-historik'
     | '/bunker'
     | '/bunker-test'
+    | '/bunker-traning'
     | '/chip'
     | '/combine'
     | '/driver-konsekvens'
@@ -905,6 +956,7 @@ export interface FileRouteTypes {
     | '/map-club'
     | '/map-my-bag'
     | '/match'
+    | '/match-bot'
     | '/min-bag'
     | '/narspel'
     | '/narspel-test'
@@ -931,16 +983,19 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/speed'
     | '/speed-test'
+    | '/spela'
     | '/teeshot'
     | '/tester'
     | '/tornado'
     | '/traning'
     | '/traning-progress'
     | '/trophy'
+    | '/turneringar'
     | '/tutor-test'
     | '/tutor-test-historik'
     | '/upp-och-in'
     | '/upp-och-in-historik'
+    | '/utmaningar'
     | '/vanner'
     | '/wedge-stege'
     | '/wedge-stege-historik'
@@ -970,6 +1025,7 @@ export interface FileRouteTypes {
     | '/approach-pei-wedge-historik'
     | '/bunker'
     | '/bunker-test'
+    | '/bunker-traning'
     | '/chip'
     | '/combine'
     | '/driver-konsekvens'
@@ -991,6 +1047,7 @@ export interface FileRouteTypes {
     | '/map-club'
     | '/map-my-bag'
     | '/match'
+    | '/match-bot'
     | '/min-bag'
     | '/narspel'
     | '/narspel-test'
@@ -1017,16 +1074,19 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/speed'
     | '/speed-test'
+    | '/spela'
     | '/teeshot'
     | '/tester'
     | '/tornado'
     | '/traning'
     | '/traning-progress'
     | '/trophy'
+    | '/turneringar'
     | '/tutor-test'
     | '/tutor-test-historik'
     | '/upp-och-in'
     | '/upp-och-in-historik'
+    | '/utmaningar'
     | '/vanner'
     | '/wedge-stege'
     | '/wedge-stege-historik'
@@ -1057,6 +1117,7 @@ export interface RootRouteChildren {
   ApproachPeiWedgeHistorikRoute: typeof ApproachPeiWedgeHistorikRoute
   BunkerRoute: typeof BunkerRoute
   BunkerTestRoute: typeof BunkerTestRoute
+  BunkerTraningRoute: typeof BunkerTraningRoute
   ChipRoute: typeof ChipRoute
   CombineRoute: typeof CombineRoute
   DriverKonsekvensRoute: typeof DriverKonsekvensRoute
@@ -1078,6 +1139,7 @@ export interface RootRouteChildren {
   MapClubRoute: typeof MapClubRoute
   MapMyBagRoute: typeof MapMyBagRoute
   MatchRoute: typeof MatchRoute
+  MatchBotRoute: typeof MatchBotRoute
   MinBagRoute: typeof MinBagRoute
   NarspelRoute: typeof NarspelRoute
   NarspelTestRoute: typeof NarspelTestRoute
@@ -1104,16 +1166,19 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SpeedRoute: typeof SpeedRoute
   SpeedTestRoute: typeof SpeedTestRoute
+  SpelaRoute: typeof SpelaRoute
   TeeshotRoute: typeof TeeshotRoute
   TesterRoute: typeof TesterRoute
   TornadoRoute: typeof TornadoRoute
   TraningRoute: typeof TraningRoute
   TraningProgressRoute: typeof TraningProgressRoute
   TrophyRoute: typeof TrophyRoute
+  TurneringarRoute: typeof TurneringarRoute
   TutorTestRoute: typeof TutorTestRoute
   TutorTestHistorikRoute: typeof TutorTestHistorikRoute
   UppOchInRoute: typeof UppOchInRoute
   UppOchInHistorikRoute: typeof UppOchInHistorikRoute
+  UtmaningarRoute: typeof UtmaningarRoute
   VannerRoute: typeof VannerRoute
   WedgeStegeRoute: typeof WedgeStegeRoute
   WedgeStegeHistorikRoute: typeof WedgeStegeHistorikRoute
@@ -1147,6 +1212,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VannerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/utmaningar': {
+      id: '/utmaningar'
+      path: '/utmaningar'
+      fullPath: '/utmaningar'
+      preLoaderRoute: typeof UtmaningarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/upp-och-in-historik': {
       id: '/upp-och-in-historik'
       path: '/upp-och-in-historik'
@@ -1173,6 +1245,13 @@ declare module '@tanstack/react-router' {
       path: '/tutor-test'
       fullPath: '/tutor-test'
       preLoaderRoute: typeof TutorTestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/turneringar': {
+      id: '/turneringar'
+      path: '/turneringar'
+      fullPath: '/turneringar'
+      preLoaderRoute: typeof TurneringarRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/trophy': {
@@ -1215,6 +1294,13 @@ declare module '@tanstack/react-router' {
       path: '/teeshot'
       fullPath: '/teeshot'
       preLoaderRoute: typeof TeeshotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/spela': {
+      id: '/spela'
+      path: '/spela'
+      fullPath: '/spela'
+      preLoaderRoute: typeof SpelaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/speed-test': {
@@ -1399,6 +1485,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MinBagRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/match-bot': {
+      id: '/match-bot'
+      path: '/match-bot'
+      fullPath: '/match-bot'
+      preLoaderRoute: typeof MatchBotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/match': {
       id: '/match'
       path: '/match'
@@ -1544,6 +1637,13 @@ declare module '@tanstack/react-router' {
       path: '/chip'
       fullPath: '/chip'
       preLoaderRoute: typeof ChipRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bunker-traning': {
+      id: '/bunker-traning'
+      path: '/bunker-traning'
+      fullPath: '/bunker-traning'
+      preLoaderRoute: typeof BunkerTraningRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/bunker-test': {
@@ -1769,6 +1869,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApproachPeiWedgeHistorikRoute: ApproachPeiWedgeHistorikRoute,
   BunkerRoute: BunkerRoute,
   BunkerTestRoute: BunkerTestRoute,
+  BunkerTraningRoute: BunkerTraningRoute,
   ChipRoute: ChipRoute,
   CombineRoute: CombineRoute,
   DriverKonsekvensRoute: DriverKonsekvensRoute,
@@ -1790,6 +1891,7 @@ const rootRouteChildren: RootRouteChildren = {
   MapClubRoute: MapClubRoute,
   MapMyBagRoute: MapMyBagRoute,
   MatchRoute: MatchRoute,
+  MatchBotRoute: MatchBotRoute,
   MinBagRoute: MinBagRoute,
   NarspelRoute: NarspelRoute,
   NarspelTestRoute: NarspelTestRoute,
@@ -1816,16 +1918,19 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SpeedRoute: SpeedRoute,
   SpeedTestRoute: SpeedTestRoute,
+  SpelaRoute: SpelaRoute,
   TeeshotRoute: TeeshotRoute,
   TesterRoute: TesterRoute,
   TornadoRoute: TornadoRoute,
   TraningRoute: TraningRoute,
   TraningProgressRoute: TraningProgressRoute,
   TrophyRoute: TrophyRoute,
+  TurneringarRoute: TurneringarRoute,
   TutorTestRoute: TutorTestRoute,
   TutorTestHistorikRoute: TutorTestHistorikRoute,
   UppOchInRoute: UppOchInRoute,
   UppOchInHistorikRoute: UppOchInHistorikRoute,
+  UtmaningarRoute: UtmaningarRoute,
   VannerRoute: VannerRoute,
   WedgeStegeRoute: WedgeStegeRoute,
   WedgeStegeHistorikRoute: WedgeStegeHistorikRoute,
