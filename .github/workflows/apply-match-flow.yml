@@ -3,7 +3,6 @@ name: Apply match flow patch
 on:
   push:
     paths:
-      - scripts/patch-match-flow.py
       - .github/workflows/apply-match-flow.yml
 
 permissions:
@@ -18,9 +17,6 @@ jobs:
           ref: main
           fetch-depth: 0
       - run: python scripts/patch-match-flow.py
-      - run: npm ci
-      - run: npm run build
-      - run: npm run typecheck --if-present
       - name: Commit changes
         run: |
           git config user.name "github-actions[bot]"
