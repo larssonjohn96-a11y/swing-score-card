@@ -17,7 +17,7 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Apply SG4 engine wiring
+      - name: Apply SG4 engine final fix
         run: python scripts/wire_sg4_engine.py
 
       - uses: oven-sh/setup-bun@v2
@@ -28,10 +28,10 @@ jobs:
       - run: bun run build
       - run: bunx vitest run src/lib/sg4-engine.test.ts
 
-      - name: Commit engine wiring
+      - name: Commit final fix
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/lib/sessions/sync.ts src/routes/traning.tsx src/routes/match.tsx src/routes/match-bot.tsx
-          git commit -m "Wire SG4 engine across games and training"
+          git add src/lib/sg4-engine.ts src/routes/traning.tsx
+          git commit -m "Preserve training labels in SG4 engine"
           git push origin main
