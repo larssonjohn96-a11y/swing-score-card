@@ -13,11 +13,13 @@ import {
 import { CHIP_POINT_ZONES, generateChipMatchDistances, getChipDistanceBand } from "@/lib/chip-match";
 import { chipPerformanceFromPoints, puttingPerformanceFromStrokes, recordEngineOutcome, selectNextEngineDistance, type EngineSkill } from "@/lib/sg4-engine";
 import { getRecommendationsForSkill } from "@/lib/sg4-surface-recommendations";
-import { recordRecommendationCompletion, recordRecommendationImpressions, recordRecommendationOpen } from "@/lib/sg4-recommender";
+import { recordRecommendationCompletion, recordRecommendationImpressions, recordRecommendationOpen, recordRecommendationSignal } from "@/lib/sg4-recommender";
 import { simulateChipBotResult, simulateDriveBotResult, simulatePuttingBotStrokes, type BotCategoryHandicaps } from "@/lib/bot-skill-model";
 import { archetypeLabels, effectiveCategoryHcp, type BotArchetype } from "@/lib/bot-archetypes";
 import { getPlayerPressureNotice } from "@/lib/bot-match-pressure";
-import { getBotResultReaction } from "@/lib/bot-result-reactions";
+import { chooseBotNextStep } from "@/lib/bot-next-step";
+import { recordBotCategoryMatch } from "@/lib/bot-match-history";
+import { getSmartBotResultReaction } from "@/lib/bot-smart-result";
 import { BOT_PERSONALITIES, getBotRelationship, personalityLine, recordBotMatch, relationshipLine } from "@/lib/bot-personality";
 import {
   APPROACH_MATCH_FORMATS,
@@ -222,8 +224,24 @@ function BotMatchPage() {
   const resultEngineSkill = engineSkillForBotCategory(category);
   const resultRecommendation = resultEngineSkill ? getRecommendationsForSkill(resultEngineSkill, 1)[0] : undefined;
   const resultOutcome: "player" | "bot" = suddenDeathWinner === "you" ? "player" : suddenDeathWinner === "bot" ? "bot" : score.you > score.bot ? "player" : "bot";
-  const resultReaction = getBotResultReaction(bot.id, resultOutcome);
-  const resultChallengeBot = resultReaction.targetBotId ? BOTS.find((item) => item.id === resultReaction.targetBotId) : undefined;
+  const resultMargin = suddenDeathWinner ? 1 : Math.max(1, Math.abs(score.you - score.bot));
+  const resultNextStep = category ? chooseBotNextStep({
+    currentBotId: bot.id,
+    currentBotHcp: bot.hcp,
+    category,
+    outcome: resultOutcome,
+    margin: resultMargin,
+    candidates: BOTS.map((item) => ({ id: item.id, hcp: item.hcp, locked: item.locked })),
+  }) : { action: "rematch" as const, rematchScore: 1, challengeScore: 0 };
+  const resultChallengeBot = resultNextStep.targetBotId ? BOTS.find((item) => item.id === resultNextStep.targetBotId) : undefined;
+  const resultReactionLine = category ? getSmartBotResultReaction({
+    botId: bot.id,
+    botName: bot.name,
+    outcome: resultOutcome,
+    category,
+    nextStep: resultNextStep,
+    targetBotName: resultChallengeBot?.name,
+  }) : (resultOutcome === "player" ? "Bra spelat. En till?" : "Bra match. Revansch?");
   useEffect(() => {
     if (step !== "result") return;
     recordRecommendationCompletion("play-bot");
@@ -403,7 +421,7 @@ function BotMatchPage() {
       const finalYou = score.you + (winner === "you" ? 1 : 0);
       const finalBot = score.bot + (winner === "bot" ? 1 : 0);
       if (finalYou === finalBot) { setSuddenDeathRound(1); setSdBotText(""); setStep("sudden-death"); }
-      else { const matchWinner = finalYou > finalBot ? "you" : "bot"; recordBotMatch(bot.id, matchWinner === "you" ? "player" : "bot"); setWinnerCelebration(matchWinner); await sleep(2300); setWinnerCelebration(null); setStep("result"); }
+      else { const matchWinner = finalYou > finalBot ? "you" : "bot"; recordBotMatch(bot.id, matchWinner === "you" ? "player" : "bot"); if (category) recordBotCategoryMatch(bot.id, category, matchWinner === "you" ? "player" : "bot", Math.abs(finalYou - finalBot)); setWinnerCelebration(matchWinner); await sleep(2300); setWinnerCelebration(null); setStep("result"); }
     } else {
       const nextIndex = holeIndex + 1;
       resetShotInput(category === "approach" ? holes[nextIndex]?.distance ?? 0 : 0);
@@ -439,6 +457,7 @@ function BotMatchPage() {
     setBotComment(youWin ? randomLine(bot.chat["player-win"]) : randomLine(bot.chat["bot-win"]));
     setSuddenDeathWinner(youWin ? "you" : "bot");
     recordBotMatch(bot.id, youWin ? "player" : "bot");
+    if (category) recordBotCategoryMatch(bot.id, category, youWin ? "player" : "bot", 1);
     setWinnerCelebration(youWin ? "you" : "bot");
     await sleep(2300);
     setWinnerCelebration(null); setStep("result"); setSdBusy(false);
@@ -693,14 +712,14 @@ function BotMatchPage() {
                   <p className="font-display text-xl text-slate-950">{bot.name}</p>
                   <p className="truncate text-[9px] font-black uppercase tracking-[0.13em] text-red-700">{BOT_PERSONALITIES[bot.id]?.label ?? bot.archetype.label}</p>
                 </div>
-                <p className="mt-2 text-[15px] font-semibold leading-6 text-slate-800">“{resultReaction.line}”</p>
+                <p className="mt-2 text-[15px] font-semibold leading-6 text-slate-800">“{resultReactionLine}”</p>
               </div>
             </div>
             <div className="border-t border-red-200/70 p-3">
-              {resultReaction.action === "challenge" && resultChallengeBot && !resultChallengeBot.locked ? (
-                <button onClick={() => { chooseBot(resultChallengeBot); setStep("category"); }} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-red-600 py-3.5 font-display text-lg text-white shadow-sm">{resultReaction.actionLabel} <ChevronRight className="h-4 w-4" /></button>
+              {resultNextStep.action === "challenge" && resultChallengeBot && !resultChallengeBot.locked ? (
+                <button onClick={() => { if (category) recordRecommendationSignal(`bot-next:challenge:${resultChallengeBot.id}:${category}`, "engage"); recordRecommendationOpen("play-bot"); chooseBot(resultChallengeBot); setStep(category === "around-the-green" ? "setup" : category ? "length" : "category"); }} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-red-600 py-3.5 font-display text-lg text-white shadow-sm">Utmana {resultChallengeBot.name} <ChevronRight className="h-4 w-4" /></button>
               ) : (
-                <button onClick={() => { recordRecommendationOpen("play-bot"); buildHoles(); }} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-red-600 py-3.5 font-display text-lg text-white shadow-sm"><RotateCcw className="h-4 w-4" /> {resultReaction.actionLabel}</button>
+                <button onClick={() => { if (category) recordRecommendationSignal(`bot-next:rematch:${bot.id}:${category}`, "engage"); recordRecommendationOpen("play-bot"); buildHoles(); }} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-red-600 py-3.5 font-display text-lg text-white shadow-sm"><RotateCcw className="h-4 w-4" /> Rematch mot {bot.name}</button>
               )}
             </div>
           </section>
@@ -708,7 +727,15 @@ function BotMatchPage() {
           <section className="mt-5"><div className="mb-3 flex items-end justify-between"><div><p className="text-[9px] font-bold uppercase tracking-[0.16em] text-slate-500">Scorecard</p><h2 className="font-display text-2xl">Hela matchen</h2></div><p className="text-[10px] font-bold uppercase text-slate-500">{playedHoles} spelade</p></div><div className={`overflow-hidden rounded-[24px] border ${glass}`}><div className="overflow-x-auto"><div className="min-w-max"><div className="grid" style={{ gridTemplateColumns: `minmax(92px,1.35fr) repeat(${length},58px)` }}><div className="border-b border-r border-slate-200 bg-slate-100 px-3 py-2 text-[10px] font-bold text-slate-600">Hål</div>{holes.map((_, i) => <div key={`rh-${i}`} className="border-b border-r border-slate-200 bg-slate-100 py-2 text-center text-[10px] font-bold text-slate-700">{i + 1}</div>)}<div className="border-b border-r border-slate-200 px-3 py-2 text-[10px] font-bold text-blue-700 truncate">{playerName}</div>{holes.map((h, i) => <div key={`ry-${i}`} className="flex items-center justify-center border-b border-r border-slate-200 px-1 py-2 text-center text-[9px] font-bold text-blue-700"><span className={`inline-flex min-h-[28px] min-w-[42px] items-center justify-center rounded-md px-1 ${h.winner === "you" ? "bg-blue-600 text-white" : ""}`}>{sideResultLabel(h, "you")}</span></div>)}<div className="border-b border-r border-slate-200 px-3 py-2 text-[10px] font-bold text-red-700 truncate">{bot.name}</div>{holes.map((h, i) => <div key={`rb-${i}`} className="flex items-center justify-center border-b border-r border-slate-200 px-1 py-2 text-center text-[9px] font-bold text-red-700"><span className={`inline-flex min-h-[28px] min-w-[42px] items-center justify-center rounded-md px-1 ${h.winner === "bot" ? "bg-red-600 text-white" : ""}`}>{sideResultLabel(h, "bot")}</span></div>)}<div className="border-r border-slate-200 bg-slate-50 px-3 py-2 text-[10px] font-bold text-slate-600">Vinnare</div>{holes.map((h, i) => <div key={`rw-${i}`} className={`border-r border-slate-200 bg-slate-50 py-2 text-center text-[9px] font-bold ${h.winner === "you" ? "text-blue-700" : h.winner === "bot" ? "text-red-700" : "text-slate-600"}`}>{h.winner === "you" ? "B" : h.winner === "bot" ? "R" : "AS"}</div>)}</div></div></div></div></section>
 
           {resultRecommendation ? <a href={resultRecommendation.href} onClick={() => recordRecommendationOpen(resultRecommendation.id)} className={`mt-5 flex items-center gap-4 rounded-[26px] border p-4 text-left ${glass}`}><span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-white"><Target className="h-5 w-5" /></span><span className="min-w-0 flex-1"><span className="text-[9px] font-black uppercase tracking-[0.15em] text-slate-500">Nästa</span><span className="mt-1 block font-display text-2xl">{resultRecommendation.title}</span><span className="mt-1 block text-xs text-slate-600">{resultRecommendation.detail}</span></span><ChevronRight className="h-5 w-5 shrink-0 text-slate-500" /></a> : null}
-          <div className="mt-5 space-y-3">{resultReaction.action === "challenge" ? <button onClick={() => { recordRecommendationOpen("play-bot"); buildHoles(); }} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white"><RotateCcw className="h-5 w-5" /> Rematch mot {bot.name}</button> : null}<button onClick={() => { setCategory(null); setStep("bot"); }} className={`flex w-full items-center justify-center gap-2 rounded-2xl border py-4 font-display text-xl ${glass}`}><Target className="h-5 w-5" /> Välj ny motståndare</button><Link to="/" className="flex w-full items-center justify-center rounded-2xl border border-slate-300 bg-white/75 py-4 text-sm font-bold">Hem</Link></div>
+          <div className="mt-5 space-y-3">
+            {resultNextStep.action === "challenge" ? (
+              <button onClick={() => { if (category) recordRecommendationSignal(`bot-next:rematch:${bot.id}:${category}`, "engage"); recordRecommendationOpen("play-bot"); buildHoles(); }} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white"><RotateCcw className="h-5 w-5" /> Rematch mot {bot.name}</button>
+            ) : resultChallengeBot && !resultChallengeBot.locked ? (
+              <button onClick={() => { if (category) recordRecommendationSignal(`bot-next:challenge:${resultChallengeBot.id}:${category}`, "engage"); recordRecommendationOpen("play-bot"); chooseBot(resultChallengeBot); setStep(category === "around-the-green" ? "setup" : category ? "length" : "category"); }} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white"><Target className="h-5 w-5" /> Utmana {resultChallengeBot.name}</button>
+            ) : null}
+            <button onClick={() => { setCategory(null); setStep("bot"); }} className={`flex w-full items-center justify-center gap-2 rounded-2xl border py-4 font-display text-xl ${glass}`}><Target className="h-5 w-5" /> Välj ny motståndare</button>
+            <Link to="/" className="flex w-full items-center justify-center rounded-2xl border border-slate-300 bg-white/75 py-4 text-sm font-bold">Hem</Link>
+          </div>
         </>
       ) : null}
     </main>
