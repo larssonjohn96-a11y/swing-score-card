@@ -71,10 +71,8 @@ export function BottomNav() {
       <div className="mx-auto grid h-[68px] w-full grid-cols-[1fr_1fr_74px_1fr_1fr] items-center gap-0.5 px-2.5 py-1.5">
         {LEFT_TABS.map((tab) => <NavLink key={tab.to} tab={tab} active={tab.exact ? pathname === tab.to : pathname.startsWith(tab.to)} />)}
 
-        <button type="button" onClick={() => setPlayOpen(true)} aria-label="Spel" className="relative -mt-5 flex h-[66px] w-[66px] items-center justify-center justify-self-center rounded-full border border-emerald-100/60 bg-[radial-gradient(circle_at_32%_18%,rgba(255,255,255,.72),transparent_28%),linear-gradient(145deg,rgba(52,211,153,.96),rgba(5,150,105,.94))] text-white shadow-[inset_0_1px_0_rgba(255,255,255,.72),inset_0_-8px_18px_rgba(4,120,87,.22),0_16px_30px_-12px_rgba(5,150,105,.62),0_0_0_6px_rgba(255,255,255,.24)] backdrop-blur-[28px] transition duration-200 active:scale-[.94]">
-          <span className="absolute inset-[5px] rounded-full border border-white/25 bg-white/[.07]" />
-          <span className="absolute left-[16px] right-[16px] top-[10px] h-px rounded-full bg-white/80" />
-          <Plus className="relative z-10 h-8 w-8 stroke-[2.4]" />
+        <button type="button" onClick={() => setPlayOpen(true)} aria-label="Spel" className="relative -mt-5 flex h-[64px] w-[64px] items-center justify-center justify-self-center rounded-full bg-emerald-600 text-white shadow-[0_10px_24px_-8px_rgba(5,150,105,.55)] transition duration-150 active:scale-[.94]">
+          <Plus className="h-8 w-8 stroke-[2.6]" />
           <span className="absolute -bottom-[17px] text-[9px] font-bold uppercase tracking-wide text-muted-foreground">Spel</span>
         </button>
 
