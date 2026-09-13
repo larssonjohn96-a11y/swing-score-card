@@ -70,7 +70,7 @@ export function chooseBotNextStep(input: {
   const action = bestTarget && challengeScore > rematchScore + 0.04 ? "challenge" : "rematch";
   return {
     action,
-    targetBotId: action === "challenge" ? bestTarget?.id : undefined,
+    targetBotId: bestTarget?.id,
     rematchScore,
     challengeScore,
   };
