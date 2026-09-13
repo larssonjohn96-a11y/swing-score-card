@@ -15,9 +15,9 @@ export const PUTTING_MATCH_FORMATS: Array<{
   detail: string;
   recommended?: boolean;
 }> = [
-  { length: 5, name: "Snabb", label: "5 hål", detail: "Kort match · 1,5–12 m" },
-  { length: 9, name: "Standard", label: "9 hål", detail: "Balanserad match · 1,5–15 m", recommended: true },
-  { length: 18, name: "Full match", label: "18 hål", detail: "Hela formatet · 1,5–18 m" },
+  { length: 5, name: "Snabb · 5 hål", label: "", detail: "" },
+  { length: 9, name: "Standard · 9 hål", label: "", detail: "", recommended: true },
+  { length: 18, name: "Full match · 18 hål", label: "", detail: "" },
 ];
 
 export const PUTTING_MATCH_RULES = [
@@ -26,10 +26,6 @@ export const PUTTING_MATCH_RULES = [
   "Håla ut. Färre puttar vinner hålet, lika antal delar hålet.",
   "Flest vunna hål efter matchens längd vinner.",
 ];
-
-const DISTANCES_5 = [1.5, 3, 5, 8, 12];
-const DISTANCES_9 = [1.5, 2, 3, 4, 5, 7, 9, 12, 15];
-const DISTANCES_18 = [1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 18];
 
 function shuffle<T>(items: readonly T[]) {
   const next = [...items];
@@ -40,27 +36,25 @@ function shuffle<T>(items: readonly T[]) {
   return next;
 }
 
+function takeRandomUnique(min: number, max: number, count: number) {
+  return shuffle(Array.from({ length: max - min + 1 }, (_, index) => min + index)).slice(0, count);
+}
+
 /**
- * Standardiserad avståndsmix per format. Samma uppsättning avstånd varje match
- * (jämförbart), med lätt variation i ordningen men alltid balanserat mellan
- * korta, mellanlånga och långa puttar.
+ * Slumpar hela meter mellan 1 och 22 med balanserad spridning över korta,
+ * mellanlånga och långa puttar. Avstånden är unika inom respektive match.
  */
 export function generatePuttingMatchDistances(length: PuttingMatchLength): number[] {
-  const base = length === 5 ? DISTANCES_5 : length === 9 ? DISTANCES_9 : DISTANCES_18;
-  const short = shuffle(base.filter((d) => d <= 3));
-  const medium = shuffle(base.filter((d) => d > 3 && d <= 8));
-  const long = shuffle(base.filter((d) => d > 8));
-  const queues = [short, medium, long];
-  const out: number[] = [];
-  while (out.length < base.length) {
-    for (const index of shuffle([0, 1, 2])) {
-      const value = queues[index].shift();
-      if (value !== undefined) out.push(value);
-    }
-  }
-  return out;
+  const quotas = length === 5 ? [2, 1, 2] : length === 9 ? [3, 3, 3] : [6, 6, 6];
+  const distances = [
+    ...takeRandomUnique(1, 7, quotas[0]),
+    ...takeRandomUnique(8, 14, quotas[1]),
+    ...takeRandomUnique(15, 22, quotas[2]),
+  ];
+
+  return shuffle(distances);
 }
 
 export function formatPuttingDistance(distance: number) {
-  return `${Number.isInteger(distance) ? distance : distance.toFixed(1).replace(".", ",")} m`;
+  return `${Math.round(distance)} m`;
 }
