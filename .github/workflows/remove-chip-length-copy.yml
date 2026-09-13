@@ -1,0 +1,32 @@
+name: Remove chip length copy
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/remove-chip-length-copy.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Remove copy
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('src/routes/match.tsx')
+          s=p.read_text()
+          old='{isShortGame ? <p className="mt-2 text-sm text-slate-600">Korta 8–14 m · Medel 15–22 m · Långa 23–30 m. Avstånden slumpas inför varje match.</p> : isPgaPutting ? <p className="mt-2 text-sm text-slate-600">Välj 3, 5 eller 7 hål. Alla längder får en mix av korta, mellanlånga och långa PGA Tour-avstånd.</p> : null}'
+          new='{isPgaPutting ? <p className="mt-2 text-sm text-slate-600">Välj 3, 5 eller 7 hål. Alla längder får en mix av korta, mellanlånga och långa PGA Tour-avstånd.</p> : null}'
+          if old not in s:
+              raise SystemExit('Target copy not found')
+          p.write_text(s.replace(old,new))
+          PY
+      - name: Commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/routes/match.tsx
+          git commit -m 'Remove chipping distance explainer from length step'
+          git push
