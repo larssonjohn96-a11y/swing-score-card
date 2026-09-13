@@ -1,0 +1,38 @@
+name: Fix Chip Match patch runner
+
+on:
+  push:
+    paths:
+      - .github/workflows/fix-chip-patch-runner.yml
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Fix validation commands
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('.github/workflows/patch-chip-match.yml')
+          t = p.read_text()
+          old = '''      - name: Validate\n        run: |\n          npm ci\n          npm run build\n          npm run lint --if-present\n'''
+          new = '''      - name: Setup Bun\n        uses: oven-sh/setup-bun@v2\n        with:\n          bun-version: latest\n      - name: Validate\n        run: |\n          bun install --frozen-lockfile\n          bun run build\n          bunx tsc --noEmit\n          bun run lint\n'''
+          if old not in t:
+              raise SystemExit('validation block not found')
+          p.write_text(t.replace(old, new, 1))
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/workflows/patch-chip-match.yml
+          git commit -m "Use Bun for Chip Match patch validation"
+          git push origin HEAD:main
