@@ -93,17 +93,17 @@ function CupPage() {
 
       <section className="mt-5 overflow-hidden rounded-[30px] border border-amber-500/25 bg-gradient-to-br from-amber-500/[.13] via-card to-card p-5 shadow-[0_22px_50px_-32px_rgba(0,0,0,.45)]">
         <div className="flex items-start justify-between gap-3"><span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-600"><Trophy className="h-6 w-6" /></span><span className="rounded-full bg-foreground px-3 py-1 text-[9px] font-black uppercase tracking-[.14em] text-background">HCP 20</span></div>
-        <h1 className="mt-5 font-display text-4xl">Club Cup</h1>
-        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">8 spelare. Förlust och du är ute. Vinn kvartsfinal, semifinal och final.</p>
+        <h1 className="mt-5 font-display text-4xl">Putting Club Cup</h1>
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">8 spelare · Putting Match · 5 hål. Samma format i varje match. Förlust och du är ute.</p>
         {state ? <div className="mt-4 flex items-center gap-2 text-xs font-bold"><span className="rounded-full border border-border bg-background/80 px-3 py-1.5">{state.status === "active" ? cupRoundLabel(state.currentRound) : state.status === "won" ? "Mästare" : "Utslagen"}</span><span className="text-muted-foreground">·</span><span className="text-muted-foreground">3 vinster till titeln</span></div> : null}
       </section>
 
       {!state ? (
         <section className="mt-5 rounded-[28px] border border-border bg-card p-5 text-center">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-amber-500/12"><Trophy className="h-7 w-7 text-amber-600" /></div>
-          <h2 className="mt-4 font-display text-3xl">Din första cup</h2>
-          <p className="mx-auto mt-2 max-w-[30ch] text-sm leading-relaxed text-muted-foreground">En enkel 8-manna bracket. Övriga matcher avgörs automatiskt och din väg fortsätter så länge du vinner.</p>
-          <button onClick={startCup} className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-foreground py-4 font-display text-xl text-background">Starta Club Cup <ChevronRight className="h-5 w-5" /></button>
+          <h2 className="mt-4 font-display text-3xl">Putting Club Cup</h2>
+          <p className="mx-auto mt-2 max-w-[30ch] text-sm leading-relaxed text-muted-foreground">8-manna knockout. Alla spelar samma Putting Match över 5 hål. Övriga matcher avgörs automatiskt.</p>
+          <button onClick={startCup} className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-foreground py-4 font-display text-xl text-background">Starta Putting Cup <ChevronRight className="h-5 w-5" /></button>
         </section>
       ) : (
         <>

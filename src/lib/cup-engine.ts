@@ -27,6 +27,8 @@ export type CupState = {
   createdAt: string;
   matches: CupMatch[];
   currentRound: CupRound;
+  category: "putting" | "around-the-green" | "approach" | "off-the-tee";
+  matchLength: 5;
 };
 
 const STORE_KEY = "sg4-club-cup-v1";
@@ -87,6 +89,8 @@ export function createClubCup(): CupState {
     status: "active",
     createdAt: new Date().toISOString(),
     currentRound: "quarterfinal",
+    category: "putting",
+    matchLength: 5,
     matches: [...qf, makeMatch("sf-1", "semifinal", 0), makeMatch("sf-2", "semifinal", 1), makeMatch("f-1", "final", 0)],
   };
   return advanceCup(state);
@@ -158,12 +162,12 @@ export function startActiveCupMatch(state: CupState) {
   if (!match) return null;
   const opponent = match.a?.player ? match.b : match.a;
   if (!opponent) return null;
-  const active = { cupId: state.id, matchId: match.id, botId: opponent.id, round: match.round };
+  const active = { cupId: state.id, matchId: match.id, botId: opponent.id, round: match.round, category: state.category, matchLength: state.matchLength };
   window.localStorage.setItem(ACTIVE_MATCH_KEY, JSON.stringify(active));
   return active;
 }
 
-export function getActiveCupMatch(): { cupId: string; matchId: string; botId: string; round: CupRound } | null {
+export function getActiveCupMatch(): { cupId: string; matchId: string; botId: string; round: CupRound; category: CupState["category"]; matchLength: 5 } | null {
   if (!hasStorage()) return null;
   try { return JSON.parse(window.localStorage.getItem(ACTIVE_MATCH_KEY) || "null"); } catch { return null; }
 }

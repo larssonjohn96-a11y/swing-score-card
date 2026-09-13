@@ -177,10 +177,10 @@ function BotMatchPage() {
   const { displayName } = useAuth();
   const [cupContext] = useState(() => getActiveCupMatch());
   const [cupRecorded, setCupRecorded] = useState(false);
-  const [step, setStep] = useState<Step>(() => cupContext ? "category" : "bot");
+  const [step, setStep] = useState<Step>(() => cupContext ? "length" : "bot");
   const [botId, setBotId] = useState(() => cupContext?.botId ?? "zach");
-  const [category, setCategory] = useState<Category | null>(null);
-  const [length, setLength] = useState<MatchLength>(5);
+  const [category, setCategory] = useState<Category | null>(() => cupContext?.category ?? null);
+  const [length, setLength] = useState<MatchLength>(() => cupContext?.matchLength ?? 5);
   const [holes, setHoles] = useState<Hole[]>([]);
   const [holeIndex, setHoleIndex] = useState(0);
   const [yourValue, setYourValue] = useState<number | null>(null);
@@ -199,6 +199,13 @@ function BotMatchPage() {
   const selectedBot = BOTS.find((item) => item.id === botId);
   const bot = selectedBot && !selectedBot.locked ? selectedBot : BOTS.find((item) => !item.locked) ?? BOTS[0];
   const [botComment, setBotComment] = useState(() => { const initial = selectedBot && !selectedBot.locked ? selectedBot : BOTS[3]; return personalityLine(initial.id, "start") ?? randomLine(initial.chat.start); });
+
+  useEffect(() => {
+    if (!cupContext) return;
+    buildHoles();
+    // Cup format is fixed by the tournament: no category or length selection.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (step !== "sudden-death") return;
@@ -471,7 +478,8 @@ function BotMatchPage() {
   }
 
   function back() {
-    if (step === "category") { if (cupContext) window.location.assign("/cup"); else setStep("bot"); }
+    if (cupContext) { window.location.assign("/cup"); return; }
+    if (step === "category") setStep("bot");
     else if (step === "setup") setStep("category");
     else if (step === "length") setStep(category === "around-the-green" ? "setup" : "category");
   }
