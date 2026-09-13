@@ -1,3 +1,5 @@
+import { selectNextEngineDistance } from "@/lib/sg4-engine";
+
 /**
  * Gemensam regelkälla för SG4:s Chip Match.
  * Ett enda spel – bara matchlängden (3/5/7 hål) skiljer.
@@ -20,7 +22,7 @@ export const CHIP_DISTANCE_BANDS = [
 
 export const CHIP_MATCH_RULES = [
   "Korta 8–14 m · Medel 15–22 m · Långa 23–30 m.",
-  "Avstånden och ordningen slumpas inför varje ny match. Samma exakta meter kan förekomma flera gånger.",
+  "Avstånden och ordningen varierar inför varje ny match. Samma exakta meter kan förekomma flera gånger.",
   "Båda spelarna chippar från exakt samma avstånd på varje hål.",
   "Ett slag per spelare. Välj bara hur nära hålet bollen stannade.",
   "Bäst avståndszon vinner hålet, samma zon delar hålet.",
@@ -39,10 +41,6 @@ export function getChipPointZone(points: number | null | undefined) {
   return CHIP_POINT_ZONES.find((zone) => zone.points === points);
 }
 
-function rand(min: number, max: number) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
 function shuffle<T>(items: readonly T[]) {
   const next = [...items];
   for (let i = next.length - 1; i > 0; i--) {
@@ -58,10 +56,29 @@ export function getChipDistanceBand(distance: number) {
   return CHIP_DISTANCE_BANDS[2];
 }
 
+/**
+ * Behåller kort/medel/lång-mixen men låter SG4-motorn välja de exakta metrarna
+ * utifrån spelarens historik, flow, learning value, mastery och exploration.
+ */
 export function generateChipMatchDistances(length: ChipMatchLength): number[] {
   const quotas = length === 3 ? [1, 1, 1] : length === 5 ? [2, 1, 2] : [2, 3, 2];
-  const distances = CHIP_DISTANCE_BANDS.flatMap((band, index) =>
-    Array.from({ length: quotas[index] }, () => rand(band.min, band.max)),
+  const slots = shuffle(
+    CHIP_DISTANCE_BANDS.flatMap((band, index) =>
+      Array.from({ length: quotas[index] }, () => band),
+    ),
   );
-  return shuffle(distances);
+  const distances: number[] = [];
+
+  for (const band of slots) {
+    distances.push(
+      selectNextEngineDistance({
+        skill: "chip",
+        objective: "balanced",
+        min: band.min,
+        max: band.max,
+        previousDistance: distances.at(-1),
+      }),
+    );
+  }
+  return distances;
 }
