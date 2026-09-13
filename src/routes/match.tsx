@@ -35,6 +35,8 @@ type Hole = { challenge: Challenge; winner: HoleWinner; blueStrokes?: number; re
 type ShortGameLie = "fairway" | "rough" | "bunker";
 type ApproachRangeId = "50-100" | "100-150" | "150-200" | "custom";
 
+const LOCAL_MATCH_KEY = "sg4.active-match.v1";
+
 const CATEGORIES = [
   { id: "putting", title: "Puttning", subtitle: "Putting Match", description: "Spela en riktig puttingmatch hål för hål. Färre puttar vinner hålet." },
   { id: "around-the-green", title: "Chipp", subtitle: "Chipping", description: "Chippingmatch mot samma mål. Närmast hålet vinner." },
@@ -199,6 +201,7 @@ function MatchPlayPage() {
   const [approachLateralDirection, setApproachLateralDirection] = useState<"left" | "right">("left");
   const [approachLateral, setApproachLateral] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [localMatchReady, setLocalMatchReady] = useState(false);
 
   useEffect(() => {
     if (step !== "sudden-death") return;
@@ -266,6 +269,57 @@ function MatchPlayPage() {
     const unsubscribe = subscribeMatchMultiplayerSession(sessionId, () => { void applySession(); });
     return () => { cancelled = true; unsubscribe(); };
   }, [user]);
+
+  // Restore an interrupted local match after an app reload / iOS process restart.
+  useEffect(() => {
+    const hasCloudSession = new URLSearchParams(window.location.search).has("session");
+    if (hasCloudSession) { setLocalMatchReady(true); return; }
+    try {
+      const raw = window.localStorage.getItem(LOCAL_MATCH_KEY);
+      if (!raw) { setLocalMatchReady(true); return; }
+      const saved = JSON.parse(raw) as any;
+      if (!saved || saved.version !== 1 || (saved.step !== "play" && saved.step !== "sudden-death")) {
+        window.localStorage.removeItem(LOCAL_MATCH_KEY);
+        setLocalMatchReady(true);
+        return;
+      }
+      setMode(saved.mode ?? "singles");
+      setCategory(saved.category ?? null);
+      setMatchType(saved.matchType ?? null);
+      setScoringMode(saved.scoringMode ?? "match");
+      setMatchLength(saved.matchLength ?? 5);
+      setHoles(Array.isArray(saved.holes) ? saved.holes : []);
+      setHoleIndex(Number.isFinite(saved.holeIndex) ? saved.holeIndex : 0);
+      setFinalText(saved.finalText ?? "");
+      setSuddenDeathRound(saved.suddenDeathRound ?? 1);
+      setSdMessage(saved.sdMessage ?? "");
+      setBlueStrokes(saved.blueStrokes ?? 1);
+      setRedStrokes(saved.redStrokes ?? 1);
+      setBlueStrokesSelected(Boolean(saved.blueStrokesSelected));
+      setRedStrokesSelected(Boolean(saved.redStrokesSelected));
+      setBluePoints(saved.bluePoints ?? null);
+      setRedPoints(saved.redPoints ?? null);
+      setShortGameLies(Array.isArray(saved.shortGameLies) ? saved.shortGameLies : []);
+      setApproachRanges(Array.isArray(saved.approachRanges) ? saved.approachRanges : []);
+      setApproachCustomMin(saved.approachCustomMin ?? 30);
+      setApproachCustomMax(saved.approachCustomMax ?? 200);
+      setApproachTurn(saved.approachTurn === "red" ? "red" : "blue");
+      setApproachLong(saved.approachLong ?? 0);
+      setApproachLateralDirection(saved.approachLateralDirection === "right" ? "right" : "left");
+      setApproachLateral(saved.approachLateral ?? 0);
+      setSelectedFriendIds(Array.isArray(saved.selectedFriendIds) ? saved.selectedFriendIds : []);
+      setGuests(Array.isArray(saved.guests) ? saved.guests : []);
+      setBlueMateId(saved.blueMateId ?? null);
+      if (saved.selfName) setSelfName(saved.selfName);
+      setSessionBlueTeam(Array.isArray(saved.blueTeam) ? saved.blueTeam : null);
+      setSessionRedTeam(Array.isArray(saved.redTeam) ? saved.redTeam : null);
+      setStep(saved.step);
+    } catch {
+      window.localStorage.removeItem(LOCAL_MATCH_KEY);
+    } finally {
+      setLocalMatchReady(true);
+    }
+  }, []);
 
   const selfPlayer: Player = { id: user?.id ?? "self", name: selfName, avatarUrl: selfAvatar, isSelf: true };
   const selectedFriends: Player[] = friends.filter((f) => selectedFriendIds.includes(f.other.id)).map((f) => ({ id: f.other.id, name: f.other.displayName, avatarUrl: f.other.avatarUrl }));
@@ -379,6 +433,29 @@ function MatchPlayPage() {
     }, 120);
     return () => window.clearTimeout(timer);
   }, [matchSessionId, matchSessionHostId, user?.id, step, holes, holeIndex, finalText, suddenDeathRound, sdBlue, sdRed, sdBlueSunk, sdRedSunk, sdMessage, mode, category, matchType, scoringMode, matchLength, blueLabel, redLabel, score.played]);
+
+  // Persist every meaningful in-progress change so leaving the app never resets the match.
+  useEffect(() => {
+    if (!localMatchReady) return;
+    if (matchSessionId || new URLSearchParams(window.location.search).has("session")) {
+      window.localStorage.removeItem(LOCAL_MATCH_KEY);
+      return;
+    }
+    if (step === "result") {
+      window.localStorage.removeItem(LOCAL_MATCH_KEY);
+      return;
+    }
+    if (step !== "play" && step !== "sudden-death") return;
+    const payload = {
+      version: 1, savedAt: Date.now(), step, mode, category, matchType, scoringMode, matchLength, holes, holeIndex, finalText,
+      suddenDeathRound, sdMessage, blueStrokes, redStrokes, blueStrokesSelected, redStrokesSelected, bluePoints, redPoints,
+      shortGameLies, approachRanges, approachCustomMin, approachCustomMax, approachTurn, approachLong, approachLateralDirection, approachLateral,
+      selectedFriendIds, guests, blueMateId, selfName,
+      blueTeam: blueTeam.map(({ id, name, avatarUrl }) => ({ id, name, avatarUrl })),
+      redTeam: redTeam.map(({ id, name, avatarUrl }) => ({ id, name, avatarUrl })),
+    };
+    try { window.localStorage.setItem(LOCAL_MATCH_KEY, JSON.stringify(payload)); } catch { /* storage may be unavailable */ }
+  }, [localMatchReady, matchSessionId, step, mode, category, matchType, scoringMode, matchLength, holes, holeIndex, finalText, suddenDeathRound, sdMessage, blueStrokes, redStrokes, blueStrokesSelected, redStrokesSelected, bluePoints, redPoints, shortGameLies, approachRanges, approachCustomMin, approachCustomMax, approachTurn, approachLong, approachLateralDirection, approachLateral, selectedFriendIds, guests, blueMateId, selfName, blueLabel, redLabel]);
 
   function chooseMode(next: MatchMode) { setMode(next); setSelectedFriendIds([]); setGuests([]); setGuestName(""); setBlueMateId(null); }
   function toggleFriend(id: string) {
@@ -563,12 +640,14 @@ function MatchPlayPage() {
     startMatch();
   }
   function newCompetition() {
+    try { window.localStorage.removeItem(LOCAL_MATCH_KEY); } catch {}
     setCategory(null); setMatchType(null); setHoles([]); setHoleIndex(0); setFinalText("");
     setBlueStrokes(1); setRedStrokes(1); setBlueStrokesSelected(false); setRedStrokesSelected(false); setBluePoints(null); setRedPoints(null);
     setShortGameLies([]); setApproachRanges([]); setApproachTurn("blue"); resetApproachInput();
     setIsSubmitting(false); setTransitionMessage(null); setEditingHoleIndex(null); setReturnHoleIndex(null); setMatchSessionId(null); setMatchSessionHostId(null); setSessionBlueTeam(null); setSessionRedTeam(null); window.history.replaceState(window.history.state, "", `/match?flow=${entryFlow}`); setStep("category");
   }
   function reset() {
+    try { window.localStorage.removeItem(LOCAL_MATCH_KEY); } catch {}
     setMode(entryFlow === "friend" ? "singles" : null); setSelectedFriendIds([]); setGuests([]); setGuestName(""); setBlueMateId(null); setCategory(null); setMatchType(null);
     setScoringMode("match"); setMatchLength(5); setHoles([]); setHoleIndex(0); setFinalText(""); setBlueStrokes(1); setRedStrokes(1); setBlueStrokesSelected(false); setRedStrokesSelected(false); setBluePoints(null); setRedPoints(null); setShortGameLies([]); setApproachRanges([]); setApproachCustomMin(30); setApproachCustomMax(200); setApproachTurn("blue"); resetApproachInput(); setIsSubmitting(false); setTransitionMessage(null); setEditingHoleIndex(null); setReturnHoleIndex(null); setMatchSessionId(null); setMatchSessionHostId(null); setSessionBlueTeam(null); setSessionRedTeam(null); window.history.replaceState(window.history.state, "", `/match?flow=${entryFlow}`); setStep("players");
   }
@@ -631,73 +710,108 @@ function MatchPlayPage() {
       {isScoredHole && lastScoredHoleIndex >= 0 ? <button type="button" disabled={isSubmitting} onClick={() => editScoredHole(lastScoredHoleIndex)} className="mt-2 w-full py-2 text-center text-[10px] font-bold text-slate-500 underline decoration-slate-300 underline-offset-4 disabled:opacity-40">Redigera senaste {unitLabel.toLowerCase()}</button> : null}</> : null}
 
     {step === "sudden-death" ? <>
-      <style>{`@keyframes sdBlueRush{0%{transform:translateX(-120%)}42%{transform:translateX(5%)}56%{transform:translateX(-2.5%)}68%{transform:translateX(1.3%)}100%{transform:translateX(0)}}@keyframes sdRedRush{0%{transform:translateX(120%)}42%{transform:translateX(-5%)}56%{transform:translateX(2.5%)}68%{transform:translateX(-1.3%)}100%{transform:translateX(0)}}@keyframes sdImpact{0%,34%{opacity:0;transform:scale(.15) rotate(0deg)}47%{opacity:1;transform:scale(1.8) rotate(28deg)}62%{opacity:.85;transform:scale(.9) rotate(-12deg)}100%{opacity:.4;transform:scale(1.15) rotate(10deg)}}@keyframes sdHeroIn{0%,50%{opacity:0;transform:translateY(18px) scale(.92)}74%{opacity:1;transform:translateY(0) scale(1.035)}100%{opacity:1;transform:translateY(0) scale(1)}}@keyframes sdPageIn{0%{opacity:0;transform:scale(.985)}100%{opacity:1;transform:scale(1)}}@keyframes sdConfettiA{0%{opacity:0;transform:translateY(-20vh) rotate(0deg)}15%{opacity:1}100%{opacity:0;transform:translateY(115vh) rotate(720deg)}}@keyframes sdConfettiB{0%{opacity:0;transform:translateY(-25vh) rotate(0deg)}12%{opacity:1}100%{opacity:0;transform:translateY(110vh) rotate(-680deg)}}@keyframes sdFirework{0%{opacity:0;transform:scale(.25)}28%{opacity:1;transform:scale(1.25)}60%{opacity:.95;transform:scale(.95)}100%{opacity:0;transform:scale(1.6)}}@keyframes sdWinnerTakeover{0%{opacity:0;clip-path:circle(4% at 50% 50%)}45%{opacity:1;clip-path:circle(55% at 50% 50%)}100%{opacity:1;clip-path:circle(110% at 50% 50%)}}`}</style>
+      <style>{`
+        @keyframes sdPageIn{0%{opacity:0;transform:scale(1.018)}100%{opacity:1;transform:scale(1)}}
+        @keyframes sdBlueRush{0%{transform:translateX(-120%)}42%{transform:translateX(4%)}58%{transform:translateX(-1.5%)}72%{transform:translateX(.6%)}100%{transform:translateX(0)}}
+        @keyframes sdRedRush{0%{transform:translateX(120%)}42%{transform:translateX(-4%)}58%{transform:translateX(1.5%)}72%{transform:translateX(-.6%)}100%{transform:translateX(0)}}
+        @keyframes sdImpact{0%,34%{opacity:0;transform:translate(-50%,-50%) scale(.2)}45%{opacity:1;transform:translate(-50%,-50%) scale(1.3)}68%{opacity:.9;transform:translate(-50%,-50%) scale(.92)}100%{opacity:.25;transform:translate(-50%,-50%) scale(1.06)}}
+        @keyframes sdHeroIn{0%,48%{opacity:0;transform:translateY(16px) scale(.94)}72%{opacity:1;transform:translateY(0) scale(1.02)}100%{opacity:1;transform:translateY(0) scale(1)}}
+        @keyframes sdGlassFloat{0%,100%{transform:translate3d(0,0,0)}50%{transform:translate3d(0,-10px,0)}}
+        @keyframes sdWinnerTakeover{0%{clip-path:circle(0% at 50% 50%)}100%{clip-path:circle(78% at 50% 50%)}}
+        @keyframes sdBurstRing{0%{opacity:0;transform:scale(.15)}18%{opacity:1}100%{opacity:0;transform:scale(2.8)}}
+        @keyframes sdRay{0%{opacity:0;transform:translate(-50%,-50%) rotate(var(--r)) translateY(0) scaleY(.2)}20%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) rotate(var(--r)) translateY(-130px) scaleY(1)}}
+        @keyframes sdShard{0%{opacity:0;transform:translate3d(0,-15vh,0) rotate(0deg)}12%{opacity:1}100%{opacity:0;transform:translate3d(var(--x),110vh,0) rotate(var(--rot))}}
+        @keyframes sdGlowPulse{0%,100%{opacity:.42;transform:scale(.94)}50%{opacity:.8;transform:scale(1.08)}}
+      `}</style>
 
-      <div className="fixed inset-0 z-40 overflow-hidden bg-slate-950 text-white">
-        <div className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-br from-blue-500 via-blue-600 to-blue-800" />
-        <div className="absolute inset-y-0 right-0 w-1/2 bg-gradient-to-bl from-red-500 via-red-600 to-red-800" />
-        <div className="absolute left-1/2 top-0 z-10 h-full w-px -translate-x-1/2 bg-white/30 shadow-[0_0_24px_rgba(255,255,255,.45)]" />
+      <div className="fixed inset-0 z-40 overflow-hidden bg-[#07101f] text-white">
+        <div className="absolute inset-y-0 left-0 w-1/2 bg-[radial-gradient(circle_at_18%_24%,rgba(125,211,252,.35),transparent_32%),linear-gradient(145deg,#2563eb_0%,#1d4ed8_48%,#0b1f5f_100%)]" />
+        <div className="absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_82%_24%,rgba(254,202,202,.28),transparent_32%),linear-gradient(215deg,#ef4444_0%,#dc2626_48%,#641313_100%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_42%,rgba(255,255,255,.13),transparent_28%)]" />
+        <div className="absolute left-1/2 top-0 z-10 h-full w-px -translate-x-1/2 bg-white/35 shadow-[0_0_32px_rgba(255,255,255,.38)]" />
+        <div className="absolute left-[8%] top-[18%] h-28 w-28 rounded-full border border-white/15 bg-white/[.07] shadow-[inset_0_1px_0_rgba(255,255,255,.3),0_18px_60px_rgba(0,0,0,.18)] backdrop-blur-3xl" style={{animation:'sdGlassFloat 5s ease-in-out infinite'}} />
+        <div className="absolute right-[7%] bottom-[18%] h-36 w-36 rounded-full border border-white/15 bg-white/[.06] shadow-[inset_0_1px_0_rgba(255,255,255,.28),0_20px_70px_rgba(0,0,0,.2)] backdrop-blur-3xl" style={{animation:'sdGlassFloat 6.2s 600ms ease-in-out infinite'}} />
 
-        <div className="relative z-20 mx-auto flex min-h-screen w-full max-w-md flex-col px-5 pb-8 pt-[max(22px,env(safe-area-inset-top))]" style={{animation:'sdPageIn 500ms ease-out both'}}>
+        <div className="relative z-20 mx-auto flex min-h-screen w-full max-w-md flex-col px-5 pb-8 pt-[max(22px,env(safe-area-inset-top))]" style={{animation:'sdPageIn 650ms ease-out both'}}>
           <div className="flex items-center justify-between pt-3">
-            <span className="max-w-[42%] truncate font-display text-2xl text-white">{blueLabel}</span>
-            <span className="rounded-full border border-white/25 bg-black/20 px-3 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-white/85">Avgörande {suddenDeathRound}</span>
-            <span className="max-w-[42%] truncate text-right font-display text-2xl text-white">{redLabel}</span>
+            <span className="max-w-[40%] truncate font-display text-2xl text-white drop-shadow-sm">{blueLabel}</span>
+            <span className="rounded-full border border-white/20 bg-white/[.10] px-3 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-white/90 shadow-[inset_0_1px_0_rgba(255,255,255,.22)] backdrop-blur-2xl">Avgörande {suddenDeathRound}</span>
+            <span className="max-w-[40%] truncate text-right font-display text-2xl text-white drop-shadow-sm">{redLabel}</span>
           </div>
 
           <div className="flex flex-1 flex-col items-center justify-center py-7 text-center">
-            <div className="relative">
-              <div className="absolute -inset-8 rounded-full bg-white/10 blur-2xl" />
-              <p className="relative text-[10px] font-black uppercase tracking-[0.42em] text-white/75">AVGÖRANDE</p>
-              <h1 className="relative mt-2 font-display text-6xl leading-[.88] text-white drop-shadow-[0_5px_18px_rgba(0,0,0,.28)]">SUDDEN<br/>DEATH</h1>
-            </div>
-            <div className="mt-7 rounded-[28px] border border-white/25 bg-black/20 px-8 py-5 shadow-2xl backdrop-blur-xl">
-              <p className="font-display text-5xl leading-none text-white">11 M</p>
-              <p className="mt-2 text-xs font-black uppercase tracking-[0.18em] text-white/75">från hålet</p>
-              <p className="mt-4 text-sm font-bold text-white">Närmast hålet vinner matchen</p>
+            <div className="relative w-full overflow-hidden rounded-[34px] border border-white/20 bg-white/[.10] px-5 py-7 shadow-[inset_0_1px_0_rgba(255,255,255,.28),0_28px_80px_rgba(0,0,0,.28)] backdrop-blur-3xl">
+              <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent" />
+              <div className="pointer-events-none absolute -left-14 -top-16 h-40 w-40 rounded-full bg-blue-300/20 blur-3xl" />
+              <div className="pointer-events-none absolute -right-14 -bottom-16 h-40 w-40 rounded-full bg-red-300/20 blur-3xl" />
+              <p className="relative text-[10px] font-black uppercase tracking-[0.42em] text-white/70">AVGÖRANDE</p>
+              <h1 className="relative mt-2 font-display text-6xl leading-[.88] text-white drop-shadow-[0_6px_22px_rgba(0,0,0,.3)]">SUDDEN<br/>DEATH</h1>
+              <div className="relative mx-auto mt-6 h-px w-24 bg-gradient-to-r from-transparent via-white/60 to-transparent" />
+              <p className="relative mt-5 font-display text-5xl leading-none text-white">11 M</p>
+              <p className="relative mt-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/60">från hålet</p>
+              <p className="relative mt-4 text-sm font-bold text-white/90">Närmast hålet vinner matchen</p>
             </div>
           </div>
 
           <div className="pb-[max(0px,env(safe-area-inset-bottom))]">
-            <p className="mb-3 text-center text-[10px] font-black uppercase tracking-[0.18em] text-white/75">Vem vann?</p>
+            <p className="mb-3 text-center text-[10px] font-black uppercase tracking-[0.2em] text-white/70">Vem vann?</p>
             <div className="grid grid-cols-2 gap-3">
-              <button onClick={() => recordSuddenDeath("blue")} className="min-h-24 rounded-[26px] border border-white/35 bg-blue-950/30 px-3 py-4 text-center shadow-xl backdrop-blur-xl transition active:scale-[.97]">
-                <span className="block text-[9px] font-black uppercase tracking-[0.16em] text-blue-100">Närmast</span>
-                <span className="mt-2 block truncate font-display text-2xl text-white">{blueLabel}</span>
+              <button onClick={() => recordSuddenDeath("blue")} className="group relative min-h-28 overflow-hidden rounded-[28px] border border-blue-100/25 bg-white/[.11] px-3 py-4 text-center shadow-[inset_0_1px_0_rgba(255,255,255,.28),0_18px_46px_rgba(3,18,56,.28)] backdrop-blur-3xl transition duration-200 active:scale-[.97]">
+                <span className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-blue-100/80 to-transparent" />
+                <span className="block text-[9px] font-black uppercase tracking-[0.18em] text-blue-100/80">Närmast</span>
+                <span className="mt-3 block truncate font-display text-2xl text-white">{blueLabel}</span>
               </button>
-              <button onClick={() => recordSuddenDeath("red")} className="min-h-24 rounded-[26px] border border-white/35 bg-red-950/30 px-3 py-4 text-center shadow-xl backdrop-blur-xl transition active:scale-[.97]">
-                <span className="block text-[9px] font-black uppercase tracking-[0.16em] text-red-100">Närmast</span>
-                <span className="mt-2 block truncate font-display text-2xl text-white">{redLabel}</span>
+              <button onClick={() => recordSuddenDeath("red")} className="group relative min-h-28 overflow-hidden rounded-[28px] border border-red-100/25 bg-white/[.11] px-3 py-4 text-center shadow-[inset_0_1px_0_rgba(255,255,255,.28),0_18px_46px_rgba(56,3,3,.28)] backdrop-blur-3xl transition duration-200 active:scale-[.97]">
+                <span className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-red-100/80 to-transparent" />
+                <span className="block text-[9px] font-black uppercase tracking-[0.18em] text-red-100/80">Närmast</span>
+                <span className="mt-3 block truncate font-display text-2xl text-white">{redLabel}</span>
               </button>
             </div>
-            <button onClick={() => recordSuddenDeath("tie")} className="mt-3 w-full rounded-[22px] border border-white/30 bg-black/20 px-4 py-3 text-center backdrop-blur-xl transition active:scale-[.98]">
+            <button onClick={() => recordSuddenDeath("tie")} className="relative mt-3 w-full overflow-hidden rounded-[24px] border border-white/20 bg-white/[.08] px-4 py-3.5 text-center shadow-[inset_0_1px_0_rgba(255,255,255,.2)] backdrop-blur-3xl transition active:scale-[.985]">
               <span className="font-display text-xl text-white">Lika</span>
-              <span className="ml-2 text-[9px] font-bold uppercase tracking-[0.12em] text-white/65">Båda satte den</span>
+              <span className="ml-2 text-[9px] font-bold uppercase tracking-[0.12em] text-white/60">Båda satte den</span>
             </button>
-            {sdMessage ? <div className="mt-3 rounded-2xl border border-white/25 bg-black/25 p-3 text-center text-sm font-black text-white backdrop-blur-xl">{sdMessage}</div> : null}
+            {sdMessage ? <div className="mt-3 rounded-[22px] border border-white/20 bg-white/[.09] p-3 text-center text-sm font-black text-white shadow-[inset_0_1px_0_rgba(255,255,255,.18)] backdrop-blur-3xl">{sdMessage}</div> : null}
           </div>
         </div>
       </div>
 
-      {showSuddenDeathIntro ? <div className="fixed inset-0 z-50 overflow-hidden bg-slate-950">
-        <div className="absolute inset-y-0 left-0 w-[56%] bg-gradient-to-r from-blue-800 via-blue-600 to-blue-500" style={{animation:'sdBlueRush 1.55s cubic-bezier(.18,.82,.24,1) both',clipPath:'polygon(0 0,88% 0,100% 50%,88% 100%,0 100%)'}} />
-        <div className="absolute inset-y-0 right-0 w-[56%] bg-gradient-to-l from-red-800 via-red-600 to-red-500" style={{animation:'sdRedRush 1.55s cubic-bezier(.18,.82,.24,1) both',clipPath:'polygon(12% 0,100% 0,100% 100%,12% 100%,0 50%)'}} />
-        <div className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 text-yellow-200" style={{animation:'sdImpact 1.95s ease-out both'}}><span className="block text-8xl drop-shadow-[0_0_28px_rgba(253,224,71,.95)]">✦</span><span className="absolute -left-8 -top-3 text-2xl">✦</span><span className="absolute -right-8 top-4 text-xl">✦</span><span className="absolute left-2 -bottom-7 text-lg">✦</span></div>
-        <div className="absolute inset-0 z-20 flex items-center justify-center px-6 text-center" style={{animation:'sdHeroIn 2.2s ease-out both'}}><div className="rounded-[34px] border border-white/25 bg-black/30 px-8 py-7 shadow-2xl backdrop-blur-xl"><p className="text-[10px] font-black uppercase tracking-[0.42em] text-white/75">AVGÖRANDE</p><h1 className="mt-2 font-display text-6xl leading-[.88] text-white">SUDDEN<br/>DEATH</h1><p className="mt-5 text-sm font-black text-white">11 meter · närmast hålet vinner</p></div></div>
+      {showSuddenDeathIntro ? <div className="fixed inset-0 z-50 overflow-hidden bg-[#050a12]">
+        <div className="absolute inset-y-0 left-0 w-[57%] bg-[radial-gradient(circle_at_20%_32%,rgba(186,230,253,.38),transparent_28%),linear-gradient(135deg,#1d4ed8,#0b2b72)]" style={{animation:'sdBlueRush 1.7s cubic-bezier(.18,.82,.24,1) both',clipPath:'polygon(0 0,88% 0,100% 50%,88% 100%,0 100%)'}} />
+        <div className="absolute inset-y-0 right-0 w-[57%] bg-[radial-gradient(circle_at_80%_32%,rgba(254,202,202,.34),transparent_28%),linear-gradient(225deg,#dc2626,#711515)]" style={{animation:'sdRedRush 1.7s cubic-bezier(.18,.82,.24,1) both',clipPath:'polygon(12% 0,100% 0,100% 100%,12% 100%,0 50%)'}} />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,.14),transparent_26%)]" />
+        <div className="absolute left-1/2 top-1/2 z-10 h-44 w-44 rounded-full border border-white/30 bg-white/[.08] shadow-[0_0_70px_rgba(255,255,255,.24),inset_0_1px_0_rgba(255,255,255,.35)] backdrop-blur-2xl" style={{animation:'sdImpact 2s ease-out both'}} />
+        <div className="absolute inset-0 z-20 flex items-center justify-center px-6 text-center" style={{animation:'sdHeroIn 2.25s ease-out both'}}>
+          <div className="relative overflow-hidden rounded-[36px] border border-white/25 bg-white/[.09] px-8 py-7 shadow-[inset_0_1px_0_rgba(255,255,255,.3),0_30px_90px_rgba(0,0,0,.38)] backdrop-blur-3xl">
+            <span className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/80 to-transparent" />
+            <p className="text-[10px] font-black uppercase tracking-[0.42em] text-white/70">AVGÖRANDE</p>
+            <h1 className="mt-2 font-display text-6xl leading-[.88] text-white">SUDDEN<br/>DEATH</h1>
+            <p className="mt-5 text-sm font-black text-white/90">11 meter · närmast hålet vinner</p>
+          </div>
+        </div>
       </div> : null}
 
-      {sdWinnerCelebration ? <div className={`fixed inset-0 z-[60] overflow-hidden ${sdWinnerCelebration === "blue" ? "bg-blue-600" : "bg-red-600"}`} style={{animation:'sdWinnerTakeover 720ms cubic-bezier(.2,.8,.2,1) both'}}>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,.22),transparent_48%)]" />
-        {['8%','19%','31%','45%','58%','70%','83%','92%'].map((left, i) => <span key={`c-${i}`} className="absolute top-[-10%] text-3xl" style={{left, animation:`${i % 2 ? 'sdConfettiA' : 'sdConfettiB'} ${1.25 + (i % 3) * .18}s ${i * .06}s ease-in both`}}>{i % 3 === 0 ? '🎉' : i % 3 === 1 ? '✦' : '🎊'}</span>)}
-        <span className="absolute left-[10%] top-[18%] text-7xl" style={{animation:'sdFirework 1.25s .2s ease-out both'}}>🎇</span>
-        <span className="absolute right-[8%] top-[24%] text-6xl" style={{animation:'sdFirework 1.25s .45s ease-out both'}}>🎆</span>
-        <span className="absolute left-[18%] bottom-[16%] text-6xl" style={{animation:'sdFirework 1.25s .65s ease-out both'}}>🎆</span>
-        <span className="absolute right-[15%] bottom-[14%] text-7xl" style={{animation:'sdFirework 1.25s .8s ease-out both'}}>🎇</span>
+      {sdWinnerCelebration ? <div className={`fixed inset-0 z-[60] overflow-hidden ${sdWinnerCelebration === "blue" ? "bg-[#082a72]" : "bg-[#741717]"}`} style={{animation:'sdWinnerTakeover 760ms cubic-bezier(.2,.8,.2,1) both'}}>
+        <div className={`absolute inset-0 ${sdWinnerCelebration === "blue" ? "bg-[radial-gradient(circle_at_50%_42%,rgba(147,197,253,.44),transparent_35%),linear-gradient(145deg,#2563eb,#0b2b72)]" : "bg-[radial-gradient(circle_at_50%_42%,rgba(254,202,202,.38),transparent_35%),linear-gradient(215deg,#ef4444,#741717)]"}`} />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,.13),transparent_30%)]" />
+
+        {[0,1,2].map((burst) => <div key={`burst-${burst}`} className="absolute" style={{left:`${24 + burst * 26}%`,top:`${24 + (burst % 2) * 22}%`,width:12,height:12}}>
+          <span className="absolute left-1/2 top-1/2 h-16 w-16 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/70" style={{animation:`sdBurstRing 1.35s ${.18 + burst * .24}s ease-out both`}} />
+          {Array.from({length:12}).map((_, ray) => <span key={ray} className="absolute left-1/2 top-1/2 h-11 w-[2px] origin-bottom rounded-full bg-gradient-to-t from-white/90 to-white/0" style={{['--r' as any]:`${ray * 30}deg`,animation:`sdRay 1.25s ${.18 + burst * .24 + ray * .012}s ease-out both`}} />)}
+        </div>)}
+
+        {Array.from({length:30}).map((_, i) => <span key={`shard-${i}`} className="absolute top-[-8%] h-2.5 w-1 rounded-full bg-white/80 shadow-[0_0_8px_rgba(255,255,255,.45)]" style={{left:`${4 + (i * 13) % 92}%`,['--x' as any]:`${(i % 2 ? 1 : -1) * (18 + (i % 5) * 9)}px`,['--rot' as any]:`${180 + (i % 7) * 55}deg`,animation:`sdShard ${1.55 + (i % 5) * .12}s ${(i % 10) * .055}s cubic-bezier(.15,.6,.2,1) both`}} />)}
+
         <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 text-center text-white">
-          <p className="text-[11px] font-black uppercase tracking-[0.34em] text-white/75">SUDDEN DEATH</p>
-          <p className="mt-4 font-display text-6xl leading-none">{sdWinnerCelebration === "blue" ? blueLabel : redLabel}</p>
-          <p className="mt-3 font-display text-4xl">VINNER</p>
-          <p className="mt-5 text-sm font-bold text-white/85">Närmast hålet · matchen avgjord</p>
+          <div className="absolute h-72 w-72 rounded-full bg-white/15 blur-3xl" style={{animation:'sdGlowPulse 2s ease-in-out infinite'}} />
+          <div className="relative overflow-hidden rounded-[38px] border border-white/25 bg-white/[.10] px-8 py-8 shadow-[inset_0_1px_0_rgba(255,255,255,.35),0_34px_100px_rgba(0,0,0,.3)] backdrop-blur-3xl">
+            <span className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/90 to-transparent" />
+            <p className="text-[10px] font-black uppercase tracking-[0.34em] text-white/65">SUDDEN DEATH</p>
+            <p className="mt-4 font-display text-6xl leading-none">{sdWinnerCelebration === "blue" ? blueLabel : redLabel}</p>
+            <div className="mx-auto mt-5 h-px w-20 bg-white/45" />
+            <p className="mt-5 font-display text-4xl">VINNER</p>
+            <p className="mt-4 text-sm font-bold text-white/75">Närmast hålet · matchen avgjord</p>
+          </div>
         </div>
       </div> : null}
     </> : null}
