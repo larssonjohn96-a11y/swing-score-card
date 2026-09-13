@@ -87,9 +87,8 @@ export function BottomNav() {
       <div className="mx-auto grid h-[68px] w-full grid-cols-[1fr_1fr_74px_1fr_1fr] items-center gap-0.5 px-2.5 py-1.5">
         {LEFT_TABS.map((tab) => <NavLink key={tab.to} tab={tab} active={tab.exact ? pathname === tab.to : pathname.startsWith(tab.to)} />)}
 
-        <button type="button" onClick={() => setPlayOpen(true)} aria-label="Spel" className="relative -mt-5 flex h-[64px] w-[64px] items-center justify-center justify-self-center overflow-hidden rounded-full border border-white bg-gradient-to-br from-blue-500 via-blue-500 to-red-500 text-white shadow-[0_12px_28px_-10px_rgba(59,130,246,.48)] transition duration-150 active:scale-[.94]">
-          <span className="absolute inset-y-0 right-0 w-1/2 bg-red-500/95" />
-          <Plus className="relative z-10 h-8 w-8 stroke-[2.6]" />
+        <button type="button" onClick={() => setPlayOpen(true)} aria-label="Spel" className="relative -mt-5 flex h-[64px] w-[64px] items-center justify-center justify-self-center rounded-full bg-emerald-600 text-white shadow-[0_10px_24px_-8px_rgba(5,150,105,.55)] transition duration-150 active:scale-[.94]">
+          <Plus className="h-8 w-8 stroke-[2.6]" />
           <span className="absolute -bottom-[17px] text-[9px] font-bold uppercase tracking-wide text-muted-foreground">Spel</span>
         </button>
 
