@@ -491,7 +491,21 @@ function BotMatchPage() {
       {step === "bot" ? (
         <>
           <section className="mt-5"><p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">1 mot 1</p><h1 className="mt-1 font-display text-4xl">Spela mot en bot</h1><p className="mt-2 text-sm text-slate-600">Välj en golfare. Varje bot har egen HCP, spelstil och styrkor.</p></section>
-          <div className="mt-5 space-y-6">
+          <section className={`sticky top-3 z-30 mt-4 rounded-[24px] border px-4 py-3 ${glass}`}>
+            <div className="flex items-center gap-3">
+              <span className="text-4xl leading-none">{bot.avatar}</span>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-baseline justify-between gap-3">
+                  <p className="truncate font-display text-xl">{bot.name}</p>
+                  <p className="shrink-0 text-xs font-black text-red-700">HCP {formatHcp(bot.hcp)}</p>
+                </div>
+                <p className="mt-0.5 truncate text-[10px] font-black uppercase tracking-[0.12em] text-red-700">{BOT_PERSONALITIES[bot.id]?.label ?? bot.archetype.label}</p>
+                <p className="mt-0.5 line-clamp-1 text-[11px] text-slate-500">{BOT_PERSONALITIES[bot.id]?.oneLiner}</p>
+                {relationshipLine(bot.id, bot.name) ? <p className="mt-1 line-clamp-1 text-[10px] font-semibold text-slate-500">{relationshipLine(bot.id, bot.name)}</p> : null}
+              </div>
+            </div>
+          </section>
+          <div className="mt-4 space-y-6">
             {BOT_TIERS.map((tier) => (
               <section key={tier}>
                 <p className="mb-2 px-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">{tier}</p>
@@ -515,7 +529,6 @@ function BotMatchPage() {
               </section>
             ))}
           </div>
-          <section className={`mt-6 rounded-[28px] border p-4 ${glass}`}><div className="flex items-start gap-3"><span className="text-4xl">{bot.avatar}</span><div><p className="font-display text-xl">{bot.name}</p><p className="text-xs font-bold text-red-700">HCP {formatHcp(bot.hcp)} · {bot.role}</p><p className="mt-1 text-[10px] font-black uppercase tracking-[0.14em] text-red-700">{BOT_PERSONALITIES[bot.id]?.label ?? bot.archetype.label}</p><p className="mt-1 text-xs leading-5 text-slate-500">{BOT_PERSONALITIES[bot.id]?.oneLiner}</p><p className="mt-2 text-sm leading-5 text-slate-600">“{bot.intro}”</p>{relationshipLine(bot.id, bot.name) ? <p className="mt-2 text-[11px] font-semibold text-slate-500">{relationshipLine(bot.id, bot.name)}</p> : null}<div className="mt-3 flex flex-wrap gap-1.5">{archetypeLabels(bot.archetype).map((trait) => <span key={trait} className="rounded-full border border-slate-200 bg-white/80 px-2 py-1 text-[9px] font-bold text-slate-600">{trait}</span>)}</div></div></div></section>
           <div className="fixed bottom-0 left-1/2 z-40 w-full max-w-md -translate-x-1/2 bg-gradient-to-t from-white via-white/95 to-white/0 px-5 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-8">
             <button onClick={() => setStep("category")} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white shadow-xl">Spela mot {bot.name} <ChevronRight className="h-5 w-5" /></button>
           </div>
