@@ -162,6 +162,7 @@ function LearnPage() {
   const [session, setSession] = useState<{ mode: "lesson" | "quick"; questions: LearnQuestion[]; index: number; selected?: number; correct: number } | null>(null);
   const [questionStats, setQuestionStats] = useState<Record<string, { correct: number; wrong: number; lastSeen: number }>>({});
   const [lessonVisible, setLessonVisible] = useState(false);
+  const [coachHintOpen, setCoachHintOpen] = useState(false);
   const selectedRef = useRef<HTMLButtonElement | null>(null);
   const sessionHistoryRef = useRef(false);
 
@@ -221,6 +222,7 @@ function LearnPage() {
     setSelectedId(lesson.id);
     setSectionMenuOpen(false);
     setLessonVisible(false);
+    setCoachHintOpen(false);
     openSessionHistory();
     setSession({ mode: "lesson", questions, index: -1, correct: 0 });
     window.requestAnimationFrame(() => window.requestAnimationFrame(() => setLessonVisible(true)));
@@ -246,6 +248,7 @@ function LearnPage() {
       return wb - wa || (sa?.lastSeen ?? 0) - (sb?.lastSeen ?? 0);
     });
     setLessonVisible(false);
+    setCoachHintOpen(false);
     openSessionHistory();
     setSession({ mode: "quick", questions: pool.slice(0, 5), index: 0, correct: 0 });
     window.requestAnimationFrame(() => window.requestAnimationFrame(() => setLessonVisible(true)));
@@ -271,6 +274,7 @@ function LearnPage() {
     }
     const nextIndex = session.index + 1;
     if (nextIndex < session.questions.length) {
+      setCoachHintOpen(false);
       setSession({ ...session, index: nextIndex, selected: undefined });
       return;
     }
@@ -413,9 +417,9 @@ function LearnPage() {
                 <div className="mb-7 flex items-center gap-2">
                   {session.questions.map((_, i) => <span key={i} className={`h-1.5 flex-1 rounded-full ${i <= session.index ? "bg-emerald-400" : "bg-white/10"}`} />)}
                 </div>
-                <p className="text-[10px] font-black uppercase tracking-[.18em] text-white/40">{question.level === "recall" ? "Kom ihåg" : question.level === "understand" ? "Förstå" : "Använd"}</p>
-                <h2 className="mt-3 font-display text-[30px] leading-[1.08]">{question.prompt}</h2>
-                <p className="mt-3 text-sm text-white/45">Välj det svar som passar bäst.</p>
+                <p className="text-xs font-semibold text-white/45">{question.level === "recall" ? "Kom ihåg" : question.level === "understand" ? "Förstå" : "Använd i spelet"}</p>
+                <h2 className="mt-2 font-sans text-[26px] font-semibold normal-case leading-[1.18] tracking-[-0.02em] text-white">{question.prompt}</h2>
+                <p className="mt-3 text-sm leading-relaxed text-white/45">Välj det svar som passar bäst.</p>
                 <div className="mt-6 space-y-3">
                   {question.options.map((option, i) => {
                     const chosen = session.selected === i;
@@ -428,6 +432,15 @@ function LearnPage() {
                   })}
                 </div>
                 {answered ? <div className={`mt-5 rounded-[22px] border p-4 ${session.selected === question.correct ? "border-emerald-300/25 bg-emerald-400/[.08]" : "border-amber-300/25 bg-amber-300/[.07]"}`}><p className="text-sm leading-relaxed text-white/78">{question.feedback}</p></div> : null}
+
+                {!answered ? <div className="fixed bottom-[max(22px,env(safe-area-inset-bottom))] right-4 z-[120] flex flex-col items-end gap-2">
+                  {coachHintOpen ? <div className="max-w-[280px] rounded-[22px] border border-emerald-300/20 bg-[#303536]/98 p-4 shadow-[0_18px_50px_-20px_rgba(0,0,0,.9)] backdrop-blur-2xl">
+                    <p className="text-xs font-bold text-emerald-300">Coachens tips</p>
+                    <p className="mt-1.5 text-sm leading-relaxed text-white/80">{question.level === "recall" ? `Tänk tillbaka på kärnan i ${selected.title}. Fokusera på vad begreppet betyder.` : question.level === "understand" ? "Fråga dig vilket svar som bäst förklarar varför principen påverkar slaget eller scoren." : "Tänk som på banan: välj lösningen med bäst marginal och minst onödig risk."}</p>
+                  </div> : null}
+                  <button type="button" onClick={() => setCoachHintOpen((open) => !open)} aria-label="Visa coachens tips" className="flex h-14 w-14 items-center justify-center rounded-full border border-emerald-300/30 bg-[#303536] shadow-[0_12px_34px_-14px_rgba(0,0,0,.9)] active:scale-[.96]"><span className="text-2xl">🧑🏻‍🏫</span></button>
+                </div> : null}
+
                 <div className="mt-auto pt-6">
                   {answered ? <button type="button" onClick={continueSession} className="w-full rounded-2xl bg-emerald-400 py-4 font-display text-xl text-slate-950">{session.index + 1 < session.questions.length ? "Fortsätt" : session.mode === "lesson" ? "Klar" : "Visa resultat"}</button> : null}
                 </div>
