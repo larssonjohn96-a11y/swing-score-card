@@ -293,6 +293,13 @@ function BotMatchPage() {
   const blueGlass = "border-blue-300/60 bg-gradient-to-br from-blue-100/58 via-white/74 to-slate-100/76 shadow-[0_10px_24px_-20px_rgba(15,23,42,.22)] backdrop-blur-2xl";
   const redGlass = "border-red-300/60 bg-gradient-to-br from-red-100/58 via-white/74 to-slate-100/76 shadow-[0_10px_24px_-20px_rgba(15,23,42,.22)] backdrop-blur-2xl";
   const selected = "border-blue-500 bg-blue-50/95 ring-2 ring-blue-500/25";
+  const ryderNext = "group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-[20px] border border-white/70 bg-[linear-gradient(90deg,#2563eb_0%,#2563eb_47%,rgba(255,255,255,.92)_50%,#dc2626_53%,#dc2626_100%)] py-4 font-display text-xl text-white shadow-[inset_0_1px_0_rgba(255,255,255,.45),0_16px_36px_-22px_rgba(15,23,42,.7)] transition active:scale-[.985] disabled:opacity-30";
+
+  function goToStep(next: Step) {
+    const doc = document as Document & { startViewTransition?: (callback: () => void) => { finished: Promise<void> } };
+    if (doc.startViewTransition) { doc.startViewTransition(() => setStep(next)); return; }
+    setStep(next);
+  }
 
   function resetShotInput(targetDistance = 0) {
     setYourValue(null);
@@ -544,6 +551,15 @@ function BotMatchPage() {
 
   return (
     <main style={LIGHT_SURFACE} className={`mx-auto min-h-screen w-full max-w-md bg-background px-5 ${approachPlay ? "pt-4 pb-8" : step === "bot" ? "pt-6 pb-40" : "pt-6 pb-16"} text-foreground`}>
+
+      <style>{`
+        @keyframes sg4MatchStepIn{0%{opacity:.15;transform:translateX(10px) scale(.992)}100%{opacity:1;transform:translateX(0) scale(1)}}
+        @keyframes sg4MatchStepOut{0%{opacity:1;transform:translateX(0)}100%{opacity:0;transform:translateX(-8px)}}
+        ::view-transition-old(root){animation:sg4MatchStepOut 170ms cubic-bezier(.4,0,.2,1) both}
+        ::view-transition-new(root){animation:sg4MatchStepIn 230ms cubic-bezier(.2,.8,.2,1) both}
+        @keyframes sg4RyderSweep{0%{transform:translateX(-150%) skewX(-18deg);opacity:0}15%{opacity:.2}50%{opacity:.65}100%{transform:translateX(220%) skewX(-18deg);opacity:0}}
+        .sg4-ryder-next:active .sg4-ryder-sweep{animation:sg4RyderSweep 520ms cubic-bezier(.2,.75,.25,1) both}
+      `}</style>
       {step !== "play" && step !== "sudden-death" && step !== "result" ? (
         <header className="flex items-center justify-between">
           {step === "bot" ? (
@@ -598,7 +614,7 @@ function BotMatchPage() {
             ))}
           </div>
           <div className="fixed bottom-0 left-1/2 z-40 w-full max-w-md -translate-x-1/2 bg-gradient-to-t from-white via-white/95 to-white/0 px-5 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-8">
-            <button onClick={() => setStep("category")} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white shadow-xl">Spela mot {bot.name} <ChevronRight className="h-5 w-5" /></button>
+            <button onClick={() => goToStep("category")} className={`sg4-ryder-next ${ryderNext} shadow-xl`}><span aria-hidden="true" className="sg4-ryder-sweep pointer-events-none absolute inset-y-[-30%] left-[-35%] w-[38%] bg-white/70 blur-[1px]" />Spela mot {bot.name} <ChevronRight className="h-5 w-5" /></button>
           </div>
         </>
       ) : null}
@@ -607,7 +623,7 @@ function BotMatchPage() {
         <>
           <section className="mt-5"><div className="flex items-center gap-3"><span className="text-4xl">{bot.avatar}</span><div><p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">{bot.name} · HCP {formatHcp(bot.hcp)}</p><h1 className="mt-1 font-display text-4xl">Vad vill du spela?</h1></div></div></section>
           <div className="mt-5 grid grid-cols-2 gap-3">{CATEGORIES.map((item) => <button key={item.id} onClick={() => setCategory(item.id)} className={`relative min-h-32 rounded-[26px] border p-4 text-left ${category === item.id ? selected : glass}`}><span className="text-[9px] font-black uppercase tracking-[0.14em] text-slate-500">{item.sub}</span><span className="mt-2 block font-display text-2xl">{item.title}</span>{category === item.id ? <Check className="absolute right-3 top-3 h-5 w-5 text-blue-600" /> : null}</button>)}</div>
-          <button disabled={!category} onClick={() => setStep(category === "around-the-green" || category === "bunker" ? "setup" : "length")} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white disabled:opacity-30">Nästa <ChevronRight className="h-5 w-5" /></button>
+          <button disabled={!category} onClick={() => goToStep(category === "around-the-green" || category === "bunker" ? "setup" : "length")} className={`sg4-ryder-next mt-6 ${ryderNext}`}><span aria-hidden="true" className="sg4-ryder-sweep pointer-events-none absolute inset-y-[-30%] left-[-35%] w-[38%] bg-white/70 blur-[1px]" />Nästa <ChevronRight className="h-5 w-5" /></button>
         </>
       ) : null}
 
@@ -615,7 +631,7 @@ function BotMatchPage() {
         <>
           <section className="mt-5"><p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">{category === "bunker" ? "Bunker • Match" : "Chipping • Match"}</p><h1 className="mt-1 font-display text-4xl">{category === "bunker" ? "Bunker" : "Chipping"}</h1><p className="mt-2 text-sm text-slate-600">Du spelar först. Därefter slår {bot.name} från exakt samma avstånd.</p></section>
           <div className={`mt-5 rounded-3xl border p-5 ${glass}`}><Target className="h-5 w-5 text-red-600" /><p className="mt-3 font-display text-2xl">10–30 meter</p><p className="mt-1 text-xs text-slate-500">Varierade närspelsavstånd.</p></div>
-          <button onClick={() => setStep("length")} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white">Nästa <ChevronRight className="h-5 w-5" /></button>
+          <button onClick={() => goToStep("length")} className={`sg4-ryder-next mt-6 ${ryderNext}`}><span aria-hidden="true" className="sg4-ryder-sweep pointer-events-none absolute inset-y-[-30%] left-[-35%] w-[38%] bg-white/70 blur-[1px]" />Nästa <ChevronRight className="h-5 w-5" /></button>
         </>
       ) : null}
 
