@@ -220,6 +220,23 @@ function MatchPlayPage() {
   const [localMatchReady, setLocalMatchReady] = useState(false);
 
   useEffect(() => {
+    const currentState = window.history.state ?? {};
+    if (currentState.sg4MatchStep === step) return;
+    const nextState = { ...currentState, sg4MatchStep: step };
+    if (step === "players") window.history.replaceState(nextState, "", window.location.href);
+    else window.history.pushState(nextState, "", window.location.href);
+  }, [step]);
+
+  useEffect(() => {
+    const onPopState = (event: PopStateEvent) => {
+      const target = event.state?.sg4MatchStep as Step | undefined;
+      if (target) setStep(target);
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  useEffect(() => {
     if (step !== "sudden-death") return;
     setShowSuddenDeathIntro(true);
     const timer = window.setTimeout(() => setShowSuddenDeathIntro(false), 2400);
@@ -711,13 +728,8 @@ function MatchPlayPage() {
     setScoringMode("match"); setMatchLength(5); setHoles([]); setHoleIndex(0); setFinalText(""); setBlueStrokes(1); setRedStrokes(1); setBlueStrokesSelected(false); setRedStrokesSelected(false); setBluePoints(null); setRedPoints(null); setShortGameLies([]); setApproachRanges([]); setApproachCustomMin(30); setApproachCustomMax(200); setApproachTurn("blue"); resetApproachInput(); setIsSubmitting(false); setTransitionMessage(null); setEditingHoleIndex(null); setReturnHoleIndex(null); setMatchSessionId(null); setMatchSessionHostId(null); setSessionBlueTeam(null); setSessionRedTeam(null); window.history.replaceState(window.history.state, "", `/match?flow=${entryFlow}`); setStep("players");
   }
   function back() {
-    if (step === "teams") setStep("players");
-    else if (step === "scoring") setStep("type");
-    else if (step === "category") setStep(mode === "singles" ? "players" : "teams");
-    else if (step === "type") setStep("category");
-    else if (step === "setup") setStep("category");
-    else if (step === "approach-setup") setStep("category");
-    else if (step === "length") setStep(isApproach ? "approach-setup" : category === "off-the-tee" || isPutting || isShortGameScoring ? "category" : "scoring");
+    if (step === "players") return;
+    window.history.back();
   }
 
   const stepLabel = step === "players" ? (entryFlow === "friend" ? "Välj kompis" : "Lagspel · Format & spelare") : step === "teams" ? "2 · Lag" : step === "scoring" ? "Spelsätt" : step === "category" ? "Kategori" : step === "type" ? "Spel" : step === "setup" ? "Chippning" : step === "approach-setup" ? "Inspel · Avstånd" : "Matchlängd";

@@ -206,6 +206,25 @@ function BotMatchPage() {
   const [showSuddenDeathIntro, setShowSuddenDeathIntro] = useState(false);
   const [winnerCelebration, setWinnerCelebration] = useState<"you" | "bot" | null>(null);
 
+  useEffect(() => {
+    if (cupContext) return;
+    const currentState = window.history.state ?? {};
+    if (currentState.sg4BotMatchStep === step) return;
+    const nextState = { ...currentState, sg4BotMatchStep: step };
+    if (step === "bot") window.history.replaceState(nextState, "", window.location.href);
+    else window.history.pushState(nextState, "", window.location.href);
+  }, [step, cupContext]);
+
+  useEffect(() => {
+    if (cupContext) return;
+    const onPopState = (event: PopStateEvent) => {
+      const target = event.state?.sg4BotMatchStep as Step | undefined;
+      if (target) setStep(target);
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [cupContext]);
+
   const selectedBot = BOTS.find((item) => item.id === botId);
   const bot = selectedBot && !selectedBot.locked ? selectedBot : BOTS.find((item) => !item.locked) ?? BOTS[0];
   const [botComment, setBotComment] = useState(() => { const initial = selectedBot && !selectedBot.locked ? selectedBot : BOTS[3]; return personalityLine(initial.id, "start") ?? randomLine(initial.chat.start); });
@@ -490,9 +509,8 @@ function BotMatchPage() {
 
   function back() {
     if (cupContext) { window.location.assign("/cup"); return; }
-    if (step === "category") setStep("bot");
-    else if (step === "setup") setStep("category");
-    else if (step === "length") setStep(category === "around-the-green" || category === "bunker" ? "setup" : "category");
+    if (step === "bot") return;
+    window.history.back();
   }
 
   const label = step === "bot" ? "Motståndare" : step === "category" ? "Kategori" : step === "setup" ? "Setup" : category === "putting" || category === "approach" ? "Format" : "Matchlängd";
@@ -529,7 +547,7 @@ function BotMatchPage() {
       {step !== "play" && step !== "sudden-death" && step !== "result" ? (
         <header className="flex items-center justify-between">
           {step === "bot" ? (
-            <Link to="/" className={`inline-flex h-10 w-10 items-center justify-center rounded-full border text-xl ${glass}`}>‹</Link>
+            <Link to="/spela" className={`inline-flex h-10 w-10 items-center justify-center rounded-full border text-xl ${glass}`}>‹</Link>
           ) : (
             <button onClick={back} className={`inline-flex h-10 w-10 items-center justify-center rounded-full border text-xl ${glass}`}>‹</button>
           )}
