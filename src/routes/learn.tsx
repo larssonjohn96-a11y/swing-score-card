@@ -154,6 +154,7 @@ const STORAGE_KEY = "sg4-learn-progress-v1";
 function LearnPage() {
   const [selectedId, setSelectedId] = useState(ALL_LESSONS[0].id);
   const [completed, setCompleted] = useState<string[]>([]);
+  const [sectionMenuOpen, setSectionMenuOpen] = useState(false);
   const selectedRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
@@ -170,6 +171,11 @@ function LearnPage() {
     try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ selectedId, completed })); } catch { /* ignore */ }
   }, [selectedId, completed]);
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => selectedRef.current?.scrollIntoView({ behavior: "auto", block: "center" }), 80);
+    return () => window.clearTimeout(timer);
+  }, []);
+
   const selected = useMemo(() => ALL_LESSONS.find((item) => item.id === selectedId) ?? ALL_LESSONS[0], [selectedId]);
   const selectedIndex = ALL_LESSONS.findIndex((item) => item.id === selectedId);
 
@@ -185,8 +191,25 @@ function LearnPage() {
       <div className="mx-auto w-full max-w-md px-4 pt-5">
         <header className="sticky top-0 z-30 -mx-4 flex items-center justify-between border-b border-white/[.06] bg-[#242728]/94 px-5 pb-4 pt-1 backdrop-blur-xl">
           <div className="flex items-center gap-2.5"><GraduationCap className="h-6 w-6 text-emerald-400" /><h1 className="font-display text-2xl">Lär dig</h1></div>
-          <button type="button" onClick={() => document.getElementById("learn-sections")?.scrollIntoView({ behavior: "smooth" })} className="flex items-center gap-2 rounded-2xl border border-white/15 bg-white/[.06] px-3 py-2 text-xs font-semibold text-white/80 backdrop-blur-xl"><Map className="h-4 w-4" /> Sektioner</button>
+          <button type="button" onClick={() => setSectionMenuOpen((open) => !open)} className="flex items-center gap-2 rounded-2xl border border-white/15 bg-white/[.06] px-3 py-2 text-xs font-semibold text-white/80 backdrop-blur-xl"><Map className="h-4 w-4" /> Sektioner</button>
         </header>
+
+        {sectionMenuOpen ? (
+          <div className="fixed left-1/2 top-[72px] z-50 w-[calc(100%-24px)] max-w-md -translate-x-1/2 rounded-[26px] border border-white/15 bg-[#303436]/96 p-3 shadow-[0_24px_60px_-24px_rgba(0,0,0,.9)] backdrop-blur-3xl">
+            <div className="grid grid-cols-2 gap-2">
+              {[...SECTIONS].reverse().map((section) => {
+                const tone = TONE[section.tone];
+                return <button key={section.id} type="button" onClick={() => {
+                  setSectionMenuOpen(false);
+                  window.setTimeout(() => document.getElementById(`learn-section-${section.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" }), 20);
+                }} className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[.05] px-3 py-3 text-left text-xs font-semibold text-white/85 active:scale-[.98]">
+                  <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${tone.dot}`} />
+                  <span>{section.title}</span>
+                </button>;
+              })}
+            </div>
+          </div>
+        ) : null}
 
         <section className="mt-5 flex items-center gap-3">
           <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border border-emerald-300/30 bg-gradient-to-br from-emerald-500/25 via-slate-700/80 to-slate-950 shadow-[inset_0_1px_0_rgba(255,255,255,.22),0_0_30px_rgba(16,185,129,.15)]">
@@ -200,7 +223,7 @@ function LearnPage() {
         <div id="learn-sections" className="mt-8 space-y-10">
           {SECTIONS.map((section) => {
             const tone = TONE[section.tone];
-            return <section key={section.id}>
+            return <section key={section.id} id={`learn-section-${section.id}`} className="scroll-mt-28">
               <div className="mb-5 text-center">
                 <div className={`mx-auto mb-2 h-1 w-10 rounded-full ${tone.dot}`} />
                 <p className="text-[10px] font-black uppercase tracking-[.22em] text-white/40">Sektion</p>
@@ -210,7 +233,7 @@ function LearnPage() {
 
               <div className="relative mx-auto max-w-[330px]">
                 <div className={`absolute bottom-8 left-1/2 top-8 w-px -translate-x-1/2 ${tone.dot} opacity-30`} />
-                {[0, 1, 2, 3].map((row) => {
+                {[3, 2, 1, 0].map((row) => {
                   const start = row === 0 ? 0 : row === 1 ? 2 : row === 2 ? 3 : 5;
                   const count = row % 2 === 0 ? 2 : 1;
                   const lessons = section.lessons.slice(start, start + count);
