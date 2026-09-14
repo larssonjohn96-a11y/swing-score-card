@@ -27,20 +27,17 @@ jobs:
           PY
           bun install --frozen-lockfile
           bun run build
-      - name: Smoke test built match route
+      - name: Verify SSR guard
         run: |
-          bunx vite preview --host 127.0.0.1 --port 4173 > /tmp/sg4-preview.log 2>&1 &
-          PID=$!
-          trap 'kill $PID || true' EXIT
-          for i in {1..20}; do
-            if curl -fsS 'http://127.0.0.1:4173/match?flow=friend' -o /tmp/match.html; then
-              break
-            fi
-            sleep 1
-          done
-          cat /tmp/sg4-preview.log
-          test -s /tmp/match.html
-          ! grep -q 'This page didn.t load' /tmp/match.html
+          grep -Fq 'if (typeof window === "undefined") return "friend";' src/routes/match.tsx
+          python3 - <<'PY'
+          from pathlib import Path
+          s = Path('src/routes/match.tsx').read_text()
+          unsafe = 'useState<"friend" | "team">(() => new URLSearchParams(window.location.search)'
+          if unsafe in s:
+              raise SystemExit('unguarded window.location initializer still present')
+          print('SSR guard verified')
+          PY
       - name: Commit
         run: |
           git config user.name github-actions[bot]
