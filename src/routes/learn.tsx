@@ -23,6 +23,7 @@ import {
   Wind,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { LEARN_QUESTIONS, knowledgeForLesson, questionsForLesson, type LearnQuestion } from "@/lib/learn-knowledge";
 
 export const Route = createFileRoute("/learn")({
   head: () => ({ meta: [{ title: "Learn | SG4" }] }),
@@ -151,11 +152,14 @@ const TONE: Record<Tone, { tile: string; active: string; dot: string }> = {
 
 const ALL_LESSONS = SECTIONS.flatMap((section) => section.lessons.map((lesson) => ({ ...lesson, section })));
 const STORAGE_KEY = "sg4-learn-progress-v1";
+const STATS_KEY = "sg4-learn-question-stats-v1";
 
 function LearnPage() {
   const [selectedId, setSelectedId] = useState(ALL_LESSONS[0].id);
   const [completed, setCompleted] = useState<string[]>([]);
   const [sectionMenuOpen, setSectionMenuOpen] = useState(false);
+  const [session, setSession] = useState<{ mode: "lesson" | "quick"; questions: LearnQuestion[]; index: number; selected?: number; correct: number } | null>(null);
+  const [questionStats, setQuestionStats] = useState<Record<string, { correct: number; wrong: number; lastSeen: number }>>({});
   const selectedRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
@@ -173,12 +177,75 @@ function LearnPage() {
   }, [selectedId, completed]);
 
   useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(STATS_KEY);
+      if (raw) setQuestionStats(JSON.parse(raw));
+    } catch { /* ignore */ }
+  }, []);
+
+  useEffect(() => {
+    try { window.localStorage.setItem(STATS_KEY, JSON.stringify(questionStats)); } catch { /* ignore */ }
+  }, [questionStats]);
+
+  useEffect(() => {
     const timer = window.setTimeout(() => selectedRef.current?.scrollIntoView({ behavior: "auto", block: "center" }), 80);
     return () => window.clearTimeout(timer);
   }, []);
 
   const selected = useMemo(() => ALL_LESSONS.find((item) => item.id === selectedId) ?? ALL_LESSONS[0], [selectedId]);
   const selectedIndex = ALL_LESSONS.findIndex((item) => item.id === selectedId);
+
+  function startLesson() {
+    const knowledge = knowledgeForLesson(selected.id);
+    const questions = questionsForLesson(selected.id, selected.section.id, 3);
+    if (!knowledge && questions.length === 0) { nextLesson(); return; }
+    setSession({ mode: "lesson", questions, index: -1, correct: 0 });
+  }
+
+  function startQuickQuiz() {
+    const seen = new Set(completed);
+    seen.add(selectedId);
+    const available = LEARN_QUESTIONS.filter((q) => seen.has(q.lessonId));
+    const pool = (available.length >= 5 ? available : LEARN_QUESTIONS.slice(0, 12)).sort((a, b) => {
+      const sa = questionStats[a.id]; const sb = questionStats[b.id];
+      const wa = sa ? sa.wrong * 3 - sa.correct : 1;
+      const wb = sb ? sb.wrong * 3 - sb.correct : 1;
+      return wb - wa || (sa?.lastSeen ?? 0) - (sb?.lastSeen ?? 0);
+    });
+    setSession({ mode: "quick", questions: pool.slice(0, 5), index: 0, correct: 0 });
+  }
+
+  function answerQuestion(optionIndex:number) {
+    if (!session || session.index < 0 || session.selected !== undefined) return;
+    const question = session.questions[session.index];
+    const ok = optionIndex === question.correct;
+    setQuestionStats((old) => {
+      const prev = old[question.id] ?? { correct: 0, wrong: 0, lastSeen: 0 };
+      return { ...old, [question.id]: { correct: prev.correct + (ok ? 1 : 0), wrong: prev.wrong + (ok ? 0 : 1), lastSeen: Date.now() } };
+    });
+    setSession((old) => old ? { ...old, selected: optionIndex, correct: old.correct + (ok ? 1 : 0) } : old);
+  }
+
+  function continueSession() {
+    if (!session) return;
+    if (session.index === -1) {
+      if (session.questions.length === 0) { setSession(null); nextLesson(); return; }
+      setSession({ ...session, index: 0 });
+      return;
+    }
+    const nextIndex = session.index + 1;
+    if (nextIndex < session.questions.length) {
+      setSession({ ...session, index: nextIndex, selected: undefined });
+      return;
+    }
+    if (session.mode === "lesson") {
+      setCompleted((old) => old.includes(selectedId) ? old : [...old, selectedId]);
+      const next = ALL_LESSONS[Math.min(selectedIndex + 1, ALL_LESSONS.length - 1)];
+      setSelectedId(next.id);
+      window.setTimeout(() => selectedRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
+    }
+    setSession(null);
+  }
 
   function nextLesson() {
     setCompleted((old) => old.includes(selectedId) ? old : [...old, selectedId]);
@@ -194,7 +261,7 @@ function LearnPage() {
           <div className="grid grid-cols-[44px_1fr_auto] items-center gap-2">
             <button type="button" onClick={() => window.history.back()} aria-label="Tillbaka" className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/12 bg-white/[.05] text-white/80 active:scale-[.96]"><ArrowLeft className="h-5 w-5" /></button>
             <div className="flex items-center justify-center gap-2"><GraduationCap className="h-5 w-5 text-emerald-400" /><h1 className="font-display text-xl">Lär dig</h1></div>
-            <button type="button" onClick={() => setSectionMenuOpen((open) => !open)} className="flex items-center gap-1.5 rounded-2xl border border-white/15 bg-white/[.06] px-2.5 py-2 text-[11px] font-semibold text-white/80 backdrop-blur-xl"><Map className="h-3.5 w-3.5" /> Sektioner</button>
+            <div className="flex items-center gap-1.5"><button type="button" onClick={startQuickQuiz} className="rounded-2xl border border-amber-300/20 bg-amber-300/[.08] px-2.5 py-2 text-[11px] font-bold text-amber-100">Snabbquiz</button><button type="button" onClick={() => setSectionMenuOpen((open) => !open)} className="flex items-center gap-1.5 rounded-2xl border border-white/15 bg-white/[.06] px-2.5 py-2 text-[11px] font-semibold text-white/80 backdrop-blur-xl"><Map className="h-3.5 w-3.5" /> Sektioner</button></div>
           </div>
           <div className="mt-3 flex items-center gap-2.5">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-emerald-300/30 bg-gradient-to-br from-emerald-500/25 via-slate-700/80 to-slate-950 shadow-[inset_0_1px_0_rgba(255,255,255,.22),0_0_24px_rgba(16,185,129,.12)]"><span className="text-2xl">🧑🏻‍🏫</span></div>
@@ -275,9 +342,55 @@ function LearnPage() {
             <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border bg-gradient-to-br ${TONE[selected.section.tone].tile}`}><selected.icon className="h-7 w-7 text-white" /></div>
             <div className="min-w-0 flex-1"><p className="text-[9px] font-bold uppercase tracking-[.18em] text-white/40">{selected.section.title}</p><h3 className="mt-0.5 font-display text-2xl leading-none">{selected.title}</h3><p className="mt-1.5 text-xs leading-snug text-white/55">{selected.description}</p></div>
           </div>
-          <button type="button" onClick={nextLesson} className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-emerald-200/25 bg-gradient-to-r from-emerald-500 via-lime-400 to-emerald-400 py-3.5 font-display text-xl text-slate-950 shadow-[inset_0_1px_0_rgba(255,255,255,.5),0_10px_28px_-12px_rgba(74,222,128,.55)] active:scale-[.99]">Nästa lektion <ChevronRight className="h-5 w-5" /></button>
+          <button type="button" onClick={startLesson} className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-emerald-200/25 bg-gradient-to-r from-emerald-500 via-lime-400 to-emerald-400 py-3.5 font-display text-xl text-slate-950 shadow-[inset_0_1px_0_rgba(255,255,255,.5),0_10px_28px_-12px_rgba(74,222,128,.55)] active:scale-[.99]">{completed.includes(selectedId) ? "Repetera" : "Starta lektion"} <ChevronRight className="h-5 w-5" /></button>
         </div>
       </div>
+      {session ? (
+        <div className="fixed inset-0 z-[100] overflow-y-auto bg-[#202324] text-white">
+          <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-5 pb-8 pt-[max(14px,env(safe-area-inset-top))]">
+            <div className="flex items-center justify-between">
+              <button type="button" onClick={() => setSession(null)} className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[.05]"><ArrowLeft className="h-5 w-5" /></button>
+              <div className="text-center"><p className="text-[10px] font-black uppercase tracking-[.18em] text-white/40">{session.mode === "quick" ? "Snabbquiz" : selected.section.title}</p><p className="font-display text-lg">{session.mode === "quick" ? "Repetition" : selected.title}</p></div>
+              <div className="w-10" />
+            </div>
+
+            {session.index === -1 ? (
+              <div className="flex flex-1 flex-col justify-center py-8">
+                <div className={`mx-auto flex h-24 w-24 items-center justify-center rounded-[30px] border bg-gradient-to-br ${TONE[selected.section.tone].tile}`}><selected.icon className="h-11 w-11" /></div>
+                <h2 className="mt-7 text-center font-display text-4xl leading-none">{selected.title}</h2>
+                <p className="mx-auto mt-3 max-w-[32ch] text-center text-sm leading-relaxed text-white/55">{selected.description}</p>
+                <div className="mt-8 space-y-3">
+                  <div className="rounded-[26px] border border-white/12 bg-white/[.055] p-5"><p className="text-[10px] font-black uppercase tracking-[.18em] text-emerald-300">Kärnan</p><p className="mt-2 text-[17px] leading-relaxed text-white/92">{knowledgeForLesson(selected.id)?.core ?? selected.coach}</p></div>
+                  <div className="rounded-[26px] border border-white/10 bg-white/[.035] p-5"><p className="text-[10px] font-black uppercase tracking-[.18em] text-amber-200">Varför det spelar roll</p><p className="mt-2 text-[15px] leading-relaxed text-white/72">{knowledgeForLesson(selected.id)?.why ?? "Förståelsen hjälper dig fatta bättre beslut och utvärdera dina slag tydligare."}</p></div>
+                </div>
+                <button type="button" onClick={continueSession} className="mt-7 rounded-2xl bg-emerald-400 py-4 font-display text-xl text-slate-950">Testa mig <ChevronRight className="ml-1 inline h-5 w-5" /></button>
+              </div>
+            ) : (() => {
+              const question = session.questions[session.index];
+              const answered = session.selected !== undefined;
+              return <div className="flex flex-1 flex-col py-7">
+                <div className="mb-7 flex items-center gap-2">
+                  {session.questions.map((_, i) => <span key={i} className={`h-1.5 flex-1 rounded-full ${i <= session.index ? "bg-emerald-400" : "bg-white/10"}`} />)}
+                </div>
+                <p className="text-[10px] font-black uppercase tracking-[.18em] text-white/40">{question.level === "recall" ? "Återkalla" : question.level === "understand" ? "Förstå" : "Tillämpa"}</p>
+                <h2 className="mt-3 font-display text-[30px] leading-[1.08]">{question.prompt}</h2>
+                <div className="mt-7 space-y-3">
+                  {question.options.map((option, i) => {
+                    const chosen = session.selected === i;
+                    const correct = answered && i === question.correct;
+                    const wrong = answered && chosen && i !== question.correct;
+                    return <button key={option} type="button" disabled={answered} onClick={() => answerQuestion(i)} className={`w-full rounded-[22px] border px-4 py-4 text-left text-[15px] font-semibold transition ${correct ? "border-emerald-300/60 bg-emerald-400/15 text-emerald-50" : wrong ? "border-red-300/50 bg-red-400/12 text-red-50" : "border-white/12 bg-white/[.055] text-white/88 active:scale-[.99]"}`}><span className="mr-3 inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-white/[.05] text-xs text-white/55">{String.fromCharCode(65+i)}</span>{option}</button>;
+                  })}
+                </div>
+                {answered ? <div className={`mt-5 rounded-[22px] border p-4 ${session.selected === question.correct ? "border-emerald-300/25 bg-emerald-400/[.08]" : "border-amber-300/25 bg-amber-300/[.07]"}`}><p className="text-sm leading-relaxed text-white/78">{question.feedback}</p></div> : null}
+                <div className="mt-auto pt-6">
+                  {answered ? <button type="button" onClick={continueSession} className="w-full rounded-2xl bg-emerald-400 py-4 font-display text-xl text-slate-950">{session.index + 1 < session.questions.length ? "Fortsätt" : session.mode === "lesson" ? "Klar" : "Visa resultat"}</button> : null}
+                </div>
+              </div>;
+            })()}
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }
