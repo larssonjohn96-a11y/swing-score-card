@@ -24,8 +24,6 @@ import {
   Sparkles,
   Target,
   Trophy,
-  Volume2,
-  VolumeX,
   Wind,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -176,7 +174,6 @@ function LearnPage() {
   const [questionStats, setQuestionStats] = useState<Record<string, { correct: number; wrong: number; lastSeen: number }>>({});
   const [lessonVisible, setLessonVisible] = useState(false);
   const [coachHintOpen, setCoachHintOpen] = useState(false);
-  const [soundOn, setSoundOn] = useState(true);
   const [scoreStep, setScoreStep] = useState(0);
   const [scoreChoice, setScoreChoice] = useState<number | null>(null);
   const selectedRef = useRef<HTMLButtonElement | null>(null);
@@ -223,23 +220,6 @@ function LearnPage() {
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
-  function speakCoach(text: string) {
-    if (!soundOn || typeof window === "undefined" || !("speechSynthesis" in window)) return;
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "sv-SE";
-    utterance.rate = 0.92;
-    const voices = window.speechSynthesis.getVoices();
-    const swedish = voices.find((voice) => voice.lang.toLowerCase().startsWith("sv"));
-    if (swedish) utterance.voice = swedish;
-    window.speechSynthesis.speak(utterance);
-  }
-
-  useEffect(() => {
-    if (!session || !lessonVisible || session.mode !== "lesson" || selectedId !== "score") return;
-    speakCoach(SCORE_LESSON_STEPS[scoreStep]?.coach ?? "");
-    return () => { if ("speechSynthesis" in window) window.speechSynthesis.cancel(); };
-  }, [scoreStep, lessonVisible, session?.mode, selectedId, soundOn]);
 
   function openSessionHistory() {
     if (sessionHistoryRef.current) return;
@@ -452,13 +432,11 @@ function LearnPage() {
               <div className="flex flex-1 flex-col py-5">
                 <div className="flex items-center justify-between">
                   <div className="text-xs font-semibold text-white/40">Så räknas score · {scoreStep + 1}/{SCORE_LESSON_STEPS.length}</div>
-                  <button type="button" onClick={() => setSoundOn((v) => !v)} className="flex h-10 w-10 items-center justify-center rounded-full border border-white/12 bg-white/[.05] text-white/70" aria-label={soundOn ? "Stäng av ljud" : "Slå på ljud"}>{soundOn ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}</button>
                 </div>
                 <div className="mt-5 flex flex-1 flex-col items-center">
                   <div className="flex h-32 w-32 items-center justify-center rounded-full border border-emerald-300/30 bg-gradient-to-br from-emerald-500/28 via-slate-700/85 to-slate-950 shadow-[0_24px_60px_-28px_rgba(16,185,129,.6)]"><span className="text-6xl">🧑🏻‍🏫</span></div>
                   <div className="relative mt-4 w-full rounded-[28px] border border-white/12 bg-white/[.06] px-5 py-5 text-center shadow-[0_18px_45px_-30px_rgba(0,0,0,.8)]">
                     <p className="text-[22px] font-semibold leading-snug text-white">{SCORE_LESSON_STEPS[scoreStep].coach}</p>
-                    <button type="button" onClick={() => speakCoach(SCORE_LESSON_STEPS[scoreStep].coach)} className="mt-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[.05] px-3 py-1.5 text-xs font-semibold text-white/55"><Volume2 className="h-3.5 w-3.5" /> Lyssna igen</button>
                   </div>
                   <div className="mt-7 w-full">
                     <h2 className="text-center font-sans text-[25px] font-semibold leading-tight">{SCORE_LESSON_STEPS[scoreStep].question}</h2>
