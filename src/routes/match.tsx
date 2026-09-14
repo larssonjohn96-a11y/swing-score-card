@@ -56,7 +56,7 @@ const MATCH_TYPES: Record<MatchCategory, Array<{ id: string; title: string; desc
     { id: "closest", title: "Closest to Pin", description: "Samma målavstånd för båda. Närmast flaggan vinner hålet." },
   ],
   "around-the-green": [
-    { id: "closest", title: "Closest to the Pin", description: "Ett slag mot flaggan. Poäng efter avståndszon – högst poäng vinner hålet." },
+    { id: "closest", title: "Closest to the Pin", description: "Ett slag mot flaggan. Närmast flaggan vinner hålet." },
   ],
   putting: [
     { id: "standard", title: "Putting Match", description: "Standardiserat format · samma position för båda · färre puttar vinner hålet" },
@@ -132,7 +132,7 @@ function generateChallenge(category: MatchCategory, typeId: string, mode: MatchM
   if (category === "around-the-green") {
     const distance = approachDistance ?? rand(8, 30);
     const band = getChipDistanceBand(distance);
-    return { eyebrow: band.label, title: `${distance} m`, detail: `${band.range} · samma avstånd för båda · högst poäng vinner hålet${suffix}` };
+    return { eyebrow: band.label, title: `${distance} m`, detail: `${distance} m från flaggan · närmast flaggan vinner${suffix}` };
   }
   if (category === "approach") {
     const d = approachDistance ?? rand(100, 150);

@@ -34,7 +34,7 @@ export const CHIP_POINT_ZONES = [
   { points: 3, label: "Inom 2 m" },
   { points: 2, label: "Inom 3 m" },
   { points: 1, label: "Inom 5 m" },
-  { points: 0, label: "Över 5 m" },
+  { points: 0, label: "Utanför 5 m" },
 ] as const;
 
 export function getChipPointZone(points: number | null | undefined) {
