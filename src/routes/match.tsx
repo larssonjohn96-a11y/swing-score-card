@@ -125,7 +125,7 @@ function generateChallenge(category: MatchCategory, typeId: string, mode: MatchM
   const suffix = mode === "fourball" ? " · registrera lagets bästa resultat" : mode === "foursomes" ? " · laget spelar vartannat slag" : "";
   if (category === "putting") {
     const distance = approachDistance ?? 1.5;
-    return { eyebrow: "Puttning", title: formatPuttingDistance(distance), detail: `Samma position · håla ut · färre puttar vinner${suffix}` };
+    return { eyebrow: "Puttning", title: formatPuttingDistance(distance), detail: `${formatPuttingDistance(distance)} från flaggan · håla ut · färre puttar vinner${suffix}` };
   }
   if (category === "bunker") {
     return { eyebrow: "Bunker", title: "Bunkerslag", detail: `Närmast flaggan vinner${suffix}` };
