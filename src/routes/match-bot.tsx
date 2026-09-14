@@ -143,8 +143,8 @@ const BOTS: BotProfile[] = [
 
 const BOT_TIERS: BotProfile["tier"][] = ["Nybörjare", "Klubbspelare", "Avancerad", "Elit"];
 const CATEGORIES = [
-  { id: "off-the-tee", title: "Fairway", sub: "Driver" },
-  { id: "approach", title: "Närmast flaggan", sub: "Inspel" },
+  { id: "off-the-tee", title: "Utslag", sub: "Driver · fairway" },
+  { id: "approach", title: "Inspel", sub: "Järn & wedge · närmast flaggan" },
   { id: "around-the-green", title: "Chippning", sub: "Chipping" },
   { id: "bunker", title: "Bunker", sub: "Bunkerslag" },
   { id: "putting", title: "Puttning", sub: "Putting" },
@@ -336,7 +336,7 @@ function BotMatchPage() {
         const d = approachDistances[holeNr] ?? 120;
         return { title: `${d} m`, distance: d, detail: "Justera faktisk längd från målavståndet · 0 m sidled = rakt" };
       }
-      return { title: "Fairway", detail: "Samma fairway och samma slag för båda spelarna" };
+      return { title: "Utslag", detail: "Samma fairway och samma slag för båda spelarna" };
     });
     setBotComment(personalityLine(bot.id, "start") ?? randomLine(bot.chat.start));
     setHoles(next);
