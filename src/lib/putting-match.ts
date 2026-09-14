@@ -36,37 +36,36 @@ const PUTTING_DISTANCE_BANDS = [
   { min: 15, max: 22 },
 ] as const;
 
-function shuffle<T>(items: readonly T[]) {
-  const next = [...items];
-  for (let i = next.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [next[i], next[j]] = [next[j], next[i]];
-  }
-  return next;
-}
-
 /**
- * Behåller kort/medel/lång-spridningen, men SG4-motorn väljer exakt avstånd
- * utifrån spelarens historik och aktuell balans mellan flow och inlärning.
- * Avstånden hålls unika inom matchen när intervallet tillåter det.
+ * Variation prioriteras före finjustering. Matchen växlar mellan tydligt olika
+ * korta, medellånga och långa puttar, medan SG4-motorn fortfarande får välja
+ * exakt avstånd inom varje band. När möjligt skiljer nästa hål minst 5 meter
+ * och ett exakt avstånd återanvänds inte inom samma match.
  */
 export function generatePuttingMatchDistances(length: PuttingMatchLength): number[] {
-  const quotas = length === 3 ? [1, 1, 1] : length === 5 ? [2, 1, 2] : [2, 3, 2];
-  const slots = shuffle(
-    PUTTING_DISTANCE_BANDS.flatMap((band, index) =>
-      Array.from({ length: quotas[index] }, () => band),
-    ),
-  );
-  const distances: number[] = [];
+  const bandOrder = length === 3
+    ? [0, 1, 2]
+    : length === 5
+      ? [0, 1, 2, 0, 2]
+      : [0, 1, 2, 1, 0, 1, 2];
 
-  for (const band of slots) {
-    const unused = Array.from(
-      { length: band.max - band.min + 1 },
-      (_, index) => band.min + index,
-    ).filter((distance) => !distances.includes(distance));
-    const allowedDistances = unused.length
-      ? unused
-      : Array.from({ length: band.max - band.min + 1 }, (_, index) => band.min + index);
+  const orderedBandIndexes = Math.random() < 0.5
+    ? bandOrder
+    : bandOrder.map((index) => 2 - index);
+
+  const distances: number[] = [];
+  const minGap = 5;
+
+  for (const bandIndex of orderedBandIndexes) {
+    const band = PUTTING_DISTANCE_BANDS[bandIndex];
+    const previous = distances.at(-1);
+    const all = Array.from({ length: band.max - band.min + 1 }, (_, index) => band.min + index);
+    const unused = all.filter((distance) => !distances.includes(distance));
+    const pool = unused.length ? unused : all;
+    const varied = previous === undefined
+      ? pool
+      : pool.filter((distance) => Math.abs(distance - previous) >= minGap);
+    const allowedDistances = varied.length ? varied : pool;
 
     distances.push(
       selectNextEngineDistance({
@@ -74,11 +73,12 @@ export function generatePuttingMatchDistances(length: PuttingMatchLength): numbe
         objective: "balanced",
         min: band.min,
         max: band.max,
-        previousDistance: distances.at(-1),
+        previousDistance: previous,
         allowedDistances,
       }),
     );
   }
+
   return distances;
 }
 
