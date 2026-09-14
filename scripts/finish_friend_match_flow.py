@@ -137,17 +137,9 @@ if 'recordFriendMatchHistory({' not in s:
     s = s.replace(anchor, history_effect + anchor, 1)
 
 if 'headToHead.played > 0' not in s:
-    result_pos = s.find('{step === "result" ? <>')
-    if result_pos < 0: raise SystemExit('result block missing')
-    patterns = ['<div className="mt-5 grid grid-cols-2 gap-3">','<div className="mt-5 grid grid-cols-2 gap-2">','<div className="mt-6 grid grid-cols-2 gap-3">']
-    for pattern in patterns:
-        pos = s.find(pattern, result_pos)
-        if pos >= 0:
-            h2h = '''{entryFlow === "friend" && friendOpponent && headToHead.played > 0 ? <div className="mt-3 rounded-[20px] border border-slate-200/90 bg-white/72 px-4 py-3 text-center shadow-sm backdrop-blur-xl"><p className="text-[9px] font-black uppercase tracking-[0.16em] text-slate-500">Inbördes</p><p className="mt-1 font-display text-xl text-slate-950">{headToHead.wins}–{headToHead.losses}{headToHead.ties ? ` · ${headToHead.ties} lika` : ""}</p><p className="mt-0.5 text-[10px] text-slate-500">{selfName} mot {friendOpponent.name} · {headToHead.played} matcher</p></div> : null}
-    '''
-            s = s[:pos] + h2h + s[pos:]
-            break
-    else:
-        raise SystemExit('result action grid missing')
+    result_anchor = '{step === "result" ? <><section className="mt-6 overflow-hidden'
+    if result_anchor not in s: raise SystemExit('result block missing')
+    h2h = '''{step === "result" ? <>{entryFlow === "friend" && friendOpponent && headToHead.played > 0 ? <div className="mt-5 rounded-[20px] border border-slate-200/90 bg-white/72 px-4 py-3 text-center shadow-sm backdrop-blur-xl"><p className="text-[9px] font-black uppercase tracking-[0.16em] text-slate-500">Inbördes</p><p className="mt-1 font-display text-xl text-slate-950">{headToHead.wins}–{headToHead.losses}{headToHead.ties ? ` · ${headToHead.ties} lika` : ""}</p><p className="mt-0.5 text-[10px] text-slate-500">{selfName} mot {friendOpponent.name} · {headToHead.played} matcher</p></div> : null}<section className="mt-6 overflow-hidden'''
+    s = s.replace(result_anchor, h2h, 1)
 
 p.write_text(s)
