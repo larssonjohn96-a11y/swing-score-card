@@ -1,0 +1,90 @@
+name: Polish match next buttons
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/polish-match-next-buttons.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: Patch match flows
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def patch(path):
+              p = Path(path)
+              s = p.read_text()
+
+              # Insert shared transition helper and button classes after selected glass constants / before first flow function.
+              if 'function goToStep(' not in s:
+                  if path.endswith('match.tsx'):
+                      anchor = '  const selectedRing = selectedGlass;\n\n'
+                      block = '''  const selectedRing = selectedGlass;\n  const ryderNext = "group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-[20px] border border-white/70 bg-[linear-gradient(90deg,#2563eb_0%,#2563eb_47%,rgba(255,255,255,.92)_50%,#dc2626_53%,#dc2626_100%)] py-4 font-display text-xl text-white shadow-[inset_0_1px_0_rgba(255,255,255,.45),0_16px_36px_-22px_rgba(15,23,42,.7)] transition active:scale-[.985] disabled:opacity-30";\n\n  function goToStep(next: Step) {\n    const doc = document as Document & { startViewTransition?: (callback: () => void) => { finished: Promise<void> } };\n    if (doc.startViewTransition) { doc.startViewTransition(() => setStep(next)); return; }\n    setStep(next);\n  }\n\n'''
+                  else:
+                      anchor = '  const selected = "border-blue-500 bg-blue-50/95 ring-2 ring-blue-500/25";\n\n'
+                      block = '''  const selected = "border-blue-500 bg-blue-50/95 ring-2 ring-blue-500/25";\n  const ryderNext = "group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-[20px] border border-white/70 bg-[linear-gradient(90deg,#2563eb_0%,#2563eb_47%,rgba(255,255,255,.92)_50%,#dc2626_53%,#dc2626_100%)] py-4 font-display text-xl text-white shadow-[inset_0_1px_0_rgba(255,255,255,.45),0_16px_36px_-22px_rgba(15,23,42,.7)] transition active:scale-[.985] disabled:opacity-30";\n\n  function goToStep(next: Step) {\n    const doc = document as Document & { startViewTransition?: (callback: () => void) => { finished: Promise<void> } };\n    if (doc.startViewTransition) { doc.startViewTransition(() => setStep(next)); return; }\n    setStep(next);\n  }\n\n'''
+                  if anchor not in s: raise SystemExit(f'anchor missing {path}')
+                  s = s.replace(anchor, block)
+
+              # Global view-transition styling inside main return area.
+              if 'sg4MatchStepIn' not in s:
+                  main_anchor = 'return <main style={LIGHT_SURFACE}' if path.endswith('match.tsx') else 'return (\n    <main style={LIGHT_SURFACE}'
+                  if path.endswith('match.tsx'):
+                      style = '''return <main style={LIGHT_SURFACE}'''
+                      s = s.replace(style, '''return <main style={LIGHT_SURFACE}''', 1)
+                      inject = '''\n    <style>{`\n      @keyframes sg4MatchStepIn{0%{opacity:.15;transform:translateX(10px) scale(.992)}100%{opacity:1;transform:translateX(0) scale(1)}}\n      @keyframes sg4MatchStepOut{0%{opacity:1;transform:translateX(0)}100%{opacity:0;transform:translateX(-8px)}}\n      ::view-transition-old(root){animation:sg4MatchStepOut 170ms cubic-bezier(.4,0,.2,1) both}\n      ::view-transition-new(root){animation:sg4MatchStepIn 230ms cubic-bezier(.2,.8,.2,1) both}\n      @keyframes sg4RyderSweep{0%{transform:translateX(-150%) skewX(-18deg);opacity:0}15%{opacity:.2}50%{opacity:.65}100%{transform:translateX(220%) skewX(-18deg);opacity:0}}\n      .sg4-ryder-next:active .sg4-ryder-sweep{animation:sg4RyderSweep 520ms cubic-bezier(.2,.75,.25,1) both}\n    `}</style>\n'''
+                      marker = '>\n    {step !== "play"'
+                      if marker not in s: raise SystemExit('friend main marker missing')
+                      s = s.replace(marker, '>' + inject + '    {step !== "play"', 1)
+                  else:
+                      inject = '''\n      <style>{`\n        @keyframes sg4MatchStepIn{0%{opacity:.15;transform:translateX(10px) scale(.992)}100%{opacity:1;transform:translateX(0) scale(1)}}\n        @keyframes sg4MatchStepOut{0%{opacity:1;transform:translateX(0)}100%{opacity:0;transform:translateX(-8px)}}\n        ::view-transition-old(root){animation:sg4MatchStepOut 170ms cubic-bezier(.4,0,.2,1) both}\n        ::view-transition-new(root){animation:sg4MatchStepIn 230ms cubic-bezier(.2,.8,.2,1) both}\n        @keyframes sg4RyderSweep{0%{transform:translateX(-150%) skewX(-18deg);opacity:0}15%{opacity:.2}50%{opacity:.65}100%{transform:translateX(220%) skewX(-18deg);opacity:0}}\n        .sg4-ryder-next:active .sg4-ryder-sweep{animation:sg4RyderSweep 520ms cubic-bezier(.2,.75,.25,1) both}\n      `}</style>\n'''
+                      marker = '      {step !== "play"'
+                      if marker not in s: raise SystemExit('bot main marker missing')
+                      s = s.replace(marker, inject + '      {step !== "play"', 1)
+
+              # Friend flow: convert the obvious forward buttons to goToStep and common style.
+              if path.endswith('match.tsx'):
+                  replacements = {
+                    'onClick={() => setStep("category")} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 via-slate-900 to-red-600 py-4 font-display text-xl text-white disabled:opacity-30"': 'onClick={() => goToStep("category")} className={`sg4-ryder-next mt-6 ${ryderNext}`}',
+                    'onClick={() => setStep("teams")} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 via-slate-900 to-red-600 py-4 font-display text-xl text-white disabled:opacity-30"': 'onClick={() => goToStep("teams")} className={`sg4-ryder-next mt-6 ${ryderNext}`}',
+                    'onClick={() => setStep("category")} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white disabled:opacity-30"': 'onClick={() => goToStep("category")} className={`sg4-ryder-next mt-6 ${ryderNext}`}',
+                    'onClick={() => setStep("length")} className="relative mt-6 flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl border border-white/80 bg-[linear-gradient(90deg,rgba(254,226,226,.94)_0%,rgba(255,255,255,.88)_50%,rgba(219,234,254,.94)_100%)] py-4 font-display text-xl text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,.98),0_14px_34px_-22px_rgba(148,163,184,.65)] backdrop-blur-xl transition active:scale-[.985]"': 'onClick={() => goToStep("length")} className={`sg4-ryder-next mt-6 ${ryderNext}`}',
+                    'onClick={() => setStep("scoring")} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white disabled:opacity-30"': 'onClick={() => goToStep("scoring")} className={`sg4-ryder-next mt-6 ${ryderNext}`}',
+                    'onClick={() => setStep("length")} className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white disabled:opacity-30"': 'onClick={() => goToStep("length")} className={`sg4-ryder-next mt-5 ${ryderNext}`}',
+                  }
+                  for a,b in replacements.items(): s = s.replace(a,b)
+
+                  # Category forward has branching logic; switch internal setStep calls to goToStep.
+                  s = s.replace('setStep("length"); return;', 'goToStep("length"); return;')
+                  s = s.replace('setStep("approach-setup"); return;', 'goToStep("approach-setup"); return;')
+                  s = s.replace('setStep("length");\n      }} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 via-slate-900 to-red-600 py-4 font-display text-xl text-white disabled:opacity-30"', 'goToStep("length");\n      }} className={`sg4-ryder-next mt-6 ${ryderNext}`}')
+
+                  # Add sweep layer to every common next button before visible label.
+                  s = s.replace('}>Nästa <ChevronRight', '}><span aria-hidden="true" className="sg4-ryder-sweep pointer-events-none absolute inset-y-[-30%] left-[-35%] w-[38%] bg-white/70 blur-[1px]" />Nästa <ChevronRight')
+              else:
+                  s = s.replace('onClick={() => setStep("category")} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white shadow-xl"', 'onClick={() => goToStep("category")} className={`sg4-ryder-next ${ryderNext} shadow-xl`}')
+                  s = s.replace('onClick={() => setStep(category === "around-the-green" || category === "bunker" ? "setup" : "length")} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white disabled:opacity-30"', 'onClick={() => goToStep(category === "around-the-green" || category === "bunker" ? "setup" : "length")} className={`sg4-ryder-next mt-6 ${ryderNext}`}')
+                  s = s.replace('onClick={() => setStep("length")} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white"', 'onClick={() => goToStep("length")} className={`sg4-ryder-next mt-6 ${ryderNext}`}')
+                  s = s.replace('}>Nästa <ChevronRight', '}><span aria-hidden="true" className="sg4-ryder-sweep pointer-events-none absolute inset-y-[-30%] left-[-35%] w-[38%] bg-white/70 blur-[1px]" />Nästa <ChevronRight')
+                  s = s.replace('}>Spela mot {bot.name} <ChevronRight', '}><span aria-hidden="true" className="sg4-ryder-sweep pointer-events-none absolute inset-y-[-30%] left-[-35%] w-[38%] bg-white/70 blur-[1px]" />Spela mot {bot.name} <ChevronRight')
+
+              p.write_text(s)
+
+          patch('src/routes/match.tsx')
+          patch('src/routes/match-bot.tsx')
+          PY
+          bun install --frozen-lockfile
+          bun run build
+      - name: Commit
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add src/routes/match.tsx src/routes/match-bot.tsx
+          git commit -m "Polish match next buttons and transitions"
+          git push
