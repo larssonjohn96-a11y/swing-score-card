@@ -1,0 +1,319 @@
+name: Finish friend match flow
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/finish-friend-match-flow.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: Finish friend match flow
+        run: |
+          cat > src/lib/friend-match-experience.ts <<'EOF'
+          export type FriendMatchLength = 3 | 5 | 7;
+          export type FriendMatchSkill = "putting" | "chip";
+          export type FriendMatchWinner = "blue" | "red" | "tie";
+
+          export type FriendMatchHistoryEntry = {
+            id: string;
+            playedAt: string;
+            selfKey: string;
+            opponentKey: string;
+            selfName: string;
+            opponentName: string;
+            category: string;
+            length: FriendMatchLength;
+            winner: FriendMatchWinner;
+            finalText: string;
+          };
+
+          const HISTORY_KEY = "sg4-friend-match-history-v1";
+          const HISTORY_LIMIT = 80;
+
+          export function getFriendMatchPacing(length: FriendMatchLength) {
+            if (length === 3) return { label: "Snabb", transitionMs: 260, resultCelebrationMs: 1800, pressureBoost: 0.9 } as const;
+            if (length === 5) return { label: "Standard", transitionMs: 340, resultCelebrationMs: 2200, pressureBoost: 1 } as const;
+            return { label: "Lång", transitionMs: 390, resultCelebrationMs: 2400, pressureBoost: 1.12 } as const;
+          }
+
+          export function getPlannedDistanceBand(skill: FriendMatchSkill, plannedDistance: number) {
+            if (skill === "putting") {
+              if (plannedDistance <= 7) return { min: 1, max: 7 } as const;
+              if (plannedDistance <= 14) return { min: 8, max: 14 } as const;
+              return { min: 15, max: 22 } as const;
+            }
+            if (plannedDistance <= 14) return { min: 8, max: 14 } as const;
+            if (plannedDistance <= 22) return { min: 15, max: 22 } as const;
+            return { min: 23, max: 30 } as const;
+          }
+
+          export function allowedDistancesInsideBand(
+            skill: FriendMatchSkill,
+            plannedDistance: number,
+            previousDistance?: number,
+          ) {
+            const band = getPlannedDistanceBand(skill, plannedDistance);
+            const all = Array.from({ length: band.max - band.min + 1 }, (_, i) => band.min + i);
+            if (typeof previousDistance !== "number") return all;
+            const minGap = skill === "putting" ? 5 : 6;
+            const varied = all.filter((distance) => Math.abs(distance - previousDistance) >= minGap);
+            return varied.length ? varied : all;
+          }
+
+          function readHistory(): FriendMatchHistoryEntry[] {
+            if (typeof window === "undefined") return [];
+            try {
+              const parsed = JSON.parse(window.localStorage.getItem(HISTORY_KEY) ?? "[]");
+              return Array.isArray(parsed) ? parsed : [];
+            } catch {
+              return [];
+            }
+          }
+
+          export function recordFriendMatchHistory(entry: FriendMatchHistoryEntry) {
+            if (typeof window === "undefined") return;
+            const current = readHistory();
+            if (current.some((item) => item.id === entry.id)) return;
+            const next = [entry, ...current].slice(0, HISTORY_LIMIT);
+            try { window.localStorage.setItem(HISTORY_KEY, JSON.stringify(next)); } catch {}
+          }
+
+          export function summarizeFriendHeadToHead(
+            entries: FriendMatchHistoryEntry[],
+            selfKey: string,
+            opponentKey: string,
+          ) {
+            const relevant = entries.filter((entry) => entry.selfKey === selfKey && entry.opponentKey === opponentKey);
+            return relevant.reduce((summary, entry) => {
+              summary.played += 1;
+              if (entry.winner === "blue") summary.wins += 1;
+              else if (entry.winner === "red") summary.losses += 1;
+              else summary.ties += 1;
+              return summary;
+            }, { played: 0, wins: 0, losses: 0, ties: 0 });
+          }
+
+          export function getFriendHeadToHead(selfKey: string, opponentKey: string) {
+            return summarizeFriendHeadToHead(readHistory(), selfKey, opponentKey);
+          }
+          EOF
+
+          cat > src/lib/friend-match-experience.test.ts <<'EOF'
+          import { describe, expect, it } from "vitest";
+          import {
+            allowedDistancesInsideBand,
+            getFriendMatchPacing,
+            getPlannedDistanceBand,
+            summarizeFriendHeadToHead,
+          } from "@/lib/friend-match-experience";
+
+          describe("friend match experience", () => {
+            it("keeps adaptive putting inside the planned short/medium/long band", () => {
+              expect(getPlannedDistanceBand("putting", 5)).toEqual({ min: 1, max: 7 });
+              expect(getPlannedDistanceBand("putting", 11)).toEqual({ min: 8, max: 14 });
+              expect(getPlannedDistanceBand("putting", 19)).toEqual({ min: 15, max: 22 });
+            });
+
+            it("keeps adaptive chipping inside its planned band", () => {
+              expect(getPlannedDistanceBand("chip", 12)).toEqual({ min: 8, max: 14 });
+              expect(getPlannedDistanceBand("chip", 18)).toEqual({ min: 15, max: 22 });
+              expect(getPlannedDistanceBand("chip", 27)).toEqual({ min: 23, max: 30 });
+            });
+
+            it("preserves meaningful variation when possible", () => {
+              const putting = allowedDistancesInsideBand("putting", 19, 12);
+              expect(putting.every((d) => d >= 15 && d <= 22)).toBe(true);
+              expect(putting.every((d) => Math.abs(d - 12) >= 5)).toBe(true);
+            });
+
+            it("gives 3, 5 and 7 hole matches distinct pacing", () => {
+              expect(getFriendMatchPacing(3).transitionMs).toBeLessThan(getFriendMatchPacing(5).transitionMs);
+              expect(getFriendMatchPacing(5).transitionMs).toBeLessThan(getFriendMatchPacing(7).transitionMs);
+            });
+
+            it("summarizes head to head history", () => {
+              const entries = [
+                { id: "1", playedAt: "2026-01-01", selfKey: "me", opponentKey: "a", selfName: "Me", opponentName: "A", category: "putting", length: 5 as const, winner: "blue" as const, finalText: "" },
+                { id: "2", playedAt: "2026-01-02", selfKey: "me", opponentKey: "a", selfName: "Me", opponentName: "A", category: "chip", length: 3 as const, winner: "red" as const, finalText: "" },
+                { id: "3", playedAt: "2026-01-03", selfKey: "me", opponentKey: "a", selfName: "Me", opponentName: "A", category: "putting", length: 7 as const, winner: "tie" as const, finalText: "" },
+              ];
+              expect(summarizeFriendHeadToHead(entries, "me", "a")).toEqual({ played: 3, wins: 1, losses: 1, ties: 1 });
+            });
+          });
+          EOF
+
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          p = Path('src/routes/match.tsx')
+          s = p.read_text()
+
+          s = s.replace('import { useEffect, useMemo, useState } from "react";', 'import { useEffect, useMemo, useRef, useState } from "react";')
+          import_anchor = 'import { chipPerformanceFromPoints, puttingPerformanceFromStrokes, recordEngineOutcome, selectNextEngineDistance, type EngineSkill } from "@/lib/sg4-engine";\n'
+          extra_import = 'import { allowedDistancesInsideBand, getFriendHeadToHead, getFriendMatchPacing, getPlannedDistanceBand, recordFriendMatchHistory } from "@/lib/friend-match-experience";\n'
+          if extra_import not in s:
+            if import_anchor not in s: raise SystemExit('import anchor missing')
+            s = s.replace(import_anchor, import_anchor + extra_import, 1)
+
+          state_anchor = '  const [normalWinnerCelebration, setNormalWinnerCelebration] = useState<"blue" | "red" | null>(null);\n'
+          state_add = '''  const [normalWinnerCelebration, setNormalWinnerCelebration] = useState<"blue" | "red" | null>(null);
+  const [matchRunId, setMatchRunId] = useState(() => `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
+  const [headToHead, setHeadToHead] = useState({ played: 0, wins: 0, losses: 0, ties: 0 });
+  const recordedHistoryIdRef = useRef<string | null>(null);
+'''
+          if state_anchor not in s: raise SystemExit('state anchor missing')
+          s = s.replace(state_anchor, state_add, 1)
+
+          pace_anchor = '  const tight = compact && Boolean(pressureNotice);\n'
+          pace_add = '''  const tight = compact && Boolean(pressureNotice);
+  const matchPacing = getFriendMatchPacing(matchLength);
+  const friendOpponent = entryFlow === "friend" ? redTeam[0] ?? selectedOthers[0] ?? null : null;
+  const selfHistoryKey = user?.id ?? `self:${selfName.toLowerCase()}`;
+  const opponentHistoryKey = friendOpponent?.id ?? (friendOpponent ? `guest:${friendOpponent.name.toLowerCase()}` : "");
+  const resolvedResultWinner: "blue" | "red" | "tie" = resultLeader
+    ?? (finalText.startsWith(blueLabel) ? "blue" : finalText.startsWith(redLabel) ? "red" : "tie");
+'''
+          if pace_anchor not in s: raise SystemExit('pace anchor missing')
+          s = s.replace(pace_anchor, pace_add, 1)
+
+          start_anchor = '  function startMatch() {\n    if (!mode || !teamsReady || !category || !matchType) return;\n'
+          start_repl = '''  function startMatch() {
+    if (!mode || !teamsReady || !category || !matchType) return;
+    const nextRunId = `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    setMatchRunId(nextRunId);
+    recordedHistoryIdRef.current = null;
+'''
+          if start_anchor not in s: raise SystemExit('start anchor missing')
+          s = s.replace(start_anchor, start_repl, 1)
+
+          # Different match lengths should feel measurably different in tempo.
+          s = s.replace('window.setTimeout(() => { advance(next); setTransitionMessage(null); setIsSubmitting(false); }, 380);', 'window.setTimeout(() => { advance(next); setTransitionMessage(null); setIsSubmitting(false); }, matchPacing.transitionMs);')
+          s = s.replace('window.setTimeout(() => { advance(next); setApproachTurn("blue"); resetApproachInput(nextTargetDistance); setTransitionMessage(null); setIsSubmitting(false); }, 380);', 'window.setTimeout(() => { advance(next); setApproachTurn("blue"); resetApproachInput(nextTargetDistance); setTransitionMessage(null); setIsSubmitting(false); }, matchPacing.transitionMs);')
+          s = s.replace('window.setTimeout(() => { setNormalWinnerCelebration(null); setStep("result"); }, 2300);', 'window.setTimeout(() => { setNormalWinnerCelebration(null); setStep("result"); }, matchPacing.resultCelebrationMs);')
+
+          # Stroke scoring must treat bunker exactly like chipping because both use point zones.
+          s = s.replace('      if (isShortGame) {\n        const delta = s.bluePoints - s.redPoints;', '      if (isShortGameScoring) {\n        const delta = s.bluePoints - s.redPoints;')
+          s = s.replace('      const strokeWinner = isShortGame ? (s.bluePoints > s.redPoints ? "blue" : "red") : (s.blueStrokes < s.redStrokes ? "blue" : "red");', '      const strokeWinner = isShortGameScoring ? (s.bluePoints > s.redPoints ? "blue" : "red") : (s.blueStrokes < s.redStrokes ? "blue" : "red");')
+
+          # Hard rule: adaptation may change difficulty INSIDE the already-planned category band,
+          # never replace short/medium/long hopping with a neighboring category.
+          old_adapt = re.search(r'  function adaptNextChallenge\(next: Hole\[\], registered: number, performance: number\) \{.*?\n  \}\n  function recordPutting\(\)', s, re.S)
+          if not old_adapt: raise SystemExit('adapt function not found')
+          new_adapt = '''  function adaptNextChallenge(next: Hole[], registered: number, performance: number) {
+    if (!category || !mode || registered >= next.length - 1) return next;
+    if (category !== "putting" && category !== "around-the-green") return next;
+    const currentDistance = holeDistance(next[registered]);
+    const plannedNextDistance = holeDistance(next[registered + 1]);
+    if (typeof currentDistance !== "number" || typeof plannedNextDistance !== "number") return next;
+    const skill = category === "putting" ? "putting" : "chip";
+    const band = getPlannedDistanceBand(skill, plannedNextDistance);
+    const allowedDistances = allowedDistancesInsideBand(skill, plannedNextDistance, currentDistance);
+    const nextDistance = selectNextEngineDistance({
+      skill,
+      objective: "balanced",
+      context: "game",
+      min: band.min,
+      max: band.max,
+      previousDistance: currentDistance,
+      previousPerformance: performance,
+      allowedDistances,
+    });
+    const nextIndex = registered + 1;
+    const adapted = [...next];
+    adapted[nextIndex] = {
+      ...adapted[nextIndex],
+      challenge: generateChallenge(category, matchType ?? "closest", mode, shortGameLies, nextDistance),
+    };
+    return adapted;
+  }
+  function recordPutting()'''
+          s = s[:old_adapt.start()] + new_adapt + s[old_adapt.end():]
+
+          # Clamp and validate restored local matches instead of accepting malformed/stale state blindly.
+          old_restore = '      setHoles(Array.isArray(saved.holes) ? saved.holes : []);\n      setHoleIndex(Number.isFinite(saved.holeIndex) ? saved.holeIndex : 0);'
+          new_restore = '''      const restoredHoles = Array.isArray(saved.holes) ? saved.holes.slice(0, saved.matchLength ?? 5) : [];
+      if (!restoredHoles.length || !restoredHoles.every((hole: any) => hole && hole.challenge && typeof hole.challenge.title === "string")) {
+        window.localStorage.removeItem(LOCAL_MATCH_KEY);
+        setLocalMatchReady(true);
+        return;
+      }
+      setHoles(restoredHoles);
+      setHoleIndex(Math.min(Math.max(0, Number.isFinite(saved.holeIndex) ? saved.holeIndex : 0), restoredHoles.length - 1));'''
+          if old_restore not in s: raise SystemExit('restore anchor missing')
+          s = s.replace(old_restore, new_restore, 1)
+
+          # Persist the run id across an interrupted match so history remains idempotent.
+          s = s.replace('      if (saved.selfName) setSelfName(saved.selfName);', '      if (saved.selfName) setSelfName(saved.selfName);\n      if (saved.matchRunId) setMatchRunId(saved.matchRunId);')
+          s = s.replace('      selectedFriendIds, guests, blueMateId, selfName,', '      selectedFriendIds, guests, blueMateId, selfName, matchRunId,')
+          s = s.replace('blueMateId, selfName, blueLabel, redLabel]);', 'blueMateId, selfName, matchRunId, blueLabel, redLabel]);')
+
+          # Friend match history: one record per match, regardless of re-renders/cloud updates.
+          effect_anchor = '  function rematch() {\n    startMatch();\n  }\n'
+          history_effect = '''  useEffect(() => {
+    if (step !== "result" || entryFlow !== "friend" || !friendOpponent || !category || score.played <= 0) return;
+    const historyId = matchSessionId ? `cloud:${matchSessionId}` : matchRunId;
+    if (recordedHistoryIdRef.current === historyId) return;
+    recordedHistoryIdRef.current = historyId;
+    recordFriendMatchHistory({
+      id: historyId,
+      playedAt: new Date().toISOString(),
+      selfKey: selfHistoryKey,
+      opponentKey: opponentHistoryKey,
+      selfName,
+      opponentName: friendOpponent.name,
+      category,
+      length: matchLength,
+      winner: resolvedResultWinner,
+      finalText,
+    });
+    setHeadToHead(getFriendHeadToHead(selfHistoryKey, opponentHistoryKey));
+  }, [step, entryFlow, friendOpponent?.id, friendOpponent?.name, category, score.played, matchSessionId, matchRunId, selfHistoryKey, opponentHistoryKey, selfName, matchLength, resolvedResultWinner, finalText]);
+
+  function rematch() {
+    startMatch();
+  }
+'''
+          if effect_anchor not in s: raise SystemExit('rematch anchor missing')
+          s = s.replace(effect_anchor, history_effect, 1)
+
+          # Show H2H on the result page without adding another navigation surface.
+          result_anchor = '{step === "result" ? <><section className="mt-6 overflow-hidden'
+          if result_anchor not in s: raise SystemExit('result anchor missing')
+          s = s.replace(result_anchor, '{step === "result" ? <><section className="mt-6 overflow-hidden', 1)
+          # Insert compact H2H just before result actions if a recognizable action-grid anchor exists.
+          action_patterns = [
+            '<div className="mt-5 grid grid-cols-2 gap-3">',
+            '<div className="mt-5 grid grid-cols-2 gap-2">',
+            '<div className="mt-6 grid grid-cols-2 gap-3">',
+          ]
+          inserted = False
+          result_pos = s.find('{step === "result" ? <>')
+          for pat in action_patterns:
+            pos = s.find(pat, result_pos)
+            if pos != -1:
+              h2h = '''{entryFlow === "friend" && friendOpponent && headToHead.played > 0 ? <div className="mt-3 rounded-[20px] border border-slate-200/90 bg-white/72 px-4 py-3 text-center shadow-sm backdrop-blur-xl"><p className="text-[9px] font-black uppercase tracking-[0.16em] text-slate-500">Inbördes</p><p className="mt-1 font-display text-xl text-slate-950">{headToHead.wins}–{headToHead.losses}{headToHead.ties ? ` · ${headToHead.ties} lika` : ""}</p><p className="mt-0.5 text-[10px] text-slate-500">{selfName} mot {friendOpponent.name} · {headToHead.played} matcher</p></div> : null}\n    '''
+              s = s[:pos] + h2h + s[pos:]
+              inserted = True
+              break
+          if not inserted:
+            raise SystemExit('result action grid anchor missing')
+
+          p.write_text(s)
+          PY
+
+          bun install --frozen-lockfile
+          bunx vitest run src/lib/friend-match-experience.test.ts src/lib/motor-learning-policy.test.ts src/lib/bot-skill-model.test.ts src/lib/bot-match-pressure.test.ts --passWithNoTests
+          bun run build
+      - name: Commit
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add src/lib/friend-match-experience.ts src/lib/friend-match-experience.test.ts src/routes/match.tsx
+          git commit -m "Finish friend match core loop"
+          git push
