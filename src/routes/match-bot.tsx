@@ -145,8 +145,8 @@ const BOT_TIERS: BotProfile["tier"][] = ["Nybörjare", "Klubbspelare", "Avancera
 const CATEGORIES = [
   { id: "off-the-tee", title: "Utslag", sub: "Off the Tee" },
   { id: "approach", title: "Inspel", sub: "Approach" },
-  { id: "around-the-green", title: "Närspel", sub: "Around the Green" },
-  { id: "putting", title: "Puttning", sub: "Putting" },
+  { id: "around-the-green", title: "Chipping • Match", sub: "Chippning" },
+  { id: "putting", title: "Putting • Match", sub: "Puttning" },
 ] as const;
 
 function rand(min: number, max: number) { return Math.floor(Math.random() * (max - min + 1)) + min; }

@@ -40,8 +40,8 @@ type ApproachRangeId = "50-100" | "100-150" | "150-200" | "custom";
 const LOCAL_MATCH_KEY = "sg4.active-match.v1";
 
 const CATEGORIES = [
-  { id: "putting", title: "Puttning", subtitle: "Putting Match", description: "Spela en riktig puttingmatch hål för hål. Färre puttar vinner hålet." },
-  { id: "around-the-green", title: "Chippning", subtitle: "Chipping", description: "Chippingmatch mot samma mål. Närmast hålet vinner." },
+  { id: "putting", title: "Putting • Match", subtitle: "Puttning", description: "Spela en riktig puttingmatch hål för hål. Färre puttar vinner hålet." },
+  { id: "around-the-green", title: "Chipping • Match", subtitle: "Chippning", description: "Chippingmatch mot samma mål. Närmast hålet vinner." },
   { id: "approach", title: "Closest to Pin", subtitle: "Inspel", description: "Slå mot samma mål från varierade avstånd. Närmast flaggan vinner." },
   { id: "off-the-tee", title: "30 m Fairway Challenge", subtitle: "Driver", description: "Längsta godkända drive inom en 30 meter bred fairway vinner." },
 ] as const;
@@ -54,10 +54,10 @@ const MATCH_TYPES: Record<MatchCategory, Array<{ id: string; title: string; desc
     { id: "closest", title: "Closest to Pin", description: "Samma målavstånd för båda. Närmast flaggan vinner hålet." },
   ],
   "around-the-green": [
-    { id: "closest", title: "Closest to the Pin", description: "Ett slag mot flaggan. Närmast flaggan vinner hålet." },
+    { id: "closest", title: "Chipping • Match", description: "Ett slag mot flaggan. Närmast flaggan vinner hålet." },
   ],
   putting: [
-    { id: "standard", title: "Putting Match", description: "Standardiserat format · samma position för båda · färre puttar vinner hålet" },
+    { id: "standard", title: "Putting • Match", description: "Standardiserat format · samma position för båda · färre puttar vinner hålet" },
   ],
 };
 
@@ -125,7 +125,7 @@ function generateChallenge(category: MatchCategory, typeId: string, mode: MatchM
   const suffix = mode === "fourball" ? " · registrera lagets bästa resultat" : mode === "foursomes" ? " · laget spelar vartannat slag" : "";
   if (category === "putting") {
     const distance = approachDistance ?? 1.5;
-    return { eyebrow: "Putting Match", title: formatPuttingDistance(distance), detail: `Samma position · håla ut · färre puttar vinner${suffix}` };
+    return { eyebrow: "Putting • Match", title: formatPuttingDistance(distance), detail: `Samma position · håla ut · färre puttar vinner${suffix}` };
   }
   if (category === "around-the-green") {
     const distance = approachDistance ?? rand(8, 30);
