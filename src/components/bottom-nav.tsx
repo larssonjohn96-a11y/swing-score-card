@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
-import { Bot, BriefcaseBusiness, ChevronRight, Flag, Gauge, Home, Menu, Plus, Target, Trophy, UserRound, Users } from "lucide-react";
+import { Bot, BriefcaseBusiness, ChevronRight, Flag, Gauge, GraduationCap, Home, Menu, Plus, Target, Trophy, UserRound, Users } from "lucide-react";
 import { useBottomNavVisibility } from "@/lib/bottom-nav-visibility";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { computeAchievements, computeMilestones, countUncollected } from "@/lib/trophy-room";
@@ -13,7 +13,7 @@ const LEFT_TABS = [
 ] as const;
 
 const RIGHT_TABS = [
-  { to: "/utveckling", label: "Analys", icon: Gauge, exact: false },
+  { to: "/learn", label: "Learn", icon: GraduationCap, exact: false },
 ] as const;
 
 const PLAY_LINKS = [
@@ -24,6 +24,7 @@ const PLAY_LINKS = [
 ] as const;
 
 const MORE_LINKS = [
+  { to: "/utveckling", label: "Analys", description: "Utveckling, nivåer och spelarprofil.", icon: Gauge, tone: "neutral" },
   { to: "/turneringar", label: "Turneringar", description: "Events, ranking och leaderboard.", icon: Trophy, tone: "gold" },
   { to: "/utmaningar", label: "Utmaningar", description: "Streaks, scoring och personliga rekord.", icon: Flag, tone: "flag" },
   { to: "/tester", label: "Tester", description: "Tester, HCP-nivå och utveckling.", icon: Target, tone: "neutral" },
