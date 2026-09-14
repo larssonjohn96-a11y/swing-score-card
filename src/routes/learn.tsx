@@ -5,6 +5,9 @@ import {
   ArrowLeft,
   Brain,
   Check,
+  Eye,
+  Lightbulb,
+  MessageCircle,
   ChevronRight,
   CircleDot,
   CloudSun,
@@ -159,7 +162,7 @@ function LearnPage() {
   const [selectedId, setSelectedId] = useState(ALL_LESSONS[0].id);
   const [completed, setCompleted] = useState<string[]>([]);
   const [sectionMenuOpen, setSectionMenuOpen] = useState(false);
-  const [session, setSession] = useState<{ mode: "lesson" | "quick"; questions: LearnQuestion[]; index: number; selected?: number; correct: number } | null>(null);
+  const [session, setSession] = useState<{ mode: "lesson" | "quick"; questions: LearnQuestion[]; index: number; selected?: number; correct: number; phase?: "intro" | "discover" | "apply" | "quiz" | "finish"; reveal?: boolean; choice?: number } | null>(null);
   const [questionStats, setQuestionStats] = useState<Record<string, { correct: number; wrong: number; lastSeen: number }>>({});
   const [lessonVisible, setLessonVisible] = useState(false);
   const [coachHintOpen, setCoachHintOpen] = useState(false);
@@ -216,25 +219,40 @@ function LearnPage() {
   const selected = useMemo(() => ALL_LESSONS.find((item) => item.id === selectedId) ?? ALL_LESSONS[0], [selectedId]);
   const selectedIndex = ALL_LESSONS.findIndex((item) => item.id === selectedId);
 
+  function buildLessonQuestions(lesson: (typeof ALL_LESSONS)[number]) {
+    const specific = questionsForLesson(lesson.id, lesson.section.id, 3);
+    const knowledge = knowledgeForLesson(lesson.id);
+    const core = knowledge?.core ?? lesson.description;
+    const why = knowledge?.why ?? lesson.coach;
+    const fallback: LearnQuestion[] = [
+      { id: `${lesson.id}-core-check`, lessonId: lesson.id, sectionId: lesson.section.id, level: "recall", prompt: `Vad är kärnan i ${lesson.title}?`, options: [core, "Att alltid slå hårdare.", "Att alltid sikta på flaggan."], correct: 0, feedback: core },
+      { id: `${lesson.id}-why-check`, lessonId: lesson.id, sectionId: lesson.section.id, level: "apply", prompt: `Varför hjälper ${lesson.title} dig på banan?`, options: [why, "Det gör automatiskt alla slag raka.", "Det tar bort behovet av bra beslut."], correct: 0, feedback: why },
+    ];
+    const ids = new Set(specific.map((q) => q.id));
+    return [...specific, ...fallback.filter((q) => !ids.has(q.id))].slice(0, 3);
+  }
+
   function startLesson(lessonId = selected.id) {
     const lesson = ALL_LESSONS.find((item) => item.id === lessonId) ?? selected;
-    const questions = questionsForLesson(lesson.id, lesson.section.id, 3);
+    const questions = buildLessonQuestions(lesson);
     setSelectedId(lesson.id);
     setSectionMenuOpen(false);
     setLessonVisible(false);
     setCoachHintOpen(false);
     openSessionHistory();
-    setSession({ mode: "lesson", questions, index: -1, correct: 0 });
+    setSession({ mode: "lesson", questions, index: 0, correct: 0, phase: "intro", reveal: false });
     window.requestAnimationFrame(() => window.requestAnimationFrame(() => setLessonVisible(true)));
   }
 
   function closeLesson() {
-    if (sessionHistoryRef.current) {
-      window.history.back();
-      return;
-    }
+    const hadSessionHistory = sessionHistoryRef.current;
+    sessionHistoryRef.current = false;
     setLessonVisible(false);
+    setCoachHintOpen(false);
     window.setTimeout(() => setSession(null), 280);
+    if (hadSessionHistory && window.history.state?.sg4LearnSession) {
+      window.setTimeout(() => window.history.back(), 0);
+    }
   }
 
   function startQuickQuiz() {
@@ -250,7 +268,7 @@ function LearnPage() {
     setLessonVisible(false);
     setCoachHintOpen(false);
     openSessionHistory();
-    setSession({ mode: "quick", questions: pool.slice(0, 5), index: 0, correct: 0 });
+    setSession({ mode: "quick", questions: pool.slice(0, 5), index: 0, correct: 0, phase: "quiz" });
     window.requestAnimationFrame(() => window.requestAnimationFrame(() => setLessonVisible(true)));
   }
 
@@ -267,29 +285,27 @@ function LearnPage() {
 
   function continueSession() {
     if (!session) return;
-    if (session.index === -1) {
-      if (session.questions.length === 0) { setSession(null); nextLesson(); return; }
-      setSession({ ...session, index: 0 });
-      return;
+    if (session.mode === "lesson") {
+      if (session.phase === "intro") { setSession({ ...session, phase: "discover", reveal: false, choice: undefined }); return; }
+      if (session.phase === "discover") { setSession({ ...session, phase: "apply", choice: undefined }); return; }
+      if (session.phase === "apply") { setSession({ ...session, phase: "quiz", index: 0, selected: undefined, choice: undefined }); return; }
+      if (session.phase === "finish") {
+        setCompleted((old) => old.includes(selectedId) ? old : [...old, selectedId]);
+        const next = ALL_LESSONS[Math.min(selectedIndex + 1, ALL_LESSONS.length - 1)];
+        setSelectedId(next.id);
+        closeLesson();
+        window.setTimeout(() => selectedRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 320);
+        return;
+      }
     }
     const nextIndex = session.index + 1;
     if (nextIndex < session.questions.length) {
       setCoachHintOpen(false);
-      setSession({ ...session, index: nextIndex, selected: undefined });
+      setSession({ ...session, phase: "quiz", index: nextIndex, selected: undefined });
       return;
     }
-    if (session.mode === "lesson") {
-      setCompleted((old) => old.includes(selectedId) ? old : [...old, selectedId]);
-      const next = ALL_LESSONS[Math.min(selectedIndex + 1, ALL_LESSONS.length - 1)];
-      setSelectedId(next.id);
-      window.setTimeout(() => selectedRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
-    }
-    if (sessionHistoryRef.current) {
-      window.history.back();
-    } else {
-      setLessonVisible(false);
-      window.setTimeout(() => setSession(null), 280);
-    }
+    if (session.mode === "lesson") { setSession({ ...session, phase: "finish", selected: undefined }); return; }
+    closeLesson();
   }
 
   function nextLesson() {
@@ -399,51 +415,61 @@ function LearnPage() {
               <div className="w-10" />
             </div>
 
-            {session.index === -1 ? (
-              <div className="flex flex-1 flex-col justify-center py-8">
-                <div className={`mx-auto flex h-24 w-24 items-center justify-center rounded-[30px] border bg-gradient-to-br ${TONE[selected.section.tone].tile}`}><selected.icon className="h-11 w-11" /></div>
-                <h2 className="mt-7 text-center font-display text-4xl leading-none">{selected.title}</h2>
-                <p className="mx-auto mt-3 max-w-[32ch] text-center text-sm leading-relaxed text-white/55">{selected.description}</p>
-                <div className="mt-8 space-y-3">
-                  <div className="rounded-[26px] border border-white/12 bg-white/[.055] p-5"><p className="text-[10px] font-black uppercase tracking-[.18em] text-emerald-300">Kärnan</p><p className="mt-2 text-[17px] leading-relaxed text-white/92">{knowledgeForLesson(selected.id)?.core ?? selected.coach}</p></div>
-                  <div className="rounded-[26px] border border-white/10 bg-white/[.035] p-5"><p className="text-[10px] font-black uppercase tracking-[.18em] text-amber-200">Varför det spelar roll</p><p className="mt-2 text-[15px] leading-relaxed text-white/72">{knowledgeForLesson(selected.id)?.why ?? "Förståelsen hjälper dig fatta bättre beslut och utvärdera dina slag tydligare."}</p></div>
+            {session.mode === "lesson" && session.phase === "intro" ? (
+              <div className="flex flex-1 flex-col py-6">
+                <div className="flex-1 pt-4">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-emerald-300/30 bg-gradient-to-br from-emerald-500/25 via-slate-700/80 to-slate-950"><span className="text-3xl">🧑🏻‍🏫</span></div>
+                    <div className="relative flex-1 rounded-[24px] border border-white/12 bg-white/[.06] p-4 before:absolute before:-left-2 before:top-6 before:h-4 before:w-4 before:rotate-45 before:border-b before:border-l before:border-white/10 before:bg-[#2c3031]">
+                      <p className="text-xs font-semibold text-emerald-300">Din coach</p>
+                      <p className="mt-2 text-[18px] leading-relaxed text-white/92">{selected.coach}</p>
+                    </div>
+                  </div>
+                  <div className="mt-8 rounded-[30px] border border-white/10 bg-white/[.045] p-5">
+                    <div className="flex items-center gap-3"><div className={`flex h-12 w-12 items-center justify-center rounded-2xl border bg-gradient-to-br ${TONE[selected.section.tone].tile}`}><selected.icon className="h-6 w-6" /></div><div><p className="text-xs text-white/40">Dagens mål</p><h2 className="font-sans text-[28px] font-semibold leading-tight">{selected.title}</h2></div></div>
+                    <p className="mt-4 text-[15px] leading-relaxed text-white/62">{selected.description}</p>
+                  </div>
                 </div>
-                <button type="button" onClick={continueSession} className="mt-7 rounded-2xl bg-emerald-400 py-4 font-display text-xl text-slate-950">Testa mig <ChevronRight className="ml-1 inline h-5 w-5" /></button>
+                <button type="button" onClick={continueSession} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-400 py-4 text-lg font-bold text-slate-950">Kör <ChevronRight className="h-5 w-5" /></button>
+              </div>
+            ) : session.mode === "lesson" && session.phase === "discover" ? (
+              <div className="flex flex-1 flex-col py-6">
+                <div className="flex items-start gap-3"><div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-emerald-300/25 bg-emerald-400/10"><span className="text-2xl">🧑🏻‍🏫</span></div><div className="rounded-[22px] border border-white/10 bg-white/[.05] px-4 py-3 text-[15px] leading-relaxed text-white/78">Innan jag visar svaret: försök själv formulera vad <strong>{selected.title}</strong> betyder.</div></div>
+                <button type="button" onClick={() => setSession((old) => old ? { ...old, reveal: true } : old)} className={`mt-7 flex min-h-[245px] w-full flex-col items-center justify-center rounded-[32px] border p-6 text-center transition-all ${session.reveal ? "border-emerald-300/25 bg-emerald-400/[.07]" : "border-white/12 bg-white/[.045] active:scale-[.99]"}`}>
+                  {session.reveal ? <><Lightbulb className="h-9 w-9 text-amber-200" /><p className="mt-5 text-[21px] font-semibold leading-snug text-white/94">{knowledgeForLesson(selected.id)?.core ?? selected.description}</p><p className="mt-5 text-sm text-white/45">Bra. Läs det en gång och försök sedan säga det utan att titta.</p></> : <><Eye className="h-9 w-9 text-white/55" /><p className="mt-4 text-xl font-semibold">Tänk först – tryck sedan</p><p className="mt-2 max-w-[25ch] text-sm leading-relaxed text-white/45">Kan du säga det med egna ord innan coachen visar nyckeln?</p></>}
+                </button>
+                <div className="mt-auto pt-6"><button type="button" disabled={!session.reveal} onClick={continueSession} className={`w-full rounded-2xl py-4 text-lg font-bold ${session.reveal ? "bg-emerald-400 text-slate-950" : "bg-white/[.06] text-white/25"}`}>Jag har det</button></div>
+              </div>
+            ) : session.mode === "lesson" && session.phase === "apply" ? (
+              <div className="flex flex-1 flex-col py-6">
+                <div className="flex items-start gap-3"><div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-emerald-300/25 bg-emerald-400/10"><span className="text-2xl">🧑🏻‍🏫</span></div><div className="rounded-[22px] border border-white/10 bg-white/[.05] px-4 py-3 text-[15px] leading-relaxed text-white/78">Bra. Nu kopplar vi det till golfen. Vilken tanke ska du ta med till banan?</div></div>
+                <div className="mt-7 space-y-3">
+                  {[knowledgeForLesson(selected.id)?.why ?? selected.coach, "Det viktigaste är alltid att spela så aggressivt som möjligt."].map((text, i) => <button key={text} type="button" disabled={session.choice !== undefined} onClick={() => setSession((old) => old ? { ...old, choice: i } : old)} className={`flex min-h-[76px] w-full items-center gap-3 rounded-[22px] border px-4 py-4 text-left transition ${session.choice === i ? i === 0 ? "border-emerald-300/60 bg-emerald-400/14" : "border-red-300/50 bg-red-400/10" : "border-white/12 bg-white/[.055]"}`}><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/12 bg-white/[.04] text-sm font-bold">{i + 1}</span><span className="text-[15px] font-semibold leading-snug">{text}</span></button>)}
+                </div>
+                {session.choice !== undefined ? <div className="mt-5 flex items-start gap-3 rounded-[22px] border border-white/10 bg-white/[.045] p-4"><span className="text-2xl">🧑🏻‍🏫</span><p className="text-sm leading-relaxed text-white/75">{session.choice === 0 ? "Precis. Nu använder du kunskapen, inte bara minns den." : "Inte riktigt. Tänk på vilket beslut som faktiskt hjälper din score över tid."}</p></div> : null}
+                <div className="mt-auto pt-6"><button type="button" disabled={session.choice === undefined} onClick={continueSession} className={`w-full rounded-2xl py-4 text-lg font-bold ${session.choice !== undefined ? "bg-emerald-400 text-slate-950" : "bg-white/[.06] text-white/25"}`}>Nu testar vi det</button></div>
+              </div>
+            ) : session.mode === "lesson" && session.phase === "finish" ? (
+              <div className="flex flex-1 flex-col justify-center py-8 text-center">
+                <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border border-emerald-300/30 bg-emerald-400/12"><Check className="h-9 w-9 text-emerald-300" /></div>
+                <p className="mt-5 text-sm font-semibold text-emerald-300">Lektionen klar</p>
+                <h2 className="mt-2 font-sans text-3xl font-semibold">{selected.title}</h2>
+                <div className="mt-7 flex gap-3 rounded-[26px] border border-white/10 bg-white/[.045] p-5 text-left"><MessageCircle className="mt-0.5 h-5 w-5 shrink-0 text-emerald-300" /><div><p className="text-xs font-semibold text-white/40">Coachens sista tanke</p><p className="mt-2 text-[16px] leading-relaxed text-white/80">{knowledgeForLesson(selected.id)?.why ?? selected.coach}</p></div></div>
+                <p className="mt-5 text-sm text-white/45">{session.correct}/{session.questions.length} rätt. Det du missade kan komma tillbaka senare.</p>
+                <button type="button" onClick={continueSession} className="mt-7 rounded-2xl bg-emerald-400 py-4 text-lg font-bold text-slate-950">Tillbaka till Learn</button>
               </div>
             ) : (() => {
               const question = session.questions[session.index];
               const answered = session.selected !== undefined;
               return <div className="flex flex-1 flex-col py-7">
-                <div className="mb-7 flex items-center gap-2">
-                  {session.questions.map((_, i) => <span key={i} className={`h-1.5 flex-1 rounded-full ${i <= session.index ? "bg-emerald-400" : "bg-white/10"}`} />)}
-                </div>
+                <div className="mb-5 flex items-start gap-3"><div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-emerald-300/25 bg-emerald-400/10"><span className="text-xl">🧑🏻‍🏫</span></div><div className="rounded-[20px] border border-white/10 bg-white/[.045] px-4 py-3 text-sm leading-relaxed text-white/70">{session.mode === "quick" ? "Välj det svar som känns mest rätt. Jag kan ge en ledtråd om du fastnar." : question.level === "recall" ? "Nu tar vi bort stödet. Kan du plocka fram det själv?" : question.level === "understand" ? "Bra. Nu ser vi om du förstår varför." : "Nu använder vi samma idé i en golfsituation."}</div></div>
+                <div className="mb-5 mt-5 flex items-center gap-2">{session.questions.map((_, i) => <span key={i} className={`h-1.5 flex-1 rounded-full ${i <= session.index ? "bg-emerald-400" : "bg-white/10"}`} />)}</div>
                 <p className="text-xs font-semibold text-white/45">{question.level === "recall" ? "Kom ihåg" : question.level === "understand" ? "Förstå" : "Använd i spelet"}</p>
                 <h2 className="mt-2 font-sans text-[26px] font-semibold normal-case leading-[1.18] tracking-[-0.02em] text-white">{question.prompt}</h2>
-                <p className="mt-3 text-sm leading-relaxed text-white/45">Välj det svar som passar bäst.</p>
-                <div className="mt-6 space-y-3">
-                  {question.options.map((option, i) => {
-                    const chosen = session.selected === i;
-                    const correct = answered && i === question.correct;
-                    const wrong = answered && chosen && i !== question.correct;
-                    return <button key={option} type="button" disabled={answered} onClick={() => answerQuestion(i)} className={`flex min-h-[64px] w-full items-center gap-3 rounded-[22px] border px-4 py-3.5 text-left transition ${correct ? "border-emerald-300/70 bg-emerald-400/16 text-emerald-50" : wrong ? "border-red-300/55 bg-red-400/12 text-red-50" : answered ? "border-white/[.07] bg-white/[.025] text-white/35" : "border-white/14 bg-white/[.06] text-white/92 active:scale-[.985] active:bg-white/[.1]"}`}>
-                      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-sm font-black ${correct ? "border-emerald-300/60 bg-emerald-400/20 text-emerald-200" : wrong ? "border-red-300/50 bg-red-400/15 text-red-100" : "border-white/12 bg-white/[.045] text-white/50"}`}>{correct ? <Check className="h-5 w-5" strokeWidth={3} /> : String.fromCharCode(65+i)}</span>
-                      <span className="flex-1 text-[16px] font-semibold leading-snug">{option}</span>
-                    </button>;
-                  })}
-                </div>
-                {answered ? <div className={`mt-5 rounded-[22px] border p-4 ${session.selected === question.correct ? "border-emerald-300/25 bg-emerald-400/[.08]" : "border-amber-300/25 bg-amber-300/[.07]"}`}><p className="text-sm leading-relaxed text-white/78">{question.feedback}</p></div> : null}
-
-                {!answered ? <div className="fixed bottom-[max(22px,env(safe-area-inset-bottom))] right-4 z-[120] flex flex-col items-end gap-2">
-                  {coachHintOpen ? <div className="max-w-[280px] rounded-[22px] border border-emerald-300/20 bg-[#303536]/98 p-4 shadow-[0_18px_50px_-20px_rgba(0,0,0,.9)] backdrop-blur-2xl">
-                    <p className="text-xs font-bold text-emerald-300">Coachens tips</p>
-                    <p className="mt-1.5 text-sm leading-relaxed text-white/80">{question.level === "recall" ? `Tänk tillbaka på kärnan i ${selected.title}. Fokusera på vad begreppet betyder.` : question.level === "understand" ? "Fråga dig vilket svar som bäst förklarar varför principen påverkar slaget eller scoren." : "Tänk som på banan: välj lösningen med bäst marginal och minst onödig risk."}</p>
-                  </div> : null}
-                  <button type="button" onClick={() => setCoachHintOpen((open) => !open)} aria-label="Visa coachens tips" className="flex h-14 w-14 items-center justify-center rounded-full border border-emerald-300/30 bg-[#303536] shadow-[0_12px_34px_-14px_rgba(0,0,0,.9)] active:scale-[.96]"><span className="text-2xl">🧑🏻‍🏫</span></button>
-                </div> : null}
-
-                <div className="mt-auto pt-6">
-                  {answered ? <button type="button" onClick={continueSession} className="w-full rounded-2xl bg-emerald-400 py-4 font-display text-xl text-slate-950">{session.index + 1 < session.questions.length ? "Fortsätt" : session.mode === "lesson" ? "Klar" : "Visa resultat"}</button> : null}
-                </div>
+                <div className="mt-6 space-y-3">{question.options.map((option, i) => { const chosen = session.selected === i; const correct = answered && i === question.correct; const wrong = answered && chosen && i !== question.correct; return <button key={option} type="button" disabled={answered} onClick={() => answerQuestion(i)} className={`flex min-h-[64px] w-full items-center gap-3 rounded-[22px] border px-4 py-3.5 text-left transition ${correct ? "border-emerald-300/70 bg-emerald-400/16 text-emerald-50" : wrong ? "border-red-300/55 bg-red-400/12 text-red-50" : answered ? "border-white/[.07] bg-white/[.025] text-white/35" : "border-white/14 bg-white/[.06] text-white/92 active:scale-[.985]"}`}><span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-sm font-bold ${correct ? "border-emerald-300/60 bg-emerald-400/20" : wrong ? "border-red-300/50 bg-red-400/15" : "border-white/12 bg-white/[.045] text-white/50"}`}>{correct ? <Check className="h-5 w-5" strokeWidth={3} /> : String.fromCharCode(65+i)}</span><span className="flex-1 text-[16px] font-semibold leading-snug">{option}</span></button>; })}</div>
+                {answered ? <div className="mt-5 flex gap-3 rounded-[22px] border border-white/10 bg-white/[.045] p-4"><span className="text-xl">🧑🏻‍🏫</span><p className="text-sm leading-relaxed text-white/78">{question.feedback}</p></div> : null}
+                {!answered ? <div className="fixed bottom-[max(22px,env(safe-area-inset-bottom))] right-4 z-[120] flex flex-col items-end gap-2">{coachHintOpen ? <div className="max-w-[280px] rounded-[22px] border border-emerald-300/20 bg-[#303536]/98 p-4 shadow-xl"><p className="text-xs font-bold text-emerald-300">Coachens tips</p><p className="mt-1.5 text-sm leading-relaxed text-white/80">{question.level === "recall" ? `Tänk tillbaka på kärnan i ${selected.title}.` : question.level === "understand" ? "Vilket svar förklarar bäst varför principen påverkar slaget eller scoren?" : "Tänk som på banan: välj bäst marginal och minst onödig risk."}</p></div> : null}<button type="button" onClick={() => setCoachHintOpen((open) => !open)} aria-label="Visa coachens tips" className="flex h-14 w-14 items-center justify-center rounded-full border border-emerald-300/30 bg-[#303536] shadow-xl"><span className="text-2xl">🧑🏻‍🏫</span></button></div> : null}
+                <div className="mt-auto pt-6">{answered ? <button type="button" onClick={continueSession} className="w-full rounded-2xl bg-emerald-400 py-4 text-lg font-bold text-slate-950">{session.index + 1 < session.questions.length ? "Fortsätt" : session.mode === "lesson" ? "Sammanfatta" : "Tillbaka till Learn"}</button> : null}</div>
               </div>;
             })()}
           </div>
