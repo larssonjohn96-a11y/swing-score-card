@@ -34,7 +34,7 @@ type Player = { id: string; name: string; avatarUrl?: string | null; isSelf?: bo
 type Challenge = { eyebrow: string; title: string; detail: string };
 type ApproachResult = { longitudinalDirection: "short" | "long"; longitudinal: number; lateralDirection: "left" | "right"; lateral: number; proximity: number };
 type Hole = { challenge: Challenge; winner: HoleWinner; blueStrokes?: number; redStrokes?: number; bluePoints?: number; redPoints?: number; blueApproach?: ApproachResult; redApproach?: ApproachResult };
-type ShortGameLie = "fairway" | "rough" | "bunker";
+type ShortGameLie = "fairway" | "rough";
 type ApproachRangeId = "50-100" | "100-150" | "150-200" | "custom";
 
 const LOCAL_MATCH_KEY = "sg4.active-match.v1";
@@ -77,15 +77,13 @@ const BUNKER_POINT_ZONES = [
 const SHORT_GAME_LIES: Array<{ id: ShortGameLie; title: string }> = [
   { id: "fairway", title: "Fairway" },
   { id: "rough", title: "Rough" },
-  { id: "bunker", title: "Bunker" },
 ];
 
 function rand(min: number, max: number) { return Math.floor(Math.random() * (max - min + 1)) + min; }
 function pick<T>(items: readonly T[]) { return items[Math.floor(Math.random() * items.length)]; }
 function initials(name: string) { return name.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase()).join(""); }
 function liveStatus(diff: number) { return diff === 0 ? "AS" : diff > 0 ? `${diff} UP` : `${Math.abs(diff)} DN`; }
-function lieLabel(lie: ShortGameLie) { return lie === "fairway" ? "fairway" : lie === "rough" ? "rough" : "bunker"; }
-function bunkerLimit(length: MatchLength) { return length === 3 ? 1 : length === 5 ? 1 : 2; }
+function lieLabel(lie: ShortGameLie) { return lie === "fairway" ? "fairway" : "rough"; }
 function holeDistance(hole?: Hole) {
   const value = Number.parseFloat(hole?.challenge.title ?? "");
   return Number.isFinite(value) ? value : undefined;
@@ -118,20 +116,8 @@ function generateApproachDistances(length: MatchLength, selected: ApproachRangeI
   return out;
 }
 function generateShortGameLieSequence(length: MatchLength, selected: ShortGameLie[]) {
-  const grassLies = selected.filter((lie): lie is Exclude<ShortGameLie, "bunker"> => lie !== "bunker");
-  if (selected.length === 1 && selected[0] === "bunker") return Array.from({ length }, () => "bunker" as ShortGameLie);
-  const fallbackGrass: Exclude<ShortGameLie, "bunker">[] = grassLies.length ? grassLies : ["fairway"];
-  const sequence: ShortGameLie[] = Array.from({ length }, () => pick(fallbackGrass));
-  if (!selected.includes("bunker")) return sequence;
-
-  const offset = Math.random() < 0.5 ? 0 : 1;
-  const available = Array.from({ length }, (_, i) => i).filter((i) => i % 2 === offset);
-  for (let i = available.length - 1; i > 0; i--) {
-    const j = rand(0, i);
-    [available[i], available[j]] = [available[j], available[i]];
-  }
-  available.slice(0, bunkerLimit(length)).forEach((index) => { sequence[index] = "bunker"; });
-  return sequence;
+  const lies: ShortGameLie[] = selected.length ? selected : ["fairway"];
+  return Array.from({ length }, () => pick(lies));
 }
 
 function generateChallenge(category: MatchCategory, typeId: string, mode: MatchMode, shortGameLies: ShortGameLie[] = ["fairway", "rough", "bunker"], approachDistance?: number): Challenge {

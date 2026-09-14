@@ -38,7 +38,7 @@ export const Route = createFileRoute("/match-bot")({
 });
 
 type Step = "bot" | "category" | "setup" | "length" | "play" | "sudden-death" | "result";
-type Category = "off-the-tee" | "approach" | "around-the-green" | "putting";
+type Category = "off-the-tee" | "approach" | "around-the-green" | "bunker" | "putting";
 type Winner = "you" | "bot" | "tie";
 type MatchLength = 3 | 5 | 7;
 type TurnState = "you" | "bot-thinking" | "reveal";
@@ -146,7 +146,17 @@ const CATEGORIES = [
   { id: "off-the-tee", title: "Utslag", sub: "Off the Tee" },
   { id: "approach", title: "Inspel", sub: "Approach" },
   { id: "around-the-green", title: "Chipping • Match", sub: "Chippning" },
+  { id: "bunker", title: "Bunker • Match", sub: "Bunker" },
   { id: "putting", title: "Putting • Match", sub: "Puttning" },
+] as const;
+
+const BOT_BUNKER_POINT_ZONES = [
+  { points: 5, label: "Sänkt" },
+  { points: 4, label: "Inom 1 m" },
+  { points: 3, label: "Inom 2 m" },
+  { points: 2, label: "Inom 3 m" },
+  { points: 1, label: "På green" },
+  { points: 0, label: "Missad green" },
 ] as const;
 
 function rand(min: number, max: number) { return Math.floor(Math.random() * (max - min + 1)) + min; }
@@ -282,17 +292,16 @@ function BotMatchPage() {
   function buildHoles() {
     if (!category || bot.locked) return;
     const puttingDistances = category === "putting" ? generatePuttingMatchDistances(length) : [];
-    const chipDistances = category === "around-the-green" ? generateChipMatchDistances(length) : [];
+    const chipDistances = category === "around-the-green" || category === "bunker" ? generateChipMatchDistances(length) : [];
     const approachDistances = category === "approach" ? generateApproachMatchDistances(length) : [];
     const next: Hole[] = Array.from({ length }, (_unused, holeNr) => {
       if (category === "putting") {
         const d = puttingDistances[holeNr] ?? 3;
         return { title: formatPuttingDistance(d), distance: d, detail: "Samma position för båda · färre puttar vinner hålet" };
       }
-      if (category === "around-the-green") {
+      if (category === "around-the-green" || category === "bunker") {
         const d = chipDistances[holeNr] ?? 15;
-        const band = getChipDistanceBand(d);
-        return { title: `${d} m`, distance: d, detail: "Närmast flaggan vinner." };
+        return { title: `${d} m`, distance: d, detail: category === "bunker" ? "Bunkerslag · närmast flaggan vinner." : "Närmast flaggan vinner." };
       }
       if (category === "approach") {
         const d = approachDistances[holeNr] ?? 120;
@@ -313,7 +322,7 @@ function BotMatchPage() {
     const lateMatch = holesRemaining <= 2;
     if (!category) return { value: 0, hit: true, approachResult: undefined as ApproachResult | undefined };
     if (category === "putting") return { value: puttingBotStrokes(hole.distance ?? 3, bot, lateMatch), hit: true, approachResult: undefined };
-    if (category === "around-the-green") {
+    if (category === "around-the-green" || category === "bunker") {
       const chipHcp = effectiveCategoryHcp(bot.categoryHcp.chipping, bot.archetype, lateMatch);
       const chip = simulateChipBotResult(hole.distance ?? 15, chipHcp, Math.random, bot.archetype);
       return { value: chip.points, hit: true, approachResult: undefined, resultText: chip.description };
@@ -328,7 +337,7 @@ function BotMatchPage() {
   }
 
   function decideWinner(userValue: number, userHit: boolean, botValue: number, botHit: boolean): Winner {
-    if (category === "around-the-green") return userValue > botValue ? "you" : userValue < botValue ? "bot" : "tie";
+    if (category === "around-the-green" || category === "bunker") return userValue > botValue ? "you" : userValue < botValue ? "bot" : "tie";
     if (category === "off-the-tee") {
       if (userHit && !botHit) return "you";
       if (!userHit && botHit) return "bot";
@@ -371,10 +380,10 @@ function BotMatchPage() {
     }
 
     const lockedDriveHit = driveHit;
-    const engineSkill = category === "putting" ? "putting" : category === "around-the-green" ? "chip" : null;
+    const engineSkill = category === "putting" ? "putting" : category === "around-the-green" || category === "bunker" ? "chip" : null;
     const enginePerformance = category === "putting"
       ? puttingPerformanceFromStrokes(lockedYourValue)
-      : category === "around-the-green"
+      : category === "around-the-green" || category === "bunker"
         ? chipPerformanceFromPoints(lockedYourValue)
         : null;
     let adaptiveNextDistance: number | null = null;
@@ -422,8 +431,8 @@ function BotMatchPage() {
 
     const isPressure = Boolean(pressureNotice);
     const event: BotEvent = isPressure ? "pressure" : winner === "bot" ? "bot-win" : winner === "you" ? "player-win" : "tie";
-    const playerBad = (category === "putting" && lockedYourValue >= 3) || (category === "around-the-green" && lockedYourValue <= 1) || (category === "off-the-tee" && !lockedDriveHit);
-    const botBad = (category === "putting" && simulated.value >= 3) || (category === "around-the-green" && simulated.value <= 1) || (category === "off-the-tee" && !simulated.hit);
+    const playerBad = (category === "putting" && lockedYourValue >= 3) || ((category === "around-the-green" || category === "bunker") && lockedYourValue <= 1) || (category === "off-the-tee" && !lockedDriveHit);
+    const botBad = (category === "putting" && simulated.value >= 3) || ((category === "around-the-green" || category === "bunker") && simulated.value <= 1) || (category === "off-the-tee" && !simulated.hit);
     const personalityEvent = isPressure ? "pressure" : playerBad ? "player-bad" : botBad ? "bot-bad" : event;
     setBotComment(personalityLine(bot.id, personalityEvent) ?? randomLine(bot.chat[event]));
     setTurnState("reveal");
@@ -480,7 +489,7 @@ function BotMatchPage() {
     if (cupContext) { window.location.assign("/cup"); return; }
     if (step === "category") setStep("bot");
     else if (step === "setup") setStep("category");
-    else if (step === "length") setStep(category === "around-the-green" ? "setup" : "category");
+    else if (step === "length") setStep(category === "around-the-green" || category === "bunker" ? "setup" : "category");
   }
 
   const label = step === "bot" ? "Motståndare" : step === "category" ? "Kategori" : step === "setup" ? "Setup" : category === "putting" || category === "approach" ? "Format" : "Matchlängd";
@@ -489,9 +498,10 @@ function BotMatchPage() {
     const value = side === "you" ? hole.yourValue : hole.botValue;
     const hit = side === "you" ? hole.yourHit : hole.botHit;
     const approach = side === "you" ? hole.yourApproach : hole.botApproach;
-    if (category === "around-the-green") {
-      if (side === "bot" && hole.botResultText) return hole.botResultText;
-      return typeof value === "number" ? CHIP_POINT_ZONES.find((zone) => zone.points === value)?.label ?? "–" : "–";
+    if (category === "around-the-green" || category === "bunker") {
+      if (side === "bot" && hole.botResultText && category === "around-the-green") return hole.botResultText;
+      const zones = category === "bunker" ? BOT_BUNKER_POINT_ZONES : CHIP_POINT_ZONES;
+      return typeof value === "number" ? zones.find((zone) => zone.points === value)?.label ?? "–" : "–";
     }
     if (category === "approach") return approach ? formatApproachResult(approach) : "–";
     if (category === "putting") return typeof value === "number" ? `${value}` : "–";
@@ -576,13 +586,13 @@ function BotMatchPage() {
         <>
           <section className="mt-5"><div className="flex items-center gap-3"><span className="text-4xl">{bot.avatar}</span><div><p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">{bot.name} · HCP {formatHcp(bot.hcp)}</p><h1 className="mt-1 font-display text-4xl">Vad vill du spela?</h1></div></div></section>
           <div className="mt-5 grid grid-cols-2 gap-3">{CATEGORIES.map((item) => <button key={item.id} onClick={() => setCategory(item.id)} className={`relative min-h-32 rounded-[26px] border p-4 text-left ${category === item.id ? selected : glass}`}><span className="text-[9px] font-black uppercase tracking-[0.14em] text-slate-500">{item.sub}</span><span className="mt-2 block font-display text-2xl">{item.title}</span>{category === item.id ? <Check className="absolute right-3 top-3 h-5 w-5 text-blue-600" /> : null}</button>)}</div>
-          <button disabled={!category} onClick={() => setStep(category === "around-the-green" ? "setup" : "length")} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white disabled:opacity-30">Nästa <ChevronRight className="h-5 w-5" /></button>
+          <button disabled={!category} onClick={() => setStep(category === "around-the-green" || category === "bunker" ? "setup" : "length")} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white disabled:opacity-30">Nästa <ChevronRight className="h-5 w-5" /></button>
         </>
       ) : null}
 
       {step === "setup" ? (
         <>
-          <section className="mt-5"><p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Närspel</p><h1 className="mt-1 font-display text-4xl">Closest to Pin</h1><p className="mt-2 text-sm text-slate-600">Du spelar först. Därefter slår {bot.name} från exakt samma avstånd.</p></section>
+          <section className="mt-5"><p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">{category === "bunker" ? "Bunker • Match" : "Chipping • Match"}</p><h1 className="mt-1 font-display text-4xl">{category === "bunker" ? "Bunker" : "Chipping"}</h1><p className="mt-2 text-sm text-slate-600">Du spelar först. Därefter slår {bot.name} från exakt samma avstånd.</p></section>
           <div className={`mt-5 rounded-3xl border p-5 ${glass}`}><Target className="h-5 w-5 text-red-600" /><p className="mt-3 font-display text-2xl">10–30 meter</p><p className="mt-1 text-xs text-slate-500">Varierade närspelsavstånd.</p></div>
           <button onClick={() => setStep("length")} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white">Nästa <ChevronRight className="h-5 w-5" /></button>
         </>
@@ -634,7 +644,7 @@ function BotMatchPage() {
             {category === "putting" ? (
               <div className="mt-2 grid grid-cols-4 gap-2">{[1, 2, 3, 4].map((v) => <button key={v} disabled={turnState !== "you"} onClick={() => setYourValue(v)} className={`rounded-2xl border py-4 font-display text-2xl disabled:opacity-50 ${yourValue === v ? "border-blue-600 bg-blue-600 text-white" : glass}`}>{v}</button>)}</div>
             ) : category === "around-the-green" ? (
-              <div className="mt-3 grid grid-cols-3 gap-2.5">{CHIP_POINT_ZONES.map((zone) => <button key={zone.points} disabled={turnState !== "you"} onClick={() => setYourValue(zone.points)} className={`min-h-[64px] rounded-2xl border px-2 py-4 text-center font-display text-base leading-tight disabled:opacity-50 ${yourValue === zone.points ? "border-blue-600 bg-blue-600 text-white" : glass}`}>{zone.label}</button>)}</div>
+              <div className="mt-3 grid grid-cols-3 gap-2.5">{(category === "bunker" ? BOT_BUNKER_POINT_ZONES : CHIP_POINT_ZONES).map((zone) => <button key={zone.points} disabled={turnState !== "you"} onClick={() => setYourValue(zone.points)} className={`min-h-[64px] rounded-2xl border px-2 py-4 text-center font-display text-base leading-tight disabled:opacity-50 ${yourValue === zone.points ? "border-blue-600 bg-blue-600 text-white" : glass}`}>{zone.label}</button>)}</div>
             ) : category === "approach" ? (
               <div className={`mt-2 rounded-[24px] border p-3.5 ${glass}`}>
                 <div className="flex items-center justify-between rounded-2xl bg-slate-950 px-4 py-2 text-white"><span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-300">Mål</span><span className="font-display text-2xl">{current.distance} m</span></div>
