@@ -143,11 +143,11 @@ const BOTS: BotProfile[] = [
 
 const BOT_TIERS: BotProfile["tier"][] = ["Nybörjare", "Klubbspelare", "Avancerad", "Elit"];
 const CATEGORIES = [
-  { id: "off-the-tee", title: "Utslag", sub: "Off the Tee" },
-  { id: "approach", title: "Inspel", sub: "Approach" },
-  { id: "around-the-green", title: "Chipping • Match", sub: "Chippning" },
-  { id: "bunker", title: "Bunker • Match", sub: "Bunker" },
-  { id: "putting", title: "Putting • Match", sub: "Puttning" },
+  { id: "off-the-tee", title: "Fairway", sub: "Driver" },
+  { id: "approach", title: "Närmast flaggan", sub: "Inspel" },
+  { id: "around-the-green", title: "Chippning", sub: "Chipping" },
+  { id: "bunker", title: "Bunker", sub: "Bunkerslag" },
+  { id: "putting", title: "Puttning", sub: "Putting" },
 ] as const;
 
 const BOT_BUNKER_POINT_ZONES = [
@@ -336,7 +336,7 @@ function BotMatchPage() {
         const d = approachDistances[holeNr] ?? 120;
         return { title: `${d} m`, distance: d, detail: "Justera faktisk längd från målavståndet · 0 m sidled = rakt" };
       }
-      return { title: "30 m Fairway Challenge", detail: "Samma fairway och samma slag för båda spelarna" };
+      return { title: "Fairway", detail: "Samma fairway och samma slag för båda spelarna" };
     });
     setBotComment(personalityLine(bot.id, "start") ?? randomLine(bot.chat.start));
     setHoles(next);
@@ -627,7 +627,7 @@ function BotMatchPage() {
 
       {step === "setup" ? (
         <>
-          <section className="mt-5"><p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">{category === "bunker" ? "Bunker • Match" : "Chipping • Match"}</p><h1 className="mt-1 font-display text-4xl">{category === "bunker" ? "Bunker" : "Chipping"}</h1><p className="mt-2 text-sm text-slate-600">Du spelar först. Därefter slår {bot.name} från exakt samma avstånd.</p></section>
+          <section className="mt-5"><p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">{category === "bunker" ? "Bunker" : "Chippning"}</p><h1 className="mt-1 font-display text-4xl">{category === "bunker" ? "Bunker" : "Chipping"}</h1><p className="mt-2 text-sm text-slate-600">Du spelar först. Därefter slår {bot.name} från exakt samma avstånd.</p></section>
           <div className={`mt-5 rounded-3xl border p-5 ${glass}`}><Target className="h-5 w-5 text-red-600" /><p className="mt-3 font-display text-2xl">10–30 meter</p><p className="mt-1 text-xs text-slate-500">Varierade närspelsavstånd.</p></div>
           <button onClick={() => goToStep("length")} className={`sg4-ryder-next mt-6 ${ryderNext}`}>Nästa <ChevronRight className="h-5 w-5" /></button>
         </>
