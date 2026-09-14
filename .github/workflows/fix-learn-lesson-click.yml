@@ -1,0 +1,52 @@
+name: Fix Learn lesson click
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/fix-learn-lesson-click.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: Open lessons directly from Learn tiles
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('src/routes/learn.tsx')
+          s = p.read_text()
+
+          old = '''  function startLesson() {\n    const knowledge = knowledgeForLesson(selected.id);\n    const questions = questionsForLesson(selected.id, selected.section.id, 3);\n    if (!knowledge && questions.length === 0) { nextLesson(); return; }\n    setSession({ mode: "lesson", questions, index: -1, correct: 0 });\n  }'''
+          new = '''  function startLesson(lessonId = selected.id) {\n    const lesson = ALL_LESSONS.find((item) => item.id === lessonId) ?? selected;\n    const questions = questionsForLesson(lesson.id, lesson.section.id, 3);\n    setSelectedId(lesson.id);\n    setSectionMenuOpen(false);\n    setSession({ mode: "lesson", questions, index: -1, correct: 0 });\n  }'''
+          if old not in s:
+              raise SystemExit('startLesson block not found')
+          s = s.replace(old, new)
+
+          old_click = 'onClick={() => setSelectedId(lesson.id)}'
+          new_click = 'onClick={() => startLesson(lesson.id)}'
+          if old_click not in s:
+              raise SystemExit('tile click handler not found')
+          s = s.replace(old_click, new_click)
+
+          old_button = 'onClick={startLesson} className="mt-4 flex w-full items-center justify-center gap-2'
+          new_button = 'onClick={() => startLesson()} className="mt-4 flex w-full items-center justify-center gap-2'
+          if old_button not in s:
+              raise SystemExit('bottom start button not found')
+          s = s.replace(old_button, new_button)
+
+          p.write_text(s)
+          PY
+      - name: Install and build
+        run: |
+          bun install --frozen-lockfile
+          bun run build
+      - name: Commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/routes/learn.tsx
+          git commit -m 'Open Learn lessons directly from tiles'
+          git push
