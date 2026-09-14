@@ -1,0 +1,431 @@
+name: Add motor learning brain
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/add-motor-learning-brain.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: Add motor learning policy and wire it into SG4
+        run: |
+          cat > src/lib/motor-learning-policy.ts <<'EOF'
+          /**
+           * SG4 motor-learning policy.
+           *
+           * This is the learning layer above the engagement/recommendation engine.
+           * It turns the main evidence-backed principles into machine-readable rules:
+           * - practice performance is not the same as durable learning
+           * - start simpler when a movement is genuinely new, then leave blocked practice quickly
+           * - interleave and vary once the player can find the movement
+           * - keep difficulty near the player's challenge point rather than maximizing failure or comfort
+           * - representative/game-like practice gets more value as skill stabilizes
+           * - fade feedback so the player learns to detect errors independently
+           * - revisit skills after spacing instead of grinding one skill continuously
+           * - add consequence/pressure only after the movement is stable enough to transfer
+           *
+           * The UI does not need to expose these concepts. They are internal policy for the SG4 brain.
+           */
+
+          export type MotorLearningSkill = "chip" | "putting" | "approach" | "driver";
+          export type MotorLearningObjective = "fun" | "learning" | "balanced";
+          export type MotorLearningContext = "game" | "training" | "assessment";
+          export type MotorLearningPhase = "acquisition" | "stabilization" | "transfer" | "pressure";
+
+          export const MOTOR_LEARNING_PRINCIPLES = [
+            "Optimize retention and transfer, not just performance during the current session.",
+            "Use blocked repetition briefly to find a new movement, then increase variability and interleaving.",
+            "Preserve representative perception, decisions and consequences as the skill becomes stable.",
+            "Keep difficulty near the player's challenge point: informative, achievable and not automatic.",
+            "Treat variation as a learning feature: the next solution should usually need to be rebuilt, not copied.",
+            "Use spacing and delayed revisits so learning must be retrieved again instead of held in short-term memory.",
+            "Fade feedback and encourage self-evaluation so the player does not become dependent on the coach or app.",
+            "Introduce score, competition and pressure progressively so the skill survives real play.",
+          ] as const;
+
+          const clamp = (value: number, min = 0, max = 1) => Math.min(max, Math.max(min, value));
+
+          export function learningPhaseFromEvidence(input: {
+            attempts: number;
+            performance: number;
+            confidence: number;
+            context?: MotorLearningContext;
+          }): MotorLearningPhase {
+            const attempts = Math.max(0, input.attempts);
+            const performance = clamp(input.performance);
+            const confidence = clamp(input.confidence);
+            const context = input.context ?? "training";
+
+            if (attempts < 4 || confidence < 0.3) return "acquisition";
+            if (attempts < 10 || confidence < 0.62 || performance < 0.56) return "stabilization";
+            if (context === "game" && attempts >= 12 && confidence >= 0.72 && performance >= 0.66) return "pressure";
+            return "transfer";
+          }
+
+          export function challengeTargetForPhase(input: {
+            phase: MotorLearningPhase;
+            objective: MotorLearningObjective;
+            context?: MotorLearningContext;
+          }) {
+            const base = input.phase === "acquisition"
+              ? 0.72
+              : input.phase === "stabilization"
+                ? 0.64
+                : input.phase === "transfer"
+                  ? 0.58
+                  : 0.55;
+            const objectiveAdjustment = input.objective === "fun" ? 0.05 : input.objective === "balanced" ? 0.02 : 0;
+            const contextAdjustment = input.context === "game" && input.phase !== "acquisition" ? -0.02 : 0;
+            return clamp(base + objectiveAdjustment + contextAdjustment, 0.5, 0.8);
+          }
+
+          export function meaningfulDistanceGap(skill: MotorLearningSkill) {
+            if (skill === "putting") return 5;
+            if (skill === "chip") return 6;
+            if (skill === "approach") return 18;
+            return 25;
+          }
+
+          export function distanceVariationScore(input: {
+            skill: MotorLearningSkill;
+            current: number;
+            previous?: number;
+            phase: MotorLearningPhase;
+            context?: MotorLearningContext;
+          }) {
+            if (typeof input.previous !== "number" || !Number.isFinite(input.previous)) return 0.72;
+            const gap = Math.abs(input.current - input.previous);
+            const ratio = gap / Math.max(1, meaningfulDistanceGap(input.skill));
+
+            if (input.phase === "acquisition") {
+              // Early learning still benefits from some change, but not maximal contextual interference.
+              return clamp(1 - Math.abs(ratio - 0.6) / 1.2, 0.28, 1);
+            }
+            if (input.phase === "stabilization") {
+              return clamp(1 - Math.abs(ratio - 1.05) / 1.45, 0.22, 1);
+            }
+
+            // Once the movement is stable, a clearly different problem is valuable.
+            if (ratio < 1) return clamp(0.2 + ratio * 0.8, 0.2, 1);
+            if (ratio <= 2.2) return 1;
+            return clamp(1 - (ratio - 2.2) * 0.1, 0.68, 1);
+          }
+
+          export function spacingPriority(hoursSinceLastPractice: number) {
+            if (!Number.isFinite(hoursSinceLastPractice)) return 1;
+            if (hoursSinceLastPractice <= 1) return 0.12;
+            if (hoursSinceLastPractice <= 6) return 0.25;
+            if (hoursSinceLastPractice <= 24) return 0.5;
+            if (hoursSinceLastPractice <= 48) return 0.72;
+            if (hoursSinceLastPractice <= 96) return 0.9;
+            return 1;
+          }
+
+          export function feedbackPolicyForPhase(phase: MotorLearningPhase) {
+            if (phase === "acquisition") {
+              return { feedbackFrequency: 0.9, promptSelfEstimate: false, cueBudget: 2, pressureWeight: 0 } as const;
+            }
+            if (phase === "stabilization") {
+              return { feedbackFrequency: 0.62, promptSelfEstimate: true, cueBudget: 1, pressureWeight: 0.15 } as const;
+            }
+            if (phase === "transfer") {
+              return { feedbackFrequency: 0.34, promptSelfEstimate: true, cueBudget: 1, pressureWeight: 0.45 } as const;
+            }
+            return { feedbackFrequency: 0.18, promptSelfEstimate: true, cueBudget: 1, pressureWeight: 0.8 } as const;
+          }
+
+          export function practiceMixForPhase(phase: MotorLearningPhase) {
+            if (phase === "acquisition") return { blocked: 0.65, varied: 0.25, gameLike: 0.1 } as const;
+            if (phase === "stabilization") return { blocked: 0.3, varied: 0.5, gameLike: 0.2 } as const;
+            if (phase === "transfer") return { blocked: 0.1, varied: 0.5, gameLike: 0.4 } as const;
+            return { blocked: 0.05, varied: 0.35, gameLike: 0.6 } as const;
+          }
+          EOF
+
+          cat > src/lib/motor-learning-policy.test.ts <<'EOF'
+          import { describe, expect, it } from "vitest";
+          import {
+            challengeTargetForPhase,
+            distanceVariationScore,
+            feedbackPolicyForPhase,
+            learningPhaseFromEvidence,
+            spacingPriority,
+          } from "@/lib/motor-learning-policy";
+
+          describe("motor learning policy", () => {
+            it("starts new or uncertain skills in acquisition", () => {
+              expect(learningPhaseFromEvidence({ attempts: 2, performance: 0.8, confidence: 0.2 })).toBe("acquisition");
+            });
+
+            it("moves stable game skills into pressure transfer", () => {
+              expect(learningPhaseFromEvidence({ attempts: 16, performance: 0.78, confidence: 0.85, context: "game" })).toBe("pressure");
+            });
+
+            it("asks for lower expected success as learning becomes more transfer-like", () => {
+              const early = challengeTargetForPhase({ phase: "acquisition", objective: "learning", context: "training" });
+              const transfer = challengeTargetForPhase({ phase: "transfer", objective: "learning", context: "game" });
+              expect(early).toBeGreaterThan(transfer);
+            });
+
+            it("rewards a meaningful putt distance change during transfer", () => {
+              const small = distanceVariationScore({ skill: "putting", previous: 3, current: 5, phase: "transfer", context: "game" });
+              const varied = distanceVariationScore({ skill: "putting", previous: 3, current: 12, phase: "transfer", context: "game" });
+              expect(varied).toBeGreaterThan(small);
+            });
+
+            it("increases revisit priority with spacing", () => {
+              expect(spacingPriority(72)).toBeGreaterThan(spacingPriority(2));
+            });
+
+            it("fades feedback as the skill transfers", () => {
+              expect(feedbackPolicyForPhase("acquisition").feedbackFrequency)
+                .toBeGreaterThan(feedbackPolicyForPhase("transfer").feedbackFrequency);
+            });
+          });
+          EOF
+
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path('src/lib/sg4-engine.ts')
+          s = p.read_text()
+          import_line = 'import { getBehaviorRecommendationScore, recordRecommendationCompletion, recordRecommendationSignal } from "@/lib/sg4-recommender";\n'
+          motor_import = '''import {
+            challengeTargetForPhase,
+            distanceVariationScore,
+            learningPhaseFromEvidence,
+            meaningfulDistanceGap,
+            spacingPriority,
+          } from "@/lib/motor-learning-policy";\n'''
+          if motor_import not in s:
+            if import_line not in s: raise SystemExit('sg4-engine import anchor missing')
+            s = s.replace(import_line, import_line + motor_import)
+
+          old = '  objective: EngineObjective;\n  min: number;'
+          new = '  objective: EngineObjective;\n  /** Miljön styr hur snabbt vi går från repetition till transfer/game-like variation. */\n  context?: EngineContext;\n  min: number;'
+          if old not in s: raise SystemExit('DistanceDecision anchor missing')
+          s = s.replace(old, new, 1)
+
+          old = '  return { expected: clamp(estimate), confidence: clamp(confidence), mastery: local?.mastery ?? 0 };'
+          new = '  return { expected: clamp(estimate), confidence: clamp(confidence), mastery: local?.mastery ?? 0, attempts: local?.attempts ?? global?.attempts ?? 0, lastPlayedAt: local?.lastPlayedAt ?? global?.lastPlayedAt };'
+          if old not in s: raise SystemExit('modelEstimate return anchor missing')
+          s = s.replace(old, new, 1)
+
+          start = s.index('function flowTarget(')
+          end = s.index('function weightedTopPick', start)
+          replacement = '''function hoursSinceEngine(iso?: string) {
+            if (!iso) return Number.POSITIVE_INFINITY;
+            const time = Date.parse(iso);
+            if (!Number.isFinite(time)) return Number.POSITIVE_INFINITY;
+            return Math.max(0, (Date.now() - time) / 3_600_000);
+          }
+
+          function candidateScore(
+            model: PlayerEngineModel,
+            input: DistanceDecision,
+            distance: number,
+          ) {
+            const estimate = modelEstimate(model, input.skill, distance);
+            const context = input.context ?? "training";
+            const phase = learningPhaseFromEvidence({
+              attempts: estimate.attempts,
+              performance: estimate.expected,
+              confidence: estimate.confidence,
+              context,
+            });
+            const target = challengeTargetForPhase({ phase, objective: input.objective, context });
+            const challengeFit = clamp(1 - Math.abs(estimate.expected - target) / 0.58);
+            const weakness = clamp(1 - estimate.expected);
+            const uncertainty = clamp(1 - estimate.confidence);
+            const novelty = challengeNovelty(model, input.skill, distance);
+            const spacing = spacingPriority(hoursSinceEngine(estimate.lastPlayedAt));
+            const variation = distanceVariationScore({
+              skill: input.skill,
+              current: distance,
+              previous: input.previousDistance,
+              phase,
+              context,
+            });
+            const mastery = estimate.expected >= 0.76
+              ? clamp((estimate.expected - 0.7) / 0.3)
+              : estimate.mastery * 0.5;
+            const representative = context === "game" ? 1 : context === "assessment" ? 0.86 : 0.62;
+
+            // Learning score intentionally values retrieval, variation and spacing instead of
+            // maximizing how easy/smooth the current session looks.
+            const learning =
+              challengeFit * 0.24 +
+              weakness * 0.16 +
+              uncertainty * 0.12 +
+              mastery * 0.08 +
+              novelty * 0.08 +
+              variation * 0.16 +
+              spacing * 0.1 +
+              representative * 0.06;
+            const fun =
+              challengeFit * 0.38 +
+              novelty * 0.22 +
+              variation * 0.2 +
+              mastery * 0.12 +
+              representative * 0.08;
+
+            let score = input.objective === "learning"
+              ? learning
+              : input.objective === "fun"
+                ? fun
+                : fun * 0.48 + learning * 0.52;
+
+            if (
+              typeof input.previousDistance === "number" &&
+              typeof input.previousPerformance === "number"
+            ) {
+              const targetDistance = adaptiveTargetAfterResult(
+                input.skill,
+                input.previousDistance,
+                input.previousPerformance,
+                input.min,
+                input.max,
+              );
+              const step = maxStep(input.skill);
+              const adaptationFit = clamp(1 - Math.abs(distance - targetDistance) / Math.max(1, step));
+              // One result should inform difficulty, not erase variation. Game contexts react
+              // least to the immediately previous shot because transfer requires reconstruction.
+              const adaptationWeight = context === "game"
+                ? 0.2
+                : phase === "acquisition"
+                  ? 0.45
+                  : phase === "stabilization"
+                    ? 0.34
+                    : 0.24;
+              score = score * (1 - adaptationWeight) + adaptationFit * adaptationWeight;
+            }
+
+            return score;
+          }
+
+          '''
+          s = s[:start] + replacement + s[end:]
+
+          filter_start = s.index('  let candidates = [...new Set(baseCandidates)];', s.index('export function selectNextEngineDistance'))
+          filter_end = s.index('  const scored = candidates.map', filter_start)
+          filter_replacement = '''  let candidates = [...new Set(baseCandidates)];
+            const context = input.context ?? "training";
+            let previousPhase = undefined;
+            if (typeof input.previousDistance === "number") {
+              const previousEstimate = modelEstimate(model, input.skill, input.previousDistance);
+              previousPhase = learningPhaseFromEvidence({
+                attempts: previousEstimate.attempts,
+                performance: previousEstimate.expected,
+                confidence: previousEstimate.confidence,
+                context,
+              });
+
+              if (context === "game" && previousPhase !== "acquisition") {
+                const minGap = meaningfulDistanceGap(input.skill);
+                const varied = candidates.filter((value) => Math.abs(value - input.previousDistance!) >= minGap);
+                if (varied.length) candidates = varied;
+              } else {
+                const step = maxStep(input.skill) * (previousPhase === "stabilization" ? 2 : 1);
+                const nearby = candidates.filter((value) => Math.abs(value - input.previousDistance!) <= step);
+                if (nearby.length) candidates = nearby;
+              }
+            }
+
+            if (
+              context !== "game" &&
+              typeof input.previousDistance === "number" &&
+              typeof input.previousPerformance === "number"
+            ) {
+              const p = clamp(input.previousPerformance);
+              if (p <= 0.3) {
+                const easier = candidates.filter((value) => value <= input.previousDistance!);
+                if (easier.length) candidates = easier;
+              }
+              if (p >= 0.76) {
+                const harder = candidates.filter((value) => value >= input.previousDistance! - 1);
+                if (harder.length) candidates = harder;
+              }
+            }
+
+          '''
+          s = s[:filter_start] + filter_replacement + s[filter_end:]
+
+          old = '''function skillLearningNeed(model: PlayerEngineModel, skill: EngineSkill) {
+            const global = model.buckets[`${skill}:global`];
+            if (!global) return 0.72;
+            const weakness = 1 - global.performance;
+            const uncertainty = 1 - global.confidence;
+            const mastery = global.performance >= 0.78 ? global.performance * 0.35 : 0;
+            return clamp(weakness * 0.54 + uncertainty * 0.28 + mastery * 0.18);
+          }'''
+          new = '''function skillLearningNeed(model: PlayerEngineModel, skill: EngineSkill) {
+            const global = model.buckets[`${skill}:global`];
+            if (!global) return 0.78;
+            const weakness = 1 - global.performance;
+            const uncertainty = 1 - global.confidence;
+            const spacing = spacingPriority(hoursSinceEngine(global.lastPlayedAt));
+            // Strong skills still need transfer/retrieval, but endless same-session grinding is deprioritized.
+            const masteryTransfer = global.performance >= 0.78 ? global.performance * 0.35 : 0;
+            return clamp(weakness * 0.38 + uncertainty * 0.2 + spacing * 0.28 + masteryTransfer * 0.14);
+          }'''
+          if old not in s: raise SystemExit('skillLearningNeed anchor missing')
+          s = s.replace(old, new, 1)
+          s = s.replace('          : funScore * 0.52 + learningScore * 0.48;', '          : funScore * 0.45 + learningScore * 0.55;', 1)
+          p.write_text(s)
+
+          p = Path('src/lib/sg4-recommender.ts')
+          s = p.read_text()
+          old = '''  exploration: number;
+            completionRate: number;
+          };'''
+          new = '''  exploration: number;
+            spacing: number;
+            completionRate: number;
+          };'''
+          if old not in s: raise SystemExit('recommender score type anchor missing')
+          s = s.replace(old, new, 1)
+          old = '''  return {
+            score: clamp(affinity * 0.6 + novelty * 0.2 + exploration * 0.2),
+            affinity,
+            novelty,
+            exploration,
+            completionRate: clamp(smoothedCompletionRate),
+          };'''
+          new = '''  return {
+            // Engagement matters, but SG4 should not become an echo chamber. Spacing and
+            // exploration keep the feed useful for retention and transfer, not just clicks.
+            score: clamp(affinity * 0.46 + novelty * 0.18 + exploration * 0.14 + spacing * 0.22),
+            affinity,
+            novelty,
+            exploration,
+            spacing,
+            completionRate: clamp(smoothedCompletionRate),
+          };'''
+          if old not in s: raise SystemExit('recommender return anchor missing')
+          s = s.replace(old, new, 1)
+          p.write_text(s)
+
+          for path in ['src/lib/putting-match.ts', 'src/lib/chip-match.ts']:
+            p = Path(path)
+            s = p.read_text()
+            anchor = '        objective: "balanced",\n'
+            if anchor not in s: raise SystemExit(f'context anchor missing in {path}')
+            s = s.replace(anchor, anchor + '        context: "game",\n', 1)
+            p.write_text(s)
+          PY
+
+          bun install --frozen-lockfile
+          bunx vitest run src/lib/motor-learning-policy.test.ts src/lib/bot-skill-model.test.ts src/lib/bot-match-pressure.test.ts --passWithNoTests
+          bun run build
+      - name: Commit
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add src/lib/motor-learning-policy.ts src/lib/motor-learning-policy.test.ts src/lib/sg4-engine.ts src/lib/sg4-recommender.ts src/lib/putting-match.ts src/lib/chip-match.ts
+          git commit -m "Teach SG4 brain motor learning principles"
+          git push
