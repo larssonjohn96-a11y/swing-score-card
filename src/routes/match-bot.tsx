@@ -155,7 +155,7 @@ const BOT_BUNKER_POINT_ZONES = [
   { points: 4, label: "Inom 1 m" },
   { points: 3, label: "Inom 2 m" },
   { points: 2, label: "Inom 3 m" },
-  { points: 1, label: "På green" },
+  { points: 1, label: "På green · utanför 3 m" },
   { points: 0, label: "Missad green" },
 ] as const;
 
@@ -292,16 +292,19 @@ function BotMatchPage() {
   function buildHoles() {
     if (!category || bot.locked) return;
     const puttingDistances = category === "putting" ? generatePuttingMatchDistances(length) : [];
-    const chipDistances = category === "around-the-green" || category === "bunker" ? generateChipMatchDistances(length) : [];
+    const chipDistances = category === "around-the-green" ? generateChipMatchDistances(length) : [];
     const approachDistances = category === "approach" ? generateApproachMatchDistances(length) : [];
     const next: Hole[] = Array.from({ length }, (_unused, holeNr) => {
       if (category === "putting") {
         const d = puttingDistances[holeNr] ?? 3;
         return { title: formatPuttingDistance(d), distance: d, detail: "Samma position för båda · färre puttar vinner hålet" };
       }
-      if (category === "around-the-green" || category === "bunker") {
+      if (category === "bunker") {
+        return { title: `Bunkerslag ${holeNr + 1}`, detail: "Närmast flaggan vinner." };
+      }
+      if (category === "around-the-green") {
         const d = chipDistances[holeNr] ?? 15;
-        return { title: `${d} m`, distance: d, detail: category === "bunker" ? "Bunkerslag · närmast flaggan vinner." : "Närmast flaggan vinner." };
+        return { title: `${d} m`, distance: d, detail: "Närmast flaggan vinner." };
       }
       if (category === "approach") {
         const d = approachDistances[holeNr] ?? 120;
@@ -380,7 +383,7 @@ function BotMatchPage() {
     }
 
     const lockedDriveHit = driveHit;
-    const engineSkill = category === "putting" ? "putting" : category === "around-the-green" || category === "bunker" ? "chip" : null;
+    const engineSkill = category === "putting" ? "putting" : category === "around-the-green" ? "chip" : null;
     const enginePerformance = category === "putting"
       ? puttingPerformanceFromStrokes(lockedYourValue)
       : category === "around-the-green" || category === "bunker"

@@ -70,7 +70,7 @@ const BUNKER_POINT_ZONES = [
   { points: 4, label: "Inom 1 m" },
   { points: 3, label: "Inom 2 m" },
   { points: 2, label: "Inom 3 m" },
-  { points: 1, label: "På green" },
+  { points: 1, label: "På green · utanför 3 m" },
   { points: 0, label: "Missad green" },
 ] as const;
 
@@ -120,16 +120,19 @@ function generateShortGameLieSequence(length: MatchLength, selected: ShortGameLi
   return Array.from({ length }, () => pick(lies));
 }
 
-function generateChallenge(category: MatchCategory, typeId: string, mode: MatchMode, shortGameLies: ShortGameLie[] = ["fairway", "rough", "bunker"], approachDistance?: number): Challenge {
+function generateChallenge(category: MatchCategory, typeId: string, mode: MatchMode, shortGameLies: ShortGameLie[] = ["fairway", "rough"], approachDistance?: number): Challenge {
   const suffix = mode === "fourball" ? " · registrera lagets bästa resultat" : mode === "foursomes" ? " · laget spelar vartannat slag" : "";
   if (category === "putting") {
     const distance = approachDistance ?? 1.5;
     return { eyebrow: "Putting • Match", title: formatPuttingDistance(distance), detail: `Samma position · håla ut · färre puttar vinner${suffix}` };
   }
-  if (category === "around-the-green" || category === "bunker") {
+  if (category === "bunker") {
+    return { eyebrow: "Bunker", title: "Bunkerslag", detail: `Närmast flaggan vinner${suffix}` };
+  }
+  if (category === "around-the-green") {
     const distance = approachDistance ?? rand(8, 30);
     const band = getChipDistanceBand(distance);
-    return { eyebrow: category === "bunker" ? "Bunker • Match" : band.label, title: `${distance} m`, detail: category === "bunker" ? `Samma bunkerläge · närmast flaggan vinner${suffix}` : `${distance} m från flaggan · närmast flaggan vinner${suffix}` };
+    return { eyebrow: band.label, title: `${distance} m`, detail: `${distance} m från flaggan · närmast flaggan vinner${suffix}` };
   }
   if (category === "approach") {
     const d = approachDistance ?? rand(100, 150);
@@ -504,7 +507,9 @@ function MatchPlayPage() {
     if (!mode || !teamsReady || !category || !matchType) return;
     const nextHoles = isPgaPutting
       ? generatePuttingMatchDistances(matchLength).map((distance) => ({ challenge: generateChallenge(category, matchType, mode, shortGameLies, distance), winner: null as HoleWinner }))
-      : isShortGameScoring
+      : isBunker
+      ? Array.from({ length: matchLength }, (_, index) => ({ challenge: { eyebrow: "Bunker", title: `Bunkerslag ${index + 1}`, detail: `Närmast flaggan vinner` }, winner: null as HoleWinner }))
+      : isShortGame
       ? generateChipMatchDistances(matchLength).map((distance) => ({ challenge: generateChallenge(category, matchType, mode, shortGameLies, distance), winner: null as HoleWinner }))
       : isApproach
         ? generateApproachDistances(matchLength, approachRanges, approachCustomMin, approachCustomMax).map((distance) => ({ challenge: generateChallenge(category, matchType, mode, shortGameLies, distance), winner: null as HoleWinner }))
@@ -591,7 +596,7 @@ function MatchPlayPage() {
   }
   function adaptNextChallenge(next: Hole[], registered: number, performance: number) {
     if (!category || !mode || registered >= next.length - 1) return next;
-    if (category !== "putting" && category !== "around-the-green" && category !== "bunker") return next;
+    if (category !== "putting" && category !== "around-the-green") return next;
     const currentDistance = holeDistance(next[registered]);
     if (typeof currentDistance !== "number") return next;
     const skill = category === "putting" ? "putting" : "chip";
