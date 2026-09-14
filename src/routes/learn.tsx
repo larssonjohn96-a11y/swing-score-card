@@ -24,6 +24,8 @@ import {
   Sparkles,
   Target,
   Trophy,
+  Volume2,
+  VolumeX,
   Wind,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -155,6 +157,14 @@ const TONE: Record<Tone, { tile: string; active: string; dot: string }> = {
 };
 
 const ALL_LESSONS = SECTIONS.flatMap((section) => section.lessons.map((lesson) => ({ ...lesson, section })));
+const SCORE_LESSON_STEPS = [
+  { coach: "Vi börjar med par.", question: "Vad är par?", options: ["Antalet slag hålet är tänkt att spelas på", "Ett slag över hålets målscore", "Ett slag under hålets målscore"], correct: 0, feedback: "Precis. Par är hålets referensscore." },
+  { coach: "Bra. Nu tar vi bogey.", question: "Vad är en bogey?", options: ["Ett slag över par", "Ett slag under par", "Två slag under par"], correct: 0, feedback: "Rätt. Bogey är ett slag över par." },
+  { coach: "Nästa är birdie.", question: "Vad är en birdie?", options: ["Ett slag under par", "Ett slag över par", "Två slag under par"], correct: 0, feedback: "Rätt. Birdie är ett slag under par." },
+  { coach: "Nu blir det ännu bättre: eagle.", question: "Vad är en eagle?", options: ["Två slag under par", "Två slag över par", "Samma som par"], correct: 0, feedback: "Exakt. Eagle är två slag under par." },
+  { coach: "Sista begreppet: hole in one.", question: "Vad betyder hole in one?", options: ["Bollen går i hål på första slaget", "Du gör birdie på ett par 3", "Du hålar en lång putt"], correct: 0, feedback: "Ja. Hole in one betyder att första slaget går direkt i hål." },
+] as const;
+
 const STORAGE_KEY = "sg4-learn-progress-v1";
 const STATS_KEY = "sg4-learn-question-stats-v1";
 
@@ -166,6 +176,9 @@ function LearnPage() {
   const [questionStats, setQuestionStats] = useState<Record<string, { correct: number; wrong: number; lastSeen: number }>>({});
   const [lessonVisible, setLessonVisible] = useState(false);
   const [coachHintOpen, setCoachHintOpen] = useState(false);
+  const [soundOn, setSoundOn] = useState(true);
+  const [scoreStep, setScoreStep] = useState(0);
+  const [scoreChoice, setScoreChoice] = useState<number | null>(null);
   const selectedRef = useRef<HTMLButtonElement | null>(null);
   const sessionHistoryRef = useRef(false);
 
@@ -210,6 +223,24 @@ function LearnPage() {
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
+  function speakCoach(text: string) {
+    if (!soundOn || typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "sv-SE";
+    utterance.rate = 0.92;
+    const voices = window.speechSynthesis.getVoices();
+    const swedish = voices.find((voice) => voice.lang.toLowerCase().startsWith("sv"));
+    if (swedish) utterance.voice = swedish;
+    window.speechSynthesis.speak(utterance);
+  }
+
+  useEffect(() => {
+    if (!session || !lessonVisible || session.mode !== "lesson" || selectedId !== "score") return;
+    speakCoach(SCORE_LESSON_STEPS[scoreStep]?.coach ?? "");
+    return () => { if ("speechSynthesis" in window) window.speechSynthesis.cancel(); };
+  }, [scoreStep, lessonVisible, session?.mode, selectedId, soundOn]);
+
   function openSessionHistory() {
     if (sessionHistoryRef.current) return;
     window.history.pushState({ sg4LearnSession: true }, "", window.location.href);
@@ -239,6 +270,8 @@ function LearnPage() {
     setSectionMenuOpen(false);
     setLessonVisible(false);
     setCoachHintOpen(false);
+    setScoreStep(0);
+    setScoreChoice(null);
     openSessionHistory();
     setSession({ mode: "lesson", questions, index: 0, correct: 0, phase: "intro", reveal: false });
     window.requestAnimationFrame(() => window.requestAnimationFrame(() => setLessonVisible(true)));
@@ -415,7 +448,29 @@ function LearnPage() {
               <div className="w-10" />
             </div>
 
-            {session.mode === "lesson" && session.phase === "intro" ? (
+            {session.mode === "lesson" && selected.id === "score" ? (
+              <div className="flex flex-1 flex-col py-5">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs font-semibold text-white/40">Så räknas score · {scoreStep + 1}/{SCORE_LESSON_STEPS.length}</div>
+                  <button type="button" onClick={() => setSoundOn((v) => !v)} className="flex h-10 w-10 items-center justify-center rounded-full border border-white/12 bg-white/[.05] text-white/70" aria-label={soundOn ? "Stäng av ljud" : "Slå på ljud"}>{soundOn ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}</button>
+                </div>
+                <div className="mt-5 flex flex-1 flex-col items-center">
+                  <div className="flex h-32 w-32 items-center justify-center rounded-full border border-emerald-300/30 bg-gradient-to-br from-emerald-500/28 via-slate-700/85 to-slate-950 shadow-[0_24px_60px_-28px_rgba(16,185,129,.6)]"><span className="text-6xl">🧑🏻‍🏫</span></div>
+                  <div className="relative mt-4 w-full rounded-[28px] border border-white/12 bg-white/[.06] px-5 py-5 text-center shadow-[0_18px_45px_-30px_rgba(0,0,0,.8)]">
+                    <p className="text-[22px] font-semibold leading-snug text-white">{SCORE_LESSON_STEPS[scoreStep].coach}</p>
+                    <button type="button" onClick={() => speakCoach(SCORE_LESSON_STEPS[scoreStep].coach)} className="mt-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[.05] px-3 py-1.5 text-xs font-semibold text-white/55"><Volume2 className="h-3.5 w-3.5" /> Lyssna igen</button>
+                  </div>
+                  <div className="mt-7 w-full">
+                    <h2 className="text-center font-sans text-[25px] font-semibold leading-tight">{SCORE_LESSON_STEPS[scoreStep].question}</h2>
+                    <div className="mt-5 space-y-3">
+                      {SCORE_LESSON_STEPS[scoreStep].options.map((option, i) => { const answered = scoreChoice !== null; const correct = SCORE_LESSON_STEPS[scoreStep].correct === i; return <button key={option} type="button" disabled={answered} onClick={() => setScoreChoice(i)} className={`flex min-h-[68px] w-full items-center gap-3 rounded-[22px] border px-4 py-3 text-left text-[16px] font-semibold leading-snug transition ${answered && correct ? "border-emerald-300/60 bg-emerald-400/14" : answered && scoreChoice === i ? "border-red-300/50 bg-red-400/10" : "border-white/12 bg-white/[.055]"}`}><span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/12 bg-white/[.04] text-sm">{i + 1}</span>{option}{answered && correct ? <Check className="ml-auto h-5 w-5 text-emerald-300" /> : null}</button>; })}
+                    </div>
+                  </div>
+                  {scoreChoice !== null ? <div className="mt-5 w-full rounded-[22px] border border-white/10 bg-white/[.045] p-4 text-center"><p className="text-[15px] leading-relaxed text-white/78">{scoreChoice === SCORE_LESSON_STEPS[scoreStep].correct ? SCORE_LESSON_STEPS[scoreStep].feedback : `Inte riktigt. ${SCORE_LESSON_STEPS[scoreStep].feedback}`}</p></div> : null}
+                </div>
+                <button type="button" disabled={scoreChoice === null} onClick={() => { if (scoreStep < SCORE_LESSON_STEPS.length - 1) { setScoreStep((v) => v + 1); setScoreChoice(null); } else { setCompleted((old) => old.includes("score") ? old : [...old, "score"]); closeLesson(); } }} className={`mt-6 w-full rounded-2xl py-4 text-lg font-bold ${scoreChoice !== null ? "bg-emerald-400 text-slate-950" : "bg-white/[.06] text-white/25"}`}>{scoreStep < SCORE_LESSON_STEPS.length - 1 ? "Nästa" : "Klar"}</button>
+              </div>
+            ) : session.mode === "lesson" && session.phase === "intro" ? (
               <div className="flex flex-1 flex-col py-6">
                 <div className="flex-1 pt-4">
                   <div className="flex items-start gap-3">
