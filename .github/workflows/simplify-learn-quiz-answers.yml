@@ -1,0 +1,36 @@
+name: Simplify Learn quiz answers
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/simplify-learn-quiz-answers.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: Simplify quiz answer selection
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('src/routes/learn.tsx')
+          s=p.read_text()
+          s=s.replace('  Brain,\n', '  Brain,\n  Check,\n')
+          old='''                <p className="text-[10px] font-black uppercase tracking-[.18em] text-white/40">{question.level === "recall" ? "Återkalla" : question.level === "understand" ? "Förstå" : "Tillämpa"}</p>\n                <h2 className="mt-3 font-display text-[30px] leading-[1.08]">{question.prompt}</h2>\n                <div className="mt-7 space-y-3">\n                  {question.options.map((option, i) => {\n                    const chosen = session.selected === i;\n                    const correct = answered && i === question.correct;\n                    const wrong = answered && chosen && i !== question.correct;\n                    return <button key={option} type="button" disabled={answered} onClick={() => answerQuestion(i)} className={`w-full rounded-[22px] border px-4 py-4 text-left text-[15px] font-semibold transition ${correct ? "border-emerald-300/60 bg-emerald-400/15 text-emerald-50" : wrong ? "border-red-300/50 bg-red-400/12 text-red-50" : "border-white/12 bg-white/[.055] text-white/88 active:scale-[.99]"}`}><span className="mr-3 inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-white/[.05] text-xs text-white/55">{String.fromCharCode(65+i)}</span>{option}</button>;\n                  })}\n                </div>'''
+          new='''                <p className="text-[10px] font-black uppercase tracking-[.18em] text-white/40">{question.level === "recall" ? "Kom ihåg" : question.level === "understand" ? "Förstå" : "Använd"}</p>\n                <h2 className="mt-3 font-display text-[30px] leading-[1.08]">{question.prompt}</h2>\n                <p className="mt-3 text-sm text-white/45">Välj det svar som passar bäst.</p>\n                <div className="mt-6 space-y-3">\n                  {question.options.map((option, i) => {\n                    const chosen = session.selected === i;\n                    const correct = answered && i === question.correct;\n                    const wrong = answered && chosen && i !== question.correct;\n                    return <button key={option} type="button" disabled={answered} onClick={() => answerQuestion(i)} className={`flex min-h-[64px] w-full items-center gap-3 rounded-[22px] border px-4 py-3.5 text-left transition ${correct ? "border-emerald-300/70 bg-emerald-400/16 text-emerald-50" : wrong ? "border-red-300/55 bg-red-400/12 text-red-50" : answered ? "border-white/[.07] bg-white/[.025] text-white/35" : "border-white/14 bg-white/[.06] text-white/92 active:scale-[.985] active:bg-white/[.1]"}`}>\n                      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-sm font-black ${correct ? "border-emerald-300/60 bg-emerald-400/20 text-emerald-200" : wrong ? "border-red-300/50 bg-red-400/15 text-red-100" : "border-white/12 bg-white/[.045] text-white/50"}`}>{correct ? <Check className="h-5 w-5" strokeWidth={3} /> : String.fromCharCode(65+i)}</span>\n                      <span className="flex-1 text-[16px] font-semibold leading-snug">{option}</span>\n                    </button>;\n                  })}\n                </div>'''
+          if old not in s: raise SystemExit('quiz block not found')
+          s=s.replace(old,new)
+          p.write_text(s)
+          PY
+          bun install --frozen-lockfile
+          bun run build
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/routes/learn.tsx
+          git commit -m "Make Learn quiz answers easier to scan"
+          git push
