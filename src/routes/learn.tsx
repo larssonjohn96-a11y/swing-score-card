@@ -195,10 +195,11 @@ function LearnPage() {
   const selected = useMemo(() => ALL_LESSONS.find((item) => item.id === selectedId) ?? ALL_LESSONS[0], [selectedId]);
   const selectedIndex = ALL_LESSONS.findIndex((item) => item.id === selectedId);
 
-  function startLesson() {
-    const knowledge = knowledgeForLesson(selected.id);
-    const questions = questionsForLesson(selected.id, selected.section.id, 3);
-    if (!knowledge && questions.length === 0) { nextLesson(); return; }
+  function startLesson(lessonId = selected.id) {
+    const lesson = ALL_LESSONS.find((item) => item.id === lessonId) ?? selected;
+    const questions = questionsForLesson(lesson.id, lesson.section.id, 3);
+    setSelectedId(lesson.id);
+    setSectionMenuOpen(false);
     setSession({ mode: "lesson", questions, index: -1, correct: 0 });
   }
 
@@ -317,7 +318,7 @@ function LearnPage() {
                         key={lesson.id}
                         ref={isSelected ? selectedRef : undefined}
                         type="button"
-                        onClick={() => setSelectedId(lesson.id)}
+                        onClick={() => startLesson(lesson.id)}
                         className="group relative mx-auto h-[106px] w-[106px]"
                         aria-label={lesson.title}
                       >
@@ -342,7 +343,7 @@ function LearnPage() {
             <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border bg-gradient-to-br ${TONE[selected.section.tone].tile}`}><selected.icon className="h-7 w-7 text-white" /></div>
             <div className="min-w-0 flex-1"><p className="text-[9px] font-bold uppercase tracking-[.18em] text-white/40">{selected.section.title}</p><h3 className="mt-0.5 font-display text-2xl leading-none">{selected.title}</h3><p className="mt-1.5 text-xs leading-snug text-white/55">{selected.description}</p></div>
           </div>
-          <button type="button" onClick={startLesson} className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-emerald-200/25 bg-gradient-to-r from-emerald-500 via-lime-400 to-emerald-400 py-3.5 font-display text-xl text-slate-950 shadow-[inset_0_1px_0_rgba(255,255,255,.5),0_10px_28px_-12px_rgba(74,222,128,.55)] active:scale-[.99]">{completed.includes(selectedId) ? "Repetera" : "Starta lektion"} <ChevronRight className="h-5 w-5" /></button>
+          <button type="button" onClick={() => startLesson()} className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-emerald-200/25 bg-gradient-to-r from-emerald-500 via-lime-400 to-emerald-400 py-3.5 font-display text-xl text-slate-950 shadow-[inset_0_1px_0_rgba(255,255,255,.5),0_10px_28px_-12px_rgba(74,222,128,.55)] active:scale-[.99]">{completed.includes(selectedId) ? "Repetera" : "Starta lektion"} <ChevronRight className="h-5 w-5" /></button>
         </div>
       </div>
       {session ? (
