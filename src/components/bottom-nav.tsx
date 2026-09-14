@@ -12,6 +12,10 @@ const LEFT_TABS = [
   { to: "/traning", label: "Träning", icon: Target, exact: false },
 ] as const;
 
+const RIGHT_TABS = [
+  { to: "/utveckling", label: "Analys", icon: Gauge, exact: false },
+] as const;
+
 const PLAY_LINKS = [
   { to: "/match?flow=friend", label: "Match mot vän", description: "1 mot 1 · välj spel och utmana en kompis.", icon: UserRound, tone: "friend" },
   { to: "/match-bot", label: "Match mot bot", description: "1 mot 1 · välj rival och spela direkt.", icon: Bot, tone: "bot" },
@@ -21,7 +25,6 @@ const PLAY_LINKS = [
 
 const MORE_LINKS = [
   { to: "/learn", label: "Lär dig", description: "Lektioner, golfkunskap och interaktiva quiz.", icon: GraduationCap, tone: "learn" },
-  { to: "/utveckling", label: "Analys", description: "Utveckling, nivåer och spelarprofil.", icon: Gauge, tone: "neutral" },
   { to: "/turneringar", label: "Turneringar", description: "Events, ranking och leaderboard.", icon: Trophy, tone: "gold" },
   { to: "/utmaningar", label: "Utmaningar", description: "Streaks, scoring och personliga rekord.", icon: Flag, tone: "flag" },
   { to: "/tester", label: "Tester", description: "Tester, HCP-nivå och utveckling.", icon: Target, tone: "neutral" },
@@ -83,13 +86,14 @@ export function BottomNav() {
 
   return <>
     <nav className="fixed left-1/2 z-40 w-[calc(100%-24px)] max-w-md -translate-x-1/2 overflow-visible rounded-[30px] border border-white/75 bg-card/66 shadow-[0_18px_48px_-20px_rgba(15,23,42,.52),inset_0_1px_0_rgba(255,255,255,.95)] backdrop-blur-[28px] supports-[backdrop-filter]:bg-card/56" style={{ bottom: "max(10px, env(safe-area-inset-bottom))" }}>
-      <div className="mx-auto grid h-[68px] w-full grid-cols-[1fr_1fr_74px_1fr] items-center gap-0.5 px-2.5 py-1.5">
+      <div className="mx-auto grid h-[68px] w-full grid-cols-[1fr_1fr_62px_1fr_1fr] items-center gap-0.5 px-2.5 py-1.5">
         {LEFT_TABS.map((tab) => <NavLink key={tab.to} tab={tab} active={tab.exact ? pathname === tab.to : pathname.startsWith(tab.to)} />)}
 
-        <button type="button" onClick={() => setPlayOpen(true)} aria-label="Spel" className="relative -mt-5 flex h-[64px] w-[64px] items-center justify-center justify-self-center rounded-full bg-emerald-600 text-white shadow-[0_10px_24px_-8px_rgba(5,150,105,.55)] transition duration-150 active:scale-[.94]">
-          <Plus className="h-8 w-8 stroke-[2.6]" />
-          <span className="absolute -bottom-[17px] text-[9px] font-bold uppercase tracking-wide text-muted-foreground">Spel</span>
+        <button type="button" onClick={() => setPlayOpen(true)} aria-label="Spel" className="relative -mt-3 flex h-[54px] w-[54px] items-center justify-center justify-self-center rounded-full bg-emerald-600 text-white shadow-[0_9px_20px_-8px_rgba(5,150,105,.5)] transition duration-150 active:scale-[.94]">
+          <Plus className="h-7 w-7 stroke-[2.6]" />
         </button>
+
+        {RIGHT_TABS.map((tab) => <NavLink key={tab.to} tab={tab} active={pathname.startsWith(tab.to)} />)}
 
         <button type="button" onClick={() => setMoreOpen(true)} className={`mx-0.5 flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-[20px] px-1 py-1.5 transition-all active:scale-[.96] ${moreActive ? "border border-white/70 bg-black/[.09] text-primary shadow-[inset_0_1px_0_rgba(255,255,255,.72),0_10px_26px_-15px_rgba(15,23,42,.78)] backdrop-blur-2xl ring-1 ring-black/[.05] dark:bg-white/[.12]" : "text-muted-foreground"}`} aria-label="Mer">
           <span className="relative flex h-7 w-8 items-center justify-center"><Menu className={`h-5 w-5 ${moreActive ? "stroke-[2.35]" : "stroke-[1.9]"}`} />{Boolean(trophyBadge) && <span className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-flag px-1 text-[9px] font-bold text-background">{trophyBadge}</span>}</span>
