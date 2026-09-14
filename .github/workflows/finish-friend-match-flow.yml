@@ -19,7 +19,7 @@ jobs:
           bun install --frozen-lockfile
           bunx vitest run src/lib/friend-match-experience.test.ts src/lib/motor-learning-policy.test.ts src/lib/bot-skill-model.test.ts src/lib/bot-match-pressure.test.ts --passWithNoTests
           bun run build
-      - name: Commit
+      - name: Commit friend match core loop
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
