@@ -1,0 +1,42 @@
+name: Make next buttons blue liquid glass
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/make-next-blue-liquid-glass.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: Patch buttons
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          old = 'const ryderNext = "group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-[20px] border border-white/70 bg-[linear-gradient(90deg,#2563eb_0%,#2563eb_47%,rgba(255,255,255,.92)_50%,#dc2626_53%,#dc2626_100%)] py-4 font-display text-xl text-white shadow-[inset_0_1px_0_rgba(255,255,255,.45),0_16px_36px_-22px_rgba(15,23,42,.7)] transition active:scale-[.985] disabled:opacity-30";'
+          new = 'const ryderNext = "group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-[20px] border border-blue-300/55 bg-[linear-gradient(180deg,rgba(96,165,250,.78)_0%,rgba(37,99,235,.88)_42%,rgba(29,78,216,.90)_100%)] py-4 font-display text-xl text-white shadow-[inset_0_1px_0_rgba(255,255,255,.58),inset_0_-1px_0_rgba(30,64,175,.35),0_14px_32px_-20px_rgba(37,99,235,.72)] backdrop-blur-2xl transition duration-200 active:scale-[.985] active:brightness-[.97] disabled:opacity-30";'
+          sweep = '<span aria-hidden="true" className="sg4-ryder-sweep pointer-events-none absolute inset-y-[-30%] left-[-35%] w-[38%] bg-white/70 blur-[1px]" />'
+          for path in ['src/routes/match.tsx','src/routes/match-bot.tsx']:
+              p = Path(path)
+              s = p.read_text()
+              if old not in s:
+                  raise SystemExit(f'button style not found in {path}')
+              s = s.replace(old, new)
+              s = s.replace(sweep, '')
+              # Keep the page transition, but remove the old Ryder sweep animation CSS.
+              s = s.replace('      @keyframes sg4RyderSweep{0%{transform:translateX(-150%) skewX(-18deg);opacity:0}15%{opacity:.2}50%{opacity:.65}100%{transform:translateX(220%) skewX(-18deg);opacity:0}}\n      .sg4-ryder-next:active .sg4-ryder-sweep{animation:sg4RyderSweep 520ms cubic-bezier(.2,.75,.25,1) both}\n', '')
+              s = s.replace('        @keyframes sg4RyderSweep{0%{transform:translateX(-150%) skewX(-18deg);opacity:0}15%{opacity:.2}50%{opacity:.65}100%{transform:translateX(220%) skewX(-18deg);opacity:0}}\n        .sg4-ryder-next:active .sg4-ryder-sweep{animation:sg4RyderSweep 520ms cubic-bezier(.2,.75,.25,1) both}\n', '')
+              p.write_text(s)
+          PY
+          bun install --frozen-lockfile
+          bun run build
+      - name: Commit
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add src/routes/match.tsx src/routes/match-bot.tsx
+          git commit -m "Use blue liquid glass next buttons"
+          git push
