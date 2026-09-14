@@ -82,6 +82,7 @@ export function generateChipMatchDistances(length: ChipMatchLength): number[] {
       selectNextEngineDistance({
         skill: "chip",
         objective: "balanced",
+        context: "game",
         min: band.min,
         max: band.max,
         previousDistance: previous,

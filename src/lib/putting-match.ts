@@ -71,6 +71,7 @@ export function generatePuttingMatchDistances(length: PuttingMatchLength): numbe
       selectNextEngineDistance({
         skill: "putting",
         objective: "balanced",
+        context: "game",
         min: band.min,
         max: band.max,
         previousDistance: previous,

@@ -1,5 +1,6 @@
 import type { TestSession } from "@/lib/sessions/types";
 import { getBehaviorRecommendationScore, recordRecommendationCompletion, recordRecommendationSignal } from "@/lib/sg4-recommender";
+import { challengeTargetForPhase, distanceVariationScore, learningPhaseFromEvidence, meaningfulDistanceGap, spacingPriority } from "@/lib/motor-learning-policy";
 
 /**
  * SG4:s interna spelarmotor.
@@ -54,6 +55,7 @@ export type PlayerEngineModel = {
 export type DistanceDecision = {
   skill: EngineSkill;
   objective: EngineObjective;
+  context?: EngineContext;
   min: number;
   max: number;
   previousDistance?: number;
@@ -269,7 +271,7 @@ function modelEstimate(model: PlayerEngineModel, skill: EngineSkill, distance: n
     estimate = estimate * (1 - local.confidence) + local.performance * local.confidence;
     confidence = Math.max(confidence, local.confidence);
   }
-  return { expected: clamp(estimate), confidence: clamp(confidence), mastery: local?.mastery ?? 0 };
+  return { expected: clamp(estimate), confidence: clamp(confidence), mastery: local?.mastery ?? 0, attempts: local?.attempts ?? global?.attempts ?? 0, lastPlayedAt: local?.lastPlayedAt ?? global?.lastPlayedAt };
 }
 
 function maxStep(skill: EngineSkill) {
@@ -309,71 +311,37 @@ function challengeNovelty(model: PlayerEngineModel, skill: EngineSkill, distance
   return clamp(1 - matches * 0.32, 0.12, 1);
 }
 
-function flowTarget(objective: EngineObjective) {
-  if (objective === "fun") return 0.68;
-  if (objective === "learning") return 0.58;
-  return 0.63;
+function hoursSinceEngine(iso?: string) {
+  if (!iso) return Number.POSITIVE_INFINITY;
+  const time = Date.parse(iso);
+  if (!Number.isFinite(time)) return Number.POSITIVE_INFINITY;
+  return Math.max(0, (Date.now() - time) / 3_600_000);
 }
 
-function candidateScore(
-  model: PlayerEngineModel,
-  input: DistanceDecision,
-  distance: number,
-) {
+function candidateScore(model: PlayerEngineModel, input: DistanceDecision, distance: number) {
   const estimate = modelEstimate(model, input.skill, distance);
-  const target = flowTarget(input.objective);
-  const flow = clamp(1 - Math.abs(estimate.expected - target) / 0.58);
+  const context = input.context ?? "training";
+  const phase = learningPhaseFromEvidence({ attempts: estimate.attempts, performance: estimate.expected, confidence: estimate.confidence, context });
+  const target = challengeTargetForPhase({ phase, objective: input.objective, context });
+  const challengeFit = clamp(1 - Math.abs(estimate.expected - target) / 0.58);
   const weakness = clamp(1 - estimate.expected);
-  // En styrka blir aldrig "klar". När precisionen är hög finns fortsatt värde
-  // i att driva den mot mastery i stället för att exkludera den.
-  const mastery = estimate.expected >= 0.76
-    ? clamp((estimate.expected - 0.7) / 0.3)
-    : estimate.mastery * 0.5;
   const uncertainty = clamp(1 - estimate.confidence);
   const novelty = challengeNovelty(model, input.skill, distance);
+  const spacing = spacingPriority(hoursSinceEngine(estimate.lastPlayedAt));
+  const variation = distanceVariationScore({ skill: input.skill, current: distance, previous: input.previousDistance, phase });
+  const mastery = estimate.expected >= 0.76 ? clamp((estimate.expected - 0.7) / 0.3) : estimate.mastery * 0.5;
+  const representative = context === "game" ? 1 : context === "assessment" ? 0.86 : 0.62;
 
-  let rhythm = 0.72;
-  if (typeof input.previousDistance === "number") {
-    const step = maxStep(input.skill);
-    const ratio = Math.abs(distance - input.previousDistance) / Math.max(1, step);
-    // Lite rörelse är roligare än samma exakt hela tiden, men stora hopp straffas.
-    rhythm = clamp(1 - Math.abs(ratio - 0.48));
+  const learning = challengeFit * 0.24 + weakness * 0.16 + uncertainty * 0.12 + mastery * 0.08 + novelty * 0.08 + variation * 0.16 + spacing * 0.1 + representative * 0.06;
+  const fun = challengeFit * 0.38 + novelty * 0.22 + variation * 0.2 + mastery * 0.12 + representative * 0.08;
+  let score = input.objective === "learning" ? learning : input.objective === "fun" ? fun : fun * 0.48 + learning * 0.52;
+
+  if (typeof input.previousDistance === "number" && typeof input.previousPerformance === "number") {
+    const targetDistance = adaptiveTargetAfterResult(input.skill, input.previousDistance, input.previousPerformance, input.min, input.max);
+    const adaptationFit = clamp(1 - Math.abs(distance - targetDistance) / Math.max(1, maxStep(input.skill)));
+    const adaptationWeight = context === "game" ? 0.18 : phase === "acquisition" ? 0.45 : phase === "stabilization" ? 0.34 : 0.24;
+    score = score * (1 - adaptationWeight) + adaptationFit * adaptationWeight;
   }
-
-  const learning =
-    flow * 0.34 +
-    weakness * 0.24 +
-    uncertainty * 0.18 +
-    mastery * 0.16 +
-    novelty * 0.08;
-  const fun =
-    flow * 0.46 +
-    novelty * 0.24 +
-    rhythm * 0.18 +
-    mastery * 0.12;
-
-  let score = input.objective === "learning"
-    ? learning
-    : input.objective === "fun"
-      ? fun
-      : fun * 0.55 + learning * 0.45;
-
-  if (
-    typeof input.previousDistance === "number" &&
-    typeof input.previousPerformance === "number"
-  ) {
-    const targetDistance = adaptiveTargetAfterResult(
-      input.skill,
-      input.previousDistance,
-      input.previousPerformance,
-      input.min,
-      input.max,
-    );
-    const step = maxStep(input.skill);
-    const adaptationFit = clamp(1 - Math.abs(distance - targetDistance) / Math.max(1, step));
-    score = score * 0.48 + adaptationFit * 0.52;
-  }
-
   return score;
 }
 
@@ -407,23 +375,27 @@ export function selectNextEngineDistance(input: DistanceDecision) {
     : Array.from({ length: max - min + 1 }, (_, index) => min + index);
 
   let candidates = [...new Set(baseCandidates)];
+  const context = input.context ?? "training";
   if (typeof input.previousDistance === "number") {
-    const step = maxStep(input.skill);
-    const nearby = candidates.filter((value) => Math.abs(value - input.previousDistance!) <= step);
-    if (nearby.length) candidates = nearby;
+    if (context === "game") {
+      const minGap = meaningfulDistanceGap(input.skill);
+      const varied = candidates.filter((value) => Math.abs(value - input.previousDistance!) >= minGap);
+      if (varied.length) candidates = varied;
+    } else {
+      const previousEstimate = modelEstimate(model, input.skill, input.previousDistance);
+      const phase = learningPhaseFromEvidence({ attempts: previousEstimate.attempts, performance: previousEstimate.expected, confidence: previousEstimate.confidence, context });
+      const step = maxStep(input.skill) * (phase === "stabilization" ? 2 : 1);
+      const nearby = candidates.filter((value) => Math.abs(value - input.previousDistance!) <= step);
+      if (nearby.length) candidates = nearby;
+    }
   }
 
-  if (
-    typeof input.previousDistance === "number" &&
-    typeof input.previousPerformance === "number"
-  ) {
+  if (context !== "game" && typeof input.previousDistance === "number" && typeof input.previousPerformance === "number") {
     const p = clamp(input.previousPerformance);
-    // Vid ett riktigt svagt försök får nästa challenge inte plötsligt bli svårare.
     if (p <= 0.3) {
       const easier = candidates.filter((value) => value <= input.previousDistance!);
       if (easier.length) candidates = easier;
     }
-    // Vid ett riktigt bra försök undviker vi ett omotiverat stort steg bakåt.
     if (p >= 0.76) {
       const harder = candidates.filter((value) => value >= input.previousDistance! - 1);
       if (harder.length) candidates = harder;
@@ -467,11 +439,12 @@ export function buildEngineDistanceSequence(
 
 function skillLearningNeed(model: PlayerEngineModel, skill: EngineSkill) {
   const global = model.buckets[`${skill}:global`];
-  if (!global) return 0.72;
+  if (!global) return 0.78;
   const weakness = 1 - global.performance;
   const uncertainty = 1 - global.confidence;
-  const mastery = global.performance >= 0.78 ? global.performance * 0.35 : 0;
-  return clamp(weakness * 0.54 + uncertainty * 0.28 + mastery * 0.18);
+  const spacing = spacingPriority(hoursSinceEngine(global.lastPlayedAt));
+  const masteryTransfer = global.performance >= 0.78 ? global.performance * 0.35 : 0;
+  return clamp(weakness * 0.38 + uncertainty * 0.2 + spacing * 0.28 + masteryTransfer * 0.14);
 }
 
 function dayNoise(id: string) {
@@ -518,7 +491,7 @@ export function rankEngineActivities<T extends RankedActivity>(
         ? funScore
         : objective === "learning"
           ? learningScore
-          : funScore * 0.52 + learningScore * 0.48;
+          : funScore * 0.45 + learningScore * 0.55;
       return { item, score, index };
     })
     .sort((a, b) => b.score - a.score || a.index - b.index)

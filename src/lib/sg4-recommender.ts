@@ -39,6 +39,7 @@ export type BehaviorRecommendationScore = {
   affinity: number;
   novelty: number;
   exploration: number;
+  spacing: number;
   completionRate: number;
 };
 
@@ -241,12 +242,15 @@ export function scoreBehaviorProfile(
   const novelty = clamp((1 - recentMatches * 0.24) * (0.7 + spacing * 0.3), 0.1, 1);
 
   return {
-    score: clamp(affinity * 0.6 + novelty * 0.2 + exploration * 0.2),
-    affinity,
-    novelty,
-    exploration,
-    completionRate: clamp(smoothedCompletionRate),
-  };
+  // Keep the feed engaging without becoming a pure click/replay echo chamber.
+  // Spacing and exploration preserve retrieval, novelty and transfer opportunities.
+  score: clamp(affinity * 0.46 + novelty * 0.18 + exploration * 0.14 + spacing * 0.22),
+  affinity,
+  novelty,
+  exploration,
+  spacing,
+  completionRate: clamp(smoothedCompletionRate),
+};
 }
 
 export function getBehaviorRecommendationScore(activityId: string): BehaviorRecommendationScore {
