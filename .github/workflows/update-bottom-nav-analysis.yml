@@ -1,0 +1,50 @@
+name: Update bottom nav analysis
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/update-bottom-nav-analysis.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: Update bottom nav
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('src/components/bottom-nav.tsx')
+          s = p.read_text()
+
+          s = s.replace(
+            'const LEFT_TABS = [\n  { to: "/", label: "Hem", icon: Home, exact: true },\n  { to: "/traning", label: "Träning", icon: Target, exact: false },\n] as const;\n',
+            'const LEFT_TABS = [\n  { to: "/", label: "Hem", icon: Home, exact: true },\n  { to: "/traning", label: "Träning", icon: Target, exact: false },\n] as const;\n\nconst RIGHT_TABS = [\n  { to: "/utveckling", label: "Analys", icon: Gauge, exact: false },\n] as const;\n'
+          )
+
+          s = s.replace('  { to: "/utveckling", label: "Analys", description: "Utveckling, nivåer och spelarprofil.", icon: Gauge, tone: "neutral" },\n', '')
+
+          s = s.replace(
+            'grid-cols-[1fr_1fr_74px_1fr]',
+            'grid-cols-[1fr_1fr_62px_1fr_1fr]'
+          )
+
+          old = '''        <button type="button" onClick={() => setPlayOpen(true)} aria-label="Spel" className="relative -mt-5 flex h-[64px] w-[64px] items-center justify-center justify-self-center rounded-full bg-emerald-600 text-white shadow-[0_10px_24px_-8px_rgba(5,150,105,.55)] transition duration-150 active:scale-[.94]">\n          <Plus className="h-8 w-8 stroke-[2.6]" />\n          <span className="absolute -bottom-[17px] text-[9px] font-bold uppercase tracking-wide text-muted-foreground">Spel</span>\n        </button>\n\n        <button type="button" onClick={() => setMoreOpen(true)}'''
+          new = '''        <button type="button" onClick={() => setPlayOpen(true)} aria-label="Spel" className="relative -mt-3 flex h-[54px] w-[54px] items-center justify-center justify-self-center rounded-full bg-emerald-600 text-white shadow-[0_9px_20px_-8px_rgba(5,150,105,.5)] transition duration-150 active:scale-[.94]">\n          <Plus className="h-7 w-7 stroke-[2.6]" />\n        </button>\n\n        {RIGHT_TABS.map((tab) => <NavLink key={tab.to} tab={tab} active={pathname.startsWith(tab.to)} />)}\n\n        <button type="button" onClick={() => setMoreOpen(true)}'''
+          if old not in s:
+              raise SystemExit('play button block not found')
+          s = s.replace(old, new)
+
+          p.write_text(s)
+          PY
+          bun install --frozen-lockfile
+          bun run build
+      - name: Commit
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add src/components/bottom-nav.tsx
+          git commit -m "Put Analysis in bottom nav" || exit 0
+          git push
