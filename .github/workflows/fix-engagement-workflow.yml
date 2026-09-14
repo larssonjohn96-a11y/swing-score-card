@@ -1,0 +1,30 @@
+name: Fix engagement brain workflow
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/fix-engagement-workflow.yml'
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fix return block patch
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('.github/workflows/add-engagement-fun-brain-v3.yml')
+          s = p.read_text()
+          old = "ret_end = fn.index('\\n}', ret_start)"
+          new = "ret_end = fn.rindex('\\n}')"
+          if old not in s:
+            raise SystemExit('anchor missing')
+          p.write_text(s.replace(old, new, 1))
+          PY
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add .github/workflows/add-engagement-fun-brain-v3.yml
+          git commit -m "Fix engagement brain patch"
+          git push
