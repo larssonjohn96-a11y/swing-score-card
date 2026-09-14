@@ -1,0 +1,58 @@
+name: Keep friend match results in play
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/keep-friend-match-in-play.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: Keep result actions inside match play
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('src/routes/match.tsx')
+          s = p.read_text()
+
+          # Remove generic post-match recommendation card so real-player matches never route
+          # to bots, training, tests, or other surfaces.
+          start = '{resultRecommendation ? <a href={resultRecommendation.href}'
+          end = ' : null}<section className="mt-5 space-y-3">'
+          if start in s:
+              a = s.index(start)
+              b = s.index(end, a)
+              s = s[:a] + '<section className="mt-5 space-y-3">' + s[b + len(end):]
+
+          # Keep the two continuation actions inside play only.
+          s = s.replace(
+              '<button onClick={() => { if (playActivityId) recordRecommendationOpen(playActivityId); rematch(); }} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white"><RotateCcw className="h-5 w-5" /> Rematch</button>',
+              '<button onClick={rematch} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white"><RotateCcw className="h-5 w-5" /> Rematch</button>'
+          )
+          s = s.replace(
+              '<button onClick={newCompetition} className={`flex w-full items-center justify-center gap-2 rounded-2xl border py-4 font-display text-xl text-slate-900 ${glass}`}><Trophy className="h-5 w-5" /> Ny tävling</button><Link to="/" className="flex w-full items-center justify-center rounded-2xl border border-slate-300 bg-white/70 py-4 text-sm font-bold text-slate-700 backdrop-blur-xl">Hem</Link>',
+              '<button onClick={newCompetition} className={`flex w-full items-center justify-center gap-2 rounded-2xl border py-4 font-display text-xl text-slate-900 ${glass}`}><Trophy className="h-5 w-5" /> Annan kategori</button>'
+          )
+
+          # Remove result-only recommendation wiring/imports if no longer used in this route.
+          s = s.replace('import { getPlayRecommendations } from "@/lib/sg4-surface-recommendations";\n', '')
+          s = s.replace('import { recordRecommendationCompletion, recordRecommendationImpressions, recordRecommendationOpen } from "@/lib/sg4-recommender";\n', '')
+          import re
+          s = re.sub(r'\n\s*const playActivityId = mode === "singles" \? "play-friend" : mode \? "play-team" : null;\n\s*const resultRecommendation = getPlayRecommendations\(1, playActivityId \? \[playActivityId\] : \[\]\)\[0\];', '', s)
+          s = re.sub(r'\n\s*useEffect\(\(\) => \{\s*if \(step !== "result" \|\| !resultRecommendation\) return;\s*recordRecommendationImpressions\(\[resultRecommendation.id\]\);\s*\}, \[step, resultRecommendation\?\.id\]\);', '', s)
+
+          p.write_text(s)
+          PY
+          bun install --frozen-lockfile
+          bun run build
+      - name: Commit
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add src/routes/match.tsx
+          git commit -m "Keep friend match results inside play" || exit 0
+          git push
