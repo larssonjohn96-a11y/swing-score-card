@@ -446,7 +446,7 @@ function MatchPlayPage() {
   const redGlass = "border-red-300/60 bg-gradient-to-br from-red-100/54 via-white/74 to-slate-100/76 shadow-[0_10px_24px_-20px_rgba(15,23,42,.22)] backdrop-blur-2xl";
   const selectedGlass = "border-blue-400/80 bg-gradient-to-br from-blue-100/80 via-white/80 to-blue-50/60 text-slate-950 shadow-[0_18px_44px_-32px_rgba(37,99,235,.4)] ring-2 ring-blue-500/40 backdrop-blur-2xl";
   const selectedRing = selectedGlass;
-  const ryderNext = "group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-[20px] border border-blue-300/55 bg-[linear-gradient(180deg,rgba(96,165,250,.78)_0%,rgba(37,99,235,.88)_42%,rgba(29,78,216,.90)_100%)] py-4 font-display text-xl text-white shadow-[inset_0_1px_0_rgba(255,255,255,.58),inset_0_-1px_0_rgba(30,64,175,.35),0_14px_32px_-20px_rgba(37,99,235,.72)] backdrop-blur-2xl transition duration-200 active:scale-[.985] active:brightness-[.97] disabled:opacity-30";
+  const ryderNext = "group relative flex w-full items-center justify-center gap-2 rounded-[20px] border border-blue-700/35 bg-[#2563eb] py-4 font-display text-xl text-white shadow-[0_5px_0_#1d4ed8,0_10px_18px_-12px_rgba(29,78,216,.72)] transition duration-150 hover:bg-[#245bd7] active:translate-y-[2px] active:scale-[.995] active:bg-[#1f55c8] active:shadow-[0_3px_0_#1e40af,0_7px_14px_-12px_rgba(29,78,216,.65)] disabled:translate-y-0 disabled:opacity-30 disabled:shadow-[0_5px_0_#1d4ed8]";
 
   function goToStep(next: Step) {
     const doc = document as Document & { startViewTransition?: (callback: () => void) => { finished: Promise<void> } };
