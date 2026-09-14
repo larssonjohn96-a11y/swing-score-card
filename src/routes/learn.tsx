@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
   ArrowDownToLine,
   BarChart3,
+  ArrowLeft,
   Brain,
   ChevronRight,
   CircleDot,
@@ -189,9 +190,18 @@ function LearnPage() {
   return (
     <main className="min-h-screen bg-[#242728] pb-32 text-white">
       <div className="mx-auto w-full max-w-md px-4 pt-5">
-        <header className="sticky top-0 z-30 -mx-4 flex items-center justify-between border-b border-white/[.06] bg-[#242728]/94 px-5 pb-4 pt-1 backdrop-blur-xl">
-          <div className="flex items-center gap-2.5"><GraduationCap className="h-6 w-6 text-emerald-400" /><h1 className="font-display text-2xl">Lär dig</h1></div>
-          <button type="button" onClick={() => setSectionMenuOpen((open) => !open)} className="flex items-center gap-2 rounded-2xl border border-white/15 bg-white/[.06] px-3 py-2 text-xs font-semibold text-white/80 backdrop-blur-xl"><Map className="h-4 w-4" /> Sektioner</button>
+        <header className="sticky top-0 z-40 -mx-4 border-b border-white/[.07] bg-[#242728]/96 px-4 pb-3 pt-[max(8px,env(safe-area-inset-top))] shadow-[0_12px_28px_-24px_rgba(0,0,0,.9)] backdrop-blur-2xl">
+          <div className="grid grid-cols-[44px_1fr_auto] items-center gap-2">
+            <button type="button" onClick={() => window.history.back()} aria-label="Tillbaka" className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/12 bg-white/[.05] text-white/80 active:scale-[.96]"><ArrowLeft className="h-5 w-5" /></button>
+            <div className="flex items-center justify-center gap-2"><GraduationCap className="h-5 w-5 text-emerald-400" /><h1 className="font-display text-xl">Lär dig</h1></div>
+            <button type="button" onClick={() => setSectionMenuOpen((open) => !open)} className="flex items-center gap-1.5 rounded-2xl border border-white/15 bg-white/[.06] px-2.5 py-2 text-[11px] font-semibold text-white/80 backdrop-blur-xl"><Map className="h-3.5 w-3.5" /> Sektioner</button>
+          </div>
+          <div className="mt-3 flex items-center gap-2.5">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-emerald-300/30 bg-gradient-to-br from-emerald-500/25 via-slate-700/80 to-slate-950 shadow-[inset_0_1px_0_rgba(255,255,255,.22),0_0_24px_rgba(16,185,129,.12)]"><span className="text-2xl">🧑🏻‍🏫</span></div>
+            <div className="relative min-w-0 flex-1 rounded-[18px] border border-white/15 bg-gradient-to-br from-white/[.12] via-white/[.07] to-white/[.035] px-3.5 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,.16)] backdrop-blur-2xl before:absolute before:-left-1.5 before:top-4 before:h-3 before:w-3 before:rotate-45 before:border-b before:border-l before:border-white/12 before:bg-[#383b3d]">
+              <p className="relative line-clamp-2 text-[13px] leading-snug text-white/90">{selected.coach}</p>
+            </div>
+          </div>
         </header>
 
         {sectionMenuOpen ? (
@@ -211,16 +221,8 @@ function LearnPage() {
           </div>
         ) : null}
 
-        <section className="mt-5 flex items-center gap-3">
-          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border border-emerald-300/30 bg-gradient-to-br from-emerald-500/25 via-slate-700/80 to-slate-950 shadow-[inset_0_1px_0_rgba(255,255,255,.22),0_0_30px_rgba(16,185,129,.15)]">
-            <span className="text-4xl">🧑🏻‍🏫</span>
-          </div>
-          <div className="relative rounded-[22px] border border-white/18 bg-gradient-to-br from-white/[.14] via-white/[.08] to-white/[.04] px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,.22),0_18px_40px_-28px_rgba(0,0,0,.8)] backdrop-blur-2xl before:absolute before:-left-2 before:top-8 before:h-4 before:w-4 before:rotate-45 before:border-b before:border-l before:border-white/15 before:bg-[#3a3d3f]">
-            <p className="relative text-[15px] leading-snug text-white/92">{selected.coach}</p>
-          </div>
-        </section>
 
-        <div id="learn-sections" className="mt-8 space-y-10">
+        <div id="learn-sections" className="mt-6 space-y-10">
           {SECTIONS.map((section) => {
             const tone = TONE[section.tone];
             return <section key={section.id} id={`learn-section-${section.id}`} className="scroll-mt-28">
@@ -267,7 +269,7 @@ function LearnPage() {
         </div>
       </div>
 
-      <div className="fixed inset-x-0 bottom-[86px] z-30 px-3">
+      <div className="fixed inset-x-0 bottom-[max(12px,env(safe-area-inset-bottom))] z-30 px-3">
         <div className="mx-auto max-w-md rounded-[28px] border border-white/18 bg-[#303436]/92 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,.16),0_24px_60px_-28px_rgba(0,0,0,.9)] backdrop-blur-3xl">
           <div className="flex items-center gap-3">
             <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border bg-gradient-to-br ${TONE[selected.section.tone].tile}`}><selected.icon className="h-7 w-7 text-white" /></div>

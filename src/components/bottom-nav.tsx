@@ -80,7 +80,7 @@ export function BottomNav() {
     setTrophyBadge(countUncollected(computeMilestones()) + countUncollected(computeAchievements()));
   }, [pathname]);
 
-  if (hidden || pathname.startsWith("/match")) return null;
+  if (hidden || pathname.startsWith("/match") || pathname.startsWith("/learn")) return null;
   const moreActive = moreOpen || MORE_LINKS.some((item) => pathname.startsWith(item.to));
 
   return <>
