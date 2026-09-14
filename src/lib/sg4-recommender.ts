@@ -1,3 +1,4 @@
+import { engagementFunScore } from "@/lib/engagement-fun-policy";
 export type RecommendationSignal =
   | "impression"
   | "open"
@@ -40,6 +41,7 @@ export type BehaviorRecommendationScore = {
   novelty: number;
   exploration: number;
   spacing: number;
+  engagementFit: number;
   completionRate: number;
 };
 
@@ -215,6 +217,7 @@ function hoursSince(iso?: string) {
 export function scoreBehaviorProfile(
   profile: ActivityBehaviorProfile,
   recentMatches = 0,
+  sessionDepth = 0,
 ): BehaviorRecommendationScore {
   const impressionPrior = 5;
   const openPrior = 2;
@@ -241,14 +244,25 @@ export function scoreBehaviorProfile(
     : 1;
   const novelty = clamp((1 - recentMatches * 0.24) * (0.7 + spacing * 0.3), 0.1, 1);
 
-  return {
-  // Keep the feed engaging without becoming a pure click/replay echo chamber.
-  // Spacing and exploration preserve retrieval, novelty and transfer opportunities.
-  score: clamp(affinity * 0.46 + novelty * 0.18 + exploration * 0.14 + spacing * 0.22),
+  const engagement = engagementFunScore({
   affinity,
   novelty,
   exploration,
   spacing,
+  completionRate: clamp(smoothedCompletionRate),
+  recentMatches,
+  sessionDepth,
+  hoursSinceLastCompletion: recentCompletionHours,
+  completions: profile.completions,
+});
+
+  return {
+  score: engagement.score,
+  affinity,
+  novelty,
+  exploration,
+  spacing,
+  engagementFit: engagement.noveltyFit * 0.35 + engagement.competence * 0.35 + engagement.diversity * 0.3,
   completionRate: clamp(smoothedCompletionRate),
 };
 }
@@ -257,7 +271,7 @@ export function getBehaviorRecommendationScore(activityId: string): BehaviorReco
   const model = loadModel();
   const profile = model.activities[activityId] ?? emptyProfile();
   const recentMatches = model.recentActivityIds.slice(-8).filter((id) => id === activityId).length;
-  return scoreBehaviorProfile(profile, recentMatches);
+  return scoreBehaviorProfile(profile, recentMatches, model.sessionEvents);
 }
 
 export function getRecommendationSessionDepth() {

@@ -476,17 +476,23 @@ export function rankEngineActivities<T extends RankedActivity>(
       const behavior = getBehaviorRecommendationScore(item.id);
       const dayVariation = 0.85 + dayNoise(item.id) * 0.15;
       const funScore =
-        behavior.affinity * 0.44 +
-        behavior.novelty * 0.18 +
-        behavior.exploration * 0.18 +
-        affinity * 0.15 +
-        dayVariation * 0.05;
-      const learningScore =
-        learningNeed * 0.62 +
-        behavior.exploration * 0.16 +
-        behavior.completionRate * 0.1 +
-        behavior.novelty * 0.08 +
-        dayVariation * 0.04;
+      behavior.score * 0.34 +
+      behavior.affinity * 0.22 +
+      behavior.novelty * 0.1 +
+      behavior.exploration * 0.08 +
+      behavior.spacing * 0.08 +
+      behavior.engagementFit * 0.08 +
+      affinity * 0.07 +
+      dayVariation * 0.03;
+    const learningScore =
+      learningNeed * 0.52 +
+      behavior.spacing * 0.14 +
+      behavior.exploration * 0.1 +
+      behavior.completionRate * 0.08 +
+      behavior.novelty * 0.05 +
+      behavior.engagementFit * 0.05 +
+      behavior.score * 0.03 +
+      dayVariation * 0.03;
       const score = objective === "fun"
         ? funScore
         : objective === "learning"
