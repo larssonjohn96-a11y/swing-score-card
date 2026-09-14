@@ -496,10 +496,6 @@ function MatchPlayPage() {
   // Persist every meaningful in-progress change so leaving the app never resets the match.
   useEffect(() => {
     if (!localMatchReady) return;
-    if (matchSessionId || new URLSearchParams(window.location.search).has("session")) {
-      window.localStorage.removeItem(LOCAL_MATCH_KEY);
-      return;
-    }
     if (step === "result") {
       window.localStorage.removeItem(LOCAL_MATCH_KEY);
       return;
