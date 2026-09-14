@@ -1,0 +1,42 @@
+name: Fix friend match navigation
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/fix-friend-match-navigation.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: Fix client-side match navigation
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('src/components/bottom-nav.tsx')
+          s = p.read_text()
+          s = s.replace('import { Link, useLocation } from "@tanstack/react-router";', 'import { Link, useLocation, useNavigate } from "@tanstack/react-router";')
+          s = s.replace('  const { pathname } = useLocation();\n', '  const { pathname } = useLocation();\n  const navigate = useNavigate();\n')
+          old = '''            return item.to.includes("?") ? <a key={item.to} href={item.to} onClick={() => setPlayOpen(false)} className={`flex items-center gap-4 rounded-[24px] border px-4 py-4 shadow-[0_12px_32px_-28px_rgba(15,23,42,.28)] active:scale-[.985] ${tone.card}`}>{inner}</a> : <Link key={item.to} to={item.to} onClick={() => setPlayOpen(false)} className={`flex items-center gap-4 rounded-[24px] border px-4 py-4 shadow-[0_12px_32px_-28px_rgba(15,23,42,.28)] active:scale-[.985] ${tone.card}`}>{inner}</Link>;'''
+          new = '''            if (item.to === "/match?flow=friend" || item.to === "/match?flow=team") {
+              const flow = item.to.endsWith("team") ? "team" : "friend";
+              return <button key={item.to} type="button" onClick={() => { setPlayOpen(false); navigate({ to: "/match", search: { flow } as any }); }} className={`flex w-full items-center gap-4 rounded-[24px] border px-4 py-4 text-left shadow-[0_12px_32px_-28px_rgba(15,23,42,.28)] active:scale-[.985] ${tone.card}`}>{inner}</button>;
+            }
+            return <Link key={item.to} to={item.to} onClick={() => setPlayOpen(false)} className={`flex items-center gap-4 rounded-[24px] border px-4 py-4 shadow-[0_12px_32px_-28px_rgba(15,23,42,.28)] active:scale-[.985] ${tone.card}`}>{inner}</Link>;'''
+          if old not in s:
+              raise SystemExit('play links navigation block not found')
+          s = s.replace(old, new)
+          p.write_text(s)
+          PY
+          bun install --frozen-lockfile
+          bun run build
+      - name: Commit
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add src/components/bottom-nav.tsx
+          git commit -m "Fix client-side friend match navigation" || exit 0
+          git push
