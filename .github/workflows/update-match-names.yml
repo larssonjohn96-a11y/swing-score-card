@@ -1,0 +1,43 @@
+name: Update match names
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/update-match-names.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: Update putting and chipping match names
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path('src/routes/match.tsx')
+          s = p.read_text()
+          s = s.replace('{ id: "putting", title: "Puttning", subtitle: "Putting Match", description: "Spela en riktig puttingmatch hål för hål. Färre puttar vinner hålet." },', '{ id: "putting", title: "Putting • Match", subtitle: "Puttning", description: "Spela en riktig puttingmatch hål för hål. Färre puttar vinner hålet." },')
+          s = s.replace('{ id: "around-the-green", title: "Chippning", subtitle: "Chipping", description: "Chippingmatch mot samma mål. Närmast hålet vinner." },', '{ id: "around-the-green", title: "Chipping • Match", subtitle: "Chippning", description: "Chippingmatch mot samma mål. Närmast hålet vinner." },')
+          s = s.replace('{ id: "closest", title: "Closest to the Pin", description: "Ett slag mot flaggan. Närmast flaggan vinner hålet." },', '{ id: "closest", title: "Chipping • Match", description: "Ett slag mot flaggan. Närmast flaggan vinner hålet." },')
+          s = s.replace('{ id: "standard", title: "Putting Match", description: "Standardiserat format · samma position för båda · färre puttar vinner hålet" },', '{ id: "standard", title: "Putting • Match", description: "Standardiserat format · samma position för båda · färre puttar vinner hålet" },')
+          s = s.replace('eyebrow: "Putting Match"', 'eyebrow: "Putting • Match"')
+          p.write_text(s)
+
+          p = Path('src/routes/match-bot.tsx')
+          s = p.read_text()
+          s = s.replace('{ id: "around-the-green", title: "Närspel", sub: "Around the Green" },', '{ id: "around-the-green", title: "Chipping • Match", sub: "Chippning" },')
+          s = s.replace('{ id: "putting", title: "Puttning", sub: "Putting" },', '{ id: "putting", title: "Putting • Match", sub: "Puttning" },')
+          p.write_text(s)
+          PY
+          bun install --frozen-lockfile
+          bun run build
+      - name: Commit
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add src/routes/match.tsx src/routes/match-bot.tsx
+          git commit -m "Rename putting and chipping matches" || exit 0
+          git push
