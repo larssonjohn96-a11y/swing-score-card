@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Link, useLocation } from "@tanstack/react-router";
+import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { Bot, BriefcaseBusiness, ChevronRight, Flag, Gauge, GraduationCap, Home, Menu, Plus, Target, Trophy, UserRound, Users } from "lucide-react";
 import { useBottomNavVisibility } from "@/lib/bottom-nav-visibility";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -73,6 +73,7 @@ function playToneClasses(tone: string) {
 export function BottomNav() {
   const { hidden } = useBottomNavVisibility();
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const [playOpen, setPlayOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [trophyBadge, setTrophyBadge] = useState(0);
@@ -123,7 +124,11 @@ export function BottomNav() {
               <span className="min-w-0 flex-1"><span className="block font-display text-xl">{item.label}</span><span className="mt-1 block text-xs text-muted-foreground">{item.description}</span></span>
               <ChevronRight className={`h-4 w-4 shrink-0 ${tone.arrow}`} />
             </>;
-            return item.to.includes("?") ? <a key={item.to} href={item.to} onClick={() => setPlayOpen(false)} className={`flex items-center gap-4 rounded-[24px] border px-4 py-4 shadow-[0_12px_32px_-28px_rgba(15,23,42,.28)] active:scale-[.985] ${tone.card}`}>{inner}</a> : <Link key={item.to} to={item.to} onClick={() => setPlayOpen(false)} className={`flex items-center gap-4 rounded-[24px] border px-4 py-4 shadow-[0_12px_32px_-28px_rgba(15,23,42,.28)] active:scale-[.985] ${tone.card}`}>{inner}</Link>;
+            if (item.to === "/match?flow=friend" || item.to === "/match?flow=team") {
+    const flow = item.to.endsWith("team") ? "team" : "friend";
+    return <button key={item.to} type="button" onClick={() => { setPlayOpen(false); navigate({ to: "/match", search: { flow } as any }); }} className={`flex w-full items-center gap-4 rounded-[24px] border px-4 py-4 text-left shadow-[0_12px_32px_-28px_rgba(15,23,42,.28)] active:scale-[.985] ${tone.card}`}>{inner}</button>;
+  }
+  return <Link key={item.to} to={item.to} onClick={() => setPlayOpen(false)} className={`flex items-center gap-4 rounded-[24px] border px-4 py-4 shadow-[0_12px_32px_-28px_rgba(15,23,42,.28)] active:scale-[.985] ${tone.card}`}>{inner}</Link>;
           })}
         </div>
       </SheetContent>
