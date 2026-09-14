@@ -168,7 +168,10 @@ function SelectedCheck({ className = "absolute right-3 top-3" }: { className?: s
 function MatchPlayPage() {
   useHideBottomNav(true);
   const { user, loading } = useAuth();
-  const [entryFlow] = useState<"friend" | "team">(() => new URLSearchParams(window.location.search).get("flow") === "team" ? "team" : "friend");
+  const [entryFlow] = useState<"friend" | "team">(() => {
+    if (typeof window === "undefined") return "friend";
+    return new URLSearchParams(window.location.search).get("flow") === "team" ? "team" : "friend";
+  });
   const [step, setStep] = useState<Step>("players");
   const [mode, setMode] = useState<MatchMode | null>(() => entryFlow === "friend" ? "singles" : null);
   const [friends, setFriends] = useState<Friendship[]>([]);
