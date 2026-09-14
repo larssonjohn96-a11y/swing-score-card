@@ -1,0 +1,62 @@
+name: Rename match options
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/rename-match-options.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: Rename match options
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          # Friend/team match flow
+          p = Path('src/routes/match.tsx')
+          s = p.read_text()
+          replacements = {
+            'title: "Putting • Match", subtitle: "Puttning"': 'title: "Puttning", subtitle: "Putting"',
+            'title: "Chipping • Match", subtitle: "Chippning"': 'title: "Chippning", subtitle: "Chipping"',
+            'title: "Bunker • Match", subtitle: "Bunker"': 'title: "Bunker", subtitle: "Bunkerslag"',
+            'title: "Closest to Pin", subtitle: "Inspel"': 'title: "Närmast flaggan", subtitle: "Inspel"',
+            'title: "30 m Fairway Challenge", subtitle: "Driver"': 'title: "Fairway", subtitle: "Driver"',
+            '{ id: "fairway", title: "30 m Fairway Challenge"': '{ id: "fairway", title: "Fairway"',
+            '{ id: "closest", title: "Closest to Pin"': '{ id: "closest", title: "Närmast flaggan"',
+            '{ id: "closest", title: "Chipping • Match"': '{ id: "closest", title: "Chippning"',
+            '{ id: "closest", title: "Bunker • Match"': '{ id: "closest", title: "Bunker"',
+            '{ id: "standard", title: "Putting • Match"': '{ id: "standard", title: "Puttning"',
+            'eyebrow: "Putting • Match"': 'eyebrow: "Puttning"',
+            'eyebrow: "Closest to Pin"': 'eyebrow: "Närmast flaggan"',
+            'title: "30 m Fairway Challenge", detail:': 'title: "Fairway", detail:',
+          }
+          for old, new in replacements.items():
+            s = s.replace(old, new)
+          p.write_text(s)
+
+          # Bot match flow
+          p = Path('src/routes/match-bot.tsx')
+          s = p.read_text()
+          s = s.replace('{ id: "off-the-tee", title: "Utslag", sub: "Off the Tee" }', '{ id: "off-the-tee", title: "Fairway", sub: "Driver" }')
+          s = s.replace('{ id: "approach", title: "Inspel", sub: "Approach" }', '{ id: "approach", title: "Närmast flaggan", sub: "Inspel" }')
+          s = s.replace('{ id: "around-the-green", title: "Chipping • Match", sub: "Chippning" }', '{ id: "around-the-green", title: "Chippning", sub: "Chipping" }')
+          s = s.replace('{ id: "bunker", title: "Bunker • Match", sub: "Bunker" }', '{ id: "bunker", title: "Bunker", sub: "Bunkerslag" }')
+          s = s.replace('{ id: "putting", title: "Putting • Match", sub: "Puttning" }', '{ id: "putting", title: "Puttning", sub: "Putting" }')
+          s = s.replace('title: "30 m Fairway Challenge", detail:', 'title: "Fairway", detail:')
+          p.write_text(s)
+          PY
+          bun install --frozen-lockfile
+          bun run build
+          grep -R "Putting • Match\|Chipping • Match\|Bunker • Match\|Closest to Pin\|30 m Fairway Challenge" -n src/routes/match.tsx src/routes/match-bot.tsx && exit 1 || true
+      - name: Commit
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add src/routes/match.tsx src/routes/match-bot.tsx
+          git commit -m "Simplify match option names"
+          git push
