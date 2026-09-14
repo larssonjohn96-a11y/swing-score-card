@@ -20,24 +20,25 @@ jobs:
           s = p.read_text()
           old = '  const [entryFlow] = useState<"friend" | "team">(() => new URLSearchParams(window.location.search).get("flow") === "team" ? "team" : "friend");\n'
           new = '  const [entryFlow] = useState<"friend" | "team">(() => {\n    if (typeof window === "undefined") return "friend";\n    return new URLSearchParams(window.location.search).get("flow") === "team" ? "team" : "friend";\n  });\n'
-          if old not in s:
-              raise SystemExit('entryFlow line not found')
-          p.write_text(s.replace(old, new))
+          if old in s:
+              p.write_text(s.replace(old, new))
+          elif 'if (typeof window === "undefined") return "friend";' not in s:
+              raise SystemExit('entryFlow block not found')
           PY
           bun install --frozen-lockfile
           bun run build
       - name: Smoke test built match route
         run: |
-          node .output/server/index.mjs > /tmp/sg4-server.log 2>&1 &
+          bunx vite preview --host 127.0.0.1 --port 4173 > /tmp/sg4-preview.log 2>&1 &
           PID=$!
           trap 'kill $PID || true' EXIT
           for i in {1..20}; do
-            if curl -fsS 'http://127.0.0.1:3000/match?flow=friend' -o /tmp/match.html; then
+            if curl -fsS 'http://127.0.0.1:4173/match?flow=friend' -o /tmp/match.html; then
               break
             fi
             sleep 1
           done
-          cat /tmp/sg4-server.log
+          cat /tmp/sg4-preview.log
           test -s /tmp/match.html
           ! grep -q 'This page didn.t load' /tmp/match.html
       - name: Commit
