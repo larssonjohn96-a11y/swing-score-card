@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Check, ChevronRight, Flag, Minus, Plus, RotateCcw, Target, Trophy, User, Users, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { listFriendships, type Friendship } from "@/lib/friends-cloud";
 import { loadCardProfile } from "@/lib/rating-card";
@@ -18,6 +18,7 @@ import {
 import { formatPuttingDistance, generatePuttingMatchDistances } from "@/lib/putting-match";
 import { CHIP_POINT_ZONES, generateChipMatchDistances, getChipDistanceBand, getChipPointZone } from "@/lib/chip-match";
 import { chipPerformanceFromPoints, puttingPerformanceFromStrokes, recordEngineOutcome, selectNextEngineDistance, type EngineSkill } from "@/lib/sg4-engine";
+import { allowedDistancesInsideBand, getFriendHeadToHead, getFriendMatchPacing, getPlannedDistanceBand, recordFriendMatchHistory } from "@/lib/friend-match-experience";
 
 export const Route = createFileRoute("/match")({
   head: () => ({ meta: [{ title: "Match Play | SG4" }] }),
@@ -201,6 +202,9 @@ function MatchPlayPage() {
   const [showSuddenDeathIntro, setShowSuddenDeathIntro] = useState(false);
   const [sdWinnerCelebration, setSdWinnerCelebration] = useState<"blue" | "red" | null>(null);
   const [normalWinnerCelebration, setNormalWinnerCelebration] = useState<"blue" | "red" | null>(null);
+  const [matchRunId, setMatchRunId] = useState(() => `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
+  const [headToHead, setHeadToHead] = useState({ played: 0, wins: 0, losses: 0, ties: 0 });
+  const recordedHistoryIdRef = useRef<string | null>(null);
   const [blueStrokes, setBlueStrokes] = useState(1);
   const [redStrokes, setRedStrokes] = useState(1);
   const [blueStrokesSelected, setBlueStrokesSelected] = useState(false);
@@ -321,8 +325,14 @@ function MatchPlayPage() {
       setMatchType(saved.matchType ?? null);
       setScoringMode(saved.scoringMode ?? "match");
       setMatchLength(saved.matchLength ?? 5);
-      setHoles(Array.isArray(saved.holes) ? saved.holes : []);
-      setHoleIndex(Number.isFinite(saved.holeIndex) ? saved.holeIndex : 0);
+      const restoredHoles = Array.isArray(saved.holes) ? saved.holes.slice(0, saved.matchLength ?? 5) : [];
+      if (!restoredHoles.length || !restoredHoles.every((hole: any) => hole && hole.challenge && typeof hole.challenge.title === "string")) {
+        window.localStorage.removeItem(LOCAL_MATCH_KEY);
+        setLocalMatchReady(true);
+        return;
+      }
+      setHoles(restoredHoles);
+      setHoleIndex(Math.min(Math.max(0, Number.isFinite(saved.holeIndex) ? saved.holeIndex : 0), restoredHoles.length - 1));
       setFinalText(saved.finalText ?? "");
       setSuddenDeathRound(saved.suddenDeathRound ?? 1);
       setSdMessage(saved.sdMessage ?? "");
@@ -344,6 +354,7 @@ function MatchPlayPage() {
       setGuests(Array.isArray(saved.guests) ? saved.guests : []);
       setBlueMateId(saved.blueMateId ?? null);
       if (saved.selfName) setSelfName(saved.selfName);
+      if (saved.matchRunId) setMatchRunId(saved.matchRunId);
       setSessionBlueTeam(Array.isArray(saved.blueTeam) ? saved.blueTeam : null);
       setSessionRedTeam(Array.isArray(saved.redTeam) ? saved.redTeam : null);
       setStep(saved.step);
@@ -423,6 +434,12 @@ function MatchPlayPage() {
   const approachProximityPreview = Math.sqrt(approachLongitudinalPreview * approachLongitudinalPreview + approachLateral * approachLateral);
   const compact = step === "play";
   const tight = compact && Boolean(pressureNotice);
+  const matchPacing = getFriendMatchPacing(matchLength);
+  const friendOpponent = entryFlow === "friend" ? redTeam[0] ?? selectedOthers[0] ?? null : null;
+  const selfHistoryKey = user?.id ?? `self:${selfName.toLowerCase()}`;
+  const opponentHistoryKey = friendOpponent?.id ?? (friendOpponent ? `guest:${friendOpponent.name.toLowerCase()}` : "");
+  const resolvedResultWinner: "blue" | "red" | "tie" = resultLeader
+    ?? (finalText.startsWith(blueLabel) ? "blue" : finalText.startsWith(redLabel) ? "red" : "tie");
 
   const glass = "border-slate-300/75 bg-white/68 shadow-[0_18px_44px_-32px_rgba(15,23,42,.42)] backdrop-blur-2xl";
   const blueGlass = "border-blue-300/60 bg-gradient-to-br from-blue-100/58 via-white/74 to-slate-100/76 shadow-[0_10px_24px_-20px_rgba(15,23,42,.22)] backdrop-blur-2xl";
@@ -492,12 +509,12 @@ function MatchPlayPage() {
       version: 1, savedAt: Date.now(), step, mode, category, matchType, scoringMode, matchLength, holes, holeIndex, finalText,
       suddenDeathRound, sdMessage, blueStrokes, redStrokes, blueStrokesSelected, redStrokesSelected, bluePoints, redPoints,
       shortGameLies, approachRanges, approachCustomMin, approachCustomMax, approachTurn, approachLong, approachLateralDirection, approachLateral,
-      selectedFriendIds, guests, blueMateId, selfName,
+      selectedFriendIds, guests, blueMateId, selfName, matchRunId,
       blueTeam: blueTeam.map(({ id, name, avatarUrl }) => ({ id, name, avatarUrl })),
       redTeam: redTeam.map(({ id, name, avatarUrl }) => ({ id, name, avatarUrl })),
     };
     try { window.localStorage.setItem(LOCAL_MATCH_KEY, JSON.stringify(payload)); } catch { /* storage may be unavailable */ }
-  }, [localMatchReady, matchSessionId, step, mode, category, matchType, scoringMode, matchLength, holes, holeIndex, finalText, suddenDeathRound, sdMessage, blueStrokes, redStrokes, blueStrokesSelected, redStrokesSelected, bluePoints, redPoints, shortGameLies, approachRanges, approachCustomMin, approachCustomMax, approachTurn, approachLong, approachLateralDirection, approachLateral, selectedFriendIds, guests, blueMateId, selfName, blueLabel, redLabel]);
+  }, [localMatchReady, matchSessionId, step, mode, category, matchType, scoringMode, matchLength, holes, holeIndex, finalText, suddenDeathRound, sdMessage, blueStrokes, redStrokes, blueStrokesSelected, redStrokesSelected, bluePoints, redPoints, shortGameLies, approachRanges, approachCustomMin, approachCustomMax, approachTurn, approachLong, approachLateralDirection, approachLateral, selectedFriendIds, guests, blueMateId, selfName, matchRunId, blueLabel, redLabel]);
 
   function chooseMode(next: MatchMode) { setMode(next); setSelectedFriendIds([]); setGuests([]); setGuestName(""); setBlueMateId(null); }
   function toggleFriend(id: string) {
@@ -529,6 +546,9 @@ function MatchPlayPage() {
   function removeGuest(id: string) { setGuests((old) => old.filter((g) => g.id !== id)); if (blueMateId === id) setBlueMateId(null); }
   function startMatch() {
     if (!mode || !teamsReady || !category || !matchType) return;
+    const nextRunId = `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    setMatchRunId(nextRunId);
+    recordedHistoryIdRef.current = null;
     const nextHoles = isPgaPutting
       ? generatePuttingMatchDistances(matchLength).map((distance) => ({ challenge: generateChallenge(category, matchType, mode, shortGameLies, distance), winner: null as HoleWinner }))
       : isBunker
@@ -576,11 +596,11 @@ function MatchPlayPage() {
       else if (Math.abs(d) > rem) setFinalText(`${d > 0 ? blueLabel : redLabel} vinner ${Math.abs(d)} & ${rem}`);
       else setFinalText(`${d > 0 ? blueLabel : redLabel} vinner ${Math.abs(d)} UP`);
       setNormalWinnerCelebration(d > 0 ? "blue" : "red");
-      window.setTimeout(() => { setNormalWinnerCelebration(null); setStep("result"); }, 2300);
+      window.setTimeout(() => { setNormalWinnerCelebration(null); setStep("result"); }, matchPacing.resultCelebrationMs);
       return;
     }
     if (scoringMode === "stroke" && s.played >= matchLength) {
-      if (isShortGame) {
+      if (isShortGameScoring) {
         const delta = s.bluePoints - s.redPoints;
         if (delta === 0) { setSuddenDeathRound(1); setSdBlue(null); setSdRed(null); setSdBlueSunk(false); setSdRedSunk(false); setSdMessage(""); setStep("sudden-death"); return; }
         else setFinalText(`${delta > 0 ? blueLabel : redLabel} vinner med ${Math.abs(delta)} poäng`);
@@ -589,9 +609,9 @@ function MatchPlayPage() {
         if (delta === 0) { setSuddenDeathRound(1); setSdBlue(null); setSdRed(null); setSdBlueSunk(false); setSdRedSunk(false); setSdMessage(""); setStep("sudden-death"); return; }
         else setFinalText(`${delta > 0 ? blueLabel : redLabel} vinner med ${Math.abs(delta)} slag`);
       }
-      const strokeWinner = isShortGame ? (s.bluePoints > s.redPoints ? "blue" : "red") : (s.blueStrokes < s.redStrokes ? "blue" : "red");
+      const strokeWinner = isShortGameScoring ? (s.bluePoints > s.redPoints ? "blue" : "red") : (s.blueStrokes < s.redStrokes ? "blue" : "red");
       setNormalWinnerCelebration(strokeWinner);
-      window.setTimeout(() => { setNormalWinnerCelebration(null); setStep("result"); }, 2300);
+      window.setTimeout(() => { setNormalWinnerCelebration(null); setStep("result"); }, matchPacing.resultCelebrationMs);
       return;
     }
     setHoleIndex(Math.min(holeIndex + 1, matchLength - 1));
@@ -603,7 +623,7 @@ function MatchPlayPage() {
     const registered = holeIndex;
     setTransitionMessage(`${unitLabel} ${registered + 1} registrerad`);
     const next = holes.map((h, i) => i === registered ? { ...h, winner: w } : h);
-    window.setTimeout(() => { advance(next); setTransitionMessage(null); setIsSubmitting(false); }, 380);
+    window.setTimeout(() => { advance(next); setTransitionMessage(null); setIsSubmitting(false); }, matchPacing.transitionMs);
   }
   function finishScoredEdit(next: Hole[], registered: number) {
     setHoles(next);
@@ -622,15 +642,20 @@ function MatchPlayPage() {
     if (!category || !mode || registered >= next.length - 1) return next;
     if (category !== "putting" && category !== "around-the-green") return next;
     const currentDistance = holeDistance(next[registered]);
-    if (typeof currentDistance !== "number") return next;
+    const plannedNextDistance = holeDistance(next[registered + 1]);
+    if (typeof currentDistance !== "number" || typeof plannedNextDistance !== "number") return next;
     const skill = category === "putting" ? "putting" : "chip";
+    const band = getPlannedDistanceBand(skill, plannedNextDistance);
+    const allowedDistances = allowedDistancesInsideBand(skill, plannedNextDistance, currentDistance);
     const nextDistance = selectNextEngineDistance({
       skill,
       objective: "balanced",
-      min: category === "putting" ? 1 : 8,
-      max: category === "putting" ? 22 : 30,
+      context: "game",
+      min: band.min,
+      max: band.max,
       previousDistance: currentDistance,
       previousPerformance: performance,
+      allowedDistances,
     });
     const nextIndex = registered + 1;
     const adapted = [...next];
@@ -654,7 +679,7 @@ function MatchPlayPage() {
     const next = editingHoleIndex === null ? adaptNextChallenge(scored, registered, matchPerformance) : scored;
     if (editingHoleIndex !== null) { finishScoredEdit(next, registered); return; }
     setTransitionMessage(`${unitLabel} ${registered + 1} registrerad`);
-    window.setTimeout(() => { advance(next); setTransitionMessage(null); setIsSubmitting(false); }, 380);
+    window.setTimeout(() => { advance(next); setTransitionMessage(null); setIsSubmitting(false); }, matchPacing.transitionMs);
   }
   function recordShortGame() {
     if (isSubmitting || bluePoints === null || redPoints === null) return;
@@ -670,7 +695,7 @@ function MatchPlayPage() {
     const next = editingHoleIndex === null ? adaptNextChallenge(scored, registered, matchPerformance) : scored;
     if (editingHoleIndex !== null) { finishScoredEdit(next, registered); return; }
     setTransitionMessage(`${unitLabel} ${registered + 1} registrerad`);
-    window.setTimeout(() => { advance(next); setTransitionMessage(null); setIsSubmitting(false); }, 380);
+    window.setTimeout(() => { advance(next); setTransitionMessage(null); setIsSubmitting(false); }, matchPacing.transitionMs);
   }
   function recordApproach() {
     if (isSubmitting) return;
@@ -689,7 +714,7 @@ function MatchPlayPage() {
     const next = holes.map((h, i) => i === holeIndex ? { ...h, redApproach: result, winner } : h);
     const nextTargetDistance = Number.parseInt(holes[holeIndex + 1]?.challenge.title ?? "0", 10) || 0;
     setTransitionMessage(`${unitLabel} ${holeIndex + 1} registrerad`);
-    window.setTimeout(() => { advance(next); setApproachTurn("blue"); resetApproachInput(nextTargetDistance); setTransitionMessage(null); setIsSubmitting(false); }, 380);
+    window.setTimeout(() => { advance(next); setApproachTurn("blue"); resetApproachInput(nextTargetDistance); setTransitionMessage(null); setIsSubmitting(false); }, matchPacing.transitionMs);
   }
   function editScoredHole(index: number) {
     if (isSubmitting || !isScoredHole) return;
@@ -718,6 +743,26 @@ function MatchPlayPage() {
       setStep("result");
     }, 2300);
   }
+
+  useEffect(() => {
+    if (step !== "result" || entryFlow !== "friend" || !friendOpponent || !category || score.played <= 0) return;
+    const historyId = matchSessionId ? `cloud:${matchSessionId}` : matchRunId;
+    if (recordedHistoryIdRef.current === historyId) return;
+    recordedHistoryIdRef.current = historyId;
+    recordFriendMatchHistory({
+      id: historyId,
+      playedAt: new Date().toISOString(),
+      selfKey: selfHistoryKey,
+      opponentKey: opponentHistoryKey,
+      selfName,
+      opponentName: friendOpponent.name,
+      category,
+      length: matchLength,
+      winner: resolvedResultWinner,
+      finalText,
+    });
+    setHeadToHead(getFriendHeadToHead(selfHistoryKey, opponentHistoryKey));
+  }, [step, entryFlow, friendOpponent?.id, friendOpponent?.name, category, score.played, matchSessionId, matchRunId, selfHistoryKey, opponentHistoryKey, selfName, matchLength, resolvedResultWinner, finalText]);
 
   function rematch() {
     startMatch();
@@ -933,7 +978,7 @@ function MatchPlayPage() {
       </div>
     </div> : null}
 
-    {step === "result" ? <><section className="mt-6 overflow-hidden rounded-[28px] border border-slate-300/85 bg-white/90 shadow-[0_22px_52px_-30px_rgba(15,23,42,.5)] backdrop-blur-2xl"><div className="px-4 pt-4 text-center"><p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">{selectedCategory?.title} · Matchresultat</p></div><div className="mt-3 grid min-h-[104px] grid-cols-[1fr_88px_1fr] items-stretch"><div style={resultLeader === "blue" ? { clipPath: "polygon(0 0,86% 0,100% 50%,86% 100%,0 100%)" } : undefined} className={`flex min-w-0 flex-col items-center justify-center px-3 pr-5 text-center ${resultLeader === "blue" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-700"}`}><p className="truncate text-[11px] font-black uppercase">{blueLabel}</p><p className={`mt-2 font-display text-3xl ${resultLeader === "blue" ? "text-white" : "text-blue-700"}`}>{scoringMode === "match" ? score.blue : isShortGameScoring ? score.bluePoints : score.blueStrokes}</p><p className={`text-[8px] font-bold uppercase tracking-[0.13em] ${resultLeader === "blue" ? "text-blue-100" : "text-slate-500"}`}>{scoringMode === "match" ? "vunna hål" : isShortGameScoring ? "poäng" : "slag"}</p></div><div className="relative z-10 flex flex-col items-center justify-center bg-white px-1 text-center"><Trophy className="mb-1 h-4 w-4 text-amber-500" /><p className="font-display text-[26px] leading-none text-slate-950">{resultScoreText}</p><p className="mt-1 text-[8px] font-black uppercase tracking-[0.12em] text-slate-500">Slutresultat</p></div><div style={resultLeader === "red" ? { clipPath: "polygon(14% 0,100% 0,100% 100%,14% 100%,0 50%)" } : undefined} className={`flex min-w-0 flex-col items-center justify-center px-3 pl-5 text-center ${resultLeader === "red" ? "bg-red-600 text-white" : "bg-slate-100 text-slate-700"}`}><p className="truncate text-[11px] font-black uppercase">{redLabel}</p><p className={`mt-2 font-display text-3xl ${resultLeader === "red" ? "text-white" : "text-red-700"}`}>{scoringMode === "match" ? score.red : isShortGameScoring ? score.redPoints : score.redStrokes}</p><p className={`text-[8px] font-bold uppercase tracking-[0.13em] ${resultLeader === "red" ? "text-red-100" : "text-slate-500"}`}>{scoringMode === "match" ? "vunna hål" : isShortGameScoring ? "poäng" : "slag"}</p></div></div><div className="border-t border-slate-200 px-4 py-3 text-center"><p className="text-xs font-bold text-slate-800">{finalText}</p>{scoringMode === "match" ? <p className="mt-1 text-[10px] font-semibold text-slate-500">{blueLabel} vann {score.blue} hål · {redLabel} vann {score.red} hål{tiedHoles ? ` · ${tiedHoles} delade` : ""}</p> : null}</div></section><section className="mt-5"><div className="mb-3 flex items-end justify-between"><div><p className="text-[9px] font-bold uppercase tracking-[0.16em] text-slate-500">Scorecard</p><h2 className="font-display text-2xl">Hela tävlingen</h2></div><p className="text-[10px] font-bold uppercase text-slate-500">{score.played} spelade</p></div><div className={`overflow-hidden rounded-[24px] border ${glass}`}><div className="overflow-x-auto"><div className="min-w-max"><div className="grid" style={{ gridTemplateColumns: `minmax(92px,1.35fr) repeat(${matchLength},${isApproach ? 58 : 48}px)` }}><div className="border-b border-r border-slate-200 bg-slate-100 px-3 py-2 text-[10px] font-bold text-slate-600">Hål</div>{holes.map((_, i) => <div key={`rh-${i}`} className="border-b border-r border-slate-200 bg-slate-100 py-2 text-center text-[10px] font-bold text-slate-700">{i + 1}</div>)}<div className="border-b border-r border-slate-200 px-3 py-2 text-[10px] font-bold text-blue-700 truncate">{blueLabel}</div>{holes.map((h, i) => { const value = isShortGameScoring ? h.bluePoints : isApproach ? h.blueApproach?.proximity : isPutting ? h.blueStrokes : undefined; return <div key={`rb-${i}`} className="flex items-center justify-center border-b border-r border-slate-200 py-2 text-xs font-bold text-blue-700"><span className={`inline-flex min-w-[34px] items-center justify-center rounded-md px-1.5 py-1 ${h.winner === "blue" ? "bg-blue-600 text-white" : ""}`}>{typeof value === "number" ? isShortGameScoring ? `${value}p` : isApproach ? `${value.toFixed(1)}m` : value : h.winner === "blue" ? "✓" : h.winner === "tie" ? "AS" : "–"}</span></div>; })}<div className="border-b border-r border-slate-200 px-3 py-2 text-[10px] font-bold text-red-700 truncate">{redLabel}</div>{holes.map((h, i) => { const value = isShortGameScoring ? h.redPoints : isApproach ? h.redApproach?.proximity : isPutting ? h.redStrokes : undefined; return <div key={`rr-${i}`} className="flex items-center justify-center border-b border-r border-slate-200 py-2 text-xs font-bold text-red-700"><span className={`inline-flex min-w-[34px] items-center justify-center rounded-md px-1.5 py-1 ${h.winner === "red" ? "bg-red-600 text-white" : ""}`}>{typeof value === "number" ? isShortGameScoring ? `${value}p` : isApproach ? `${value.toFixed(1)}m` : value : h.winner === "red" ? "✓" : h.winner === "tie" ? "AS" : "–"}</span></div>; })}<div className="border-r border-slate-200 bg-slate-50 px-3 py-2 text-[10px] font-bold text-slate-600">Vinnare</div>{holes.map((h, i) => <div key={`rw-${i}`} className={`border-r border-slate-200 bg-slate-50 py-2 text-center text-[9px] font-bold ${h.winner === "blue" ? "text-blue-700" : h.winner === "red" ? "text-red-700" : "text-slate-600"}`}>{h.winner === "blue" ? "B" : h.winner === "red" ? "R" : "AS"}</div>)}</div></div></div></div></section><section className="mt-5 space-y-3"><button onClick={rematch} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white"><RotateCcw className="h-5 w-5" /> Rematch</button><button onClick={newCompetition} className={`flex w-full items-center justify-center gap-2 rounded-2xl border py-4 font-display text-xl text-slate-900 ${glass}`}><Trophy className="h-5 w-5" /> Annan kategori</button></section></> : null}
+    {step === "result" ? <>{entryFlow === "friend" && friendOpponent && headToHead.played > 0 ? <div className="mt-5 rounded-[20px] border border-slate-200/90 bg-white/72 px-4 py-3 text-center shadow-sm backdrop-blur-xl"><p className="text-[9px] font-black uppercase tracking-[0.16em] text-slate-500">Inbördes</p><p className="mt-1 font-display text-xl text-slate-950">{headToHead.wins}–{headToHead.losses}{headToHead.ties ? ` · ${headToHead.ties} lika` : ""}</p><p className="mt-0.5 text-[10px] text-slate-500">{selfName} mot {friendOpponent.name} · {headToHead.played} matcher</p></div> : null}<section className="mt-6 overflow-hidden rounded-[28px] border border-slate-300/85 bg-white/90 shadow-[0_22px_52px_-30px_rgba(15,23,42,.5)] backdrop-blur-2xl"><div className="px-4 pt-4 text-center"><p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">{selectedCategory?.title} · Matchresultat</p></div><div className="mt-3 grid min-h-[104px] grid-cols-[1fr_88px_1fr] items-stretch"><div style={resultLeader === "blue" ? { clipPath: "polygon(0 0,86% 0,100% 50%,86% 100%,0 100%)" } : undefined} className={`flex min-w-0 flex-col items-center justify-center px-3 pr-5 text-center ${resultLeader === "blue" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-700"}`}><p className="truncate text-[11px] font-black uppercase">{blueLabel}</p><p className={`mt-2 font-display text-3xl ${resultLeader === "blue" ? "text-white" : "text-blue-700"}`}>{scoringMode === "match" ? score.blue : isShortGameScoring ? score.bluePoints : score.blueStrokes}</p><p className={`text-[8px] font-bold uppercase tracking-[0.13em] ${resultLeader === "blue" ? "text-blue-100" : "text-slate-500"}`}>{scoringMode === "match" ? "vunna hål" : isShortGameScoring ? "poäng" : "slag"}</p></div><div className="relative z-10 flex flex-col items-center justify-center bg-white px-1 text-center"><Trophy className="mb-1 h-4 w-4 text-amber-500" /><p className="font-display text-[26px] leading-none text-slate-950">{resultScoreText}</p><p className="mt-1 text-[8px] font-black uppercase tracking-[0.12em] text-slate-500">Slutresultat</p></div><div style={resultLeader === "red" ? { clipPath: "polygon(14% 0,100% 0,100% 100%,14% 100%,0 50%)" } : undefined} className={`flex min-w-0 flex-col items-center justify-center px-3 pl-5 text-center ${resultLeader === "red" ? "bg-red-600 text-white" : "bg-slate-100 text-slate-700"}`}><p className="truncate text-[11px] font-black uppercase">{redLabel}</p><p className={`mt-2 font-display text-3xl ${resultLeader === "red" ? "text-white" : "text-red-700"}`}>{scoringMode === "match" ? score.red : isShortGameScoring ? score.redPoints : score.redStrokes}</p><p className={`text-[8px] font-bold uppercase tracking-[0.13em] ${resultLeader === "red" ? "text-red-100" : "text-slate-500"}`}>{scoringMode === "match" ? "vunna hål" : isShortGameScoring ? "poäng" : "slag"}</p></div></div><div className="border-t border-slate-200 px-4 py-3 text-center"><p className="text-xs font-bold text-slate-800">{finalText}</p>{scoringMode === "match" ? <p className="mt-1 text-[10px] font-semibold text-slate-500">{blueLabel} vann {score.blue} hål · {redLabel} vann {score.red} hål{tiedHoles ? ` · ${tiedHoles} delade` : ""}</p> : null}</div></section><section className="mt-5"><div className="mb-3 flex items-end justify-between"><div><p className="text-[9px] font-bold uppercase tracking-[0.16em] text-slate-500">Scorecard</p><h2 className="font-display text-2xl">Hela tävlingen</h2></div><p className="text-[10px] font-bold uppercase text-slate-500">{score.played} spelade</p></div><div className={`overflow-hidden rounded-[24px] border ${glass}`}><div className="overflow-x-auto"><div className="min-w-max"><div className="grid" style={{ gridTemplateColumns: `minmax(92px,1.35fr) repeat(${matchLength},${isApproach ? 58 : 48}px)` }}><div className="border-b border-r border-slate-200 bg-slate-100 px-3 py-2 text-[10px] font-bold text-slate-600">Hål</div>{holes.map((_, i) => <div key={`rh-${i}`} className="border-b border-r border-slate-200 bg-slate-100 py-2 text-center text-[10px] font-bold text-slate-700">{i + 1}</div>)}<div className="border-b border-r border-slate-200 px-3 py-2 text-[10px] font-bold text-blue-700 truncate">{blueLabel}</div>{holes.map((h, i) => { const value = isShortGameScoring ? h.bluePoints : isApproach ? h.blueApproach?.proximity : isPutting ? h.blueStrokes : undefined; return <div key={`rb-${i}`} className="flex items-center justify-center border-b border-r border-slate-200 py-2 text-xs font-bold text-blue-700"><span className={`inline-flex min-w-[34px] items-center justify-center rounded-md px-1.5 py-1 ${h.winner === "blue" ? "bg-blue-600 text-white" : ""}`}>{typeof value === "number" ? isShortGameScoring ? `${value}p` : isApproach ? `${value.toFixed(1)}m` : value : h.winner === "blue" ? "✓" : h.winner === "tie" ? "AS" : "–"}</span></div>; })}<div className="border-b border-r border-slate-200 px-3 py-2 text-[10px] font-bold text-red-700 truncate">{redLabel}</div>{holes.map((h, i) => { const value = isShortGameScoring ? h.redPoints : isApproach ? h.redApproach?.proximity : isPutting ? h.redStrokes : undefined; return <div key={`rr-${i}`} className="flex items-center justify-center border-b border-r border-slate-200 py-2 text-xs font-bold text-red-700"><span className={`inline-flex min-w-[34px] items-center justify-center rounded-md px-1.5 py-1 ${h.winner === "red" ? "bg-red-600 text-white" : ""}`}>{typeof value === "number" ? isShortGameScoring ? `${value}p` : isApproach ? `${value.toFixed(1)}m` : value : h.winner === "red" ? "✓" : h.winner === "tie" ? "AS" : "–"}</span></div>; })}<div className="border-r border-slate-200 bg-slate-50 px-3 py-2 text-[10px] font-bold text-slate-600">Vinnare</div>{holes.map((h, i) => <div key={`rw-${i}`} className={`border-r border-slate-200 bg-slate-50 py-2 text-center text-[9px] font-bold ${h.winner === "blue" ? "text-blue-700" : h.winner === "red" ? "text-red-700" : "text-slate-600"}`}>{h.winner === "blue" ? "B" : h.winner === "red" ? "R" : "AS"}</div>)}</div></div></div></div></section><section className="mt-5 space-y-3"><button onClick={rematch} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white"><RotateCcw className="h-5 w-5" /> Rematch</button><button onClick={newCompetition} className={`flex w-full items-center justify-center gap-2 rounded-2xl border py-4 font-display text-xl text-slate-900 ${glass}`}><Trophy className="h-5 w-5" /> Annan kategori</button></section></> : null}
 
     <Sheet open={pickerOpen} onOpenChange={setPickerOpen}><SheetContent side="bottom" className="mx-auto max-h-[82vh] max-w-md overflow-y-auto rounded-t-3xl px-5 pb-8"><SheetHeader><SheetTitle>{entryFlow === "friend" ? "Välj kompis" : "Välj spelare"}</SheetTitle></SheetHeader><div className="mt-4 space-y-3"><div className={`rounded-2xl border p-3 ${glass}`}><div className="flex items-center gap-2"><input value={guestName} onChange={(e) => setGuestName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") addGuest(); }} placeholder="Lägg till gästspelare" className="min-w-0 flex-1 bg-transparent text-sm outline-none" /><button onClick={addGuest} disabled={!guestName.trim() || selectedOthers.length >= neededOthers} className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-950 text-white disabled:opacity-30"><Plus className="h-4 w-4" /></button></div></div>{guests.map((g) => <div key={g.id} className="flex items-center gap-3 rounded-2xl border border-red-200 bg-red-50/70 p-3"><PlayerAvatar player={g} tone="red" /><span className="flex-1 text-sm font-semibold">{g.name}</span><button onClick={() => removeGuest(g.id)}><X className="h-4 w-4 text-slate-500" /></button></div>)}{loadingSocial ? <div className="rounded-2xl bg-muted/60 p-4 text-sm text-muted-foreground">Laddar vänner …</div> : friends.map((f) => { const active = selectedFriendIds.includes(f.other.id); const full = selectedOthers.length >= neededOthers && !active; return <button key={f.id} disabled={full} onClick={() => toggleFriend(f.other.id)} className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white/70 p-3 text-left disabled:opacity-35"><PlayerAvatar player={{ id: f.other.id, name: f.other.displayName, avatarUrl: f.other.avatarUrl }} tone="red" /><span className="min-w-0 flex-1 truncate text-sm font-semibold">{f.other.displayName}</span>{active ? <Check className="h-5 w-5 text-red-600" /> : null}</button>; })}{mode !== "singles" && selectedOthers.length < neededOthers ? <button onClick={() => setPickerOpen(false)} className="w-full rounded-2xl border border-slate-300 bg-white/70 py-3.5 text-sm font-bold text-slate-700">Stäng · {selectedOthers.length}/{neededOthers}</button> : null}</div></SheetContent></Sheet>
   </main>;
