@@ -160,6 +160,7 @@ function LearnPage() {
   const [sectionMenuOpen, setSectionMenuOpen] = useState(false);
   const [session, setSession] = useState<{ mode: "lesson" | "quick"; questions: LearnQuestion[]; index: number; selected?: number; correct: number } | null>(null);
   const [questionStats, setQuestionStats] = useState<Record<string, { correct: number; wrong: number; lastSeen: number }>>({});
+  const [lessonVisible, setLessonVisible] = useState(false);
   const selectedRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
@@ -200,7 +201,14 @@ function LearnPage() {
     const questions = questionsForLesson(lesson.id, lesson.section.id, 3);
     setSelectedId(lesson.id);
     setSectionMenuOpen(false);
+    setLessonVisible(false);
     setSession({ mode: "lesson", questions, index: -1, correct: 0 });
+    window.requestAnimationFrame(() => window.requestAnimationFrame(() => setLessonVisible(true)));
+  }
+
+  function closeLesson() {
+    setLessonVisible(false);
+    window.setTimeout(() => setSession(null), 280);
   }
 
   function startQuickQuiz() {
@@ -213,7 +221,9 @@ function LearnPage() {
       const wb = sb ? sb.wrong * 3 - sb.correct : 1;
       return wb - wa || (sa?.lastSeen ?? 0) - (sb?.lastSeen ?? 0);
     });
+    setLessonVisible(false);
     setSession({ mode: "quick", questions: pool.slice(0, 5), index: 0, correct: 0 });
+    window.requestAnimationFrame(() => window.requestAnimationFrame(() => setLessonVisible(true)));
   }
 
   function answerQuestion(optionIndex:number) {
@@ -245,7 +255,8 @@ function LearnPage() {
       setSelectedId(next.id);
       window.setTimeout(() => selectedRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
     }
-    setSession(null);
+    setLessonVisible(false);
+    window.setTimeout(() => setSession(null), 280);
   }
 
   function nextLesson() {
@@ -256,8 +267,8 @@ function LearnPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#242728] pb-32 text-white">
-      <div className="mx-auto w-full max-w-md px-4 pt-5">
+    <main className="min-h-screen overflow-x-hidden bg-[#242728] pb-32 text-white">
+      <div className={`mx-auto w-full max-w-md px-4 pt-5 transition-transform duration-300 ease-[cubic-bezier(.22,.8,.24,1)] ${session && lessonVisible ? "-translate-x-[22%]" : "translate-x-0"}`}> 
         <header className="sticky top-0 z-40 -mx-4 border-b border-white/[.07] bg-[#242728]/96 px-4 pb-3 pt-[max(8px,env(safe-area-inset-top))] shadow-[0_12px_28px_-24px_rgba(0,0,0,.9)] backdrop-blur-2xl">
           <div className="grid grid-cols-[44px_1fr_auto] items-center gap-2">
             <button type="button" onClick={() => window.history.back()} aria-label="Tillbaka" className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/12 bg-white/[.05] text-white/80 active:scale-[.96]"><ArrowLeft className="h-5 w-5" /></button>
@@ -347,10 +358,10 @@ function LearnPage() {
         </div>
       </div>
       {session ? (
-        <div className="fixed inset-0 z-[100] overflow-y-auto bg-[#202324] text-white">
+        <div className={`fixed inset-0 z-[100] overflow-y-auto bg-[#202324] text-white transition-transform duration-300 ease-[cubic-bezier(.22,.8,.24,1)] ${lessonVisible ? "translate-x-0" : "translate-x-full"}`}> 
           <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-5 pb-8 pt-[max(14px,env(safe-area-inset-top))]">
             <div className="flex items-center justify-between">
-              <button type="button" onClick={() => setSession(null)} className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[.05]"><ArrowLeft className="h-5 w-5" /></button>
+              <button type="button" onClick={closeLesson} className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[.05]"><ArrowLeft className="h-5 w-5" /></button>
               <div className="text-center"><p className="text-[10px] font-black uppercase tracking-[.18em] text-white/40">{session.mode === "quick" ? "Snabbquiz" : selected.section.title}</p><p className="font-display text-lg">{session.mode === "quick" ? "Repetition" : selected.title}</p></div>
               <div className="w-10" />
             </div>
