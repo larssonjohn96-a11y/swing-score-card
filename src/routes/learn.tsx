@@ -4,6 +4,7 @@ import {
   BarChart3,
   ArrowLeft,
   Brain,
+  Check,
   ChevronRight,
   CircleDot,
   CloudSun,
@@ -412,14 +413,18 @@ function LearnPage() {
                 <div className="mb-7 flex items-center gap-2">
                   {session.questions.map((_, i) => <span key={i} className={`h-1.5 flex-1 rounded-full ${i <= session.index ? "bg-emerald-400" : "bg-white/10"}`} />)}
                 </div>
-                <p className="text-[10px] font-black uppercase tracking-[.18em] text-white/40">{question.level === "recall" ? "Återkalla" : question.level === "understand" ? "Förstå" : "Tillämpa"}</p>
+                <p className="text-[10px] font-black uppercase tracking-[.18em] text-white/40">{question.level === "recall" ? "Kom ihåg" : question.level === "understand" ? "Förstå" : "Använd"}</p>
                 <h2 className="mt-3 font-display text-[30px] leading-[1.08]">{question.prompt}</h2>
-                <div className="mt-7 space-y-3">
+                <p className="mt-3 text-sm text-white/45">Välj det svar som passar bäst.</p>
+                <div className="mt-6 space-y-3">
                   {question.options.map((option, i) => {
                     const chosen = session.selected === i;
                     const correct = answered && i === question.correct;
                     const wrong = answered && chosen && i !== question.correct;
-                    return <button key={option} type="button" disabled={answered} onClick={() => answerQuestion(i)} className={`w-full rounded-[22px] border px-4 py-4 text-left text-[15px] font-semibold transition ${correct ? "border-emerald-300/60 bg-emerald-400/15 text-emerald-50" : wrong ? "border-red-300/50 bg-red-400/12 text-red-50" : "border-white/12 bg-white/[.055] text-white/88 active:scale-[.99]"}`}><span className="mr-3 inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-white/[.05] text-xs text-white/55">{String.fromCharCode(65+i)}</span>{option}</button>;
+                    return <button key={option} type="button" disabled={answered} onClick={() => answerQuestion(i)} className={`flex min-h-[64px] w-full items-center gap-3 rounded-[22px] border px-4 py-3.5 text-left transition ${correct ? "border-emerald-300/70 bg-emerald-400/16 text-emerald-50" : wrong ? "border-red-300/55 bg-red-400/12 text-red-50" : answered ? "border-white/[.07] bg-white/[.025] text-white/35" : "border-white/14 bg-white/[.06] text-white/92 active:scale-[.985] active:bg-white/[.1]"}`}>
+                      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-sm font-black ${correct ? "border-emerald-300/60 bg-emerald-400/20 text-emerald-200" : wrong ? "border-red-300/50 bg-red-400/15 text-red-100" : "border-white/12 bg-white/[.045] text-white/50"}`}>{correct ? <Check className="h-5 w-5" strokeWidth={3} /> : String.fromCharCode(65+i)}</span>
+                      <span className="flex-1 text-[16px] font-semibold leading-snug">{option}</span>
+                    </button>;
                   })}
                 </div>
                 {answered ? <div className={`mt-5 rounded-[22px] border p-4 ${session.selected === question.correct ? "border-emerald-300/25 bg-emerald-400/[.08]" : "border-amber-300/25 bg-amber-300/[.07]"}`}><p className="text-sm leading-relaxed text-white/78">{question.feedback}</p></div> : null}
