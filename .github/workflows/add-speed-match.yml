@@ -1,0 +1,117 @@
+name: Add Speed Match
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/add-speed-match.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add Speed as an objective Match Play category
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          p = Path('src/routes/match.tsx')
+          s = p.read_text()
+
+          def rep(old, new, count=1):
+              global s
+              if old not in s:
+                  raise SystemExit('Target not found:\n' + old[:220])
+              s = s.replace(old, new, count)
+
+          rep('type MatchCategory = "off-the-tee" | "approach" | "around-the-green" | "bunker" | "putting";',
+              'type MatchCategory = "off-the-tee" | "approach" | "around-the-green" | "bunker" | "putting" | "speed";')
+          rep('type Hole = { challenge: Challenge; winner: HoleWinner; blueStrokes?: number; redStrokes?: number; bluePoints?: number; redPoints?: number; blueApproach?: ApproachResult; redApproach?: ApproachResult };',
+              'type Hole = { challenge: Challenge; winner: HoleWinner; blueStrokes?: number; redStrokes?: number; bluePoints?: number; redPoints?: number; blueApproach?: ApproachResult; redApproach?: ApproachResult; blueSpeed?: number; redSpeed?: number };')
+
+          rep('  { id: "putting", title: "Puttning", subtitle: "Putting", description: "Spela en riktig puttingmatch hål för hål. Färre puttar vinner hålet." },',
+              '  { id: "putting", title: "Puttning", subtitle: "Putting", description: "Spela en riktig puttingmatch hål för hål. Färre puttar vinner hålet." },\n  { id: "speed", title: "Speed", subtitle: "Ball speed", description: "Match Play i speed. Högsta ball speed vinner varje omgång." },')
+
+          rep('  putting: [\n    { id: "standard", title: "Puttning", description: "Standardiserat format · samma position för båda · färre puttar vinner hålet" },\n  ],\n};',
+              '  putting: [\n    { id: "standard", title: "Puttning", description: "Standardiserat format · samma position för båda · färre puttar vinner hålet" },\n  ],\n  speed: [\n    { id: "7-iron", title: "7-järn", description: "Tävla i ball speed med 7-järn. Högsta speed vinner omgången." },\n    { id: "driver", title: "Driver", description: "Tävla i ball speed med driver. Högsta speed vinner omgången." },\n  ],\n};')
+
+          rep('  if (category === "approach") {\n    const d = approachDistance ?? rand(100, 150);\n    return { eyebrow: "Inspel", title: `${d} m`, detail: `Samma mål för båda · närmast flaggan vinner${suffix}` };\n  }',
+              '  if (category === "approach") {\n    const d = approachDistance ?? rand(100, 150);\n    return { eyebrow: "Inspel", title: `${d} m`, detail: `Samma mål för båda · närmast flaggan vinner${suffix}` };\n  }\n  if (category === "speed") {\n    const club = typeId === "driver" ? "Driver" : "7-järn";\n    return { eyebrow: "Speed · Ball speed", title: club, detail: `Högsta ball speed vinner omgången${suffix}` };\n  }')
+
+          rep('  const [bluePoints, setBluePoints] = useState<number | null>(null);\n  const [redPoints, setRedPoints] = useState<number | null>(null);',
+              '  const [bluePoints, setBluePoints] = useState<number | null>(null);\n  const [redPoints, setRedPoints] = useState<number | null>(null);\n  const [blueSpeed, setBlueSpeed] = useState(0);\n  const [redSpeed, setRedSpeed] = useState(0);')
+
+          rep('        setBlueStrokes(1); setRedStrokes(1); setBlueStrokesSelected(false); setRedStrokesSelected(false); setBluePoints(null); setRedPoints(null);',
+              '        setBlueStrokes(1); setRedStrokes(1); setBlueStrokesSelected(false); setRedStrokesSelected(false); setBluePoints(null); setRedPoints(null); setBlueSpeed(0); setRedSpeed(0);')
+          rep('      setBluePoints(saved.bluePoints ?? null);\n      setRedPoints(saved.redPoints ?? null);',
+              '      setBluePoints(saved.bluePoints ?? null);\n      setRedPoints(saved.redPoints ?? null);\n      setBlueSpeed(saved.blueSpeed ?? 0);\n      setRedSpeed(saved.redSpeed ?? 0);')
+
+          rep('  const isApproach = category === "approach";\n  const isScoredHole = isPutting || isShortGameScoring;',
+              '  const isApproach = category === "approach";\n  const isSpeed = category === "speed";\n  const isScoredHole = isPutting || isShortGameScoring || isSpeed;')
+          rep('  const approachProximityPreview = Math.sqrt(approachLongitudinalPreview * approachLongitudinalPreview + approachLateral * approachLateral);',
+              '  const approachProximityPreview = Math.sqrt(approachLongitudinalPreview * approachLongitudinalPreview + approachLateral * approachLateral);\n  const blueMaxSpeed = Math.max(0, ...holes.map((hole) => hole.blueSpeed ?? 0));\n  const redMaxSpeed = Math.max(0, ...holes.map((hole) => hole.redSpeed ?? 0));\n  const matchMaxSpeed = Math.max(blueMaxSpeed, redMaxSpeed);')
+
+          rep('      suddenDeathRound, sdMessage, blueStrokes, redStrokes, blueStrokesSelected, redStrokesSelected, bluePoints, redPoints,',
+              '      suddenDeathRound, sdMessage, blueStrokes, redStrokes, blueStrokesSelected, redStrokesSelected, bluePoints, redPoints, blueSpeed, redSpeed,')
+          rep('blueStrokesSelected, redStrokesSelected, bluePoints, redPoints, shortGameLies,',
+              'blueStrokesSelected, redStrokesSelected, bluePoints, redPoints, blueSpeed, redSpeed, shortGameLies,')
+
+          rep('        if (category === "approach") { setMatchType("closest"); setApproachRanges([]); goToStep("approach-setup"); return; }\n        setMatchType("fairway"); goToStep("length");',
+              '        if (category === "approach") { setMatchType("closest"); setApproachRanges([]); goToStep("approach-setup"); return; }\n        if (category === "speed") { setMatchType(null); setMatchLength(5); goToStep("type"); return; }\n        setMatchType("fairway"); goToStep("length");')
+
+          rep('<h1 className="mt-1 font-display text-4xl">Välj spel</h1>{isPutting ?',
+              '<h1 className="mt-1 font-display text-4xl">{isSpeed ? "Välj klubba" : "Välj spel"}</h1>{isPutting ?')
+          rep('<button disabled={!matchType} onClick={() => goToStep("scoring")} className={`sg4-ryder-next mt-6 ${ryderNext}`}>Nästa <ChevronRight className="h-5 w-5" /></button>',
+              '<button disabled={!matchType} onClick={() => { if (isSpeed) { setScoringMode("match"); setMatchLength(5); goToStep("length"); } else goToStep("scoring"); }} className={`sg4-ryder-next mt-6 ${ryderNext}`}>Nästa <ChevronRight className="h-5 w-5" /></button>')
+
+          rep('{isShortGameScoring ? "Välj antal hål" : isPgaPutting ? "Matchlängd" : scoringMode === "stroke" ? "Antal hål" : "Bäst av"}',
+              '{isSpeed ? "Välj antal omgångar" : isShortGameScoring ? "Välj antal hål" : isPgaPutting ? "Matchlängd" : scoringMode === "stroke" ? "Antal hål" : "Bäst av"}')
+          rep('{v} <span className="text-xl">hål</span></span>{v === 3 ?',
+              '{v} <span className="text-xl">{isSpeed ? "rundor" : "hål"}</span></span>{v === 3 ?', 1)
+
+          rep('setHoleIndex(0); setBlueStrokes(1); setRedStrokes(1); setBlueStrokesSelected(false); setRedStrokesSelected(false); setBluePoints(null); setRedPoints(null);',
+              'setHoleIndex(0); setBlueStrokes(1); setRedStrokes(1); setBlueStrokesSelected(false); setRedStrokesSelected(false); setBluePoints(null); setRedPoints(null); setBlueSpeed(0); setRedSpeed(0);')
+          rep('    setBlueStrokes(1); setRedStrokes(1); setBlueStrokesSelected(false); setRedStrokesSelected(false); setBluePoints(null); setRedPoints(null);\n  }\n  function recordWinner',
+              '    setBlueStrokes(1); setRedStrokes(1); setBlueStrokesSelected(false); setRedStrokesSelected(false); setBluePoints(null); setRedPoints(null); setBlueSpeed(0); setRedSpeed(0);\n  }\n  function recordSpeed() {\n    if (isSubmitting || blueSpeed <= 0 || redSpeed <= 0) return;\n    setIsSubmitting(true);\n    const registered = holeIndex;\n    const winner: Exclude<HoleWinner, null> = blueSpeed > redSpeed ? "blue" : redSpeed > blueSpeed ? "red" : "tie";\n    setTransitionMessage(`Omgång ${registered + 1} registrerad`);\n    const next = holes.map((h, i) => i === registered ? { ...h, winner, blueSpeed, redSpeed } : h);\n    window.setTimeout(() => { advance(next); setTransitionMessage(null); setIsSubmitting(false); }, matchPacing.transitionMs);\n  }\n  function recordWinner')
+
+          rep('if (d === 0) { setSuddenDeathRound(1); setSdBlue(null); setSdRed(null); setSdBlueSunk(false); setSdRedSunk(false); setSdMessage(""); setStep("sudden-death"); return; }',
+              'if (d === 0) { if (isSpeed) { setFinalText("Matchen slutar AS"); setStep("result"); return; } setSuddenDeathRound(1); setSdBlue(null); setSdRed(null); setSdBlueSunk(false); setSdRedSunk(false); setSdMessage(""); setStep("sudden-death"); return; }', 1)
+
+          needle = '<button disabled={isSubmitting} onClick={recordApproach} className="mt-2 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-3 font-display text-xl text-white disabled:opacity-30">Spara slag <ChevronRight className="h-5 w-5" /></button></section> : <section className={tight ? "mt-1" : compact ? "mt-2" : "mt-4"}>'
+          speed_ui = '''<button disabled={isSubmitting} onClick={recordApproach} className="mt-2 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-3 font-display text-xl text-white disabled:opacity-30">Spara slag <ChevronRight className="h-5 w-5" /></button></section> : isSpeed ? <section className={tight ? "mt-1" : compact ? "mt-2" : "mt-4"}><div className="text-center"><p className="text-[9px] font-bold uppercase tracking-[0.16em] text-slate-500">2 · Registrering</p><h2 className="mt-1 font-display text-2xl">Ball speed</h2><p className="mt-1 text-[10px] font-semibold text-slate-500">Högsta speed vinner omgången · mph</p></div><div className="mt-4 grid grid-cols-2 gap-3">{([[blueLabel, blueSpeed, setBlueSpeed, "blue"], [redLabel, redSpeed, setRedSpeed, "red"]] as const).map(([label, value, setter, tone]) => <label key={tone} className={`rounded-[24px] border p-4 text-center ${tone === "blue" ? blueGlass : redGlass}`}><span className={`block truncate font-display text-xl ${tone === "blue" ? "text-blue-700" : "text-red-700"}`}>{label}</span><span className="mt-3 flex items-baseline justify-center gap-1"><input type="number" inputMode="decimal" min={1} max={250} step={0.1} value={value || ""} onChange={(e) => setter(Math.max(0, Math.min(250, Number(e.target.value))))} placeholder="0" className="w-24 bg-transparent text-center font-display text-4xl leading-none text-slate-950 outline-none" /><span className="text-xs font-bold uppercase text-slate-500">mph</span></span></label>)}</div><button disabled={isSubmitting || blueSpeed <= 0 || redSpeed <= 0} onClick={recordSpeed} className={`flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 font-display text-xl text-white disabled:opacity-30 ${tight ? "mt-1 py-2.5" : compact ? "mt-2 py-3" : "mt-4 py-4"}`}>{isSubmitting ? "Registrerar…" : `Registrera omgång ${holeIndex + 1}`} <ChevronRight className="h-5 w-5" /></button></section> : <section className={tight ? "mt-1" : compact ? "mt-2" : "mt-4"}>'''
+          rep(needle, speed_ui)
+
+          rep('<div className="border-t border-slate-200 px-4 py-3 text-center"><p className="text-xs font-bold text-slate-800">{finalText}</p>{scoringMode === "match" ?',
+              '<div className="border-t border-slate-200 px-4 py-3 text-center"><p className="text-xs font-bold text-slate-800">{finalText}</p>{isSpeed && matchMaxSpeed > 0 ? <div className="mx-auto mt-3 rounded-2xl bg-slate-950 px-4 py-3 text-white"><p className="text-[9px] font-black uppercase tracking-[0.16em] text-white/60">Högsta speed i matchen</p><p className="mt-1 font-display text-3xl">{matchMaxSpeed.toFixed(1)} mph</p><p className="mt-1 text-[9px] text-white/65">{blueLabel}: {blueMaxSpeed.toFixed(1)} · {redLabel}: {redMaxSpeed.toFixed(1)}</p></div> : null}{scoringMode === "match" ?')
+
+          rep('const value = isShortGameScoring ? h.bluePoints : isApproach ? h.blueApproach?.proximity : isPutting ? h.blueStrokes : undefined;',
+              'const value = isShortGameScoring ? h.bluePoints : isApproach ? h.blueApproach?.proximity : isPutting ? h.blueStrokes : isSpeed ? h.blueSpeed : undefined;')
+          rep('const value = isShortGameScoring ? h.redPoints : isApproach ? h.redApproach?.proximity : isPutting ? h.redStrokes : undefined;',
+              'const value = isShortGameScoring ? h.redPoints : isApproach ? h.redApproach?.proximity : isPutting ? h.redStrokes : isSpeed ? h.redSpeed : undefined;')
+          rep('isShortGameScoring ? `${value}p` : isApproach ? `${value.toFixed(1)}m` : value',
+              'isShortGameScoring ? `${value}p` : isApproach ? `${value.toFixed(1)}m` : isSpeed ? `${value.toFixed(1)}` : value', 2)
+
+          rep('setBlueStrokes(1); setRedStrokes(1); setBlueStrokesSelected(false); setRedStrokesSelected(false); setBluePoints(null); setRedPoints(null);\n    setShortGameLies([]);',
+              'setBlueStrokes(1); setRedStrokes(1); setBlueStrokesSelected(false); setRedStrokesSelected(false); setBluePoints(null); setRedPoints(null); setBlueSpeed(0); setRedSpeed(0);\n    setShortGameLies([]);')
+          rep('setBlueStrokes(1); setRedStrokes(1); setBlueStrokesSelected(false); setRedStrokesSelected(false); setBluePoints(null); setRedPoints(null); setShortGameLies([]);',
+              'setBlueStrokes(1); setRedStrokes(1); setBlueStrokesSelected(false); setRedStrokesSelected(false); setBluePoints(null); setRedPoints(null); setBlueSpeed(0); setRedSpeed(0); setShortGameLies([]);')
+
+          p.write_text(s)
+
+          mp = Path('src/lib/match-multiplayer.ts')
+          ms = mp.read_text()
+          old = 'category: "off-the-tee" | "approach" | "around-the-green" | "putting" | "bunker";'
+          if old not in ms:
+              raise SystemExit('match-multiplayer category union target missing')
+          mp.write_text(ms.replace(old, 'category: "off-the-tee" | "approach" | "around-the-green" | "putting" | "bunker" | "speed";', 1))
+          PY
+      - name: Typecheck
+        run: bunx tsgo --noEmit
+      - name: Commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/routes/match.tsx src/lib/match-multiplayer.ts
+          git commit -m 'Add Speed Match Play category'
+          git push
