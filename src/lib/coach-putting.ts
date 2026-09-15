@@ -35,21 +35,21 @@ export const COACHES = [
     id: "alma" as const,
     name: "Alma",
     style: "Lugn PGA-coach",
-    emoji: "👩🏻‍🏫",
+    emoji: "👩🏽‍🦱",
     description: "Tydlig, varm och selektiv. Säger något när det faktiskt hjälper.",
   },
   {
     id: "axel" as const,
     name: "Axel",
     style: "Rak & krävande",
-    emoji: "🧑🏼‍🏫",
+    emoji: "🧔🏻",
     description: "Kort och konkret. Mer direkt när samma misstag upprepas.",
   },
   {
     id: "leo" as const,
     name: "Leo",
     style: "Peppande coach",
-    emoji: "👨🏽‍🏫",
+    emoji: "🧑🏼‍🦰",
     description: "Mer energi och beröm, men samma spelmotor och samma krav.",
   },
 ] as const;
@@ -121,11 +121,6 @@ function randomInteger(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-/**
- * V1: realism first, adaptation second.
- * Base weights approximate an on-course mix. Known weak buckets receive only
- * a moderate boost, and the previous bucket is strongly down-weighted.
- */
 export function nextCoachPuttingDistance(previous?: number) {
   const model = loadPlayerEngineModel();
   const weighted = DISTANCE_BUCKETS.map((range) => {
@@ -157,11 +152,6 @@ export function nextCoachPuttingDistance(previous?: number) {
   return distance;
 }
 
-/**
- * Every registered putt is written immediately to the canonical append-only
- * Shot Bank. Each attempt is its own completed rating unit so closing an
- * infinity session never discards already registered shots.
- */
 export function recordCoachPuttingAttempt(
   coachSessionId: string,
   sequence: number,
@@ -221,7 +211,6 @@ type LearningEntry = {
   text: string;
 };
 
-/** Curated, non-attributed v1 library. No live-generated tour claims. */
 const LEARNING_LIBRARY: LearningEntry[] = [
   { id: "lag-goal", topic: "lag-goal", condition: (d, s) => d >= 10 && s >= 3, text: "Från den här längden är den stora vinsten att eliminera treputt. Prioritera fart och en enkel andraputt framför att jaga hålet." },
   { id: "lag-good", topic: "lag-goal", condition: (d, s) => d >= 10 && s <= 2, text: "Bra. På långputt är två puttar ett starkt resultat. Fartkontroll gör ofta större skillnad för scoren än att försöka vara perfekt på linjen." },
@@ -263,7 +252,6 @@ export function coachPuttingComment(
     return strokes === 1 && shotNumber % 4 === 0 ? praise(coachId) : null;
   }
 
-  // Prefer fresh concepts and deliberately leave some shots uncommented.
   if (strokes === 2 && shotNumber % 3 !== 0) return null;
   const fresh = eligible.filter((entry) => topicExposure(entry.topic) < 3);
   const pool = fresh.length ? fresh : eligible.slice(0, 2);
