@@ -11,7 +11,7 @@ export type MatchPlayerSnapshot = {
 
 export type MatchCloudState = {
   mode: "singles" | "fourball" | "foursomes";
-  category: "off-the-tee" | "approach" | "around-the-green" | "putting";
+  category: "off-the-tee" | "approach" | "around-the-green" | "putting" | "bunker";
   categoryTitle: string;
   matchType: string;
   scoringMode: "match" | "stroke";
