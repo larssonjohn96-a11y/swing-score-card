@@ -7,9 +7,12 @@ export function ShotSyncStatus() {
 
   useEffect(() => subscribeShotSyncStatus(setStatus), []);
 
-  // Pending uploads are normal offline-first behaviour and should not compete
-  // with the training UI. Surface sync only when the user needs to act.
-  if (status.state !== "failed") return null;
+  const isCoachRoute = typeof window !== "undefined" && window.location.pathname === "/coach";
+
+  // Pending uploads are normal offline-first behaviour. In coach mode we keep
+  // the play surface completely clean, even if a retry is needed; sync can be
+  // handled elsewhere without covering the training UI.
+  if (status.state !== "failed" || isCoachRoute) return null;
 
   return (
     <button
