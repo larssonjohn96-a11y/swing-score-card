@@ -109,47 +109,66 @@ function bucketId(distance: number) {
   return "15+";
 }
 
-const DISTANCE_BUCKETS = [
-  { id: "0-2", min: 1, max: 2, base: 0.31 },
-  { id: "3-5", min: 3, max: 5, base: 0.27 },
-  { id: "6-8", min: 6, max: 8, base: 0.18 },
-  { id: "9-14", min: 9, max: 14, base: 0.16 },
-  { id: "15+", min: 15, max: 22, base: 0.08 },
-] as const;
+type DistanceZone = "short" | "medium" | "long";
 
-function randomInteger(min: number, max: number) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
+const DISTANCE_ZONES: Array<{ id: DistanceZone; base: number; distances: number[]; modelBuckets: string[] }> = [
+  { id: "short", base: 0.30, distances: [0.5, 1, 1.5, 2, 2.5, 3], modelBuckets: ["0-2", "3-5"] },
+  { id: "medium", base: 0.40, distances: [4, 5, 6, 7], modelBuckets: ["3-5", "6-8"] },
+  { id: "long", base: 0.30, distances: [8, 9, 10, 11, 12, 13, 14, 15], modelBuckets: ["6-8", "9-14", "15+"] },
+];
+
+function zoneForDistance(distance: number): DistanceZone {
+  if (distance <= 3) return "short";
+  if (distance <= 7) return "medium";
+  return "long";
+}
+
+function zoneWeakness(model: ReturnType<typeof loadPlayerEngineModel>, modelBuckets: string[]) {
+  const known = modelBuckets
+    .map((id) => model.buckets[`putting:${id}`])
+    .filter((bucket): bucket is NonNullable<typeof bucket> => Boolean(bucket));
+
+  if (!known.length) return 0;
+  const confidenceSum = known.reduce((sum, bucket) => sum + Math.max(0.05, bucket.confidence), 0);
+  const performance = known.reduce(
+    (sum, bucket) => sum + bucket.performance * Math.max(0.05, bucket.confidence),
+    0,
+  ) / confidenceSum;
+  return Math.max(0, Math.min(0.25, 0.72 - performance));
+}
+
+function pickDistance(distances: number[], previous?: number) {
+  let candidates = distances;
+  if (previous !== undefined) {
+    const varied = distances.filter((value) => value !== previous && Math.abs(value - previous) >= 1);
+    if (varied.length) candidates = varied;
+  }
+  return candidates[Math.floor(Math.random() * candidates.length)];
 }
 
 export function nextCoachPuttingDistance(previous?: number) {
   const model = loadPlayerEngineModel();
-  const weighted = DISTANCE_BUCKETS.map((range) => {
-    const bucket = model.buckets[`putting:${range.id}`];
-    const confidence = bucket?.confidence ?? 0;
-    const performance = bucket?.performance ?? 0.68;
-    const weakness = Math.max(0, 0.72 - performance);
-    const weaknessBoost = 1 + weakness * (0.6 + confidence * 0.6);
-    const repeatPenalty = previous !== undefined && bucketId(previous) === range.id ? 0.35 : 1;
-    return { ...range, weight: range.base * weaknessBoost * repeatPenalty };
+  const weighted = DISTANCE_ZONES.map((zone) => {
+    const weakness = zoneWeakness(model, zone.modelBuckets);
+    // Weak areas get a meaningful but deliberately capped over-weighting so
+    // every session still contains short, medium and long putts.
+    const weaknessBoost = 1 + Math.min(0.30, weakness * 1.2);
+    const repeatPenalty = previous !== undefined && zoneForDistance(previous) === zone.id ? 0.72 : 1;
+    return { ...zone, weight: zone.base * weaknessBoost * repeatPenalty };
   });
 
-  const total = weighted.reduce((sum, range) => sum + range.weight, 0);
+  const total = weighted.reduce((sum, zone) => sum + zone.weight, 0);
   let roll = Math.random() * total;
   let selected = weighted[0];
-  for (const range of weighted) {
-    roll -= range.weight;
-    if (roll <= 0) { selected = range; break; }
-  }
-
-  let distance = randomInteger(selected.min, selected.max);
-  if (previous !== undefined) {
-    let tries = 0;
-    while ((distance === previous || Math.abs(distance - previous) < 2) && tries < 10) {
-      distance = randomInteger(selected.min, selected.max);
-      tries += 1;
+  for (const zone of weighted) {
+    roll -= zone.weight;
+    if (roll <= 0) {
+      selected = zone;
+      break;
     }
   }
-  return distance;
+
+  return pickDistance(selected.distances, previous);
 }
 
 export function recordCoachPuttingAttempt(
