@@ -17,6 +17,21 @@ type OutboxItem = {
   data: ShotSession | ShotEvent;
 };
 
+type ShotBankDbError = { code?: string; message?: string } | null;
+type ShotBankDbResult = PromiseLike<{ error: ShotBankDbError }>;
+type ShotBankDb = {
+  from: (table: string) => {
+    upsert: (
+      values: Record<string, unknown>,
+      options: { onConflict: string; ignoreDuplicates: boolean },
+    ) => ShotBankDbResult;
+  };
+};
+
+// The generated Supabase Database type does not include the new migration until
+// remote type generation runs. Keep the temporary untyped boundary isolated here.
+const shotBankDb = supabase as unknown as ShotBankDb;
+
 export type ShotSyncStatus = {
   pending: number;
   failed: number;
@@ -106,7 +121,9 @@ export function getShotSyncStatus(storage: ShotStorage | null = browserStorage()
 export function subscribeShotSyncStatus(listener: (status: ShotSyncStatus) => void) {
   listeners.add(listener);
   listener(getShotSyncStatus());
-  return () => listeners.delete(listener);
+  return () => {
+    listeners.delete(listener);
+  };
 }
 
 export function recordShotSession(session: ShotSession) {
@@ -126,7 +143,7 @@ function scheduleShotSync() {
   queueMicrotask(() => void syncShotOutbox());
 }
 
-function schemaNotReady(error: { code?: string; message?: string } | null) {
+function schemaNotReady(error: ShotBankDbError) {
   if (!error) return false;
   return error.code === "42P01" || error.code === "PGRST205" || error.message?.includes("shot_events") || error.message?.includes("shot_sessions");
 }
@@ -134,9 +151,7 @@ function schemaNotReady(error: { code?: string; message?: string } | null) {
 async function syncOne(item: OutboxItem, userId: string) {
   if (item.kind === "session") {
     const session = item.data as ShotSession;
-    // Generated Database types are refreshed after the migration is applied remotely.
-    // @ts-expect-error shot_sessions is introduced by the migration in this change.
-    return supabase.from("shot_sessions").upsert({
+    return shotBankDb.from("shot_sessions").upsert({
       session_id: session.session_id,
       user_id: userId,
       source: session.source,
@@ -150,9 +165,7 @@ async function syncOne(item: OutboxItem, userId: string) {
   }
 
   const event = item.data as ShotEvent;
-  // Generated Database types are refreshed after the migration is applied remotely.
-  // @ts-expect-error shot_events is introduced by the migration in this change.
-  return supabase.from("shot_events").upsert({
+  return shotBankDb.from("shot_events").upsert({
     event_id: event.event_id,
     user_id: userId,
     event_type: event.event_type,
@@ -191,7 +204,7 @@ export async function syncShotOutbox() {
       outbox = loadOutbox();
       const index = outbox.findIndex((row) => row.key === item.key);
       if (index < 0) continue;
-      const error = result.error as { code?: string; message?: string } | null;
+      const error = result.error;
       if (!error) {
         outbox[index] = { ...outbox[index], status: "synced", attempts: outbox[index].attempts + 1, last_error: undefined };
       } else if (schemaNotReady(error)) {
