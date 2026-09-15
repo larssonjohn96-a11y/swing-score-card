@@ -1,0 +1,65 @@
+name: Tune match action controls
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/tune-match-actions.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch match controls
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('src/routes/match.tsx')
+          s = p.read_text()
+
+          replacements = [
+            (
+              'className={`relative isolate flex w-full items-center justify-center overflow-hidden whitespace-nowrap rounded-2xl bg-slate-950 font-display text-xl leading-none text-white disabled:opacity-45 ${tight ? "mt-1 py-2.5" : compact ? "mt-2 py-3" : "mt-4 py-4"}`}',
+              'className={`relative isolate flex min-h-[50px] w-full items-center justify-center overflow-hidden whitespace-nowrap rounded-2xl bg-slate-950 px-4 font-display text-xl leading-none text-white disabled:opacity-45 ${tight ? "mt-1" : compact ? "mt-2" : "mt-4"}`}'
+            ),
+            (
+              'className={`flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-2xl bg-slate-950 font-display text-xl leading-none text-white disabled:opacity-30 ${tight ? "mt-1 py-2.5" : compact ? "mt-2 py-3" : "mt-3 py-4"}`}',
+              'className={`flex min-h-[50px] w-full items-center justify-center gap-2 whitespace-nowrap rounded-2xl bg-slate-950 px-4 font-display text-xl leading-none text-white disabled:opacity-30 ${tight ? "mt-1" : compact ? "mt-2" : "mt-3"}`}'
+            ),
+            (
+              'className="mt-2 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-3 font-display text-xl text-white disabled:opacity-30"',
+              'className="mt-2 flex min-h-[50px] w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 font-display text-xl leading-none text-white disabled:opacity-30"'
+            ),
+            (
+              'className={`flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 font-display text-xl text-white disabled:opacity-30 ${tight ? "mt-1 py-2.5" : compact ? "mt-2 py-3" : "mt-4 py-4"}`}',
+              'className={`flex min-h-[50px] w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 font-display text-xl leading-none text-white disabled:opacity-30 ${tight ? "mt-1" : compact ? "mt-2" : "mt-4"}`}'
+            ),
+            (
+              '<button type="button" onClick={() => setAbortConfirmOpen(true)} className="fixed right-4 top-[max(10px,env(safe-area-inset-top))] z-[45] rounded-full border border-red-200/90 bg-white/92 px-3 py-2 text-[10px] font-black uppercase tracking-[0.08em] text-red-700 shadow-sm backdrop-blur-xl">Avbryt spel</button>',
+              '<button type="button" onClick={() => setAbortConfirmOpen(true)} aria-label="Avbryt spel" title="Avbryt spel" className="fixed right-4 top-[max(10px,env(safe-area-inset-top))] z-[45] inline-flex h-10 w-10 items-center justify-center rounded-full border border-red-200/90 bg-red-50/90 text-red-600 shadow-sm backdrop-blur-xl transition active:scale-95"><X className="h-4.5 w-4.5" /></button>'
+            ),
+          ]
+
+          changed = 0
+          for old, new in replacements:
+            if old in s:
+              s = s.replace(old, new, 1)
+              changed += 1
+            else:
+              print('Missing target:', old[:120])
+
+          if changed < 5:
+            raise SystemExit(f'Expected 5 replacements, got {changed}')
+
+          p.write_text(s)
+          PY
+      - name: Typecheck
+        run: bunx tsgo --noEmit
+      - name: Commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/routes/match.tsx
+          git commit -m 'Refine match register and abort controls'
+          git push
