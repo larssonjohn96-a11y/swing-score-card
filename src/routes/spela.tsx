@@ -1,5 +1,5 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { ArrowLeft, Bot, ChevronRight, GraduationCap, UserRound, UsersRound } from "lucide-react";
+import { ArrowLeft, ChevronRight, GraduationCap, UserRound, UsersRound } from "lucide-react";
 import { useEffect } from "react";
 import { recordRecommendationImpressions, recordRecommendationOpen } from "@/lib/sg4-recommender";
 
