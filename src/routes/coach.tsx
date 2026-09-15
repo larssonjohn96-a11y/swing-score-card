@@ -1,0 +1,213 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { Check, ChevronRight, CircleHelp, Sparkles, Target, X } from "lucide-react";
+import { useMemo, useState } from "react";
+import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
+import { LIGHT_SURFACE } from "./8-bollar";
+import {
+  COACHES,
+  coachPuttingComment,
+  localPuttingDataStatus,
+  loadSelectedCoach,
+  maybeCoachPuttingQuestion,
+  nextCoachPuttingDistance,
+  recordCoachPuttingAttempt,
+  recordCoachQuestionAnswer,
+  saveSelectedCoach,
+  summarizeCoachPutting,
+  type CoachId,
+  type CoachPuttingAttempt,
+  type CoachQuestion,
+} from "@/lib/coach-putting";
+
+export const Route = createFileRoute("/coach")({
+  head: () => ({ meta: [{ title: "Spela med coach | SG4" }] }),
+  component: PlayWithCoachPage,
+});
+
+type Phase = "hub" | "play" | "summary";
+type FeedbackCard = { text: string; nextDistance: number };
+const FUTURE_AREAS = ["Chipping", "Bunker", "Inspel", "Utslag", "Speed"] as const;
+
+function newSessionId() {
+  return `coach-putting-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function PlayWithCoachPage() {
+  useHideBottomNav(true);
+  const [phase, setPhase] = useState<Phase>("hub");
+  const [coachId, setCoachId] = useState<CoachId>(() => loadSelectedCoach());
+  const coach = COACHES.find((item) => item.id === coachId) ?? COACHES[0];
+  const [sessionId, setSessionId] = useState(() => newSessionId());
+  const [distance, setDistance] = useState(() => nextCoachPuttingDistance());
+  const [selectedStrokes, setSelectedStrokes] = useState<1 | 2 | 3 | 4 | null>(null);
+  const [attempts, setAttempts] = useState<CoachPuttingAttempt[]>([]);
+  const [feedback, setFeedback] = useState<FeedbackCard | null>(null);
+  const [question, setQuestion] = useState<CoachQuestion | null>(null);
+  const [questionAnswer, setQuestionAnswer] = useState<number | null>(null);
+  const [confirmEnd, setConfirmEnd] = useState(false);
+
+  const dataStatus = useMemo(() => localPuttingDataStatus(), [phase, attempts.length]);
+  const summary = useMemo(() => summarizeCoachPutting(attempts), [attempts]);
+  const recommendation = dataStatus.attempts < 12
+    ? "Jag har inte så mycket speldata ännu. Vi börjar med en balanserad puttingmix så jag lär känna ditt spel."
+    : "Jag rekommenderar putting. Jag varierar längderna som på banan, men ger lite mer vikt åt de distanser där din profil behöver flest bra reps.";
+
+  function selectCoach(next: CoachId) {
+    setCoachId(next);
+    saveSelectedCoach(next);
+  }
+
+  function startPutting() {
+    setSessionId(newSessionId());
+    setAttempts([]);
+    setSelectedStrokes(null);
+    setFeedback(null);
+    setQuestion(null);
+    setQuestionAnswer(null);
+    setDistance(nextCoachPuttingDistance());
+    setConfirmEnd(false);
+    setPhase("play");
+  }
+
+  function registerPutt() {
+    if (selectedStrokes === null || feedback || question) return;
+    const sequence = attempts.length + 1;
+    const attempt = recordCoachPuttingAttempt(sessionId, sequence, distance, selectedStrokes, coachId);
+    const nextAttempts = [...attempts, attempt];
+    const nextDistance = nextCoachPuttingDistance(distance);
+    const comment = coachPuttingComment(distance, selectedStrokes, coachId, sequence);
+    setAttempts(nextAttempts);
+    setFeedback({
+      text: comment ?? (selectedStrokes === 1
+        ? coachId === "axel" ? "Bra. Den satt." : coachId === "leo" ? "Snyggt! Bra spelat." : "Bra spelat. Stabil putt."
+        : "Registrerat. Nästa putt får en ny situation."),
+      nextDistance,
+    });
+  }
+
+  function continueAfterFeedback() {
+    if (!feedback) return;
+    const nextDistance = feedback.nextDistance;
+    const nextShotNumber = attempts.length + 1;
+    setDistance(nextDistance);
+    setSelectedStrokes(null);
+    setFeedback(null);
+    setQuestionAnswer(null);
+    setQuestion(maybeCoachPuttingQuestion(nextDistance, nextShotNumber));
+  }
+
+  function answerCoachQuestion(index: number) {
+    if (!question || questionAnswer !== null) return;
+    setQuestionAnswer(index);
+    recordCoachQuestionAnswer(question.topic, index === question.correct);
+  }
+
+  function endSession() {
+    setConfirmEnd(false);
+    setFeedback(null);
+    setQuestion(null);
+    setQuestionAnswer(null);
+    setPhase("summary");
+  }
+
+  function returnToHub() {
+    setPhase("hub");
+    setAttempts([]);
+    setSelectedStrokes(null);
+    setFeedback(null);
+    setQuestion(null);
+    setQuestionAnswer(null);
+  }
+
+  const glass = "border-slate-300/75 bg-white/72 shadow-[0_18px_44px_-32px_rgba(15,23,42,.42)] backdrop-blur-2xl";
+  const selected = "border-emerald-400/80 bg-gradient-to-br from-emerald-100/80 via-white/86 to-emerald-50/70 shadow-[0_18px_44px_-32px_rgba(5,150,105,.35)] ring-2 ring-emerald-500/30 backdrop-blur-2xl";
+
+  return <main style={LIGHT_SURFACE} className="mx-auto min-h-screen w-full max-w-md bg-background px-5 pb-12 pt-[max(18px,env(safe-area-inset-top))] text-foreground">
+    {phase === "hub" ? <>
+      <header className="flex items-center justify-between">
+        <Link to="/spela" aria-label="Tillbaka till Spela" className={`inline-flex h-10 w-10 items-center justify-center rounded-full border text-2xl ${glass}`}>‹</Link>
+        <div className="text-center"><p className="text-[9px] font-black uppercase tracking-[.2em] text-emerald-700">SG4 Coach</p><p className="text-[11px] font-semibold text-slate-600">Spela med coach</p></div>
+        <span className="h-10 w-10" />
+      </header>
+
+      <section className="mt-6">
+        <p className="text-[10px] font-black uppercase tracking-[.18em] text-slate-500">Din coach</p>
+        <div className="mt-3 grid grid-cols-3 gap-2.5">
+          {COACHES.map((item) => {
+            const active = item.id === coachId;
+            return <button key={item.id} type="button" onClick={() => selectCoach(item.id)} className={`relative rounded-[24px] border px-2 py-4 text-center ${active ? selected : glass}`}>
+              {active ? <span className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-white"><Check className="h-3 w-3" /></span> : null}
+              <span className="block text-3xl">{item.emoji}</span>
+              <span className="mt-2 block font-display text-lg leading-none">{item.name}</span>
+              <span className="mt-1 block text-[9px] font-bold leading-tight text-slate-500">{item.style}</span>
+            </button>;
+          })}
+        </div>
+        <p className="mt-3 text-center text-xs leading-relaxed text-slate-500">{coach.description}</p>
+      </section>
+
+      <section className="mt-7">
+        <h1 className="font-display text-[38px] leading-[.95] text-slate-950">Vad ska vi spela idag?</h1>
+        <div className="mt-4 flex gap-3 rounded-[26px] border border-emerald-200/80 bg-emerald-50/80 p-4 shadow-sm">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-2xl shadow-sm">{coach.emoji}</span>
+          <div className="min-w-0"><p className="text-[10px] font-black uppercase tracking-[.14em] text-emerald-700">{coach.name}s rekommendation</p><p className="mt-1.5 text-sm leading-relaxed text-slate-700">{recommendation}</p></div>
+        </div>
+      </section>
+
+      <section className="mt-5">
+        <button type="button" onClick={startPutting} className="group flex w-full items-center gap-4 rounded-[28px] border border-emerald-300/70 bg-gradient-to-br from-emerald-50 via-white to-slate-50 p-5 text-left shadow-[0_18px_44px_-30px_rgba(5,150,105,.35)] active:scale-[.99]">
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[20px] bg-emerald-600 text-white"><Target className="h-6 w-6" /></span>
+          <span className="min-w-0 flex-1"><span className="block text-[9px] font-black uppercase tracking-[.16em] text-emerald-700">Rekommenderat · tillgängligt nu</span><span className="mt-1 block font-display text-3xl leading-none text-slate-950">Putting</span><span className="mt-2 block text-xs leading-relaxed text-slate-600">Infinity mode · banspelslik variation · anpassas efter din profil.</span></span>
+          <ChevronRight className="h-5 w-5 shrink-0 text-emerald-600" />
+        </button>
+        <div className="mt-4 grid grid-cols-2 gap-2.5">
+          {FUTURE_AREAS.map((area) => <div key={area} className="rounded-[22px] border border-slate-200 bg-white/45 px-4 py-4 opacity-55"><p className="font-display text-lg text-slate-700">{area}</p><p className="mt-1 text-[9px] font-black uppercase tracking-[.12em] text-slate-400">Kommer senare</p></div>)}
+        </div>
+      </section>
+    </> : null}
+
+    {phase === "play" ? <>
+      <header className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2.5"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-emerald-200 bg-white text-xl">{coach.emoji}</span><div className="min-w-0"><p className="truncate text-sm font-black text-slate-900">{coach.name}</p><p className="text-[9px] font-bold uppercase tracking-[.13em] text-slate-500">Putting · {attempts.length} spelade</p></div></div>
+        <button type="button" onClick={() => setConfirmEnd(true)} className="rounded-full border border-red-200 bg-white/85 px-3 py-2 text-[10px] font-black text-red-700">Avsluta spel</button>
+      </header>
+
+      <section className="mt-5 overflow-hidden rounded-[30px] border border-slate-300/80 bg-white/85 text-center shadow-[0_20px_50px_-34px_rgba(15,23,42,.5)] backdrop-blur-2xl">
+        <div className="px-5 py-6"><p className="text-[9px] font-black uppercase tracking-[.2em] text-slate-500">Nästa putt</p><h1 className="mt-2 font-display text-7xl leading-none text-slate-950">{distance} m</h1><p className="mt-3 text-sm text-slate-600">Håla ut från den här platsen.</p></div>
+        <div className="border-t border-slate-200 bg-slate-50/80 px-4 py-2.5 text-[10px] font-semibold text-slate-500">Längderna varierar som i spel och vägs försiktigt mot det du behöver mest.</div>
+      </section>
+
+      {question ? <section className="mt-4 rounded-[28px] border border-amber-200 bg-amber-50/90 p-5 shadow-sm">
+        <div className="flex items-start gap-3"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white"><CircleHelp className="h-4 w-4 text-amber-700" /></span><div><p className="text-[9px] font-black uppercase tracking-[.15em] text-amber-700">{coach.name} frågar</p><h2 className="mt-1 font-display text-2xl leading-tight text-slate-950">{question.prompt}</h2></div></div>
+        <div className="mt-4 space-y-2">{question.options.map((option, index) => {
+          const answered = questionAnswer !== null;
+          const correct = index === question.correct;
+          const picked = index === questionAnswer;
+          return <button key={option} type="button" disabled={answered} onClick={() => answerCoachQuestion(index)} className={`flex min-h-14 w-full items-center gap-3 rounded-2xl border px-4 text-left text-sm font-semibold ${answered && correct ? "border-emerald-400 bg-emerald-50 text-emerald-900" : answered && picked ? "border-red-300 bg-red-50 text-red-800" : "border-slate-200 bg-white text-slate-800"}`}><span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-current/20 text-xs font-black">{String.fromCharCode(65 + index)}</span>{option}{answered && correct ? <Check className="ml-auto h-4 w-4" /> : null}</button>;
+        })}</div>
+        {questionAnswer !== null ? <><p className="mt-4 text-sm leading-relaxed text-slate-700">{question.feedback}</p><button type="button" onClick={() => { setQuestion(null); setQuestionAnswer(null); }} className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-3.5 font-display text-lg text-white">Spela putten <ChevronRight className="h-4 w-4" /></button></> : null}
+      </section> : feedback ? <section className="mt-4 rounded-[28px] border border-emerald-200 bg-emerald-50/80 p-5 shadow-sm">
+        <div className="flex gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-xl">{coach.emoji}</span><div><p className="text-[9px] font-black uppercase tracking-[.15em] text-emerald-700">{coach.name}</p><p className="mt-1.5 text-sm leading-relaxed text-slate-700">{feedback.text}</p></div></div>
+        <button type="button" onClick={continueAfterFeedback} className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-3.5 font-display text-lg text-white">Nästa putt <ChevronRight className="h-4 w-4" /></button>
+      </section> : <section className="mt-5">
+        <div className="text-center"><p className="text-[9px] font-black uppercase tracking-[.17em] text-slate-500">Registrera resultat</p><h2 className="mt-1 font-display text-2xl text-slate-950">Antal puttar</h2></div>
+        <div className="mt-4 grid grid-cols-4 gap-2.5">{([1, 2, 3, 4] as const).map((strokes) => <button key={strokes} type="button" onClick={() => setSelectedStrokes(strokes)} className={`rounded-[18px] border px-1 py-4 text-center transition active:scale-[.97] ${selectedStrokes === strokes ? "border-emerald-600 bg-emerald-600 text-white shadow-sm" : "border-slate-300 bg-white/80 text-slate-800"}`}><span className="block font-display text-3xl leading-none">{strokes}</span><span className="mt-1.5 block text-[8px] font-black uppercase">{strokes === 1 ? "putt" : "puttar"}</span></button>)}</div>
+        <button type="button" disabled={selectedStrokes === null} onClick={registerPutt} className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 font-display text-xl text-white disabled:opacity-30">Registrera <ChevronRight className="h-5 w-5" /></button>
+      </section>}
+
+      {confirmEnd ? <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-950/45 px-5 backdrop-blur-sm"><div className="w-full max-w-sm rounded-[28px] border border-slate-200 bg-white p-5 shadow-2xl"><button type="button" onClick={() => setConfirmEnd(false)} className="ml-auto flex h-9 w-9 items-center justify-center rounded-full bg-slate-100"><X className="h-4 w-4" /></button><h2 className="font-display text-3xl leading-none text-slate-950">Avsluta spelet?</h2><p className="mt-3 text-sm leading-relaxed text-slate-600">Alla {attempts.length} registrerade puttar är redan sparade och räknas in i din spelarprofil.</p><div className="mt-5 space-y-2.5"><button type="button" onClick={() => setConfirmEnd(false)} className="w-full rounded-2xl bg-slate-950 py-3.5 text-sm font-black text-white">Fortsätt spela</button><button type="button" onClick={endSession} className="w-full rounded-2xl border border-red-200 bg-red-50 py-3.5 text-sm font-black text-red-700">Avsluta spel</button></div></div></div> : null}
+    </> : null}
+
+    {phase === "summary" ? <>
+      <header className="flex items-center justify-center"><div className="text-center"><span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-emerald-200 bg-white text-3xl">{coach.emoji}</span><p className="mt-2 text-[9px] font-black uppercase tracking-[.16em] text-emerald-700">{coach.name}</p></div></header>
+      <section className="mt-5 text-center"><Sparkles className="mx-auto h-6 w-6 text-emerald-600" /><h1 className="mt-3 font-display text-4xl leading-none text-slate-950">Bra spelat.</h1><p className="mt-2 text-lg font-bold text-slate-700">{summary.count} puttar idag.</p></section>
+      <section className="mt-6 grid grid-cols-3 gap-2.5">
+        <div className={`rounded-[22px] border p-3 text-center ${glass}`}><p className="text-[9px] font-black uppercase text-slate-500">Snitt</p><p className="mt-1 font-display text-2xl">{summary.avg}</p><p className="text-[9px] text-slate-500">puttar</p></div>
+        <div className={`rounded-[22px] border p-3 text-center ${glass}`}><p className="text-[9px] font-black uppercase text-slate-500">1-putt</p><p className="mt-1 font-display text-2xl">{summary.onePuttPct}%</p></div>
+        <div className={`rounded-[22px] border p-3 text-center ${glass}`}><p className="text-[9px] font-black uppercase text-slate-500">3-putt+</p><p className="mt-1 font-display text-2xl">{summary.threePuttPct}%</p></div>
+      </section>
+      <div className="mt-5 flex gap-3 rounded-[26px] border border-emerald-200 bg-emerald-50/80 p-4"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-xl">{coach.emoji}</span><p className="text-sm leading-relaxed text-slate-700">{summary.count === 0 ? "Vi hann inte registrera någon putt. Nästa gång börjar vi direkt med en balanserad mix." : summary.threePuttPct >= 25 ? "Jag vill fortsätta följa fartkontrollen på de längre puttarna. Nästa spel kommer fortfarande variera som på banan, men du får lite fler relevanta lägen där." : "Stabil session. Jag behåller variationen och låter nästa spel fortsätta anpassas efter det som faktiskt sticker ut i din profil."}</p></div>
+      <section className="mt-6 space-y-2.5"><button type="button" onClick={startPutting} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 py-4 font-display text-xl text-white"><Target className="h-5 w-5" /> Spela mer putting</button><button type="button" onClick={returnToHub} className={`flex w-full items-center justify-center gap-2 rounded-2xl border py-4 font-display text-xl text-slate-900 ${glass}`}>Välj område</button><Link to="/spela" className={`flex w-full items-center justify-center rounded-2xl border py-4 font-display text-xl text-slate-900 ${glass}`}>Klar för idag</Link></section>
+    </> : null}
+  </main>;
+}
