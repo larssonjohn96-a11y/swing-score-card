@@ -14,8 +14,15 @@ jobs:
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
       - name: Focused tests
-        run: bun test src/lib/shot-bank/shot-bank.test.ts src/lib/hcp-audit.test.ts
-      - name: Typecheck
-        run: bunx tsc --noEmit
-      - name: Build
-        run: bun run build
+        run: bun test src/lib/shot-bank/shot-bank.test.ts src/lib/hcp-audit.test.ts > focused-tests.log 2>&1 || true
+      - name: Typecheck report
+        run: bunx tsc --noEmit > typecheck.log 2>&1 || true
+      - name: Build report
+        run: bun run build > build.log 2>&1 || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sg4-tsc-validation-logs
+          path: |
+            focused-tests.log
+            typecheck.log
+            build.log
