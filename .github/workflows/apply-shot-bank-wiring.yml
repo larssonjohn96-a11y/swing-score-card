@@ -1,0 +1,81 @@
+name: Apply SG4 Shot Bank Wiring
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/apply-shot-bank-wiring.yml'
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - name: Wire putting sources and sync UI
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace(path, old, new):
+              p = Path(path)
+              s = p.read_text()
+              if old not in s:
+                  raise SystemExit(f"target not found in {path}: {old[:100]}")
+              p.write_text(s.replace(old, new, 1))
+
+          replace(
+              'src/lib/shortputt.ts',
+              'import { recordSessionDeleted, recordSessionSaved } from "@/lib/sessions/sync";\n',
+              'import { recordSessionDeleted, recordSessionSaved } from "@/lib/sessions/sync";\nimport { recordPuttingSession } from "@/lib/shot-bank";\n',
+          )
+          replace(
+              'src/lib/shortputt.ts',
+              '''  window.localStorage.setItem(KEY, JSON.stringify([...loadShortPuttSessions(), record]));\n  recordSessionSaved("short-putt", record);\n  return record;''',
+              '''  window.localStorage.setItem(KEY, JSON.stringify([...loadShortPuttSessions(), record]));\n  recordSessionSaved("short-putt", record);\n  recordPuttingSession({\n    session_id: record.id,\n    source: "short_putting_test",\n    activity_type: "test",\n    played_at: record.date,\n    session_metadata: { green_type: greenType },\n    default_context: { independent_attempt: true, progression_format: false, format_id: "short_putting_test", green_type: greenType },\n    attempts: record.putts.map((putt) => ({\n      distance_m: putt.distance,\n      first_putt_holed: putt.holed,\n      context: { direction: putt.direction },\n    })),\n  });\n  return record;''',
+          )
+
+          p = Path('src/lib/putting-streak.ts')
+          s = p.read_text()
+          if 'recordPuttingSession' not in s:
+              s = 'import { recordPuttingSession } from "@/lib/shot-bank";\n\n' + s
+          old = '''  const next = [...loadPuttingStreakSessions(), record];\n  window.localStorage.setItem(KEY, JSON.stringify(next));\n  return next;'''
+          new = '''  const next = [...loadPuttingStreakSessions(), record];\n  window.localStorage.setItem(KEY, JSON.stringify(next));\n  const attempts = PUTTING_STREAK_DISTANCES.slice(0, record.cleared).map((distance) => ({\n    distance_m: distance,\n    first_putt_holed: true,\n  }));\n  if (record.cleared < PUTTING_STREAK_DISTANCES.length) {\n    attempts.push({ distance_m: record.failedDistance, first_putt_holed: false });\n  }\n  recordPuttingSession({\n    session_id: record.id,\n    source: "putting_streak",\n    activity_type: "training",\n    played_at: record.date,\n    default_context: { independent_attempt: false, progression_format: true, hcp_eligible: false, format_id: "putting_streak" },\n    attempts,\n  });\n  return next;'''
+          if old not in s:
+              raise SystemExit('putting streak target not found')
+          p.write_text(s.replace(old, new, 1))
+
+          replace(
+              'src/routes/__root.tsx',
+              'import { ActiveMultiplayerBanner } from "@/components/active-multiplayer-banner";\n',
+              'import { ActiveMultiplayerBanner } from "@/components/active-multiplayer-banner";\nimport { ShotSyncStatus } from "@/components/shot-sync-status";\nimport { startShotSync } from "@/lib/shot-bank";\n',
+          )
+          replace(
+              'src/routes/__root.tsx',
+              '  useEffect(() => startSessionSync(), []);',
+              '  useEffect(() => startSessionSync(), []);\n  useEffect(() => startShotSync(), []);',
+          )
+          replace(
+              'src/routes/__root.tsx',
+              '<Outlet /><ActiveMultiplayerBanner /><BottomNav /><DevPlanSwitcher />',
+              '<Outlet /><ActiveMultiplayerBanner /><ShotSyncStatus /><BottomNav /><DevPlanSwitcher />',
+          )
+
+          invalid = Path('.github/workflows/sg4-data-foundation.yml')
+          if invalid.exists():
+              invalid.unlink()
+          PY
+      - name: Focused tests
+        run: bun test src/lib/shot-bank/shot-bank.test.ts src/lib/hcp-audit.test.ts
+      - name: Commit wiring
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/lib/shortputt.ts src/lib/putting-streak.ts src/routes/__root.tsx .github/workflows/sg4-data-foundation.yml
+          git commit -m 'Wire putting flows to SG4 shot bank'
+          git push
+      - name: Typecheck
+        run: bunx tsgo --noEmit
+      - name: Build
+        run: bun run build
