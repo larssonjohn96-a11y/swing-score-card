@@ -19,6 +19,8 @@ import { DevPlanSwitcher } from "@/components/dev-plan-switcher";
 import { SplashScreen, useSplash } from "@/components/splash-screen";
 import { startSessionSync } from "@/lib/sessions/startup";
 import { ActiveMultiplayerBanner } from "@/components/active-multiplayer-banner";
+import { ShotSyncStatus } from "@/components/shot-sync-status";
+import { startShotSync } from "@/lib/shot-bank";
 
 function NotFoundComponent() {
   return (
@@ -115,6 +117,7 @@ function RootComponent() {
 
   // Central molnsynk av testhistorik: inloggad → import + restore, gäst → enbart lokalt.
   useEffect(() => startSessionSync(), []);
+  useEffect(() => startShotSync(), []);
 
   // Håll skärmen aktiv så länge SG4 är öppen och synlig. Wake Lock släpps av
   // operativsystemet när appen går i bakgrunden och begärs då igen när den blir synlig.
@@ -193,6 +196,6 @@ function RootComponent() {
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}><SubscriptionProvider><BottomNavVisibilityProvider><div className="relative min-h-screen pb-20"><Outlet /><ActiveMultiplayerBanner /><BottomNav /><DevPlanSwitcher /></div>{show && <SplashScreen onDismiss={dismiss} />}</BottomNavVisibilityProvider></SubscriptionProvider></QueryClientProvider>
+    <QueryClientProvider client={queryClient}><SubscriptionProvider><BottomNavVisibilityProvider><div className="relative min-h-screen pb-20"><Outlet /><ActiveMultiplayerBanner /><ShotSyncStatus /><BottomNav /><DevPlanSwitcher /></div>{show && <SplashScreen onDismiss={dismiss} />}</BottomNavVisibilityProvider></SubscriptionProvider></QueryClientProvider>
   );
 }

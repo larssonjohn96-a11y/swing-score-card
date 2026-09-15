@@ -1,5 +1,6 @@
 import { LEGACY_KEYS } from "@/lib/sessions/keys";
 import { recordSessionDeleted, recordSessionSaved } from "@/lib/sessions/sync";
+import { recordPuttingSession } from "@/lib/shot-bank";
 /**
  * Short Putting Test (tidigare "Kortputt").
  *
@@ -311,6 +312,19 @@ export function saveShortPuttSession(
   };
   window.localStorage.setItem(KEY, JSON.stringify([...loadShortPuttSessions(), record]));
   recordSessionSaved("short-putt", record);
+  recordPuttingSession({
+    session_id: record.id,
+    source: "short_putting_test",
+    activity_type: "test",
+    played_at: record.date,
+    session_metadata: { green_type: greenType },
+    default_context: { independent_attempt: true, progression_format: false, format_id: "short_putting_test", green_type: greenType },
+    attempts: record.putts.map((putt) => ({
+      distance_m: putt.distance,
+      first_putt_holed: putt.holed,
+      context: { direction: putt.direction },
+    })),
+  });
   return record;
 }
 
