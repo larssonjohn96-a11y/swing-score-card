@@ -1,4 +1,4 @@
-import { recordPuttingSession } from "@/lib/shot-bank";
+import { recordPuttingSession, type PuttingAttemptInput } from "@/lib/shot-bank";
 
 export const PUTTING_STREAK_DISTANCES = [1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 8, 10] as const;
 
@@ -31,7 +31,7 @@ export function savePuttingStreakSession(input: Omit<PuttingStreakSession, "id" 
   };
   const next = [...loadPuttingStreakSessions(), record];
   window.localStorage.setItem(KEY, JSON.stringify(next));
-  const attempts = PUTTING_STREAK_DISTANCES.slice(0, record.cleared).map((distance) => ({
+  const attempts: PuttingAttemptInput[] = PUTTING_STREAK_DISTANCES.slice(0, record.cleared).map((distance) => ({
     distance_m: distance,
     first_putt_holed: true,
   }));
