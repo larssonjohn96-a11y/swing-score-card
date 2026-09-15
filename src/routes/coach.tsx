@@ -36,14 +36,18 @@ function newSessionId() {
   return `coach-putting-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-function SpeechBubble({ avatar, name, text }: { avatar: string; name: string; text: string }) {
+function formatDistance(distance: number) {
+  return Number.isInteger(distance) ? String(distance) : String(distance).replace(".", ",");
+}
+
+function SpeechBubble({ avatar, name, text, fixed = false }: { avatar: string; name: string; text: string; fixed?: boolean }) {
   return (
-    <div className="flex items-end gap-3">
+    <div className={`flex items-end gap-3 ${fixed ? "h-[136px]" : ""}`}>
       <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[18px] border border-slate-700/10 bg-[#25231f] text-4xl shadow-sm">{avatar}</div>
-      <div className="relative mb-1 flex-1 rounded-[18px] bg-white px-4 py-3.5 text-slate-900 shadow-[0_8px_24px_-18px_rgba(15,23,42,.45)]">
+      <div className={`relative mb-1 flex-1 rounded-[18px] bg-white px-4 py-3.5 text-slate-900 shadow-[0_8px_24px_-18px_rgba(15,23,42,.45)] ${fixed ? "h-[132px] overflow-hidden" : ""}`}>
         <span className="absolute -left-2 bottom-4 h-4 w-4 rotate-45 bg-white" />
         <p className="relative text-[10px] font-black uppercase tracking-[.13em] text-slate-400">{name}</p>
-        <p className="relative mt-1 text-sm font-medium leading-relaxed">{text}</p>
+        <p className={`relative mt-1 text-sm font-medium leading-relaxed ${fixed ? "line-clamp-4" : ""}`}>{text}</p>
       </div>
     </div>
   );
@@ -63,6 +67,16 @@ function PlayWithCoachPage() {
   const [transitioning, setTransitioning] = useState(false);
 
   const summary = useMemo(() => summarizeCoachPutting(attempts), [attempts]);
+  const liveStats = useMemo(() => {
+    const totalPutts = attempts.reduce((sum, attempt) => sum + attempt.strokes, 0);
+    const outsideEight = attempts.filter((attempt) => attempt.distance > 8);
+    const threePuttOutsideEight = outsideEight.filter((attempt) => attempt.strokes >= 3).length;
+    return {
+      totalPutts,
+      holes: attempts.length,
+      longThreePuttPct: outsideEight.length ? Math.round((threePuttOutsideEight / outsideEight.length) * 100) : 0,
+    };
+  }, [attempts]);
 
   function selectCoach(next: CoachId) {
     setCoachId(next);
@@ -148,38 +162,40 @@ function PlayWithCoachPage() {
       </> : null}
 
       {phase === "play" ? <>
-        <header className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <span className="flex h-11 w-11 items-center justify-center rounded-full border-[3px] border-blue-500 bg-blue-50 text-sm font-black text-blue-700">DU</span>
-            <div><p className="text-sm font-black text-slate-950">Du</p><p className="text-[9px] font-black uppercase tracking-[.12em] text-slate-400">Putting</p></div>
+        <header className="grid grid-cols-3 overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-sm">
+          <div className="px-2 py-3 text-center">
+            <p className="text-[8px] font-black uppercase tracking-[.1em] text-slate-400">Puttar</p>
+            <p className="mt-0.5 font-display text-2xl leading-none text-slate-950">{liveStats.totalPutts}</p>
           </div>
-          <div className="text-center"><p className="text-[9px] font-black uppercase tracking-[.15em] text-slate-400">Infinity</p><p className="font-display text-xl text-slate-950">{attempts.length}</p></div>
-          <div className="flex items-center gap-2.5 text-right">
-            <div><p className="text-sm font-black text-slate-950">{coach.name}</p><p className="text-[9px] font-black uppercase tracking-[.12em] text-slate-400">Coach</p></div>
-            <span className="flex h-11 w-11 items-center justify-center rounded-full border-[3px] border-red-500 bg-red-50 text-2xl">{coach.emoji}</span>
+          <div className="border-x border-slate-100 px-2 py-3 text-center">
+            <p className="text-[8px] font-black uppercase tracking-[.1em] text-slate-400">Hål</p>
+            <p className="mt-0.5 font-display text-2xl leading-none text-slate-950">{liveStats.holes}</p>
+          </div>
+          <div className="px-2 py-3 text-center">
+            <p className="text-[8px] font-black uppercase tracking-[.08em] text-slate-400">3-putt &gt;8 m</p>
+            <p className="mt-0.5 font-display text-2xl leading-none text-slate-950">{liveStats.longThreePuttPct}%</p>
           </div>
         </header>
 
-        <section className="mt-5 rounded-[30px] border border-slate-200 bg-white px-5 py-7 text-center shadow-[0_18px_42px_-30px_rgba(15,23,42,.45)]">
-          <p className="text-[10px] font-black uppercase tracking-[.18em] text-slate-400">Nästa putt</p>
-          <h1 className={`mt-2 font-display text-[76px] leading-none text-slate-950 transition-opacity ${transitioning ? "opacity-35" : "opacity-100"}`}>{distance} m</h1>
-          <p className="mt-3 text-sm text-slate-500">Håla ut från positionen.</p>
-        </section>
-
         <section className="mt-4">
-          <SpeechBubble avatar={coach.emoji} name={coach.name} text={coachText} />
+          <SpeechBubble avatar={coach.emoji} name={coach.name} text={coachText} fixed />
         </section>
 
-        <section className="mt-6">
+        <section className="mt-4 rounded-[26px] border border-slate-200 bg-white px-5 py-5 text-center shadow-[0_18px_42px_-30px_rgba(15,23,42,.45)]">
+          <p className="text-[9px] font-black uppercase tracking-[.18em] text-slate-400">Avstånd</p>
+          <h1 className={`mt-1 font-display text-[58px] leading-none text-slate-950 transition-opacity ${transitioning ? "opacity-35" : "opacity-100"}`}>{formatDistance(distance)} m</h1>
+        </section>
+
+        <section className="mt-5">
           <div className="text-center"><p className="text-[10px] font-black uppercase tracking-[.16em] text-slate-400">Ditt resultat</p><h2 className="mt-1 font-display text-2xl text-slate-950">Antal puttar</h2></div>
-          <div className="mt-4 grid grid-cols-4 gap-2.5">
-            {([1, 2, 3, 4] as const).map((strokes) => <button key={strokes} type="button" disabled={transitioning} onClick={() => registerResult(strokes)} className="rounded-[20px] border border-slate-200 bg-white px-1 py-4 text-center shadow-sm transition active:scale-[.96] disabled:opacity-40"><span className="block font-display text-3xl leading-none text-slate-950">{strokes}</span><span className="mt-1.5 block text-[8px] font-black uppercase tracking-[.08em] text-slate-400">{strokes === 1 ? "putt" : "puttar"}</span></button>)}
+          <div className="mt-3 grid grid-cols-4 gap-2.5">
+            {([1, 2, 3, 4] as const).map((strokes) => <button key={strokes} type="button" disabled={transitioning} onClick={() => registerResult(strokes)} className="rounded-[20px] border border-blue-300 bg-blue-50 px-1 py-4 text-center shadow-sm transition hover:bg-blue-100 active:scale-[.96] active:bg-blue-200 disabled:opacity-40"><span className="block font-display text-3xl leading-none text-blue-800">{strokes}</span><span className="mt-1.5 block text-[8px] font-black uppercase tracking-[.08em] text-blue-500">{strokes === 1 ? "putt" : "puttar"}</span></button>)}
           </div>
         </section>
 
-        <button type="button" onClick={() => setConfirmEnd(true)} className="mt-7 w-full rounded-[18px] border border-slate-200 bg-white py-3.5 text-sm font-black text-slate-500">Avsluta spel</button>
+        <button type="button" onClick={() => setConfirmEnd(true)} className="mt-6 w-full rounded-[18px] border border-slate-200 bg-white py-3.5 text-sm font-black text-slate-500">Avsluta spel</button>
 
-        {confirmEnd ? <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-950/45 px-5 backdrop-blur-sm"><div className="w-full max-w-sm rounded-[28px] bg-white p-5 shadow-2xl"><button type="button" onClick={() => setConfirmEnd(false)} className="ml-auto flex h-9 w-9 items-center justify-center rounded-full bg-slate-100"><X className="h-4 w-4" /></button><h2 className="font-display text-3xl leading-none text-slate-950">Avsluta spelet?</h2><p className="mt-3 text-sm leading-relaxed text-slate-500">Dina {attempts.length} registrerade puttar är redan sparade.</p><div className="mt-5 space-y-2.5"><button type="button" onClick={() => setConfirmEnd(false)} className="w-full rounded-2xl bg-slate-950 py-3.5 text-sm font-black text-white">Fortsätt spela</button><button type="button" onClick={endSession} className="w-full rounded-2xl border border-red-200 bg-red-50 py-3.5 text-sm font-black text-red-700">Avsluta spel</button></div></div></div> : null}
+        {confirmEnd ? <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-950/45 px-5 backdrop-blur-sm"><div className="w-full max-w-sm rounded-[28px] bg-white p-5 shadow-2xl"><button type="button" onClick={() => setConfirmEnd(false)} className="ml-auto flex h-9 w-9 items-center justify-center rounded-full bg-slate-100"><X className="h-4 w-4" /></button><h2 className="font-display text-3xl leading-none text-slate-950">Avsluta spelet?</h2><p className="mt-3 text-sm leading-relaxed text-slate-500">Dina {attempts.length} registrerade hål är redan sparade.</p><div className="mt-5 space-y-2.5"><button type="button" onClick={() => setConfirmEnd(false)} className="w-full rounded-2xl bg-slate-950 py-3.5 text-sm font-black text-white">Fortsätt spela</button><button type="button" onClick={endSession} className="w-full rounded-2xl border border-red-200 bg-red-50 py-3.5 text-sm font-black text-red-700">Avsluta spel</button></div></div></div> : null}
       </> : null}
 
       {phase === "summary" ? <>
