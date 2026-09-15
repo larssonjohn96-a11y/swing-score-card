@@ -449,10 +449,13 @@ function MatchPlayPage() {
   const ryderNext = "group relative flex w-full items-center justify-center gap-2 rounded-[20px] border border-blue-700/35 bg-[#2563eb] py-4 font-display text-[23px] leading-none text-white shadow-[0_5px_0_#1d4ed8,0_10px_18px_-12px_rgba(29,78,216,.72)] transition duration-150 hover:bg-[#245bd7] active:translate-y-[2px] active:scale-[.995] active:bg-[#1f55c8] active:shadow-[0_3px_0_#1e40af,0_7px_14px_-12px_rgba(29,78,216,.65)] disabled:translate-y-0 disabled:opacity-30 disabled:shadow-[0_5px_0_#1d4ed8]";
 
   function goToStep(next: Step) {
+    const live = next === "play" || next === "sudden-death" || next === "result";
+    const from = step === "play" || step === "sudden-death" || step === "result";
     const doc = document as Document & { startViewTransition?: (callback: () => void) => { finished: Promise<void> } };
-    if (doc.startViewTransition) { doc.startViewTransition(() => setStep(next)); return; }
+    if (!live && !from && doc.startViewTransition) { doc.startViewTransition(() => setStep(next)); return; }
     setStep(next);
   }
+
 
   function makeCloudState(nextHoles = holes, nextHoleIndex = holeIndex, nextFinalText = finalText): MatchCloudState | null {
     if (!mode || !category || !matchType) return null;
