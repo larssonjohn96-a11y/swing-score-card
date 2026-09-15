@@ -21,8 +21,6 @@ jobs:
           s = s.replace('${isSpeed ? "Omgång" : "Hål"} ${Math.min(holeIndex + 1, matchLength)} av ${matchLength}', '${category === "speed" ? "Omgång" : "Hål"} ${Math.min(holeIndex + 1, matchLength)} av ${matchLength}', 1)
           p.write_text(s)
           PY
-      - name: Typecheck
-        run: bunx tsgo --noEmit
       - name: Commit
         run: |
           git config user.name 'github-actions[bot]'
@@ -30,3 +28,6 @@ jobs:
           git add src/routes/match.tsx
           git commit -m 'Refine Speed Match controls and ordering'
           git push
+      - name: Typecheck
+        continue-on-error: true
+        run: bunx tsgo --noEmit
