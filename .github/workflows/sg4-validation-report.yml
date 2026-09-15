@@ -19,10 +19,16 @@ jobs:
         run: bunx tsc --noEmit > typecheck.log 2>&1 || true
       - name: Build report
         run: bun run build > build.log 2>&1 || true
+      - name: Lint report
+        run: bun run lint > lint.log 2>&1 || true
+      - name: Full test report
+        run: bun run test > full-test.log 2>&1 || true
       - uses: actions/upload-artifact@v4
         with:
-          name: sg4-tsc-validation-logs
+          name: sg4-complete-validation-logs
           path: |
             focused-tests.log
             typecheck.log
             build.log
+            lint.log
+            full-test.log
