@@ -1,0 +1,28 @@
+name: SG4 Validation Report
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/sg4-validation-report.yml'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - name: Focused tests
+        run: bun test src/lib/shot-bank/shot-bank.test.ts src/lib/hcp-audit.test.ts > focused-tests.log 2>&1 || true
+      - name: Typecheck report
+        run: bunx tsgo --noEmit > typecheck.log 2>&1 || true
+      - name: Build report
+        run: bun run build > build.log 2>&1 || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sg4-validation-logs
+          path: |
+            focused-tests.log
+            typecheck.log
+            build.log
