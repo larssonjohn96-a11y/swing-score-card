@@ -134,7 +134,7 @@ function Home() {
 
       <section className="mt-6 border-t border-border pt-4">
         <div className="flex items-center justify-between gap-2">
-          <Link to="/traning" className="flex min-w-0 flex-1 items-center gap-2 rounded-2xl px-2 py-3 text-sm font-bold text-muted-foreground"><Target className="h-4 w-4" /><span className="truncate">Träning</span></Link>
+          <Link to="/traning" search={{ category: undefined }} className="flex min-w-0 flex-1 items-center gap-2 rounded-2xl px-2 py-3 text-sm font-bold text-muted-foreground"><Target className="h-4 w-4" /><span className="truncate">Träning</span></Link>
           <Link to="/tester" className="flex min-w-0 flex-1 items-center justify-center gap-2 rounded-2xl px-2 py-3 text-sm font-bold text-muted-foreground"><Gauge className="h-4 w-4" /><span className="truncate">Tester</span></Link>
           <Link to="/utveckling" className="flex min-w-0 flex-1 items-center justify-end gap-2 rounded-2xl px-2 py-3 text-sm font-bold text-muted-foreground"><Gauge className="h-4 w-4" /><span className="truncate">Utveckling</span></Link>
         </div>

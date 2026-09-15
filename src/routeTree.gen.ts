@@ -56,6 +56,7 @@ import { Route as MatchRouteImport } from './routes/match'
 import { Route as MapMyBagRouteImport } from './routes/map-my-bag'
 import { Route as MapClubRouteImport } from './routes/map-club'
 import { Route as LongdriveRouteImport } from './routes/longdrive'
+import { Route as LearnRouteImport } from './routes/learn'
 import { Route as LagputtTestRouteImport } from './routes/lagputt-test'
 import { Route as LagputtLadderRouteImport } from './routes/lagputt-ladder'
 import { Route as LagputtHistorikRouteImport } from './routes/lagputt-historik'
@@ -71,6 +72,7 @@ import { Route as FairwayStreakRouteImport } from './routes/fairway-streak'
 import { Route as FairwayRouteImport } from './routes/fairway'
 import { Route as DriverKonsekvensHistorikRouteImport } from './routes/driver-konsekvens-historik'
 import { Route as DriverKonsekvensRouteImport } from './routes/driver-konsekvens'
+import { Route as CupRouteImport } from './routes/cup'
 import { Route as CombineRouteImport } from './routes/combine'
 import { Route as ChipRouteImport } from './routes/chip'
 import { Route as BunkerTraningRouteImport } from './routes/bunker-traning'
@@ -337,6 +339,11 @@ const LongdriveRoute = LongdriveRouteImport.update({
   path: '/longdrive',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LearnRoute = LearnRouteImport.update({
+  id: '/learn',
+  path: '/learn',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LagputtTestRoute = LagputtTestRouteImport.update({
   id: '/lagputt-test',
   path: '/lagputt-test',
@@ -411,6 +418,11 @@ const DriverKonsekvensHistorikRoute =
 const DriverKonsekvensRoute = DriverKonsekvensRouteImport.update({
   id: '/driver-konsekvens',
   path: '/driver-konsekvens',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CupRoute = CupRouteImport.update({
+  id: '/cup',
+  path: '/cup',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CombineRoute = CombineRouteImport.update({
@@ -570,6 +582,7 @@ export interface FileRoutesByFullPath {
   '/bunker-traning': typeof BunkerTraningRoute
   '/chip': typeof ChipRoute
   '/combine': typeof CombineRoute
+  '/cup': typeof CupRoute
   '/driver-konsekvens': typeof DriverKonsekvensRoute
   '/driver-konsekvens-historik': typeof DriverKonsekvensHistorikRoute
   '/fairway': typeof FairwayRoute
@@ -585,6 +598,7 @@ export interface FileRoutesByFullPath {
   '/lagputt-historik': typeof LagputtHistorikRoute
   '/lagputt-ladder': typeof LagputtLadderRoute
   '/lagputt-test': typeof LagputtTestRoute
+  '/learn': typeof LearnRoute
   '/longdrive': typeof LongdriveRoute
   '/map-club': typeof MapClubRoute
   '/map-my-bag': typeof MapMyBagRoute
@@ -661,6 +675,7 @@ export interface FileRoutesByTo {
   '/bunker-traning': typeof BunkerTraningRoute
   '/chip': typeof ChipRoute
   '/combine': typeof CombineRoute
+  '/cup': typeof CupRoute
   '/driver-konsekvens': typeof DriverKonsekvensRoute
   '/driver-konsekvens-historik': typeof DriverKonsekvensHistorikRoute
   '/fairway': typeof FairwayRoute
@@ -676,6 +691,7 @@ export interface FileRoutesByTo {
   '/lagputt-historik': typeof LagputtHistorikRoute
   '/lagputt-ladder': typeof LagputtLadderRoute
   '/lagputt-test': typeof LagputtTestRoute
+  '/learn': typeof LearnRoute
   '/longdrive': typeof LongdriveRoute
   '/map-club': typeof MapClubRoute
   '/map-my-bag': typeof MapMyBagRoute
@@ -753,6 +769,7 @@ export interface FileRoutesById {
   '/bunker-traning': typeof BunkerTraningRoute
   '/chip': typeof ChipRoute
   '/combine': typeof CombineRoute
+  '/cup': typeof CupRoute
   '/driver-konsekvens': typeof DriverKonsekvensRoute
   '/driver-konsekvens-historik': typeof DriverKonsekvensHistorikRoute
   '/fairway': typeof FairwayRoute
@@ -768,6 +785,7 @@ export interface FileRoutesById {
   '/lagputt-historik': typeof LagputtHistorikRoute
   '/lagputt-ladder': typeof LagputtLadderRoute
   '/lagputt-test': typeof LagputtTestRoute
+  '/learn': typeof LearnRoute
   '/longdrive': typeof LongdriveRoute
   '/map-club': typeof MapClubRoute
   '/map-my-bag': typeof MapMyBagRoute
@@ -846,6 +864,7 @@ export interface FileRouteTypes {
     | '/bunker-traning'
     | '/chip'
     | '/combine'
+    | '/cup'
     | '/driver-konsekvens'
     | '/driver-konsekvens-historik'
     | '/fairway'
@@ -861,6 +880,7 @@ export interface FileRouteTypes {
     | '/lagputt-historik'
     | '/lagputt-ladder'
     | '/lagputt-test'
+    | '/learn'
     | '/longdrive'
     | '/map-club'
     | '/map-my-bag'
@@ -937,6 +957,7 @@ export interface FileRouteTypes {
     | '/bunker-traning'
     | '/chip'
     | '/combine'
+    | '/cup'
     | '/driver-konsekvens'
     | '/driver-konsekvens-historik'
     | '/fairway'
@@ -952,6 +973,7 @@ export interface FileRouteTypes {
     | '/lagputt-historik'
     | '/lagputt-ladder'
     | '/lagputt-test'
+    | '/learn'
     | '/longdrive'
     | '/map-club'
     | '/map-my-bag'
@@ -1028,6 +1050,7 @@ export interface FileRouteTypes {
     | '/bunker-traning'
     | '/chip'
     | '/combine'
+    | '/cup'
     | '/driver-konsekvens'
     | '/driver-konsekvens-historik'
     | '/fairway'
@@ -1043,6 +1066,7 @@ export interface FileRouteTypes {
     | '/lagputt-historik'
     | '/lagputt-ladder'
     | '/lagputt-test'
+    | '/learn'
     | '/longdrive'
     | '/map-club'
     | '/map-my-bag'
@@ -1120,6 +1144,7 @@ export interface RootRouteChildren {
   BunkerTraningRoute: typeof BunkerTraningRoute
   ChipRoute: typeof ChipRoute
   CombineRoute: typeof CombineRoute
+  CupRoute: typeof CupRoute
   DriverKonsekvensRoute: typeof DriverKonsekvensRoute
   DriverKonsekvensHistorikRoute: typeof DriverKonsekvensHistorikRoute
   FairwayRoute: typeof FairwayRoute
@@ -1135,6 +1160,7 @@ export interface RootRouteChildren {
   LagputtHistorikRoute: typeof LagputtHistorikRoute
   LagputtLadderRoute: typeof LagputtLadderRoute
   LagputtTestRoute: typeof LagputtTestRoute
+  LearnRoute: typeof LearnRoute
   LongdriveRoute: typeof LongdriveRoute
   MapClubRoute: typeof MapClubRoute
   MapMyBagRoute: typeof MapMyBagRoute
@@ -1520,6 +1546,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LongdriveRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/learn': {
+      id: '/learn'
+      path: '/learn'
+      fullPath: '/learn'
+      preLoaderRoute: typeof LearnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lagputt-test': {
       id: '/lagputt-test'
       path: '/lagputt-test'
@@ -1623,6 +1656,13 @@ declare module '@tanstack/react-router' {
       path: '/driver-konsekvens'
       fullPath: '/driver-konsekvens'
       preLoaderRoute: typeof DriverKonsekvensRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cup': {
+      id: '/cup'
+      path: '/cup'
+      fullPath: '/cup'
+      preLoaderRoute: typeof CupRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/combine': {
@@ -1872,6 +1912,7 @@ const rootRouteChildren: RootRouteChildren = {
   BunkerTraningRoute: BunkerTraningRoute,
   ChipRoute: ChipRoute,
   CombineRoute: CombineRoute,
+  CupRoute: CupRoute,
   DriverKonsekvensRoute: DriverKonsekvensRoute,
   DriverKonsekvensHistorikRoute: DriverKonsekvensHistorikRoute,
   FairwayRoute: FairwayRoute,
@@ -1887,6 +1928,7 @@ const rootRouteChildren: RootRouteChildren = {
   LagputtHistorikRoute: LagputtHistorikRoute,
   LagputtLadderRoute: LagputtLadderRoute,
   LagputtTestRoute: LagputtTestRoute,
+  LearnRoute: LearnRoute,
   LongdriveRoute: LongdriveRoute,
   MapClubRoute: MapClubRoute,
   MapMyBagRoute: MapMyBagRoute,
