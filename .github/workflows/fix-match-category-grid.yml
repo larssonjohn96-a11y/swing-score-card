@@ -1,4 +1,4 @@
-name: Fix match category grid
+name: Refine Speed Match
 on:
   push:
     branches: [main]
@@ -11,22 +11,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Update category selection UI
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          p=Path('src/routes/match.tsx')
-          s=p.read_text()
-          old='''      <div className="mt-6 space-y-4">{CATEGORIES.map((i) => <button key={i.id} onClick={() => {\n        setCategory(i.id);\n        setScoringMode("match");\n        if (i.id === "putting") { setMatchType("standard"); setMatchLength(5); setStep("length"); return; }\n        if (i.id === "around-the-green") { setMatchType("closest"); setMatchLength(5); setStep("length"); return; }\n        if (i.id === "approach") { setMatchType("closest"); setApproachRanges([]); setStep("approach-setup"); return; }\n        setMatchType("fairway"); setStep("length");\n      }} className={`group relative flex min-h-28 w-full items-center justify-between overflow-hidden rounded-[30px] border px-6 py-6 text-left transition active:scale-[.985] ${glass}`}>\n        <span className="font-display text-3xl leading-none text-slate-950">{i.title}</span>\n        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-slate-300/80 bg-white/75 text-2xl text-slate-700 shadow-sm backdrop-blur-xl transition group-active:translate-x-0.5">›</span>\n      </button>)}</div>'''
-          new='''      <div className="mt-6 grid grid-cols-2 gap-3">{CATEGORIES.map((i) => { const active = category === i.id; return <button key={i.id} onClick={() => { setCategory(i.id); setScoringMode("match"); }} className={`relative flex min-h-32 w-full items-center rounded-[26px] border p-4 text-left transition active:scale-[.985] ${active ? selectedRing : glass}`}>\n        {active ? <SelectedCheck /> : null}\n        <span className={`font-display text-[27px] leading-[.95] ${active ? "text-blue-700" : "text-slate-950"}`}>{i.title}</span>\n      </button>; })}</div>\n      <button disabled={!category} onClick={() => {\n        if (!category) return;\n        setScoringMode("match");\n        if (category === "putting") { setMatchType("standard"); setMatchLength(5); setStep("length"); return; }\n        if (category === "around-the-green") { setMatchType("closest"); setMatchLength(5); setStep("length"); return; }\n        if (category === "approach") { setMatchType("closest"); setApproachRanges([]); setStep("approach-setup"); return; }\n        setMatchType("fairway"); setStep("length");\n      }} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 via-slate-900 to-red-600 py-4 font-display text-xl text-white disabled:opacity-30">Nästa <ChevronRight className="h-5 w-5" /></button>'''
-          if old not in s:
-              raise SystemExit('Target block not found')
-          p.write_text(s.replace(old,new))
-          PY
+      - name: Apply Speed Match refinement
+        run: python .github/scripts/refine_speed_match.py
+      - name: Typecheck
+        run: bunx tsgo --noEmit
       - name: Commit
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add src/routes/match.tsx
-          git commit -m 'Restore two-column match category selection'
+          git commit -m 'Refine Speed Match controls and ordering'
           git push
