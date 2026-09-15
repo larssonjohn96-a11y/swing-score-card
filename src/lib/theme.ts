@@ -4,35 +4,43 @@ export type Theme = "dark" | "light";
 
 export const THEME_KEY = "golf-theme";
 
-/** Körs före hydrering i <head> så temat sätts utan blink. */
-export const THEME_SCRIPT = `(function(){try{var t=localStorage.getItem('${THEME_KEY}');if(t!=='dark'){t='light'}document.documentElement.classList.remove('dark','light');document.documentElement.classList.add(t);}catch(e){document.documentElement.classList.add('light');}})();`;
+/**
+ * Dark mode is temporarily paused. This runs before hydration so the app is
+ * forced into light mode before the first visible render, regardless of a
+ * previously saved preference.
+ */
+export const THEME_SCRIPT = `(function(){try{document.documentElement.classList.remove('dark','light');document.documentElement.classList.add('light');document.documentElement.style.colorScheme='light';localStorage.setItem('${THEME_KEY}','light');}catch(e){document.documentElement.classList.remove('dark');document.documentElement.classList.add('light');document.documentElement.style.colorScheme='light';}})();`;
 
-function apply(theme: Theme) {
+function applyLight() {
   const root = document.documentElement;
   root.classList.remove("dark", "light");
-  root.classList.add(theme);
-  root.style.colorScheme = theme;
+  root.classList.add("light");
+  root.style.colorScheme = "light";
 }
 
 export function useTheme() {
   const [theme, setTheme] = useState<Theme>("light");
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(THEME_KEY);
-    const initial: Theme = stored === "dark" ? "dark" : "light";
-    setTheme(initial);
-    apply(initial);
+    applyLight();
+    setTheme("light");
+    try {
+      window.localStorage.setItem(THEME_KEY, "light");
+    } catch {
+      /* ignore */
+    }
   }, []);
 
-  function changeTheme(next: Theme) {
-    setTheme(next);
-    apply(next);
+  function changeTheme(_next: Theme) {
+    // Dark mode is intentionally disabled for now.
+    setTheme("light");
+    applyLight();
     try {
-      window.localStorage.setItem(THEME_KEY, next);
+      window.localStorage.setItem(THEME_KEY, "light");
     } catch {
       /* ignore */
     }
   }
 
-  return { theme, setTheme: changeTheme, toggle: () => changeTheme(theme === "dark" ? "light" : "dark") };
+  return { theme, setTheme: changeTheme, toggle: () => changeTheme("light") };
 }
