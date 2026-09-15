@@ -1,0 +1,24 @@
+name: Refine Speed Match
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/refine-speed-match.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply patch
+        run: python .github/scripts/refine_speed_match.py
+      - name: Typecheck
+        run: bunx tsgo --noEmit
+      - name: Commit source changes
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/routes/match.tsx
+          git commit -m 'Refine Speed Match controls and ordering'
+          git push
