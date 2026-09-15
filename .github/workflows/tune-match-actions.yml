@@ -37,7 +37,7 @@ jobs:
             ),
             (
               '<button type="button" onClick={() => setAbortConfirmOpen(true)} className="fixed right-4 top-[max(10px,env(safe-area-inset-top))] z-[45] rounded-full border border-red-200/90 bg-white/92 px-3 py-2 text-[10px] font-black uppercase tracking-[0.08em] text-red-700 shadow-sm backdrop-blur-xl">Avbryt spel</button>',
-              '<button type="button" onClick={() => setAbortConfirmOpen(true)} aria-label="Avbryt spel" title="Avbryt spel" className="fixed right-4 top-[max(10px,env(safe-area-inset-top))] z-[45] inline-flex h-10 w-10 items-center justify-center rounded-full border border-red-200/90 bg-red-50/90 text-red-600 shadow-sm backdrop-blur-xl transition active:scale-95"><X className="h-4.5 w-4.5" /></button>'
+              '<button type="button" onClick={() => setAbortConfirmOpen(true)} aria-label="Avbryt spel" title="Avbryt spel" className="fixed right-4 top-[max(10px,env(safe-area-inset-top))] z-[45] inline-flex h-10 w-10 items-center justify-center rounded-full border border-red-200/90 bg-red-50/90 text-red-600 shadow-sm backdrop-blur-xl transition active:scale-95"><X className="h-[18px] w-[18px]" /></button>'
             ),
           ]
 
@@ -54,8 +54,6 @@ jobs:
 
           p.write_text(s)
           PY
-      - name: Typecheck
-        run: bunx tsgo --noEmit
       - name: Commit
         run: |
           git config user.name 'github-actions[bot]'
@@ -63,3 +61,5 @@ jobs:
           git add src/routes/match.tsx
           git commit -m 'Refine match register and abort controls'
           git push
+      - name: Typecheck
+        run: bunx tsgo --noEmit
