@@ -1,4 +1,5 @@
 import { loadSessions, saveSession, type TrainingSession } from "@/lib/training/core";
+import { recordPuttingSession } from "@/lib/shot-bank";
 
 export const CLOCK_PUTTING_TEST_ID = "clock-putting";
 export const CLOCK_PUTTING_ROLLING_WINDOW = 20;
@@ -41,7 +42,20 @@ export function loadClockPuttingSessions(): TrainingSession[] {
  */
 export function saveClockPuttingSession(made: boolean[]): TrainingSession {
   const shots = CLOCK_PUTTS.map((putt, index) => (made[index] ? putt.points : 0));
-  return saveSession(CLOCK_PUTTING_TEST_ID, shots);
+  const record = saveSession(CLOCK_PUTTING_TEST_ID, shots);
+  recordPuttingSession({
+    session_id: record.id,
+    source: "clock_putting",
+    activity_type: "test",
+    played_at: record.date,
+    default_context: { independent_attempt: true, progression_format: false, format_id: "clock_putting" },
+    attempts: CLOCK_PUTTS.map((putt, index) => ({
+      distance_m: putt.distance,
+      first_putt_holed: (record.shots[index] ?? 0) > 0,
+      context: { direction: putt.direction },
+    })),
+  });
+  return record;
 }
 
 export function clockDistanceStats(sessions: TrainingSession[]): ClockDistanceStat[] {
