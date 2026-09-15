@@ -75,3 +75,17 @@ export function summarizeFriendHeadToHead(entries: FriendMatchHistoryEntry[], se
 export function getFriendHeadToHead(selfKey: string, opponentKey: string) {
   return summarizeFriendHeadToHead(readHistory(), selfKey, opponentKey);
 }
+
+export function getMostPlayedOpponentKey(selfKey: string) {
+  const relevant = readHistory().filter((entry) => entry.selfKey === selfKey && entry.opponentKey);
+  if (!relevant.length) return null;
+  const summary = new Map<string, { count: number; latest: number }>();
+  for (const entry of relevant) {
+    const previous = summary.get(entry.opponentKey) ?? { count: 0, latest: 0 };
+    summary.set(entry.opponentKey, {
+      count: previous.count + 1,
+      latest: Math.max(previous.latest, Date.parse(entry.playedAt) || 0),
+    });
+  }
+  return [...summary.entries()].sort((a, b) => b[1].count - a[1].count || b[1].latest - a[1].latest)[0]?.[0] ?? null;
+}
