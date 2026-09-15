@@ -1,0 +1,318 @@
+import { getLocalPuttingProfile, recordPuttingSession } from "@/lib/shot-bank";
+import { loadPlayerEngineModel, puttingPerformanceFromStrokes, recordEngineOutcome } from "@/lib/sg4-engine";
+
+export type CoachId = "alma" | "axel" | "leo";
+
+export type CoachPuttingAttempt = {
+  id: string;
+  coachSessionId: string;
+  playedAt: string;
+  distance: number;
+  strokes: 1 | 2 | 3 | 4;
+};
+
+export type CoachQuestion = {
+  topic: string;
+  prompt: string;
+  options: string[];
+  correct: number;
+  feedback: string;
+};
+
+type KnowledgeEvent = {
+  id: string;
+  at: string;
+  topic: string;
+  kind: "shown" | "answered";
+  correct?: boolean;
+};
+
+const KNOWLEDGE_KEY = "sg4-coach-knowledge-events-v1";
+const SELECTED_COACH_KEY = "sg4-selected-coach-v1";
+
+export const COACHES = [
+  {
+    id: "alma" as const,
+    name: "Alma",
+    style: "Lugn PGA-coach",
+    emoji: "👩🏻‍🏫",
+    description: "Tydlig, varm och selektiv. Säger något när det faktiskt hjälper.",
+  },
+  {
+    id: "axel" as const,
+    name: "Axel",
+    style: "Rak & krävande",
+    emoji: "🧑🏼‍🏫",
+    description: "Kort och konkret. Mer direkt när samma misstag upprepas.",
+  },
+  {
+    id: "leo" as const,
+    name: "Leo",
+    style: "Peppande coach",
+    emoji: "👨🏽‍🏫",
+    description: "Mer energi och beröm, men samma spelmotor och samma krav.",
+  },
+] as const;
+
+function readJson<T>(key: string, fallback: T): T {
+  if (typeof window === "undefined") return fallback;
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(key) ?? "null") as T | null;
+    return parsed ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function writeJson(key: string, value: unknown) {
+  if (typeof window === "undefined") return;
+  try { window.localStorage.setItem(key, JSON.stringify(value)); } catch { /* best effort */ }
+}
+
+function uid(prefix: string) {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+export function loadSelectedCoach(): CoachId {
+  const value = readJson<CoachId>(SELECTED_COACH_KEY, "alma");
+  return COACHES.some((coach) => coach.id === value) ? value : "alma";
+}
+
+export function saveSelectedCoach(coachId: CoachId) {
+  writeJson(SELECTED_COACH_KEY, coachId);
+}
+
+function knowledgeEvents() {
+  return readJson<KnowledgeEvent[]>(KNOWLEDGE_KEY, []);
+}
+
+function recordKnowledgeEvent(topic: string, kind: KnowledgeEvent["kind"], correct?: boolean) {
+  const next: KnowledgeEvent = {
+    id: uid("coach-knowledge"),
+    at: new Date().toISOString(),
+    topic,
+    kind,
+    ...(kind === "answered" ? { correct: Boolean(correct) } : {}),
+  };
+  writeJson(KNOWLEDGE_KEY, [...knowledgeEvents(), next].slice(-1200));
+}
+
+export function recordCoachQuestionAnswer(topic: string, correct: boolean) {
+  recordKnowledgeEvent(topic, "answered", correct);
+}
+
+function bucketId(distance: number) {
+  if (distance <= 2) return "0-2";
+  if (distance <= 5) return "3-5";
+  if (distance <= 8) return "6-8";
+  if (distance <= 14) return "9-14";
+  return "15+";
+}
+
+const DISTANCE_BUCKETS = [
+  { id: "0-2", min: 1, max: 2, base: 0.31 },
+  { id: "3-5", min: 3, max: 5, base: 0.27 },
+  { id: "6-8", min: 6, max: 8, base: 0.18 },
+  { id: "9-14", min: 9, max: 14, base: 0.16 },
+  { id: "15+", min: 15, max: 22, base: 0.08 },
+] as const;
+
+function randomInteger(min: number, max: number) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+/**
+ * V1: realism first, adaptation second.
+ * Base weights approximate an on-course mix. Known weak buckets receive only
+ * a moderate boost, and the previous bucket is strongly down-weighted.
+ */
+export function nextCoachPuttingDistance(previous?: number) {
+  const model = loadPlayerEngineModel();
+  const weighted = DISTANCE_BUCKETS.map((range) => {
+    const bucket = model.buckets[`putting:${range.id}`];
+    const confidence = bucket?.confidence ?? 0;
+    const performance = bucket?.performance ?? 0.68;
+    const weakness = Math.max(0, 0.72 - performance);
+    const weaknessBoost = 1 + weakness * (0.6 + confidence * 0.6);
+    const repeatPenalty = previous !== undefined && bucketId(previous) === range.id ? 0.35 : 1;
+    return { ...range, weight: range.base * weaknessBoost * repeatPenalty };
+  });
+
+  const total = weighted.reduce((sum, range) => sum + range.weight, 0);
+  let roll = Math.random() * total;
+  let selected = weighted[0];
+  for (const range of weighted) {
+    roll -= range.weight;
+    if (roll <= 0) { selected = range; break; }
+  }
+
+  let distance = randomInteger(selected.min, selected.max);
+  if (previous !== undefined) {
+    let tries = 0;
+    while ((distance === previous || Math.abs(distance - previous) < 2) && tries < 10) {
+      distance = randomInteger(selected.min, selected.max);
+      tries += 1;
+    }
+  }
+  return distance;
+}
+
+/**
+ * Every registered putt is written immediately to the canonical append-only
+ * Shot Bank. Each attempt is its own completed rating unit so closing an
+ * infinity session never discards already registered shots.
+ */
+export function recordCoachPuttingAttempt(
+  coachSessionId: string,
+  sequence: number,
+  distance: number,
+  strokes: 1 | 2 | 3 | 4,
+  coachId: CoachId,
+): CoachPuttingAttempt {
+  const playedAt = new Date().toISOString();
+  const attemptSessionId = `${coachSessionId}:putt:${sequence}`;
+
+  recordPuttingSession({
+    session_id: attemptSessionId,
+    source: "coach-putting",
+    activity_type: "game",
+    played_at: playedAt,
+    attempts: [{
+      distance_m: distance,
+      first_putt_holed: strokes === 1,
+      strokes_to_hole: strokes,
+      context: {
+        hcp_eligible: true,
+        independent_attempt: true,
+        progression_format: false,
+        format_id: "coach-putting-infinity-v1",
+        coach_id: coachId,
+        coach_session_id: coachSessionId,
+      },
+    }],
+    session_metadata: {
+      coach_session_id: coachSessionId,
+      coach_id: coachId,
+      infinity_mode: true,
+    },
+  });
+
+  recordEngineOutcome({
+    skill: "putting",
+    distance,
+    performance: puttingPerformanceFromStrokes(strokes),
+    context: "game",
+    activityId: "coach-putting",
+  });
+
+  return {
+    id: `${attemptSessionId}:shot:1`,
+    coachSessionId,
+    playedAt,
+    distance,
+    strokes,
+  };
+}
+
+type LearningEntry = {
+  id: string;
+  topic: string;
+  condition: (distance: number, strokes: number) => boolean;
+  text: string;
+};
+
+/** Curated, non-attributed v1 library. No live-generated tour claims. */
+const LEARNING_LIBRARY: LearningEntry[] = [
+  { id: "lag-goal", topic: "lag-goal", condition: (d, s) => d >= 10 && s >= 3, text: "Från den här längden är den stora vinsten att eliminera treputt. Prioritera fart och en enkel andraputt framför att jaga hålet." },
+  { id: "lag-good", topic: "lag-goal", condition: (d, s) => d >= 10 && s <= 2, text: "Bra. På långputt är två puttar ett starkt resultat. Fartkontroll gör ofta större skillnad för scoren än att försöka vara perfekt på linjen." },
+  { id: "short-start", topic: "start-line", condition: (d, s) => d <= 2 && s >= 2, text: "På kortputt blir startlinjen extra viktig. Bestäm startpunkten före stroken och försök starta bollen där, i stället för att styra den genom träffen." },
+  { id: "short-routine", topic: "short-routine", condition: (d, s) => d <= 2 && s === 1, text: "Satt. Kortputt blir starkt när det enkla är repeterbart: samma läsning, samma rutin och fullt commitment till startlinjen." },
+  { id: "mid-speed", topic: "pace", condition: (d, s) => d >= 4 && d <= 8 && s >= 3, text: "På mellanlängd kostar dålig fart snabbt ett extra slag. Tänk slutposition: vilken fart lämnar den enklaste nästa putten om den inte går i?" },
+  { id: "line-speed", topic: "line-speed", condition: (d, s) => d >= 3 && d <= 8 && s === 1, text: "Bra satt. Linje och fart hör ihop: mer fart minskar den effektiva breaken, mindre fart gör att lutningen hinner påverka bollen mer." },
+  { id: "external-focus", topic: "external-focus", condition: (d) => d >= 12, text: "På långputt kan ett yttre fokus hjälpa: tänk mer på var bollen ska stanna än på hur själva putterrörelsen ska se ut." },
+  { id: "green-read", topic: "green-reading", condition: (d) => d >= 5 && d <= 12, text: "Läs greenen innan du ställer upp. Börja med den stora lutningen och fallinjen, välj sedan startlinje och fart. Det minskar sena korrigeringar över bollen." },
+  { id: "quiet-eyes", topic: "visual-routine", condition: (d, s) => d <= 5 && s >= 2, text: "Ett enkelt sätt att göra kortputten lugnare är att låta blicken bli stilla före stroken. Läs, välj startpunkt och undvik en sista korrigering när du står över bollen." },
+  { id: "one-change", topic: "feedback", condition: (_d, s) => s >= 3, text: "Efter ett dyrt resultat: ändra inte tre saker samtidigt. Välj en sak till nästa putt – linje, fart eller rutin – och gör den tydligt." },
+  { id: "random-transfer", topic: "transfer", condition: (d) => d >= 6, text: "Vi varierar längderna medvetet. På banan får du nästan aldrig samma putt två gånger, så variation tränar avståndskänslan för spel bättre än ren blockrepetition." },
+  { id: "pattern-not-shot", topic: "patterns", condition: (d) => d >= 8, text: "En enskild putt säger ganska lite. Det är mönstret över många försök på liknande längder som visar vad som faktiskt behöver förbättras." },
+];
+
+function topicExposure(topic: string) {
+  return knowledgeEvents().filter((event) => event.kind === "shown" && event.topic === topic).length;
+}
+
+function praise(coachId: CoachId) {
+  if (coachId === "axel") return "Bra. Gör samma sak igen när nästa chans kommer.";
+  if (coachId === "leo") return "Snyggt! Det där är ett resultat som bygger självförtroende på banan.";
+  return "Bra spelat. Stabilt – behåll samma lugna rutin.";
+}
+
+export function coachPuttingComment(
+  distance: number,
+  strokes: number,
+  coachId: CoachId,
+  shotNumber: number,
+) {
+  if (shotNumber < 2) return null;
+
+  const eligible = LEARNING_LIBRARY
+    .filter((entry) => entry.condition(distance, strokes))
+    .sort((a, b) => topicExposure(a.topic) - topicExposure(b.topic));
+
+  if (!eligible.length) {
+    return strokes === 1 && shotNumber % 4 === 0 ? praise(coachId) : null;
+  }
+
+  // Prefer fresh concepts and deliberately leave some shots uncommented.
+  if (strokes === 2 && shotNumber % 3 !== 0) return null;
+  const fresh = eligible.filter((entry) => topicExposure(entry.topic) < 3);
+  const pool = fresh.length ? fresh : eligible.slice(0, 2);
+  const entry = pool[Math.floor(Math.random() * pool.length)];
+  recordKnowledgeEvent(entry.topic, "shown");
+
+  if (coachId === "axel") return entry.text;
+  if (coachId === "leo") return `Bra att veta: ${entry.text}`;
+  return `Coachens tanke: ${entry.text}`;
+}
+
+export function maybeCoachPuttingQuestion(distance: number, shotNumber: number): CoachQuestion | null {
+  if (shotNumber < 5 || shotNumber % 7 !== 0) return null;
+
+  if (distance >= 10) {
+    return {
+      topic: "lag-goal",
+      prompt: "Vad är huvudmålet från den här längden?",
+      options: ["Försöka håla till varje pris", "Lämna en enkel andraputt"],
+      correct: 1,
+      feedback: "Rätt fokus är att minimera treputt. Hålar du är det bonus.",
+    };
+  }
+  if (distance <= 2) {
+    return {
+      topic: "start-line",
+      prompt: "Vad blir extra viktigt på en kortputt?",
+      options: ["Startlinjen", "Maximal fart"],
+      correct: 0,
+      feedback: "På kortputt blir små fel i startlinjen snabbt avgörande.",
+    };
+  }
+  return null;
+}
+
+export function summarizeCoachPutting(attempts: CoachPuttingAttempt[]) {
+  if (!attempts.length) return { count: 0, avg: 0, onePuttPct: 0, threePuttPct: 0 };
+  const total = attempts.reduce((sum, attempt) => sum + attempt.strokes, 0);
+  const one = attempts.filter((attempt) => attempt.strokes === 1).length;
+  const threePlus = attempts.filter((attempt) => attempt.strokes >= 3).length;
+  return {
+    count: attempts.length,
+    avg: Math.round((total / attempts.length) * 100) / 100,
+    onePuttPct: Math.round((one / attempts.length) * 100),
+    threePuttPct: Math.round((threePlus / attempts.length) * 100),
+  };
+}
+
+export function localPuttingDataStatus() {
+  const profile = getLocalPuttingProfile(new Date().toISOString());
+  return { attempts: profile.eligible_attempts, confidence: profile.confidence };
+}
