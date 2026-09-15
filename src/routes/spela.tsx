@@ -1,5 +1,5 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { ChevronRight, Flag, GraduationCap, Trophy, User } from "lucide-react";
+import { ArrowLeft, Bot, ChevronRight, GraduationCap, UserRound, UsersRound } from "lucide-react";
 import { useEffect } from "react";
 import { recordRecommendationImpressions, recordRecommendationOpen } from "@/lib/sg4-recommender";
 
@@ -8,47 +8,118 @@ export const Route = createFileRoute("/spela")({
   component: PlayPage,
 });
 
-function VersusMark() {
-  return <span className="flex h-7 min-w-7 items-center justify-center rounded-full bg-foreground px-1.5 text-[9px] font-black uppercase tracking-[.08em] text-background">VS</span>;
+type PlayCardProps = {
+  href: string;
+  title: string;
+  visual: React.ReactNode;
+  recommendationId?: string;
+};
+
+function PlayCard({ href, title, visual, recommendationId }: PlayCardProps) {
+  return (
+    <a
+      href={href}
+      onClick={() => recommendationId && recordRecommendationOpen(recommendationId)}
+      className="group relative flex min-h-[104px] items-center overflow-hidden rounded-[30px] border border-white/90 bg-white/58 px-4 shadow-[0_18px_50px_-32px_rgba(37,99,235,.34),inset_0_1px_0_rgba(255,255,255,.96)] backdrop-blur-2xl transition-transform active:scale-[.985]"
+    >
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,rgba(255,255,255,.72)_0%,rgba(219,238,255,.52)_48%,rgba(191,222,255,.30)_100%)]"
+      />
+      <span className="relative flex h-[76px] w-[82px] shrink-0 items-center justify-center rounded-[24px] border border-white/90 bg-white/58 shadow-[inset_0_1px_0_rgba(255,255,255,.95),0_10px_26px_-20px_rgba(37,99,235,.45)] backdrop-blur-xl">
+        {visual}
+      </span>
+      <span className="relative min-w-0 flex-1 px-4 text-center font-display text-[24px] leading-none tracking-[-0.02em] text-[#071b3a]">
+        {title}
+      </span>
+      <ChevronRight className="relative h-6 w-6 shrink-0 text-[#6e89ad] transition-transform group-active:translate-x-0.5" strokeWidth={2.6} />
+    </a>
+  );
 }
 
-function PlayerDot({ side, small = false }: { side: "blue" | "red"; small?: boolean }) {
-  const tone = side === "blue" ? "border-blue-400/50 bg-blue-500/[.10] text-blue-600" : "border-red-400/50 bg-red-500/[.10] text-red-500";
-  return <span className={`flex shrink-0 items-center justify-center rounded-full border ${tone} ${small ? "h-8 w-8" : "h-10 w-10"}`}><User className={small ? "h-3.5 w-3.5" : "h-4.5 w-4.5"} /></span>;
-}
-
-function MatchCard({ href, onClick, title, description, visual, coach = false }: { href: string; onClick: () => void; title: string; description: string; visual: React.ReactNode; coach?: boolean }) {
-  const classes = coach
-    ? "group flex min-h-[118px] items-center gap-4 overflow-hidden rounded-[28px] border border-emerald-400/30 bg-gradient-to-r from-emerald-500/[.10] via-card to-emerald-500/[.04] px-4 py-4 shadow-[0_14px_34px_-26px_rgba(5,150,105,.32)] active:scale-[.99]"
-    : "group flex min-h-[118px] items-center gap-4 overflow-hidden rounded-[28px] border border-blue-400/25 bg-gradient-to-r from-blue-500/[.075] via-card to-red-500/[.075] px-4 py-4 shadow-[0_14px_34px_-26px_rgba(15,23,42,.30)] active:scale-[.99]";
-  return <a href={href} onClick={onClick} className={classes}><span className="flex w-[106px] shrink-0 items-center justify-center">{visual}</span><span className="min-w-0 flex-1"><span className="block font-display text-2xl leading-none">{title}</span><span className="mt-2 block text-sm leading-snug text-muted-foreground">{description}</span></span><ChevronRight className={`h-5 w-5 shrink-0 transition-transform group-active:translate-x-1 ${coach ? "text-emerald-600" : "text-red-500/70"}`} /></a>;
+function FriendVisual() {
+  return (
+    <span className="relative flex h-14 w-16 items-center justify-center">
+      <span className="absolute left-1 flex h-11 w-11 items-center justify-center rounded-full border-2 border-white bg-gradient-to-br from-red-400 to-red-500 text-white shadow-[0_8px_20px_-12px_rgba(239,68,68,.85)]">
+        <UserRound className="h-5 w-5" strokeWidth={2.4} />
+      </span>
+      <span className="absolute right-1 flex h-11 w-11 items-center justify-center rounded-full border-2 border-white bg-gradient-to-br from-blue-400 to-blue-600 text-white shadow-[0_8px_20px_-12px_rgba(37,99,235,.85)]">
+        <UserRound className="h-5 w-5" strokeWidth={2.4} />
+      </span>
+    </span>
+  );
 }
 
 function PlayPage() {
   useEffect(() => {
-    recordRecommendationImpressions(["play-coach", "play-bot", "play-friend", "play-team", "play-cup"]);
+    recordRecommendationImpressions(["play-coach", "play-bot", "play-friend", "play-team"]);
   }, []);
 
-  return <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-28 pt-8">
-    <header><p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">SG4 · Spel</p><h1 className="mt-1 font-display text-4xl">Spela</h1><p className="mt-2 text-sm leading-relaxed text-muted-foreground">Välj hur du vill spela.</p></header>
+  return (
+    <main className="relative mx-auto min-h-screen w-full max-w-md overflow-hidden bg-[#f7fbff] px-5 pb-28 pt-8 text-[#071b3a]">
+      <div aria-hidden="true" className="pointer-events-none absolute -left-24 top-20 h-72 w-72 rounded-full bg-blue-200/25 blur-3xl" />
+      <div aria-hidden="true" className="pointer-events-none absolute -right-28 top-[36%] h-80 w-80 rounded-full bg-sky-200/25 blur-3xl" />
 
-    <section className="mt-6 space-y-3">
-      <MatchCard href="/coach" onClick={() => recordRecommendationOpen("play-coach")} title="Spela med coach" description="Infinity mode som anpassar spelet och lär dig längs vägen." coach visual={<div className="flex h-16 w-16 items-center justify-center rounded-[22px] border border-emerald-300/70 bg-emerald-50 text-emerald-700"><GraduationCap className="h-7 w-7" /></div>} />
+      <header className="relative grid grid-cols-[48px_1fr_48px] items-center">
+        <Link
+          to="/"
+          aria-label="Tillbaka"
+          className="flex h-12 w-12 items-center justify-center rounded-full border border-white/90 bg-white/64 text-[#49698f] shadow-[0_12px_30px_-22px_rgba(37,99,235,.5)] backdrop-blur-xl active:scale-95"
+        >
+          <ArrowLeft className="h-6 w-6" strokeWidth={2.6} />
+        </Link>
+        <h1 className="text-center font-display text-[42px] leading-none tracking-[-0.035em] text-[#071b3a]">Spela</h1>
+        <span />
+      </header>
 
-      <MatchCard href="/match-bot" onClick={() => recordRecommendationOpen("play-bot")} title="Mot bot" description="Välj rival och spela direkt." visual={<div className="flex items-center"><span className="z-20 flex h-11 w-11 items-center justify-center rounded-full border-2 border-card bg-blue-500/[.10] text-xl shadow-sm">👩🏼</span><span className="-ml-2 z-10 flex h-11 w-11 items-center justify-center rounded-full border-2 border-card bg-red-500/[.10] text-xl shadow-sm">👴🏻</span><span className="-ml-2 flex h-11 w-11 items-center justify-center rounded-full border-2 border-card bg-muted text-xl shadow-sm">🧑🏽</span></div>} />
+      <section className="relative mt-12 space-y-3.5">
+        <PlayCard
+          href="/utmaningar"
+          title="Spela själv"
+          visual={
+            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-sky-300 to-blue-600 text-white shadow-[0_10px_24px_-14px_rgba(37,99,235,.75)]">
+              <UserRound className="h-6 w-6" strokeWidth={2.5} />
+            </span>
+          }
+        />
 
-      <MatchCard href="/match?flow=friend" onClick={() => recordRecommendationOpen("play-friend")} title="Mot vän" description="1 mot 1. Samma spel, sida vid sida." visual={<div className="flex items-center gap-2"><PlayerDot side="blue" /><VersusMark /><PlayerDot side="red" /></div>} />
+        <PlayCard
+          href="/match?flow=friend"
+          title="Spela med vän"
+          recommendationId="play-friend"
+          visual={<FriendVisual />}
+        />
 
-      <MatchCard href="/match?flow=team" onClick={() => recordRecommendationOpen("play-team")} title="Lagspel" description="2 mot 2 · Fourball eller Foursomes." visual={<div className="flex items-center gap-1.5"><span className="flex -space-x-2"><PlayerDot side="blue" small /><PlayerDot side="blue" small /></span><VersusMark /><span className="flex -space-x-2"><PlayerDot side="red" small /><PlayerDot side="red" small /></span></div>} />
-    </section>
+        <PlayCard
+          href="/match-bot"
+          title="Spela mot bot"
+          recommendationId="play-bot"
+          visual={<span className="text-[42px] leading-none" role="img" aria-label="Bot">🤖</span>}
+        />
 
-    <section className="mt-7 border-t border-border pt-5">
-      <p className="mb-3 text-[10px] font-black uppercase tracking-[.16em] text-muted-foreground">Fler sätt att spela</p>
-      <div className="overflow-hidden rounded-[24px] border border-border bg-card">
-        <Link to="/cup" onClick={() => recordRecommendationOpen("play-cup")} className="flex items-center gap-3 px-4 py-4 active:bg-muted/40"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-blue-400/25 bg-gradient-to-br from-blue-500/[.08] to-red-500/[.08]"><Trophy className="h-4.5 w-4.5" /></span><span className="min-w-0 flex-1"><span className="block font-display text-lg">Putting Cup</span><span className="block text-xs text-muted-foreground">Kvartsfinal → semifinal → final</span></span><ChevronRight className="h-4 w-4 text-muted-foreground" /></Link>
-        <div className="mx-4 border-t border-border" />
-        <Link to="/utmaningar" className="flex items-center gap-3 px-4 py-4 active:bg-muted/40"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted"><Flag className="h-4.5 w-4.5" /></span><span className="min-w-0 flex-1"><span className="block font-display text-lg">Utmaningar</span><span className="block text-xs text-muted-foreground">Korta spel, scoring och PB-jakt</span></span><ChevronRight className="h-4 w-4 text-muted-foreground" /></Link>
-      </div>
-    </section>
-  </main>;
+        <PlayCard
+          href="/coach"
+          title="Spela med coach"
+          recommendationId="play-coach"
+          visual={
+            <span className="relative flex h-14 w-14 items-center justify-center">
+              <span className="text-[40px] leading-none" role="img" aria-label="Coach">🧑🏻‍🏫</span>
+              <GraduationCap className="absolute -right-1 -top-1 h-4 w-4 text-blue-500/70" />
+            </span>
+          }
+        />
+
+        <PlayCard
+          href="/match?flow=team"
+          title="Spela i lag"
+          recommendationId="play-team"
+          visual={
+            <span className="flex h-14 w-14 items-center justify-center rounded-[20px] bg-gradient-to-br from-sky-200/90 to-blue-500/90 text-white shadow-[0_10px_24px_-14px_rgba(37,99,235,.75)]">
+              <UsersRound className="h-7 w-7" strokeWidth={2.3} />
+            </span>
+          }
+        />
+      </section>
+    </main>
+  );
 }
