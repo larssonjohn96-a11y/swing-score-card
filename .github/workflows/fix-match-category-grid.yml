@@ -12,7 +12,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Apply Speed Match refinement
-        run: python .github/scripts/refine_speed_match.py
+        run: |
+          python .github/scripts/refine_speed_match.py
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('src/routes/match.tsx')
+          s = p.read_text()
+          s = s.replace('${isSpeed ? "Omgång" : "Hål"} ${Math.min(holeIndex + 1, matchLength)} av ${matchLength}', '${category === "speed" ? "Omgång" : "Hål"} ${Math.min(holeIndex + 1, matchLength)} av ${matchLength}', 1)
+          p.write_text(s)
+          PY
       - name: Typecheck
         run: bunx tsgo --noEmit
       - name: Commit
