@@ -9,7 +9,7 @@ import { computeAchievements, computeMilestones, countUncollected } from "@/lib/
 
 const LEFT_TABS = [
   { to: "/", label: "Hem", icon: Home, exact: true },
-  { to: "/traning", label: "Träning", icon: Target, exact: false },
+  { to: "/coach", label: "Coach", icon: GraduationCap, exact: false },
 ] as const;
 
 const RIGHT_TABS = [
@@ -17,6 +17,7 @@ const RIGHT_TABS = [
 ] as const;
 
 const PLAY_LINKS = [
+  { to: "/coach", label: "Spela med coach", description: "Adaptivt spel med en coach som lär känna ditt spel.", icon: GraduationCap, tone: "coach" },
   { to: "/match?flow=friend", label: "Match mot vän", description: "1 mot 1 · välj spel och utmana en kompis.", icon: UserRound, tone: "friend" },
   { to: "/match-bot", label: "Match mot bot", description: "1 mot 1 · välj rival och spela direkt.", icon: Bot, tone: "bot" },
   { to: "/match?flow=team", label: "Lagmatch", description: "2 mot 2 · Fourball eller Foursomes.", icon: Users, tone: "team" },
@@ -24,6 +25,7 @@ const PLAY_LINKS = [
 ] as const;
 
 const MORE_LINKS = [
+  { to: "/traning", label: "Träning", description: "Klassiska träningspass och övningar.", icon: Target, tone: "neutral" },
   { to: "/learn", label: "Lär dig", description: "Lektioner, golfkunskap och interaktiva quiz.", icon: GraduationCap, tone: "learn" },
   { to: "/turneringar", label: "Turneringar", description: "Events, ranking och leaderboard.", icon: Trophy, tone: "gold" },
   { to: "/utmaningar", label: "Utmaningar", description: "Streaks, scoring och personliga rekord.", icon: Flag, tone: "flag" },
@@ -48,6 +50,11 @@ function toneClasses(tone: string) {
 }
 
 function playToneClasses(tone: string) {
+  if (tone === "coach") return {
+    card: "border-emerald-300/55 bg-gradient-to-r from-emerald-500/[.10] via-card to-emerald-500/[.04]",
+    icon: "border border-emerald-300/70 bg-emerald-50 text-emerald-700",
+    arrow: "text-emerald-600",
+  };
   if (tone === "friend") return {
     card: "border-blue-300/55 bg-gradient-to-r from-blue-500/[.10] via-card to-red-500/[.06]",
     icon: "border border-blue-300/70 bg-blue-50 text-blue-600",
@@ -125,10 +132,10 @@ export function BottomNav() {
               <ChevronRight className={`h-4 w-4 shrink-0 ${tone.arrow}`} />
             </>;
             if (item.to === "/match?flow=friend" || item.to === "/match?flow=team") {
-    const flow = item.to.endsWith("team") ? "team" : "friend";
-    return <button key={item.to} type="button" onClick={() => { setPlayOpen(false); navigate({ to: "/match", search: { flow } as any }); }} className={`flex w-full items-center gap-4 rounded-[24px] border px-4 py-4 text-left shadow-[0_12px_32px_-28px_rgba(15,23,42,.28)] active:scale-[.985] ${tone.card}`}>{inner}</button>;
-  }
-  return <Link key={item.to} to={item.to} onClick={() => setPlayOpen(false)} className={`flex items-center gap-4 rounded-[24px] border px-4 py-4 shadow-[0_12px_32px_-28px_rgba(15,23,42,.28)] active:scale-[.985] ${tone.card}`}>{inner}</Link>;
+              const flow = item.to.endsWith("team") ? "team" : "friend";
+              return <button key={item.to} type="button" onClick={() => { setPlayOpen(false); navigate({ to: "/match", search: { flow } as any }); }} className={`flex w-full items-center gap-4 rounded-[24px] border px-4 py-4 text-left shadow-[0_12px_32px_-28px_rgba(15,23,42,.28)] active:scale-[.985] ${tone.card}`}>{inner}</button>;
+            }
+            return <Link key={item.to} to={item.to} onClick={() => setPlayOpen(false)} className={`flex items-center gap-4 rounded-[24px] border px-4 py-4 shadow-[0_12px_32px_-28px_rgba(15,23,42,.28)] active:scale-[.985] ${tone.card}`}>{inner}</Link>;
           })}
         </div>
       </SheetContent>
