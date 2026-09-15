@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Check, ChevronRight, Flame, Target, X } from "lucide-react";
+import { Check, ChevronRight, Target, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 import { useAuth } from "@/hooks/use-auth";
@@ -52,36 +52,43 @@ function consecutiveFromEnd(attempts: CoachPuttingAttempt[], predicate: (attempt
   return count;
 }
 
+function shortHoledStreak(attempts: CoachPuttingAttempt[]) {
+  const shortAttempts = attempts.filter((attempt) => attempt.distance <= 3);
+  return consecutiveFromEnd(shortAttempts, (attempt) => attempt.strokes === 1);
+}
+
 function longNoThreeStreak(attempts: CoachPuttingAttempt[]) {
   const longAttempts = attempts.filter((attempt) => attempt.distance > 8);
   return consecutiveFromEnd(longAttempts, (attempt) => attempt.strokes <= 2);
 }
 
 function maybePressureChallenge(distance: number, attempts: CoachPuttingAttempt[]): PressureChallenge | null {
-  if (attempts.length < 2) return null;
-
-  const holedStreak = consecutiveFromEnd(attempts, (attempt) => attempt.strokes === 1);
+  const shortStreak = shortHoledStreak(attempts);
   const longStreak = longNoThreeStreak(attempts);
-  const naturallyInteresting = distance <= 3 || distance >= 8;
-  if (!naturallyInteresting) return null;
 
-  const streakPressure = holedStreak >= 2 || longStreak >= 3;
-  const chance = streakPressure ? 0.58 : distance <= 3 ? 0.24 : 0.30;
-  if (Math.random() > chance) return null;
-
-  if (distance <= 3) {
+  if (distance <= 3 && shortStreak >= 2) {
+    const harderShortPutt = distance >= 2.5;
+    const chance = harderShortPutt ? 0.68 : 0.46;
+    if (Math.random() > chance) return null;
     return {
-      title: "Sänk putten",
-      detail: holedStreak >= 2 ? `Behåll din streak på ${holedStreak} hålade.` : "En putt. Fullt commitment.",
+      title: "Håla denna putt",
+      detail: `För att hålla ${shortStreak} kortputtar i rad vid liv`,
       maxStrokes: 1,
     };
   }
 
-  return {
-    title: "Klara den på max 2 puttar",
-    detail: longStreak >= 3 ? `Behåll ${longStreak} långputtar utan treputt.` : "Fartkontroll först. Undvik treputten.",
-    maxStrokes: 2,
-  };
+  if (distance > 8 && longStreak >= 3) {
+    const harderLongPutt = distance >= 12;
+    const chance = harderLongPutt ? 0.68 : 0.46;
+    if (Math.random() > chance) return null;
+    return {
+      title: "Max 2 puttar",
+      detail: `För att hålla ${longStreak} långputtar utan treputt vid liv`,
+      maxStrokes: 2,
+    };
+  }
+
+  return null;
 }
 
 function SpeechBubble({ avatar, name, text, fixed = false }: { avatar: string; name: string; text: string; fixed?: boolean }) {
@@ -125,7 +132,7 @@ function PlayWithCoachPage() {
   const summary = useMemo(() => summarizeCoachPutting(attempts), [attempts]);
   const liveStats = useMemo(() => {
     const totalPutts = attempts.reduce((sum, attempt) => sum + attempt.strokes, 0);
-    const holedStreak = consecutiveFromEnd(attempts, (attempt) => attempt.strokes === 1);
+    const shortStreak = shortHoledStreak(attempts);
     const noThreeStreak = consecutiveFromEnd(attempts, (attempt) => attempt.strokes <= 2);
     const longStreak = longNoThreeStreak(attempts);
     const outsideEight = attempts.filter((attempt) => attempt.distance > 8);
@@ -133,9 +140,9 @@ function PlayWithCoachPage() {
 
     let highlightLabel = "Puttar";
     let highlightValue = String(totalPutts);
-    if (holedStreak >= 2) {
-      highlightLabel = "Hålade i rad";
-      highlightValue = `🔥 ${holedStreak}`;
+    if (shortStreak >= 2) {
+      highlightLabel = "≤3 m hålade i rad";
+      highlightValue = `🔥 ${shortStreak}`;
     } else if (longStreak >= 2) {
       highlightLabel = ">8 m utan 3-putt";
       highlightValue = `🎯 ${longStreak}`;
@@ -147,7 +154,7 @@ function PlayWithCoachPage() {
     return {
       totalPutts,
       holes: attempts.length,
-      holedStreak,
+      shortStreak,
       longStreak,
       longThreePuttPct: outsideEight.length ? Math.round((threePuttOutsideEight / outsideEight.length) * 100) : 0,
       highlightLabel,
@@ -182,10 +189,10 @@ function PlayWithCoachPage() {
     setAttempts(nextAttempts);
     if (activePressure) {
       setCoachText(pressureWon
-        ? `Press klarad. ${strokes === 1 ? "Snyggt sänkt." : "Två puttar och vidare."}`
+        ? `Press klarad. ${strokes === 1 ? "Snyggt sänkt." : "Två puttar och streaken lever vidare."}`
         : activePressure.maxStrokes === 1
-          ? "Pressen missad. Släpp den direkt och ta nästa uppgift."
-          : "Treputten kostade. Nästa långputt börjar vi om med fartkontrollen.");
+          ? "Streaken tog slut där. Ny chans att bygga en direkt."
+          : "Treputten bröt streaken. Nästa långputt bygger vi om från noll.");
     } else {
       setCoachText(comment ?? (strokes === 1 ? "Snyggt. Den satt. Nästa läge." : strokes >= 3 ? "Registrerat. Släpp den och gå vidare till nästa läge." : "Bra. Nästa putt."));
     }
@@ -234,6 +241,8 @@ function PlayWithCoachPage() {
       </> : null}
 
       {phase === "play" ? <>
+        <style>{`@keyframes sg4PressureEnter{0%{opacity:.25;transform:scale(.985)}55%{opacity:1;transform:scale(1.006)}100%{opacity:1;transform:scale(1)}}@keyframes sg4PressurePulse{0%,100%{transform:scale(1);box-shadow:0 12px 28px -20px rgba(245,158,11,.52),0 0 0 0 rgba(250,204,21,0)}45%{transform:scale(1.012);box-shadow:0 18px 34px -19px rgba(245,158,11,.78),0 0 0 2px rgba(250,204,21,.32)}65%{transform:scale(1.006);box-shadow:0 15px 31px -19px rgba(245,158,11,.66),0 0 0 1px rgba(250,204,21,.18)}}@keyframes sg4PressureWave{0%{transform:translateX(-145%) skewX(-18deg);opacity:0}12%{opacity:.18}48%{opacity:.62}78%{opacity:.18}100%{transform:translateX(245%) skewX(-18deg);opacity:0}}`}</style>
+
         <header className="flex min-h-[74px] items-center justify-between rounded-[22px] bg-blue-600 px-4 py-3 text-white shadow-[0_12px_28px_-18px_rgba(37,99,235,.8)]">
           <div className="min-w-0 pr-3">
             <p className="truncate font-display text-xl leading-none">{playerName}</p>
@@ -249,14 +258,17 @@ function PlayWithCoachPage() {
           <SpeechBubble avatar={coach.emoji} name={coach.name} text={coachText} fixed />
         </section>
 
-        <div className="mt-3 h-[72px]">
-          {pressure ? <section className="flex h-full items-center justify-between rounded-[20px] border border-amber-300 bg-amber-100 px-4 shadow-sm">
-            <div className="min-w-0 pr-3">
-              <div className="flex items-center gap-1.5"><Flame className="h-4 w-4 text-amber-700" /><p className="text-[9px] font-black uppercase tracking-[.16em] text-amber-700">Pressläge</p></div>
-              <p className="mt-1 truncate font-display text-lg leading-none text-amber-950">{pressure.title}</p>
+        <div className="mt-3 min-h-[66px]">
+          {pressure ? <div className="overflow-hidden">
+            <div key={`${distance}-${pressure.title}`} className="relative overflow-hidden rounded-[22px] border border-amber-300/90 bg-gradient-to-r from-yellow-400 via-amber-300 to-yellow-300 px-5 py-3 text-center text-slate-950 shadow-[0_12px_28px_-20px_rgba(245,158,11,.65)]" style={{ animation: "sg4PressureEnter 420ms cubic-bezier(.2,.8,.25,1) both, sg4PressurePulse 1.9s ease-in-out 520ms infinite" }}>
+              <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 w-[52%] bg-gradient-to-r from-transparent via-white/90 to-transparent blur-[1px]" style={{ animation: "sg4PressureWave 1.18s cubic-bezier(.2,.75,.25,1) 150ms both" }} />
+              <div className="relative">
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-950">Pressläge · Nu gäller det</p>
+                <p className="mt-1 font-display text-lg leading-none text-slate-950">{pressure.title}</p>
+                <p className="mt-1 text-xs font-bold leading-snug text-slate-800">{pressure.detail}</p>
+              </div>
             </div>
-            <p className="max-w-[46%] text-right text-[10px] font-bold leading-snug text-amber-800">{pressure.detail}</p>
-          </section> : null}
+          </div> : null}
         </div>
 
         <section className="mt-3 rounded-[26px] border border-slate-200 bg-white px-5 py-5 text-center shadow-[0_18px_42px_-30px_rgba(15,23,42,.45)]">
