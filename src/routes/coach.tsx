@@ -26,13 +26,13 @@ type PressureChallenge = { title: string; detail: string; maxStrokes: 1 | 2 };
 
 const DEFAULT_COACH_ID: CoachId = "alma";
 
-const CATEGORIES: Array<{ id: Category; title: string; subtitle: string; description: string; available: boolean }> = [
-  { id: "putting", title: "Puttning", subtitle: "Putting", description: "Håla ut från varierade avstånd. Färre puttar är bättre.", available: true },
-  { id: "around-the-green", title: "Chippning", subtitle: "Chipping", description: "Närmast hålet från varierade lägen.", available: false },
-  { id: "bunker", title: "Bunker", subtitle: "Bunkerslag", description: "Träna beslut och resultat från bunker.", available: false },
-  { id: "approach", title: "Inspel", subtitle: "Järn & wedge", description: "Varierade avstånd mot samma typ av mål.", available: false },
-  { id: "off-the-tee", title: "Driver", subtitle: "Utslag", description: "Fairway, längd och spridning från tee.", available: false },
-  { id: "speed", title: "Speed", subtitle: "Ball speed", description: "Speed-format med coachfeedback.", available: false },
+const CATEGORIES: Array<{ id: Category; title: string; available: boolean }> = [
+  { id: "putting", title: "Puttning", available: true },
+  { id: "around-the-green", title: "Chippning", available: false },
+  { id: "bunker", title: "Bunker", available: false },
+  { id: "approach", title: "Inspel", available: false },
+  { id: "off-the-tee", title: "Driver", available: false },
+  { id: "speed", title: "Speed", available: false },
 ];
 
 function newSessionId() {
@@ -94,7 +94,7 @@ function maybePressureChallenge(distance: number, attempts: CoachPuttingAttempt[
 function SpeechBubble({ avatar, name, text, fixed = false }: { avatar: string; name: string; text: string; fixed?: boolean }) {
   return (
     <div className={`flex items-end gap-3 ${fixed ? "h-[136px]" : ""}`}>
-      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[18px] border border-slate-700/10 bg-[#25231f] text-4xl shadow-sm">{avatar}</div>
+      <div className="flex h-20 w-20 shrink-0 items-center justify-center text-[58px] leading-none">{avatar}</div>
       <div className={`relative mb-1 flex-1 rounded-[18px] bg-white px-4 py-3.5 text-slate-900 shadow-[0_8px_24px_-18px_rgba(15,23,42,.45)] ${fixed ? "h-[132px] overflow-hidden" : ""}`}>
         <span className="absolute -left-2 bottom-4 h-4 w-4 rotate-45 bg-white" />
         <p className="relative text-[10px] font-black uppercase tracking-[.13em] text-slate-400">{name}</p>
@@ -228,11 +228,9 @@ function PlayWithCoachPage() {
           <div className="mt-5 grid grid-cols-2 gap-3">
             {CATEGORIES.map((item) => {
               const active = category === item.id;
-              return <button key={item.id} type="button" onClick={() => item.available && setCategory(item.id)} className={`relative min-h-[122px] rounded-[24px] border p-4 text-left transition active:scale-[.985] ${active ? "border-blue-500 bg-blue-50 ring-2 ring-blue-500/15" : item.available ? "border-slate-200 bg-white" : "border-slate-200 bg-white/55 opacity-50"}`}>
+              return <button key={item.id} type="button" onClick={() => item.available && setCategory(item.id)} className={`relative flex min-h-[122px] items-center justify-center rounded-[24px] border p-4 text-center transition active:scale-[.985] ${active ? "border-blue-500 bg-blue-50 ring-2 ring-blue-500/15" : item.available ? "border-slate-200 bg-white" : "border-slate-200 bg-white/55 opacity-50"}`}>
                 {active ? <span className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-white"><Check className="h-3.5 w-3.5" /></span> : null}
-                <p className="font-display text-2xl leading-none text-slate-950">{item.title}</p>
-                <p className="mt-1 text-[10px] font-black uppercase tracking-[.12em] text-slate-400">{item.subtitle}</p>
-                <p className="mt-3 text-xs leading-snug text-slate-500">{item.available ? item.description : "Kommer snart"}</p>
+                <p className={`font-display text-[27px] leading-none ${active ? "text-blue-700" : "text-slate-950"}`}>{item.title}</p>
               </button>;
             })}
           </div>
