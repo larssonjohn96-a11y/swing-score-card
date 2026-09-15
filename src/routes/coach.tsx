@@ -1,15 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Check, ChevronRight, Target, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { Check, ChevronRight, Flame, Target, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
+import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/integrations/supabase/client";
 import { LIGHT_SURFACE } from "./8-bollar";
 import {
   COACHES,
   coachPuttingComment,
-  loadSelectedCoach,
   nextCoachPuttingDistance,
   recordCoachPuttingAttempt,
-  saveSelectedCoach,
   summarizeCoachPutting,
   type CoachId,
   type CoachPuttingAttempt,
@@ -22,6 +22,9 @@ export const Route = createFileRoute("/coach")({
 
 type Phase = "setup" | "play" | "summary";
 type Category = "putting" | "around-the-green" | "bunker" | "approach" | "off-the-tee" | "speed";
+type PressureChallenge = { title: string; detail: string; maxStrokes: 1 | 2 };
+
+const DEFAULT_COACH_ID: CoachId = "alma";
 
 const CATEGORIES: Array<{ id: Category; title: string; subtitle: string; description: string; available: boolean }> = [
   { id: "putting", title: "Puttning", subtitle: "Putting", description: "Håla ut från varierade avstånd. Färre puttar är bättre.", available: true },
@@ -40,6 +43,47 @@ function formatDistance(distance: number) {
   return Number.isInteger(distance) ? String(distance) : String(distance).replace(".", ",");
 }
 
+function consecutiveFromEnd(attempts: CoachPuttingAttempt[], predicate: (attempt: CoachPuttingAttempt) => boolean) {
+  let count = 0;
+  for (let index = attempts.length - 1; index >= 0; index -= 1) {
+    if (!predicate(attempts[index])) break;
+    count += 1;
+  }
+  return count;
+}
+
+function longNoThreeStreak(attempts: CoachPuttingAttempt[]) {
+  const longAttempts = attempts.filter((attempt) => attempt.distance > 8);
+  return consecutiveFromEnd(longAttempts, (attempt) => attempt.strokes <= 2);
+}
+
+function maybePressureChallenge(distance: number, attempts: CoachPuttingAttempt[]): PressureChallenge | null {
+  if (attempts.length < 2) return null;
+
+  const holedStreak = consecutiveFromEnd(attempts, (attempt) => attempt.strokes === 1);
+  const longStreak = longNoThreeStreak(attempts);
+  const naturallyInteresting = distance <= 3 || distance >= 8;
+  if (!naturallyInteresting) return null;
+
+  const streakPressure = holedStreak >= 2 || longStreak >= 3;
+  const chance = streakPressure ? 0.58 : distance <= 3 ? 0.24 : 0.30;
+  if (Math.random() > chance) return null;
+
+  if (distance <= 3) {
+    return {
+      title: "Sänk putten",
+      detail: holedStreak >= 2 ? `Behåll din streak på ${holedStreak} hålade.` : "En putt. Fullt commitment.",
+      maxStrokes: 1,
+    };
+  }
+
+  return {
+    title: "Klara den på max 2 puttar",
+    detail: longStreak >= 3 ? `Behåll ${longStreak} långputtar utan treputt.` : "Fartkontroll först. Undvik treputten.",
+    maxStrokes: 2,
+  };
+}
+
 function SpeechBubble({ avatar, name, text, fixed = false }: { avatar: string; name: string; text: string; fixed?: boolean }) {
   return (
     <div className={`flex items-end gap-3 ${fixed ? "h-[136px]" : ""}`}>
@@ -55,9 +99,11 @@ function SpeechBubble({ avatar, name, text, fixed = false }: { avatar: string; n
 
 function PlayWithCoachPage() {
   useHideBottomNav(true);
-  const [phase, setPhase] = useState<Phase>("setup");
-  const [coachId, setCoachId] = useState<CoachId>(() => loadSelectedCoach());
+  const { user, loading } = useAuth();
+  const coachId = DEFAULT_COACH_ID;
   const coach = COACHES.find((item) => item.id === coachId) ?? COACHES[0];
+  const [playerName, setPlayerName] = useState("Du");
+  const [phase, setPhase] = useState<Phase>("setup");
   const [category, setCategory] = useState<Category | null>(null);
   const [sessionId, setSessionId] = useState(() => newSessionId());
   const [distance, setDistance] = useState(() => nextCoachPuttingDistance());
@@ -65,29 +111,57 @@ function PlayWithCoachPage() {
   const [coachText, setCoachText] = useState("Välj vad du vill spela så kör vi direkt.");
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
+  const [pressure, setPressure] = useState<PressureChallenge | null>(null);
+
+  useEffect(() => {
+    if (loading || !user) return;
+    let cancelled = false;
+    void supabase.from("profiles").select("display_name").eq("id", user.id).maybeSingle().then(({ data }) => {
+      if (!cancelled && data?.display_name) setPlayerName(data.display_name);
+    });
+    return () => { cancelled = true; };
+  }, [user, loading]);
 
   const summary = useMemo(() => summarizeCoachPutting(attempts), [attempts]);
   const liveStats = useMemo(() => {
     const totalPutts = attempts.reduce((sum, attempt) => sum + attempt.strokes, 0);
+    const holedStreak = consecutiveFromEnd(attempts, (attempt) => attempt.strokes === 1);
+    const noThreeStreak = consecutiveFromEnd(attempts, (attempt) => attempt.strokes <= 2);
+    const longStreak = longNoThreeStreak(attempts);
     const outsideEight = attempts.filter((attempt) => attempt.distance > 8);
     const threePuttOutsideEight = outsideEight.filter((attempt) => attempt.strokes >= 3).length;
+
+    let highlightLabel = "Puttar";
+    let highlightValue = String(totalPutts);
+    if (holedStreak >= 2) {
+      highlightLabel = "Hålade i rad";
+      highlightValue = `🔥 ${holedStreak}`;
+    } else if (longStreak >= 2) {
+      highlightLabel = ">8 m utan 3-putt";
+      highlightValue = `🎯 ${longStreak}`;
+    } else if (noThreeStreak >= 3) {
+      highlightLabel = "Hål ≤2 puttar";
+      highlightValue = String(noThreeStreak);
+    }
+
     return {
       totalPutts,
       holes: attempts.length,
+      holedStreak,
+      longStreak,
       longThreePuttPct: outsideEight.length ? Math.round((threePuttOutsideEight / outsideEight.length) * 100) : 0,
+      highlightLabel,
+      highlightValue,
     };
   }, [attempts]);
 
-  function selectCoach(next: CoachId) {
-    setCoachId(next);
-    saveSelectedCoach(next);
-  }
-
   function startGame() {
     if (category !== "putting") return;
+    const firstDistance = nextCoachPuttingDistance();
     setSessionId(newSessionId());
     setAttempts([]);
-    setDistance(nextCoachPuttingDistance());
+    setDistance(firstDistance);
+    setPressure(null);
     setCoachText("Vi kör putting. Spela första putten och registrera resultatet direkt.");
     setConfirmEnd(false);
     setTransitioning(false);
@@ -98,14 +172,27 @@ function PlayWithCoachPage() {
     if (transitioning) return;
     setTransitioning(true);
     const sequence = attempts.length + 1;
+    const activePressure = pressure;
     const attempt = recordCoachPuttingAttempt(sessionId, sequence, distance, strokes, coachId);
     const nextAttempts = [...attempts, attempt];
     const comment = coachPuttingComment(distance, strokes, coachId, sequence);
     const nextDistance = nextCoachPuttingDistance(distance);
+    const pressureWon = activePressure ? strokes <= activePressure.maxStrokes : false;
+
     setAttempts(nextAttempts);
-    setCoachText(comment ?? (strokes === 1 ? "Snyggt. Den satt. Nästa läge." : strokes >= 3 ? "Registrerat. Släpp den och gå vidare till nästa läge." : "Bra. Nästa putt."));
+    if (activePressure) {
+      setCoachText(pressureWon
+        ? `Press klarad. ${strokes === 1 ? "Snyggt sänkt." : "Två puttar och vidare."}`
+        : activePressure.maxStrokes === 1
+          ? "Pressen missad. Släpp den direkt och ta nästa uppgift."
+          : "Treputten kostade. Nästa långputt börjar vi om med fartkontrollen.");
+    } else {
+      setCoachText(comment ?? (strokes === 1 ? "Snyggt. Den satt. Nästa läge." : strokes >= 3 ? "Registrerat. Släpp den och gå vidare till nästa läge." : "Bra. Nästa putt."));
+    }
+
     window.setTimeout(() => {
       setDistance(nextDistance);
+      setPressure(maybePressureChallenge(nextDistance, nextAttempts));
       setTransitioning(false);
     }, 280);
   }
@@ -125,31 +212,16 @@ function PlayWithCoachPage() {
         </header>
 
         <section className="mt-6">
-          <p className="text-[10px] font-black uppercase tracking-[.16em] text-slate-400">Välj coach</p>
-          <div className="mt-3 grid grid-cols-3 gap-2.5">
-            {COACHES.map((item) => {
-              const active = item.id === coachId;
-              return <button key={item.id} type="button" onClick={() => selectCoach(item.id)} className={`relative rounded-[24px] border px-2 py-4 text-center transition active:scale-[.98] ${active ? "border-emerald-500 bg-emerald-50 shadow-sm ring-2 ring-emerald-500/15" : "border-slate-200 bg-white"}`}>
-                {active ? <span className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-white"><Check className="h-3 w-3" /></span> : null}
-                <span className="block text-4xl leading-none">{item.emoji}</span>
-                <span className="mt-2 block font-display text-lg leading-none text-slate-950">{item.name}</span>
-                <span className="mt-1 block text-[9px] font-bold leading-tight text-slate-500">{item.style}</span>
-              </button>;
-            })}
-          </div>
+          <SpeechBubble avatar={coach.emoji} name={coach.name} text="Välj vad du vill spela. Jag styr variationen och höjer pressen när det passar." />
         </section>
 
-        <section className="mt-6">
-          <SpeechBubble avatar={coach.emoji} name={coach.name} text="Välj en kategori. Jag styr variationen under spelet och ger feedback när det faktiskt hjälper." />
-        </section>
-
-        <section className="mt-7">
-          <p className="text-[10px] font-black uppercase tracking-[.18em] text-slate-400">Kategori</p>
-          <h1 className="mt-1 font-display text-[36px] leading-none text-slate-950">Vad ska ni tävla i?</h1>
+        <section className="mt-8">
+          <p className="text-[10px] font-black uppercase tracking-[.18em] text-slate-400">Coachläge</p>
+          <h1 className="mt-1 font-display text-[38px] leading-none text-slate-950">Vad vill du spela?</h1>
           <div className="mt-5 grid grid-cols-2 gap-3">
             {CATEGORIES.map((item) => {
               const active = category === item.id;
-              return <button key={item.id} type="button" onClick={() => item.available && setCategory(item.id)} className={`relative min-h-[132px] rounded-[24px] border p-4 text-left transition active:scale-[.985] ${active ? "border-blue-500 bg-blue-50 ring-2 ring-blue-500/15" : item.available ? "border-slate-200 bg-white" : "border-slate-200 bg-white/55 opacity-50"}`}>
+              return <button key={item.id} type="button" onClick={() => item.available && setCategory(item.id)} className={`relative min-h-[122px] rounded-[24px] border p-4 text-left transition active:scale-[.985] ${active ? "border-blue-500 bg-blue-50 ring-2 ring-blue-500/15" : item.available ? "border-slate-200 bg-white" : "border-slate-200 bg-white/55 opacity-50"}`}>
                 {active ? <span className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-white"><Check className="h-3.5 w-3.5" /></span> : null}
                 <p className="font-display text-2xl leading-none text-slate-950">{item.title}</p>
                 <p className="mt-1 text-[10px] font-black uppercase tracking-[.12em] text-slate-400">{item.subtitle}</p>
@@ -157,23 +229,19 @@ function PlayWithCoachPage() {
               </button>;
             })}
           </div>
-          <button type="button" disabled={category !== "putting"} onClick={startGame} className="mt-5 flex w-full items-center justify-center gap-2 rounded-[20px] bg-slate-950 py-4 font-display text-xl text-white shadow-sm disabled:opacity-25">Starta <ChevronRight className="h-5 w-5" /></button>
+          <button type="button" disabled={category !== "putting"} onClick={startGame} className="mt-5 flex w-full items-center justify-center gap-2 rounded-[20px] bg-blue-600 py-4 font-display text-xl text-white shadow-sm transition active:scale-[.99] disabled:opacity-25">Starta <ChevronRight className="h-5 w-5" /></button>
         </section>
       </> : null}
 
       {phase === "play" ? <>
-        <header className="grid grid-cols-3 overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-sm">
-          <div className="px-2 py-3 text-center">
-            <p className="text-[8px] font-black uppercase tracking-[.1em] text-slate-400">Puttar</p>
-            <p className="mt-0.5 font-display text-2xl leading-none text-slate-950">{liveStats.totalPutts}</p>
+        <header className="flex min-h-[74px] items-center justify-between rounded-[22px] bg-blue-600 px-4 py-3 text-white shadow-[0_12px_28px_-18px_rgba(37,99,235,.8)]">
+          <div className="min-w-0 pr-3">
+            <p className="truncate font-display text-xl leading-none">{playerName}</p>
+            <p className="mt-1 text-[9px] font-black uppercase tracking-[.14em] text-blue-100">Putting · {liveStats.holes} hål</p>
           </div>
-          <div className="border-x border-slate-100 px-2 py-3 text-center">
-            <p className="text-[8px] font-black uppercase tracking-[.1em] text-slate-400">Hål</p>
-            <p className="mt-0.5 font-display text-2xl leading-none text-slate-950">{liveStats.holes}</p>
-          </div>
-          <div className="px-2 py-3 text-center">
-            <p className="text-[8px] font-black uppercase tracking-[.08em] text-slate-400">3-putt &gt;8 m</p>
-            <p className="mt-0.5 font-display text-2xl leading-none text-slate-950">{liveStats.longThreePuttPct}%</p>
+          <div className="shrink-0 text-right">
+            <p className="text-[8px] font-black uppercase tracking-[.12em] text-blue-100">{liveStats.highlightLabel}</p>
+            <p className="mt-0.5 font-display text-2xl leading-none text-white">{liveStats.highlightValue}</p>
           </div>
         </header>
 
@@ -181,7 +249,17 @@ function PlayWithCoachPage() {
           <SpeechBubble avatar={coach.emoji} name={coach.name} text={coachText} fixed />
         </section>
 
-        <section className="mt-4 rounded-[26px] border border-slate-200 bg-white px-5 py-5 text-center shadow-[0_18px_42px_-30px_rgba(15,23,42,.45)]">
+        <div className="mt-3 h-[72px]">
+          {pressure ? <section className="flex h-full items-center justify-between rounded-[20px] border border-amber-300 bg-amber-100 px-4 shadow-sm">
+            <div className="min-w-0 pr-3">
+              <div className="flex items-center gap-1.5"><Flame className="h-4 w-4 text-amber-700" /><p className="text-[9px] font-black uppercase tracking-[.16em] text-amber-700">Pressläge</p></div>
+              <p className="mt-1 truncate font-display text-lg leading-none text-amber-950">{pressure.title}</p>
+            </div>
+            <p className="max-w-[46%] text-right text-[10px] font-bold leading-snug text-amber-800">{pressure.detail}</p>
+          </section> : null}
+        </div>
+
+        <section className="mt-3 rounded-[26px] border border-slate-200 bg-white px-5 py-5 text-center shadow-[0_18px_42px_-30px_rgba(15,23,42,.45)]">
           <p className="text-[9px] font-black uppercase tracking-[.18em] text-slate-400">Avstånd</p>
           <h1 className={`mt-1 font-display text-[58px] leading-none text-slate-950 transition-opacity ${transitioning ? "opacity-35" : "opacity-100"}`}>{formatDistance(distance)} m</h1>
         </section>
