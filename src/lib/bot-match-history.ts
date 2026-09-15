@@ -1,4 +1,4 @@
-export type BotMatchCategory = "off-the-tee" | "approach" | "around-the-green" | "putting";
+export type BotMatchCategory = "off-the-tee" | "approach" | "around-the-green" | "putting" | "bunker";
 export type BotMatchWinner = "player" | "bot";
 
 export type BotCategoryHistory = {
