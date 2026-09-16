@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { Bell, ChevronRight, Gauge, LineChart, Swords, Target, User, Users } from "lucide-react";
+import { Bell, ChevronRight, Database, Gauge, LineChart, Swords, Target, User, Users } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { computeEstimatedHandicap, hcpLabel, loadRealHandicap, type CategoryHandicap } from "@/lib/sg-handicap";
 import { computeStableCategoryHandicaps } from "@/lib/category-index";
@@ -9,6 +9,13 @@ import { loadCardProfile } from "@/lib/rating-card";
 import { listFriendships, pushPlayerSnapshot } from "@/lib/friends-cloud";
 import { loadFriends, type Friend } from "@/lib/friends";
 import { ActiveMultiplayerBanner } from "@/components/active-multiplayer-banner";
+import { loadPrecisionSessions } from "@/lib/precision-store";
+import { loadOffTeeSessions } from "@/lib/offtee-store";
+import { loadShortGameSessions } from "@/lib/shortgame";
+import { loadBunkerSessions } from "@/lib/bunker";
+import { loadShortPuttSessions } from "@/lib/shortputt";
+import { loadLagPuttSessions } from "@/lib/lagputt";
+import { loadSpeedSessions } from "@/lib/speed";
 import {
   getBehaviorRecommendationScore,
   recordRecommendationImpressions,
@@ -39,6 +46,33 @@ function loadHomeData(): HomeData {
   const real = loadRealHandicap();
   const cats = computeStableCategoryHandicaps(undefined, real ?? undefined);
   return { real, cats, estimated: computeEstimatedHandicap(cats) };
+}
+
+function loadTotalRegisteredShots() {
+  const approach = loadPrecisionSessions().reduce((sum, session) => sum + session.shots.length, 0);
+  const driving = loadOffTeeSessions().reduce(
+    (sum, session) => sum + session.shots.filter((shot) => shot.filled).length,
+    0,
+  );
+  const shortGame = loadShortGameSessions().reduce(
+    (sum, session) => sum + session.shots.filter((shot) => Boolean(shot.interval)).length,
+    0,
+  );
+  const bunker = loadBunkerSessions().reduce(
+    (sum, session) => sum + session.shots.filter((shot) => Boolean(shot.interval)).length,
+    0,
+  );
+  const shortPutting = loadShortPuttSessions().reduce((sum, session) => sum + session.putts.length, 0);
+  const lagPutting = loadLagPuttSessions().reduce(
+    (sum, session) => sum + session.putts.filter((putt) => Boolean(putt.interval)).length,
+    0,
+  );
+  const speed = loadSpeedSessions().reduce(
+    (sum, session) => sum + session.shots.filter((shot) => shot.ballSpeed > 0).length,
+    0,
+  );
+
+  return approach + driving + shortGame + bunker + shortPutting + lagPutting + speed;
 }
 
 function initials(name: string) {
@@ -124,6 +158,7 @@ function Home() {
   const totalFriends = friends.length + cloudFriendCount;
   const previewFriends = friends.slice(0, 4);
   const hcpValue = data ? hcpLabel(data.real ?? data.estimated ?? 0) : "–";
+  const totalShots = useMemo(() => loadTotalRegisteredShots(), [sessionsVersion]);
   const knownCategories = data?.cats.filter((category) => category.count > 0) ?? [];
   const strongest = knownCategories.length
     ? [...knownCategories].sort((a, b) => a.handicap - b.handicap)[0]
@@ -151,7 +186,25 @@ function Home() {
         </button>
       </header>
 
-      <div className="mt-5">
+      <section className="mt-5 grid grid-cols-[1fr_auto] overflow-hidden rounded-[24px] border border-border bg-card">
+        <Link to="/utveckling" className="flex min-w-0 items-center gap-3 px-5 py-4 active:bg-muted/30">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+            <Database className="h-5 w-5" />
+          </span>
+          <span className="min-w-0">
+            <span className="block text-[10px] font-black uppercase tracking-[.18em] text-muted-foreground">Slagbank</span>
+            <span className="mt-0.5 block text-[30px] font-black leading-none tabular-nums text-foreground">{totalShots.toLocaleString("sv-SE")}</span>
+            <span className="mt-1 block text-xs text-muted-foreground">registrerade slag</span>
+          </span>
+        </Link>
+        <Link to="/vanner" className="flex min-w-[92px] flex-col items-center justify-center border-l border-border px-4 py-4 text-center active:bg-muted/30">
+          <Users className="h-4 w-4 text-blue-600" />
+          <span className="mt-1 text-xl font-black tabular-nums text-foreground">{totalFriends}</span>
+          <span className="text-[10px] font-bold uppercase tracking-[.12em] text-muted-foreground">vänner</span>
+        </Link>
+      </section>
+
+      <div className="mt-4">
         <ActiveMultiplayerBanner />
       </div>
 
@@ -221,20 +274,24 @@ function Home() {
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-600"><Gauge className="h-5 w-5" /></span>
           <span className="min-w-0 flex-1">
             <span className="block text-[10px] font-black uppercase tracking-[.17em] text-muted-foreground">HCP-test</span>
-            <span className="mt-1 block text-base font-black text-foreground">Gör ett nytt test</span>
+            <span className="mt-1 block text-base font-black text-foreground">Gör ett test – få ett HCP-resultat</span>
             <span className="mt-0.5 block text-xs text-muted-foreground">Senaste HCP: {hcpValue}</span>
           </span>
           <ChevronRight className="h-5 w-5 text-muted-foreground" />
         </Link>
 
-        <Link to="/coach" onClick={() => recordRecommendationOpen("practice")} className="flex items-center gap-4 rounded-[22px] border border-border bg-card px-4 py-4 active:bg-muted/30">
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700"><Target className="h-5 w-5" /></span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-[10px] font-black uppercase tracking-[.17em] text-muted-foreground">Träning</span>
-            <span className="mt-1 block text-base font-black text-foreground">Träna med Alma</span>
-            <span className="mt-0.5 block text-xs text-muted-foreground">Välj område och starta direkt</span>
-          </span>
-          <ChevronRight className="h-5 w-5 text-muted-foreground" />
+        <Link to="/coach" onClick={() => recordRecommendationOpen("practice")} className="overflow-hidden rounded-[22px] border border-blue-200 bg-card active:bg-muted/30">
+          <div className="grid grid-cols-[1.45fr_.9fr] min-h-[92px]">
+            <span className="flex min-w-0 flex-col justify-center bg-blue-600 px-5 py-4 text-white [clip-path:polygon(0_0,88%_0,100%_50%,88%_100%,0_100%)]">
+              <span className="text-[10px] font-black uppercase tracking-[.17em] text-blue-100">Träning</span>
+              <span className="mt-1 text-lg font-black leading-tight">Starta ett träningspass</span>
+              <span className="mt-1 text-xs text-blue-100">Coach · Putting · Chipping · Bunker</span>
+            </span>
+            <span className="flex items-center justify-end gap-2 px-4 text-blue-600">
+              <Target className="h-6 w-6" />
+              <ChevronRight className="h-5 w-5" />
+            </span>
+          </div>
         </Link>
 
         <Link to="/utveckling" className="flex items-center gap-4 rounded-[22px] border border-border bg-card px-4 py-4 active:bg-muted/30">
