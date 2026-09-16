@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { Bell, ChevronRight, Database, LineChart, Swords, User, Users } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
@@ -74,7 +74,7 @@ function BrowseHeading({ title, subtitle, action, to }: { title: string; subtitl
   );
 }
 
-const ROW_CLASS = "-mx-5 mt-3.5 flex touch-pan-x gap-2 overflow-x-auto bg-transparent px-5 pb-0.5 scroll-smooth overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden";
+const ROW_CLASS = "-mx-5 mt-3.5 flex gap-2 overflow-x-auto bg-transparent px-5 pb-0.5 scroll-smooth overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden";
 const CARD_BASE = "relative flex h-[220px] w-[164px] shrink-0 flex-col justify-end overflow-hidden rounded-[24px] border border-black/[.04] px-4 pb-4 pt-4 text-white";
 
 function SimpleCard({ label, title, tone }: { label: string; title: string; tone: string }) {
@@ -84,6 +84,57 @@ function SimpleCard({ label, title, tone }: { label: string; title: string; tone
       <div>
         <h3 className="font-display text-[27px] leading-[.95] text-white">{title}</h3>
       </div>
+    </div>
+  );
+}
+
+function DragScrollRow({ children }: { children: React.ReactNode }) {
+  const rowRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef({ active: false, startX: 0, startScrollLeft: 0, moved: false });
+
+  return (
+    <div
+      ref={rowRef}
+      className={`${ROW_CLASS} cursor-grab select-none active:cursor-grabbing`}
+      style={{ WebkitOverflowScrolling: "touch" }}
+      onPointerDown={(event) => {
+        if (event.pointerType === "touch") return;
+        const row = rowRef.current;
+        if (!row) return;
+        dragRef.current = {
+          active: true,
+          startX: event.clientX,
+          startScrollLeft: row.scrollLeft,
+          moved: false,
+        };
+        row.setPointerCapture(event.pointerId);
+      }}
+      onPointerMove={(event) => {
+        const row = rowRef.current;
+        const drag = dragRef.current;
+        if (!row || !drag.active || event.pointerType === "touch") return;
+        const delta = event.clientX - drag.startX;
+        if (Math.abs(delta) > 4) drag.moved = true;
+        row.scrollLeft = drag.startScrollLeft - delta;
+        if (drag.moved) event.preventDefault();
+      }}
+      onPointerUp={(event) => {
+        const row = rowRef.current;
+        if (!row || event.pointerType === "touch") return;
+        dragRef.current.active = false;
+        if (row.hasPointerCapture(event.pointerId)) row.releasePointerCapture(event.pointerId);
+      }}
+      onPointerCancel={() => {
+        dragRef.current.active = false;
+      }}
+      onClickCapture={(event) => {
+        if (!dragRef.current.moved) return;
+        event.preventDefault();
+        event.stopPropagation();
+        dragRef.current.moved = false;
+      }}
+    >
+      {children}
     </div>
   );
 }
@@ -219,22 +270,22 @@ function Home() {
 
         <section className="mt-7">
           <BrowseHeading title="Träna med coach" subtitle="Practice Mode" action="Alla pass" to="/coach" />
-          <div className={ROW_CLASS} style={{ WebkitOverflowScrolling: "touch" }}>
+          <DragScrollRow>
             <Link to="/coach" search={{ category: "putting" }} onClick={() => recordRecommendationOpen("practice")} className="block shrink-0"><SimpleCard label="Practice" title="Puttning" tone="bg-[#5146d8]" /></Link>
             <Link to="/coach" search={{ category: "around-the-green" }} onClick={() => recordRecommendationOpen("practice")} className="block shrink-0"><SimpleCard label="Practice" title="Chippning" tone="bg-[#118267]" /></Link>
             <Link to="/coach" search={{ category: "bunker" }} onClick={() => recordRecommendationOpen("practice")} className="block shrink-0"><SimpleCard label="Practice" title="Bunker" tone="bg-[#c77a2c]" /></Link>
             <Link to="/coach" onClick={() => recordRecommendationOpen("practice")} className="block shrink-0"><SimpleCard label="Practice" title="Alla pass" tone="bg-[#334155]" /></Link>
-          </div>
+          </DragScrollRow>
         </section>
 
         <section className="mt-7">
           <BrowseHeading title="Testa din nivå" subtitle="HCP Test" action="Alla tester" to="/tester" />
-          <div className={ROW_CLASS} style={{ WebkitOverflowScrolling: "touch" }}>
+          <DragScrollRow>
             <Link to="/kategori/$slug" params={{ slug: "puttning" }} onClick={() => recordRecommendationOpen("hcp-test")} className="block shrink-0"><SimpleCard label="HCP Test" title="Putting" tone="bg-[#7656c9]" /></Link>
             <Link to="/kategori/$slug" params={{ slug: "around-the-green" }} onClick={() => recordRecommendationOpen("hcp-test")} className="block shrink-0"><SimpleCard label="HCP Test" title="Around the Green" tone="bg-[#2d8a58]" /></Link>
             <Link to="/kategori/$slug" params={{ slug: "approach" }} onClick={() => recordRecommendationOpen("hcp-test")} className="block shrink-0"><SimpleCard label="HCP Test" title="Approach" tone="bg-[#2f76b7]" /></Link>
             <Link to="/kategori/$slug" params={{ slug: "driving" }} onClick={() => recordRecommendationOpen("hcp-test")} className="block shrink-0"><SimpleCard label="HCP Test" title="Off the Tee" tone="bg-[#3f4b5d]" /></Link>
-          </div>
+          </DragScrollRow>
         </section>
 
         <section className="mt-7">
@@ -242,12 +293,12 @@ function Home() {
             <h2 className="text-[24px] font-black leading-none text-foreground">Mät precision och nivå</h2>
             <p className="mt-1.5 text-[10px] font-black uppercase tracking-[.18em] text-muted-foreground">Benchmarks &amp; challenges</p>
           </div>
-          <div className={ROW_CLASS} style={{ WebkitOverflowScrolling: "touch" }}>
+          <DragScrollRow>
             <Link to="/pga-tour-18-puttar" className="block shrink-0"><SimpleCard label="Benchmark" title="18 puttar" tone="bg-[#a94c57]" /></Link>
             <Link to="/tutor-test" className="block shrink-0"><SimpleCard label="Benchmark" title="Tutor Test" tone="bg-[#4955a7]" /></Link>
             <Link to="/driver-konsekvens" className="block shrink-0"><SimpleCard label="Challenge" title="Konsekvens" tone="bg-[#a76632]" /></Link>
             <Link to="/approach-pei-valj" className="block shrink-0"><SimpleCard label="Benchmark" title="PEI Approach" tone="bg-[#217d8c]" /></Link>
-          </div>
+          </DragScrollRow>
         </section>
 
         <section className="mt-5">
