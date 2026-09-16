@@ -270,40 +270,42 @@ function Home() {
       </header>
 
       <div className="px-5 pt-5">
-        <section className="grid grid-cols-[1.6fr_1fr] gap-2.5">
+        <section className="grid grid-cols-[1.6fr_1fr] gap-2">
           <Link
             to="/vanner"
-            className="relative flex min-h-[96px] items-center overflow-hidden rounded-[27px] border border-white/70 bg-white/48 px-4 shadow-[inset_0_1px_0_rgba(255,255,255,.95),inset_0_-1px_0_rgba(255,255,255,.38),0_12px_28px_-18px_rgba(15,75,50,.34)] backdrop-blur-2xl"
+            className="relative flex h-[82px] items-center overflow-hidden rounded-[25px] border border-white/55 bg-gradient-to-br from-white/70 via-white/28 to-emerald-50/22 px-3.5 shadow-[inset_0_1.5px_0_rgba(255,255,255,.96),inset_0_-1px_0_rgba(255,255,255,.3),0_10px_24px_-18px_rgba(15,55,40,.45)] backdrop-blur-[28px] backdrop-saturate-150"
           >
-            <span className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent" />
-            <div className="flex min-w-0 items-center">
+            <span className="pointer-events-none absolute inset-[1px] rounded-[24px] border border-white/25" />
+            <span className="pointer-events-none absolute left-5 right-5 top-0 h-[2px] bg-gradient-to-r from-transparent via-white/90 to-transparent blur-[.2px]" />
+            <div className="relative z-10 flex w-full items-center justify-center">
               <div className="flex shrink-0 -space-x-2.5">
                 {previewFriends.length ? previewFriends.map((friend, index) => (
-                  <span key={friend.id} className={`flex h-9 w-9 items-center justify-center rounded-full border-2 border-white/90 text-[9px] font-black text-foreground shadow-sm ${index % 3 === 0 ? "bg-emerald-100" : index % 3 === 1 ? "bg-sky-100" : "bg-amber-100"}`}>
+                  <span key={friend.id} className={`flex h-8 w-8 items-center justify-center rounded-full border-2 border-white/95 text-[8px] font-black text-foreground shadow-[0_2px_8px_rgba(15,23,42,.12)] ${index % 3 === 0 ? "bg-emerald-100" : index % 3 === 1 ? "bg-sky-100" : "bg-amber-100"}`}>
                     {initials(friend.name)}
                   </span>
                 )) : (
                   <>
-                    <span className="h-9 w-9 rounded-full border-2 border-white/90 bg-emerald-100 shadow-sm" />
-                    <span className="h-9 w-9 rounded-full border-2 border-white/90 bg-sky-100 shadow-sm" />
-                    <span className="h-9 w-9 rounded-full border-2 border-white/90 bg-amber-100 shadow-sm" />
+                    <span className="h-8 w-8 rounded-full border-2 border-white/95 bg-emerald-100 shadow-sm" />
+                    <span className="h-8 w-8 rounded-full border-2 border-white/95 bg-sky-100 shadow-sm" />
+                    <span className="h-8 w-8 rounded-full border-2 border-white/95 bg-amber-100 shadow-sm" />
                   </>
                 )}
               </div>
-              <div className="ml-3 flex min-w-0 items-baseline gap-2">
-                <span className="text-[29px] font-black leading-none tabular-nums text-emerald-700">{totalFriends}</span>
-                <span className="truncate text-[15px] font-extrabold text-foreground/85">Vänner</span>
+              <div className="ml-2.5 flex min-w-0 items-baseline gap-1.5">
+                <span className="text-[28px] font-black leading-none tabular-nums text-emerald-700">{totalFriends}</span>
+                <span className="truncate text-[14px] font-extrabold text-foreground/82">Vänner</span>
               </div>
             </div>
           </Link>
 
           <Link
             to="/utveckling"
-            className="relative flex min-h-[96px] items-center justify-center overflow-hidden rounded-[27px] border border-white/70 bg-white/48 px-3 text-center shadow-[inset_0_1px_0_rgba(255,255,255,.95),inset_0_-1px_0_rgba(255,255,255,.38),0_12px_28px_-18px_rgba(15,75,50,.34)] backdrop-blur-2xl"
+            className="relative h-[82px] overflow-hidden rounded-[25px] border border-white/55 bg-gradient-to-br from-white/70 via-white/28 to-emerald-50/22 px-2 text-center shadow-[inset_0_1.5px_0_rgba(255,255,255,.96),inset_0_-1px_0_rgba(255,255,255,.3),0_10px_24px_-18px_rgba(15,55,40,.45)] backdrop-blur-[28px] backdrop-saturate-150"
           >
-            <span className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent" />
-            <span className="text-[29px] font-black leading-none tabular-nums text-emerald-700">{totalShots.toLocaleString("sv-SE")}</span>
-            <span className="absolute bottom-[16px] left-2 right-2 text-[10px] font-bold leading-tight text-foreground/68">Registrerade slag</span>
+            <span className="pointer-events-none absolute inset-[1px] rounded-[24px] border border-white/25" />
+            <span className="pointer-events-none absolute left-4 right-4 top-0 h-[2px] bg-gradient-to-r from-transparent via-white/90 to-transparent blur-[.2px]" />
+            <span className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap text-[28px] font-black leading-none tabular-nums text-emerald-700">{totalShots.toLocaleString("sv-SE")}</span>
+            <span className="absolute bottom-[6px] left-2 right-2 z-10 text-[9px] font-bold leading-tight text-foreground/62">Registrerade slag</span>
           </Link>
         </section>
 
