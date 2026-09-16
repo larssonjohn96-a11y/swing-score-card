@@ -1,5 +1,5 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { ArrowLeft, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { useEffect } from "react";
 import { recordRecommendationImpressions, recordRecommendationOpen } from "@/lib/sg4-recommender";
 
@@ -29,9 +29,47 @@ function PlayCard({ href, title, recommendationId }: PlayCardProps) {
   );
 }
 
+function HomeArrowIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="none"
+      className="h-6 w-6"
+      stroke="currentColor"
+      strokeWidth="2.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M19 12H5" />
+      <path d="m12 19-7-7 7-7" />
+    </svg>
+  );
+}
+
 function PlayPage() {
   useEffect(() => {
     recordRecommendationImpressions(["play-coach", "play-bot", "play-friend", "play-team"]);
+
+    // Play is intentionally light. Force the document surface to match the page so
+    // a previously visited dark route cannot leak through around/behind the page.
+    const root = document.documentElement;
+    const body = document.body;
+    const previousRootBackground = root.style.backgroundColor;
+    const previousBodyBackground = body.style.backgroundColor;
+    const previousColorScheme = root.style.colorScheme;
+
+    root.classList.remove("dark");
+    root.classList.add("light");
+    root.style.colorScheme = "light";
+    root.style.backgroundColor = "#fcfcfa";
+    body.style.backgroundColor = "#fcfcfa";
+
+    return () => {
+      root.style.backgroundColor = previousRootBackground;
+      body.style.backgroundColor = previousBodyBackground;
+      root.style.colorScheme = previousColorScheme || "light";
+    };
   }, []);
 
   return (
@@ -39,10 +77,10 @@ function PlayPage() {
       <header className="grid grid-cols-[52px_1fr_52px] items-center">
         <Link
           to="/"
-          aria-label="Tillbaka"
+          aria-label="Gå till startsidan"
           className="flex h-12 w-12 items-center justify-center rounded-full border border-[#d8e1ee] bg-white text-[#061126] active:scale-95"
         >
-          <ArrowLeft className="h-6 w-6" strokeWidth={2.6} />
+          <HomeArrowIcon />
         </Link>
         <div className="text-center">
           <p className="text-[10px] font-black uppercase tracking-[0.26em] text-[#667b99]">SG4 Match</p>
