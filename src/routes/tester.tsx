@@ -78,7 +78,6 @@ function TrainAndTestPage() {
           onClick={() => setView("hcp")}
           className="flex w-full items-center gap-4 rounded-[28px] border border-primary/30 bg-primary/[.06] px-5 py-6 text-left shadow-[var(--shadow-glow)] transition active:scale-[.985]"
         >
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground"><Target className="h-6 w-6" /></span>
           <span className="min-w-0 flex-1">
             <span className="block font-display text-[27px] leading-none">Handicap Test</span>
             <span className="mt-2 block text-sm text-muted-foreground">Gör ett test · få ett HCP-resultat</span>
