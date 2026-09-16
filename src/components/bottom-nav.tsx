@@ -9,7 +9,7 @@ import { computeAchievements, computeMilestones, countUncollected } from "@/lib/
 
 const LEFT_TABS = [
   { to: "/", label: "Hem", icon: Home, exact: true },
-  { to: "/traning", label: "Träning", icon: Target, exact: false },
+  { to: "/tester", label: "Train & Test", icon: Target, exact: false },
 ] as const;
 
 const RIGHT_TABS = [
@@ -28,7 +28,7 @@ const MORE_LINKS = [
   { to: "/learn", label: "Lär dig", description: "Lektioner, golfkunskap och interaktiva quiz.", icon: GraduationCap, tone: "learn" },
   { to: "/turneringar", label: "Turneringar", description: "Events, ranking och leaderboard.", icon: Trophy, tone: "gold" },
   { to: "/utmaningar", label: "Utmaningar", description: "Streaks, scoring och personliga rekord.", icon: Flag, tone: "flag" },
-  { to: "/tester", label: "Tester", description: "Tester, HCP-nivå och utveckling.", icon: Target, tone: "neutral" },
+  { to: "/traning", label: "Träning – gammal", description: "Det gamla övningsflödet med alla drills.", icon: Target, tone: "neutral" },
   { to: "/vanner", label: "Vänner", description: "Hitta spelare och bygg ditt nätverk.", icon: Users, tone: "neutral" },
   { to: "/trophy", label: "Trophy Room", description: "PB, milestones och achievements.", icon: Trophy, tone: "gold" },
   { to: "/min-bag", label: "My Bag", description: "Klubbor, carry-längder och gapping.", icon: BriefcaseBusiness, tone: "neutral" },
