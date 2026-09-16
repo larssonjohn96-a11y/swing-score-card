@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { Bell, ChevronRight, Database, Gauge, LineChart, Swords, Target, User, Users } from "lucide-react";
+import { Bell, ChevronRight, Database, Gauge, LineChart, Swords, User, Users } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { computeEstimatedHandicap, hcpLabel, loadRealHandicap, type CategoryHandicap } from "@/lib/sg-handicap";
 import { computeStableCategoryHandicaps } from "@/lib/category-index";
@@ -269,7 +269,7 @@ function Home() {
         </Link>
       </section>
 
-      <section className="mt-3 space-y-3">
+      <section className="mt-3">
         <Link to="/tester" onClick={() => recordRecommendationOpen("hcp-test")} className="flex items-center gap-4 rounded-[22px] border border-border bg-card px-4 py-4 active:bg-muted/30">
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-600"><Gauge className="h-5 w-5" /></span>
           <span className="min-w-0 flex-1">
@@ -279,21 +279,48 @@ function Home() {
           </span>
           <ChevronRight className="h-5 w-5 text-muted-foreground" />
         </Link>
+      </section>
 
-        <Link to="/coach" onClick={() => recordRecommendationOpen("practice")} className="overflow-hidden rounded-[22px] border border-blue-200 bg-card active:bg-muted/30">
-          <div className="grid grid-cols-[1.45fr_.9fr] min-h-[92px]">
-            <span className="flex min-w-0 flex-col justify-center bg-blue-600 px-5 py-4 text-white [clip-path:polygon(0_0,88%_0,100%_50%,88%_100%,0_100%)]">
-              <span className="text-[10px] font-black uppercase tracking-[.17em] text-blue-100">Träning</span>
-              <span className="mt-1 text-lg font-black leading-tight">Starta ett träningspass</span>
-              <span className="mt-1 text-xs text-blue-100">Coach · Putting · Chipping · Bunker</span>
-            </span>
-            <span className="flex items-center justify-end gap-2 px-4 text-blue-600">
-              <Target className="h-6 w-6" />
-              <ChevronRight className="h-5 w-5" />
-            </span>
+      <section className="mt-6">
+        <div className="flex items-end justify-between gap-3 px-0.5">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[.18em] text-muted-foreground">Practice Mode</p>
+            <h2 className="mt-1 text-[23px] font-black leading-none text-foreground">Träning</h2>
           </div>
-        </Link>
+          <a href="/coach" onClick={() => recordRecommendationOpen("practice")} className="text-xs font-bold text-blue-600">Alla pass</a>
+        </div>
 
+        <div className="-mx-5 mt-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <a href="/coach?category=putting" onClick={() => recordRecommendationOpen("practice")} className="relative flex h-[190px] w-[152px] shrink-0 snap-start flex-col overflow-hidden rounded-[24px] bg-gradient-to-br from-indigo-700 via-violet-700 to-purple-950 p-4 text-white shadow-[0_16px_30px_-24px_rgba(49,46,129,.9)] active:scale-[.985]">
+            <span className="absolute inset-x-0 top-0 h-20 bg-white/5" />
+            <span className="relative flex flex-1 items-center justify-center text-[54px]">⛳</span>
+            <span className="relative text-[10px] font-black uppercase tracking-[.16em] text-violet-200">Coachträning</span>
+            <span className="relative mt-1 font-display text-[25px] leading-none">Puttning</span>
+          </a>
+
+          <a href="/coach?category=around-the-green" onClick={() => recordRecommendationOpen("practice")} className="relative flex h-[190px] w-[152px] shrink-0 snap-start flex-col overflow-hidden rounded-[24px] bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-800 p-4 text-white shadow-[0_16px_30px_-24px_rgba(5,150,105,.9)] active:scale-[.985]">
+            <span className="absolute inset-x-0 top-0 h-20 bg-white/5" />
+            <span className="relative flex flex-1 items-center justify-center text-[54px]">🏌️</span>
+            <span className="relative text-[10px] font-black uppercase tracking-[.16em] text-emerald-100">Coachträning</span>
+            <span className="relative mt-1 font-display text-[25px] leading-none">Chippning</span>
+          </a>
+
+          <a href="/coach?category=bunker" onClick={() => recordRecommendationOpen("practice")} className="relative flex h-[190px] w-[152px] shrink-0 snap-start flex-col overflow-hidden rounded-[24px] bg-gradient-to-br from-amber-300 via-orange-400 to-orange-700 p-4 text-white shadow-[0_16px_30px_-24px_rgba(234,88,12,.8)] active:scale-[.985]">
+            <span className="absolute inset-x-0 top-0 h-20 bg-white/8" />
+            <span className="relative flex flex-1 items-center justify-center text-[54px]">🏖️</span>
+            <span className="relative text-[10px] font-black uppercase tracking-[.16em] text-amber-50">Coachträning</span>
+            <span className="relative mt-1 font-display text-[25px] leading-none">Bunker</span>
+          </a>
+
+          <a href="/coach" onClick={() => recordRecommendationOpen("practice")} className="relative flex h-[190px] w-[152px] shrink-0 snap-start flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-gradient-to-br from-slate-100 to-slate-300 p-4 text-slate-950 shadow-[0_16px_30px_-24px_rgba(15,23,42,.35)] active:scale-[.985]">
+            <span className="relative flex flex-1 items-center justify-center text-[46px]">＋</span>
+            <span className="relative text-[10px] font-black uppercase tracking-[.16em] text-slate-500">Practice Mode</span>
+            <span className="relative mt-1 font-display text-[25px] leading-none">Alla pass</span>
+          </a>
+        </div>
+      </section>
+
+      <section className="mt-3">
         <Link to="/utveckling" className="flex items-center gap-4 rounded-[22px] border border-border bg-card px-4 py-4 active:bg-muted/30">
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-violet-50 text-violet-600"><LineChart className="h-5 w-5" /></span>
           <span className="min-w-0 flex-1">
