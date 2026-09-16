@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { Bell, ChevronRight, LineChart, Swords, User, UserPlus, Users } from "lucide-react";
+import { Bell, ChevronRight, User, UserPlus } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { computeEstimatedHandicap, hcpLabel, loadRealHandicap, type CategoryHandicap } from "@/lib/sg-handicap";
 import { computeStableCategoryHandicaps } from "@/lib/category-index";
@@ -40,9 +40,18 @@ type QuickStart = {
   to: "/tester" | "/spela" | "/coach";
   activityId: string;
 };
+type CompareTarget = "friends" | "5" | "10" | "15" | "20" | "30";
 
 const CLOUD_FRIEND_COUNT_KEY = "sg4-home-cloud-friend-count-v1";
 const HOME_SHOT_COUNTER_KEY = "sg4-home-shot-counter-v1";
+const COMPARE_OPTIONS: { id: CompareTarget; label: string }[] = [
+  { id: "friends", label: "Vänner" },
+  { id: "5", label: "HCP 5" },
+  { id: "10", label: "HCP 10" },
+  { id: "15", label: "HCP 15" },
+  { id: "20", label: "HCP 20" },
+  { id: "30", label: "HCP 30" },
+];
 
 function loadHomeData(): HomeData {
   const real = loadRealHandicap();
@@ -78,9 +87,7 @@ function loadPreviousShotCount(current: number) {
   const persisted = window.localStorage.getItem(HOME_SHOT_COUNTER_KEY);
   const legacySessionValue = window.sessionStorage.getItem(HOME_SHOT_COUNTER_KEY);
   const raw = persisted ?? legacySessionValue;
-  if (persisted === null && legacySessionValue !== null) {
-    window.localStorage.setItem(HOME_SHOT_COUNTER_KEY, legacySessionValue);
-  }
+  if (persisted === null && legacySessionValue !== null) window.localStorage.setItem(HOME_SHOT_COUNTER_KEY, legacySessionValue);
   if (raw === null) return current;
   const value = Number(raw);
   if (!Number.isFinite(value) || value < 0 || value > current) return current;
@@ -115,24 +122,17 @@ function SimpleCard({ label, title, tone }: { label: string; title: string; tone
   return (
     <div className={`${CARD_BASE} ${tone}`}>
       <span className="absolute left-4 top-4 text-[9px] font-black uppercase tracking-[.16em] text-white/68">{label}</span>
-      <div>
-        <h3 className="font-display text-[27px] leading-[.95] text-white">{title}</h3>
-      </div>
+      <h3 className="font-display text-[27px] leading-[.95] text-white">{title}</h3>
     </div>
   );
 }
 
 function RollingDigit({ digit, active, accent }: { digit: number; active: boolean; accent: boolean }) {
   return (
-    <span className={`relative h-[29px] w-[18px] overflow-hidden rounded-[4px] border border-[#0d5f43]/20 bg-[#f2efdf]/88 shadow-[inset_0_1px_0_rgba(255,255,255,.72),inset_0_-1px_0_rgba(17,72,52,.08)] ${active ? "ring-1 ring-[#c89f3b]/30" : ""}`}>
-      <span
-        className="absolute left-0 top-0 flex w-full flex-col transition-transform duration-150 [transition-timing-function:cubic-bezier(.2,.8,.2,1)]"
-        style={{ transform: `translateY(-${digit * 29}px)` }}
-      >
+    <span className={`relative h-[27px] w-[17px] overflow-hidden rounded-[4px] border border-[#0d5f43]/20 bg-[#f2efdf]/88 shadow-[inset_0_1px_0_rgba(255,255,255,.72),inset_0_-1px_0_rgba(17,72,52,.08)] ${active ? "ring-1 ring-[#c89f3b]/30" : ""}`}>
+      <span className="absolute left-0 top-0 flex w-full flex-col transition-transform duration-150 [transition-timing-function:cubic-bezier(.2,.8,.2,1)]" style={{ transform: `translateY(-${digit * 27}px)` }}>
         {Array.from({ length: 10 }, (_, value) => (
-          <span key={value} className={`flex h-[29px] w-full shrink-0 items-center justify-center font-mono text-[20px] font-black leading-none ${accent && active ? "text-[#b4232f]" : "text-[#0b6b4c]"}`}>
-            {value}
-          </span>
+          <span key={value} className={`flex h-[27px] w-full shrink-0 items-center justify-center font-mono text-[19px] font-black leading-none ${accent && active ? "text-[#b4232f]" : "text-[#0b6b4c]"}`}>{value}</span>
         ))}
       </span>
       <span className="pointer-events-none absolute inset-x-0 top-1/2 h-px bg-[#0d5f43]/10" />
@@ -143,13 +143,11 @@ function RollingDigit({ digit, active, accent }: { digit: number; active: boolea
 function HeritageShotCounter({ value, active }: { value: number; active: boolean }) {
   const text = value.toLocaleString("sv-SE");
   const lastDigitIndex = text.split("").reduce((last, char, index) => (/\d/.test(char) ? index : last), -1);
-
   return (
     <span className="flex items-center justify-center gap-[2px]" aria-label={`${text} registrerade slag`}>
-      {text.split("").map((char, index) => {
-        if (!/\d/.test(char)) return <span key={`${char}-${index}`} className="w-[4px]" />;
-        return <RollingDigit key={index} digit={Number(char)} active={active} accent={index === lastDigitIndex} />;
-      })}
+      {text.split("").map((char, index) => !/\d/.test(char)
+        ? <span key={`${char}-${index}`} className="w-[4px]" />
+        : <RollingDigit key={index} digit={Number(char)} active={active} accent={index === lastDigitIndex} />)}
     </span>
   );
 }
@@ -157,7 +155,6 @@ function HeritageShotCounter({ value, active }: { value: number; active: boolean
 function DragScrollRow({ children }: { children: React.ReactNode }) {
   const rowRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef({ active: false, startX: 0, startScrollLeft: 0, moved: false });
-
   return (
     <div
       ref={rowRef}
@@ -192,9 +189,46 @@ function DragScrollRow({ children }: { children: React.ReactNode }) {
         event.stopPropagation();
         dragRef.current.moved = false;
       }}
-    >
-      {children}
-    </div>
+    >{children}</div>
+  );
+}
+
+function handicapToScore(handicap: number) {
+  return Math.max(8, Math.min(100, 100 - handicap * 2.25));
+}
+
+function RadarPreview({ categories, benchmarkHcp }: { categories: CategoryHandicap[]; benchmarkHcp: number }) {
+  const order = ["driving", "approach", "around-the-green", "puttning"];
+  const fallback = categories.length ? categories.reduce((sum, item) => sum + item.handicap, 0) / categories.length : 25;
+  const values = order.map((id) => {
+    const item = categories.find((category) => category.id === id);
+    return handicapToScore(item?.count ? item.handicap : fallback);
+  });
+  const benchmark = handicapToScore(benchmarkHcp);
+  const center = 72;
+  const radius = 52;
+  const axes = [-Math.PI / 2, 0, Math.PI / 2, Math.PI];
+  const point = (value: number, angle: number) => {
+    const r = radius * value / 100;
+    return `${center + Math.cos(angle) * r},${center + Math.sin(angle) * r}`;
+  };
+  const playerPoints = axes.map((angle, index) => point(values[index], angle)).join(" ");
+  const benchmarkPoints = axes.map((angle) => point(benchmark, angle)).join(" ");
+  const ring = (scale: number) => axes.map((angle) => point(scale, angle)).join(" ");
+
+  return (
+    <svg viewBox="0 0 144 144" className="h-[132px] w-[132px] shrink-0" role="img" aria-label="Spindeldiagram över dina fyra spelkategorier">
+      <polygon points={ring(100)} fill="none" stroke="currentColor" className="text-foreground/12" strokeWidth="1" />
+      <polygon points={ring(67)} fill="none" stroke="currentColor" className="text-foreground/10" strokeWidth="1" />
+      <polygon points={ring(34)} fill="none" stroke="currentColor" className="text-foreground/8" strokeWidth="1" />
+      {axes.map((angle, index) => <line key={index} x1={center} y1={center} x2={Number(point(100, angle).split(",")[0])} y2={Number(point(100, angle).split(",")[1])} stroke="currentColor" className="text-foreground/10" strokeWidth="1" />)}
+      <polygon points={benchmarkPoints} fill="rgba(100,116,139,.06)" stroke="rgba(100,116,139,.65)" strokeWidth="1.5" strokeDasharray="4 3" />
+      <polygon points={playerPoints} fill="rgba(5,150,105,.18)" stroke="rgb(5,150,105)" strokeWidth="2" />
+      {axes.map((angle, index) => {
+        const [x, y] = point(values[index], angle).split(",").map(Number);
+        return <circle key={index} cx={x} cy={y} r="2.8" fill="rgb(5,150,105)" />;
+      })}
+    </svg>
   );
 }
 
@@ -204,6 +238,7 @@ function Home() {
   const [friends, setFriends] = useState<Friend[]>(() => loadFriends());
   const [cloudFriendCount, setCloudFriendCount] = useState(() => loadCachedCloudFriendCount());
   const [navVisible, setNavVisible] = useState(true);
+  const [compareTarget, setCompareTarget] = useState<CompareTarget>("friends");
   const initialShotCountRef = useRef(loadTotalRegisteredShots());
   const [totalShots, setTotalShots] = useState(initialShotCountRef.current);
   const [displayedShots, setDisplayedShots] = useState(() => loadPreviousShotCount(initialShotCountRef.current));
@@ -217,20 +252,16 @@ function Home() {
   const sessionsVersion = useSessionsVersion();
   const profile = loadCardProfile();
 
-  useEffect(() => {
-    recordRecommendationImpressions(["play-friend", "play-bot", "play-cup", "hcp-test", "practice"]);
-  }, []);
+  useEffect(() => { recordRecommendationImpressions(["play-friend", "play-bot", "play-cup", "hcp-test", "practice"]); }, []);
 
   useEffect(() => {
     const initialY = Math.max(0, window.scrollY);
     lastScrollYRef.current = initialY;
     directionStartYRef.current = initialY;
-
     const onScroll = () => {
       const currentY = Math.max(0, window.scrollY);
       const delta = currentY - lastScrollYRef.current;
       const nextDirection = delta > 0 ? "down" : delta < 0 ? "up" : scrollDirectionRef.current;
-
       if (currentY <= 24) {
         setNavVisible(true);
         directionStartYRef.current = currentY;
@@ -238,12 +269,10 @@ function Home() {
         lastScrollYRef.current = currentY;
         return;
       }
-
       if (nextDirection && nextDirection !== scrollDirectionRef.current) {
         scrollDirectionRef.current = nextDirection;
         directionStartYRef.current = currentY;
       }
-
       const travelled = Math.abs(currentY - directionStartYRef.current);
       if (nextDirection === "down" && travelled >= 34) {
         setNavVisible(false);
@@ -254,7 +283,6 @@ function Home() {
       }
       lastScrollYRef.current = currentY;
     };
-
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
@@ -275,10 +303,7 @@ function Home() {
 
   useEffect(() => {
     const refreshShots = () => setTotalShots(loadTotalRegisteredShots());
-    const onVisibility = () => {
-      if (document.visibilityState === "visible") refreshShots();
-    };
-
+    const onVisibility = () => { if (document.visibilityState === "visible") refreshShots(); };
     window.addEventListener("focus", refreshShots);
     window.addEventListener("pageshow", refreshShots);
     document.addEventListener("visibilitychange", onVisibility);
@@ -292,7 +317,6 @@ function Home() {
   useEffect(() => {
     if (shotAnimationRef.current !== null) cancelAnimationFrame(shotAnimationRef.current);
     if (shotGlowTimeoutRef.current !== null) window.clearTimeout(shotGlowTimeoutRef.current);
-
     const start = displayedShotsRef.current;
     if (totalShots <= start) {
       displayedShotsRef.current = totalShots;
@@ -301,12 +325,10 @@ function Home() {
       savePreviousShotCount(totalShots);
       return;
     }
-
     const delta = totalShots - start;
     const duration = Math.min(1350, Math.max(520, 430 + delta * 28));
     const startedAt = performance.now();
     setShotCounterActive(true);
-
     const tick = (now: number) => {
       const progress = Math.min(1, (now - startedAt) / duration);
       const eased = 1 - Math.pow(1 - progress, 3);
@@ -315,37 +337,26 @@ function Home() {
         displayedShotsRef.current = next;
         setDisplayedShots(next);
       }
-
       if (progress < 1) {
         shotAnimationRef.current = requestAnimationFrame(tick);
         return;
       }
-
       displayedShotsRef.current = totalShots;
       setDisplayedShots(totalShots);
       savePreviousShotCount(totalShots);
       shotAnimationRef.current = null;
       shotGlowTimeoutRef.current = window.setTimeout(() => setShotCounterActive(false), 520);
     };
-
     shotAnimationRef.current = requestAnimationFrame(tick);
-    return () => {
-      if (shotAnimationRef.current !== null) cancelAnimationFrame(shotAnimationRef.current);
-    };
+    return () => { if (shotAnimationRef.current !== null) cancelAnimationFrame(shotAnimationRef.current); };
   }, [totalShots]);
 
   const quickStart = useMemo<QuickStart>(() => {
     const noBaseline = data.real === null && data.cats.every((category) => category.count === 0);
     if (noBaseline) return { eyebrow: "Kom igång", title: "Gör ditt första HCP-test", detail: "Få ett första resultat och börja bygga din spelarprofil.", to: "/tester", activityId: "hcp-test" };
-
-    const playScore = Math.max(
-      getBehaviorRecommendationScore("play-friend").score,
-      getBehaviorRecommendationScore("play-bot").score,
-      getBehaviorRecommendationScore("play-cup").score,
-    );
+    const playScore = Math.max(getBehaviorRecommendationScore("play-friend").score, getBehaviorRecommendationScore("play-bot").score, getBehaviorRecommendationScore("play-cup").score);
     const practiceScore = getBehaviorRecommendationScore("practice").score;
     const testScore = getBehaviorRecommendationScore("hcp-test").score;
-
     if (practiceScore >= playScore && practiceScore >= testScore) return { eyebrow: "Snabbstart", title: "Träna med coach", detail: "Tillbaka till Practice Mode.", to: "/coach", activityId: "practice" };
     if (testScore > playScore) return { eyebrow: "Snabbstart", title: "Gör ett nytt HCP-test", detail: "Få ett nytt resultat direkt.", to: "/tester", activityId: "hcp-test" };
     return { eyebrow: "Snabbstart", title: "Spela en match", detail: "Hoppa direkt tillbaka till spel.", to: "/spela", activityId: "play-friend" };
@@ -354,8 +365,8 @@ function Home() {
   const totalFriends = friends.length + cloudFriendCount;
   const previewFriends = friends.slice(0, 3);
   const hcpValue = hcpLabel(data.real ?? data.estimated ?? 0);
-  const knownCategories = data.cats.filter((category) => category.count > 0);
-  const strongest = knownCategories.length ? [...knownCategories].sort((a, b) => a.handicap - b.handicap)[0] : undefined;
+  const friendAverageHcp = friends.length ? friends.reduce((sum, friend) => sum + friend.handicap, 0) / friends.length : 18;
+  const benchmarkHcp = compareTarget === "friends" ? friendAverageHcp : Number(compareTarget);
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-md bg-background pb-28">
@@ -371,12 +382,8 @@ function Home() {
             </span>
           </Link>
           <div className="flex items-center gap-2">
-            <Link to="/lagg-till-kompis" aria-label="Lägg till kompis" className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card/80 text-foreground">
-              <UserPlus className="h-[18px] w-[18px]" />
-            </Link>
-            <Link to="/notiser" aria-label="Notiser" className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card/80 text-foreground">
-              <Bell className="h-[18px] w-[18px]" />
-            </Link>
+            <Link to="/lagg-till-kompis" aria-label="Lägg till kompis" className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card/80 text-foreground"><UserPlus className="h-[18px] w-[18px]" /></Link>
+            <Link to="/notiser" aria-label="Notiser" className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card/80 text-foreground"><Bell className="h-[18px] w-[18px]" /></Link>
           </div>
         </div>
         <div className={`overflow-hidden transition-[max-height,opacity,padding] duration-500 [transition-timing-function:cubic-bezier(.22,1,.36,1)] ${navVisible ? "max-h-16 pb-3 opacity-100" : "max-h-0 pb-0 opacity-0"}`}>
@@ -389,44 +396,28 @@ function Home() {
         </div>
       </header>
 
-      <div className="px-5 pt-5">
+      <div className="px-5 pt-4">
         <section className="grid grid-cols-[1.6fr_1fr] gap-2">
-          <Link
-            to="/vanner"
-            className="relative flex h-[78px] items-center overflow-hidden rounded-[24px] border border-white/75 bg-card/66 px-4 shadow-[0_18px_48px_-24px_rgba(15,23,42,.42),inset_0_1px_0_rgba(255,255,255,.95)] backdrop-blur-[28px] supports-[backdrop-filter]:bg-card/56"
-          >
-            <span className="pointer-events-none absolute inset-[1px] rounded-[23px] border border-white/22" />
-            <span className="pointer-events-none absolute left-5 right-5 top-0 h-px bg-gradient-to-r from-transparent via-white/90 to-transparent" />
+          <Link to="/vanner" className="relative flex h-[64px] items-center overflow-hidden rounded-[22px] border border-white/75 bg-card/66 px-3.5 shadow-[0_14px_38px_-24px_rgba(15,23,42,.42),inset_0_1px_0_rgba(255,255,255,.95)] backdrop-blur-[28px] supports-[backdrop-filter]:bg-card/56">
+            <span className="pointer-events-none absolute inset-[1px] rounded-[21px] border border-white/22" />
             <div className="relative z-10 flex w-full items-center justify-start">
-              <div className="flex shrink-0 -space-x-2.5">
+              <div className="flex shrink-0 -space-x-2">
                 {previewFriends.length ? previewFriends.map((friend, index) => (
-                  <span key={friend.id} className={`flex h-8 w-8 items-center justify-center rounded-full border-2 border-white/90 text-[8px] font-black text-foreground shadow-[0_2px_8px_rgba(15,23,42,.12)] ${index % 3 === 0 ? "bg-emerald-100/90" : index % 3 === 1 ? "bg-sky-100/90" : "bg-amber-100/90"}`}>
-                    {initials(friend.name)}
-                  </span>
-                )) : (
-                  <>
-                    <span className="h-8 w-8 rounded-full border-2 border-white/90 bg-emerald-100/90 shadow-sm" />
-                    <span className="h-8 w-8 rounded-full border-2 border-white/90 bg-sky-100/90 shadow-sm" />
-                    <span className="h-8 w-8 rounded-full border-2 border-white/90 bg-amber-100/90 shadow-sm" />
-                  </>
-                )}
+                  <span key={friend.id} className={`flex h-7 w-7 items-center justify-center rounded-full border-2 border-white/90 text-[8px] font-black text-foreground ${index % 3 === 0 ? "bg-emerald-100/90" : index % 3 === 1 ? "bg-sky-100/90" : "bg-amber-100/90"}`}>{initials(friend.name)}</span>
+                )) : <><span className="h-7 w-7 rounded-full border-2 border-white/90 bg-emerald-100/90" /><span className="h-7 w-7 rounded-full border-2 border-white/90 bg-sky-100/90" /><span className="h-7 w-7 rounded-full border-2 border-white/90 bg-amber-100/90" /></>}
               </div>
               <div className="ml-2.5 flex min-w-0 items-baseline gap-1.5">
-                <span className="text-[28px] font-black leading-none tabular-nums text-emerald-700">{totalFriends}</span>
-                <span className="truncate text-[14px] font-extrabold text-foreground/82">Vänner</span>
+                <span className="text-[25px] font-black leading-none tabular-nums text-emerald-700">{totalFriends}</span>
+                <span className="truncate text-[13px] font-extrabold text-foreground/82">Vänner</span>
               </div>
             </div>
           </Link>
 
-          <Link
-            to="/utveckling"
-            className={`relative flex h-[78px] items-center justify-center overflow-hidden rounded-[24px] border px-2 text-center backdrop-blur-[28px] transition-[background-color,border-color,box-shadow] duration-500 ${shotCounterActive ? "border-emerald-300/70 bg-card/76 shadow-[0_18px_48px_-24px_rgba(15,23,42,.42),inset_0_1px_0_rgba(255,255,255,.95),0_0_30px_rgba(16,185,129,.20)] supports-[backdrop-filter]:bg-card/66" : "border-white/75 bg-card/66 shadow-[0_18px_48px_-24px_rgba(15,23,42,.42),inset_0_1px_0_rgba(255,255,255,.95)] supports-[backdrop-filter]:bg-card/56"}`}
-          >
-            <span className="pointer-events-none absolute inset-[1px] rounded-[23px] border border-white/22" />
-            <span className={`pointer-events-none absolute left-4 right-4 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent transition-opacity duration-300 ${shotCounterActive ? "opacity-100" : "opacity-80"}`} />
+          <Link to="/utveckling" className={`relative flex h-[64px] items-center justify-center overflow-hidden rounded-[22px] border px-2 text-center backdrop-blur-[28px] transition-[background-color,border-color,box-shadow] duration-500 ${shotCounterActive ? "border-emerald-300/70 bg-card/76 shadow-[0_14px_38px_-24px_rgba(15,23,42,.42),inset_0_1px_0_rgba(255,255,255,.95),0_0_26px_rgba(16,185,129,.20)] supports-[backdrop-filter]:bg-card/66" : "border-white/75 bg-card/66 shadow-[0_14px_38px_-24px_rgba(15,23,42,.42),inset_0_1px_0_rgba(255,255,255,.95)] supports-[backdrop-filter]:bg-card/56"}`}>
+            <span className="pointer-events-none absolute inset-[1px] rounded-[21px] border border-white/22" />
             <div className="relative z-10 flex flex-col items-center justify-center">
               <HeritageShotCounter value={displayedShots} active={shotCounterActive} />
-              <span className="mt-1 text-[9px] font-bold uppercase tracking-[.08em] text-foreground/60">Registrerade slag</span>
+              <span className="mt-0.5 text-[8px] font-bold uppercase tracking-[.07em] text-foreground/58">Registrerade slag</span>
             </div>
           </Link>
         </section>
@@ -500,21 +491,34 @@ function Home() {
           </DragScrollRow>
         </section>
 
-        <section className="mt-5">
-          <Link to="/utveckling" className="flex items-center gap-4 rounded-[22px] border border-border bg-card px-4 py-4 active:bg-muted/30">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-violet-50 text-violet-600"><LineChart className="h-5 w-5" /></span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-[10px] font-black uppercase tracking-[.17em] text-muted-foreground">Analys</span>
-              <span className="mt-1 block text-base font-black text-foreground">Din utveckling</span>
-              <span className="mt-0.5 block text-xs text-muted-foreground">{strongest ? `Starkast just nu: ${strongest.label}` : "Se styrkor, svagheter och framsteg"}</span>
-            </span>
-            <span className="flex items-center gap-2 text-muted-foreground"><span className="hidden h-8 w-8 items-center justify-center rounded-full bg-violet-50 sm:flex"><LineChart className="h-4 w-4" /></span><ChevronRight className="h-5 w-5" /></span>
-          </Link>
-        </section>
+        <section className="mt-5 overflow-hidden rounded-[24px] border border-white/75 bg-card/66 shadow-[0_16px_42px_-28px_rgba(15,23,42,.42),inset_0_1px_0_rgba(255,255,255,.95)] backdrop-blur-[28px] supports-[backdrop-filter]:bg-card/56">
+          <div className="flex items-center justify-between px-4 pt-4">
+            <div>
+              <p className="text-[9px] font-black uppercase tracking-[.17em] text-muted-foreground">Analys</p>
+              <h2 className="mt-1 text-[17px] font-black text-foreground">Jämför ditt spel</h2>
+            </div>
+            <Link to="/utveckling" className="flex items-center gap-1 text-[11px] font-bold text-emerald-700">Öppna <ChevronRight className="h-3.5 w-3.5" /></Link>
+          </div>
 
-        <section className="mt-5 flex items-center justify-between px-1 text-xs text-muted-foreground">
-          <Link to="/vanner" className="flex items-center gap-1.5"><Users className="h-4 w-4" />Vänner</Link>
-          <Link to="/spela" className="flex items-center gap-1.5"><Swords className="h-4 w-4" />Alla spellägen</Link>
+          <div className="mt-2 flex gap-1.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {COMPARE_OPTIONS.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                onClick={() => setCompareTarget(option.id)}
+                className={`shrink-0 rounded-full px-3 py-1.5 text-[10px] font-black transition-colors ${compareTarget === option.id ? "bg-emerald-600 text-white" : "bg-black/[.045] text-muted-foreground"}`}
+              >{option.label}</button>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-[140px_1fr] items-center gap-2 px-3 pb-3 pt-1">
+            <RadarPreview categories={data.cats} benchmarkHcp={benchmarkHcp} />
+            <div className="min-w-0 pr-2">
+              <div className="flex items-center gap-2 text-[11px] font-bold"><span className="h-2.5 w-2.5 rounded-full bg-emerald-600" />Du</div>
+              <div className="mt-2 flex items-center gap-2 text-[11px] font-bold text-muted-foreground"><span className="h-0 w-4 border-t border-dashed border-slate-500" />{compareTarget === "friends" ? (friends.length ? `Vänner · HCP ${friendAverageHcp.toFixed(1)}` : "Vänner · referens") : `HCP ${compareTarget}`}</div>
+              <p className="mt-3 text-[10px] leading-snug text-muted-foreground">Off the Tee · Approach · Around the Green · Putting</p>
+            </div>
+          </div>
         </section>
       </div>
     </main>
