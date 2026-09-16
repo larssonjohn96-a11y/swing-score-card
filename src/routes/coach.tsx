@@ -530,13 +530,13 @@ function PlayWithCoachPage() {
                 {shortStreak >= 2 ? <span className="mt-2 inline-flex rounded-full bg-white/14 px-2 py-1 text-[8px] font-black uppercase tracking-[.06em] text-white">🔥 {shortStreak} i rad · inom 2 m</span> : null}
               </div>
             </div>
-            <div className="relative flex min-w-0 items-center justify-end bg-white pl-8 pr-5 text-right">
-              <div className="min-w-0">
+            <div className="relative flex min-w-0 items-center justify-center bg-white pl-8 pr-4 text-center">
+              <div className="flex h-full min-w-0 flex-col items-center justify-center">
                 <p className="text-[8px] font-black uppercase tracking-[.12em] text-slate-500">Snitt / slag</p>
-                <p className={`mt-0.5 whitespace-nowrap font-display text-[31px] leading-none ${aboveAveragePb ? "text-amber-700" : "text-slate-950"}`}>{shortGameAverage}{aboveAveragePb ? <span className="ml-1.5 align-middle text-[11px] font-black tracking-normal">🏆 PB</span> : null}</p>
-                <div className="mt-2 flex items-end justify-end gap-2 whitespace-nowrap">
-                  <span className="text-[8px] font-black uppercase tracking-[.1em] text-slate-400">Total</span>
-                  <span className="font-display text-[18px] leading-none text-slate-700">{shortTotal} P</span>
+                <p className={`mt-0.5 whitespace-nowrap font-display text-[40px] leading-none ${aboveAveragePb ? "text-amber-700" : "text-slate-950"}`}>{shortGameAverage}{aboveAveragePb ? <span className="ml-1.5 align-middle text-[11px] font-black tracking-normal">🏆 PB</span> : null}</p>
+                <div className="mt-1.5 flex items-center justify-center gap-1.5 whitespace-nowrap">
+                  <span className="text-[7px] font-black uppercase tracking-[.1em] text-slate-400">Total</span>
+                  <span className="font-display text-[14px] leading-none text-slate-600">{shortTotal} P</span>
                 </div>
               </div>
             </div>
