@@ -34,6 +34,50 @@ const MORE_LINKS = [
   { to: "/min-bag", label: "My Bag", description: "Klubbor, carry-längder och gapping.", icon: BriefcaseBusiness, tone: "neutral" },
 ] as const;
 
+const TRAINING_FLOW_PATHS = new Set([
+  "/traning",
+  "/traning-progress",
+  "/speed",
+  "/longdrive",
+  "/fairway-streak",
+  "/driver-konsekvens",
+  "/approach-pei-valj",
+  "/approach-pei",
+  "/approach-pei-wedge",
+  "/approach-pei-iron",
+  "/shot-shaping",
+  "/8-bollar",
+  "/upp-och-in",
+  "/bunker-traning",
+  "/putting-streak",
+  "/lagputt-ladder",
+  "/klock-putt",
+  "/pga-tour-18-puttar",
+  "/50-bollar",
+  "/lagputt",
+  "/tutor-test",
+  "/green-reading",
+  "/putting-data",
+  "/50-bollar-resultat",
+  "/8-bollar-historik",
+  "/lagputt-historik",
+  "/driver-konsekvens-historik",
+  "/green-reading-historik",
+  "/pga-tour-18-puttar-historik",
+  "/tutor-test-historik",
+  "/approach-pei-historik",
+  "/approach-pei-wedge-historik",
+  "/approach-pei-iron-historik",
+  "/shot-shaping-9-window-historik",
+  "/shot-shaping-konstant-historik",
+  "/shot-shaping-vaxlande-historik",
+  "/wedge-stege-historik",
+]);
+
+function isTrainingFlowPath(pathname: string) {
+  return TRAINING_FLOW_PATHS.has(pathname) || pathname.startsWith("/shot-shaping-");
+}
+
 function NavLink({ tab, active }: { tab: { to: string; label: string; icon: typeof Home }; active: boolean }) {
   return <Link to={tab.to} className={`mx-0.5 flex min-h-12 flex-1 flex-col items-center justify-center gap-0.5 rounded-[20px] px-1 py-1.5 transition-all active:scale-[.96] ${active ? "border border-white/70 bg-black/[.09] text-primary shadow-[inset_0_1px_0_rgba(255,255,255,.72),0_10px_26px_-15px_rgba(15,23,42,.78)] backdrop-blur-2xl ring-1 ring-black/[.05] dark:bg-white/[.12]" : "text-muted-foreground"}`}>
     <span className="flex h-7 w-8 items-center justify-center"><tab.icon className={`h-5 w-5 ${active ? "stroke-[2.35]" : "stroke-[1.9]"}`} /></span>
@@ -88,7 +132,7 @@ export function BottomNav() {
     setTrophyBadge(countUncollected(computeMilestones()) + countUncollected(computeAchievements()));
   }, [pathname]);
 
-  if (hidden || pathname.startsWith("/match") || pathname.startsWith("/learn")) return null;
+  if (hidden || pathname.startsWith("/match") || pathname.startsWith("/learn") || isTrainingFlowPath(pathname)) return null;
   const moreActive = moreOpen || MORE_LINKS.some((item) => pathname.startsWith(item.to));
 
   return <>
