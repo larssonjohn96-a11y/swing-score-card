@@ -58,6 +58,12 @@ const CHIP_LIE_STORAGE_KEY = "sg4-coach-chip-lie-v1";
 const SHORT_GAME_PB_PREFIX = "sg4-practice-pb-v1";
 const PUTTING_COACH_LOG_KEY = "sg4-putting-coach-log-v1";
 
+function readDeepLinkedCategory(): Category | null {
+  if (typeof window === "undefined") return null;
+  const value = new URLSearchParams(window.location.search).get("category");
+  return value === "putting" || value === "around-the-green" || value === "bunker" ? value : null;
+}
+
 const CATEGORIES: Array<{ id: Category; title: string; available: boolean }> = [
   { id: "putting", title: "Puttning", available: true },
   { id: "around-the-green", title: "Chippning", available: true },
@@ -294,6 +300,21 @@ function PlayWithCoachPage() {
   const [pressure, setPressure] = useState<PressureChallenge | null>(null);
   const [confetti, setConfetti] = useState(false);
   const [finalChallenge, setFinalChallenge] = useState(false);
+
+  useEffect(() => {
+    const linkedCategory = readDeepLinkedCategory();
+    if (!linkedCategory) return;
+    setCategory(linkedCategory);
+    setShortGamePb(readShortGamePb(linkedCategory));
+    if (linkedCategory === "around-the-green") {
+      setPhase("chip-setup");
+      return;
+    }
+    setDistance(linkedCategory === "putting" ? nextCoachPuttingDistance() : 0);
+    setIntroState("done");
+    setTransitioning(false);
+    setPhase("play");
+  }, []);
 
   useEffect(() => {
     if (loading || !user) return;
