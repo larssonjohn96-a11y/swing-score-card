@@ -76,7 +76,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootShell({ children }: { children: ReactNode }) {
-  return <html lang="sv" className="dark"><head><HeadContent /><script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} /></head><body>{children}<Scripts /></body></html>;
+  return <html lang="sv" className="light"><head><HeadContent /><script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} /></head><body>{children}<Scripts /></body></html>;
 }
 
 const TRAINING_ROOT_ROUTES = new Set([
