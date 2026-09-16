@@ -79,25 +79,40 @@ function RootShell({ children }: { children: ReactNode }) {
   return <html lang="sv" className="light"><head><HeadContent /><script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} /></head><body>{children}<Scripts /></body></html>;
 }
 
-const TRAINING_ROOT_ROUTES = new Set([
-  "/8-bollar",
-  "/lagputt",
-  "/50-bollar",
-  "/tutor-test",
-  "/pga-tour-18-puttar",
-  "/green-reading",
-  "/upp-och-in",
-  "/wedge-stege",
-  "/approach-pei-valj",
-  "/driver-konsekvens",
-]);
+const TRAINING_CATEGORY_PARENT: Record<string, string> = {
+  "/speed": "/traning?category=off-the-tee",
+  "/longdrive": "/traning?category=off-the-tee",
+  "/fairway-streak": "/traning?category=off-the-tee",
+  "/driver-konsekvens": "/traning?category=off-the-tee",
+  "/approach-pei-valj": "/traning?category=approach",
+  "/shot-shaping": "/traning?category=approach",
+  "/8-bollar": "/traning?category=around-the-green",
+  "/upp-och-in": "/traning?category=around-the-green",
+  "/bunker-traning": "/traning?category=around-the-green",
+  "/putting-streak": "/traning?category=putting",
+  "/lagputt-ladder": "/traning?category=putting",
+  "/klock-putt": "/traning?category=putting",
+  "/pga-tour-18-puttar": "/traning?category=putting",
+  "/50-bollar": "/traning?category=putting",
+  "/lagputt": "/traning?category=putting",
+  "/tutor-test": "/traning?category=putting",
+  "/green-reading": "/traning?category=putting",
+};
 
-function trainingFallback(pathname: string) {
-  if (pathname === "/shot-shaping") return "/traning";
+const TRAINING_DETAIL_PARENT: Record<string, string> = {
+  "/50-bollar-resultat": "/50-bollar",
+  "/driver-konsekvens-historik": "/driver-konsekvens",
+  "/green-reading-historik": "/green-reading",
+  "/pga-tour-18-puttar-historik": "/pga-tour-18-puttar",
+  "/tutor-test-historik": "/tutor-test",
+};
+
+function trainingFallback(pathname: string, search: string) {
+  if (pathname === "/traning" && new URLSearchParams(search).has("category")) return "/traning";
+  if (TRAINING_DETAIL_PARENT[pathname]) return TRAINING_DETAIL_PARENT[pathname];
   if (pathname.startsWith("/shot-shaping-") && !pathname.endsWith("-historik")) return "/shot-shaping";
   if (pathname === "/approach-pei" || pathname === "/approach-pei-wedge" || pathname === "/approach-pei-iron") return "/approach-pei-valj";
-  if (TRAINING_ROOT_ROUTES.has(pathname)) return "/traning";
-  return null;
+  return TRAINING_CATEGORY_PARENT[pathname] ?? null;
 }
 
 type WakeLockHandle = {
@@ -164,13 +179,15 @@ function RootComponent() {
 
   useEffect(() => {
     const goBackNaturally = (control: HTMLElement) => {
+      // Training mirrors the match flow: use the defined flow parent before browser history.
+      const trainingParent = trainingFallback(window.location.pathname, window.location.search);
+      if (trainingParent) { window.location.assign(trainingParent); return; }
+
       const state = window.history.state as { __TSR_index?: number } | null;
       const hasTanStackHistory = typeof state?.__TSR_index === "number" && state.__TSR_index > 0;
       const hasSameOriginReferrer = Boolean(document.referrer && document.referrer.startsWith(window.location.origin));
 
       if (hasTanStackHistory || hasSameOriginReferrer) { window.history.back(); return; }
-      const trainingParent = trainingFallback(window.location.pathname);
-      if (trainingParent) { window.location.assign(trainingParent); return; }
       const href = control instanceof HTMLAnchorElement ? control.getAttribute("href") : null;
       if (href && href.startsWith("/") && href !== window.location.pathname) window.location.assign(href);
       else window.location.assign("/tester");
