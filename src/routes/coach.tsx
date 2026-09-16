@@ -29,6 +29,7 @@ type ChipLieOption = "fairway" | "rough" | "both";
 type ChipLie = "Fairway" | "Ruff";
 type ShortAttempt = { distance?: number; points: number; lie?: ChipLie };
 type StreakStatus = { label: string; value: string; detail: string } | null;
+type IntroState = "coach" | "3" | "2" | "1" | "go" | "done";
 
 const DEFAULT_COACH_ID: CoachId = "alma";
 const CHIP_LIE_STORAGE_KEY = "sg4-coach-chip-lie-v1";
@@ -176,7 +177,9 @@ function PlayWithCoachPage() {
   const [shortAttempts, setShortAttempts] = useState<ShortAttempt[]>([]);
   const [coachText, setCoachText] = useState("Välj vad du vill träna. Jag styr variationen och säger till när något är värt att justera.");
   const [coachVisible, setCoachVisible] = useState(false);
+  const [introState, setIntroState] = useState<IntroState>("done");
   const coachTimerRef = useRef<number | null>(null);
+  const introTimerRefs = useRef<number[]>([]);
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
   const [pressure, setPressure] = useState<PressureChallenge | null>(null);
@@ -200,6 +203,7 @@ function PlayWithCoachPage() {
 
   useEffect(() => () => {
     if (coachTimerRef.current !== null) window.clearTimeout(coachTimerRef.current);
+    introTimerRefs.current.forEach((timer) => window.clearTimeout(timer));
   }, []);
 
   const puttingSummary = useMemo(() => summarizeCoachPutting(puttingAttempts), [puttingAttempts]);
@@ -230,6 +234,11 @@ function PlayWithCoachPage() {
   }, [category, puttingAttempts, shortAttempts]);
 
   const categoryLabel = category === "around-the-green" ? "Chippning" : category === "bunker" ? "Bunker" : "Puttning";
+
+  function clearIntroTimers() {
+    introTimerRefs.current.forEach((timer) => window.clearTimeout(timer));
+    introTimerRefs.current = [];
+  }
 
   function showCoach(text: string, duration = 4200) {
     setCoachText(text);
@@ -262,6 +271,15 @@ function PlayWithCoachPage() {
   function startGame() {
     if (!category || !["putting", "around-the-green", "bunker"].includes(category)) return;
     const firstDistance = category === "putting" ? nextCoachPuttingDistance() : category === "around-the-green" ? nextChipDistance() : 0;
+    const startMessage = category === "putting"
+      ? "Läs putten, välj fart och slå med ett tydligt beslut."
+      : category === "bunker"
+        ? "Slå bunkerslaget så nära flaggan du kan."
+        : "Läs läget, välj landningspunkt och slå så nära hålet du kan.";
+
+    clearIntroTimers();
+    if (coachTimerRef.current !== null) window.clearTimeout(coachTimerRef.current);
+    coachTimerRef.current = null;
     setSessionId(newSessionId());
     setPuttingAttempts([]);
     setShortAttempts([]);
@@ -270,17 +288,24 @@ function PlayWithCoachPage() {
     setPressure(null);
     setConfetti(false);
     setFinalChallenge(false);
+    setCoachText(startMessage);
     setCoachVisible(false);
+    setIntroState("coach");
     setConfirmEnd(false);
-    setTransitioning(false);
+    setTransitioning(true);
     setPhase("play");
-    window.setTimeout(() => {
-      showCoach(category === "putting"
-        ? "Vi kör. Läs putten, välj fart och slå med ett tydligt beslut."
-        : category === "bunker"
-          ? "Vi kör. Slå bunkerslaget så nära flaggan du kan."
-          : "Vi kör. Läs läget, välj landningspunkt och slå så nära hålet du kan.", 3600);
-    }, 250);
+
+    introTimerRefs.current = [
+      window.setTimeout(() => setIntroState("3"), 1800),
+      window.setTimeout(() => setIntroState("2"), 2550),
+      window.setTimeout(() => setIntroState("1"), 3300),
+      window.setTimeout(() => setIntroState("go"), 4050),
+      window.setTimeout(() => {
+        setIntroState("done");
+        setTransitioning(false);
+        introTimerRefs.current = [];
+      }, 4800),
+    ];
   }
 
   function startFinalChallenge() {
@@ -396,6 +421,18 @@ function PlayWithCoachPage() {
   const shortGameInsideTwo = shortAttempts.length ? Math.round((shortAttempts.filter((attempt) => attempt.points >= 3).length / shortAttempts.length) * 100) : 0;
   const shortGameHoled = shortAttempts.filter((attempt) => attempt.points === 5).length;
 
+  const introActive = introState !== "done";
+  const topBarMode = introActive ? "intro" : pressure ? "pressure" : coachVisible ? "coach" : streakStatus ? "streak" : "normal";
+  const topBarClass = topBarMode === "pressure"
+    ? "border-amber-300 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-300 text-slate-950"
+    : topBarMode === "streak"
+      ? "border-indigo-400 bg-gradient-to-r from-blue-700 via-indigo-600 to-blue-600 text-white"
+      : topBarMode === "coach" || (topBarMode === "intro" && introState === "coach")
+        ? "border-blue-200 bg-gradient-to-r from-blue-50 via-white to-blue-50 text-slate-950"
+        : topBarMode === "intro"
+          ? "border-blue-700 bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-600 text-white"
+          : "border-slate-200 bg-white text-slate-950";
+
   return (
     <main style={LIGHT_SURFACE} className="mx-auto min-h-screen w-full max-w-md bg-background px-5 pb-10 pt-[max(16px,env(safe-area-inset-top))] text-foreground">
       {phase === "setup" ? <>
@@ -451,30 +488,18 @@ function PlayWithCoachPage() {
       {phase === "play" ? <>
         <style>{`
           @keyframes coachConfetti{0%{opacity:0;transform:translate3d(0,-12vh,0) rotate(0deg) scale(.7)}8%{opacity:1}100%{opacity:0;transform:translate3d(var(--cx),108vh,0) rotate(var(--cr)) scale(1.15)}}
+          @keyframes topbarStateIn{0%{opacity:0;transform:translateY(5px) scale(.992)}100%{opacity:1;transform:translateY(0) scale(1)}}
+          .sg4-topbar-state{animation:topbarStateIn 320ms cubic-bezier(.22,.61,.36,1) both}
+          @media (prefers-reduced-motion: reduce){.sg4-topbar-state{animation:none!important}}
         `}</style>
 
-        {pressure ? <header className="-mx-5 flex min-h-[82px] w-[calc(100%+2.5rem)] items-center justify-between border-y border-amber-300 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-300 px-5 text-slate-950 shadow-[0_12px_30px_-22px_rgba(245,158,11,.8)]">
-          <div className="min-w-0 pr-4"><p className="text-[9px] font-black uppercase tracking-[.22em]">Pressläge · Nu gäller det</p><p className="mt-1 truncate font-display text-[25px] leading-none">{pressure.title}</p><p className="mt-1 truncate text-[11px] font-bold text-slate-800">{pressure.detail}</p></div><span className="text-2xl">⚡</span>
-        </header> : streakStatus ? <header className="-mx-5 flex min-h-[82px] w-[calc(100%+2.5rem)] items-center justify-between border-y border-indigo-400 bg-gradient-to-r from-blue-700 via-indigo-600 to-blue-600 px-5 text-white shadow-[0_12px_30px_-22px_rgba(37,99,235,.8)]">
-          <div className="min-w-0"><p className="text-[9px] font-black uppercase tracking-[.22em] text-blue-100">{streakStatus.label}</p><p className="mt-1 font-display text-[27px] leading-none">{streakStatus.value}</p><p className="mt-1 text-[11px] font-semibold text-blue-100">{streakStatus.detail}</p></div><span className="text-2xl">🔥</span>
-        </header> : <header className="-mx-5 grid min-h-[76px] w-[calc(100%+2.5rem)] grid-cols-[60%_40%] overflow-hidden border-y border-slate-200 bg-white shadow-[0_10px_28px_-24px_rgba(15,23,42,.5)]">
-          <div className="relative z-10 flex min-w-0 items-center bg-blue-600 px-5 pr-9 text-white after:absolute after:-right-6 after:top-0 after:h-full after:w-9 after:bg-blue-600 after:[clip-path:polygon(0_0,36%_0,100%_50%,36%_100%,0_100%)]">
-            <div className="min-w-0"><p className="truncate font-display text-[30px] leading-none text-white">{playerName}</p><p className="mt-1.5 text-[10px] font-black uppercase tracking-[.14em] text-blue-100">{currentCount} slag registrerade</p></div>
-          </div>
-          <div className="relative flex min-w-0 items-center justify-end bg-white pl-8 pr-5 text-right">
-            <div className="min-w-0"><p className="truncate text-[8px] font-black uppercase tracking-[.12em] text-slate-500">{liveStats.label}</p><p className="mt-0.5 font-display text-[27px] leading-none text-slate-950">{liveStats.value}</p></div>
-          </div>
-        </header>}
+        <header className={`-mx-5 h-[108px] w-[calc(100%+2.5rem)] overflow-hidden border-y shadow-[0_12px_30px_-24px_rgba(15,23,42,.45)] transition-colors duration-300 ${topBarClass}`}>
+          {topBarMode === "intro" ? <div key={`intro-${introState}`} className="sg4-topbar-state flex h-full w-full items-center justify-center px-5 text-center">
+            {introState === "coach" ? <div className="flex w-full items-center gap-3 text-left"><span className="flex h-14 w-14 shrink-0 items-center justify-center text-[42px] leading-none">{coach.emoji}</span><div className="min-w-0"><p className="text-[9px] font-black uppercase tracking-[.2em] text-blue-600">Alma</p><p className="mt-1 line-clamp-2 text-[16px] font-semibold leading-[1.3] text-slate-900">{coachText}</p></div></div> : introState === "go" ? <div><p className="text-[10px] font-black uppercase tracking-[.24em] text-blue-100">Practice Mode</p><p className="mt-1 font-display text-[34px] leading-none">NU KÖR VI</p></div> : <span className="font-display text-[58px] leading-none">{introState}</span>}
+          </div> : topBarMode === "pressure" && pressure ? <div key={`pressure-${pressure.title}-${distance}`} className="sg4-topbar-state flex h-full w-full items-center justify-between px-5"><div className="min-w-0 pr-4"><p className="text-[9px] font-black uppercase tracking-[.22em]">Pressläge · Nu gäller det</p><p className="mt-1 truncate font-display text-[26px] leading-none">{pressure.title}</p><p className="mt-1 truncate text-[11px] font-bold text-slate-800">{pressure.detail}</p></div><span className="text-2xl">⚡</span></div> : topBarMode === "coach" ? <div key={`coach-${coachText}`} className="sg4-topbar-state flex h-full w-full items-center gap-3 px-5"><span className="flex h-14 w-14 shrink-0 items-center justify-center text-[42px] leading-none">{coach.emoji}</span><div className="min-w-0"><p className="text-[9px] font-black uppercase tracking-[.2em] text-blue-600">Alma</p><p className="mt-1 line-clamp-2 text-[16px] font-semibold leading-[1.3] text-slate-900">{coachText}</p></div></div> : topBarMode === "streak" && streakStatus ? <div key={`streak-${streakStatus.value}`} className="sg4-topbar-state flex h-full w-full items-center justify-between px-5"><div className="min-w-0"><p className="text-[9px] font-black uppercase tracking-[.22em] text-blue-100">{streakStatus.label}</p><p className="mt-1 font-display text-[28px] leading-none">{streakStatus.value}</p><p className="mt-1 text-[11px] font-semibold text-blue-100">{streakStatus.detail}</p></div><span className="text-2xl">🔥</span></div> : <div key="normal" className="sg4-topbar-state grid h-full w-full grid-cols-[60%_40%] overflow-hidden"><div className="relative z-10 flex min-w-0 items-center bg-blue-600 px-5 pr-9 text-white after:absolute after:-right-6 after:top-0 after:h-full after:w-9 after:bg-blue-600 after:[clip-path:polygon(0_0,36%_0,100%_50%,36%_100%,0_100%)]"><div className="min-w-0"><p className="truncate font-display text-[30px] leading-none text-white">{playerName}</p><p className="mt-1.5 text-[10px] font-black uppercase tracking-[.14em] text-blue-100">{currentCount} slag registrerade</p></div></div><div className="relative flex min-w-0 items-center justify-end bg-white pl-8 pr-5 text-right"><div className="min-w-0"><p className="truncate text-[8px] font-black uppercase tracking-[.12em] text-slate-500">{liveStats.label}</p><p className="mt-0.5 font-display text-[27px] leading-none text-slate-950">{liveStats.value}</p></div></div></div>}
+        </header>
 
-        <section className="mt-3 flex h-[252px] flex-col overflow-hidden">
-          <div className={`overflow-hidden transition-[height,opacity,transform,margin] duration-500 ease-[cubic-bezier(.22,.61,.36,1)] ${coachVisible ? "mb-3 h-[112px] translate-y-0 opacity-100" : "mb-0 h-0 -translate-y-2 opacity-0"}`} aria-hidden={!coachVisible}>
-            <SpeechBubble avatar={coach.emoji} name={coach.name} text={coachText} fixed />
-          </div>
-
-          <div className="min-h-0 flex-1 transition-[height,flex-basis] duration-500 ease-[cubic-bezier(.22,.61,.36,1)]">
-            {category === "bunker" ? <section className="flex h-full flex-col justify-center rounded-[26px] border border-slate-200 bg-white px-5 py-5 text-center shadow-[0_18px_42px_-30px_rgba(15,23,42,.45)]"><p className="text-[9px] font-black uppercase tracking-[.18em] text-slate-400">Uppgift</p><h1 className="mt-1 font-display text-[42px] leading-none text-slate-950">Bunkerslag</h1><p className="mt-2 text-sm font-semibold text-slate-500">Slå så nära flaggan som möjligt.</p></section> : <section className="flex h-full flex-col justify-center rounded-[26px] border border-slate-200 bg-white px-5 py-4 text-center shadow-[0_18px_42px_-30px_rgba(15,23,42,.45)]"><p className="text-[9px] font-black uppercase tracking-[.18em] text-slate-400">{category === "around-the-green" ? "Situation" : "Avstånd"}</p>{category === "around-the-green" ? <div className={`mt-1 flex items-center justify-center gap-2 whitespace-nowrap transition-opacity ${transitioning ? "opacity-35" : "opacity-100"}`}><span className="font-display text-[54px] leading-none text-slate-950">{formatDistance(distance)} m</span><span className="flex items-center gap-1 font-display text-[25px] leading-none"><span className="text-slate-500">• från</span><span className={chipLie === "Fairway" ? "text-emerald-500" : "text-emerald-900"}>{chipLie.toLowerCase()}</span></span></div> : <h1 className={`mt-1 font-display text-[58px] leading-none text-slate-950 transition-opacity ${transitioning ? "opacity-35" : "opacity-100"}`}>{formatDistance(distance)} m</h1>}{category === "around-the-green" ? <p className="mt-2 text-sm font-semibold text-slate-500">Slå så nära hålet som möjligt.</p> : null}</section>}
-          </div>
-        </section>
+        {category === "bunker" ? <section className="mt-3 rounded-[26px] border border-slate-200 bg-white px-5 py-6 text-center shadow-[0_18px_42px_-30px_rgba(15,23,42,.45)]"><p className="text-[9px] font-black uppercase tracking-[.18em] text-slate-400">Uppgift</p><h1 className="mt-1 font-display text-[42px] leading-none text-slate-950">Bunkerslag</h1><p className="mt-2 text-sm font-semibold text-slate-500">Slå så nära flaggan som möjligt.</p></section> : <section className="mt-3 rounded-[26px] border border-slate-200 bg-white px-5 py-5 text-center shadow-[0_18px_42px_-30px_rgba(15,23,42,.45)]"><p className="text-[9px] font-black uppercase tracking-[.18em] text-slate-400">{category === "around-the-green" ? "Situation" : "Avstånd"}</p>{category === "around-the-green" ? <div className={`mt-1 flex items-center justify-center gap-2 whitespace-nowrap transition-opacity ${transitioning ? "opacity-35" : "opacity-100"}`}><span className="font-display text-[54px] leading-none text-slate-950">{formatDistance(distance)} m</span><span className="flex items-center gap-1 font-display text-[25px] leading-none"><span className="text-slate-500">• från</span><span className={chipLie === "Fairway" ? "text-emerald-500" : "text-emerald-900"}>{chipLie.toLowerCase()}</span></span></div> : <h1 className={`mt-1 font-display text-[58px] leading-none text-slate-950 transition-opacity ${transitioning ? "opacity-35" : "opacity-100"}`}>{formatDistance(distance)} m</h1>}{category === "around-the-green" ? <p className="mt-2 text-sm font-semibold text-slate-500">Slå så nära hålet som möjligt.</p> : null}</section>}
 
         {category === "putting" ? <section className="mt-5"><div className="text-center"><p className="text-[10px] font-black uppercase tracking-[.16em] text-slate-400">Ditt resultat</p><h2 className="mt-1 font-display text-2xl text-slate-950">Antal puttar</h2></div><div className="mt-3 grid grid-cols-4 gap-2.5">{([1, 2, 3, 4] as const).map((strokes) => <button key={strokes} type="button" disabled={transitioning} onClick={() => registerPutting(strokes)} className="rounded-[20px] border border-blue-300 bg-blue-50 px-1 py-4 text-center shadow-sm transition hover:bg-blue-100 active:scale-[.96] active:bg-blue-200 disabled:opacity-40"><span className="block font-display text-3xl leading-none text-blue-800">{strokes}</span><span className="mt-1.5 block text-[9px] font-black uppercase tracking-[.08em] text-blue-500">{strokes === 1 ? "putt" : "puttar"}</span></button>)}</div></section> : category === "around-the-green" ? <section className="mt-5"><div className="text-center"><p className="text-[10px] font-black uppercase tracking-[.16em] text-slate-400">Ditt resultat</p><h2 className="mt-1 font-display text-2xl text-slate-950">Hur nära hålet?</h2></div><div className="mt-3 grid grid-cols-2 gap-2.5">{CHIP_POINT_ZONES.map((zone) => {
           const visualClass = zone.points === 5
