@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { Bell, ChevronRight, Database, Gauge, LineChart, Swords, User, Users } from "lucide-react";
+import { Bell, ChevronRight, Database, LineChart, Swords, User, Users } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { computeEstimatedHandicap, hcpLabel, loadRealHandicap, type CategoryHandicap } from "@/lib/sg-handicap";
 import { computeStableCategoryHandicaps } from "@/lib/category-index";
@@ -83,6 +83,20 @@ function initials(name: string) {
     .map((part) => part[0]?.toUpperCase())
     .join("");
 }
+
+function BrowseHeading({ eyebrow, title, action, to }: { eyebrow: string; title: string; action: string; to: "/coach" | "/tester" }) {
+  return (
+    <div className="flex items-end justify-between gap-3 px-0.5">
+      <div>
+        <p className="text-[10px] font-black uppercase tracking-[.18em] text-muted-foreground">{eyebrow}</p>
+        <h2 className="mt-1 text-[24px] font-black leading-none text-foreground">{title}</h2>
+      </div>
+      <Link to={to} className="shrink-0 text-xs font-bold text-blue-600">{action}</Link>
+    </div>
+  );
+}
+
+const POSTER_BASE = "group relative flex h-[214px] w-[164px] shrink-0 snap-start flex-col overflow-hidden rounded-[24px] text-white shadow-[0_18px_32px_-22px_rgba(15,23,42,.72)] ring-1 ring-black/5 transition-transform active:scale-[.975]";
 
 function Home() {
   const { user, displayName } = useAuth();
@@ -279,58 +293,106 @@ function Home() {
           </Link>
         </section>
 
-        <section className="mt-3">
-          <Link to="/tester" onClick={() => recordRecommendationOpen("hcp-test")} className="flex items-center gap-4 rounded-[22px] border border-border bg-card px-4 py-4 active:bg-muted/30">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-600"><Gauge className="h-5 w-5" /></span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-[10px] font-black uppercase tracking-[.17em] text-muted-foreground">HCP-test</span>
-              <span className="mt-1 block text-base font-black text-foreground">Gör ett test – få ett HCP-resultat</span>
-              <span className="mt-0.5 block text-xs text-muted-foreground">Senaste HCP: {hcpValue}</span>
-            </span>
-            <ChevronRight className="h-5 w-5 text-muted-foreground" />
-          </Link>
-        </section>
-
-        <section className="mt-6">
-          <div className="flex items-end justify-between gap-3 px-0.5">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-[.18em] text-muted-foreground">Practice Mode</p>
-              <h2 className="mt-1 text-[23px] font-black leading-none text-foreground">Träning</h2>
-            </div>
-            <Link to="/coach" onClick={() => recordRecommendationOpen("practice")} className="text-xs font-bold text-blue-600">Alla pass</Link>
-          </div>
-
+        <section className="mt-7">
+          <BrowseHeading eyebrow="Practice Mode" title="Träna med coach" action="Alla pass" to="/coach" />
           <div className="-mx-5 mt-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <Link to="/coach" search={{ category: "putting" }} onClick={() => recordRecommendationOpen("practice")} className="relative flex h-[190px] w-[152px] shrink-0 snap-start flex-col overflow-hidden rounded-[24px] bg-gradient-to-br from-indigo-700 via-violet-700 to-purple-950 p-4 text-white shadow-[0_16px_30px_-24px_rgba(49,46,129,.9)] active:scale-[.985]">
-              <span className="absolute inset-x-0 top-0 h-20 bg-white/5" />
-              <span className="relative flex flex-1 items-center justify-center text-[54px]">⛳</span>
-              <span className="relative text-[10px] font-black uppercase tracking-[.16em] text-violet-200">Coachträning</span>
-              <span className="relative mt-1 font-display text-[25px] leading-none">Puttning</span>
+            <Link to="/coach" search={{ category: "putting" }} onClick={() => recordRecommendationOpen("practice")} className={`${POSTER_BASE} bg-gradient-to-br from-indigo-600 via-violet-700 to-purple-950`}>
+              <span className="absolute inset-0 bg-[radial-gradient(circle_at_72%_18%,rgba(255,255,255,.30),transparent_26%),linear-gradient(to_top,rgba(0,0,0,.62),transparent_58%)]" />
+              <span className="absolute left-3 top-3 z-10 rounded-md bg-black/45 px-2 py-1 text-[9px] font-black uppercase tracking-[.16em] backdrop-blur-md">Practice</span>
+              <span className="relative z-10 flex flex-1 items-center justify-center text-[64px] drop-shadow-lg">⛳</span>
+              <span className="relative z-10 px-4 pb-4">
+                <span className="block text-[10px] font-bold uppercase tracking-[.15em] text-violet-100">Coachträning</span>
+                <span className="mt-1 block font-display text-[27px] leading-none">Puttning</span>
+              </span>
             </Link>
 
-            <Link to="/coach" search={{ category: "around-the-green" }} onClick={() => recordRecommendationOpen("practice")} className="relative flex h-[190px] w-[152px] shrink-0 snap-start flex-col overflow-hidden rounded-[24px] bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-800 p-4 text-white shadow-[0_16px_30px_-24px_rgba(5,150,105,.9)] active:scale-[.985]">
-              <span className="absolute inset-x-0 top-0 h-20 bg-white/5" />
-              <span className="relative flex flex-1 items-center justify-center text-[54px]">🏌️</span>
-              <span className="relative text-[10px] font-black uppercase tracking-[.16em] text-emerald-100">Coachträning</span>
-              <span className="relative mt-1 font-display text-[25px] leading-none">Chippning</span>
+            <Link to="/coach" search={{ category: "around-the-green" }} onClick={() => recordRecommendationOpen("practice")} className={`${POSTER_BASE} bg-gradient-to-br from-emerald-400 via-emerald-600 to-teal-950`}>
+              <span className="absolute inset-0 bg-[radial-gradient(circle_at_72%_18%,rgba(255,255,255,.28),transparent_26%),linear-gradient(to_top,rgba(0,0,0,.62),transparent_58%)]" />
+              <span className="absolute left-3 top-3 z-10 rounded-md bg-black/45 px-2 py-1 text-[9px] font-black uppercase tracking-[.16em] backdrop-blur-md">Practice</span>
+              <span className="relative z-10 flex flex-1 items-center justify-center text-[62px] drop-shadow-lg">🏌️</span>
+              <span className="relative z-10 px-4 pb-4">
+                <span className="block text-[10px] font-bold uppercase tracking-[.15em] text-emerald-100">Coachträning</span>
+                <span className="mt-1 block font-display text-[27px] leading-none">Chippning</span>
+              </span>
             </Link>
 
-            <Link to="/coach" search={{ category: "bunker" }} onClick={() => recordRecommendationOpen("practice")} className="relative flex h-[190px] w-[152px] shrink-0 snap-start flex-col overflow-hidden rounded-[24px] bg-gradient-to-br from-amber-300 via-orange-400 to-orange-700 p-4 text-white shadow-[0_16px_30px_-24px_rgba(234,88,12,.8)] active:scale-[.985]">
-              <span className="absolute inset-x-0 top-0 h-20 bg-white/8" />
-              <span className="relative flex flex-1 items-center justify-center text-[54px]">🏖️</span>
-              <span className="relative text-[10px] font-black uppercase tracking-[.16em] text-amber-50">Coachträning</span>
-              <span className="relative mt-1 font-display text-[25px] leading-none">Bunker</span>
+            <Link to="/coach" search={{ category: "bunker" }} onClick={() => recordRecommendationOpen("practice")} className={`${POSTER_BASE} bg-gradient-to-br from-amber-300 via-orange-500 to-orange-900`}>
+              <span className="absolute inset-0 bg-[radial-gradient(circle_at_72%_18%,rgba(255,255,255,.30),transparent_26%),linear-gradient(to_top,rgba(0,0,0,.62),transparent_58%)]" />
+              <span className="absolute left-3 top-3 z-10 rounded-md bg-black/45 px-2 py-1 text-[9px] font-black uppercase tracking-[.16em] backdrop-blur-md">Practice</span>
+              <span className="relative z-10 flex flex-1 items-center justify-center text-[62px] drop-shadow-lg">🏖️</span>
+              <span className="relative z-10 px-4 pb-4">
+                <span className="block text-[10px] font-bold uppercase tracking-[.15em] text-amber-50">Coachträning</span>
+                <span className="mt-1 block font-display text-[27px] leading-none">Bunker</span>
+              </span>
             </Link>
 
-            <Link to="/coach" onClick={() => recordRecommendationOpen("practice")} className="relative flex h-[190px] w-[152px] shrink-0 snap-start flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-gradient-to-br from-slate-100 to-slate-300 p-4 text-slate-950 shadow-[0_16px_30px_-24px_rgba(15,23,42,.35)] active:scale-[.985]">
-              <span className="relative flex flex-1 items-center justify-center text-[46px]">＋</span>
-              <span className="relative text-[10px] font-black uppercase tracking-[.16em] text-slate-500">Practice Mode</span>
-              <span className="relative mt-1 font-display text-[25px] leading-none">Alla pass</span>
+            <Link to="/coach" onClick={() => recordRecommendationOpen("practice")} className={`${POSTER_BASE} bg-gradient-to-br from-slate-500 via-slate-700 to-slate-950`}>
+              <span className="absolute inset-0 bg-[linear-gradient(to_top,rgba(0,0,0,.64),transparent_58%)]" />
+              <span className="absolute left-3 top-3 z-10 rounded-md bg-black/45 px-2 py-1 text-[9px] font-black uppercase tracking-[.16em] backdrop-blur-md">Practice</span>
+              <span className="relative z-10 flex flex-1 items-center justify-center text-[60px] font-light">＋</span>
+              <span className="relative z-10 px-4 pb-4">
+                <span className="block text-[10px] font-bold uppercase tracking-[.15em] text-slate-200">Practice Mode</span>
+                <span className="mt-1 block font-display text-[27px] leading-none">Alla pass</span>
+              </span>
             </Link>
           </div>
         </section>
 
-        <section className="mt-3">
+        <section className="mt-7">
+          <BrowseHeading eyebrow="HCP Test" title="Testa din nivå" action="Alla tester" to="/tester" />
+          <div className="-mx-5 mt-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <Link to="/kategori/$slug" params={{ slug: "puttning" }} onClick={() => recordRecommendationOpen("hcp-test")} className={`${POSTER_BASE} bg-gradient-to-br from-fuchsia-500 via-violet-700 to-indigo-950`}>
+              <span className="absolute inset-0 bg-[radial-gradient(circle_at_68%_20%,rgba(255,255,255,.28),transparent_27%),linear-gradient(to_top,rgba(0,0,0,.66),transparent_57%)]" />
+              <span className="absolute left-3 top-3 z-10 rounded-md bg-white/18 px-2 py-1 text-[9px] font-black uppercase tracking-[.16em] backdrop-blur-md">HCP Test</span>
+              <span className="relative z-10 flex flex-1 items-center justify-center text-[62px]">🎯</span>
+              <span className="relative z-10 px-4 pb-4"><span className="block text-[10px] font-bold uppercase tracking-[.15em] text-violet-100">På green</span><span className="mt-1 block font-display text-[27px] leading-none">Putting</span></span>
+            </Link>
+
+            <Link to="/kategori/$slug" params={{ slug: "around-the-green" }} onClick={() => recordRecommendationOpen("hcp-test")} className={`${POSTER_BASE} bg-gradient-to-br from-lime-400 via-emerald-600 to-emerald-950`}>
+              <span className="absolute inset-0 bg-[radial-gradient(circle_at_68%_20%,rgba(255,255,255,.28),transparent_27%),linear-gradient(to_top,rgba(0,0,0,.66),transparent_57%)]" />
+              <span className="absolute left-3 top-3 z-10 rounded-md bg-white/18 px-2 py-1 text-[9px] font-black uppercase tracking-[.16em] backdrop-blur-md">HCP Test</span>
+              <span className="relative z-10 flex flex-1 items-center justify-center text-[62px]">🟢</span>
+              <span className="relative z-10 px-4 pb-4"><span className="block text-[10px] font-bold uppercase tracking-[.15em] text-emerald-100">Short game</span><span className="mt-1 block font-display text-[25px] leading-[.95]">Around the Green</span></span>
+            </Link>
+
+            <Link to="/kategori/$slug" params={{ slug: "approach" }} onClick={() => recordRecommendationOpen("hcp-test")} className={`${POSTER_BASE} bg-gradient-to-br from-cyan-400 via-sky-600 to-blue-950`}>
+              <span className="absolute inset-0 bg-[radial-gradient(circle_at_68%_20%,rgba(255,255,255,.30),transparent_27%),linear-gradient(to_top,rgba(0,0,0,.66),transparent_57%)]" />
+              <span className="absolute left-3 top-3 z-10 rounded-md bg-white/18 px-2 py-1 text-[9px] font-black uppercase tracking-[.16em] backdrop-blur-md">HCP Test</span>
+              <span className="relative z-10 flex flex-1 items-center justify-center text-[62px]">🏌️‍♂️</span>
+              <span className="relative z-10 px-4 pb-4"><span className="block text-[10px] font-bold uppercase tracking-[.15em] text-sky-100">Inspel</span><span className="mt-1 block font-display text-[27px] leading-none">Approach</span></span>
+            </Link>
+
+            <Link to="/kategori/$slug" params={{ slug: "driving" }} onClick={() => recordRecommendationOpen("hcp-test")} className={`${POSTER_BASE} bg-gradient-to-br from-slate-400 via-slate-700 to-black`}>
+              <span className="absolute inset-0 bg-[radial-gradient(circle_at_68%_20%,rgba(255,255,255,.25),transparent_27%),linear-gradient(to_top,rgba(0,0,0,.72),transparent_57%)]" />
+              <span className="absolute left-3 top-3 z-10 rounded-md bg-white/18 px-2 py-1 text-[9px] font-black uppercase tracking-[.16em] backdrop-blur-md">HCP Test</span>
+              <span className="relative z-10 flex flex-1 items-center justify-center text-[62px]">🚀</span>
+              <span className="relative z-10 px-4 pb-4"><span className="block text-[10px] font-bold uppercase tracking-[.15em] text-slate-200">Utslag</span><span className="mt-1 block font-display text-[27px] leading-none">Off the Tee</span></span>
+            </Link>
+          </div>
+        </section>
+
+        <section className="mt-7">
+          <div className="px-0.5">
+            <p className="text-[10px] font-black uppercase tracking-[.18em] text-muted-foreground">Benchmarks & challenges</p>
+            <h2 className="mt-1 text-[24px] font-black leading-none text-foreground">Mät precision och nivå</h2>
+          </div>
+          <div className="-mx-5 mt-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <Link to="/pga-tour-18-puttar" className={`${POSTER_BASE} bg-gradient-to-br from-rose-500 via-red-700 to-red-950`}>
+              <span className="absolute inset-0 bg-[linear-gradient(to_top,rgba(0,0,0,.7),transparent_58%)]" /><span className="absolute left-3 top-3 z-10 rounded-md bg-black/40 px-2 py-1 text-[9px] font-black uppercase tracking-[.16em]">Benchmark</span><span className="relative z-10 flex flex-1 items-center justify-center text-[58px]">🏆</span><span className="relative z-10 px-4 pb-4"><span className="block text-[10px] font-bold uppercase tracking-[.15em] text-red-100">Putting</span><span className="mt-1 block font-display text-[27px] leading-none">18 puttar</span></span>
+            </Link>
+            <Link to="/tutor-test" className={`${POSTER_BASE} bg-gradient-to-br from-violet-500 via-indigo-700 to-slate-950`}>
+              <span className="absolute inset-0 bg-[linear-gradient(to_top,rgba(0,0,0,.7),transparent_58%)]" /><span className="absolute left-3 top-3 z-10 rounded-md bg-black/40 px-2 py-1 text-[9px] font-black uppercase tracking-[.16em]">Benchmark</span><span className="relative z-10 flex flex-1 items-center justify-center text-[58px]">📏</span><span className="relative z-10 px-4 pb-4"><span className="block text-[10px] font-bold uppercase tracking-[.15em] text-indigo-100">Startlinje</span><span className="mt-1 block font-display text-[27px] leading-none">Tutor Test</span></span>
+            </Link>
+            <Link to="/driver-konsekvens" className={`${POSTER_BASE} bg-gradient-to-br from-orange-400 via-amber-600 to-stone-950`}>
+              <span className="absolute inset-0 bg-[linear-gradient(to_top,rgba(0,0,0,.7),transparent_58%)]" /><span className="absolute left-3 top-3 z-10 rounded-md bg-black/40 px-2 py-1 text-[9px] font-black uppercase tracking-[.16em]">Challenge</span><span className="relative z-10 flex flex-1 items-center justify-center text-[58px]">📈</span><span className="relative z-10 px-4 pb-4"><span className="block text-[10px] font-bold uppercase tracking-[.15em] text-amber-100">Driver</span><span className="mt-1 block font-display text-[24px] leading-none">Konsekvens</span></span>
+            </Link>
+            <Link to="/approach-pei-valj" className={`${POSTER_BASE} bg-gradient-to-br from-teal-400 via-cyan-700 to-blue-950`}>
+              <span className="absolute inset-0 bg-[linear-gradient(to_top,rgba(0,0,0,.7),transparent_58%)]" /><span className="absolute left-3 top-3 z-10 rounded-md bg-black/40 px-2 py-1 text-[9px] font-black uppercase tracking-[.16em]">Benchmark</span><span className="relative z-10 flex flex-1 items-center justify-center text-[58px]">🎯</span><span className="relative z-10 px-4 pb-4"><span className="block text-[10px] font-bold uppercase tracking-[.15em] text-cyan-100">Approach</span><span className="mt-1 block font-display text-[25px] leading-none">PEI Approach</span></span>
+            </Link>
+          </div>
+        </section>
+
+        <section className="mt-4">
           <Link to="/utveckling" className="flex items-center gap-4 rounded-[22px] border border-border bg-card px-4 py-4 active:bg-muted/30">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-violet-50 text-violet-600"><LineChart className="h-5 w-5" /></span>
             <span className="min-w-0 flex-1">
