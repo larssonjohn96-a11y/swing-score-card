@@ -22,7 +22,7 @@ export const Route = createFileRoute("/coach")({
   component: PlayWithCoachPage,
 });
 
-type Phase = "setup" | "play" | "summary";
+type Phase = "setup" | "chip-setup" | "play" | "summary";
 type Category = "putting" | "around-the-green" | "bunker" | "approach" | "off-the-tee" | "speed";
 type PressureChallenge = { title: string; detail: string; maxStrokes?: 1 | 2; minPoints?: number };
 type ChipLieOption = "fairway" | "rough" | "both";
@@ -41,10 +41,10 @@ const CATEGORIES: Array<{ id: Category; title: string; available: boolean }> = [
   { id: "speed", title: "Speed", available: false },
 ];
 
-const CHIP_LIE_OPTIONS: Array<{ id: ChipLieOption; label: string; meta: string }> = [
-  { id: "fairway", label: "Fairway", meta: "Normal lie" },
-  { id: "rough", label: "Ruff", meta: "Bara ruff" },
-  { id: "both", label: "Båda", meta: "70% fairway · 30% ruff" },
+const CHIP_LIE_OPTIONS: Array<{ id: ChipLieOption; label: string }> = [
+  { id: "fairway", label: "Fairway" },
+  { id: "rough", label: "Ruff" },
+  { id: "both", label: "Båda" },
 ];
 
 const BUNKER_POINT_ZONES = [
@@ -216,13 +216,16 @@ function PlayWithCoachPage() {
   }, [category, puttingAttempts, shortAttempts]);
 
   const categoryLabel = category === "around-the-green" ? "Chippning" : category === "bunker" ? "Bunker" : "Puttning";
-  const setupCoachText = category === "around-the-green"
-    ? "Vad har vi att jobba med idag? Välj vilket underlag du har tillgång till."
-    : "Välj vad du vill träna. Jag styr variationen och säger till när något är värt att justera.";
 
   function selectChipLie(option: ChipLieOption) {
     setChipLieOption(option);
     if (typeof window !== "undefined") window.localStorage.setItem(CHIP_LIE_STORAGE_KEY, option);
+  }
+
+  function selectCategory(nextCategory: Category, available: boolean) {
+    if (!available) return;
+    setCategory(nextCategory);
+    if (nextCategory === "around-the-green") setPhase("chip-setup");
   }
 
   function startGame() {
@@ -360,7 +363,7 @@ function PlayWithCoachPage() {
           <span className="h-10 w-10" />
         </header>
 
-        <section className="mt-6"><SpeechBubble avatar={coach.emoji} name={coach.name} text={setupCoachText} /></section>
+        <section className="mt-6"><SpeechBubble avatar={coach.emoji} name={coach.name} text="Välj vad du vill träna. Jag styr variationen och säger till när något är värt att justera." /></section>
 
         <section className="mt-8">
           <p className="text-[10px] font-black uppercase tracking-[.18em] text-slate-400">Träning</p>
@@ -368,27 +371,38 @@ function PlayWithCoachPage() {
           <div className="mt-5 grid grid-cols-2 gap-3">
             {CATEGORIES.map((item) => {
               const active = category === item.id;
-              return <button key={item.id} type="button" onClick={() => item.available && setCategory(item.id)} className={`relative flex min-h-[122px] items-center justify-center rounded-[24px] border p-4 text-center transition active:scale-[.985] ${active ? "border-blue-500 bg-blue-50 ring-2 ring-blue-500/15" : item.available ? "border-slate-200 bg-white" : "border-slate-200 bg-white/55 opacity-50"}`}>
+              return <button key={item.id} type="button" onClick={() => selectCategory(item.id, item.available)} className={`relative flex min-h-[122px] items-center justify-center rounded-[24px] border p-4 text-center transition active:scale-[.985] ${active ? "border-blue-500 bg-blue-50 ring-2 ring-blue-500/15" : item.available ? "border-slate-200 bg-white" : "border-slate-200 bg-white/55 opacity-50"}`}>
                 {active ? <span className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-white"><Check className="h-3.5 w-3.5" /></span> : null}
                 <p className={`font-display text-[27px] uppercase leading-none ${active ? "text-blue-700" : "text-slate-950"}`}>{item.title}</p>
               </button>;
             })}
           </div>
+          <button type="button" disabled={!category || category === "around-the-green" || !["putting", "bunker"].includes(category)} onClick={startGame} className="mt-5 flex w-full items-center justify-center gap-2 rounded-[20px] bg-blue-600 py-4 font-display text-xl text-white shadow-sm transition active:scale-[.99] disabled:opacity-25">Starta träning <ChevronRight className="h-5 w-5" /></button>
+        </section>
+      </> : null}
 
-          {category === "around-the-green" ? <div className="mt-5 rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_14px_34px_-28px_rgba(15,23,42,.45)]">
-            <p className="text-[10px] font-black uppercase tracking-[.16em] text-slate-400">Underlag idag</p>
-            <div className="mt-3 grid grid-cols-3 gap-2">
-              {CHIP_LIE_OPTIONS.map((option) => {
-                const active = chipLieOption === option.id;
-                return <button key={option.id} type="button" onClick={() => selectChipLie(option.id)} className={`min-h-[76px] rounded-[18px] border px-2 py-3 text-center transition active:scale-[.98] ${active ? "border-blue-500 bg-blue-50 ring-2 ring-blue-500/15" : "border-slate-200 bg-slate-50"}`}>
-                  <span className={`block font-display text-lg leading-none ${active ? "text-blue-700" : "text-slate-950"}`}>{option.label}</span>
-                  <span className="mt-1.5 block text-[9px] font-semibold leading-tight text-slate-500">{option.meta}</span>
-                </button>;
-              })}
-            </div>
-          </div> : null}
+      {phase === "chip-setup" ? <>
+        <header className="flex items-center justify-between">
+          <button type="button" onClick={() => setPhase("setup")} aria-label="Tillbaka till träningsval" className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-2xl shadow-sm">‹</button>
+          <div className="text-center"><p className="text-[10px] font-black uppercase tracking-[.18em] text-slate-400">Practice Mode</p><p className="text-sm font-black text-slate-900">Chippning</p></div>
+          <span className="h-10 w-10" />
+        </header>
 
-          <button type="button" disabled={!category || !["putting", "around-the-green", "bunker"].includes(category)} onClick={startGame} className="mt-5 flex w-full items-center justify-center gap-2 rounded-[20px] bg-blue-600 py-4 font-display text-xl text-white shadow-sm transition active:scale-[.99] disabled:opacity-25">Starta träning <ChevronRight className="h-5 w-5" /></button>
+        <section className="mt-6"><SpeechBubble avatar={coach.emoji} name={coach.name} text="Vad har vi att jobba med idag? Vilket underlag har du tillgång till?" /></section>
+
+        <section className="mt-8">
+          <p className="text-[10px] font-black uppercase tracking-[.18em] text-slate-400">Underlag</p>
+          <h1 className="mt-1 font-display text-[38px] leading-none text-slate-950">Välj underlag</h1>
+          <div className="mt-5 grid grid-cols-3 gap-3">
+            {CHIP_LIE_OPTIONS.map((option) => {
+              const active = chipLieOption === option.id;
+              return <button key={option.id} type="button" onClick={() => selectChipLie(option.id)} className={`relative min-h-[104px] rounded-[22px] border px-3 py-4 text-center transition active:scale-[.98] ${active ? "border-blue-500 bg-blue-50 ring-2 ring-blue-500/15" : "border-slate-200 bg-white"}`}>
+                {active ? <span className="absolute right-2.5 top-2.5 flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-white"><Check className="h-3.5 w-3.5" /></span> : null}
+                <span className={`block font-display text-[22px] leading-none ${active ? "text-blue-700" : "text-slate-950"}`}>{option.label}</span>
+              </button>;
+            })}
+          </div>
+          <button type="button" onClick={startGame} className="mt-5 flex w-full items-center justify-center gap-2 rounded-[20px] bg-blue-600 py-4 font-display text-xl text-white shadow-sm transition active:scale-[.99]">Starta träning <ChevronRight className="h-5 w-5" /></button>
         </section>
       </> : null}
 
