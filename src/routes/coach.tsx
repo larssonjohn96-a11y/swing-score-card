@@ -25,9 +25,12 @@ export const Route = createFileRoute("/coach")({
 type Phase = "setup" | "play" | "summary";
 type Category = "putting" | "around-the-green" | "bunker" | "approach" | "off-the-tee" | "speed";
 type PressureChallenge = { title: string; detail: string; maxStrokes?: 1 | 2; minPoints?: number };
-type ShortAttempt = { distance?: number; points: number };
+type ChipLieOption = "fairway" | "rough" | "both";
+type ChipLie = "Fairway" | "Ruff";
+type ShortAttempt = { distance?: number; points: number; lie?: ChipLie };
 
 const DEFAULT_COACH_ID: CoachId = "alma";
+const CHIP_LIE_STORAGE_KEY = "sg4-coach-chip-lie-v1";
 
 const CATEGORIES: Array<{ id: Category; title: string; available: boolean }> = [
   { id: "putting", title: "Puttning", available: true },
@@ -36,6 +39,12 @@ const CATEGORIES: Array<{ id: Category; title: string; available: boolean }> = [
   { id: "approach", title: "Inspel", available: false },
   { id: "off-the-tee", title: "Driver", available: false },
   { id: "speed", title: "Speed", available: false },
+];
+
+const CHIP_LIE_OPTIONS: Array<{ id: ChipLieOption; label: string; meta: string }> = [
+  { id: "fairway", label: "Fairway", meta: "Normal lie" },
+  { id: "rough", label: "Ruff", meta: "Bara ruff" },
+  { id: "both", label: "Båda", meta: "70% fairway · 30% ruff" },
 ];
 
 const BUNKER_POINT_ZONES = [
@@ -87,15 +96,27 @@ function nextChipDistance(previous?: number) {
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
+function nextChipLie(option: ChipLieOption): ChipLie {
+  if (option === "rough") return "Ruff";
+  if (option === "fairway") return "Fairway";
+  return Math.random() < 0.7 ? "Fairway" : "Ruff";
+}
+
+function readSavedChipLieOption(): ChipLieOption {
+  if (typeof window === "undefined") return "fairway";
+  const saved = window.localStorage.getItem(CHIP_LIE_STORAGE_KEY);
+  return saved === "rough" || saved === "both" || saved === "fairway" ? saved : "fairway";
+}
+
 function maybePressureChallenge(category: Category, distance: number, puttingAttempts: CoachPuttingAttempt[], shortAttempts: ShortAttempt[]): PressureChallenge | null {
   if (category === "putting") {
     const shortStreak = shortHoledStreak(puttingAttempts);
     const longStreak = longNoThreeStreak(puttingAttempts);
-    if (distance <= 3 && shortStreak >= 2) {
+    if (shortStreak >= 2 && distance <= 3) {
       const chance = distance >= 2.5 ? 0.68 : 0.46;
       if (Math.random() <= chance) return { title: "Håla denna putt", detail: `Håll ${shortStreak} kortputtar i rad vid liv`, maxStrokes: 1 };
     }
-    if (distance > 8 && longStreak >= 3) {
+    if (longStreak >= 3 && distance > 8) {
       const chance = distance >= 12 ? 0.68 : 0.46;
       if (Math.random() <= chance) return { title: "Max 2 puttar", detail: `Håll ${longStreak} långputtar utan treputt vid liv`, maxStrokes: 2 };
     }
@@ -148,6 +169,8 @@ function PlayWithCoachPage() {
   const [category, setCategory] = useState<Category | null>(null);
   const [sessionId, setSessionId] = useState(() => newSessionId());
   const [distance, setDistance] = useState(() => nextCoachPuttingDistance());
+  const [chipLieOption, setChipLieOption] = useState<ChipLieOption>(() => readSavedChipLieOption());
+  const [chipLie, setChipLie] = useState<ChipLie>("Fairway");
   const [puttingAttempts, setPuttingAttempts] = useState<CoachPuttingAttempt[]>([]);
   const [shortAttempts, setShortAttempts] = useState<ShortAttempt[]>([]);
   const [coachText, setCoachText] = useState("Välj vad du vill träna. Jag styr variationen och säger till när något är värt att justera.");
@@ -193,6 +216,14 @@ function PlayWithCoachPage() {
   }, [category, puttingAttempts, shortAttempts]);
 
   const categoryLabel = category === "around-the-green" ? "Chippning" : category === "bunker" ? "Bunker" : "Puttning";
+  const setupCoachText = category === "around-the-green"
+    ? "Vad har vi att jobba med idag? Välj vilket underlag du har tillgång till."
+    : "Välj vad du vill träna. Jag styr variationen och säger till när något är värt att justera.";
+
+  function selectChipLie(option: ChipLieOption) {
+    setChipLieOption(option);
+    if (typeof window !== "undefined") window.localStorage.setItem(CHIP_LIE_STORAGE_KEY, option);
+  }
 
   function startGame() {
     if (!category || !["putting", "around-the-green", "bunker"].includes(category)) return;
@@ -201,6 +232,7 @@ function PlayWithCoachPage() {
     setPuttingAttempts([]);
     setShortAttempts([]);
     setDistance(firstDistance);
+    if (category === "around-the-green") setChipLie(nextChipLie(chipLieOption));
     setPressure(null);
     setConfetti(false);
     setFinalChallenge(false);
@@ -208,7 +240,7 @@ function PlayWithCoachPage() {
       ? "Vi kör. Läs putten, välj fart och slå med ett tydligt beslut."
       : category === "bunker"
         ? "Vi kör. Slå bunkerslaget så nära flaggan du kan."
-        : "Vi kör. Bestäm landningspunkt och vilken rull du vill se innan du slår.");
+        : "Vi kör. Läs läget, välj landningspunkt och slå så nära hålet du kan.");
     setConfirmEnd(false);
     setTransitioning(false);
     setPhase("play");
@@ -227,8 +259,9 @@ function PlayWithCoachPage() {
       setCoachText("Sista slaget. Få den så nära flaggan du kan.");
     } else {
       setDistance(12);
+      setChipLie(nextChipLie(chipLieOption));
       setPressure({ title: "Inom 1 meter", detail: "Ett sista slag. Sätt press på flaggan.", minPoints: 4 });
-      setCoachText("Sista slaget. Tolv meter. Välj landningspunkt och commit.");
+      setCoachText("Sista slaget. Tolv meter. Läs läget och commit.");
     }
   }
 
@@ -281,10 +314,12 @@ function PlayWithCoachPage() {
     if (transitioning || (category !== "around-the-green" && category !== "bunker")) return;
     setTransitioning(true);
     const playedDistance = category === "bunker" ? undefined : distance;
+    const playedLie = category === "around-the-green" ? chipLie : undefined;
     const activePressure = pressure;
     const activeFinalChallenge = finalChallenge;
-    const nextAttempts = [...shortAttempts, { distance: playedDistance, points }];
+    const nextAttempts = [...shortAttempts, { distance: playedDistance, points, lie: playedLie }];
     const nextDistance = category === "around-the-green" ? nextChipDistance(distance) : 0;
+    const nextLie = category === "around-the-green" ? nextChipLie(chipLieOption) : chipLie;
     const pressureWon = activePressure?.minPoints !== undefined ? points >= activePressure.minPoints : false;
 
     setShortAttempts(nextAttempts);
@@ -301,6 +336,7 @@ function PlayWithCoachPage() {
 
     window.setTimeout(() => {
       setDistance(nextDistance);
+      if (category === "around-the-green") setChipLie(nextLie);
       setPressure(maybePressureChallenge(category, nextDistance, puttingAttempts, nextAttempts));
       setTransitioning(false);
     }, 280);
@@ -324,7 +360,7 @@ function PlayWithCoachPage() {
           <span className="h-10 w-10" />
         </header>
 
-        <section className="mt-6"><SpeechBubble avatar={coach.emoji} name={coach.name} text="Välj vad du vill träna. Jag styr variationen och säger till när något är värt att justera." /></section>
+        <section className="mt-6"><SpeechBubble avatar={coach.emoji} name={coach.name} text={setupCoachText} /></section>
 
         <section className="mt-8">
           <p className="text-[10px] font-black uppercase tracking-[.18em] text-slate-400">Träning</p>
@@ -338,6 +374,20 @@ function PlayWithCoachPage() {
               </button>;
             })}
           </div>
+
+          {category === "around-the-green" ? <div className="mt-5 rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_14px_34px_-28px_rgba(15,23,42,.45)]">
+            <p className="text-[10px] font-black uppercase tracking-[.16em] text-slate-400">Underlag idag</p>
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              {CHIP_LIE_OPTIONS.map((option) => {
+                const active = chipLieOption === option.id;
+                return <button key={option.id} type="button" onClick={() => selectChipLie(option.id)} className={`min-h-[76px] rounded-[18px] border px-2 py-3 text-center transition active:scale-[.98] ${active ? "border-blue-500 bg-blue-50 ring-2 ring-blue-500/15" : "border-slate-200 bg-slate-50"}`}>
+                  <span className={`block font-display text-lg leading-none ${active ? "text-blue-700" : "text-slate-950"}`}>{option.label}</span>
+                  <span className="mt-1.5 block text-[9px] font-semibold leading-tight text-slate-500">{option.meta}</span>
+                </button>;
+              })}
+            </div>
+          </div> : null}
+
           <button type="button" disabled={!category || !["putting", "around-the-green", "bunker"].includes(category)} onClick={startGame} className="mt-5 flex w-full items-center justify-center gap-2 rounded-[20px] bg-blue-600 py-4 font-display text-xl text-white shadow-sm transition active:scale-[.99] disabled:opacity-25">Starta träning <ChevronRight className="h-5 w-5" /></button>
         </section>
       </> : null}
@@ -363,7 +413,7 @@ function PlayWithCoachPage() {
 
         {pressure ? <div className="mt-3 overflow-hidden"><div key={`${distance}-${pressure.title}`} className="relative overflow-hidden rounded-[22px] border border-amber-300/90 bg-gradient-to-r from-yellow-400 via-amber-300 to-yellow-300 px-5 py-3 text-center text-slate-950 shadow-[0_12px_28px_-20px_rgba(245,158,11,.65)]" style={{ animation: "sg4PressureEnter 420ms cubic-bezier(.2,.8,.25,1) both, sg4PressurePulse 1.9s ease-in-out 520ms infinite" }}><span aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 w-[52%] bg-gradient-to-r from-transparent via-white/90 to-transparent blur-[1px]" style={{ animation: "sg4PressureWave 1.18s cubic-bezier(.2,.75,.25,1) 150ms both" }} /><div className="relative"><p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-950">Pressläge · Nu gäller det</p><p className="mt-1 font-display text-lg leading-none text-slate-950">{pressure.title}</p><p className="mt-1 text-xs font-bold leading-snug text-slate-800">{pressure.detail}</p></div></div></div> : null}
 
-        {category === "bunker" ? <section className="mt-3 rounded-[26px] border border-slate-200 bg-white px-5 py-6 text-center shadow-[0_18px_42px_-30px_rgba(15,23,42,.45)]"><p className="text-[9px] font-black uppercase tracking-[.18em] text-slate-400">Uppgift</p><h1 className="mt-1 font-display text-[42px] leading-none text-slate-950">Bunkerslag</h1><p className="mt-2 text-sm font-semibold text-slate-500">Slå så nära flaggan som möjligt.</p></section> : <section className="mt-3 rounded-[26px] border border-slate-200 bg-white px-5 py-5 text-center shadow-[0_18px_42px_-30px_rgba(15,23,42,.45)]"><p className="text-[9px] font-black uppercase tracking-[.18em] text-slate-400">Avstånd</p><h1 className={`mt-1 font-display text-[58px] leading-none text-slate-950 transition-opacity ${transitioning ? "opacity-35" : "opacity-100"}`}>{formatDistance(distance)} m</h1></section>}
+        {category === "bunker" ? <section className="mt-3 rounded-[26px] border border-slate-200 bg-white px-5 py-6 text-center shadow-[0_18px_42px_-30px_rgba(15,23,42,.45)]"><p className="text-[9px] font-black uppercase tracking-[.18em] text-slate-400">Uppgift</p><h1 className="mt-1 font-display text-[42px] leading-none text-slate-950">Bunkerslag</h1><p className="mt-2 text-sm font-semibold text-slate-500">Slå så nära flaggan som möjligt.</p></section> : <section className="mt-3 rounded-[26px] border border-slate-200 bg-white px-5 py-5 text-center shadow-[0_18px_42px_-30px_rgba(15,23,42,.45)]"><p className="text-[9px] font-black uppercase tracking-[.18em] text-slate-400">{category === "around-the-green" ? `Underlag · ${chipLie}` : "Avstånd"}</p><h1 className={`mt-1 font-display text-[58px] leading-none text-slate-950 transition-opacity ${transitioning ? "opacity-35" : "opacity-100"}`}>{formatDistance(distance)} m</h1>{category === "around-the-green" ? <p className="mt-2 text-sm font-semibold text-slate-500">Slå så nära hålet som möjligt.</p> : null}</section>}
 
         {category === "putting" ? <section className="mt-5"><div className="text-center"><p className="text-[10px] font-black uppercase tracking-[.16em] text-slate-400">Ditt resultat</p><h2 className="mt-1 font-display text-2xl text-slate-950">Antal puttar</h2></div><div className="mt-3 grid grid-cols-4 gap-2.5">{([1, 2, 3, 4] as const).map((strokes) => <button key={strokes} type="button" disabled={transitioning} onClick={() => registerPutting(strokes)} className="rounded-[20px] border border-blue-300 bg-blue-50 px-1 py-4 text-center shadow-sm transition hover:bg-blue-100 active:scale-[.96] active:bg-blue-200 disabled:opacity-40"><span className="block font-display text-3xl leading-none text-blue-800">{strokes}</span><span className="mt-1.5 block text-[8px] font-black uppercase tracking-[.08em] text-blue-500">{strokes === 1 ? "putt" : "puttar"}</span></button>)}</div></section> : <section className="mt-5"><div className="text-center"><p className="text-[10px] font-black uppercase tracking-[.16em] text-slate-400">Ditt resultat</p><h2 className="mt-1 font-display text-2xl text-slate-950">Hur nära hålet?</h2></div><div className="mt-3 grid grid-cols-2 gap-2.5">{(category === "bunker" ? BUNKER_POINT_ZONES : CHIP_POINT_ZONES).map((zone) => <button key={zone.points} type="button" disabled={transitioning} onClick={() => registerShortGame(zone.points)} className="min-h-[58px] rounded-[18px] border border-blue-300 bg-blue-50 px-3 py-3 text-center font-display text-base leading-tight text-blue-800 shadow-sm transition hover:bg-blue-100 active:scale-[.97] active:bg-blue-200 disabled:opacity-40">{zone.label}</button>)}</div></section>}
 
