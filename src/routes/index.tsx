@@ -41,10 +41,24 @@ type QuickStart = {
   activityId: string;
 };
 
+const CLOUD_FRIEND_COUNT_KEY = "sg4-home-cloud-friend-count-v1";
+
 function loadHomeData(): HomeData {
   const real = loadRealHandicap();
   const cats = computeStableCategoryHandicaps(undefined, real ?? undefined);
   return { real, cats, estimated: computeEstimatedHandicap(cats) };
+}
+
+function loadCachedCloudFriendCount() {
+  if (typeof window === "undefined") return 0;
+  const raw = window.localStorage.getItem(CLOUD_FRIEND_COUNT_KEY);
+  const value = raw === null ? 0 : Number(raw);
+  return Number.isFinite(value) && value >= 0 ? value : 0;
+}
+
+function saveCachedCloudFriendCount(value: number) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(CLOUD_FRIEND_COUNT_KEY, String(value));
 }
 
 function loadTotalRegisteredShots() {
@@ -141,9 +155,9 @@ function DragScrollRow({ children }: { children: React.ReactNode }) {
 
 function Home() {
   const { user, displayName } = useAuth();
-  const [data, setData] = useState<HomeData | null>(null);
-  const [friends, setFriends] = useState<Friend[]>([]);
-  const [cloudFriendCount, setCloudFriendCount] = useState(0);
+  const [data, setData] = useState<HomeData>(() => loadHomeData());
+  const [friends, setFriends] = useState<Friend[]>(() => loadFriends());
+  const [cloudFriendCount, setCloudFriendCount] = useState(() => loadCachedCloudFriendCount());
   const [navVisible, setNavVisible] = useState(true);
   const lastScrollYRef = useRef(0);
   const directionStartYRef = useRef(0);
@@ -200,13 +214,17 @@ function Home() {
     setFriends(loadFriends());
     if (user) {
       void pushPlayerSnapshot();
-      void listFriendships().then((result) => setCloudFriendCount(result.accepted.length));
+      void listFriendships().then((result) => {
+        const count = result.accepted.length;
+        saveCachedCloudFriendCount(count);
+        setCloudFriendCount(count);
+      });
     }
   }, [user, sessionsVersion]);
 
   const quickStart = useMemo<QuickStart>(() => {
-    const noBaseline = !!data && data.real === null && data.cats.every((category) => category.count === 0);
-    if (!data || noBaseline) {
+    const noBaseline = data.real === null && data.cats.every((category) => category.count === 0);
+    if (noBaseline) {
       return { eyebrow: "Kom igång", title: "Gör ditt första HCP-test", detail: "Få ett första resultat och börja bygga din spelarprofil.", to: "/tester", activityId: "hcp-test" };
     }
 
@@ -229,9 +247,9 @@ function Home() {
 
   const totalFriends = friends.length + cloudFriendCount;
   const previewFriends = friends.slice(0, 4);
-  const hcpValue = data ? hcpLabel(data.real ?? data.estimated ?? 0) : "–";
+  const hcpValue = hcpLabel(data.real ?? data.estimated ?? 0);
   const totalShots = useMemo(() => loadTotalRegisteredShots(), [sessionsVersion]);
-  const knownCategories = data?.cats.filter((category) => category.count > 0) ?? [];
+  const knownCategories = data.cats.filter((category) => category.count > 0);
   const strongest = knownCategories.length ? [...knownCategories].sort((a, b) => a.handicap - b.handicap)[0] : undefined;
 
   return (
