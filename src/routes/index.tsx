@@ -75,7 +75,12 @@ function loadTotalRegisteredShots() {
 
 function loadPreviousShotCount(current: number) {
   if (typeof window === "undefined") return current;
-  const raw = window.sessionStorage.getItem(HOME_SHOT_COUNTER_KEY);
+  const persisted = window.localStorage.getItem(HOME_SHOT_COUNTER_KEY);
+  const legacySessionValue = window.sessionStorage.getItem(HOME_SHOT_COUNTER_KEY);
+  const raw = persisted ?? legacySessionValue;
+  if (persisted === null && legacySessionValue !== null) {
+    window.localStorage.setItem(HOME_SHOT_COUNTER_KEY, legacySessionValue);
+  }
   if (raw === null) return current;
   const value = Number(raw);
   if (!Number.isFinite(value) || value < 0 || value > current) return current;
@@ -84,7 +89,7 @@ function loadPreviousShotCount(current: number) {
 
 function savePreviousShotCount(value: number) {
   if (typeof window === "undefined") return;
-  window.sessionStorage.setItem(HOME_SHOT_COUNTER_KEY, String(Math.max(0, Math.floor(value))));
+  window.localStorage.setItem(HOME_SHOT_COUNTER_KEY, String(Math.max(0, Math.floor(value))));
 }
 
 function initials(name: string) {
@@ -388,40 +393,40 @@ function Home() {
         <section className="grid grid-cols-[1.6fr_1fr] gap-2">
           <Link
             to="/vanner"
-            className="relative flex h-[78px] items-center overflow-hidden rounded-[24px] border border-white/30 bg-[rgba(176,183,190,.32)] px-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,.58),inset_0_-1px_0_rgba(20,48,38,.08),0_10px_26px_-20px_rgba(18,40,32,.55)] backdrop-blur-[28px] backdrop-saturate-150"
+            className="relative flex h-[78px] items-center overflow-hidden rounded-[24px] border border-white/75 bg-card/66 px-4 shadow-[0_18px_48px_-24px_rgba(15,23,42,.42),inset_0_1px_0_rgba(255,255,255,.95)] backdrop-blur-[28px] supports-[backdrop-filter]:bg-card/56"
           >
-            <span className="pointer-events-none absolute inset-[1px] rounded-[23px] border border-white/16" />
-            <span className="pointer-events-none absolute left-5 right-5 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent" />
+            <span className="pointer-events-none absolute inset-[1px] rounded-[23px] border border-white/22" />
+            <span className="pointer-events-none absolute left-5 right-5 top-0 h-px bg-gradient-to-r from-transparent via-white/90 to-transparent" />
             <div className="relative z-10 flex w-full items-center justify-start">
               <div className="flex shrink-0 -space-x-2.5">
                 {previewFriends.length ? previewFriends.map((friend, index) => (
-                  <span key={friend.id} className={`flex h-8 w-8 items-center justify-center rounded-full border-2 border-white/80 text-[8px] font-black text-foreground shadow-[0_2px_8px_rgba(15,23,42,.12)] ${index % 3 === 0 ? "bg-emerald-100/90" : index % 3 === 1 ? "bg-sky-100/90" : "bg-amber-100/90"}`}>
+                  <span key={friend.id} className={`flex h-8 w-8 items-center justify-center rounded-full border-2 border-white/90 text-[8px] font-black text-foreground shadow-[0_2px_8px_rgba(15,23,42,.12)] ${index % 3 === 0 ? "bg-emerald-100/90" : index % 3 === 1 ? "bg-sky-100/90" : "bg-amber-100/90"}`}>
                     {initials(friend.name)}
                   </span>
                 )) : (
                   <>
-                    <span className="h-8 w-8 rounded-full border-2 border-white/80 bg-emerald-100/90 shadow-sm" />
-                    <span className="h-8 w-8 rounded-full border-2 border-white/80 bg-sky-100/90 shadow-sm" />
-                    <span className="h-8 w-8 rounded-full border-2 border-white/80 bg-amber-100/90 shadow-sm" />
+                    <span className="h-8 w-8 rounded-full border-2 border-white/90 bg-emerald-100/90 shadow-sm" />
+                    <span className="h-8 w-8 rounded-full border-2 border-white/90 bg-sky-100/90 shadow-sm" />
+                    <span className="h-8 w-8 rounded-full border-2 border-white/90 bg-amber-100/90 shadow-sm" />
                   </>
                 )}
               </div>
               <div className="ml-2.5 flex min-w-0 items-baseline gap-1.5">
-                <span className="text-[28px] font-black leading-none tabular-nums text-emerald-800">{totalFriends}</span>
-                <span className="truncate text-[14px] font-extrabold text-foreground/80">Vänner</span>
+                <span className="text-[28px] font-black leading-none tabular-nums text-emerald-700">{totalFriends}</span>
+                <span className="truncate text-[14px] font-extrabold text-foreground/82">Vänner</span>
               </div>
             </div>
           </Link>
 
           <Link
             to="/utveckling"
-            className={`relative flex h-[78px] items-center justify-center overflow-hidden rounded-[24px] border px-2 text-center backdrop-blur-[28px] backdrop-saturate-150 transition-[background-color,border-color,box-shadow] duration-500 ${shotCounterActive ? "border-[#d6bc68]/70 bg-[rgba(205,207,178,.48)] shadow-[inset_0_1px_0_rgba(255,255,255,.7),0_0_0_1px_rgba(201,167,65,.18),0_0_28px_rgba(72,133,84,.30)]" : "border-white/30 bg-[rgba(176,183,190,.32)] shadow-[inset_0_1px_0_rgba(255,255,255,.58),inset_0_-1px_0_rgba(20,48,38,.08),0_10px_26px_-20px_rgba(18,40,32,.55)]"}`}
+            className={`relative flex h-[78px] items-center justify-center overflow-hidden rounded-[24px] border px-2 text-center backdrop-blur-[28px] transition-[background-color,border-color,box-shadow] duration-500 ${shotCounterActive ? "border-emerald-300/70 bg-card/76 shadow-[0_18px_48px_-24px_rgba(15,23,42,.42),inset_0_1px_0_rgba(255,255,255,.95),0_0_30px_rgba(16,185,129,.20)] supports-[backdrop-filter]:bg-card/66" : "border-white/75 bg-card/66 shadow-[0_18px_48px_-24px_rgba(15,23,42,.42),inset_0_1px_0_rgba(255,255,255,.95)] supports-[backdrop-filter]:bg-card/56"}`}
           >
-            <span className="pointer-events-none absolute inset-[1px] rounded-[23px] border border-white/16" />
-            <span className={`pointer-events-none absolute left-4 right-4 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent transition-opacity duration-300 ${shotCounterActive ? "opacity-100" : "opacity-65"}`} />
+            <span className="pointer-events-none absolute inset-[1px] rounded-[23px] border border-white/22" />
+            <span className={`pointer-events-none absolute left-4 right-4 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent transition-opacity duration-300 ${shotCounterActive ? "opacity-100" : "opacity-80"}`} />
             <div className="relative z-10 flex flex-col items-center justify-center">
               <HeritageShotCounter value={displayedShots} active={shotCounterActive} />
-              <span className="mt-1 text-[9px] font-bold uppercase tracking-[.08em] text-[#254b3c]/72">Registrerade slag</span>
+              <span className="mt-1 text-[9px] font-bold uppercase tracking-[.08em] text-foreground/60">Registrerade slag</span>
             </div>
           </Link>
         </section>
