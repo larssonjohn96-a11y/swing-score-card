@@ -66,7 +66,6 @@ function TrainAndTestPage() {
           onClick={() => navigate({ to: "/coach" })}
           className="flex w-full items-center gap-4 rounded-[28px] border border-emerald-500/35 bg-emerald-500/[.07] px-5 py-6 text-left shadow-[var(--shadow-glow)] transition active:scale-[.985]"
         >
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-600"><GraduationCap className="h-6 w-6" /></span>
           <span className="min-w-0 flex-1">
             <span className="block font-display text-[27px] leading-none">Practice Mode</span>
             <span className="mt-2 block text-sm text-muted-foreground">Träna med coach</span>
