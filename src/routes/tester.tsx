@@ -1,7 +1,8 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, GraduationCap, ListChecks, Target } from "lucide-react";
+import { ChevronLeft, ChevronRight, ListChecks, Target } from "lucide-react";
 import { CATEGORIES } from "@/lib/categories";
+import { COACHES } from "@/lib/coach-putting";
 
 export const Route = createFileRoute("/tester")({
   head: () => ({
@@ -24,9 +25,10 @@ function CircleBack({ onClick, to, label }: { onClick?: () => void; to?: "/"; la
 }
 
 function SpeechBubble({ text }: { text: string }) {
+  const alma = COACHES.find((coach) => coach.id === "alma") ?? COACHES[0];
   return (
     <div className="flex items-end gap-3">
-      <div className="flex h-20 w-20 shrink-0 items-center justify-center text-[58px] leading-none">🏌️‍♀️</div>
+      <div className="flex h-20 w-20 shrink-0 items-center justify-center text-[58px] leading-none">{alma.emoji}</div>
       <div className="relative mb-0 flex-1 rounded-[18px] border border-border bg-card px-4 py-3.5 shadow-[0_14px_32px_-20px_rgba(15,23,42,.42)]">
         <span className="absolute -left-[17px] top-1/2 -translate-y-1/2 border-y-[13px] border-y-transparent border-r-[17px] border-r-border" />
         <span className="absolute -left-[14px] top-1/2 -translate-y-1/2 border-y-[11px] border-y-transparent border-r-[15px] border-r-card" />
@@ -54,12 +56,7 @@ function TrainAndTestPage() {
         <span className="h-10 w-10" />
       </header>
 
-      <section className="mt-7 text-center">
-        <p className="text-[10px] font-black uppercase tracking-[.2em] text-muted-foreground">Train &amp; Test</p>
-        <h1 className="mt-1 font-display text-[40px] leading-none">Välj läge</h1>
-      </section>
-
-      <section className="mt-6">
+      <section className="mt-7">
         <SpeechBubble text="Välj om du vill träna med coach eller göra ett handicaptest. Practice Mode är ditt träningsflöde. Handicap Test ger dig ett HCP-resultat." />
       </section>
 
@@ -69,7 +66,6 @@ function TrainAndTestPage() {
           onClick={() => navigate({ to: "/coach" })}
           className="flex w-full items-center gap-4 rounded-[28px] border border-emerald-500/35 bg-emerald-500/[.07] px-5 py-6 text-left shadow-[var(--shadow-glow)] transition active:scale-[.985]"
         >
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-600"><GraduationCap className="h-6 w-6" /></span>
           <span className="min-w-0 flex-1">
             <span className="block font-display text-[27px] leading-none">Practice Mode</span>
             <span className="mt-2 block text-sm text-muted-foreground">Träna med coach</span>
@@ -82,7 +78,6 @@ function TrainAndTestPage() {
           onClick={() => setView("hcp")}
           className="flex w-full items-center gap-4 rounded-[28px] border border-primary/30 bg-primary/[.06] px-5 py-6 text-left shadow-[var(--shadow-glow)] transition active:scale-[.985]"
         >
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground"><Target className="h-6 w-6" /></span>
           <span className="min-w-0 flex-1">
             <span className="block font-display text-[27px] leading-none">Handicap Test</span>
             <span className="mt-2 block text-sm text-muted-foreground">Gör ett test · få ett HCP-resultat</span>
