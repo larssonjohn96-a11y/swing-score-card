@@ -1,27 +1,25 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { Bot, ChevronDown, ChevronRight, Gauge, Share2, Swords, Target, Trophy, User, Users } from "lucide-react";
+import { Bell, ChevronRight, Gauge, LineChart, Swords, Target, User, Users } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { computeEstimatedHandicap, hcpLabel, loadRealHandicap, type CategoryHandicap } from "@/lib/sg-handicap";
 import { computeStableCategoryHandicaps } from "@/lib/category-index";
 import { useSessionsVersion } from "@/lib/sessions/use-sessions";
 import { loadCardProfile } from "@/lib/rating-card";
-import { pushPlayerSnapshot, listFriendships } from "@/lib/friends-cloud";
-import { loadFriends } from "@/lib/friends";
-import { AgeInlinePrompt } from "@/components/age-inline-prompt";
+import { listFriendships, pushPlayerSnapshot } from "@/lib/friends-cloud";
+import { loadFriends, type Friend } from "@/lib/friends";
 import { ActiveMultiplayerBanner } from "@/components/active-multiplayer-banner";
-import { recordRecommendationImpressions, recordRecommendationOpen } from "@/lib/sg4-recommender";
+import {
+  getBehaviorRecommendationScore,
+  recordRecommendationImpressions,
+  recordRecommendationOpen,
+} from "@/lib/sg4-recommender";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "SG4 – Spela. Tävla. Bli bättre." },
-      { name: "description", content: "Golf som spel – head to head, botmatcher, cuper och progression." },
-      { property: "og:title", content: "SG4 – Spela. Tävla. Bli bättre." },
-      { property: "og:description", content: "Golf som spel – head to head, botmatcher, cuper och progression." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
+      { title: "SG4 – Hem" },
+      { name: "description", content: "Spela, testa, träna och följ din utveckling i SG4." },
     ],
   }),
   component: Home,
@@ -29,124 +27,236 @@ export const Route = createFileRoute("/")({
 
 type HomeData = { real: number | null; cats: CategoryHandicap[]; estimated: number | undefined };
 
+type QuickStart = {
+  eyebrow: string;
+  title: string;
+  detail: string;
+  to: "/tester" | "/spela" | "/coach";
+  activityId: string;
+};
+
 function loadHomeData(): HomeData {
   const real = loadRealHandicap();
   const cats = computeStableCategoryHandicaps(undefined, real ?? undefined);
   return { real, cats, estimated: computeEstimatedHandicap(cats) };
 }
 
+function initials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
+}
+
 function Home() {
   const { user, displayName } = useAuth();
   const [data, setData] = useState<HomeData | null>(null);
-  const [ageSaved, setAgeSaved] = useState(false);
-  const [friendCount, setFriendCount] = useState<number | null>(null);
-  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [friends, setFriends] = useState<Friend[]>([]);
+  const [cloudFriendCount, setCloudFriendCount] = useState(0);
   const sessionsVersion = useSessionsVersion();
   const profile = loadCardProfile();
 
   useEffect(() => {
-    recordRecommendationImpressions(["play-friend", "play-bot", "play-cup"]);
+    recordRecommendationImpressions(["play-friend", "play-bot", "play-cup", "hcp-test", "practice"]);
   }, []);
 
   useEffect(() => {
     setData(loadHomeData());
-    setFriendCount(loadFriends().length);
+    setFriends(loadFriends());
+
     if (user) {
       void pushPlayerSnapshot();
-      void listFriendships().then((f) => setFriendCount(loadFriends().length + f.accepted.length));
+      void listFriendships().then((result) => setCloudFriendCount(result.accepted.length));
     }
   }, [user, sessionsVersion]);
 
-  function shareProfile() {
-    const shareData = {
-      title: "SG4",
-      text: `Spela mot mig i SG4${data?.real !== null && data ? ` · HCP ${hcpLabel(data.real ?? data.estimated ?? 0)}` : ""}.`,
-      url: typeof window !== "undefined" ? window.location.origin : undefined,
+  const quickStart = useMemo<QuickStart>(() => {
+    const noBaseline = !!data && data.real === null && data.cats.every((category) => category.count === 0);
+    if (!data || noBaseline) {
+      return {
+        eyebrow: "Kom igång",
+        title: "Gör ditt första HCP-test",
+        detail: "Få ett första resultat och börja bygga din spelarprofil.",
+        to: "/tester",
+        activityId: "hcp-test",
+      };
+    }
+
+    const playScore = Math.max(
+      getBehaviorRecommendationScore("play-friend").score,
+      getBehaviorRecommendationScore("play-bot").score,
+      getBehaviorRecommendationScore("play-cup").score,
+    );
+    const practiceScore = getBehaviorRecommendationScore("practice").score;
+    const testScore = getBehaviorRecommendationScore("hcp-test").score;
+
+    if (practiceScore >= playScore && practiceScore >= testScore) {
+      return {
+        eyebrow: "Snabbstart",
+        title: "Träna med coach",
+        detail: "Tillbaka till Practice Mode.",
+        to: "/coach",
+        activityId: "practice",
+      };
+    }
+
+    if (testScore > playScore) {
+      return {
+        eyebrow: "Snabbstart",
+        title: "Gör ett nytt HCP-test",
+        detail: "Få ett nytt resultat direkt.",
+        to: "/tester",
+        activityId: "hcp-test",
+      };
+    }
+
+    return {
+      eyebrow: "Snabbstart",
+      title: "Spela en match",
+      detail: "Hoppa direkt tillbaka till spel.",
+      to: "/spela",
+      activityId: "play-friend",
     };
-    if (typeof navigator !== "undefined" && navigator.share) navigator.share(shareData).catch(() => {});
-    else if (typeof navigator !== "undefined" && navigator.clipboard && shareData.url) void navigator.clipboard.writeText(shareData.url);
-  }
+  }, [data, sessionsVersion]);
+
+  const totalFriends = friends.length + cloudFriendCount;
+  const previewFriends = friends.slice(0, 4);
+  const hcpValue = data ? hcpLabel(data.real ?? data.estimated ?? 0) : "–";
+  const knownCategories = data?.cats.filter((category) => category.count > 0) ?? [];
+  const strongest = knownCategories.length
+    ? [...knownCategories].sort((a, b) => a.handicap - b.handicap)[0]
+    : undefined;
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-28 pt-6">
-      <div className="flex items-center justify-between">
-        <span className="font-display text-2xl leading-none tracking-wide text-foreground">SG4</span>
-        <div className="flex shrink-0 items-center gap-2">
-          <ThemeToggle />
-          <button type="button" onClick={shareProfile} aria-label="Dela" className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-background text-muted-foreground"><Share2 className="h-4 w-4" /></button>
-          {user ? (
-            <div className="relative">
-              <button type="button" onClick={() => setProfileMenuOpen((open) => !open)} className="flex items-center gap-1 rounded-full border border-border bg-background px-3.5 py-2 text-sm font-medium text-muted-foreground">{displayName ?? "Konto"}<ChevronDown className={`h-3.5 w-3.5 ${profileMenuOpen ? "rotate-180" : ""}`} /></button>
-              {profileMenuOpen ? <div className="absolute right-0 z-50 mt-2 w-44 overflow-hidden rounded-2xl border border-border bg-card p-1.5 shadow-xl"><Link to="/konto" onClick={() => setProfileMenuOpen(false)} className="flex w-full items-center rounded-xl px-3 py-2.5 text-sm text-muted-foreground">Konto</Link></div> : null}
-            </div>
-          ) : <Link to="/konto" className="rounded-full border border-border px-4 py-2 text-sm font-medium text-muted-foreground">Logga in</Link>}
-        </div>
+    <main className="mx-auto min-h-screen w-full max-w-md bg-background px-5 pb-28 pt-5">
+      <header className="flex items-center justify-between">
+        <Link to="/konto" className="flex min-w-0 items-center gap-3">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-muted">
+            {profile.photo ? <img src={profile.photo} alt="" className="h-full w-full object-cover" /> : <User className="h-5 w-5 text-muted-foreground" />}
+          </span>
+          <span className="min-w-0">
+            <span className="block truncate text-sm font-bold text-foreground">{displayName ?? "Golfspelare"}</span>
+            <span className="block text-sm font-medium text-muted-foreground">HCP {hcpValue}</span>
+          </span>
+        </Link>
+
+        <button
+          type="button"
+          aria-label="Notiser"
+          className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background text-foreground"
+        >
+          <Bell className="h-[18px] w-[18px]" />
+        </button>
+      </header>
+
+      <div className="mt-5">
+        <ActiveMultiplayerBanner />
       </div>
 
-      <div className="mt-7 flex items-center gap-3">
-        <Link to="/konto" className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-muted">{profile.photo ? <img src={profile.photo} alt="" className="h-full w-full object-cover" /> : <User className="h-5 w-5 text-muted-foreground" />}</Link>
-        <div className="min-w-0 flex-1"><p className="text-[10px] font-black uppercase tracking-[.17em] text-muted-foreground">Redo att spela?</p><h1 className="truncate font-display text-3xl leading-none">{displayName ?? "Golfspelare"}</h1></div>
-        <div className="shrink-0 text-right"><p className="text-[9px] font-black uppercase tracking-[.14em] text-muted-foreground">HCP</p><p className="font-display text-2xl text-primary">{data ? hcpLabel(data.real ?? data.estimated ?? 0) : "–"}</p></div>
-      </div>
+      <section className="mt-4">
+        <Link
+          to={quickStart.to}
+          onClick={() => recordRecommendationOpen(quickStart.activityId)}
+          className="group flex items-center gap-4 rounded-[26px] border border-blue-200 bg-blue-50/70 px-5 py-5 active:scale-[.99]"
+        >
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] font-black uppercase tracking-[.18em] text-blue-600">{quickStart.eyebrow}</p>
+            <h1 className="mt-1.5 text-[22px] font-black leading-tight text-foreground">{quickStart.title}</h1>
+            <p className="mt-1.5 text-sm leading-snug text-muted-foreground">{quickStart.detail}</p>
+          </div>
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white transition-transform group-active:translate-x-0.5">
+            <ChevronRight className="h-5 w-5" />
+          </span>
+        </Link>
+      </section>
 
-      <ActiveMultiplayerBanner />
-
-      <section className="mt-5">
-        <Link to="/spela" onClick={() => recordRecommendationOpen("play-friend")} className="group block overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-[0_18px_44px_-30px_rgba(15,23,42,.22)] active:scale-[.99]">
-          <div className="grid grid-cols-[1fr_76px_1fr] border-b border-slate-200">
-            <div className="flex min-h-[108px] items-center gap-3 bg-gradient-to-br from-blue-100 via-blue-50 to-white px-4">
-              <span className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-blue-400 bg-blue-100 text-blue-600 shadow-sm"><User className="h-5 w-5" /></span>
-              <span className="text-sm font-black uppercase tracking-[.12em] text-blue-600">Du</span>
+      <section className="mt-4">
+        <Link
+          to="/spela"
+          onClick={() => recordRecommendationOpen("play-friend")}
+          className="block overflow-hidden rounded-[26px] border border-border bg-card active:scale-[.99]"
+        >
+          <div className="grid grid-cols-[1fr_62px_1fr] border-b border-border">
+            <div className="flex h-[72px] items-center gap-2 bg-blue-50 px-4 text-blue-600">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full border border-blue-300"><User className="h-4 w-4" /></span>
+              <span className="text-xs font-black uppercase tracking-[.12em]">Du</span>
             </div>
-            <div className="flex min-h-[108px] items-center justify-center bg-[#071b14] font-display text-2xl text-white">VS</div>
-            <div className="flex min-h-[108px] items-center justify-end gap-3 bg-gradient-to-bl from-red-100 via-red-50 to-white px-4">
-              <span className="text-sm font-black uppercase tracking-[.12em] text-red-600">Rival</span>
-              <span className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-red-400 bg-red-100 text-red-600 shadow-sm"><User className="h-5 w-5" /></span>
+            <div className="flex h-[72px] items-center justify-center bg-[#071b14] text-sm font-black text-white">VS</div>
+            <div className="flex h-[72px] items-center justify-end gap-2 bg-red-50 px-4 text-red-500">
+              <span className="text-xs font-black uppercase tracking-[.12em]">Vän</span>
+              <span className="flex h-9 w-9 items-center justify-center rounded-full border border-red-300"><User className="h-4 w-4" /></span>
             </div>
           </div>
-          <div className="relative overflow-hidden bg-gradient-to-r from-blue-50/55 via-white to-red-50/55 px-5 py-6">
-            <div className="absolute inset-y-0 left-0 w-[22%] bg-blue-50/30" />
-            <div className="relative flex items-end gap-4">
-              <div className="min-w-0 flex-1">
-                <p className="text-[10px] font-black uppercase tracking-[.19em]"><span className="text-blue-600">Head</span><span className="text-slate-500">-to-</span><span className="text-red-600">Head</span></p>
-                <h2 className="mt-2 font-display text-4xl leading-none text-[#071b14]">SPELA EN MATCH</h2>
-                <p className="mt-3 max-w-[30ch] text-sm leading-relaxed text-slate-600">Mot vän, bot eller lag. Välj spel och börja direkt.</p>
+
+          <div className="flex items-center gap-3 px-5 py-4">
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-black uppercase tracking-[.18em] text-blue-600">Spela</p>
+              <h2 className="mt-1 text-xl font-black text-foreground">Utmana en vän</h2>
+              <div className="mt-3 flex items-center gap-2">
+                <div className="flex -space-x-2">
+                  {previewFriends.length ? previewFriends.map((friend) => (
+                    <span key={friend.id} className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-background bg-muted text-[10px] font-black text-foreground">
+                      {initials(friend.name)}
+                    </span>
+                  )) : (
+                    <>
+                      <span className="h-8 w-8 rounded-full border-2 border-background bg-slate-200" />
+                      <span className="h-8 w-8 rounded-full border-2 border-background bg-slate-300" />
+                      <span className="h-8 w-8 rounded-full border-2 border-background bg-slate-200" />
+                    </>
+                  )}
+                </div>
+                <span className="text-xs text-muted-foreground">{totalFriends > 0 ? `${totalFriends} vänner` : "Hitta någon att spela mot"}</span>
               </div>
-              <span className="mb-2 flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-red-500 shadow-sm transition-transform group-active:translate-x-1"><ChevronRight className="h-5 w-5" /></span>
             </div>
+            <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
           </div>
         </Link>
       </section>
 
-      <section className="mt-4 overflow-hidden rounded-[24px] border border-border bg-white">
-        <Link to="/match-bot" onClick={() => recordRecommendationOpen("play-bot")} className="flex items-center gap-3 px-4 py-4 active:bg-muted/40">
-          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50 text-emerald-700"><Bot className="h-5 w-5" /></span>
-          <span className="min-w-0 flex-1"><span className="block text-sm font-black text-foreground">Mot bot</span><span className="mt-0.5 block text-xs text-muted-foreground">Välj rival och spela direkt</span></span>
-          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+      <section className="mt-3 space-y-3">
+        <Link to="/tester" onClick={() => recordRecommendationOpen("hcp-test")} className="flex items-center gap-4 rounded-[22px] border border-border bg-card px-4 py-4 active:bg-muted/30">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-600"><Gauge className="h-5 w-5" /></span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[10px] font-black uppercase tracking-[.17em] text-muted-foreground">HCP-test</span>
+            <span className="mt-1 block text-base font-black text-foreground">Gör ett nytt test</span>
+            <span className="mt-0.5 block text-xs text-muted-foreground">Senaste HCP: {hcpValue}</span>
+          </span>
+          <ChevronRight className="h-5 w-5 text-muted-foreground" />
         </Link>
-        <div className="mx-4 border-t border-border" />
-        <Link to="/cup" onClick={() => recordRecommendationOpen("play-cup")} className="flex items-center gap-3 px-4 py-4 active:bg-muted/40">
-          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-50 text-amber-600"><Trophy className="h-5 w-5" /></span>
-          <span className="min-w-0 flex-1"><span className="block text-sm font-black text-foreground">Putting Cup</span><span className="mt-0.5 block text-xs text-muted-foreground">Kvartsfinal → semifinal → final</span></span>
-          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+
+        <Link to="/coach" onClick={() => recordRecommendationOpen("practice")} className="flex items-center gap-4 rounded-[22px] border border-border bg-card px-4 py-4 active:bg-muted/30">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700"><Target className="h-5 w-5" /></span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[10px] font-black uppercase tracking-[.17em] text-muted-foreground">Träning</span>
+            <span className="mt-1 block text-base font-black text-foreground">Träna med Alma</span>
+            <span className="mt-0.5 block text-xs text-muted-foreground">Välj område och starta direkt</span>
+          </span>
+          <ChevronRight className="h-5 w-5 text-muted-foreground" />
+        </Link>
+
+        <Link to="/utveckling" className="flex items-center gap-4 rounded-[22px] border border-border bg-card px-4 py-4 active:bg-muted/30">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-violet-50 text-violet-600"><LineChart className="h-5 w-5" /></span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[10px] font-black uppercase tracking-[.17em] text-muted-foreground">Analys</span>
+            <span className="mt-1 block text-base font-black text-foreground">Din utveckling</span>
+            <span className="mt-0.5 block text-xs text-muted-foreground">
+              {strongest ? `Starkast just nu: ${strongest.label}` : "Se styrkor, svagheter och framsteg"}
+            </span>
+          </span>
+          <span className="flex items-center gap-2 text-muted-foreground">
+            <span className="hidden h-8 w-8 items-center justify-center rounded-full bg-violet-50 sm:flex"><LineChart className="h-4 w-4" /></span>
+            <ChevronRight className="h-5 w-5" />
+          </span>
         </Link>
       </section>
 
-      <section className="mt-6 border-t border-border pt-4">
-        <div className="flex items-center justify-between gap-2">
-          <Link to="/traning" search={{ category: undefined }} className="flex min-w-0 flex-1 items-center gap-2 rounded-2xl px-2 py-3 text-sm font-bold text-muted-foreground"><Target className="h-4 w-4" /><span className="truncate">Träning</span></Link>
-          <Link to="/tester" className="flex min-w-0 flex-1 items-center justify-center gap-2 rounded-2xl px-2 py-3 text-sm font-bold text-muted-foreground"><Gauge className="h-4 w-4" /><span className="truncate">Tester</span></Link>
-          <Link to="/utveckling" className="flex min-w-0 flex-1 items-center justify-end gap-2 rounded-2xl px-2 py-3 text-sm font-bold text-muted-foreground"><Gauge className="h-4 w-4" /><span className="truncate">Utveckling</span></Link>
-        </div>
+      <section className="mt-5 flex items-center justify-between px-1 text-xs text-muted-foreground">
+        <Link to="/vanner" className="flex items-center gap-1.5"><Users className="h-4 w-4" />Vänner</Link>
+        <Link to="/spela" className="flex items-center gap-1.5"><Swords className="h-4 w-4" />Alla spellägen</Link>
       </section>
-
-      <section className="mt-2 flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3 text-xs text-muted-foreground">
-        <Link to="/vanner" className="flex items-center gap-2 font-bold"><Users className="h-4 w-4 text-primary" />{friendCount ?? "–"} vänner</Link>
-        <Link to="/trophy" className="flex items-center gap-2 font-bold"><Trophy className="h-4 w-4 text-amber-500" />Trophy Room</Link>
-      </section>
-
-      {data && data.real === null && data.cats.every((c) => c.count === 0) ? <Link to="/konto" className="mt-4 flex items-center gap-3 rounded-2xl border border-primary/30 bg-primary/5 p-4"><Gauge className="h-5 w-5 text-primary" /><span className="min-w-0 flex-1"><span className="block text-sm font-semibold">Ange ditt officiella HCP</span><span className="block text-xs text-muted-foreground">Få en direkt baslinje för SG4.</span></span><ChevronRight className="h-4 w-4 text-muted-foreground" /></Link> : null}
-      {profile.age === undefined && !ageSaved ? <div className="mt-4"><AgeInlinePrompt title="Ange din ålder" description="Jämför din ball speed med jämnåriga golfare" onSaved={() => setAgeSaved(true)} /></div> : null}
     </main>
   );
 }
