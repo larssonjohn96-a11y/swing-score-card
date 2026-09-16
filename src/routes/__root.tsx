@@ -41,7 +41,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   const router = useRouter();
   useEffect(() => { reportLovableError(error, { boundary: "tanstack_root_error_component" }); }, [error]);
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4"><div className="max-w-md text-center"><h1 className="text-xl font-semibold tracking-tight text-foreground">This page didn't load</h1><p className="mt-2 text-sm text-muted-foreground">Something went wrong on our end. You can try refreshing or head back home.</p><div className="mt-6 flex flex-wrap justify-center gap-2"><button onClick={() => { router.invalidate(); reset(); }} className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">Try again</button><a href="/" className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent">Go home</a></div></div></div>
+    <div className="flex min-h-screen items-center justify-center bg-background px-4"><div className="max-w-md text-center"><h1 className="text-xl font-semibold tracking-tight text-foreground">This page didn't load</h1><p className="mt-2 text-sm text-muted-foreground">Something went wrong on our end. You can try refreshing or head back home.</p><div className="mt-6 flex flex-wrap justify-center gap-2"><button onClick={() => { router.invalidate(); reset(); }} className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">Try again</button><Link to="/" className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent">Go home</Link></div></div></div>
   );
 }
 
@@ -146,14 +146,13 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const { show, dismiss } = useSplash();
   const location = useLocation();
+  const router = useRouter();
   const trainingHome = location.pathname === "/traning" && !new URLSearchParams(location.searchStr ?? "").has("category");
+  const routeTransitionKey = `${location.pathname}${location.searchStr ?? ""}`;
 
-  // Central molnsynk av testhistorik: inloggad → import + restore, gäst → enbart lokalt.
   useEffect(() => startSessionSync(), []);
   useEffect(() => startShotSync(), []);
 
-  // Håll skärmen aktiv så länge SG4 är öppen och synlig. Wake Lock släpps av
-  // operativsystemet när appen går i bakgrunden och begärs då igen när den blir synlig.
   useEffect(() => {
     const wakeLockNavigator = navigator as WakeLockNavigator;
     if (!wakeLockNavigator.wakeLock) return;
@@ -168,7 +167,6 @@ function RootComponent() {
       try {
         handle = await wakeLockNavigator.wakeLock?.request("screen") ?? null;
       } catch {
-        // Vissa webbläsare kräver användarinteraktion eller kan neka p.g.a. systeminställningar.
       } finally {
         requesting = false;
       }
@@ -196,20 +194,22 @@ function RootComponent() {
   }, []);
 
   useEffect(() => {
+    const pushInternal = (href: string) => {
+      router.history.push(href);
+    };
+
     const goBackNaturally = (control: HTMLElement) => {
-      // Training is an isolated navigation system. Every back action inside it
-      // resolves to a defined training parent; only /traning itself exits to home.
       const trainingParent = trainingFallback(window.location.pathname, window.location.search);
-      if (trainingParent) { window.location.assign(trainingParent); return; }
+      if (trainingParent) { pushInternal(trainingParent); return; }
 
       const state = window.history.state as { __TSR_index?: number } | null;
       const hasTanStackHistory = typeof state?.__TSR_index === "number" && state.__TSR_index > 0;
       const hasSameOriginReferrer = Boolean(document.referrer && document.referrer.startsWith(window.location.origin));
 
-      if (hasTanStackHistory || hasSameOriginReferrer) { window.history.back(); return; }
+      if (hasTanStackHistory || hasSameOriginReferrer) { router.history.back(); return; }
       const href = control instanceof HTMLAnchorElement ? control.getAttribute("href") : null;
-      if (href && href.startsWith("/") && href !== window.location.pathname) window.location.assign(href);
-      else window.location.assign("/tester");
+      if (href && href.startsWith("/") && href !== window.location.pathname) pushInternal(href);
+      else pushInternal("/tester");
     };
 
     const handleNavigationControl = (event: MouseEvent) => {
@@ -224,14 +224,30 @@ function RootComponent() {
       const isBackControl = explicitlyDynamicBack || hasArrowLeft || label === "tillbaka" || text === "tillbaka" || text.startsWith("tillbaka till ");
       const isCancelNavigation = explicitlyDynamicCancel || text.startsWith("avbryt test") || (control instanceof HTMLAnchorElement && text === "avbryt");
       if (!isBackControl && !isCancelNavigation) return;
-      event.preventDefault(); event.stopPropagation(); goBackNaturally(control);
+      event.preventDefault();
+      event.stopPropagation();
+      goBackNaturally(control);
     };
 
     document.addEventListener("click", handleNavigationControl, true);
     return () => document.removeEventListener("click", handleNavigationControl, true);
-  }, []);
+  }, [router]);
 
   return (
-    <QueryClientProvider client={queryClient}><SubscriptionProvider><BottomNavVisibilityProvider><div className="relative min-h-screen pb-20">{trainingHome ? <div className="mx-auto w-full max-w-md px-5 pt-6"><Link to="/" data-dynamic-back aria-label="Tillbaka till Hem" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-300/80 bg-white/70 text-xl leading-none text-slate-800 shadow-sm backdrop-blur-xl">‹</Link></div> : null}<Outlet /><ActiveMultiplayerBanner /><ShotSyncStatus /><BottomNav /><DevPlanSwitcher /></div>{show && <SplashScreen onDismiss={dismiss} />}</BottomNavVisibilityProvider></SubscriptionProvider></QueryClientProvider>
+    <QueryClientProvider client={queryClient}>
+      <SubscriptionProvider>
+        <BottomNavVisibilityProvider>
+          <div className="relative min-h-screen pb-20">
+            {trainingHome ? <div className="mx-auto w-full max-w-md px-5 pt-6"><Link to="/" data-dynamic-back aria-label="Tillbaka till Hem" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-300/80 bg-white/70 text-xl leading-none text-slate-800 shadow-sm backdrop-blur-xl">‹</Link></div> : null}
+            <div key={routeTransitionKey} className="sg4-route-transition"><Outlet /></div>
+            <ActiveMultiplayerBanner />
+            <ShotSyncStatus />
+            <BottomNav />
+            <DevPlanSwitcher />
+          </div>
+          {show && <SplashScreen onDismiss={dismiss} />}
+        </BottomNavVisibilityProvider>
+      </SubscriptionProvider>
+    </QueryClientProvider>
   );
 }
