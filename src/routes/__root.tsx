@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useLocation,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -97,18 +98,33 @@ const TRAINING_CATEGORY_PARENT: Record<string, string> = {
   "/lagputt": "/traning?category=putting",
   "/tutor-test": "/traning?category=putting",
   "/green-reading": "/traning?category=putting",
+  "/putting-data": "/traning?category=putting",
 };
 
 const TRAINING_DETAIL_PARENT: Record<string, string> = {
   "/50-bollar-resultat": "/50-bollar",
+  "/8-bollar-historik": "/8-bollar",
+  "/lagputt-historik": "/lagputt",
   "/driver-konsekvens-historik": "/driver-konsekvens",
   "/green-reading-historik": "/green-reading",
   "/pga-tour-18-puttar-historik": "/pga-tour-18-puttar",
   "/tutor-test-historik": "/tutor-test",
+  "/approach-pei-historik": "/approach-pei-valj",
+  "/approach-pei-wedge-historik": "/approach-pei-valj",
+  "/approach-pei-iron-historik": "/approach-pei-valj",
+  "/shot-shaping-9-window-historik": "/shot-shaping",
+  "/shot-shaping-konstant-historik": "/shot-shaping",
+  "/shot-shaping-vaxlande-historik": "/shot-shaping",
+  "/wedge-stege-historik": "/traning?category=approach",
 };
 
 function trainingFallback(pathname: string, search: string) {
-  if (pathname === "/traning" && new URLSearchParams(search).has("category")) return "/traning";
+  const params = new URLSearchParams(search);
+  if (pathname === "/traning") return params.has("category") ? "/traning" : "/";
+  if (pathname === "/traning-progress") {
+    const category = params.get("category");
+    return category ? `/traning?category=${encodeURIComponent(category)}` : "/traning";
+  }
   if (TRAINING_DETAIL_PARENT[pathname]) return TRAINING_DETAIL_PARENT[pathname];
   if (pathname.startsWith("/shot-shaping-") && !pathname.endsWith("-historik")) return "/shot-shaping";
   if (pathname === "/approach-pei" || pathname === "/approach-pei-wedge" || pathname === "/approach-pei-iron") return "/approach-pei-valj";
@@ -129,6 +145,8 @@ type WakeLockNavigator = Navigator & {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const { show, dismiss } = useSplash();
+  const location = useLocation();
+  const trainingHome = location.pathname === "/traning" && !new URLSearchParams(location.searchStr ?? "").has("category");
 
   // Central molnsynk av testhistorik: inloggad → import + restore, gäst → enbart lokalt.
   useEffect(() => startSessionSync(), []);
@@ -179,7 +197,8 @@ function RootComponent() {
 
   useEffect(() => {
     const goBackNaturally = (control: HTMLElement) => {
-      // Training mirrors the match flow: use the defined flow parent before browser history.
+      // Training is an isolated navigation system. Every back action inside it
+      // resolves to a defined training parent; only /traning itself exits to home.
       const trainingParent = trainingFallback(window.location.pathname, window.location.search);
       if (trainingParent) { window.location.assign(trainingParent); return; }
 
@@ -213,6 +232,6 @@ function RootComponent() {
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}><SubscriptionProvider><BottomNavVisibilityProvider><div className="relative min-h-screen pb-20"><Outlet /><ActiveMultiplayerBanner /><ShotSyncStatus /><BottomNav /><DevPlanSwitcher /></div>{show && <SplashScreen onDismiss={dismiss} />}</BottomNavVisibilityProvider></SubscriptionProvider></QueryClientProvider>
+    <QueryClientProvider client={queryClient}><SubscriptionProvider><BottomNavVisibilityProvider><div className="relative min-h-screen pb-20">{trainingHome ? <div className="mx-auto w-full max-w-md px-5 pt-6"><Link to="/" data-dynamic-back aria-label="Tillbaka till Hem" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-300/80 bg-white/70 text-xl leading-none text-slate-800 shadow-sm backdrop-blur-xl">‹</Link></div> : null}<Outlet /><ActiveMultiplayerBanner /><ShotSyncStatus /><BottomNav /><DevPlanSwitcher /></div>{show && <SplashScreen onDismiss={dismiss} />}</BottomNavVisibilityProvider></SubscriptionProvider></QueryClientProvider>
   );
 }
