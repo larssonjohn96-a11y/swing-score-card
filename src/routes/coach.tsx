@@ -271,6 +271,7 @@ function PlayWithCoachPage() {
   const [chipLieOption, setChipLieOption] = useState<ChipLieOption>(() => readSavedChipLieOption());
   const [chipLie, setChipLie] = useState<ChipLie>("Fairway");
   const [puttingAttempts, setPuttingAttempts] = useState<CoachPuttingAttempt[]>([]);
+  const [selectedPuttingStrokes, setSelectedPuttingStrokes] = useState<1 | 2 | 3 | 4 | null>(null);
   const [shortAttempts, setShortAttempts] = useState<ShortAttempt[]>([]);
   const [coachText, setCoachText] = useState("Välj vad du vill träna. Jag styr variationen och säger till när något är värt att justera.");
   const [coachVisible, setCoachVisible] = useState(false);
@@ -464,6 +465,7 @@ function PlayWithCoachPage() {
     coachTimerRef.current = null;
     setSessionId(newSessionId());
     setPuttingAttempts([]);
+    setSelectedPuttingStrokes(null);
     setShortAttempts([]);
     setDistance(firstDistance);
     if (category === "around-the-green") setChipLie(nextChipLie(chipLieOption));
@@ -533,6 +535,7 @@ function PlayWithCoachPage() {
     setConfirmEnd(false);
     setFinalChallenge(true);
     if (category === "putting") {
+      setSelectedPuttingStrokes(null);
       setDistance(3);
       setPressure({ title: "Håla för vinsten", detail: "En sista putt. Sätt den och avsluta på topp.", maxStrokes: 1 });
       showCoach("Sista putten. Tre meter. Bestäm linjen och lita på stroken.");
@@ -568,6 +571,7 @@ function PlayWithCoachPage() {
   function registerPutting(strokes: 1 | 2 | 3 | 4) {
     if (transitioning || category !== "putting") return;
     setTransitioning(true);
+    setSelectedPuttingStrokes(null);
     const sequence = puttingAttempts.length + 1;
     const activePressure = pressure;
     const activeFinalChallenge = finalChallenge;
@@ -826,12 +830,12 @@ function PlayWithCoachPage() {
           </div>
         </section> : null}
 
-        {category === "bunker" ? <section className="mt-3 rounded-[26px] border border-slate-200 bg-white px-5 py-6 text-center shadow-[0_18px_42px_-30px_rgba(15,23,42,.45)]"><p className="text-[9px] font-black uppercase tracking-[.18em] text-slate-400">Uppgift</p><h1 className="mt-1 font-display text-[42px] leading-none text-slate-950">Bunkerslag</h1><p className="mt-2 text-sm font-semibold text-slate-500">Slå så nära flaggan som möjligt.</p></section> : <section className="mt-3 rounded-[26px] border border-slate-200 bg-white px-5 py-5 text-center shadow-[0_18px_42px_-30px_rgba(15,23,42,.45)]"><p className="text-[9px] font-black uppercase tracking-[.18em] text-slate-400">{category === "around-the-green" ? "Situation" : "Avstånd från hål"}</p>{category === "around-the-green" ? <div className={`mt-1 flex items-center justify-center gap-2 whitespace-nowrap text-slate-600 transition-opacity ${transitioning ? "opacity-35" : "opacity-100"}`}><span className="font-display text-[46px] leading-none text-slate-950">{formatDistance(distance)} m</span><span className="font-display text-[33px] leading-none text-slate-500">• från {chipLie.toLowerCase()}</span></div> : <h1 className={`mt-1 font-display text-[58px] leading-none text-slate-950 transition-opacity ${transitioning ? "opacity-35" : "opacity-100"}`}>{formatDistance(distance)} m</h1>}{category === "around-the-green" ? <p className="mt-2 text-sm font-semibold text-slate-500">Slå så nära hålet som möjligt.</p> : null}</section>}
+        {category === "bunker" ? <section className="mt-3 rounded-[26px] border border-slate-200 bg-white px-5 py-6 text-center shadow-[0_18px_42px_-30px_rgba(15,23,42,.45)]"><p className="text-[9px] font-black uppercase tracking-[.18em] text-slate-400">Uppgift</p><h1 className="mt-1 font-display text-[42px] leading-none text-slate-950">Bunkerslag</h1><p className="mt-2 text-sm font-semibold text-slate-500">Slå så nära flaggan som möjligt.</p></section> : category === "putting" ? <section className="mt-3 rounded-[26px] border border-slate-200 bg-white px-5 py-5 text-center shadow-[0_18px_42px_-30px_rgba(15,23,42,.45)]"><p className="text-[9px] font-black uppercase tracking-[.18em] text-slate-400">Nästa putt</p><h1 className={`mt-1 font-display text-[45px] leading-none text-slate-950 transition-opacity ${transitioning ? "opacity-35" : "opacity-100"}`}>{formatDistance(distance)} m från hålet</h1><p className="mt-2 text-sm font-semibold text-slate-500">Spela hålet klart och registrera antal puttar</p></section> : <section className="mt-3 rounded-[26px] border border-slate-200 bg-white px-5 py-5 text-center shadow-[0_18px_42px_-30px_rgba(15,23,42,.45)]"><p className="text-[9px] font-black uppercase tracking-[.18em] text-slate-400">Situation</p><div className={`mt-1 flex items-center justify-center gap-2 whitespace-nowrap text-slate-600 transition-opacity ${transitioning ? "opacity-35" : "opacity-100"}`}><span className="font-display text-[46px] leading-none text-slate-950">{formatDistance(distance)} m</span><span className="font-display text-[33px] leading-none text-slate-500">• från {chipLie.toLowerCase()}</span></div><p className="mt-2 text-sm font-semibold text-slate-500">Slå så nära hålet som möjligt.</p></section>}
 
-        {category === "putting" ? <section className="mt-5"><div className="text-center"><p className="text-[10px] font-black uppercase tracking-[.16em] text-slate-400">Ditt resultat</p><h2 className="mt-1 font-display text-2xl text-slate-950">Antal puttar</h2></div><div className="mt-3 grid grid-cols-4 gap-2.5">{([1, 2, 3, 4] as const).map((strokes) => {
-          const visual = strokes === 1 ? "border-blue-800 bg-blue-800 text-white shadow-[0_10px_24px_-14px_rgba(30,64,175,.75)]" : strokes === 2 ? "border-blue-600 bg-blue-600 text-white" : strokes === 3 ? "border-blue-200 bg-blue-100 text-blue-950" : "border-blue-300 bg-white text-blue-950";
-          return <button key={strokes} type="button" disabled={transitioning} onClick={() => registerPutting(strokes)} className={`rounded-[20px] border px-1 py-4 text-center shadow-sm transition active:scale-[.96] disabled:opacity-40 ${visual}`}><span className="block font-display text-3xl leading-none">{strokes}</span><span className={`mt-1.5 block text-[9px] font-black uppercase tracking-[.08em] ${strokes <= 2 ? "text-blue-100" : "text-blue-600"}`}>{strokes === 1 ? "putt" : "puttar"}</span></button>;
-        })}</div></section> : category === "around-the-green" ? <section className="mt-5"><div className="text-center"><p className="text-[10px] font-black uppercase tracking-[.16em] text-slate-400">Ditt resultat</p><h2 className="mt-1 font-display text-2xl text-slate-950">Hur nära hålet?</h2></div><div className="mt-3 grid grid-cols-2 gap-2.5">{CHIP_POINT_ZONES.map((zone) => {
+        {category === "putting" ? <section className="mt-5"><div className="text-center"><h2 className="font-display text-[28px] leading-none text-slate-950">Hur många puttar tog det?</h2><p className="mt-2 text-sm font-semibold text-slate-500">Räkna alla puttar tills bollen är i koppen.</p></div><div className="mt-4 grid grid-cols-2 gap-3">{([1, 2, 3, 4] as const).map((strokes) => {
+          const selected = selectedPuttingStrokes === strokes;
+          return <button key={strokes} type="button" disabled={transitioning} onClick={() => setSelectedPuttingStrokes(strokes)} className={`relative min-h-[92px] rounded-[22px] border px-4 py-4 text-center shadow-sm transition active:scale-[.98] disabled:opacity-40 ${selected ? "border-blue-500 bg-blue-600 text-white ring-2 ring-blue-500/15" : "border-slate-200 bg-white text-slate-950"}`}>{selected ? <span className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full bg-white text-blue-600"><Check className="h-3.5 w-3.5" /></span> : null}<span className="block font-display text-[32px] leading-none">{strokes}</span><span className={`mt-1.5 block text-[10px] font-black uppercase tracking-[.08em] ${selected ? "text-blue-100" : "text-slate-500"}`}>{strokes === 1 ? "putt" : "puttar"}</span></button>;
+        })}</div><button type="button" disabled={transitioning || selectedPuttingStrokes === null} onClick={() => { if (selectedPuttingStrokes !== null) registerPutting(selectedPuttingStrokes); }} className="mt-4 flex w-full items-center justify-center gap-2 rounded-[20px] bg-blue-600 py-4 font-display text-xl text-white shadow-sm transition active:scale-[.99] disabled:cursor-not-allowed disabled:opacity-25">Registrera & nästa hål <ChevronRight className="h-5 w-5" /></button></section> : category === "around-the-green" ? <section className="mt-5"><div className="text-center"><p className="text-[10px] font-black uppercase tracking-[.16em] text-slate-400">Ditt resultat</p><h2 className="mt-1 font-display text-2xl text-slate-950">Hur nära hålet?</h2></div><div className="mt-3 grid grid-cols-2 gap-2.5">{CHIP_POINT_ZONES.map((zone) => {
           const visualClass = zone.points === 5
             ? "col-span-2 min-h-[72px] border-blue-800 bg-gradient-to-r from-blue-800 to-blue-700 text-white shadow-[0_12px_28px_-18px_rgba(30,64,175,.65)]"
             : zone.points === 4
