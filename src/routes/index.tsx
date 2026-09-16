@@ -144,7 +144,7 @@ function Home() {
   const [data, setData] = useState<HomeData | null>(null);
   const [friends, setFriends] = useState<Friend[]>([]);
   const [cloudFriendCount, setCloudFriendCount] = useState(0);
-  const [headerVisible, setHeaderVisible] = useState(true);
+  const [navVisible, setNavVisible] = useState(true);
   const lastScrollYRef = useRef(0);
   const sessionsVersion = useSessionsVersion();
   const profile = loadCardProfile();
@@ -161,11 +161,11 @@ function Home() {
       const delta = currentY - lastScrollYRef.current;
 
       if (currentY <= 20) {
-        setHeaderVisible(true);
+        setNavVisible(true);
       } else if (delta > 2) {
-        setHeaderVisible(false);
+        setNavVisible(false);
       } else if (delta < -2) {
-        setHeaderVisible(true);
+        setNavVisible(true);
       }
 
       lastScrollYRef.current = currentY;
@@ -216,7 +216,7 @@ function Home() {
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-md bg-background pb-28">
-      <header className={`sticky top-0 z-40 border-b border-border/70 bg-background/88 px-5 pt-[max(12px,env(safe-area-inset-top))] backdrop-blur-2xl transition-transform duration-300 ease-out will-change-transform ${headerVisible ? "translate-y-0" : "-translate-y-full"}`}>
+      <header className="sticky top-0 z-40 border-b border-border/70 bg-background/88 px-5 pt-[max(12px,env(safe-area-inset-top))] backdrop-blur-2xl">
         <div className="flex items-center justify-between pb-3">
           <Link to="/konto" className="flex min-w-0 items-center gap-3">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-muted">
@@ -231,12 +231,14 @@ function Home() {
             <Bell className="h-[18px] w-[18px]" />
           </button>
         </div>
-        <nav className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Snabbnavigering">
-          <Link to="/spela" className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black">Spela</Link>
-          <Link to="/tester" className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black">Train &amp; Test</Link>
-          <Link to="/utveckling" className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black">Utveckling</Link>
-          <Link to="/vanner" className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black">Vänner</Link>
-        </nav>
+        <div className={`overflow-hidden transition-[max-height,opacity,transform,padding] duration-300 ease-out ${navVisible ? "max-h-16 translate-y-0 pb-3 opacity-100" : "max-h-0 -translate-y-2 pb-0 opacity-0"}`}>
+          <nav className="-mx-1 flex gap-2 overflow-x-auto px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Snabbnavigering">
+            <Link to="/spela" className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black">Spela</Link>
+            <Link to="/tester" className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black">Train &amp; Test</Link>
+            <Link to="/utveckling" className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black">Utveckling</Link>
+            <Link to="/vanner" className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black">Vänner</Link>
+          </nav>
+        </div>
       </header>
 
       <div className="px-5 pt-5">
