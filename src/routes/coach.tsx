@@ -18,7 +18,7 @@ import { CHIP_POINT_ZONES, generateChipMatchDistances } from "@/lib/chip-match";
 import { chipPerformanceFromPoints, recordEngineOutcome } from "@/lib/sg4-engine";
 
 export const Route = createFileRoute("/coach")({
-  head: () => ({ meta: [{ title: "Spela med coach | SG4" }] }),
+  head: () => ({ meta: [{ title: "Practice Mode – Träna med coach | SG4" }] }),
   component: PlayWithCoachPage,
 });
 
@@ -150,7 +150,7 @@ function PlayWithCoachPage() {
   const [distance, setDistance] = useState(() => nextCoachPuttingDistance());
   const [puttingAttempts, setPuttingAttempts] = useState<CoachPuttingAttempt[]>([]);
   const [shortAttempts, setShortAttempts] = useState<ShortAttempt[]>([]);
-  const [coachText, setCoachText] = useState("Välj vad du vill spela. Jag styr variationen och säger till när något är värt att justera.");
+  const [coachText, setCoachText] = useState("Välj vad du vill träna. Jag styr variationen och säger till när något är värt att justera.");
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
   const [pressure, setPressure] = useState<PressureChallenge | null>(null);
@@ -319,26 +319,26 @@ function PlayWithCoachPage() {
     <main style={LIGHT_SURFACE} className="mx-auto min-h-screen w-full max-w-md bg-background px-5 pb-10 pt-[max(16px,env(safe-area-inset-top))] text-foreground">
       {phase === "setup" ? <>
         <header className="flex items-center justify-between">
-          <Link to="/spela" aria-label="Tillbaka till Spela" className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-2xl shadow-sm">‹</Link>
-          <div className="text-center"><p className="text-[10px] font-black uppercase tracking-[.18em] text-slate-400">SG4 Coach</p><p className="text-sm font-black text-slate-900">Spela med coach</p></div>
+          <Link to="/tester" aria-label="Tillbaka till Train & Test" className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-2xl shadow-sm">‹</Link>
+          <div className="text-center"><p className="text-[10px] font-black uppercase tracking-[.18em] text-slate-400">Practice Mode</p><p className="text-sm font-black text-slate-900">Träna med coach</p></div>
           <span className="h-10 w-10" />
         </header>
 
-        <section className="mt-6"><SpeechBubble avatar={coach.emoji} name={coach.name} text="Välj vad du vill spela. Jag styr variationen och säger till när något är värt att justera." /></section>
+        <section className="mt-6"><SpeechBubble avatar={coach.emoji} name={coach.name} text="Välj vad du vill träna. Jag styr variationen och säger till när något är värt att justera." /></section>
 
         <section className="mt-8">
-          <p className="text-[10px] font-black uppercase tracking-[.18em] text-slate-400">Coachläge</p>
-          <h1 className="mt-1 font-display text-[38px] leading-none text-slate-950">Vad vill du spela?</h1>
+          <p className="text-[10px] font-black uppercase tracking-[.18em] text-slate-400">Träning</p>
+          <h1 className="mt-1 font-display text-[38px] leading-none text-slate-950">Vad vill du träna?</h1>
           <div className="mt-5 grid grid-cols-2 gap-3">
             {CATEGORIES.map((item) => {
               const active = category === item.id;
               return <button key={item.id} type="button" onClick={() => item.available && setCategory(item.id)} className={`relative flex min-h-[122px] items-center justify-center rounded-[24px] border p-4 text-center transition active:scale-[.985] ${active ? "border-blue-500 bg-blue-50 ring-2 ring-blue-500/15" : item.available ? "border-slate-200 bg-white" : "border-slate-200 bg-white/55 opacity-50"}`}>
                 {active ? <span className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-white"><Check className="h-3.5 w-3.5" /></span> : null}
-                <p className={`font-display text-[27px] leading-none ${active ? "text-blue-700" : "text-slate-950"}`}>{item.title}</p>
+                <p className={`font-display text-[27px] uppercase leading-none ${active ? "text-blue-700" : "text-slate-950"}`}>{item.title}</p>
               </button>;
             })}
           </div>
-          <button type="button" disabled={!category || !["putting", "around-the-green", "bunker"].includes(category)} onClick={startGame} className="mt-5 flex w-full items-center justify-center gap-2 rounded-[20px] bg-blue-600 py-4 font-display text-xl text-white shadow-sm transition active:scale-[.99] disabled:opacity-25">Starta <ChevronRight className="h-5 w-5" /></button>
+          <button type="button" disabled={!category || !["putting", "around-the-green", "bunker"].includes(category)} onClick={startGame} className="mt-5 flex w-full items-center justify-center gap-2 rounded-[20px] bg-blue-600 py-4 font-display text-xl text-white shadow-sm transition active:scale-[.99] disabled:opacity-25">Starta träning <ChevronRight className="h-5 w-5" /></button>
         </section>
       </> : null}
 
@@ -352,7 +352,7 @@ function PlayWithCoachPage() {
 
         <header className="-mx-5 grid min-h-[76px] w-[calc(100%+2.5rem)] grid-cols-[60%_40%] overflow-hidden border-y border-slate-200 bg-white shadow-[0_10px_28px_-24px_rgba(15,23,42,.5)]">
           <div className="relative z-10 flex min-w-0 items-center bg-blue-600 px-5 pr-9 text-white after:absolute after:-right-6 after:top-0 after:h-full after:w-9 after:bg-blue-600 after:[clip-path:polygon(0_0,36%_0,100%_50%,36%_100%,0_100%)]">
-            <div className="min-w-0"><p className="truncate font-display text-[30px] leading-none text-white">{playerName}</p><p className="mt-1.5 text-[10px] font-black uppercase tracking-[.14em] text-blue-100">{currentCount} hål spelade</p></div>
+            <div className="min-w-0"><p className="truncate font-display text-[30px] leading-none text-white">{playerName}</p><p className="mt-1.5 text-[10px] font-black uppercase tracking-[.14em] text-blue-100">{currentCount} slag registrerade</p></div>
           </div>
           <div className="relative flex min-w-0 items-center justify-end bg-white pl-8 pr-5 text-right">
             <div className="min-w-0"><p className="truncate text-[8px] font-black uppercase tracking-[.12em] text-slate-500">{liveStats.label}</p><p className="mt-0.5 font-display text-[27px] leading-none text-slate-950">{liveStats.value}</p></div>
@@ -367,19 +367,19 @@ function PlayWithCoachPage() {
 
         {category === "putting" ? <section className="mt-5"><div className="text-center"><p className="text-[10px] font-black uppercase tracking-[.16em] text-slate-400">Ditt resultat</p><h2 className="mt-1 font-display text-2xl text-slate-950">Antal puttar</h2></div><div className="mt-3 grid grid-cols-4 gap-2.5">{([1, 2, 3, 4] as const).map((strokes) => <button key={strokes} type="button" disabled={transitioning} onClick={() => registerPutting(strokes)} className="rounded-[20px] border border-blue-300 bg-blue-50 px-1 py-4 text-center shadow-sm transition hover:bg-blue-100 active:scale-[.96] active:bg-blue-200 disabled:opacity-40"><span className="block font-display text-3xl leading-none text-blue-800">{strokes}</span><span className="mt-1.5 block text-[8px] font-black uppercase tracking-[.08em] text-blue-500">{strokes === 1 ? "putt" : "puttar"}</span></button>)}</div></section> : <section className="mt-5"><div className="text-center"><p className="text-[10px] font-black uppercase tracking-[.16em] text-slate-400">Ditt resultat</p><h2 className="mt-1 font-display text-2xl text-slate-950">Hur nära hålet?</h2></div><div className="mt-3 grid grid-cols-2 gap-2.5">{(category === "bunker" ? BUNKER_POINT_ZONES : CHIP_POINT_ZONES).map((zone) => <button key={zone.points} type="button" disabled={transitioning} onClick={() => registerShortGame(zone.points)} className="min-h-[58px] rounded-[18px] border border-blue-300 bg-blue-50 px-3 py-3 text-center font-display text-base leading-tight text-blue-800 shadow-sm transition hover:bg-blue-100 active:scale-[.97] active:bg-blue-200 disabled:opacity-40">{zone.label}</button>)}</div></section>}
 
-        <button type="button" onClick={() => setConfirmEnd(true)} className="mt-6 w-full rounded-[18px] border border-slate-200 bg-white py-3.5 text-sm font-black text-slate-500">Avsluta spel</button>
+        <button type="button" onClick={() => setConfirmEnd(true)} className="mt-6 w-full rounded-[18px] border border-slate-200 bg-white py-3.5 text-sm font-black text-slate-500">Avsluta träning</button>
 
         {confetti ? <div className="pointer-events-none fixed inset-0 z-[170] overflow-hidden">{Array.from({ length: 52 }).map((_, index) => <span key={index} className="absolute top-[-10%] rounded-sm" style={{ left: `${2 + (index * 17) % 96}%`, width: `${5 + (index % 3) * 2}px`, height: `${10 + (index % 4) * 3}px`, backgroundColor: CONFETTI_COLORS[index % CONFETTI_COLORS.length], ["--cx" as string]: `${(index % 2 ? 1 : -1) * (18 + (index % 7) * 13)}px`, ["--cr" as string]: `${220 + (index % 9) * 70}deg`, animation: `coachConfetti ${1.2 + (index % 6) * .13}s ${(index % 11) * .035}s cubic-bezier(.16,.7,.2,1) both` }} />)}</div> : null}
 
-        {confirmEnd ? <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-950/45 px-5 backdrop-blur-sm"><div className="w-full max-w-sm rounded-[28px] bg-white p-5 shadow-2xl"><button type="button" onClick={() => setConfirmEnd(false)} className="ml-auto flex h-9 w-9 items-center justify-center rounded-full bg-slate-100"><X className="h-4 w-4" /></button><p className="text-[9px] font-black uppercase tracking-[.18em] text-amber-600">En sista?</p><h2 className="mt-1 font-display text-3xl leading-none text-slate-950">Coach challenge</h2><p className="mt-3 text-sm leading-relaxed text-slate-500">{category === "putting" ? "En putt till. Tre meter. Håla den för att avsluta med en vinst." : category === "bunker" ? "Ett bunkerslag till. Slå så nära flaggan som möjligt och kom inom 1 meter för att avsluta med en vinst." : "Ett chip till från 12 meter. Inom 1 meter för att avsluta med en vinst."}</p><div className="mt-5 space-y-2.5"><button type="button" onClick={startFinalChallenge} className="w-full rounded-2xl bg-amber-400 py-3.5 font-display text-lg text-slate-950">Ta sista utmaningen</button><button type="button" onClick={() => setConfirmEnd(false)} className="w-full rounded-2xl bg-slate-950 py-3.5 text-sm font-black text-white">Fortsätt spela</button><button type="button" onClick={endSession} className="w-full rounded-2xl border border-slate-200 bg-white py-3.5 text-sm font-black text-slate-500">Avsluta ändå</button></div></div></div> : null}
+        {confirmEnd ? <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-950/45 px-5 backdrop-blur-sm"><div className="w-full max-w-sm rounded-[28px] bg-white p-5 shadow-2xl"><button type="button" onClick={() => setConfirmEnd(false)} className="ml-auto flex h-9 w-9 items-center justify-center rounded-full bg-slate-100"><X className="h-4 w-4" /></button><p className="text-[9px] font-black uppercase tracking-[.18em] text-amber-600">En sista?</p><h2 className="mt-1 font-display text-3xl leading-none text-slate-950">Coach challenge</h2><p className="mt-3 text-sm leading-relaxed text-slate-500">{category === "putting" ? "En putt till. Tre meter. Håla den för att avsluta med en vinst." : category === "bunker" ? "Ett bunkerslag till. Slå så nära flaggan som möjligt och kom inom 1 meter för att avsluta med en vinst." : "Ett chip till från 12 meter. Inom 1 meter för att avsluta med en vinst."}</p><div className="mt-5 space-y-2.5"><button type="button" onClick={startFinalChallenge} className="w-full rounded-2xl bg-amber-400 py-3.5 font-display text-lg text-slate-950">Ta sista utmaningen</button><button type="button" onClick={() => setConfirmEnd(false)} className="w-full rounded-2xl bg-slate-950 py-3.5 text-sm font-black text-white">Fortsätt träna</button><button type="button" onClick={endSession} className="w-full rounded-2xl border border-slate-200 bg-white py-3.5 text-sm font-black text-slate-500">Avsluta ändå</button></div></div></div> : null}
       </> : null}
 
       {phase === "summary" ? <>
         <header className="flex items-center justify-between"><span className="h-10 w-10" /><div className="text-center"><p className="text-[10px] font-black uppercase tracking-[.16em] text-slate-400">Resultat</p><p className="text-sm font-black text-slate-950">{categoryLabel} med {coach.name}</p></div><span className="h-10 w-10" /></header>
-        <section className="mt-8 text-center"><span className="mx-auto flex h-16 w-16 items-center justify-center text-5xl">{coach.emoji}</span><h1 className="mt-4 font-display text-4xl leading-none text-slate-950">Bra spelat.</h1><p className="mt-2 text-sm text-slate-500">{currentCount} hål registrerade</p></section>
+        <section className="mt-8 text-center"><span className="mx-auto flex h-16 w-16 items-center justify-center text-5xl">{coach.emoji}</span><h1 className="mt-4 font-display text-4xl leading-none text-slate-950">Bra tränat.</h1><p className="mt-2 text-sm text-slate-500">{currentCount} slag registrerade</p></section>
         {category === "putting" ? <section className="mt-6 grid grid-cols-3 gap-2.5"><div className="rounded-[22px] border border-slate-200 bg-white p-3 text-center"><p className="text-[9px] font-black uppercase text-slate-400">Snitt</p><p className="mt-1 font-display text-2xl">{puttingSummary.avg}</p></div><div className="rounded-[22px] border border-slate-200 bg-white p-3 text-center"><p className="text-[9px] font-black uppercase text-slate-400">1-putt</p><p className="mt-1 font-display text-2xl">{puttingSummary.onePuttPct}%</p></div><div className="rounded-[22px] border border-slate-200 bg-white p-3 text-center"><p className="text-[9px] font-black uppercase text-slate-400">3-putt+</p><p className="mt-1 font-display text-2xl">{puttingSummary.threePuttPct}%</p></div></section> : <section className="mt-6 grid grid-cols-3 gap-2.5"><div className="rounded-[22px] border border-slate-200 bg-white p-3 text-center"><p className="text-[9px] font-black uppercase text-slate-400">Snitt</p><p className="mt-1 font-display text-2xl">{shortGameAverage}</p></div><div className="rounded-[22px] border border-slate-200 bg-white p-3 text-center"><p className="text-[9px] font-black uppercase text-slate-400">Inom 2 m</p><p className="mt-1 font-display text-2xl">{shortGameInsideTwo}%</p></div><div className="rounded-[22px] border border-slate-200 bg-white p-3 text-center"><p className="text-[9px] font-black uppercase text-slate-400">Sänkta</p><p className="mt-1 font-display text-2xl">{shortGameHoled}</p></div></section>}
         <section className="mt-5"><SpeechBubble avatar={coach.emoji} name={coach.name} text={category === "putting" ? (puttingSummary.threePuttPct >= 25 ? "Vi behöver få ner treputtarna. Nästa pass lägger vi mer vikt på fartkontroll från längre håll." : "Stabilt pass. Nästa gång bygger vi vidare på samma rutin och ser om streaksen blir längre.") : shortGameInsideTwo >= 60 ? "Bra kontroll runt målet. Nästa pass kan vi höja svårigheten lite." : "Nästa pass vill jag se fler bollar inom två meter. Landningspunkten blir vårt huvudfokus."} /></section>
-        <section className="mt-6 space-y-2.5"><button type="button" onClick={startGame} className="w-full rounded-[20px] bg-emerald-600 py-4 font-display text-xl text-white">Spela igen</button><button type="button" onClick={() => { setPhase("setup"); setCategory(null); }} className="w-full rounded-[20px] border border-slate-200 bg-white py-4 font-display text-xl text-slate-950">Byt kategori</button><Link to="/spela" className="flex w-full items-center justify-center rounded-[20px] border border-slate-200 bg-white py-4 font-display text-xl text-slate-950">Klar</Link></section>
+        <section className="mt-6 space-y-2.5"><button type="button" onClick={startGame} className="w-full rounded-[20px] bg-emerald-600 py-4 font-display text-xl text-white">Träna igen</button><button type="button" onClick={() => { setPhase("setup"); setCategory(null); }} className="w-full rounded-[20px] border border-slate-200 bg-white py-4 font-display text-xl text-slate-950">Byt kategori</button><Link to="/tester" className="flex w-full items-center justify-center rounded-[20px] border border-slate-200 bg-white py-4 font-display text-xl text-slate-950">Klar</Link></section>
       </> : null}
     </main>
   );
