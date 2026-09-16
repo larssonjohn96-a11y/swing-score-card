@@ -1,7 +1,8 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, GraduationCap, ListChecks, Target } from "lucide-react";
+import { ChevronLeft, ChevronRight, ListChecks, Target } from "lucide-react";
 import { CATEGORIES } from "@/lib/categories";
+import { COACHES } from "@/lib/coach-putting";
 
 export const Route = createFileRoute("/tester")({
   head: () => ({
@@ -24,9 +25,10 @@ function CircleBack({ onClick, to, label }: { onClick?: () => void; to?: "/"; la
 }
 
 function SpeechBubble({ text }: { text: string }) {
+  const alma = COACHES.find((coach) => coach.id === "alma") ?? COACHES[0];
   return (
     <div className="flex items-end gap-3">
-      <div className="flex h-20 w-20 shrink-0 items-center justify-center text-[58px] leading-none">🏌️‍♀️</div>
+      <div className="flex h-20 w-20 shrink-0 items-center justify-center text-[58px] leading-none">{alma.emoji}</div>
       <div className="relative mb-0 flex-1 rounded-[18px] border border-border bg-card px-4 py-3.5 shadow-[0_14px_32px_-20px_rgba(15,23,42,.42)]">
         <span className="absolute -left-[17px] top-1/2 -translate-y-1/2 border-y-[13px] border-y-transparent border-r-[17px] border-r-border" />
         <span className="absolute -left-[14px] top-1/2 -translate-y-1/2 border-y-[11px] border-y-transparent border-r-[15px] border-r-card" />
