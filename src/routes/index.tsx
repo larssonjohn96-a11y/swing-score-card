@@ -146,6 +146,8 @@ function Home() {
   const [cloudFriendCount, setCloudFriendCount] = useState(0);
   const [navVisible, setNavVisible] = useState(true);
   const lastScrollYRef = useRef(0);
+  const directionStartYRef = useRef(0);
+  const scrollDirectionRef = useRef<"up" | "down" | null>(null);
   const sessionsVersion = useSessionsVersion();
   const profile = loadCardProfile();
 
@@ -154,18 +156,36 @@ function Home() {
   }, []);
 
   useEffect(() => {
-    lastScrollYRef.current = Math.max(0, window.scrollY);
+    const initialY = Math.max(0, window.scrollY);
+    lastScrollYRef.current = initialY;
+    directionStartYRef.current = initialY;
 
     const onScroll = () => {
       const currentY = Math.max(0, window.scrollY);
       const delta = currentY - lastScrollYRef.current;
+      const nextDirection = delta > 0 ? "down" : delta < 0 ? "up" : scrollDirectionRef.current;
 
-      if (currentY <= 20) {
+      if (currentY <= 24) {
         setNavVisible(true);
-      } else if (delta > 2) {
+        directionStartYRef.current = currentY;
+        scrollDirectionRef.current = nextDirection;
+        lastScrollYRef.current = currentY;
+        return;
+      }
+
+      if (nextDirection && nextDirection !== scrollDirectionRef.current) {
+        scrollDirectionRef.current = nextDirection;
+        directionStartYRef.current = currentY;
+      }
+
+      const travelled = Math.abs(currentY - directionStartYRef.current);
+
+      if (nextDirection === "down" && travelled >= 34) {
         setNavVisible(false);
-      } else if (delta < -2) {
+        directionStartYRef.current = currentY;
+      } else if (nextDirection === "up" && travelled >= 22) {
         setNavVisible(true);
+        directionStartYRef.current = currentY;
       }
 
       lastScrollYRef.current = currentY;
@@ -231,8 +251,8 @@ function Home() {
             <Bell className="h-[18px] w-[18px]" />
           </button>
         </div>
-        <div className={`overflow-hidden transition-[max-height,opacity,transform,padding] duration-300 ease-out ${navVisible ? "max-h-16 translate-y-0 pb-3 opacity-100" : "max-h-0 -translate-y-2 pb-0 opacity-0"}`}>
-          <nav className="-mx-1 flex gap-2 overflow-x-auto px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Snabbnavigering">
+        <div className={`overflow-hidden transition-[max-height,opacity,padding] duration-500 [transition-timing-function:cubic-bezier(.22,1,.36,1)] ${navVisible ? "max-h-16 pb-3 opacity-100" : "max-h-0 pb-0 opacity-0"}`}>
+          <nav className={`-mx-1 flex gap-2 overflow-x-auto px-1 transition-transform duration-500 [transition-timing-function:cubic-bezier(.22,1,.36,1)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${navVisible ? "translate-y-0" : "-translate-y-1"}`} aria-label="Snabbnavigering">
             <Link to="/spela" className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black">Spela</Link>
             <Link to="/tester" className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black">Train &amp; Test</Link>
             <Link to="/utveckling" className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black">Utveckling</Link>
