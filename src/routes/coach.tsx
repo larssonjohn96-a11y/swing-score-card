@@ -28,11 +28,12 @@ type PressureChallenge = { title: string; detail: string; maxStrokes?: 1 | 2; mi
 type ChipLieOption = "fairway" | "rough" | "both";
 type ChipLie = "Fairway" | "Ruff";
 type ShortAttempt = { distance?: number; points: number; lie?: ChipLie };
-type StreakStatus = { label: string; value: string; detail: string } | null;
 type IntroState = "coach" | "3" | "2" | "1" | "go" | "done";
+type ShortGamePb = { average: number; total: number };
 
 const DEFAULT_COACH_ID: CoachId = "alma";
 const CHIP_LIE_STORAGE_KEY = "sg4-coach-chip-lie-v1";
+const SHORT_GAME_PB_PREFIX = "sg4-practice-pb-v1";
 
 const CATEGORIES: Array<{ id: Category; title: string; available: boolean }> = [
   { id: "putting", title: "Puttning", available: true },
@@ -68,6 +69,10 @@ function formatDistance(distance: number) {
   return Number.isInteger(distance) ? String(distance) : String(distance).replace(".", ",");
 }
 
+function formatOne(value: number) {
+  return value.toFixed(1).replace(".", ",");
+}
+
 function consecutiveFromEnd<T>(items: T[], predicate: (item: T) => boolean) {
   let count = 0;
   for (let index = items.length - 1; index >= 0; index -= 1) {
@@ -75,16 +80,6 @@ function consecutiveFromEnd<T>(items: T[], predicate: (item: T) => boolean) {
     count += 1;
   }
   return count;
-}
-
-function shortHoledStreak(attempts: CoachPuttingAttempt[]) {
-  const shortAttempts = attempts.filter((attempt) => attempt.distance <= 3);
-  return consecutiveFromEnd(shortAttempts, (attempt) => attempt.strokes === 1);
-}
-
-function longNoThreeStreak(attempts: CoachPuttingAttempt[]) {
-  const longAttempts = attempts.filter((attempt) => attempt.distance > 8);
-  return consecutiveFromEnd(longAttempts, (attempt) => attempt.strokes <= 2);
 }
 
 function shortGameQualityStreak(attempts: ShortAttempt[]) {
@@ -110,24 +105,33 @@ function readSavedChipLieOption(): ChipLieOption {
   return saved === "rough" || saved === "both" || saved === "fairway" ? saved : "fairway";
 }
 
-function maybePressureChallenge(category: Category, distance: number, puttingAttempts: CoachPuttingAttempt[], shortAttempts: ShortAttempt[]): PressureChallenge | null {
-  if (category === "putting") {
-    const shortStreak = shortHoledStreak(puttingAttempts);
-    const longStreak = longNoThreeStreak(puttingAttempts);
-    if (shortStreak >= 2 && distance <= 3) {
-      const chance = distance >= 2.5 ? 0.68 : 0.46;
-      if (Math.random() <= chance) return { title: "Håla denna putt", detail: `Håll ${shortStreak} kortputtar i rad vid liv`, maxStrokes: 1 };
-    }
-    if (longStreak >= 3 && distance > 8) {
-      const chance = distance >= 12 ? 0.68 : 0.46;
-      if (Math.random() <= chance) return { title: "Max 2 puttar", detail: `Håll ${longStreak} långputtar utan treputt vid liv`, maxStrokes: 2 };
-    }
+function pbStorageKey(category: Category) {
+  return `${SHORT_GAME_PB_PREFIX}-${category}`;
+}
+
+function readShortGamePb(category: Category): ShortGamePb | null {
+  if (typeof window === "undefined" || (category !== "around-the-green" && category !== "bunker")) return null;
+  try {
+    const raw = window.localStorage.getItem(pbStorageKey(category));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<ShortGamePb>;
+    if (typeof parsed.average !== "number" || typeof parsed.total !== "number") return null;
+    return { average: parsed.average, total: parsed.total };
+  } catch {
     return null;
   }
+}
 
-  const streak = shortGameQualityStreak(shortAttempts);
-  if (streak < 3 || Math.random() > 0.58) return null;
-  return { title: "Inom 2 meter", detail: `Håll ${streak} starka slag i rad vid liv`, minPoints: 3 };
+function saveShortGamePb(category: Category, attempts: ShortAttempt[], previous: ShortGamePb | null) {
+  if (typeof window === "undefined" || !attempts.length || (category !== "around-the-green" && category !== "bunker")) return previous;
+  const total = attempts.reduce((sum, attempt) => sum + attempt.points, 0);
+  const average = total / attempts.length;
+  const next = {
+    average: Math.max(previous?.average ?? 0, average),
+    total: Math.max(previous?.total ?? 0, total),
+  };
+  window.localStorage.setItem(pbStorageKey(category), JSON.stringify(next));
+  return next;
 }
 
 function positiveLongPuttComment(distance: number) {
@@ -136,15 +140,10 @@ function positiveLongPuttComment(distance: number) {
   return "Snyggt. Fyra meter plus är en riktig bonusputt.";
 }
 
-function shortGameCoachComment(category: Category, points: number, distance?: number) {
-  if (points === 5) return category === "bunker" ? "Hålad ur bunkern. Det är bonus på riktigt." : "Den gick i. Exakt den typen av bonus vi tar varje gång.";
-  if (points === 4) return "Mycket bra. Du gav dig själv en enkel nästa putt.";
-  if (points === 3) return "Bra slag. Två meter eller närmare är ett klart godkänt resultat här.";
-  if (points <= 1) {
-    if (category === "bunker") return "För långt från flaggan. Välj landningspunkt tydligare på nästa slag.";
-    return (distance ?? 0) >= 18 ? "Den blev för lös. Välj landningspunkt först och låt längden komma därifrån." : "För långt från målet. Gör landningspunkten tydligare på nästa.";
-  }
-  return "Godkänt. Försök flytta nästa en zon närmare hålet.";
+function poorPatternComment(category: Category) {
+  return category === "bunker"
+    ? "Några slag har blivit för långt från flaggan. Välj landningspunkt tydligare på nästa."
+    : "Några slag har hamnat för långt från målet. Gör landningspunkten tydligare på nästa.";
 }
 
 function SpeechBubble({ avatar, name, text, fixed = false }: { avatar: string; name: string; text: string; fixed?: boolean }) {
@@ -178,8 +177,11 @@ function PlayWithCoachPage() {
   const [coachText, setCoachText] = useState("Välj vad du vill träna. Jag styr variationen och säger till när något är värt att justera.");
   const [coachVisible, setCoachVisible] = useState(false);
   const [introState, setIntroState] = useState<IntroState>("done");
+  const [shortGamePb, setShortGamePb] = useState<ShortGamePb | null>(null);
+  const [pbCoachShown, setPbCoachShown] = useState(false);
   const coachTimerRef = useRef<number | null>(null);
   const introTimerRefs = useRef<number[]>([]);
+  const poorCoachAtRef = useRef(0);
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
   const [pressure, setPressure] = useState<PressureChallenge | null>(null);
@@ -208,30 +210,10 @@ function PlayWithCoachPage() {
 
   const puttingSummary = useMemo(() => summarizeCoachPutting(puttingAttempts), [puttingAttempts]);
   const currentCount = category === "putting" ? puttingAttempts.length : shortAttempts.length;
-
-  const liveStats = useMemo(() => {
-    if (category === "putting") {
-      const totalPutts = puttingAttempts.reduce((sum, attempt) => sum + attempt.strokes, 0);
-      return { label: "Puttar", value: String(totalPutts) };
-    }
-    const average = shortAttempts.length ? (shortAttempts.reduce((sum, attempt) => sum + attempt.points, 0) / shortAttempts.length).toFixed(1) : "0";
-    return { label: "Snittpoäng", value: average };
-  }, [category, puttingAttempts, shortAttempts]);
-
-  const streakStatus = useMemo<StreakStatus>(() => {
-    if (category === "putting") {
-      const shortStreak = shortHoledStreak(puttingAttempts);
-      const longStreak = longNoThreeStreak(puttingAttempts);
-      const noThreeStreak = consecutiveFromEnd(puttingAttempts, (attempt) => attempt.strokes <= 2);
-      if (shortStreak >= 2) return { label: "STREAK", value: `🔥 ${shortStreak} I RAD`, detail: "Kortputtar ≤3 m sänkta i rad" };
-      if (longStreak >= 2) return { label: "STREAK", value: `🎯 ${longStreak} I RAD`, detail: "Långputtar >8 m utan treputt" };
-      if (noThreeStreak >= 3) return { label: "STREAK", value: `${noThreeStreak} I RAD`, detail: "Max två puttar" };
-      return null;
-    }
-    const streak = shortGameQualityStreak(shortAttempts);
-    if (streak >= 2) return { label: "STREAK", value: `🎯 ${streak} I RAD`, detail: "Slag inom 2 meter" };
-    return null;
-  }, [category, puttingAttempts, shortAttempts]);
+  const shortTotal = useMemo(() => shortAttempts.reduce((sum, attempt) => sum + attempt.points, 0), [shortAttempts]);
+  const shortAverage = shortAttempts.length ? shortTotal / shortAttempts.length : 0;
+  const shortStreak = useMemo(() => shortGameQualityStreak(shortAttempts), [shortAttempts]);
+  const aboveAveragePb = Boolean(shortGamePb && shortAttempts.length >= 3 && shortAverage > shortGamePb.average);
 
   const categoryLabel = category === "around-the-green" ? "Chippning" : category === "bunker" ? "Bunker" : "Puttning";
 
@@ -240,7 +222,7 @@ function PlayWithCoachPage() {
     introTimerRefs.current = [];
   }
 
-  function showCoach(text: string, duration = 4200) {
+  function showCoach(text: string, duration = 3800) {
     setCoachText(text);
     setCoachVisible(true);
     if (coachTimerRef.current !== null) window.clearTimeout(coachTimerRef.current);
@@ -271,11 +253,6 @@ function PlayWithCoachPage() {
   function startGame() {
     if (!category || !["putting", "around-the-green", "bunker"].includes(category)) return;
     const firstDistance = category === "putting" ? nextCoachPuttingDistance() : category === "around-the-green" ? nextChipDistance() : 0;
-    const startMessage = category === "putting"
-      ? "Läs putten, välj fart och slå med ett tydligt beslut."
-      : category === "bunker"
-        ? "Slå bunkerslaget så nära flaggan du kan."
-        : "Läs läget, välj landningspunkt och slå så nära hålet du kan.";
 
     clearIntroTimers();
     if (coachTimerRef.current !== null) window.clearTimeout(coachTimerRef.current);
@@ -285,10 +262,13 @@ function PlayWithCoachPage() {
     setShortAttempts([]);
     setDistance(firstDistance);
     if (category === "around-the-green") setChipLie(nextChipLie(chipLieOption));
+    setShortGamePb(readShortGamePb(category));
+    setPbCoachShown(false);
+    poorCoachAtRef.current = 0;
     setPressure(null);
     setConfetti(false);
     setFinalChallenge(false);
-    setCoachText(startMessage);
+    setCoachText("Är du redo? Nu kör vi!");
     setCoachVisible(false);
     setIntroState("coach");
     setConfirmEnd(false);
@@ -296,16 +276,43 @@ function PlayWithCoachPage() {
     setPhase("play");
 
     introTimerRefs.current = [
-      window.setTimeout(() => setIntroState("3"), 1800),
-      window.setTimeout(() => setIntroState("2"), 2550),
-      window.setTimeout(() => setIntroState("1"), 3300),
-      window.setTimeout(() => setIntroState("go"), 4050),
+      window.setTimeout(() => setIntroState("3"), 1200),
+      window.setTimeout(() => setIntroState("2"), 1950),
+      window.setTimeout(() => setIntroState("1"), 2700),
+      window.setTimeout(() => setIntroState("go"), 3450),
       window.setTimeout(() => {
         setIntroState("done");
         setTransitioning(false);
         introTimerRefs.current = [];
-      }, 4800),
+      }, 4200),
     ];
+  }
+
+  function shortPressureForNext(nextAttempts: ShortAttempt[]) {
+    if (!shortGamePb || nextAttempts.length < 3) {
+      const streak = shortGameQualityStreak(nextAttempts);
+      return streak >= 3 && streak % 3 === 0
+        ? { title: "Håll streaken vid liv", detail: `${streak} i rad inom 2 m · nästa räknas`, minPoints: 3 }
+        : null;
+    }
+
+    const total = nextAttempts.reduce((sum, attempt) => sum + attempt.points, 0);
+    const average = total / nextAttempts.length;
+    const streak = shortGameQualityStreak(nextAttempts);
+    const totalGap = shortGamePb.total - total;
+    const avgGap = shortGamePb.average - average;
+
+    if (streak >= 3 && streak % 3 === 0) {
+      return { title: "Håll streaken vid liv", detail: `${streak} i rad inom 2 m · nästa räknas`, minPoints: 3 };
+    }
+    if (totalGap > 0 && totalGap <= 6) {
+      const strongShots = Math.max(1, Math.ceil(totalGap / 3));
+      return { title: "PB inom räckhåll", detail: `${strongShots} bra slag från total-PB`, minPoints: 3 };
+    }
+    if (nextAttempts.length >= 5 && avgGap > 0 && avgGap <= 0.25) {
+      return { title: "Nära snitt-PB", detail: `${formatOne(avgGap)} från ditt bästa snitt`, minPoints: 3 };
+    }
+    return null;
   }
 
   function startFinalChallenge() {
@@ -327,10 +334,17 @@ function PlayWithCoachPage() {
     }
   }
 
+  function persistCurrentPb() {
+    if (!category) return;
+    const saved = saveShortGamePb(category, shortAttempts, shortGamePb);
+    if (saved) setShortGamePb(saved);
+  }
+
   function finishFinalChallenge(success: boolean) {
     setPressure(null);
     showCoach(success ? "Där satt den. Perfekt sätt att avsluta." : "Inte riktigt där, men passet är klart. Bra jobb.", 2200);
     window.setTimeout(() => {
+      persistCurrentPb();
       setFinalChallenge(false);
       setTransitioning(false);
       setPhase("summary");
@@ -355,11 +369,10 @@ function PlayWithCoachPage() {
       setConfetti(true);
       showCoach(positiveLongPuttComment(playedDistance));
     } else if (activePressure) {
-      showCoach(pressureWon ? (strokes === 1 ? "Bra. Du höll streaken vid liv." : "Bra tvåputt. Streaken lever.") : activePressure.maxStrokes === 1 ? "Den streaken är över. Bygg en ny direkt." : "Treputten bröt streaken. Släpp den och börja om.");
-    } else if (strokes >= 3 || sequence % 5 === 0) {
+      showCoach(pressureWon ? "Bra. Du höll pressen." : "Släpp den. Nästa putt är en ny situation.");
+    } else if (strokes >= 3 && sequence % 3 === 0) {
       const comment = coachPuttingComment(playedDistance, strokes, coachId, sequence);
       if (comment) showCoach(comment);
-      else if (strokes >= 3) showCoach("Den blev dyr. Släpp den och fokusera på nästa.");
     }
 
     if (activeFinalChallenge) {
@@ -369,7 +382,6 @@ function PlayWithCoachPage() {
 
     window.setTimeout(() => {
       setDistance(nextDistance);
-      setPressure(maybePressureChallenge("putting", nextDistance, nextAttempts, shortAttempts));
       setTransitioning(false);
     }, 280);
   }
@@ -385,6 +397,8 @@ function PlayWithCoachPage() {
     const nextDistance = category === "around-the-green" ? nextChipDistance(distance) : 0;
     const nextLie = category === "around-the-green" ? nextChipLie(chipLieOption) : chipLie;
     const pressureWon = activePressure?.minPoints !== undefined ? points >= activePressure.minPoints : false;
+    const nextTotal = nextAttempts.reduce((sum, attempt) => sum + attempt.points, 0);
+    const nextAverage = nextTotal / nextAttempts.length;
 
     setPressure(null);
     setShortAttempts(nextAttempts);
@@ -392,11 +406,21 @@ function PlayWithCoachPage() {
 
     if (points === 5) {
       setConfetti(true);
-      showCoach(shortGameCoachComment(category, points, playedDistance));
+      showCoach(category === "bunker" ? "Hålad ur bunkern. Det är bonus på riktigt." : "Den gick i. Exakt den typen av bonus vi tar varje gång.");
+    } else if (shortGamePb && !pbCoachShown && nextAttempts.length >= 3 && nextAverage > shortGamePb.average) {
+      setPbCoachShown(true);
+      showCoach("Du ligger över ditt personbästa. Fortsätt så.");
     } else if (activePressure) {
-      showCoach(pressureWon ? "Bra. Du höll streaken vid liv." : "Streaken tog slut där. Ny chans på nästa.");
-    } else if (points <= 1 || nextAttempts.length % 5 === 0) {
-      showCoach(shortGameCoachComment(category, points, playedDistance));
+      showCoach(pressureWon ? "Bra. Du höll pressen och streaken lever." : "Streaken bröts där. Ny chans direkt.");
+    } else if (points === 4 && nextAttempts.length % 4 === 0) {
+      showCoach("Riktigt bra. Inom en meter är starkt från den här typen av läge.");
+    } else {
+      const recent = nextAttempts.slice(-3);
+      const poorCount = recent.filter((attempt) => attempt.points <= 1).length;
+      if (recent.length === 3 && poorCount >= 2 && nextAttempts.length - poorCoachAtRef.current >= 4) {
+        poorCoachAtRef.current = nextAttempts.length;
+        showCoach(poorPatternComment(category));
+      }
     }
 
     if (activeFinalChallenge) {
@@ -407,30 +431,32 @@ function PlayWithCoachPage() {
     window.setTimeout(() => {
       setDistance(nextDistance);
       if (category === "around-the-green") setChipLie(nextLie);
-      setPressure(maybePressureChallenge(category, nextDistance, puttingAttempts, nextAttempts));
+      setPressure(shortPressureForNext(nextAttempts));
       setTransitioning(false);
     }, 280);
   }
 
   function endSession() {
+    persistCurrentPb();
     setConfirmEnd(false);
     setPhase("summary");
   }
 
-  const shortGameAverage = shortAttempts.length ? (shortAttempts.reduce((sum, attempt) => sum + attempt.points, 0) / shortAttempts.length).toFixed(1) : "0";
+  const shortGameAverage = shortAttempts.length ? formatOne(shortAverage) : "0,0";
   const shortGameInsideTwo = shortAttempts.length ? Math.round((shortAttempts.filter((attempt) => attempt.points >= 3).length / shortAttempts.length) * 100) : 0;
   const shortGameHoled = shortAttempts.filter((attempt) => attempt.points === 5).length;
-
   const introActive = introState !== "done";
-  const topBarMode = introActive ? "intro" : pressure ? "pressure" : coachVisible ? "coach" : streakStatus ? "streak" : "normal";
+  const topBarMode = introActive ? "intro" : pressure ? "pressure" : coachVisible ? "coach" : "normal";
+  const isShortGame = category === "around-the-green" || category === "bunker";
+
   const topBarClass = topBarMode === "pressure"
     ? "border-amber-300 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-300 text-slate-950"
-    : topBarMode === "streak"
-      ? "border-indigo-400 bg-gradient-to-r from-blue-700 via-indigo-600 to-blue-600 text-white"
-      : topBarMode === "coach" || (topBarMode === "intro" && introState === "coach")
-        ? "border-blue-200 bg-gradient-to-r from-blue-50 via-white to-blue-50 text-slate-950"
-        : topBarMode === "intro"
-          ? "border-blue-700 bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-600 text-white"
+    : topBarMode === "coach" || (topBarMode === "intro" && introState === "coach")
+      ? "border-blue-200 bg-gradient-to-r from-blue-50 via-white to-blue-50 text-slate-950"
+      : topBarMode === "intro"
+        ? "border-blue-700 bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-600 text-white"
+        : aboveAveragePb
+          ? "border-amber-200 bg-gradient-to-r from-amber-50 via-white to-orange-50 text-slate-950 shadow-[0_0_28px_-12px_rgba(245,158,11,.8)]"
           : "border-slate-200 bg-white text-slate-950";
 
   return (
@@ -493,15 +519,28 @@ function PlayWithCoachPage() {
           @media (prefers-reduced-motion: reduce){.sg4-topbar-state{animation:none!important}}
         `}</style>
 
-        <header className={`-mx-5 h-[108px] w-[calc(100%+2.5rem)] overflow-hidden border-y shadow-[0_12px_30px_-24px_rgba(15,23,42,.45)] transition-colors duration-300 ${topBarClass}`}>
+        <header className={`-mx-5 h-[108px] w-[calc(100%+2.5rem)] overflow-hidden border-y transition-all duration-300 ${topBarClass}`}>
           {topBarMode === "intro" ? <div key={`intro-${introState}`} className="sg4-topbar-state flex h-full w-full items-center justify-center px-5 text-center">
-            {introState === "coach" ? <div className="flex w-full items-center gap-3 text-left"><span className="flex h-14 w-14 shrink-0 items-center justify-center text-[42px] leading-none">{coach.emoji}</span><div className="min-w-0"><p className="text-[9px] font-black uppercase tracking-[.2em] text-blue-600">Alma</p><p className="mt-1 line-clamp-2 text-[16px] font-semibold leading-[1.3] text-slate-900">{coachText}</p></div></div> : introState === "go" ? <div><p className="text-[10px] font-black uppercase tracking-[.24em] text-blue-100">Practice Mode</p><p className="mt-1 font-display text-[34px] leading-none">NU KÖR VI</p></div> : <span className="font-display text-[58px] leading-none">{introState}</span>}
-          </div> : topBarMode === "pressure" && pressure ? <div key={`pressure-${pressure.title}-${distance}`} className="sg4-topbar-state flex h-full w-full items-center justify-between px-5"><div className="min-w-0 pr-4"><p className="text-[9px] font-black uppercase tracking-[.22em]">Pressläge · Nu gäller det</p><p className="mt-1 truncate font-display text-[26px] leading-none">{pressure.title}</p><p className="mt-1 truncate text-[11px] font-bold text-slate-800">{pressure.detail}</p></div><span className="text-2xl">⚡</span></div> : topBarMode === "coach" ? <div key={`coach-${coachText}`} className="sg4-topbar-state flex h-full w-full items-center gap-3 px-5"><span className="flex h-14 w-14 shrink-0 items-center justify-center text-[42px] leading-none">{coach.emoji}</span><div className="min-w-0"><p className="text-[9px] font-black uppercase tracking-[.2em] text-blue-600">Alma</p><p className="mt-1 line-clamp-2 text-[16px] font-semibold leading-[1.3] text-slate-900">{coachText}</p></div></div> : topBarMode === "streak" && streakStatus ? <div key={`streak-${streakStatus.value}`} className="sg4-topbar-state flex h-full w-full items-center justify-between px-5"><div className="min-w-0"><p className="text-[9px] font-black uppercase tracking-[.22em] text-blue-100">{streakStatus.label}</p><p className="mt-1 font-display text-[28px] leading-none">{streakStatus.value}</p><p className="mt-1 text-[11px] font-semibold text-blue-100">{streakStatus.detail}</p></div><span className="text-2xl">🔥</span></div> : <div key="normal" className="sg4-topbar-state grid h-full w-full grid-cols-[60%_40%] overflow-hidden"><div className="relative z-10 flex min-w-0 items-center bg-blue-600 px-5 pr-9 text-white after:absolute after:-right-6 after:top-0 after:h-full after:w-9 after:bg-blue-600 after:[clip-path:polygon(0_0,36%_0,100%_50%,36%_100%,0_100%)]"><div className="min-w-0"><p className="truncate font-display text-[30px] leading-none text-white">{playerName}</p><p className="mt-1.5 text-[10px] font-black uppercase tracking-[.14em] text-blue-100">{currentCount} slag registrerade</p></div></div><div className="relative flex min-w-0 items-center justify-end bg-white pl-8 pr-5 text-right"><div className="min-w-0"><p className="truncate text-[8px] font-black uppercase tracking-[.12em] text-slate-500">{liveStats.label}</p><p className="mt-0.5 font-display text-[27px] leading-none text-slate-950">{liveStats.value}</p></div></div></div>}
+            {introState === "coach" ? <div className="flex w-full items-center gap-3 text-left"><span className="flex h-14 w-14 shrink-0 items-center justify-center text-[42px] leading-none">{coach.emoji}</span><div className="min-w-0"><p className="text-[9px] font-black uppercase tracking-[.2em] text-blue-600">Alma</p><p className="mt-1 text-[17px] font-semibold leading-[1.3] text-slate-900">{coachText}</p></div></div> : introState === "go" ? <div><p className="text-[10px] font-black uppercase tracking-[.24em] text-blue-100">Practice Mode</p><p className="mt-1 font-display text-[34px] leading-none">NU KÖR VI</p></div> : <span className="font-display text-[58px] leading-none">{introState}</span>}
+          </div> : topBarMode === "pressure" && pressure ? <div key={`pressure-${pressure.title}-${distance}`} className="sg4-topbar-state flex h-full w-full items-center justify-between px-5"><div className="min-w-0 pr-4"><p className="text-[9px] font-black uppercase tracking-[.22em]">Pressläge · Nu gäller det</p><p className="mt-1 truncate font-display text-[26px] leading-none">{pressure.title}</p><p className="mt-1 truncate text-[11px] font-bold text-slate-800">{pressure.detail}</p></div><span className="text-2xl">⚡</span></div> : topBarMode === "coach" ? <div key={`coach-${coachText}`} className="sg4-topbar-state flex h-full w-full items-center gap-3 px-5"><span className="flex h-14 w-14 shrink-0 items-center justify-center text-[42px] leading-none">{coach.emoji}</span><div className="min-w-0"><p className="text-[9px] font-black uppercase tracking-[.2em] text-blue-600">Alma</p><p className="mt-1 line-clamp-2 text-[16px] font-semibold leading-[1.3] text-slate-900">{coachText}</p></div></div> : isShortGame ? <div key="short-normal" className="sg4-topbar-state grid h-full w-full grid-cols-[1fr_auto] items-center gap-3 px-5">
+            <div className="min-w-0">
+              <div className="flex items-end gap-2"><div><p className="text-[8px] font-black uppercase tracking-[.16em] text-slate-500">Snitt / slag</p><p className={`mt-0.5 font-display text-[38px] leading-none ${aboveAveragePb ? "text-amber-700" : "text-slate-950"}`}>{shortGameAverage}{aboveAveragePb ? <span className="ml-2 align-middle text-[15px] font-black tracking-normal">🏆 PB</span> : null}</p></div>
+              <div className="pb-0.5"><p className="text-[8px] font-black uppercase tracking-[.14em] text-slate-400">Total</p><p className="font-display text-[22px] leading-none text-slate-700">{shortTotal} P</p></div></div>
+              <div className="mt-1.5 flex items-center gap-2 overflow-hidden whitespace-nowrap text-[9px] font-bold text-slate-500">
+                <span>{shortGamePb ? `PB snitt ${formatOne(shortGamePb.average)} · PB total ${shortGamePb.total} P` : "PB sparas efter avslutat pass"}</span>
+                {shortStreak >= 2 ? <span className="rounded-full bg-blue-50 px-2 py-1 text-blue-700">🔥 {shortStreak} i rad · inom 2 m</span> : null}
+              </div>
+            </div>
+            <div className="text-right"><p className="text-[8px] font-black uppercase tracking-[.14em] text-slate-400">Slag</p><p className="font-display text-[25px] leading-none text-slate-800">{currentCount}</p></div>
+          </div> : <div key="putt-normal" className="sg4-topbar-state grid h-full w-full grid-cols-[60%_40%] overflow-hidden"><div className="relative z-10 flex min-w-0 items-center bg-blue-600 px-5 pr-9 text-white after:absolute after:-right-6 after:top-0 after:h-full after:w-9 after:bg-blue-600 after:[clip-path:polygon(0_0,36%_0,100%_50%,36%_100%,0_100%)]"><div className="min-w-0"><p className="truncate font-display text-[30px] leading-none text-white">{playerName}</p><p className="mt-1.5 text-[10px] font-black uppercase tracking-[.14em] text-blue-100">{currentCount} slag registrerade</p></div></div><div className="relative flex min-w-0 items-center justify-end bg-white pl-8 pr-5 text-right"><div><p className="text-[8px] font-black uppercase tracking-[.12em] text-slate-500">Puttar</p><p className="mt-0.5 font-display text-[27px] leading-none text-slate-950">{puttingAttempts.reduce((sum, attempt) => sum + attempt.strokes, 0)}</p></div></div></div>}
         </header>
 
-        {category === "bunker" ? <section className="mt-3 rounded-[26px] border border-slate-200 bg-white px-5 py-6 text-center shadow-[0_18px_42px_-30px_rgba(15,23,42,.45)]"><p className="text-[9px] font-black uppercase tracking-[.18em] text-slate-400">Uppgift</p><h1 className="mt-1 font-display text-[42px] leading-none text-slate-950">Bunkerslag</h1><p className="mt-2 text-sm font-semibold text-slate-500">Slå så nära flaggan som möjligt.</p></section> : <section className="mt-3 rounded-[26px] border border-slate-200 bg-white px-5 py-5 text-center shadow-[0_18px_42px_-30px_rgba(15,23,42,.45)]"><p className="text-[9px] font-black uppercase tracking-[.18em] text-slate-400">{category === "around-the-green" ? "Situation" : "Avstånd"}</p>{category === "around-the-green" ? <div className={`mt-1 flex items-center justify-center gap-2 whitespace-nowrap transition-opacity ${transitioning ? "opacity-35" : "opacity-100"}`}><span className="font-display text-[54px] leading-none text-slate-950">{formatDistance(distance)} m</span><span className="flex items-center gap-1 font-display text-[25px] leading-none"><span className="text-slate-500">• från</span><span className={chipLie === "Fairway" ? "text-emerald-500" : "text-emerald-900"}>{chipLie.toLowerCase()}</span></span></div> : <h1 className={`mt-1 font-display text-[58px] leading-none text-slate-950 transition-opacity ${transitioning ? "opacity-35" : "opacity-100"}`}>{formatDistance(distance)} m</h1>}{category === "around-the-green" ? <p className="mt-2 text-sm font-semibold text-slate-500">Slå så nära hålet som möjligt.</p> : null}</section>}
+        {category === "bunker" ? <section className="mt-3 rounded-[26px] border border-slate-200 bg-white px-5 py-6 text-center shadow-[0_18px_42px_-30px_rgba(15,23,42,.45)]"><p className="text-[9px] font-black uppercase tracking-[.18em] text-slate-400">Uppgift</p><h1 className="mt-1 font-display text-[42px] leading-none text-slate-950">Bunkerslag</h1><p className="mt-2 text-sm font-semibold text-slate-500">Slå så nära flaggan som möjligt.</p></section> : <section className="mt-3 rounded-[26px] border border-slate-200 bg-white px-5 py-5 text-center shadow-[0_18px_42px_-30px_rgba(15,23,42,.45)]"><p className="text-[9px] font-black uppercase tracking-[.18em] text-slate-400">{category === "around-the-green" ? "Situation" : "Avstånd från hål"}</p>{category === "around-the-green" ? <div className={`mt-1 flex items-center justify-center gap-2 whitespace-nowrap text-slate-600 transition-opacity ${transitioning ? "opacity-35" : "opacity-100"}`}><span className="font-display text-[46px] leading-none text-slate-950">{formatDistance(distance)} m</span><span className="font-display text-[33px] leading-none text-slate-500">• från {chipLie.toLowerCase()}</span></div> : <h1 className={`mt-1 font-display text-[58px] leading-none text-slate-950 transition-opacity ${transitioning ? "opacity-35" : "opacity-100"}`}>{formatDistance(distance)} m</h1>}{category === "around-the-green" ? <p className="mt-2 text-sm font-semibold text-slate-500">Slå så nära hålet som möjligt.</p> : null}</section>}
 
-        {category === "putting" ? <section className="mt-5"><div className="text-center"><p className="text-[10px] font-black uppercase tracking-[.16em] text-slate-400">Ditt resultat</p><h2 className="mt-1 font-display text-2xl text-slate-950">Antal puttar</h2></div><div className="mt-3 grid grid-cols-4 gap-2.5">{([1, 2, 3, 4] as const).map((strokes) => <button key={strokes} type="button" disabled={transitioning} onClick={() => registerPutting(strokes)} className="rounded-[20px] border border-blue-300 bg-blue-50 px-1 py-4 text-center shadow-sm transition hover:bg-blue-100 active:scale-[.96] active:bg-blue-200 disabled:opacity-40"><span className="block font-display text-3xl leading-none text-blue-800">{strokes}</span><span className="mt-1.5 block text-[9px] font-black uppercase tracking-[.08em] text-blue-500">{strokes === 1 ? "putt" : "puttar"}</span></button>)}</div></section> : category === "around-the-green" ? <section className="mt-5"><div className="text-center"><p className="text-[10px] font-black uppercase tracking-[.16em] text-slate-400">Ditt resultat</p><h2 className="mt-1 font-display text-2xl text-slate-950">Hur nära hålet?</h2></div><div className="mt-3 grid grid-cols-2 gap-2.5">{CHIP_POINT_ZONES.map((zone) => {
+        {category === "putting" ? <section className="mt-5"><div className="text-center"><p className="text-[10px] font-black uppercase tracking-[.16em] text-slate-400">Ditt resultat</p><h2 className="mt-1 font-display text-2xl text-slate-950">Antal puttar</h2></div><div className="mt-3 grid grid-cols-4 gap-2.5">{([1, 2, 3, 4] as const).map((strokes) => {
+          const visual = strokes === 1 ? "border-blue-800 bg-blue-800 text-white shadow-[0_10px_24px_-14px_rgba(30,64,175,.75)]" : strokes === 2 ? "border-blue-600 bg-blue-600 text-white" : strokes === 3 ? "border-blue-200 bg-blue-100 text-blue-950" : "border-blue-300 bg-white text-blue-950";
+          return <button key={strokes} type="button" disabled={transitioning} onClick={() => registerPutting(strokes)} className={`rounded-[20px] border px-1 py-4 text-center shadow-sm transition active:scale-[.96] disabled:opacity-40 ${visual}`}><span className="block font-display text-3xl leading-none">{strokes}</span><span className={`mt-1.5 block text-[9px] font-black uppercase tracking-[.08em] ${strokes <= 2 ? "text-blue-100" : "text-blue-600"}`}>{strokes === 1 ? "putt" : "puttar"}</span></button>;
+        })}</div></section> : category === "around-the-green" ? <section className="mt-5"><div className="text-center"><p className="text-[10px] font-black uppercase tracking-[.16em] text-slate-400">Ditt resultat</p><h2 className="mt-1 font-display text-2xl text-slate-950">Hur nära hålet?</h2></div><div className="mt-3 grid grid-cols-2 gap-2.5">{CHIP_POINT_ZONES.map((zone) => {
           const visualClass = zone.points === 5
             ? "col-span-2 min-h-[72px] border-blue-800 bg-gradient-to-r from-blue-800 to-blue-700 text-white shadow-[0_12px_28px_-18px_rgba(30,64,175,.65)]"
             : zone.points === 4
@@ -513,12 +552,12 @@ function PlayWithCoachPage() {
                   : zone.points === 1
                     ? "min-h-[66px] border-blue-200 bg-blue-50 text-blue-950"
                     : "col-span-2 min-h-[64px] border-blue-300 bg-white text-blue-950";
-          return <button key={zone.points} type="button" disabled={transitioning} onClick={() => registerShortGame(zone.points)} className={`rounded-[18px] border px-3 py-3 text-center font-display text-[20px] uppercase leading-tight shadow-sm transition active:scale-[.97] disabled:opacity-40 ${visualClass}`}>{zone.points === 5 ? <span className="flex items-center justify-center gap-2"><span aria-hidden="true" className="text-[22px]">⛳</span><span>{zone.label}</span></span> : zone.label}</button>;
-        })}</div></section> : <section className="mt-5"><div className="text-center"><p className="text-[10px] font-black uppercase tracking-[.16em] text-slate-400">Ditt resultat</p><h2 className="mt-1 font-display text-2xl text-slate-950">Hur nära hålet?</h2></div><div className="mt-3 grid grid-cols-2 gap-2.5">{BUNKER_POINT_ZONES.map((zone) => <button key={zone.points} type="button" disabled={transitioning} onClick={() => registerShortGame(zone.points)} className="min-h-[64px] rounded-[18px] border border-blue-300 bg-blue-50 px-3 py-3 text-center font-display text-[18px] leading-tight text-blue-800 shadow-sm transition hover:bg-blue-100 active:scale-[.97] active:bg-blue-200 disabled:opacity-40">{zone.label}</button>)}</div></section>}
+          return <button key={zone.points} type="button" disabled={transitioning} onClick={() => registerShortGame(zone.points)} className={`rounded-[18px] border px-3 py-3 text-center shadow-sm transition active:scale-[.97] disabled:opacity-40 ${visualClass}`}><span className="flex items-center justify-center gap-2"><span className="font-display text-[20px] uppercase leading-tight">{zone.points === 5 ? "⛳ " : ""}{zone.label}</span><span className={`text-[11px] font-black uppercase tracking-[.08em] ${zone.points >= 3 ? "opacity-80" : "text-blue-600"}`}>{zone.points} P</span></span></button>;
+        })}</div></section> : <section className="mt-5"><div className="text-center"><p className="text-[10px] font-black uppercase tracking-[.16em] text-slate-400">Ditt resultat</p><h2 className="mt-1 font-display text-2xl text-slate-950">Hur nära hålet?</h2></div><div className="mt-3 grid grid-cols-2 gap-2.5">{BUNKER_POINT_ZONES.map((zone) => <button key={zone.points} type="button" disabled={transitioning} onClick={() => registerShortGame(zone.points)} className="min-h-[64px] rounded-[18px] border border-blue-300 bg-blue-50 px-3 py-3 text-center text-blue-800 shadow-sm transition hover:bg-blue-100 active:scale-[.97] active:bg-blue-200 disabled:opacity-40"><span className="font-display text-[18px] leading-tight">{zone.label}</span><span className="ml-2 text-[10px] font-black uppercase text-blue-500">{zone.points} P</span></button>)}</div></section>}
 
         <button type="button" onClick={() => setConfirmEnd(true)} className="mt-5 w-full py-2 text-center text-sm font-semibold text-slate-400 transition hover:text-slate-500 active:text-slate-600">Avsluta träning</button>
 
-        {confetti ? <div className="pointer-events-none fixed inset-0 z-[170] overflow-hidden">{Array.from({ length: 52 }).map((_, index) => <span key={index} className="absolute top-[-10%] rounded-sm" style={{ left: `${2 + (index * 17) % 96}%`, width: `${5 + (index % 3) * 2}px`, height: `${10 + (index % 4) * 3}px`, backgroundColor: CONFETTI_COLORS[index % CONFETTI_COLORS.length], ["--cx" as string]: `${(index % 2 ? 1 : -1) * (18 + (index % 7) * 13)}px`, ["--cr" as string]: `${220 + (index % 9) * 70}deg`, animation: `coachConfetti ${1.2 + (index % 6) * .13}s ${(index % 11) * .035}s cubic-bezier(.16,.7,.2,1) both` }} />)}</div> : null}
+        {confetti ? <div className="pointer-events-none fixed inset-0 z-[170] overflow-hidden">{Array.from({ length: 62 }).map((_, index) => <span key={index} className="absolute top-[-10%] rounded-sm" style={{ left: `${2 + (index * 17) % 96}%`, width: `${5 + (index % 3) * 2}px`, height: `${10 + (index % 4) * 3}px`, backgroundColor: CONFETTI_COLORS[index % CONFETTI_COLORS.length], ["--cx" as string]: `${(index % 2 ? 1 : -1) * (18 + (index % 7) * 13)}px`, ["--cr" as string]: `${220 + (index % 9) * 70}deg`, animation: `coachConfetti ${1.2 + (index % 6) * .13}s ${(index % 11) * .035}s cubic-bezier(.16,.7,.2,1) both` }} />)}</div> : null}
 
         {confirmEnd ? <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-950/45 px-5 backdrop-blur-sm"><div className="w-full max-w-sm rounded-[28px] bg-white p-5 shadow-2xl"><button type="button" onClick={() => setConfirmEnd(false)} className="ml-auto flex h-9 w-9 items-center justify-center rounded-full bg-slate-100"><X className="h-4 w-4" /></button><p className="text-[9px] font-black uppercase tracking-[.18em] text-amber-600">En sista?</p><h2 className="mt-1 font-display text-3xl leading-none text-slate-950">Coach challenge</h2><p className="mt-3 text-sm leading-relaxed text-slate-500">{category === "putting" ? "En putt till. Tre meter. Håla den för att avsluta med en vinst." : category === "bunker" ? "Ett bunkerslag till. Slå så nära flaggan som möjligt och kom inom 1 meter för att avsluta med en vinst." : "Ett chip till från 12 meter. Inom 1 meter för att avsluta med en vinst."}</p><div className="mt-5 space-y-2.5"><button type="button" onClick={startFinalChallenge} className="w-full rounded-2xl bg-amber-400 py-3.5 font-display text-lg text-slate-950">Ta sista utmaningen</button><button type="button" onClick={() => setConfirmEnd(false)} className="w-full rounded-2xl bg-slate-950 py-3.5 text-sm font-black text-white">Fortsätt träna</button><button type="button" onClick={endSession} className="w-full rounded-2xl border border-slate-200 bg-white py-3.5 text-sm font-black text-slate-500">Avsluta ändå</button></div></div></div> : null}
       </> : null}
@@ -526,8 +565,8 @@ function PlayWithCoachPage() {
       {phase === "summary" ? <>
         <header className="flex items-center justify-between"><span className="h-10 w-10" /><div className="text-center"><p className="text-[10px] font-black uppercase tracking-[.16em] text-slate-400">Resultat</p><p className="text-sm font-black text-slate-950">{categoryLabel} med {coach.name}</p></div><span className="h-10 w-10" /></header>
         <section className="mt-8 text-center"><span className="mx-auto flex h-16 w-16 items-center justify-center text-5xl">{coach.emoji}</span><h1 className="mt-4 font-display text-4xl leading-none text-slate-950">Bra tränat.</h1><p className="mt-2 text-sm text-slate-500">{currentCount} slag registrerade</p></section>
-        {category === "putting" ? <section className="mt-6 grid grid-cols-3 gap-2.5"><div className="rounded-[22px] border border-slate-200 bg-white p-3 text-center"><p className="text-[9px] font-black uppercase text-slate-400">Snitt</p><p className="mt-1 font-display text-2xl">{puttingSummary.avg}</p></div><div className="rounded-[22px] border border-slate-200 bg-white p-3 text-center"><p className="text-[9px] font-black uppercase text-slate-400">1-putt</p><p className="mt-1 font-display text-2xl">{puttingSummary.onePuttPct}%</p></div><div className="rounded-[22px] border border-slate-200 bg-white p-3 text-center"><p className="text-[9px] font-black uppercase text-slate-400">3-putt+</p><p className="mt-1 font-display text-2xl">{puttingSummary.threePuttPct}%</p></div></section> : <section className="mt-6 grid grid-cols-3 gap-2.5"><div className="rounded-[22px] border border-slate-200 bg-white p-3 text-center"><p className="text-[9px] font-black uppercase text-slate-400">Snitt</p><p className="mt-1 font-display text-2xl">{shortGameAverage}</p></div><div className="rounded-[22px] border border-slate-200 bg-white p-3 text-center"><p className="text-[9px] font-black uppercase text-slate-400">Inom 2 m</p><p className="mt-1 font-display text-2xl">{shortGameInsideTwo}%</p></div><div className="rounded-[22px] border border-slate-200 bg-white p-3 text-center"><p className="text-[9px] font-black uppercase text-slate-400">Sänkta</p><p className="mt-1 font-display text-2xl">{shortGameHoled}</p></div></section>}
-        <section className="mt-5"><SpeechBubble avatar={coach.emoji} name={coach.name} text={category === "putting" ? (puttingSummary.threePuttPct >= 25 ? "Vi behöver få ner treputtarna. Nästa pass lägger vi mer vikt på fartkontroll från längre håll." : "Stabilt pass. Nästa gång bygger vi vidare på samma rutin och ser om streaksen blir längre.") : shortGameInsideTwo >= 60 ? "Bra kontroll runt målet. Nästa pass kan vi höja svårigheten lite." : "Nästa pass vill jag se fler bollar inom två meter. Landningspunkten blir vårt huvudfokus."} /></section>
+        {category === "putting" ? <section className="mt-6 grid grid-cols-3 gap-2.5"><div className="rounded-[22px] border border-slate-200 bg-white p-3 text-center"><p className="text-[9px] font-black uppercase text-slate-400">Snitt</p><p className="mt-1 font-display text-2xl">{puttingSummary.avg}</p></div><div className="rounded-[22px] border border-slate-200 bg-white p-3 text-center"><p className="text-[9px] font-black uppercase text-slate-400">1-putt</p><p className="mt-1 font-display text-2xl">{puttingSummary.onePuttPct}%</p></div><div className="rounded-[22px] border border-slate-200 bg-white p-3 text-center"><p className="text-[9px] font-black uppercase text-slate-400">3-putt+</p><p className="mt-1 font-display text-2xl">{puttingSummary.threePuttPct}%</p></div></section> : <section className="mt-6 grid grid-cols-3 gap-2.5"><div className="rounded-[22px] border border-slate-200 bg-white p-3 text-center"><p className="text-[9px] font-black uppercase text-slate-400">Snitt / slag</p><p className="mt-1 font-display text-2xl">{shortGameAverage}</p></div><div className="rounded-[22px] border border-slate-200 bg-white p-3 text-center"><p className="text-[9px] font-black uppercase text-slate-400">Total</p><p className="mt-1 font-display text-2xl">{shortTotal} P</p></div><div className="rounded-[22px] border border-slate-200 bg-white p-3 text-center"><p className="text-[9px] font-black uppercase text-slate-400">Inom 2 m</p><p className="mt-1 font-display text-2xl">{shortGameInsideTwo}%</p></div></section>}
+        <section className="mt-5"><SpeechBubble avatar={coach.emoji} name={coach.name} text={category === "putting" ? (puttingSummary.threePuttPct >= 25 ? "Vi behöver få ner treputtarna. Nästa pass lägger vi mer vikt på fartkontroll från längre håll." : "Stabilt pass. Nästa gång bygger vi vidare på samma rutin.") : shortGameHoled > 0 ? "Bra pass. Du fick dessutom i en boll — den bonusen tar vi varje gång." : shortGameInsideTwo >= 60 ? "Bra kontroll runt målet. Nästa pass kan vi höja svårigheten lite." : "Nästa pass vill jag se fler bollar inom två meter. Landningspunkten blir vårt huvudfokus."} /></section>
         <section className="mt-6 space-y-2.5"><button type="button" onClick={startGame} className="w-full rounded-[20px] bg-emerald-600 py-4 font-display text-xl text-white">Träna igen</button><button type="button" onClick={() => { setPhase("setup"); setCategory(null); }} className="w-full rounded-[20px] border border-slate-200 bg-white py-4 font-display text-xl text-slate-950">Byt kategori</button><Link to="/tester" className="flex w-full items-center justify-center rounded-[20px] border border-slate-200 bg-white py-4 font-display text-xl text-slate-950">Klar</Link></section>
       </> : null}
     </main>
