@@ -42,6 +42,7 @@ type QuickStart = {
 };
 
 const CLOUD_FRIEND_COUNT_KEY = "sg4-home-cloud-friend-count-v1";
+const HOME_SHOT_COUNTER_KEY = "sg4-home-shot-counter-v1";
 
 function loadHomeData(): HomeData {
   const real = loadRealHandicap();
@@ -72,6 +73,20 @@ function loadTotalRegisteredShots() {
   return approach + driving + shortGame + bunker + shortPutting + lagPutting + speed;
 }
 
+function loadPreviousShotCount(current: number) {
+  if (typeof window === "undefined") return current;
+  const raw = window.sessionStorage.getItem(HOME_SHOT_COUNTER_KEY);
+  if (raw === null) return current;
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value < 0 || value > current) return current;
+  return Math.floor(value);
+}
+
+function savePreviousShotCount(value: number) {
+  if (typeof window === "undefined") return;
+  window.sessionStorage.setItem(HOME_SHOT_COUNTER_KEY, String(Math.max(0, Math.floor(value))));
+}
+
 function initials(name: string) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join("");
 }
@@ -99,6 +114,38 @@ function SimpleCard({ label, title, tone }: { label: string; title: string; tone
         <h3 className="font-display text-[27px] leading-[.95] text-white">{title}</h3>
       </div>
     </div>
+  );
+}
+
+function RollingDigit({ digit, active, accent }: { digit: number; active: boolean; accent: boolean }) {
+  return (
+    <span className={`relative h-[29px] w-[18px] overflow-hidden rounded-[4px] border border-[#0d5f43]/20 bg-[#f2efdf]/88 shadow-[inset_0_1px_0_rgba(255,255,255,.72),inset_0_-1px_0_rgba(17,72,52,.08)] ${active ? "ring-1 ring-[#c89f3b]/30" : ""}`}>
+      <span
+        className="absolute left-0 top-0 flex w-full flex-col transition-transform duration-150 [transition-timing-function:cubic-bezier(.2,.8,.2,1)]"
+        style={{ transform: `translateY(-${digit * 29}px)` }}
+      >
+        {Array.from({ length: 10 }, (_, value) => (
+          <span key={value} className={`flex h-[29px] w-full shrink-0 items-center justify-center font-mono text-[20px] font-black leading-none ${accent && active ? "text-[#b4232f]" : "text-[#0b6b4c]"}`}>
+            {value}
+          </span>
+        ))}
+      </span>
+      <span className="pointer-events-none absolute inset-x-0 top-1/2 h-px bg-[#0d5f43]/10" />
+    </span>
+  );
+}
+
+function HeritageShotCounter({ value, active }: { value: number; active: boolean }) {
+  const text = value.toLocaleString("sv-SE");
+  const lastDigitIndex = text.split("").reduce((last, char, index) => (/\d/.test(char) ? index : last), -1);
+
+  return (
+    <span className="flex items-center justify-center gap-[2px]" aria-label={`${text} registrerade slag`}>
+      {text.split("").map((char, index) => {
+        if (!/\d/.test(char)) return <span key={`${char}-${index}`} className="w-[4px]" />;
+        return <RollingDigit key={index} digit={Number(char)} active={active} accent={index === lastDigitIndex} />;
+      })}
+    </span>
   );
 }
 
@@ -152,6 +199,13 @@ function Home() {
   const [friends, setFriends] = useState<Friend[]>(() => loadFriends());
   const [cloudFriendCount, setCloudFriendCount] = useState(() => loadCachedCloudFriendCount());
   const [navVisible, setNavVisible] = useState(true);
+  const initialShotCountRef = useRef(loadTotalRegisteredShots());
+  const [totalShots, setTotalShots] = useState(initialShotCountRef.current);
+  const [displayedShots, setDisplayedShots] = useState(() => loadPreviousShotCount(initialShotCountRef.current));
+  const [shotCounterActive, setShotCounterActive] = useState(false);
+  const displayedShotsRef = useRef(displayedShots);
+  const shotAnimationRef = useRef<number | null>(null);
+  const shotGlowTimeoutRef = useRef<number | null>(null);
   const lastScrollYRef = useRef(0);
   const directionStartYRef = useRef(0);
   const scrollDirectionRef = useRef<"up" | "down" | null>(null);
@@ -203,6 +257,7 @@ function Home() {
   useEffect(() => {
     setData(loadHomeData());
     setFriends(loadFriends());
+    setTotalShots(loadTotalRegisteredShots());
     if (user) {
       void pushPlayerSnapshot();
       void listFriendships().then((result) => {
@@ -212,6 +267,67 @@ function Home() {
       });
     }
   }, [user, sessionsVersion]);
+
+  useEffect(() => {
+    const refreshShots = () => setTotalShots(loadTotalRegisteredShots());
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") refreshShots();
+    };
+
+    window.addEventListener("focus", refreshShots);
+    window.addEventListener("pageshow", refreshShots);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("focus", refreshShots);
+      window.removeEventListener("pageshow", refreshShots);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (shotAnimationRef.current !== null) cancelAnimationFrame(shotAnimationRef.current);
+    if (shotGlowTimeoutRef.current !== null) window.clearTimeout(shotGlowTimeoutRef.current);
+
+    const start = displayedShotsRef.current;
+    if (totalShots <= start) {
+      displayedShotsRef.current = totalShots;
+      setDisplayedShots(totalShots);
+      setShotCounterActive(false);
+      savePreviousShotCount(totalShots);
+      return;
+    }
+
+    const delta = totalShots - start;
+    const duration = Math.min(1350, Math.max(520, 430 + delta * 28));
+    const startedAt = performance.now();
+    setShotCounterActive(true);
+
+    const tick = (now: number) => {
+      const progress = Math.min(1, (now - startedAt) / duration);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const next = Math.min(totalShots, start + Math.floor(delta * eased));
+      if (next !== displayedShotsRef.current) {
+        displayedShotsRef.current = next;
+        setDisplayedShots(next);
+      }
+
+      if (progress < 1) {
+        shotAnimationRef.current = requestAnimationFrame(tick);
+        return;
+      }
+
+      displayedShotsRef.current = totalShots;
+      setDisplayedShots(totalShots);
+      savePreviousShotCount(totalShots);
+      shotAnimationRef.current = null;
+      shotGlowTimeoutRef.current = window.setTimeout(() => setShotCounterActive(false), 520);
+    };
+
+    shotAnimationRef.current = requestAnimationFrame(tick);
+    return () => {
+      if (shotAnimationRef.current !== null) cancelAnimationFrame(shotAnimationRef.current);
+    };
+  }, [totalShots]);
 
   const quickStart = useMemo<QuickStart>(() => {
     const noBaseline = data.real === null && data.cats.every((category) => category.count === 0);
@@ -233,7 +349,6 @@ function Home() {
   const totalFriends = friends.length + cloudFriendCount;
   const previewFriends = friends.slice(0, 3);
   const hcpValue = hcpLabel(data.real ?? data.estimated ?? 0);
-  const totalShots = useMemo(() => loadTotalRegisteredShots(), [sessionsVersion]);
   const knownCategories = data.cats.filter((category) => category.count > 0);
   const strongest = knownCategories.length ? [...knownCategories].sort((a, b) => a.handicap - b.handicap)[0] : undefined;
 
@@ -273,39 +388,41 @@ function Home() {
         <section className="grid grid-cols-[1.6fr_1fr] gap-2">
           <Link
             to="/vanner"
-            className="relative flex h-[82px] items-center overflow-hidden rounded-[25px] border border-white/55 bg-gradient-to-br from-white/70 via-white/28 to-emerald-50/22 px-3.5 shadow-[inset_0_1.5px_0_rgba(255,255,255,.96),inset_0_-1px_0_rgba(255,255,255,.3),0_10px_24px_-18px_rgba(15,55,40,.45)] backdrop-blur-[28px] backdrop-saturate-150"
+            className="relative flex h-[78px] items-center overflow-hidden rounded-[24px] border border-white/30 bg-[rgba(176,183,190,.32)] px-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,.58),inset_0_-1px_0_rgba(20,48,38,.08),0_10px_26px_-20px_rgba(18,40,32,.55)] backdrop-blur-[28px] backdrop-saturate-150"
           >
-            <span className="pointer-events-none absolute inset-[1px] rounded-[24px] border border-white/25" />
-            <span className="pointer-events-none absolute left-5 right-5 top-0 h-[2px] bg-gradient-to-r from-transparent via-white/90 to-transparent blur-[.2px]" />
-            <div className="relative z-10 flex w-full items-center justify-center">
+            <span className="pointer-events-none absolute inset-[1px] rounded-[23px] border border-white/16" />
+            <span className="pointer-events-none absolute left-5 right-5 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent" />
+            <div className="relative z-10 flex w-full items-center justify-start">
               <div className="flex shrink-0 -space-x-2.5">
                 {previewFriends.length ? previewFriends.map((friend, index) => (
-                  <span key={friend.id} className={`flex h-8 w-8 items-center justify-center rounded-full border-2 border-white/95 text-[8px] font-black text-foreground shadow-[0_2px_8px_rgba(15,23,42,.12)] ${index % 3 === 0 ? "bg-emerald-100" : index % 3 === 1 ? "bg-sky-100" : "bg-amber-100"}`}>
+                  <span key={friend.id} className={`flex h-8 w-8 items-center justify-center rounded-full border-2 border-white/80 text-[8px] font-black text-foreground shadow-[0_2px_8px_rgba(15,23,42,.12)] ${index % 3 === 0 ? "bg-emerald-100/90" : index % 3 === 1 ? "bg-sky-100/90" : "bg-amber-100/90"}`}>
                     {initials(friend.name)}
                   </span>
                 )) : (
                   <>
-                    <span className="h-8 w-8 rounded-full border-2 border-white/95 bg-emerald-100 shadow-sm" />
-                    <span className="h-8 w-8 rounded-full border-2 border-white/95 bg-sky-100 shadow-sm" />
-                    <span className="h-8 w-8 rounded-full border-2 border-white/95 bg-amber-100 shadow-sm" />
+                    <span className="h-8 w-8 rounded-full border-2 border-white/80 bg-emerald-100/90 shadow-sm" />
+                    <span className="h-8 w-8 rounded-full border-2 border-white/80 bg-sky-100/90 shadow-sm" />
+                    <span className="h-8 w-8 rounded-full border-2 border-white/80 bg-amber-100/90 shadow-sm" />
                   </>
                 )}
               </div>
               <div className="ml-2.5 flex min-w-0 items-baseline gap-1.5">
-                <span className="text-[28px] font-black leading-none tabular-nums text-emerald-700">{totalFriends}</span>
-                <span className="truncate text-[14px] font-extrabold text-foreground/82">Vänner</span>
+                <span className="text-[28px] font-black leading-none tabular-nums text-emerald-800">{totalFriends}</span>
+                <span className="truncate text-[14px] font-extrabold text-foreground/80">Vänner</span>
               </div>
             </div>
           </Link>
 
           <Link
             to="/utveckling"
-            className="relative h-[82px] overflow-hidden rounded-[25px] border border-white/55 bg-gradient-to-br from-white/70 via-white/28 to-emerald-50/22 px-2 text-center shadow-[inset_0_1.5px_0_rgba(255,255,255,.96),inset_0_-1px_0_rgba(255,255,255,.3),0_10px_24px_-18px_rgba(15,55,40,.45)] backdrop-blur-[28px] backdrop-saturate-150"
+            className={`relative flex h-[78px] items-center justify-center overflow-hidden rounded-[24px] border px-2 text-center backdrop-blur-[28px] backdrop-saturate-150 transition-[background-color,border-color,box-shadow] duration-500 ${shotCounterActive ? "border-[#d6bc68]/70 bg-[rgba(205,207,178,.48)] shadow-[inset_0_1px_0_rgba(255,255,255,.7),0_0_0_1px_rgba(201,167,65,.18),0_0_28px_rgba(72,133,84,.30)]" : "border-white/30 bg-[rgba(176,183,190,.32)] shadow-[inset_0_1px_0_rgba(255,255,255,.58),inset_0_-1px_0_rgba(20,48,38,.08),0_10px_26px_-20px_rgba(18,40,32,.55)]"}`}
           >
-            <span className="pointer-events-none absolute inset-[1px] rounded-[24px] border border-white/25" />
-            <span className="pointer-events-none absolute left-4 right-4 top-0 h-[2px] bg-gradient-to-r from-transparent via-white/90 to-transparent blur-[.2px]" />
-            <span className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap text-[28px] font-black leading-none tabular-nums text-emerald-700">{totalShots.toLocaleString("sv-SE")}</span>
-            <span className="absolute bottom-[6px] left-2 right-2 z-10 text-[9px] font-bold leading-tight text-foreground/62">Registrerade slag</span>
+            <span className="pointer-events-none absolute inset-[1px] rounded-[23px] border border-white/16" />
+            <span className={`pointer-events-none absolute left-4 right-4 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent transition-opacity duration-300 ${shotCounterActive ? "opacity-100" : "opacity-65"}`} />
+            <div className="relative z-10 flex flex-col items-center justify-center">
+              <HeritageShotCounter value={displayedShots} active={shotCounterActive} />
+              <span className="mt-1 text-[9px] font-bold uppercase tracking-[.08em] text-[#254b3c]/72">Registrerade slag</span>
+            </div>
           </Link>
         </section>
 
