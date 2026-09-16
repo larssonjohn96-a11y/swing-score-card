@@ -144,11 +144,35 @@ function Home() {
   const [data, setData] = useState<HomeData | null>(null);
   const [friends, setFriends] = useState<Friend[]>([]);
   const [cloudFriendCount, setCloudFriendCount] = useState(0);
+  const [headerVisible, setHeaderVisible] = useState(true);
+  const lastScrollYRef = useRef(0);
   const sessionsVersion = useSessionsVersion();
   const profile = loadCardProfile();
 
   useEffect(() => {
     recordRecommendationImpressions(["play-friend", "play-bot", "play-cup", "hcp-test", "practice"]);
+  }, []);
+
+  useEffect(() => {
+    lastScrollYRef.current = Math.max(0, window.scrollY);
+
+    const onScroll = () => {
+      const currentY = Math.max(0, window.scrollY);
+      const delta = currentY - lastScrollYRef.current;
+
+      if (currentY <= 20) {
+        setHeaderVisible(true);
+      } else if (delta > 2) {
+        setHeaderVisible(false);
+      } else if (delta < -2) {
+        setHeaderVisible(true);
+      }
+
+      lastScrollYRef.current = currentY;
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   useEffect(() => {
@@ -192,7 +216,7 @@ function Home() {
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-md bg-background pb-28">
-      <header className="sticky top-0 z-40 border-b border-border/70 bg-background/88 px-5 pt-[max(12px,env(safe-area-inset-top))] backdrop-blur-2xl">
+      <header className={`sticky top-0 z-40 border-b border-border/70 bg-background/88 px-5 pt-[max(12px,env(safe-area-inset-top))] backdrop-blur-2xl transition-transform duration-300 ease-out will-change-transform ${headerVisible ? "translate-y-0" : "-translate-y-full"}`}>
         <div className="flex items-center justify-between pb-3">
           <Link to="/konto" className="flex min-w-0 items-center gap-3">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-muted">
