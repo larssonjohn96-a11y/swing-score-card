@@ -56,12 +56,7 @@ function TrainAndTestPage() {
         <span className="h-10 w-10" />
       </header>
 
-      <section className="mt-7 text-center">
-        <p className="text-[10px] font-black uppercase tracking-[.2em] text-muted-foreground">Train &amp; Test</p>
-        <h1 className="mt-1 font-display text-[40px] leading-none">Välj läge</h1>
-      </section>
-
-      <section className="mt-6">
+      <section className="mt-7">
         <SpeechBubble text="Välj om du vill träna med coach eller göra ett handicaptest. Practice Mode är ditt träningsflöde. Handicap Test ger dig ett HCP-resultat." />
       </section>
 
