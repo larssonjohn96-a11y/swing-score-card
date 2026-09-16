@@ -30,10 +30,33 @@ type ChipLie = "Fairway" | "Ruff";
 type ShortAttempt = { distance?: number; points: number; lie?: ChipLie };
 type IntroState = "coach" | "3" | "2" | "1" | "go" | "done";
 type ShortGamePb = { average: number; total: number };
+type PuttingFocus = "start-line" | "speed" | "green-reading" | "pressure";
+type PuttingChallenge = {
+  title: string;
+  detail: string;
+  category: "short" | "long" | "reading" | "pressure" | "skill";
+  distance: number;
+  remaining: number;
+  successes: number;
+  target: number;
+  rule: "make" | "max-two";
+};
+
+type PuttingCoachLog = {
+  at: number;
+  distance: number;
+  strokes: number;
+  cue: string | null;
+  focus: PuttingFocus | null;
+  challenge: string | null;
+  makeStreak: number;
+  avoidanceStreak: number;
+};
 
 const DEFAULT_COACH_ID: CoachId = "alma";
 const CHIP_LIE_STORAGE_KEY = "sg4-coach-chip-lie-v1";
 const SHORT_GAME_PB_PREFIX = "sg4-practice-pb-v1";
+const PUTTING_COACH_LOG_KEY = "sg4-putting-coach-log-v1";
 
 const CATEGORIES: Array<{ id: Category; title: string; available: boolean }> = [
   { id: "putting", title: "Puttning", available: true },
@@ -58,6 +81,52 @@ const BUNKER_POINT_ZONES = [
   { points: 1, label: "På green" },
   { points: 0, label: "Missad green" },
 ] as const;
+
+const PUTTING_TIPS: Record<string, Array<{ text: string; focus: PuttingFocus }>> = {
+  short: [
+    { text: "Sikta noga. Starta bollen på rätt linje.", focus: "start-line" },
+    { text: "Bestäm linjen och slå.", focus: "start-line" },
+    { text: "Titta inte upp för tidigt.", focus: "start-line" },
+    { text: "Kort stroke. Bestämd träff.", focus: "start-line" },
+    { text: "Lita på linjen.", focus: "pressure" },
+  ],
+  make: [
+    { text: "Bestäm farten först.", focus: "speed" },
+    { text: "Välj en tydlig startlinje.", focus: "start-line" },
+    { text: "Läs breaket och lita på det.", focus: "green-reading" },
+    { text: "Commit till linje och fart.", focus: "pressure" },
+    { text: "Samma rutin som alltid.", focus: "pressure" },
+  ],
+  transition: [
+    { text: "Fart först, linje sen.", focus: "speed" },
+    { text: "Läs sista metern extra noga.", focus: "green-reading" },
+    { text: "Låt bollen dö vid hålet.", focus: "speed" },
+    { text: "Samma tempo. Längre stroke.", focus: "speed" },
+    { text: "Lämna en enkel retur.", focus: "speed" },
+  ],
+  long: [
+    { text: "Här vinner du med fartkontroll.", focus: "speed" },
+    { text: "Prioritera tvåputt.", focus: "speed" },
+    { text: "Lämna en enkel nästa putt.", focus: "speed" },
+    { text: "Tänk målzon runt hålet.", focus: "speed" },
+    { text: "Läs lutningen innan du slår.", focus: "green-reading" },
+  ],
+  veryLong: [
+    { text: "Här är vi nöjda med tvåputt. Sänkning är bonus.", focus: "speed" },
+    { text: "Tänk zon, inte hål.", focus: "speed" },
+    { text: "Få första putten nära.", focus: "speed" },
+    { text: "Kontrollera farten, inte hålet.", focus: "speed" },
+    { text: "Läs uppför eller nedför först.", focus: "green-reading" },
+  ],
+};
+
+const PRESSURE_CUES = [
+  "1,5 meter. Du vet vad som krävs.",
+  "Commit. Ingen tvekan.",
+  "Föreställ dig att den här är för att vinna en Major.",
+  "Samma rutin som alltid.",
+  "En putt. Ett beslut.",
+];
 
 const CONFETTI_COLORS = ["#2563eb", "#f43f5e", "#f59e0b", "#10b981", "#8b5cf6", "#06b6d4", "#ec4899"];
 
@@ -84,6 +153,35 @@ function consecutiveFromEnd<T>(items: T[], predicate: (item: T) => boolean) {
 
 function shortGameQualityStreak(attempts: ShortAttempt[]) {
   return consecutiveFromEnd(attempts, (attempt) => attempt.points >= 3);
+}
+
+function puttingMakeStreak(attempts: CoachPuttingAttempt[]) {
+  const eligible = attempts.filter((attempt) => attempt.distance <= 3);
+  return consecutiveFromEnd(eligible, (attempt) => attempt.strokes === 1);
+}
+
+function puttingAvoidanceStreak(attempts: CoachPuttingAttempt[]) {
+  const eligible = attempts.filter((attempt) => attempt.distance > 4);
+  return consecutiveFromEnd(eligible, (attempt) => attempt.strokes <= 2);
+}
+
+function puttingBand(distance: number) {
+  if (distance <= 1.5) return "short";
+  if (distance <= 3) return "make";
+  if (distance <= 7) return "transition";
+  if (distance <= 15) return "long";
+  return "veryLong";
+}
+
+function appendPuttingCoachLog(entry: PuttingCoachLog) {
+  if (typeof window === "undefined") return;
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(PUTTING_COACH_LOG_KEY) ?? "[]") as PuttingCoachLog[];
+    const next = [...parsed, entry].slice(-300);
+    window.localStorage.setItem(PUTTING_COACH_LOG_KEY, JSON.stringify(next));
+  } catch {
+    window.localStorage.setItem(PUTTING_COACH_LOG_KEY, JSON.stringify([entry]));
+  }
 }
 
 function nextChipDistance(previous?: number) {
@@ -135,9 +233,9 @@ function saveShortGamePb(category: Category, attempts: ShortAttempt[], previous:
 }
 
 function positiveLongPuttComment(distance: number) {
-  if (distance >= 9) return "Vilken putt. Från den här längden är en sänkning ren bonus även på väldigt hög nivå.";
-  if (distance >= 6) return "Riktigt starkt. Det där är en putt som bra spelare oftare missar än sänker.";
-  return "Snyggt. Fyra meter plus är en riktig bonusputt.";
+  if (distance >= 9) return "Starkt. Sänkning från den här längden är bonus.";
+  if (distance >= 6) return "Riktigt bra. Bra fart och commitment.";
+  return "Snyggt. Den tog du.";
 }
 
 function poorPatternComment(category: Category) {
@@ -176,12 +274,20 @@ function PlayWithCoachPage() {
   const [shortAttempts, setShortAttempts] = useState<ShortAttempt[]>([]);
   const [coachText, setCoachText] = useState("Välj vad du vill träna. Jag styr variationen och säger till när något är värt att justera.");
   const [coachVisible, setCoachVisible] = useState(false);
+  const [displayedCoachText, setDisplayedCoachText] = useState("");
+  const [sessionFocus, setSessionFocus] = useState<string | null>(null);
+  const [puttingChallenge, setPuttingChallenge] = useState<PuttingChallenge | null>(null);
   const [introState, setIntroState] = useState<IntroState>("done");
   const [shortGamePb, setShortGamePb] = useState<ShortGamePb | null>(null);
   const [pbCoachShown, setPbCoachShown] = useState(false);
   const coachTimerRef = useRef<number | null>(null);
   const introTimerRefs = useRef<number[]>([]);
   const poorCoachAtRef = useRef(0);
+  const negativePuttingCoachAtRef = useRef(0);
+  const lastPuttingTipAtRef = useRef(-10);
+  const lastChallengeAtRef = useRef(-10);
+  const recentPuttingTipsRef = useRef<string[]>([]);
+  const activePuttingCueRef = useRef<{ text: string; focus: PuttingFocus } | null>(null);
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
   const [pressure, setPressure] = useState<PressureChallenge | null>(null);
@@ -213,9 +319,29 @@ function PlayWithCoachPage() {
   const shortTotal = useMemo(() => shortAttempts.reduce((sum, attempt) => sum + attempt.points, 0), [shortAttempts]);
   const shortAverage = shortAttempts.length ? shortTotal / shortAttempts.length : 0;
   const shortStreak = useMemo(() => shortGameQualityStreak(shortAttempts), [shortAttempts]);
+  const makeStreak = useMemo(() => puttingMakeStreak(puttingAttempts), [puttingAttempts]);
+  const avoidanceStreak = useMemo(() => puttingAvoidanceStreak(puttingAttempts), [puttingAttempts]);
   const aboveAveragePb = Boolean(shortGamePb && shortAttempts.length >= 3 && shortAverage > shortGamePb.average);
 
   const categoryLabel = category === "around-the-green" ? "Chippning" : category === "bunker" ? "Bunker" : "Puttning";
+  const passiveCoachText = sessionFocus ? `Dagens fokus: ${sessionFocus}` : "Alma följer ditt pass.";
+  const coachBoxText = puttingChallenge
+    ? `Coach Challenge · ${puttingChallenge.title} · ${puttingChallenge.remaining} kvar`
+    : coachVisible
+      ? coachText
+      : passiveCoachText;
+
+  useEffect(() => {
+    if (category !== "putting" || phase !== "play" || introState !== "done") return;
+    setDisplayedCoachText("");
+    let index = 0;
+    const timer = window.setInterval(() => {
+      index += 1;
+      setDisplayedCoachText(coachBoxText.slice(0, index));
+      if (index >= coachBoxText.length) window.clearInterval(timer);
+    }, 28);
+    return () => window.clearInterval(timer);
+  }, [coachBoxText, category, phase, introState]);
 
   function clearIntroTimers() {
     introTimerRefs.current.forEach((timer) => window.clearTimeout(timer));
@@ -250,6 +376,85 @@ function PlayWithCoachPage() {
     startGame();
   }
 
+  function recentThreePutts(attempts: CoachPuttingAttempt[]) {
+    return attempts.slice(-5).filter((attempt) => attempt.distance >= 4 && attempt.strokes >= 3).length;
+  }
+
+  function recentShortMisses(attempts: CoachPuttingAttempt[]) {
+    return attempts.slice(-6).filter((attempt) => attempt.distance <= 3 && attempt.strokes > 1).length;
+  }
+
+  function deriveSessionFocus(attempts: CoachPuttingAttempt[]) {
+    if (attempts.length < 6) return null;
+    const shortMisses = recentShortMisses(attempts);
+    const longThreePutts = recentThreePutts(attempts);
+    if (longThreePutts >= 2) return "fartkontroll på längre puttar";
+    if (shortMisses >= 3) return "startlinje på korta puttar";
+    const long = attempts.filter((attempt) => attempt.distance >= 8);
+    if (long.length >= 3 && long.filter((attempt) => attempt.strokes >= 3).length >= 1) return "fartkontroll från 8–15 m";
+    return null;
+  }
+
+  function choosePuttingTip(nextDistance: number, attempts: CoachPuttingAttempt[]) {
+    const sequence = attempts.length;
+    if (sequence - lastPuttingTipAtRef.current < 2) return null;
+
+    const shortMisses = recentShortMisses(attempts);
+    const longThreePutts = recentThreePutts(attempts);
+    let chance = nextDistance <= 1.5 ? 0.42 : nextDistance <= 3 ? 0.34 : nextDistance <= 7 ? 0.28 : nextDistance <= 15 ? 0.4 : 0.5;
+    if ((nextDistance <= 3 && shortMisses >= 2) || (nextDistance >= 7 && longThreePutts >= 2)) chance += 0.22;
+
+    if (Math.random() > chance) return null;
+
+    if (Math.random() < 0.08 && sequence >= 3) {
+      const text = PRESSURE_CUES[Math.floor(Math.random() * PRESSURE_CUES.length)];
+      return { text, focus: "pressure" as PuttingFocus };
+    }
+
+    const band = puttingBand(nextDistance);
+    let pool = PUTTING_TIPS[band];
+    if (nextDistance <= 3 && shortMisses >= 2) pool = pool.filter((tip) => tip.focus === "start-line" || tip.focus === "pressure");
+    if (nextDistance >= 7 && longThreePutts >= 2) pool = pool.filter((tip) => tip.focus === "speed");
+    if (!pool.length) pool = PUTTING_TIPS[band];
+
+    const recent = recentPuttingTipsRef.current;
+    const candidates = pool.filter((tip) => !recent.includes(tip.text));
+    const selectedPool = candidates.length ? candidates : pool;
+    return selectedPool[Math.floor(Math.random() * selectedPool.length)];
+  }
+
+  function showPuttingPreShotCue(nextDistance: number, attempts: CoachPuttingAttempt[]) {
+    const cue = choosePuttingTip(nextDistance, attempts);
+    activePuttingCueRef.current = cue;
+    if (!cue) return;
+    lastPuttingTipAtRef.current = attempts.length;
+    recentPuttingTipsRef.current = [...recentPuttingTipsRef.current, cue.text].slice(-4);
+    showCoach(cue.text, 3600);
+  }
+
+  function maybeStartPuttingChallenge(attempts: CoachPuttingAttempt[]) {
+    if (puttingChallenge || attempts.length < 5 || attempts.length - lastChallengeAtRef.current < 4) return null;
+    const shouldStart = Math.random() < Math.min(0.42, 0.16 + Math.max(0, attempts.length - lastChallengeAtRef.current - 4) * 0.06);
+    if (!shouldStart) return null;
+
+    const shortMisses = recentShortMisses(attempts);
+    const longThreePutts = recentThreePutts(attempts);
+    let challenge: PuttingChallenge;
+    if (shortMisses >= 2) {
+      challenge = { title: "2 av 3", detail: "Sänk två av tre från 1,5 m.", category: "short", distance: 1.5, remaining: 3, successes: 0, target: 2, rule: "make" };
+    } else if (longThreePutts >= 2) {
+      challenge = { title: "Stoppa treputten", detail: "Tre puttar från 10 m. Ingen treputt.", category: "long", distance: 10, remaining: 3, successes: 0, target: 3, rule: "max-two" };
+    } else if (Math.random() < 0.65) {
+      challenge = { title: "Major-putten", detail: "2 m. Föreställ dig att den är för vinsten.", category: "pressure", distance: 2, remaining: 1, successes: 0, target: 1, rule: "make" };
+    } else {
+      challenge = { title: "Lag zone", detail: "Två puttar från 12 m. Max två puttar på båda.", category: "reading", distance: 12, remaining: 2, successes: 0, target: 2, rule: "max-two" };
+    }
+    lastChallengeAtRef.current = attempts.length;
+    setPuttingChallenge(challenge);
+    showCoach(`Coach Challenge: ${challenge.detail}`, 4200);
+    return challenge;
+  }
+
   function startGame() {
     if (!category || !["putting", "around-the-green", "bunker"].includes(category)) return;
     const firstDistance = category === "putting" ? nextCoachPuttingDistance() : category === "around-the-green" ? nextChipDistance() : 0;
@@ -264,6 +469,14 @@ function PlayWithCoachPage() {
     if (category === "around-the-green") setChipLie(nextChipLie(chipLieOption));
     setShortGamePb(readShortGamePb(category));
     setPbCoachShown(false);
+    setSessionFocus(null);
+    setPuttingChallenge(null);
+    setDisplayedCoachText("");
+    activePuttingCueRef.current = null;
+    lastPuttingTipAtRef.current = -10;
+    lastChallengeAtRef.current = -10;
+    negativePuttingCoachAtRef.current = 0;
+    recentPuttingTipsRef.current = [];
     poorCoachAtRef.current = 0;
     setPressure(null);
     setConfetti(false);
@@ -284,6 +497,7 @@ function PlayWithCoachPage() {
         setIntroState("done");
         setTransitioning(false);
         introTimerRefs.current = [];
+        if (category === "putting") window.setTimeout(() => showPuttingPreShotCue(firstDistance, []), 250);
       }, 4200),
     ];
   }
@@ -357,22 +571,53 @@ function PlayWithCoachPage() {
     const sequence = puttingAttempts.length + 1;
     const activePressure = pressure;
     const activeFinalChallenge = finalChallenge;
+    const activeChallenge = puttingChallenge;
     const playedDistance = distance;
     const attempt = recordCoachPuttingAttempt(sessionId, sequence, playedDistance, strokes, coachId);
     const nextAttempts = [...puttingAttempts, attempt];
-    const nextDistance = nextCoachPuttingDistance(playedDistance);
+    const baseNextDistance = nextCoachPuttingDistance(playedDistance);
     const pressureWon = activePressure?.maxStrokes ? strokes <= activePressure.maxStrokes : false;
+    const nextMakeStreak = puttingMakeStreak(nextAttempts);
+    const nextAvoidanceStreak = puttingAvoidanceStreak(nextAttempts);
+
+    appendPuttingCoachLog({
+      at: Date.now(),
+      distance: playedDistance,
+      strokes,
+      cue: activePuttingCueRef.current?.text ?? null,
+      focus: activePuttingCueRef.current?.focus ?? null,
+      challenge: activeChallenge?.title ?? null,
+      makeStreak: nextMakeStreak,
+      avoidanceStreak: nextAvoidanceStreak,
+    });
+    activePuttingCueRef.current = null;
 
     setPressure(null);
     setPuttingAttempts(nextAttempts);
+    const nextFocus = deriveSessionFocus(nextAttempts);
+    if (nextFocus && nextFocus !== sessionFocus) setSessionFocus(nextFocus);
+
+    let postCommentShown = false;
     if (strokes === 1 && playedDistance >= 4) {
       setConfetti(true);
       showCoach(positiveLongPuttComment(playedDistance));
+      postCommentShown = true;
     } else if (activePressure) {
       showCoach(pressureWon ? "Bra. Du höll pressen." : "Släpp den. Nästa putt är en ny situation.");
-    } else if (strokes >= 3 && sequence % 3 === 0) {
-      const comment = coachPuttingComment(playedDistance, strokes, coachId, sequence);
-      if (comment) showCoach(comment);
+      postCommentShown = true;
+    } else {
+      const threePutts = recentThreePutts(nextAttempts);
+      if (threePutts >= 2 && sequence - negativePuttingCoachAtRef.current >= 4) {
+        negativePuttingCoachAtRef.current = sequence;
+        showCoach(playedDistance <= 7 ? "Fart först på nästa." : "Prioritera en enkel retur.");
+        postCommentShown = true;
+      } else if (strokes >= 3 && sequence % 4 === 0) {
+        const comment = coachPuttingComment(playedDistance, strokes, coachId, sequence);
+        if (comment) {
+          showCoach(comment);
+          postCommentShown = true;
+        }
+      }
     }
 
     if (activeFinalChallenge) {
@@ -380,9 +625,31 @@ function PlayWithCoachPage() {
       return;
     }
 
+    let nextDistance = baseNextDistance;
+    if (activeChallenge) {
+      const wonThis = activeChallenge.rule === "make" ? strokes === 1 : strokes <= 2;
+      const nextChallenge = {
+        ...activeChallenge,
+        remaining: activeChallenge.remaining - 1,
+        successes: activeChallenge.successes + (wonThis ? 1 : 0),
+      };
+      if (nextChallenge.remaining <= 0) {
+        const success = nextChallenge.successes >= nextChallenge.target;
+        setPuttingChallenge(null);
+        window.setTimeout(() => showCoach(success ? "Challenge klar. Bra under press." : "Challenge slut. Vi tar med oss lärdomen."), postCommentShown ? 900 : 180);
+      } else {
+        setPuttingChallenge(nextChallenge);
+        nextDistance = nextChallenge.distance;
+      }
+    } else {
+      const startedChallenge = maybeStartPuttingChallenge(nextAttempts);
+      if (startedChallenge) nextDistance = startedChallenge.distance;
+    }
+
     window.setTimeout(() => {
       setDistance(nextDistance);
       setTransitioning(false);
+      if (!postCommentShown && !activeChallenge) window.setTimeout(() => showPuttingPreShotCue(nextDistance, nextAttempts), 220);
     }, 280);
   }
 
@@ -446,7 +713,7 @@ function PlayWithCoachPage() {
   const shortGameInsideTwo = shortAttempts.length ? Math.round((shortAttempts.filter((attempt) => attempt.points >= 3).length / shortAttempts.length) * 100) : 0;
   const shortGameHoled = shortAttempts.filter((attempt) => attempt.points === 5).length;
   const introActive = introState !== "done";
-  const topBarMode = introActive ? "intro" : pressure ? "pressure" : coachVisible ? "coach" : "normal";
+  const topBarMode = introActive ? "intro" : pressure ? "pressure" : coachVisible && category !== "putting" ? "coach" : "normal";
   const isShortGame = category === "around-the-green" || category === "bunker";
 
   const topBarClass = topBarMode === "pressure"
@@ -542,6 +809,22 @@ function PlayWithCoachPage() {
             </div>
           </div> : <div key="putt-normal" className="sg4-topbar-state grid h-full w-full grid-cols-[60%_40%] overflow-hidden"><div className="relative z-10 flex min-w-0 items-center bg-blue-600 px-5 pr-9 text-white after:absolute after:-right-6 after:top-0 after:h-full after:w-9 after:bg-blue-600 after:[clip-path:polygon(0_0,36%_0,100%_50%,36%_100%,0_100%)]"><div className="min-w-0"><p className="truncate font-display text-[30px] leading-none text-white">{playerName}</p><p className="mt-1.5 text-[10px] font-black uppercase tracking-[.14em] text-blue-100">{currentCount} slag registrerade</p></div></div><div className="relative flex min-w-0 items-center justify-end bg-white pl-8 pr-5 text-right"><div><p className="text-[8px] font-black uppercase tracking-[.12em] text-slate-500">Puttar</p><p className="mt-0.5 font-display text-[27px] leading-none text-slate-950">{puttingAttempts.reduce((sum, attempt) => sum + attempt.strokes, 0)}</p></div></div></div>}
         </header>
+
+        {category === "putting" && !introActive ? <section className="mt-3 h-[116px] rounded-[24px] border border-blue-100 bg-white px-4 py-3 shadow-[0_18px_42px_-32px_rgba(15,23,42,.45)]">
+          <div className="flex h-full items-center gap-3">
+            <span className="flex h-14 w-14 shrink-0 items-center justify-center text-[42px] leading-none">{coach.emoji}</span>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[9px] font-black uppercase tracking-[.18em] text-blue-600">Alma</p>
+                <div className="flex items-center gap-1.5">
+                  {makeStreak >= 2 ? <span className="rounded-full bg-blue-50 px-2 py-1 text-[8px] font-black text-blue-700">🔥 {makeStreak} sänkta</span> : null}
+                  {avoidanceStreak >= 2 ? <span className="rounded-full bg-slate-100 px-2 py-1 text-[8px] font-black text-slate-600">🛡 {avoidanceStreak} utan 3-putt</span> : null}
+                </div>
+              </div>
+              <p className={`mt-1.5 line-clamp-2 min-h-[42px] text-[15px] font-semibold leading-[1.38] ${coachVisible || puttingChallenge ? "text-slate-950" : "text-slate-500"}`}>{displayedCoachText || " "}</p>
+            </div>
+          </div>
+        </section> : null}
 
         {category === "bunker" ? <section className="mt-3 rounded-[26px] border border-slate-200 bg-white px-5 py-6 text-center shadow-[0_18px_42px_-30px_rgba(15,23,42,.45)]"><p className="text-[9px] font-black uppercase tracking-[.18em] text-slate-400">Uppgift</p><h1 className="mt-1 font-display text-[42px] leading-none text-slate-950">Bunkerslag</h1><p className="mt-2 text-sm font-semibold text-slate-500">Slå så nära flaggan som möjligt.</p></section> : <section className="mt-3 rounded-[26px] border border-slate-200 bg-white px-5 py-5 text-center shadow-[0_18px_42px_-30px_rgba(15,23,42,.45)]"><p className="text-[9px] font-black uppercase tracking-[.18em] text-slate-400">{category === "around-the-green" ? "Situation" : "Avstånd från hål"}</p>{category === "around-the-green" ? <div className={`mt-1 flex items-center justify-center gap-2 whitespace-nowrap text-slate-600 transition-opacity ${transitioning ? "opacity-35" : "opacity-100"}`}><span className="font-display text-[46px] leading-none text-slate-950">{formatDistance(distance)} m</span><span className="font-display text-[33px] leading-none text-slate-500">• från {chipLie.toLowerCase()}</span></div> : <h1 className={`mt-1 font-display text-[58px] leading-none text-slate-950 transition-opacity ${transitioning ? "opacity-35" : "opacity-100"}`}>{formatDistance(distance)} m</h1>}{category === "around-the-green" ? <p className="mt-2 text-sm font-semibold text-slate-500">Slå så nära hålet som möjligt.</p> : null}</section>}
 
