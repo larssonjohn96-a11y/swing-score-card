@@ -225,7 +225,14 @@ function PlayWithCoachPage() {
   function selectCategory(nextCategory: Category, available: boolean) {
     if (!available) return;
     setCategory(nextCategory);
-    if (nextCategory === "around-the-green") setPhase("chip-setup");
+  }
+
+  function continueFromSetup() {
+    if (category === "around-the-green") {
+      setPhase("chip-setup");
+      return;
+    }
+    startGame();
   }
 
   function startGame() {
@@ -377,7 +384,7 @@ function PlayWithCoachPage() {
               </button>;
             })}
           </div>
-          <button type="button" disabled={!category || category === "around-the-green" || !["putting", "bunker"].includes(category)} onClick={startGame} className="mt-5 flex w-full items-center justify-center gap-2 rounded-[20px] bg-blue-600 py-4 font-display text-xl text-white shadow-sm transition active:scale-[.99] disabled:opacity-25">Starta träning <ChevronRight className="h-5 w-5" /></button>
+          <button type="button" disabled={!category || !["putting", "around-the-green", "bunker"].includes(category)} onClick={continueFromSetup} className="mt-5 flex w-full items-center justify-center gap-2 rounded-[20px] bg-blue-600 py-4 font-display text-xl text-white shadow-sm transition active:scale-[.99] disabled:opacity-25">Starta träning <ChevronRight className="h-5 w-5" /></button>
         </section>
       </> : null}
 
@@ -427,7 +434,7 @@ function PlayWithCoachPage() {
 
         {pressure ? <div className="mt-3 overflow-hidden"><div key={`${distance}-${pressure.title}`} className="relative overflow-hidden rounded-[22px] border border-amber-300/90 bg-gradient-to-r from-yellow-400 via-amber-300 to-yellow-300 px-5 py-3 text-center text-slate-950 shadow-[0_12px_28px_-20px_rgba(245,158,11,.65)]" style={{ animation: "sg4PressureEnter 420ms cubic-bezier(.2,.8,.25,1) both, sg4PressurePulse 1.9s ease-in-out 520ms infinite" }}><span aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 w-[52%] bg-gradient-to-r from-transparent via-white/90 to-transparent blur-[1px]" style={{ animation: "sg4PressureWave 1.18s cubic-bezier(.2,.75,.25,1) 150ms both" }} /><div className="relative"><p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-950">Pressläge · Nu gäller det</p><p className="mt-1 font-display text-lg leading-none text-slate-950">{pressure.title}</p><p className="mt-1 text-xs font-bold leading-snug text-slate-800">{pressure.detail}</p></div></div></div> : null}
 
-        {category === "bunker" ? <section className="mt-3 rounded-[26px] border border-slate-200 bg-white px-5 py-6 text-center shadow-[0_18px_42px_-30px_rgba(15,23,42,.45)]"><p className="text-[9px] font-black uppercase tracking-[.18em] text-slate-400">Uppgift</p><h1 className="mt-1 font-display text-[42px] leading-none text-slate-950">Bunkerslag</h1><p className="mt-2 text-sm font-semibold text-slate-500">Slå så nära flaggan som möjligt.</p></section> : <section className="mt-3 rounded-[26px] border border-slate-200 bg-white px-5 py-5 text-center shadow-[0_18px_42px_-30px_rgba(15,23,42,.45)]"><p className="text-[9px] font-black uppercase tracking-[.18em] text-slate-400">{category === "around-the-green" ? `Underlag · ${chipLie}` : "Avstånd"}</p><h1 className={`mt-1 font-display text-[58px] leading-none text-slate-950 transition-opacity ${transitioning ? "opacity-35" : "opacity-100"}`}>{formatDistance(distance)} m</h1>{category === "around-the-green" ? <p className="mt-2 text-sm font-semibold text-slate-500">Slå så nära hålet som möjligt.</p> : null}</section>}
+        {category === "bunker" ? <section className="mt-3 rounded-[26px] border border-slate-200 bg-white px-5 py-6 text-center shadow-[0_18px_42px_-30px_rgba(15,23,42,.45)]"><p className="text-[9px] font-black uppercase tracking-[.18em] text-slate-400">Uppgift</p><h1 className="mt-1 font-display text-[42px] leading-none text-slate-950">Bunkerslag</h1><p className="mt-2 text-sm font-semibold text-slate-500">Slå så nära flaggan som möjligt.</p></section> : <section className="mt-3 rounded-[26px] border border-slate-200 bg-white px-5 py-5 text-center shadow-[0_18px_42px_-30px_rgba(15,23,42,.45)]"><p className="text-[9px] font-black uppercase tracking-[.18em] text-slate-400">{category === "around-the-green" ? "Situation" : "Avstånd"}</p>{category === "around-the-green" ? <div className={`mt-1 flex items-baseline justify-center gap-2 whitespace-nowrap transition-opacity ${transitioning ? "opacity-35" : "opacity-100"}`}><span className="font-display text-[54px] leading-none text-slate-950">{formatDistance(distance)} m</span><span className="font-display text-[22px] leading-none text-slate-500">• från {chipLie.toLowerCase()}</span></div> : <h1 className={`mt-1 font-display text-[58px] leading-none text-slate-950 transition-opacity ${transitioning ? "opacity-35" : "opacity-100"}`}>{formatDistance(distance)} m</h1>}{category === "around-the-green" ? <p className="mt-2 text-sm font-semibold text-slate-500">Slå så nära hålet som möjligt.</p> : null}</section>}
 
         {category === "putting" ? <section className="mt-5"><div className="text-center"><p className="text-[10px] font-black uppercase tracking-[.16em] text-slate-400">Ditt resultat</p><h2 className="mt-1 font-display text-2xl text-slate-950">Antal puttar</h2></div><div className="mt-3 grid grid-cols-4 gap-2.5">{([1, 2, 3, 4] as const).map((strokes) => <button key={strokes} type="button" disabled={transitioning} onClick={() => registerPutting(strokes)} className="rounded-[20px] border border-blue-300 bg-blue-50 px-1 py-4 text-center shadow-sm transition hover:bg-blue-100 active:scale-[.96] active:bg-blue-200 disabled:opacity-40"><span className="block font-display text-3xl leading-none text-blue-800">{strokes}</span><span className="mt-1.5 block text-[8px] font-black uppercase tracking-[.08em] text-blue-500">{strokes === 1 ? "putt" : "puttar"}</span></button>)}</div></section> : <section className="mt-5"><div className="text-center"><p className="text-[10px] font-black uppercase tracking-[.16em] text-slate-400">Ditt resultat</p><h2 className="mt-1 font-display text-2xl text-slate-950">Hur nära hålet?</h2></div><div className="mt-3 grid grid-cols-2 gap-2.5">{(category === "bunker" ? BUNKER_POINT_ZONES : CHIP_POINT_ZONES).map((zone) => <button key={zone.points} type="button" disabled={transitioning} onClick={() => registerShortGame(zone.points)} className="min-h-[58px] rounded-[18px] border border-blue-300 bg-blue-50 px-3 py-3 text-center font-display text-base leading-tight text-blue-800 shadow-sm transition hover:bg-blue-100 active:scale-[.97] active:bg-blue-200 disabled:opacity-40">{zone.label}</button>)}</div></section>}
 
