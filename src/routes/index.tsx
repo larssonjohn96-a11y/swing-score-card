@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { Bell, ChevronRight, Database, LineChart, Swords, User, Users } from "lucide-react";
+import { Bell, ChevronRight, LineChart, Swords, User, Users } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { computeEstimatedHandicap, hcpLabel, loadRealHandicap, type CategoryHandicap } from "@/lib/sg-handicap";
 import { computeStableCategoryHandicaps } from "@/lib/category-index";
@@ -115,12 +115,7 @@ function DragScrollRow({ children }: { children: React.ReactNode }) {
         if (event.pointerType === "touch") return;
         const row = rowRef.current;
         if (!row) return;
-        dragRef.current = {
-          active: true,
-          startX: event.clientX,
-          startScrollLeft: row.scrollLeft,
-          moved: false,
-        };
+        dragRef.current = { active: true, startX: event.clientX, startScrollLeft: row.scrollLeft, moved: false };
         row.setPointerCapture(event.pointerId);
       }}
       onPointerMove={(event) => {
@@ -138,9 +133,7 @@ function DragScrollRow({ children }: { children: React.ReactNode }) {
         dragRef.current.active = false;
         if (row.hasPointerCapture(event.pointerId)) row.releasePointerCapture(event.pointerId);
       }}
-      onPointerCancel={() => {
-        dragRef.current.active = false;
-      }}
+      onPointerCancel={() => { dragRef.current.active = false; }}
       onClickCapture={(event) => {
         if (!dragRef.current.moved) return;
         event.preventDefault();
@@ -193,7 +186,6 @@ function Home() {
       }
 
       const travelled = Math.abs(currentY - directionStartYRef.current);
-
       if (nextDirection === "down" && travelled >= 34) {
         setNavVisible(false);
         directionStartYRef.current = currentY;
@@ -201,7 +193,6 @@ function Home() {
         setNavVisible(true);
         directionStartYRef.current = currentY;
       }
-
       lastScrollYRef.current = currentY;
     };
 
@@ -224,9 +215,7 @@ function Home() {
 
   const quickStart = useMemo<QuickStart>(() => {
     const noBaseline = data.real === null && data.cats.every((category) => category.count === 0);
-    if (noBaseline) {
-      return { eyebrow: "Kom igång", title: "Gör ditt första HCP-test", detail: "Få ett första resultat och börja bygga din spelarprofil.", to: "/tester", activityId: "hcp-test" };
-    }
+    if (noBaseline) return { eyebrow: "Kom igång", title: "Gör ditt första HCP-test", detail: "Få ett första resultat och börja bygga din spelarprofil.", to: "/tester", activityId: "hcp-test" };
 
     const playScore = Math.max(
       getBehaviorRecommendationScore("play-friend").score,
@@ -236,17 +225,13 @@ function Home() {
     const practiceScore = getBehaviorRecommendationScore("practice").score;
     const testScore = getBehaviorRecommendationScore("hcp-test").score;
 
-    if (practiceScore >= playScore && practiceScore >= testScore) {
-      return { eyebrow: "Snabbstart", title: "Träna med coach", detail: "Tillbaka till Practice Mode.", to: "/coach", activityId: "practice" };
-    }
-    if (testScore > playScore) {
-      return { eyebrow: "Snabbstart", title: "Gör ett nytt HCP-test", detail: "Få ett nytt resultat direkt.", to: "/tester", activityId: "hcp-test" };
-    }
+    if (practiceScore >= playScore && practiceScore >= testScore) return { eyebrow: "Snabbstart", title: "Träna med coach", detail: "Tillbaka till Practice Mode.", to: "/coach", activityId: "practice" };
+    if (testScore > playScore) return { eyebrow: "Snabbstart", title: "Gör ett nytt HCP-test", detail: "Få ett nytt resultat direkt.", to: "/tester", activityId: "hcp-test" };
     return { eyebrow: "Snabbstart", title: "Spela en match", detail: "Hoppa direkt tillbaka till spel.", to: "/spela", activityId: "play-friend" };
   }, [data, sessionsVersion]);
 
   const totalFriends = friends.length + cloudFriendCount;
-  const previewFriends = friends.slice(0, 4);
+  const previewFriends = friends.slice(0, 3);
   const hcpValue = hcpLabel(data.real ?? data.estimated ?? 0);
   const totalShots = useMemo(() => loadTotalRegisteredShots(), [sessionsVersion]);
   const knownCategories = data.cats.filter((category) => category.count > 0);
@@ -280,19 +265,40 @@ function Home() {
       </header>
 
       <div className="px-5 pt-5">
-        <section className="grid grid-cols-[1fr_auto] overflow-hidden rounded-[24px] border border-border bg-card">
-          <Link to="/utveckling" className="flex min-w-0 items-center gap-3 px-5 py-4 active:bg-muted/30">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-600"><Database className="h-5 w-5" /></span>
-            <span className="min-w-0">
-              <span className="block text-[10px] font-black uppercase tracking-[.18em] text-muted-foreground">Slagbank</span>
-              <span className="mt-0.5 block text-[30px] font-black leading-none tabular-nums text-foreground">{totalShots.toLocaleString("sv-SE")}</span>
-              <span className="mt-1 block text-xs text-muted-foreground">registrerade slag</span>
-            </span>
+        <section className="grid grid-cols-[1.6fr_1fr] gap-2.5">
+          <Link
+            to="/vanner"
+            className="relative flex min-h-[96px] items-center overflow-hidden rounded-[27px] border border-white/70 bg-white/48 px-4 shadow-[inset_0_1px_0_rgba(255,255,255,.95),inset_0_-1px_0_rgba(255,255,255,.38),0_12px_28px_-18px_rgba(15,75,50,.34)] backdrop-blur-2xl"
+          >
+            <span className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent" />
+            <div className="flex min-w-0 items-center">
+              <div className="flex shrink-0 -space-x-2.5">
+                {previewFriends.length ? previewFriends.map((friend, index) => (
+                  <span key={friend.id} className={`flex h-9 w-9 items-center justify-center rounded-full border-2 border-white/90 text-[9px] font-black text-foreground shadow-sm ${index % 3 === 0 ? "bg-emerald-100" : index % 3 === 1 ? "bg-sky-100" : "bg-amber-100"}`}>
+                    {initials(friend.name)}
+                  </span>
+                )) : (
+                  <>
+                    <span className="h-9 w-9 rounded-full border-2 border-white/90 bg-emerald-100 shadow-sm" />
+                    <span className="h-9 w-9 rounded-full border-2 border-white/90 bg-sky-100 shadow-sm" />
+                    <span className="h-9 w-9 rounded-full border-2 border-white/90 bg-amber-100 shadow-sm" />
+                  </>
+                )}
+              </div>
+              <div className="ml-3 flex min-w-0 items-baseline gap-2">
+                <span className="text-[29px] font-black leading-none tabular-nums text-emerald-700">{totalFriends}</span>
+                <span className="truncate text-[15px] font-extrabold text-foreground/85">Vänner</span>
+              </div>
+            </div>
           </Link>
-          <Link to="/vanner" className="flex min-w-[92px] flex-col items-center justify-center border-l border-border px-4 py-4 text-center active:bg-muted/30">
-            <Users className="h-4 w-4 text-blue-600" />
-            <span className="mt-1 text-xl font-black tabular-nums text-foreground">{totalFriends}</span>
-            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-muted-foreground">vänner</span>
+
+          <Link
+            to="/utveckling"
+            className="relative flex min-h-[96px] flex-col items-center justify-center overflow-hidden rounded-[27px] border border-white/70 bg-white/48 px-3 text-center shadow-[inset_0_1px_0_rgba(255,255,255,.95),inset_0_-1px_0_rgba(255,255,255,.38),0_12px_28px_-18px_rgba(15,75,50,.34)] backdrop-blur-2xl"
+          >
+            <span className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent" />
+            <span className="text-[25px] font-black leading-none tabular-nums text-emerald-700">{totalShots.toLocaleString("sv-SE")}</span>
+            <span className="mt-1.5 text-[10px] font-bold leading-tight text-foreground/68">Registrerade slag</span>
           </Link>
         </section>
 
