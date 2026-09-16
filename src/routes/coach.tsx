@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Check, ChevronRight, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,6 +28,7 @@ type PressureChallenge = { title: string; detail: string; maxStrokes?: 1 | 2; mi
 type ChipLieOption = "fairway" | "rough" | "both";
 type ChipLie = "Fairway" | "Ruff";
 type ShortAttempt = { distance?: number; points: number; lie?: ChipLie };
+type StreakStatus = { label: string; value: string; detail: string } | null;
 
 const DEFAULT_COACH_ID: CoachId = "alma";
 const CHIP_LIE_STORAGE_KEY = "sg4-coach-chip-lie-v1";
@@ -147,9 +148,9 @@ function shortGameCoachComment(category: Category, points: number, distance?: nu
 
 function SpeechBubble({ avatar, name, text, fixed = false }: { avatar: string; name: string; text: string; fixed?: boolean }) {
   return (
-    <div className={`flex items-end gap-3 ${fixed ? "h-[126px]" : ""}`}>
+    <div className={`flex items-end gap-3 ${fixed ? "min-h-[112px]" : ""}`}>
       <div className="flex h-20 w-20 shrink-0 items-center justify-center text-[58px] leading-none">{avatar}</div>
-      <div className={`relative mb-0 flex-1 rounded-[18px] border border-slate-300 bg-white px-4 py-3.5 text-slate-950 shadow-[0_14px_32px_-20px_rgba(15,23,42,.42)] ${fixed ? "h-[122px] overflow-hidden" : ""}`}>
+      <div className={`relative mb-0 flex-1 rounded-[18px] border border-slate-300 bg-white px-4 py-3.5 text-slate-950 shadow-[0_14px_32px_-20px_rgba(15,23,42,.42)] ${fixed ? "min-h-[104px]" : ""}`}>
         <span className="absolute -left-[17px] top-1/2 -translate-y-1/2 border-y-[13px] border-y-transparent border-r-[17px] border-r-slate-300" />
         <span className="absolute -left-[14px] top-1/2 -translate-y-1/2 border-y-[11px] border-y-transparent border-r-[15px] border-r-white" />
         <p className="relative text-[10px] font-black uppercase tracking-[.13em] text-slate-500">{name}</p>
@@ -174,6 +175,8 @@ function PlayWithCoachPage() {
   const [puttingAttempts, setPuttingAttempts] = useState<CoachPuttingAttempt[]>([]);
   const [shortAttempts, setShortAttempts] = useState<ShortAttempt[]>([]);
   const [coachText, setCoachText] = useState("Välj vad du vill träna. Jag styr variationen och säger till när något är värt att justera.");
+  const [coachVisible, setCoachVisible] = useState(false);
+  const coachTimerRef = useRef<number | null>(null);
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
   const [pressure, setPressure] = useState<PressureChallenge | null>(null);
@@ -195,27 +198,48 @@ function PlayWithCoachPage() {
     return () => window.clearTimeout(timer);
   }, [confetti]);
 
+  useEffect(() => () => {
+    if (coachTimerRef.current !== null) window.clearTimeout(coachTimerRef.current);
+  }, []);
+
   const puttingSummary = useMemo(() => summarizeCoachPutting(puttingAttempts), [puttingAttempts]);
   const currentCount = category === "putting" ? puttingAttempts.length : shortAttempts.length;
 
   const liveStats = useMemo(() => {
     if (category === "putting") {
       const totalPutts = puttingAttempts.reduce((sum, attempt) => sum + attempt.strokes, 0);
-      const shortStreak = shortHoledStreak(puttingAttempts);
-      const noThreeStreak = consecutiveFromEnd(puttingAttempts, (attempt) => attempt.strokes <= 2);
-      const longStreak = longNoThreeStreak(puttingAttempts);
-      if (shortStreak >= 2) return { label: "≤3 m i rad", value: `🔥 ${shortStreak}` };
-      if (longStreak >= 2) return { label: ">8 m utan 3-putt", value: `🎯 ${longStreak}` };
-      if (noThreeStreak >= 3) return { label: "≤2 puttar i rad", value: String(noThreeStreak) };
       return { label: "Puttar", value: String(totalPutts) };
     }
-    const streak = shortGameQualityStreak(shortAttempts);
-    if (streak >= 2) return { label: "Inom 2 m i rad", value: `🎯 ${streak}` };
     const average = shortAttempts.length ? (shortAttempts.reduce((sum, attempt) => sum + attempt.points, 0) / shortAttempts.length).toFixed(1) : "0";
     return { label: "Snittpoäng", value: average };
   }, [category, puttingAttempts, shortAttempts]);
 
+  const streakStatus = useMemo<StreakStatus>(() => {
+    if (category === "putting") {
+      const shortStreak = shortHoledStreak(puttingAttempts);
+      const longStreak = longNoThreeStreak(puttingAttempts);
+      const noThreeStreak = consecutiveFromEnd(puttingAttempts, (attempt) => attempt.strokes <= 2);
+      if (shortStreak >= 2) return { label: "STREAK", value: `🔥 ${shortStreak} I RAD`, detail: "Kortputtar ≤3 m sänkta i rad" };
+      if (longStreak >= 2) return { label: "STREAK", value: `🎯 ${longStreak} I RAD`, detail: "Långputtar >8 m utan treputt" };
+      if (noThreeStreak >= 3) return { label: "STREAK", value: `${noThreeStreak} I RAD`, detail: "Max två puttar" };
+      return null;
+    }
+    const streak = shortGameQualityStreak(shortAttempts);
+    if (streak >= 2) return { label: "STREAK", value: `🎯 ${streak} I RAD`, detail: "Slag inom 2 meter" };
+    return null;
+  }, [category, puttingAttempts, shortAttempts]);
+
   const categoryLabel = category === "around-the-green" ? "Chippning" : category === "bunker" ? "Bunker" : "Puttning";
+
+  function showCoach(text: string, duration = 4200) {
+    setCoachText(text);
+    setCoachVisible(true);
+    if (coachTimerRef.current !== null) window.clearTimeout(coachTimerRef.current);
+    coachTimerRef.current = window.setTimeout(() => {
+      setCoachVisible(false);
+      coachTimerRef.current = null;
+    }, duration);
+  }
 
   function selectChipLie(option: ChipLieOption) {
     setChipLieOption(option);
@@ -246,14 +270,17 @@ function PlayWithCoachPage() {
     setPressure(null);
     setConfetti(false);
     setFinalChallenge(false);
-    setCoachText(category === "putting"
-      ? "Vi kör. Läs putten, välj fart och slå med ett tydligt beslut."
-      : category === "bunker"
-        ? "Vi kör. Slå bunkerslaget så nära flaggan du kan."
-        : "Vi kör. Läs läget, välj landningspunkt och slå så nära hålet du kan.");
+    setCoachVisible(false);
     setConfirmEnd(false);
     setTransitioning(false);
     setPhase("play");
+    window.setTimeout(() => {
+      showCoach(category === "putting"
+        ? "Vi kör. Läs putten, välj fart och slå med ett tydligt beslut."
+        : category === "bunker"
+          ? "Vi kör. Slå bunkerslaget så nära flaggan du kan."
+          : "Vi kör. Läs läget, välj landningspunkt och slå så nära hålet du kan.", 3600);
+    }, 250);
   }
 
   function startFinalChallenge() {
@@ -262,22 +289,22 @@ function PlayWithCoachPage() {
     if (category === "putting") {
       setDistance(3);
       setPressure({ title: "Håla för vinsten", detail: "En sista putt. Sätt den och avsluta på topp.", maxStrokes: 1 });
-      setCoachText("Sista putten. Tre meter. Bestäm linjen och lita på stroken.");
+      showCoach("Sista putten. Tre meter. Bestäm linjen och lita på stroken.");
     } else if (category === "bunker") {
       setDistance(0);
       setPressure({ title: "Inom 1 meter", detail: "Ett sista bunkerslag. Sätt press på flaggan.", minPoints: 4 });
-      setCoachText("Sista slaget. Få den så nära flaggan du kan.");
+      showCoach("Sista slaget. Få den så nära flaggan du kan.");
     } else {
       setDistance(12);
       setChipLie(nextChipLie(chipLieOption));
       setPressure({ title: "Inom 1 meter", detail: "Ett sista slag. Sätt press på flaggan.", minPoints: 4 });
-      setCoachText("Sista slaget. Tolv meter. Läs läget och commit.");
+      showCoach("Sista slaget. Tolv meter. Läs läget och commit.");
     }
   }
 
   function finishFinalChallenge(success: boolean) {
     setPressure(null);
-    setCoachText(success ? "Där satt den. Perfekt sätt att avsluta." : "Inte riktigt där, men passet är klart. Bra jobb.");
+    showCoach(success ? "Där satt den. Perfekt sätt att avsluta." : "Inte riktigt där, men passet är klart. Bra jobb.", 2200);
     window.setTimeout(() => {
       setFinalChallenge(false);
       setTransitioning(false);
@@ -297,15 +324,17 @@ function PlayWithCoachPage() {
     const nextDistance = nextCoachPuttingDistance(playedDistance);
     const pressureWon = activePressure?.maxStrokes ? strokes <= activePressure.maxStrokes : false;
 
+    setPressure(null);
     setPuttingAttempts(nextAttempts);
     if (strokes === 1 && playedDistance >= 4) {
       setConfetti(true);
-      setCoachText(positiveLongPuttComment(playedDistance));
+      showCoach(positiveLongPuttComment(playedDistance));
     } else if (activePressure) {
-      setCoachText(pressureWon ? (strokes === 1 ? "Bra. Du höll streaken vid liv." : "Bra tvåputt. Streaken lever.") : activePressure.maxStrokes === 1 ? "Den streaken är över. Bygg en ny direkt." : "Treputten bröt streaken. Släpp den och börja om.");
-    } else {
+      showCoach(pressureWon ? (strokes === 1 ? "Bra. Du höll streaken vid liv." : "Bra tvåputt. Streaken lever.") : activePressure.maxStrokes === 1 ? "Den streaken är över. Bygg en ny direkt." : "Treputten bröt streaken. Släpp den och börja om.");
+    } else if (strokes >= 3 || sequence % 5 === 0) {
       const comment = coachPuttingComment(playedDistance, strokes, coachId, sequence);
-      setCoachText(comment ?? (strokes === 1 ? "Bra. Samma rutin nästa gång." : strokes >= 3 ? "Den blev dyr. Släpp den och fokusera på nästa." : "Bra tvåputt. Nästa."));
+      if (comment) showCoach(comment);
+      else if (strokes >= 3) showCoach("Den blev dyr. Släpp den och fokusera på nästa.");
     }
 
     if (activeFinalChallenge) {
@@ -332,12 +361,18 @@ function PlayWithCoachPage() {
     const nextLie = category === "around-the-green" ? nextChipLie(chipLieOption) : chipLie;
     const pressureWon = activePressure?.minPoints !== undefined ? points >= activePressure.minPoints : false;
 
+    setPressure(null);
     setShortAttempts(nextAttempts);
     recordEngineOutcome({ skill: "chip", ...(playedDistance !== undefined ? { distance: playedDistance } : {}), performance: chipPerformanceFromPoints(points), context: "game", activityId: category === "bunker" ? "coach-bunker" : "coach-chipping" });
 
-    if (points === 5) setConfetti(true);
-    if (activePressure) setCoachText(pressureWon ? "Bra. Du höll streaken vid liv." : "Streaken tog slut där. Ny chans på nästa.");
-    else setCoachText(shortGameCoachComment(category, points, playedDistance));
+    if (points === 5) {
+      setConfetti(true);
+      showCoach(shortGameCoachComment(category, points, playedDistance));
+    } else if (activePressure) {
+      showCoach(pressureWon ? "Bra. Du höll streaken vid liv." : "Streaken tog slut där. Ny chans på nästa.");
+    } else if (points <= 1 || nextAttempts.length % 5 === 0) {
+      showCoach(shortGameCoachComment(category, points, playedDistance));
+    }
 
     if (activeFinalChallenge) {
       finishFinalChallenge(points >= 4);
@@ -415,43 +450,43 @@ function PlayWithCoachPage() {
 
       {phase === "play" ? <>
         <style>{`
-          @keyframes sg4PressureEnter{0%{opacity:.25;transform:scale(.985)}55%{opacity:1;transform:scale(1.006)}100%{opacity:1;transform:scale(1)}}
-          @keyframes sg4PressurePulse{0%,100%{transform:scale(1);box-shadow:0 12px 28px -20px rgba(245,158,11,.52),0 0 0 0 rgba(250,204,21,0)}45%{transform:scale(1.012);box-shadow:0 18px 34px -19px rgba(245,158,11,.78),0 0 0 2px rgba(250,204,21,.32)}65%{transform:scale(1.006);box-shadow:0 15px 31px -19px rgba(245,158,11,.66),0 0 0 1px rgba(250,204,21,.18)}}
-          @keyframes sg4PressureWave{0%{transform:translateX(-145%) skewX(-18deg);opacity:0}12%{opacity:.18}48%{opacity:.62}78%{opacity:.18}100%{transform:translateX(245%) skewX(-18deg);opacity:0}}
           @keyframes coachConfetti{0%{opacity:0;transform:translate3d(0,-12vh,0) rotate(0deg) scale(.7)}8%{opacity:1}100%{opacity:0;transform:translate3d(var(--cx),108vh,0) rotate(var(--cr)) scale(1.15)}}
+          @keyframes coachEnter{0%{opacity:0;transform:translateY(-8px) scale(.99)}100%{opacity:1;transform:translateY(0) scale(1)}}
         `}</style>
 
-        <header className="-mx-5 grid min-h-[76px] w-[calc(100%+2.5rem)] grid-cols-[60%_40%] overflow-hidden border-y border-slate-200 bg-white shadow-[0_10px_28px_-24px_rgba(15,23,42,.5)]">
+        {pressure ? <header className="-mx-5 flex min-h-[82px] w-[calc(100%+2.5rem)] items-center justify-between border-y border-amber-300 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-300 px-5 text-slate-950 shadow-[0_12px_30px_-22px_rgba(245,158,11,.8)]">
+          <div className="min-w-0 pr-4"><p className="text-[9px] font-black uppercase tracking-[.22em]">Pressläge · Nu gäller det</p><p className="mt-1 truncate font-display text-[25px] leading-none">{pressure.title}</p><p className="mt-1 truncate text-[11px] font-bold text-slate-800">{pressure.detail}</p></div><span className="text-2xl">⚡</span>
+        </header> : streakStatus ? <header className="-mx-5 flex min-h-[82px] w-[calc(100%+2.5rem)] items-center justify-between border-y border-indigo-400 bg-gradient-to-r from-blue-700 via-indigo-600 to-blue-600 px-5 text-white shadow-[0_12px_30px_-22px_rgba(37,99,235,.8)]">
+          <div className="min-w-0"><p className="text-[9px] font-black uppercase tracking-[.22em] text-blue-100">{streakStatus.label}</p><p className="mt-1 font-display text-[27px] leading-none">{streakStatus.value}</p><p className="mt-1 text-[11px] font-semibold text-blue-100">{streakStatus.detail}</p></div><span className="text-2xl">🔥</span>
+        </header> : <header className="-mx-5 grid min-h-[76px] w-[calc(100%+2.5rem)] grid-cols-[60%_40%] overflow-hidden border-y border-slate-200 bg-white shadow-[0_10px_28px_-24px_rgba(15,23,42,.5)]">
           <div className="relative z-10 flex min-w-0 items-center bg-blue-600 px-5 pr-9 text-white after:absolute after:-right-6 after:top-0 after:h-full after:w-9 after:bg-blue-600 after:[clip-path:polygon(0_0,36%_0,100%_50%,36%_100%,0_100%)]">
             <div className="min-w-0"><p className="truncate font-display text-[30px] leading-none text-white">{playerName}</p><p className="mt-1.5 text-[10px] font-black uppercase tracking-[.14em] text-blue-100">{currentCount} slag registrerade</p></div>
           </div>
           <div className="relative flex min-w-0 items-center justify-end bg-white pl-8 pr-5 text-right">
             <div className="min-w-0"><p className="truncate text-[8px] font-black uppercase tracking-[.12em] text-slate-500">{liveStats.label}</p><p className="mt-0.5 font-display text-[27px] leading-none text-slate-950">{liveStats.value}</p></div>
           </div>
-        </header>
+        </header>}
 
-        <section className="mt-3"><SpeechBubble avatar={coach.emoji} name={coach.name} text={coachText} fixed /></section>
+        {coachVisible ? <section className="mt-3" style={{ animation: "coachEnter 220ms ease-out both" }}><SpeechBubble avatar={coach.emoji} name={coach.name} text={coachText} fixed /></section> : null}
 
-        {pressure ? <div className="mt-3 overflow-hidden"><div key={`${distance}-${pressure.title}`} className="relative overflow-hidden rounded-[22px] border border-amber-300/90 bg-gradient-to-r from-yellow-400 via-amber-300 to-yellow-300 px-5 py-3 text-center text-slate-950 shadow-[0_12px_28px_-20px_rgba(245,158,11,.65)]" style={{ animation: "sg4PressureEnter 420ms cubic-bezier(.2,.8,.25,1) both, sg4PressurePulse 1.9s ease-in-out 520ms infinite" }}><span aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 w-[52%] bg-gradient-to-r from-transparent via-white/90 to-transparent blur-[1px]" style={{ animation: "sg4PressureWave 1.18s cubic-bezier(.2,.75,.25,1) 150ms both" }} /><div className="relative"><p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-950">Pressläge · Nu gäller det</p><p className="mt-1 font-display text-lg leading-none text-slate-950">{pressure.title}</p><p className="mt-1 text-xs font-bold leading-snug text-slate-800">{pressure.detail}</p></div></div></div> : null}
+        {category === "bunker" ? <section className="mt-3 rounded-[26px] border border-slate-200 bg-white px-5 py-6 text-center shadow-[0_18px_42px_-30px_rgba(15,23,42,.45)]"><p className="text-[9px] font-black uppercase tracking-[.18em] text-slate-400">Uppgift</p><h1 className="mt-1 font-display text-[42px] leading-none text-slate-950">Bunkerslag</h1><p className="mt-2 text-sm font-semibold text-slate-500">Slå så nära flaggan som möjligt.</p></section> : <section className="mt-3 rounded-[26px] border border-slate-200 bg-white px-5 py-5 text-center shadow-[0_18px_42px_-30px_rgba(15,23,42,.45)]"><p className="text-[9px] font-black uppercase tracking-[.18em] text-slate-400">{category === "around-the-green" ? "Situation" : "Avstånd"}</p>{category === "around-the-green" ? <div className={`mt-1 flex items-center justify-center gap-2 whitespace-nowrap transition-opacity ${transitioning ? "opacity-35" : "opacity-100"}`}><span className="font-display text-[54px] leading-none text-slate-950">{formatDistance(distance)} m</span><span className="font-display text-[25px] leading-none text-slate-500">• från {chipLie.toLowerCase()}</span></div> : <h1 className={`mt-1 font-display text-[58px] leading-none text-slate-950 transition-opacity ${transitioning ? "opacity-35" : "opacity-100"}`}>{formatDistance(distance)} m</h1>}{category === "around-the-green" ? <p className="mt-2 text-sm font-semibold text-slate-500">Slå så nära hålet som möjligt.</p> : null}</section>}
 
-        {category === "bunker" ? <section className="mt-3 rounded-[26px] border border-slate-200 bg-white px-5 py-6 text-center shadow-[0_18px_42px_-30px_rgba(15,23,42,.45)]"><p className="text-[9px] font-black uppercase tracking-[.18em] text-slate-400">Uppgift</p><h1 className="mt-1 font-display text-[42px] leading-none text-slate-950">Bunkerslag</h1><p className="mt-2 text-sm font-semibold text-slate-500">Slå så nära flaggan som möjligt.</p></section> : <section className="mt-3 rounded-[26px] border border-slate-200 bg-white px-5 py-5 text-center shadow-[0_18px_42px_-30px_rgba(15,23,42,.45)]"><p className="text-[9px] font-black uppercase tracking-[.18em] text-slate-400">{category === "around-the-green" ? "Situation" : "Avstånd"}</p>{category === "around-the-green" ? <div className={`mt-1 flex items-baseline justify-center gap-2 whitespace-nowrap transition-opacity ${transitioning ? "opacity-35" : "opacity-100"}`}><span className="font-display text-[54px] leading-none text-slate-950">{formatDistance(distance)} m</span><span className="font-display text-[22px] leading-none text-slate-500">• från {chipLie.toLowerCase()}</span></div> : <h1 className={`mt-1 font-display text-[58px] leading-none text-slate-950 transition-opacity ${transitioning ? "opacity-35" : "opacity-100"}`}>{formatDistance(distance)} m</h1>}{category === "around-the-green" ? <p className="mt-2 text-sm font-semibold text-slate-500">Slå så nära hålet som möjligt.</p> : null}</section>}
-
-        {category === "putting" ? <section className="mt-5"><div className="text-center"><p className="text-[10px] font-black uppercase tracking-[.16em] text-slate-400">Ditt resultat</p><h2 className="mt-1 font-display text-2xl text-slate-950">Antal puttar</h2></div><div className="mt-3 grid grid-cols-4 gap-2.5">{([1, 2, 3, 4] as const).map((strokes) => <button key={strokes} type="button" disabled={transitioning} onClick={() => registerPutting(strokes)} className="rounded-[20px] border border-blue-300 bg-blue-50 px-1 py-4 text-center shadow-sm transition hover:bg-blue-100 active:scale-[.96] active:bg-blue-200 disabled:opacity-40"><span className="block font-display text-3xl leading-none text-blue-800">{strokes}</span><span className="mt-1.5 block text-[8px] font-black uppercase tracking-[.08em] text-blue-500">{strokes === 1 ? "putt" : "puttar"}</span></button>)}</div></section> : category === "around-the-green" ? <section className="mt-5"><div className="text-center"><p className="text-[10px] font-black uppercase tracking-[.16em] text-slate-400">Ditt resultat</p><h2 className="mt-1 font-display text-2xl text-slate-950">Hur nära hålet?</h2></div><div className="mt-3 grid grid-cols-2 gap-2.5">{CHIP_POINT_ZONES.map((zone) => {
+        {category === "putting" ? <section className="mt-5"><div className="text-center"><p className="text-[10px] font-black uppercase tracking-[.16em] text-slate-400">Ditt resultat</p><h2 className="mt-1 font-display text-2xl text-slate-950">Antal puttar</h2></div><div className="mt-3 grid grid-cols-4 gap-2.5">{([1, 2, 3, 4] as const).map((strokes) => <button key={strokes} type="button" disabled={transitioning} onClick={() => registerPutting(strokes)} className="rounded-[20px] border border-blue-300 bg-blue-50 px-1 py-4 text-center shadow-sm transition hover:bg-blue-100 active:scale-[.96] active:bg-blue-200 disabled:opacity-40"><span className="block font-display text-3xl leading-none text-blue-800">{strokes}</span><span className="mt-1.5 block text-[9px] font-black uppercase tracking-[.08em] text-blue-500">{strokes === 1 ? "putt" : "puttar"}</span></button>)}</div></section> : category === "around-the-green" ? <section className="mt-5"><div className="text-center"><p className="text-[10px] font-black uppercase tracking-[.16em] text-slate-400">Ditt resultat</p><h2 className="mt-1 font-display text-2xl text-slate-950">Hur nära hålet?</h2></div><div className="mt-3 grid grid-cols-2 gap-2.5">{CHIP_POINT_ZONES.map((zone) => {
           const visualClass = zone.points === 5
-            ? "col-span-2 min-h-[64px] border-blue-800 bg-gradient-to-r from-blue-800 to-blue-700 text-white shadow-[0_12px_28px_-18px_rgba(30,64,175,.65)]"
+            ? "col-span-2 min-h-[72px] border-blue-800 bg-gradient-to-r from-blue-800 to-blue-700 text-white shadow-[0_12px_28px_-18px_rgba(30,64,175,.65)]"
             : zone.points === 4
-              ? "min-h-[58px] border-blue-600 bg-blue-600 text-white"
+              ? "min-h-[66px] border-blue-600 bg-blue-600 text-white"
               : zone.points === 3
-                ? "min-h-[58px] border-blue-500 bg-blue-500 text-white"
+                ? "min-h-[66px] border-blue-500 bg-blue-500 text-white"
                 : zone.points === 2
-                  ? "min-h-[58px] border-blue-200 bg-blue-100 text-blue-950"
+                  ? "min-h-[66px] border-blue-200 bg-blue-100 text-blue-950"
                   : zone.points === 1
-                    ? "min-h-[58px] border-blue-200 bg-blue-50 text-blue-950"
-                    : "col-span-2 min-h-[58px] border-blue-300 bg-white text-blue-950";
-          return <button key={zone.points} type="button" disabled={transitioning} onClick={() => registerShortGame(zone.points)} className={`rounded-[18px] border px-3 py-3 text-center font-display text-base uppercase leading-tight shadow-sm transition active:scale-[.97] disabled:opacity-40 ${visualClass}`}>{zone.points === 5 ? <span className="flex items-center justify-center gap-2"><span aria-hidden="true" className="text-xl">⛳</span><span>{zone.label}</span></span> : zone.label}</button>;
-        })}</div></section> : <section className="mt-5"><div className="text-center"><p className="text-[10px] font-black uppercase tracking-[.16em] text-slate-400">Ditt resultat</p><h2 className="mt-1 font-display text-2xl text-slate-950">Hur nära hålet?</h2></div><div className="mt-3 grid grid-cols-2 gap-2.5">{BUNKER_POINT_ZONES.map((zone) => <button key={zone.points} type="button" disabled={transitioning} onClick={() => registerShortGame(zone.points)} className="min-h-[58px] rounded-[18px] border border-blue-300 bg-blue-50 px-3 py-3 text-center font-display text-base leading-tight text-blue-800 shadow-sm transition hover:bg-blue-100 active:scale-[.97] active:bg-blue-200 disabled:opacity-40">{zone.label}</button>)}</div></section>}
+                    ? "min-h-[66px] border-blue-200 bg-blue-50 text-blue-950"
+                    : "col-span-2 min-h-[64px] border-blue-300 bg-white text-blue-950";
+          return <button key={zone.points} type="button" disabled={transitioning} onClick={() => registerShortGame(zone.points)} className={`rounded-[18px] border px-3 py-3 text-center font-display text-[20px] uppercase leading-tight shadow-sm transition active:scale-[.97] disabled:opacity-40 ${visualClass}`}>{zone.points === 5 ? <span className="flex items-center justify-center gap-2"><span aria-hidden="true" className="text-[22px]">⛳</span><span>{zone.label}</span></span> : zone.label}</button>;
+        })}</div></section> : <section className="mt-5"><div className="text-center"><p className="text-[10px] font-black uppercase tracking-[.16em] text-slate-400">Ditt resultat</p><h2 className="mt-1 font-display text-2xl text-slate-950">Hur nära hålet?</h2></div><div className="mt-3 grid grid-cols-2 gap-2.5">{BUNKER_POINT_ZONES.map((zone) => <button key={zone.points} type="button" disabled={transitioning} onClick={() => registerShortGame(zone.points)} className="min-h-[64px] rounded-[18px] border border-blue-300 bg-blue-50 px-3 py-3 text-center font-display text-[18px] leading-tight text-blue-800 shadow-sm transition hover:bg-blue-100 active:scale-[.97] active:bg-blue-200 disabled:opacity-40">{zone.label}</button>)}</div></section>}
 
-        <button type="button" onClick={() => setConfirmEnd(true)} className="mt-6 w-full rounded-[18px] border border-slate-200 bg-white py-3.5 text-sm font-black text-slate-500">Avsluta träning</button>
+        <button type="button" onClick={() => setConfirmEnd(true)} className="mt-5 w-full py-2 text-center text-sm font-semibold text-slate-400 transition hover:text-slate-500 active:text-slate-600">Avsluta träning</button>
 
         {confetti ? <div className="pointer-events-none fixed inset-0 z-[170] overflow-hidden">{Array.from({ length: 52 }).map((_, index) => <span key={index} className="absolute top-[-10%] rounded-sm" style={{ left: `${2 + (index * 17) % 96}%`, width: `${5 + (index % 3) * 2}px`, height: `${10 + (index % 4) * 3}px`, backgroundColor: CONFETTI_COLORS[index % CONFETTI_COLORS.length], ["--cx" as string]: `${(index % 2 ? 1 : -1) * (18 + (index % 7) * 13)}px`, ["--cr" as string]: `${220 + (index % 9) * 70}deg`, animation: `coachConfetti ${1.2 + (index % 6) * .13}s ${(index % 11) * .035}s cubic-bezier(.16,.7,.2,1) both` }} />)}</div> : null}
 
