@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { Bell, ChevronRight, LineChart, Swords, User, Users } from "lucide-react";
+import { Bell, ChevronRight, LineChart, Swords, User, UserPlus, Users } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { computeEstimatedHandicap, hcpLabel, loadRealHandicap, type CategoryHandicap } from "@/lib/sg-handicap";
 import { computeStableCategoryHandicaps } from "@/lib/category-index";
@@ -250,9 +250,14 @@ function Home() {
               <span className="mt-1 block text-xs font-semibold text-muted-foreground">HCP {hcpValue}</span>
             </span>
           </Link>
-          <button type="button" aria-label="Notiser" className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card/80 text-foreground">
-            <Bell className="h-[18px] w-[18px]" />
-          </button>
+          <div className="flex items-center gap-2">
+            <Link to="/lagg-till-kompis" aria-label="Lägg till kompis" className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card/80 text-foreground">
+              <UserPlus className="h-[18px] w-[18px]" />
+            </Link>
+            <Link to="/notiser" aria-label="Notiser" className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card/80 text-foreground">
+              <Bell className="h-[18px] w-[18px]" />
+            </Link>
+          </div>
         </div>
         <div className={`overflow-hidden transition-[max-height,opacity,padding] duration-500 [transition-timing-function:cubic-bezier(.22,1,.36,1)] ${navVisible ? "max-h-16 pb-3 opacity-100" : "max-h-0 pb-0 opacity-0"}`}>
           <nav className={`-mx-1 flex gap-2 overflow-x-auto px-1 transition-transform duration-500 [transition-timing-function:cubic-bezier(.22,1,.36,1)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${navVisible ? "translate-y-0" : "-translate-y-1"}`} aria-label="Snabbnavigering">
@@ -294,11 +299,11 @@ function Home() {
 
           <Link
             to="/utveckling"
-            className="relative flex min-h-[96px] flex-col items-center justify-center overflow-hidden rounded-[27px] border border-white/70 bg-white/48 px-3 text-center shadow-[inset_0_1px_0_rgba(255,255,255,.95),inset_0_-1px_0_rgba(255,255,255,.38),0_12px_28px_-18px_rgba(15,75,50,.34)] backdrop-blur-2xl"
+            className="relative flex min-h-[96px] items-center justify-center overflow-hidden rounded-[27px] border border-white/70 bg-white/48 px-3 text-center shadow-[inset_0_1px_0_rgba(255,255,255,.95),inset_0_-1px_0_rgba(255,255,255,.38),0_12px_28px_-18px_rgba(15,75,50,.34)] backdrop-blur-2xl"
           >
             <span className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent" />
-            <span className="text-[25px] font-black leading-none tabular-nums text-emerald-700">{totalShots.toLocaleString("sv-SE")}</span>
-            <span className="mt-1.5 text-[10px] font-bold leading-tight text-foreground/68">Registrerade slag</span>
+            <span className="text-[29px] font-black leading-none tabular-nums text-emerald-700">{totalShots.toLocaleString("sv-SE")}</span>
+            <span className="absolute bottom-[16px] left-2 right-2 text-[10px] font-bold leading-tight text-foreground/68">Registrerade slag</span>
           </Link>
         </section>
 
