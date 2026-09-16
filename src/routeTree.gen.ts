@@ -74,6 +74,7 @@ import { Route as DriverKonsekvensHistorikRouteImport } from './routes/driver-ko
 import { Route as DriverKonsekvensRouteImport } from './routes/driver-konsekvens'
 import { Route as CupRouteImport } from './routes/cup'
 import { Route as CombineRouteImport } from './routes/combine'
+import { Route as CoachRouteImport } from './routes/coach'
 import { Route as ChipRouteImport } from './routes/chip'
 import { Route as BunkerTraningRouteImport } from './routes/bunker-traning'
 import { Route as BunkerTestRouteImport } from './routes/bunker-test'
@@ -430,6 +431,11 @@ const CombineRoute = CombineRouteImport.update({
   path: '/combine',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CoachRoute = CoachRouteImport.update({
+  id: '/coach',
+  path: '/coach',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ChipRoute = ChipRouteImport.update({
   id: '/chip',
   path: '/chip',
@@ -581,6 +587,7 @@ export interface FileRoutesByFullPath {
   '/bunker-test': typeof BunkerTestRoute
   '/bunker-traning': typeof BunkerTraningRoute
   '/chip': typeof ChipRoute
+  '/coach': typeof CoachRoute
   '/combine': typeof CombineRoute
   '/cup': typeof CupRoute
   '/driver-konsekvens': typeof DriverKonsekvensRoute
@@ -674,6 +681,7 @@ export interface FileRoutesByTo {
   '/bunker-test': typeof BunkerTestRoute
   '/bunker-traning': typeof BunkerTraningRoute
   '/chip': typeof ChipRoute
+  '/coach': typeof CoachRoute
   '/combine': typeof CombineRoute
   '/cup': typeof CupRoute
   '/driver-konsekvens': typeof DriverKonsekvensRoute
@@ -768,6 +776,7 @@ export interface FileRoutesById {
   '/bunker-test': typeof BunkerTestRoute
   '/bunker-traning': typeof BunkerTraningRoute
   '/chip': typeof ChipRoute
+  '/coach': typeof CoachRoute
   '/combine': typeof CombineRoute
   '/cup': typeof CupRoute
   '/driver-konsekvens': typeof DriverKonsekvensRoute
@@ -863,6 +872,7 @@ export interface FileRouteTypes {
     | '/bunker-test'
     | '/bunker-traning'
     | '/chip'
+    | '/coach'
     | '/combine'
     | '/cup'
     | '/driver-konsekvens'
@@ -956,6 +966,7 @@ export interface FileRouteTypes {
     | '/bunker-test'
     | '/bunker-traning'
     | '/chip'
+    | '/coach'
     | '/combine'
     | '/cup'
     | '/driver-konsekvens'
@@ -1049,6 +1060,7 @@ export interface FileRouteTypes {
     | '/bunker-test'
     | '/bunker-traning'
     | '/chip'
+    | '/coach'
     | '/combine'
     | '/cup'
     | '/driver-konsekvens'
@@ -1143,6 +1155,7 @@ export interface RootRouteChildren {
   BunkerTestRoute: typeof BunkerTestRoute
   BunkerTraningRoute: typeof BunkerTraningRoute
   ChipRoute: typeof ChipRoute
+  CoachRoute: typeof CoachRoute
   CombineRoute: typeof CombineRoute
   CupRoute: typeof CupRoute
   DriverKonsekvensRoute: typeof DriverKonsekvensRoute
@@ -1672,6 +1685,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CombineRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/coach': {
+      id: '/coach'
+      path: '/coach'
+      fullPath: '/coach'
+      preLoaderRoute: typeof CoachRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/chip': {
       id: '/chip'
       path: '/chip'
@@ -1911,6 +1931,7 @@ const rootRouteChildren: RootRouteChildren = {
   BunkerTestRoute: BunkerTestRoute,
   BunkerTraningRoute: BunkerTraningRoute,
   ChipRoute: ChipRoute,
+  CoachRoute: CoachRoute,
   CombineRoute: CombineRoute,
   CupRoute: CupRoute,
   DriverKonsekvensRoute: DriverKonsekvensRoute,
