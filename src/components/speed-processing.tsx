@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { ArrowRight, Check } from "lucide-react";
 
-const STEPS = ["Testet sammanställt", "Jämfört med HCP-nivåer", "Speed-nivå beräknad"];
+const STEPS = ["Testet sammanställt", "Jämfört med HCP-nivåer", "Ball speed-nivå beräknad"];
 
 /**
- * Speed-testets egen variant av "Beräknar din nivå" – exakt samma mönster
+ * Ball Speed-testets egen variant av "Beräknar din nivå" – exakt samma mönster
  * som Approach-pilotens ApproachProcessing (approach-processing.tsx),
  * medvetet en egen komponent istället för att ändra den delade
  * TestResultProcessing (test-reveal.tsx) som de andra fem testerna
