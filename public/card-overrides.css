@@ -127,3 +127,46 @@ main div[class*="h-[220px]"][class*="w-[164px]"] > span[class*="tracking-[.16em]
   bottom: auto !important;
   z-index: 5 !important;
 }
+
+/* Friend challenge hero card: make the uploaded red-vs-blue artwork the main visual, closer to a YouTube-style feature card. */
+main section.mt-4 > a[href="/spela"] {
+  position: relative !important;
+  min-height: 196px !important;
+  display: flex !important;
+  align-items: flex-end !important;
+  overflow: hidden !important;
+  border-radius: 26px !important;
+  border-color: rgba(15, 23, 42, 0.08) !important;
+  background-image:
+    linear-gradient(to bottom, rgba(4, 12, 18, 0.03) 0%, rgba(4, 12, 18, 0.02) 42%, rgba(4, 12, 18, 0.72) 100%),
+    url('/Red_vs_blue_1.png') !important;
+  background-size: cover !important;
+  background-position: 50% 48% !important;
+  background-repeat: no-repeat !important;
+}
+
+main section.mt-4 > a[href="/spela"] > div:first-child {
+  display: none !important;
+}
+
+main section.mt-4 > a[href="/spela"] > div:last-child {
+  position: relative !important;
+  z-index: 2 !important;
+  width: 100% !important;
+  padding: 16px 18px 18px !important;
+  background: linear-gradient(to top, rgba(2, 9, 14, 0.74), rgba(2, 9, 14, 0.00)) !important;
+  color: #fff !important;
+}
+
+main section.mt-4 > a[href="/spela"] > div:last-child p,
+main section.mt-4 > a[href="/spela"] > div:last-child h2,
+main section.mt-4 > a[href="/spela"] > div:last-child span,
+main section.mt-4 > a[href="/spela"] > div:last-child svg {
+  color: #fff !important;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.48);
+}
+
+main section.mt-4 > a[href="/spela"] > div:last-child h2 {
+  font-size: 1.45rem !important;
+  line-height: 1.05 !important;
+}
