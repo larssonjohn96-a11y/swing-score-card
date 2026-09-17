@@ -52,6 +52,7 @@ const TEST_SECTIONS: TestSection[] = [
     title: "Inspel",
     subtitle: "Precision, wedges och bollkontroll",
     tests: [
+      { to: "/par-3-challenge", title: "Par 3 Challenge", label: "9 slag", description: "9 par 3-slag från korta, medium och långa distanser.", tone: "bg-[#255f9c]" },
       { to: "/approach-pei-valj", title: "PEI Approach", label: "Precision", description: "Mät inspelsprecision över flera avstånd.", tone: "bg-[#217d8c]" },
       { to: "/approach-pei-wedge", title: "PEI Wedge", label: "Wedge", description: "Precision med wedges från kontrollerade avstånd.", tone: "bg-[#3a8790]" },
       { to: "/approach-pei-iron", title: "PEI Iron", label: "Järn", description: "Benchmark för järnslag och proximity.", tone: "bg-[#3475a8]" },
