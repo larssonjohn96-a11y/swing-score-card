@@ -563,7 +563,7 @@ function BotMatchPage() {
   const approachPlay = step === "play" && category === "approach";
 
   return (
-    <main style={LIGHT_SURFACE} className={`mx-auto min-h-screen w-full max-w-md bg-background px-5 ${approachPlay ? "pt-4 pb-8" : step === "bot" ? "pt-6 pb-40" : "pt-6 pb-16"} text-foreground`}>
+    <main style={LIGHT_SURFACE} className={`mx-auto min-h-screen w-full max-w-md bg-background px-5 ${approachPlay ? "pt-4 pb-8" : step === "bot" ? "pt-6 pb-56" : "pt-6 pb-16"} text-foreground`}>
 
       <style>{`
         @keyframes sg4MatchStepIn{0%{opacity:.15;transform:translateX(10px) scale(.992)}100%{opacity:1;transform:translateX(0) scale(1)}}
@@ -592,7 +592,6 @@ function BotMatchPage() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <p className="truncate font-display text-[23px] leading-none">{bot.name}</p>
-                  <span className="text-lg">{bot.flag}</span>
                   <p className="ml-auto shrink-0 text-xs font-black text-red-700">HCP {formatHcp(bot.hcp)}</p>
                 </div>
                 <p className="mt-1 text-[10px] font-black uppercase tracking-[0.12em] text-red-700">{BOT_PERSONALITIES[bot.id]?.label ?? bot.archetype.label} · {bot.role}</p>
@@ -630,8 +629,10 @@ function BotMatchPage() {
               );
             })}
           </div>
-          <div className="fixed bottom-0 left-1/2 z-40 w-full max-w-md -translate-x-1/2 bg-gradient-to-t from-white via-white/95 to-white/0 px-5 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-8">
-            <button onClick={() => goToStep("category")} className={`sg4-ryder-next ${ryderNext} shadow-xl`}>Spela mot {bot.name} <ChevronRight className="h-5 w-5" /></button>
+          <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[70] flex justify-center bg-gradient-to-t from-white via-white/98 to-white/0 px-5 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-10">
+            <div className="pointer-events-auto w-full max-w-md">
+              <button onClick={() => goToStep("category")} className={`sg4-ryder-next ${ryderNext} shadow-xl`}>Spela mot {bot.name} <ChevronRight className="h-5 w-5" /></button>
+            </div>
           </div>
         </>
       ) : null}
