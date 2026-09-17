@@ -168,8 +168,10 @@ export function startActiveCupMatch(state: CupState) {
 }
 
 export function getActiveCupMatch(): { cupId: string; matchId: string; botId: string; round: CupRound; category: CupState["category"]; matchLength: 5 } | null {
-  if (!hasStorage()) return null;
-  try { return JSON.parse(window.localStorage.getItem(ACTIVE_MATCH_KEY) || "null"); } catch { return null; }
+  // Bot play should always open the bot picker. Clear any stale Cup state so an
+  // old Putting Cup can never hijack the normal "Spela mot bot" flow.
+  if (hasStorage()) window.localStorage.removeItem(ACTIVE_MATCH_KEY);
+  return null;
 }
 
 export function clearActiveCupMatch() {
