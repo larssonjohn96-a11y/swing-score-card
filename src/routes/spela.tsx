@@ -79,15 +79,15 @@ function PlayPage() {
   }, []);
 
   return (
-    <main className="relative mx-auto min-h-screen w-full max-w-md overflow-hidden bg-[#fcfcfa] px-5 pb-28 pt-6 text-[#061126]">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-[470px] overflow-hidden">
+    <main className="relative mx-auto min-h-screen w-full max-w-md overflow-hidden bg-[#fcfcfa] pb-28 pt-6 text-[#061126]">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[520px] overflow-hidden">
         <div className="absolute -left-28 top-8 h-[330px] w-[330px] rounded-full bg-[#377dff]/24 blur-[88px]" />
         <div className="absolute -right-28 top-12 h-[330px] w-[330px] rounded-full bg-[#ff5d67]/22 blur-[88px]" />
-        <div className="absolute left-[8%] top-[250px] h-[190px] w-[190px] rounded-full bg-[#68a5ff]/13 blur-[68px]" />
-        <div className="absolute right-[7%] top-[260px] h-[190px] w-[190px] rounded-full bg-[#ff8b92]/13 blur-[68px]" />
+        <div className="absolute left-[8%] top-[300px] h-[190px] w-[190px] rounded-full bg-[#68a5ff]/13 blur-[68px]" />
+        <div className="absolute right-[7%] top-[310px] h-[190px] w-[190px] rounded-full bg-[#ff8b92]/13 blur-[68px]" />
       </div>
 
-      <header className="relative z-10 grid grid-cols-[52px_1fr_52px] items-center">
+      <header className="relative z-10 grid grid-cols-[52px_1fr_52px] items-center px-5">
         <Link
           to="/"
           aria-label="Gå till startsidan"
@@ -102,18 +102,17 @@ function PlayPage() {
         <span />
       </header>
 
-      <section className="relative z-10 mt-6 min-h-[238px] overflow-hidden rounded-[28px] border border-black/[.06] shadow-[0_18px_42px_-30px_rgba(15,23,42,.38)]">
+      <section className="relative z-10 mt-5 w-full overflow-hidden">
         <img
           src="/Red_vs_blue_1.png"
           alt=""
-          className="absolute inset-0 h-full w-full object-cover"
-          style={{ objectPosition: "50% 30%" }}
+          className="block h-auto w-full object-contain"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/[.01] via-black/[.04] to-black/76" />
-        <div className="absolute inset-y-0 left-0 w-1/2 bg-[#2f7dff]/12" />
-        <div className="absolute inset-y-0 right-0 w-1/2 bg-[#ff5e5e]/12" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/42" />
+        <div className="pointer-events-none absolute inset-y-0 left-0 w-1/2 bg-[#2f7dff]/8" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-1/2 bg-[#ff5e5e]/8" />
 
-        <div className="relative z-10 flex min-h-[238px] flex-col justify-end px-5 pb-5 pt-6 text-white">
+        <div className="absolute inset-x-0 bottom-0 z-10 px-5 pb-5 text-white">
           <p className="text-[10px] font-black uppercase tracking-[.18em] text-white/82">Spela</p>
           <h1 className="mt-1 font-display text-[36px] leading-[.94] tracking-[-0.03em] text-white drop-shadow-[0_2px_14px_rgba(0,0,0,.35)]">
             Välj din match
@@ -124,7 +123,7 @@ function PlayPage() {
         </div>
       </section>
 
-      <section className="relative z-10 mt-5 space-y-3.5">
+      <section className="relative z-10 mt-5 space-y-3.5 px-5">
         <PlayCard href="/match?flow=friend" title="Spela mot vän" recommendationId="play-friend" />
         <PlayCard href="/match-bot" title="Spela mot bot" recommendationId="play-bot" />
         <PlayCard href="/match?flow=team" title="Spela i lag" recommendationId="play-team" />
