@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { Bell, ChevronRight, User, UserPlus } from "lucide-react";
+import { Bell, ChevronRight, Flame, User, UserPlus } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { computeEstimatedHandicap, hcpLabel, loadRealHandicap, type CategoryHandicap } from "@/lib/sg-handicap";
 import { computeStableCategoryHandicaps } from "@/lib/category-index";
@@ -16,6 +16,7 @@ import { loadBunkerSessions } from "@/lib/bunker";
 import { loadShortPuttSessions } from "@/lib/shortputt";
 import { loadLagPuttSessions } from "@/lib/lagputt";
 import { loadSpeedSessions } from "@/lib/speed";
+import { buildChallenge, challengeStreaks, ensureTodayRecord, loadDailyChallengeState } from "@/lib/daily-challenge";
 import {
   getBehaviorRecommendationScore,
   recordRecommendationImpressions,
@@ -103,7 +104,7 @@ function initials(name: string) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join("");
 }
 
-function BrowseHeading({ title, subtitle, action, to }: { title: string; subtitle: string; action: string; to: "/coach" | "/tester" }) {
+function BrowseHeading({ title, subtitle, action, to }: { title: string; subtitle: string; action: string; to: string }) {
   return (
     <div className="flex items-end justify-between gap-3 px-0.5">
       <div>
@@ -128,7 +129,7 @@ function SimpleCard({ label, title, tone, imageSrc }: { label: string; title: st
         </>
       )}
       <span className="absolute left-4 top-4 text-[9px] font-black uppercase tracking-[.16em] text-white/68">{label}</span>
-      <h3 className="font-display text-[27px] leading-[.95] text-white">{title}</h3>
+      <h3 className="relative z-10 font-display text-[27px] leading-[.95] text-white">{title}</h3>
     </div>
   );
 }
@@ -391,6 +392,15 @@ function Home() {
   const benchmarkHcp = compareTarget === "tour" ? -5 : Number(compareTarget);
   const compareLabel = compareTarget === "tour" ? "Tour" : `HCP ${compareTarget}`;
 
+  const dailyState = loadDailyChallengeState();
+  const { record: dailyRecord } = ensureTodayRecord();
+  const dailyStreak = challengeStreaks(dailyState).daily;
+  const dailyDefinition = dailyRecord.selected ? buildChallenge(dailyRecord.selected, dailyState) : null;
+  const dailyDone = dailyRecord.status === "won" || dailyRecord.status === "lost";
+  const dailyStatus = dailyDone
+    ? dailyRecord.status === "won" ? "Klar för idag" : "Genomförd för idag"
+    : dailyDefinition ? `${dailyDefinition.label} · ${dailyDefinition.shortTask}` : "Välj 1 av 3 kategorier";
+
   return (
     <main className="mx-auto min-h-screen w-full max-w-md bg-background pb-28">
       <header className="sticky top-0 z-40 border-b border-border/70 bg-background/88 px-5 pt-[max(12px,env(safe-area-inset-top))] backdrop-blur-2xl">
@@ -481,8 +491,20 @@ function Home() {
           </Link>
         </section>
 
+        <section className="mt-2.5">
+          <Link to="/daily-challenge" className="flex min-h-[62px] items-center gap-3 rounded-[20px] border border-emerald-200/70 bg-white/78 px-4 py-2.5 shadow-[0_10px_24px_-18px_rgba(15,23,42,.18)] backdrop-blur-[18px] active:scale-[.99]">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-emerald-200/70 bg-emerald-50 text-emerald-700"><Flame className="h-[18px] w-[18px]" /></span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[16px] font-black leading-none text-[#061126]">Dagens Challenge</span>
+              <span className="mt-1 block truncate text-[11px] leading-snug text-[#667085]">{dailyStatus}</span>
+            </span>
+            {dailyStreak > 0 && <span className="rounded-full border border-emerald-200/70 bg-emerald-50 px-2 py-1 text-[11px] font-bold text-emerald-700">🔥 {dailyStreak}</span>}
+            <ChevronRight className="h-4 w-4 shrink-0 text-[#98A2B3]" />
+          </Link>
+        </section>
+
         <section className="mt-7">
-          <BrowseHeading title="Träna med coach" subtitle="Practice Mode" action="Alla pass" to="/coach" />
+          <BrowseHeading title="Träna" subtitle="Practice Mode" action="Alla pass" to="/coach" />
           <DragScrollRow>
             <Link to="/coach" search={{ category: "putting" }} onClick={() => recordRecommendationOpen("practice")} className="block shrink-0"><SimpleCard label="Practice" title="Puttning" tone="bg-[#5146d8]" /></Link>
             <Link to="/coach" search={{ category: "around-the-green" }} onClick={() => recordRecommendationOpen("practice")} className="block shrink-0"><SimpleCard label="Practice" title="Chippning" tone="bg-[#118267]" /></Link>
@@ -492,7 +514,7 @@ function Home() {
         </section>
 
         <section className="mt-7">
-          <BrowseHeading title="Testa din nivå" subtitle="HCP Test" action="Alla tester" to="/tester" />
+          <BrowseHeading title="Testa din nivå" subtitle="Få ett HCP-resultat" action="Alla HCP-test" to="/tester" />
           <DragScrollRow>
             <Link to="/kategori/$slug" params={{ slug: "puttning" }} onClick={() => recordRecommendationOpen("hcp-test")} className="block shrink-0"><SimpleCard label="HCP Test" title="Putting" tone="bg-[#7656c9]" imageSrc="/b01e80c1-ac1d-4d11-81f0-5b9f362d0777.png" /></Link>
             <Link to="/kategori/$slug" params={{ slug: "around-the-green" }} onClick={() => recordRecommendationOpen("hcp-test")} className="block shrink-0"><SimpleCard label="HCP Test" title="Around the Green" tone="bg-[#2d8a58]" /></Link>
@@ -502,15 +524,15 @@ function Home() {
         </section>
 
         <section className="mt-7">
-          <div className="px-0.5">
-            <h2 className="text-[24px] font-black leading-none text-foreground">Mät precision och nivå</h2>
-            <p className="mt-1.5 text-[10px] font-black uppercase tracking-[.18em] text-muted-foreground">Benchmarks &amp; challenges</p>
-          </div>
+          <BrowseHeading title="Standardiserade tester" subtitle="Mät specifika delar av spelet" action="Alla tester" to="/standardiserade-tester" />
           <DragScrollRow>
-            <Link to="/pga-tour-18-puttar" className="block shrink-0"><SimpleCard label="Benchmark" title="18 puttar" tone="bg-[#a94c57]" imageSrc="/b01e80c1-ac1d-4d11-81f0-5b9f362d0777.png" /></Link>
-            <Link to="/tutor-test" className="block shrink-0"><SimpleCard label="Benchmark" title="Tutor Test" tone="bg-[#4955a7]" imageSrc="/b01e80c1-ac1d-4d11-81f0-5b9f362d0777.png" /></Link>
-            <Link to="/driver-konsekvens" className="block shrink-0"><SimpleCard label="Challenge" title="Konsekvens" tone="bg-[#a76632]" /></Link>
-            <Link to="/approach-pei-valj" className="block shrink-0"><SimpleCard label="Benchmark" title="PEI Approach" tone="bg-[#217d8c]" /></Link>
+            <Link to="/8-bollar" className="block shrink-0"><SimpleCard label="Precision" title="8 Bollar" tone="bg-[#6757c7]" imageSrc="/b01e80c1-ac1d-4d11-81f0-5b9f362d0777.png" /></Link>
+            <Link to="/tutor-test" className="block shrink-0"><SimpleCard label="Startlinje" title="Tutor Test" tone="bg-[#4955a7]" imageSrc="/b01e80c1-ac1d-4d11-81f0-5b9f362d0777.png" /></Link>
+            <Link to="/pga-tour-18-puttar" className="block shrink-0"><SimpleCard label="Scoring" title="18 Puttar" tone="bg-[#a94c57]" imageSrc="/b01e80c1-ac1d-4d11-81f0-5b9f362d0777.png" /></Link>
+            <Link to="/approach-pei-valj" className="block shrink-0"><SimpleCard label="Precision" title="PEI Approach" tone="bg-[#217d8c]" /></Link>
+            <Link to="/driver-konsekvens" className="block shrink-0"><SimpleCard label="Konsekvens" title="Driver" tone="bg-[#a76632]" /></Link>
+            <Link to="/upp-och-in" className="block shrink-0"><SimpleCard label="Närspel" title="Upp & In" tone="bg-[#247760]" /></Link>
+            <Link to="/standardiserade-tester" className="block shrink-0"><SimpleCard label="Bibliotek" title="Alla tester" tone="bg-[#334155]" /></Link>
           </DragScrollRow>
         </section>
 
