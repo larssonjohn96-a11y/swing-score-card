@@ -10,12 +10,29 @@ a[href="/kategori/around-the-green"] > div {
   background-repeat: no-repeat !important;
 }
 
-/* Reduce the old dark/grey cast on putting browse cards. */
-a[href^="/coach"][href*="category=putting"] > div,
+/* Reduce the old dark/grey cast on putting test/benchmark browse cards. */
 a[href="/kategori/puttning"] > div,
 a[href="/pga-tour-18-puttar"] > div,
 a[href="/tutor-test"] > div {
   background-image: none !important;
+}
+
+/* Practice putting artwork. */
+a[href^="/coach"][href*="category=putting"] > div {
+  background-color: #3d5b42 !important;
+  background-image:
+    linear-gradient(to bottom, rgba(7, 10, 8, 0.04) 0%, rgba(7, 10, 8, 0.00) 58%, rgba(7, 10, 8, 0.22) 100%),
+    url('/Putting_1.png') !important;
+  background-size: cover !important;
+  background-position: 50% 48% !important;
+  background-repeat: no-repeat !important;
+}
+
+a[href^="/coach"][href*="category=putting"] > div > h3 {
+  position: relative;
+  z-index: 1;
+  color: #fff !important;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.42);
 }
 
 /* Remove the old bunker background layer that was creating a grey lower block. */
