@@ -26,3 +26,41 @@ a[href^="/coach"][href*="category=bunker"] > div {
   background-position: 50% 40% !important;
   background-repeat: no-repeat !important;
 }
+
+/* Off the Tee / Driver artwork for the HCP test browse card. */
+a[href="/kategori/driving"] > div {
+  background-color: #314255 !important;
+  background-image:
+    linear-gradient(to bottom, rgba(5, 9, 12, 0.05) 0%, rgba(5, 9, 12, 0.00) 56%, rgba(5, 9, 12, 0.28) 100%),
+    url('/Off_the_tee.png') !important;
+  background-size: cover !important;
+  background-position: 50% 46% !important;
+  background-repeat: no-repeat !important;
+}
+
+a[href="/kategori/driving"] > div > span,
+a[href="/kategori/driving"] > div > h3 {
+  position: relative;
+  z-index: 1;
+  color: #fff !important;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.42);
+}
+
+/* Off the Tee / Driver artwork for the first category card on the training page. */
+main[style] > section.mt-6 div.grid.grid-cols-2.gap-3 > button:first-child {
+  overflow: hidden;
+  background-color: #314255 !important;
+  background-image:
+    linear-gradient(to bottom, rgba(5, 9, 12, 0.06) 0%, rgba(5, 9, 12, 0.00) 52%, rgba(5, 9, 12, 0.34) 100%),
+    url('/Off_the_tee.png') !important;
+  background-size: cover !important;
+  background-position: 50% 46% !important;
+  background-repeat: no-repeat !important;
+}
+
+main[style] > section.mt-6 div.grid.grid-cols-2.gap-3 > button:first-child span {
+  position: relative;
+  z-index: 1;
+  color: #fff !important;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.44);
+}
