@@ -9,7 +9,7 @@ import { computeAchievements, computeMilestones, countUncollected } from "@/lib/
 
 const LEFT_TABS = [
   { to: "/", label: "Hem", icon: Home, exact: true },
-  { to: "/tester", label: "Train & Test", icon: Target, exact: false },
+  { to: "/tester", label: "HCP test", icon: Target, exact: false },
 ] as const;
 
 const RIGHT_TABS = [
