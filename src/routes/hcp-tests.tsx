@@ -29,6 +29,12 @@ const CATEGORY_IMAGES: Record<string, string | undefined> = {
   driving: "/HCP_OFFtheTee_full.png",
 };
 
+const CATEGORY_IMAGE_POSITIONS: Record<string, string> = {
+  driving: "50% 18%",
+  approach: "50% 42%",
+  puttning: "50% 42%",
+};
+
 const CATEGORY_PROMPTS: Record<string, string> = {
   driving: "Vad är din HCP-nivå från tee?",
   approach: "Vad är din HCP-nivå på dina inspel?",
@@ -43,12 +49,13 @@ function toneFor(category: Category, index: number) {
 
 function HcpCard({ category, test, index, fullWidth = false }: { category: Category; test: CategoryTest; index: number; fullWidth?: boolean }) {
   const imageSrc = CATEGORY_IMAGES[category.slug];
+  const imagePosition = CATEGORY_IMAGE_POSITIONS[category.slug] ?? "50% 50%";
   return (
     <Link to={test.to} className={fullWidth ? "block w-full" : "block w-[calc(50%-4px)] shrink-0"}>
       <article className={`relative flex h-[220px] flex-col justify-end overflow-hidden rounded-[24px] border border-black/[.04] px-4 pb-4 pt-4 text-white ${toneFor(category, index)}`}>
         {imageSrc && (
           <>
-            <img src={imageSrc} alt="" className="absolute inset-0 h-full w-full object-cover" />
+            <img src={imageSrc} alt="" className="absolute inset-0 h-full w-full object-cover" style={{ objectPosition: imagePosition }} />
             <span className="absolute inset-0 bg-gradient-to-t from-black/62 via-black/18 to-black/5" />
           </>
         )}
