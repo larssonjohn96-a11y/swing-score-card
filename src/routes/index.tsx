@@ -118,9 +118,15 @@ function BrowseHeading({ title, subtitle, action, to }: { title: string; subtitl
 const ROW_CLASS = "-mx-5 mt-3.5 flex gap-2 overflow-x-auto bg-transparent px-5 pb-0.5 scroll-smooth overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden";
 const CARD_BASE = "relative flex h-[220px] w-[164px] shrink-0 flex-col justify-end overflow-hidden rounded-[24px] border border-black/[.04] px-4 pb-4 pt-4 text-white";
 
-function SimpleCard({ label, title, tone }: { label: string; title: string; tone: string }) {
+function SimpleCard({ label, title, tone, imageSrc }: { label: string; title: string; tone: string; imageSrc?: string }) {
   return (
     <div className={`${CARD_BASE} ${tone}`}>
+      {imageSrc && (
+        <>
+          <img src={imageSrc} alt="" className="absolute inset-0 h-full w-full object-cover" />
+          <span className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/15 to-black/5" />
+        </>
+      )}
       <span className="absolute left-4 top-4 text-[9px] font-black uppercase tracking-[.16em] text-white/68">{label}</span>
       <h3 className="font-display text-[27px] leading-[.95] text-white">{title}</h3>
     </div>
@@ -471,7 +477,7 @@ function Home() {
         <section className="mt-7">
           <BrowseHeading title="Testa din nivå" subtitle="HCP Test" action="Alla tester" to="/tester" />
           <DragScrollRow>
-            <Link to="/kategori/$slug" params={{ slug: "puttning" }} onClick={() => recordRecommendationOpen("hcp-test")} className="block shrink-0"><SimpleCard label="HCP Test" title="Putting" tone="bg-[#7656c9]" /></Link>
+            <Link to="/kategori/$slug" params={{ slug: "puttning" }} onClick={() => recordRecommendationOpen("hcp-test")} className="block shrink-0"><SimpleCard label="HCP Test" title="Putting" tone="bg-[#7656c9]" imageSrc="/b01e80c1-ac1d-4d11-81f0-5b9f362d0777.png" /></Link>
             <Link to="/kategori/$slug" params={{ slug: "around-the-green" }} onClick={() => recordRecommendationOpen("hcp-test")} className="block shrink-0"><SimpleCard label="HCP Test" title="Around the Green" tone="bg-[#2d8a58]" /></Link>
             <Link to="/kategori/$slug" params={{ slug: "approach" }} onClick={() => recordRecommendationOpen("hcp-test")} className="block shrink-0"><SimpleCard label="HCP Test" title="Approach" tone="bg-[#2f76b7]" /></Link>
             <Link to="/kategori/$slug" params={{ slug: "driving" }} onClick={() => recordRecommendationOpen("hcp-test")} className="block shrink-0"><SimpleCard label="HCP Test" title="Off the Tee" tone="bg-[#3f4b5d]" /></Link>
@@ -484,8 +490,8 @@ function Home() {
             <p className="mt-1.5 text-[10px] font-black uppercase tracking-[.18em] text-muted-foreground">Benchmarks &amp; challenges</p>
           </div>
           <DragScrollRow>
-            <Link to="/pga-tour-18-puttar" className="block shrink-0"><SimpleCard label="Benchmark" title="18 puttar" tone="bg-[#a94c57]" /></Link>
-            <Link to="/tutor-test" className="block shrink-0"><SimpleCard label="Benchmark" title="Tutor Test" tone="bg-[#4955a7]" /></Link>
+            <Link to="/pga-tour-18-puttar" className="block shrink-0"><SimpleCard label="Benchmark" title="18 puttar" tone="bg-[#a94c57]" imageSrc="/b01e80c1-ac1d-4d11-81f0-5b9f362d0777.png" /></Link>
+            <Link to="/tutor-test" className="block shrink-0"><SimpleCard label="Benchmark" title="Tutor Test" tone="bg-[#4955a7]" imageSrc="/b01e80c1-ac1d-4d11-81f0-5b9f362d0777.png" /></Link>
             <Link to="/driver-konsekvens" className="block shrink-0"><SimpleCard label="Challenge" title="Konsekvens" tone="bg-[#a76632]" /></Link>
             <Link to="/approach-pei-valj" className="block shrink-0"><SimpleCard label="Benchmark" title="PEI Approach" tone="bg-[#217d8c]" /></Link>
           </DragScrollRow>

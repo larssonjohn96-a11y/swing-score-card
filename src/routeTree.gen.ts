@@ -48,6 +48,7 @@ import { Route as PgaTour18PuttarHistorikRouteImport } from './routes/pga-tour-1
 import { Route as PgaTour18PuttarRouteImport } from './routes/pga-tour-18-puttar'
 import { Route as OffteeTestRouteImport } from './routes/offtee-test'
 import { Route as OffteeRouteImport } from './routes/offtee'
+import { Route as NotiserRouteImport } from './routes/notiser'
 import { Route as NarspelTestRouteImport } from './routes/narspel-test'
 import { Route as NarspelRouteImport } from './routes/narspel'
 import { Route as MinBagRouteImport } from './routes/min-bag'
@@ -61,6 +62,7 @@ import { Route as LagputtTestRouteImport } from './routes/lagputt-test'
 import { Route as LagputtLadderRouteImport } from './routes/lagputt-ladder'
 import { Route as LagputtHistorikRouteImport } from './routes/lagputt-historik'
 import { Route as LagputtRouteImport } from './routes/lagputt'
+import { Route as LaggTillKompisRouteImport } from './routes/lagg-till-kompis'
 import { Route as KortputtRouteImport } from './routes/kortputt'
 import { Route as KontoRouteImport } from './routes/konto'
 import { Route as KlockPuttRouteImport } from './routes/klock-putt'
@@ -300,6 +302,11 @@ const OffteeRoute = OffteeRouteImport.update({
   path: '/offtee',
   getParentRoute: () => rootRouteImport,
 } as any)
+const NotiserRoute = NotiserRouteImport.update({
+  id: '/notiser',
+  path: '/notiser',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const NarspelTestRoute = NarspelTestRouteImport.update({
   id: '/narspel-test',
   path: '/narspel-test',
@@ -363,6 +370,11 @@ const LagputtHistorikRoute = LagputtHistorikRouteImport.update({
 const LagputtRoute = LagputtRouteImport.update({
   id: '/lagputt',
   path: '/lagputt',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LaggTillKompisRoute = LaggTillKompisRouteImport.update({
+  id: '/lagg-till-kompis',
+  path: '/lagg-till-kompis',
   getParentRoute: () => rootRouteImport,
 } as any)
 const KortputtRoute = KortputtRouteImport.update({
@@ -601,6 +613,7 @@ export interface FileRoutesByFullPath {
   '/klock-putt': typeof KlockPuttRoute
   '/konto': typeof KontoRoute
   '/kortputt': typeof KortputtRoute
+  '/lagg-till-kompis': typeof LaggTillKompisRoute
   '/lagputt': typeof LagputtRoute
   '/lagputt-historik': typeof LagputtHistorikRoute
   '/lagputt-ladder': typeof LagputtLadderRoute
@@ -614,6 +627,7 @@ export interface FileRoutesByFullPath {
   '/min-bag': typeof MinBagRoute
   '/narspel': typeof NarspelRoute
   '/narspel-test': typeof NarspelTestRoute
+  '/notiser': typeof NotiserRoute
   '/offtee': typeof OffteeRoute
   '/offtee-test': typeof OffteeTestRoute
   '/pga-tour-18-puttar': typeof PgaTour18PuttarRoute
@@ -695,6 +709,7 @@ export interface FileRoutesByTo {
   '/klock-putt': typeof KlockPuttRoute
   '/konto': typeof KontoRoute
   '/kortputt': typeof KortputtRoute
+  '/lagg-till-kompis': typeof LaggTillKompisRoute
   '/lagputt': typeof LagputtRoute
   '/lagputt-historik': typeof LagputtHistorikRoute
   '/lagputt-ladder': typeof LagputtLadderRoute
@@ -708,6 +723,7 @@ export interface FileRoutesByTo {
   '/min-bag': typeof MinBagRoute
   '/narspel': typeof NarspelRoute
   '/narspel-test': typeof NarspelTestRoute
+  '/notiser': typeof NotiserRoute
   '/offtee': typeof OffteeRoute
   '/offtee-test': typeof OffteeTestRoute
   '/pga-tour-18-puttar': typeof PgaTour18PuttarRoute
@@ -790,6 +806,7 @@ export interface FileRoutesById {
   '/klock-putt': typeof KlockPuttRoute
   '/konto': typeof KontoRoute
   '/kortputt': typeof KortputtRoute
+  '/lagg-till-kompis': typeof LaggTillKompisRoute
   '/lagputt': typeof LagputtRoute
   '/lagputt-historik': typeof LagputtHistorikRoute
   '/lagputt-ladder': typeof LagputtLadderRoute
@@ -803,6 +820,7 @@ export interface FileRoutesById {
   '/min-bag': typeof MinBagRoute
   '/narspel': typeof NarspelRoute
   '/narspel-test': typeof NarspelTestRoute
+  '/notiser': typeof NotiserRoute
   '/offtee': typeof OffteeRoute
   '/offtee-test': typeof OffteeTestRoute
   '/pga-tour-18-puttar': typeof PgaTour18PuttarRoute
@@ -886,6 +904,7 @@ export interface FileRouteTypes {
     | '/klock-putt'
     | '/konto'
     | '/kortputt'
+    | '/lagg-till-kompis'
     | '/lagputt'
     | '/lagputt-historik'
     | '/lagputt-ladder'
@@ -899,6 +918,7 @@ export interface FileRouteTypes {
     | '/min-bag'
     | '/narspel'
     | '/narspel-test'
+    | '/notiser'
     | '/offtee'
     | '/offtee-test'
     | '/pga-tour-18-puttar'
@@ -980,6 +1000,7 @@ export interface FileRouteTypes {
     | '/klock-putt'
     | '/konto'
     | '/kortputt'
+    | '/lagg-till-kompis'
     | '/lagputt'
     | '/lagputt-historik'
     | '/lagputt-ladder'
@@ -993,6 +1014,7 @@ export interface FileRouteTypes {
     | '/min-bag'
     | '/narspel'
     | '/narspel-test'
+    | '/notiser'
     | '/offtee'
     | '/offtee-test'
     | '/pga-tour-18-puttar'
@@ -1074,6 +1096,7 @@ export interface FileRouteTypes {
     | '/klock-putt'
     | '/konto'
     | '/kortputt'
+    | '/lagg-till-kompis'
     | '/lagputt'
     | '/lagputt-historik'
     | '/lagputt-ladder'
@@ -1087,6 +1110,7 @@ export interface FileRouteTypes {
     | '/min-bag'
     | '/narspel'
     | '/narspel-test'
+    | '/notiser'
     | '/offtee'
     | '/offtee-test'
     | '/pga-tour-18-puttar'
@@ -1169,6 +1193,7 @@ export interface RootRouteChildren {
   KlockPuttRoute: typeof KlockPuttRoute
   KontoRoute: typeof KontoRoute
   KortputtRoute: typeof KortputtRoute
+  LaggTillKompisRoute: typeof LaggTillKompisRoute
   LagputtRoute: typeof LagputtRoute
   LagputtHistorikRoute: typeof LagputtHistorikRoute
   LagputtLadderRoute: typeof LagputtLadderRoute
@@ -1182,6 +1207,7 @@ export interface RootRouteChildren {
   MinBagRoute: typeof MinBagRoute
   NarspelRoute: typeof NarspelRoute
   NarspelTestRoute: typeof NarspelTestRoute
+  NotiserRoute: typeof NotiserRoute
   OffteeRoute: typeof OffteeRoute
   OffteeTestRoute: typeof OffteeTestRoute
   PgaTour18PuttarRoute: typeof PgaTour18PuttarRoute
@@ -1503,6 +1529,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OffteeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/notiser': {
+      id: '/notiser'
+      path: '/notiser'
+      fullPath: '/notiser'
+      preLoaderRoute: typeof NotiserRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/narspel-test': {
       id: '/narspel-test'
       path: '/narspel-test'
@@ -1592,6 +1625,13 @@ declare module '@tanstack/react-router' {
       path: '/lagputt'
       fullPath: '/lagputt'
       preLoaderRoute: typeof LagputtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lagg-till-kompis': {
+      id: '/lagg-till-kompis'
+      path: '/lagg-till-kompis'
+      fullPath: '/lagg-till-kompis'
+      preLoaderRoute: typeof LaggTillKompisRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/kortputt': {
@@ -1945,6 +1985,7 @@ const rootRouteChildren: RootRouteChildren = {
   KlockPuttRoute: KlockPuttRoute,
   KontoRoute: KontoRoute,
   KortputtRoute: KortputtRoute,
+  LaggTillKompisRoute: LaggTillKompisRoute,
   LagputtRoute: LagputtRoute,
   LagputtHistorikRoute: LagputtHistorikRoute,
   LagputtLadderRoute: LagputtLadderRoute,
@@ -1958,6 +1999,7 @@ const rootRouteChildren: RootRouteChildren = {
   MinBagRoute: MinBagRoute,
   NarspelRoute: NarspelRoute,
   NarspelTestRoute: NarspelTestRoute,
+  NotiserRoute: NotiserRoute,
   OffteeRoute: OffteeRoute,
   OffteeTestRoute: OffteeTestRoute,
   PgaTour18PuttarRoute: PgaTour18PuttarRoute,
