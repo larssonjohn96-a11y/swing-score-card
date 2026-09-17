@@ -104,24 +104,27 @@ function PlayPage() {
         <span />
       </header>
 
-      <section className="relative z-10 mt-5 w-full overflow-hidden">
-        <img
-          src="/Red_vs_blue_1.png"
-          alt=""
-          className="block h-auto w-full object-contain"
-        />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/42" />
-        <div className="pointer-events-none absolute inset-y-0 left-0 w-1/2 bg-[#2f7dff]/8" />
-        <div className="pointer-events-none absolute inset-y-0 right-0 w-1/2 bg-[#ff5e5e]/8" />
+      <section className="relative z-10 mt-5 px-2">
+        <div className="relative w-full overflow-hidden rounded-[30px] border border-white/75 bg-white/18 shadow-[0_22px_48px_-30px_rgba(15,23,42,.34),inset_0_1px_0_rgba(255,255,255,.5)] backdrop-blur-[6px]">
+          <img
+            src="/Red_vs_blue_1.png"
+            alt=""
+            className="block h-auto w-full object-contain"
+          />
+          <div className="pointer-events-none absolute inset-0 rounded-[30px] ring-1 ring-inset ring-white/35" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/42" />
+          <div className="pointer-events-none absolute inset-y-0 left-0 w-1/2 bg-[#2f7dff]/8" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-1/2 bg-[#ff5e5e]/8" />
 
-        <div className="absolute inset-x-0 bottom-0 z-10 px-5 pb-5 text-white">
-          <p className="text-[10px] font-black uppercase tracking-[.18em] text-white/82">Spela</p>
-          <h1 className="mt-1 font-display text-[36px] leading-[.94] tracking-[-0.03em] text-white drop-shadow-[0_2px_14px_rgba(0,0,0,.35)]">
-            Välj din match
-          </h1>
-          <p className="mt-2 max-w-[27ch] text-[13px] font-medium leading-snug text-white/84">
-            Spela head-to-head, mot bot eller tillsammans i lag.
-          </p>
+          <div className="absolute inset-x-0 bottom-0 z-10 px-5 pb-5 text-white">
+            <p className="text-[10px] font-black uppercase tracking-[.18em] text-white/82">Spela</p>
+            <h1 className="mt-1 font-display text-[36px] leading-[.94] tracking-[-0.03em] text-white drop-shadow-[0_2px_14px_rgba(0,0,0,.35)]">
+              Välj din match
+            </h1>
+            <p className="mt-2 max-w-[27ch] text-[13px] font-medium leading-snug text-white/84">
+              Spela head-to-head, mot bot eller tillsammans i lag.
+            </p>
+          </div>
         </div>
       </section>
 
