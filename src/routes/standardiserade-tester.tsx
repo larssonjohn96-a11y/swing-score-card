@@ -31,7 +31,6 @@ const TEST_SECTIONS: TestSection[] = [
     title: "Puttning",
     subtitle: "Startlinje, kortputt och längdkontroll",
     tests: [
-      { to: "/8-bollar", title: "8 Bollar", label: "Precision", description: "Ett snabbt standardtest för puttprecision.", tone: "bg-[#6757c7]", imageSrc: "/b01e80c1-ac1d-4d11-81f0-5b9f362d0777.png" },
       { to: "/tutor-test", title: "Tutor Test", label: "Startlinje", description: "Mät hur konsekvent du startar bollen på rätt linje.", tone: "bg-[#4955a7]", imageSrc: "/b01e80c1-ac1d-4d11-81f0-5b9f362d0777.png" },
       { to: "/pga-tour-18-puttar", title: "18 Puttar", label: "Scoring", description: "Benchmark över flera puttlängder.", tone: "bg-[#a94c57]", imageSrc: "/b01e80c1-ac1d-4d11-81f0-5b9f362d0777.png" },
       { to: "/lagputt", title: "Lag Putt", label: "Längdkontroll", description: "Mät fart och proximity på längre puttar.", tone: "bg-[#7b6a9c]" },
@@ -43,6 +42,7 @@ const TEST_SECTIONS: TestSection[] = [
     title: "Närspel",
     subtitle: "Chip, pitch och upp & in",
     tests: [
+      { to: "/8-bollar", title: "8 Bollar", label: "Precision", description: "Ett snabbt standardtest för närspelsprecision.", tone: "bg-[#6757c7]", imageSrc: "/b01e80c1-ac1d-4d11-81f0-5b9f362d0777.png" },
       { to: "/upp-och-in", title: "Upp & In", label: "Scoring", description: "Mät förmågan att rädda slag runt green.", tone: "bg-[#247760]" },
       { to: "/50-bollar", title: "50 Bollar", label: "Närspel", description: "Större test för ett stabilt närspelsbenchmark.", tone: "bg-[#3c8068]" },
       { to: "/bunker-traning", title: "Bunker", label: "Bunker", description: "Mät kontroll och proximity från bunker.", tone: "bg-[#b87936]" },
