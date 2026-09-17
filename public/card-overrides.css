@@ -38,7 +38,6 @@ a[href="/kategori/driving"] > div {
   background-repeat: no-repeat !important;
 }
 
-a[href="/kategori/driving"] > div > span,
 a[href="/kategori/driving"] > div > h3 {
   position: relative;
   z-index: 1;
@@ -63,4 +62,14 @@ main[style] > section.mt-6 div.grid.grid-cols-2.gap-3 > button:first-child span 
   z-index: 1;
   color: #fff !important;
   text-shadow: 0 1px 12px rgba(0, 0, 0, 0.44);
+}
+
+/* Keep the small card-type label (Practice / HCP Test / Benchmark / Challenge etc.) fixed in the top-left on every browse card. */
+main div[class*="h-[220px]"][class*="w-[164px]"] > span[class*="tracking-[.16em]"] {
+  position: absolute !important;
+  left: 1rem !important;
+  top: 1rem !important;
+  right: auto !important;
+  bottom: auto !important;
+  z-index: 5 !important;
 }
