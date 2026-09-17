@@ -19,12 +19,14 @@ function PlayCard({ href, title, recommendationId }: PlayCardProps) {
     <a
       href={href}
       onClick={() => recommendationId && recordRecommendationOpen(recommendationId)}
-      className="group flex min-h-[104px] items-center rounded-[26px] border border-[#d8e1ee] bg-white px-6 shadow-[0_14px_34px_-28px_rgba(15,23,42,.24)] transition-all active:scale-[.99] active:border-blue-400 active:bg-blue-50"
+      className="group flex min-h-[104px] items-center rounded-[26px] border border-white/75 bg-white/82 px-6 shadow-[0_14px_34px_-28px_rgba(15,23,42,.24)] backdrop-blur-xl transition-all active:scale-[.99] active:border-blue-300 active:bg-white"
     >
       <span className="min-w-0 flex-1 font-display text-[29px] leading-[0.96] tracking-[-0.025em] text-[#061126]">
         {title}
       </span>
-      <ChevronRight className="h-6 w-6 shrink-0 text-[#7b8da7] transition-transform group-active:translate-x-0.5" strokeWidth={2.5} />
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#f2c94c] text-[#071b14] shadow-[0_8px_20px_-12px_rgba(0,0,0,.45)] transition-transform group-active:translate-x-0.5">
+        <ChevronRight className="h-5 w-5" strokeWidth={2.8} />
+      </span>
     </a>
   );
 }
@@ -71,12 +73,18 @@ function PlayPage() {
   }, []);
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-md bg-[#fcfcfa] px-5 pb-28 pt-6 text-[#061126]">
-      <header className="grid grid-cols-[52px_1fr_52px] items-center">
+    <main
+      className="relative mx-auto min-h-screen w-full max-w-md overflow-hidden bg-[#fcfcfa] px-5 pb-28 pt-6 text-[#061126]"
+      style={{
+        backgroundImage:
+          "radial-gradient(circle at 0% 24%, rgba(37,99,235,.085), transparent 34%), radial-gradient(circle at 100% 30%, rgba(239,68,68,.075), transparent 34%), linear-gradient(180deg, #fcfcfa 0%, #fbfbf8 100%)",
+      }}
+    >
+      <header className="relative z-10 grid grid-cols-[52px_1fr_52px] items-center">
         <Link
           to="/"
           aria-label="Gå till startsidan"
-          className="flex h-12 w-12 items-center justify-center rounded-full border border-[#d8e1ee] bg-white text-[#061126] active:scale-95"
+          className="flex h-12 w-12 items-center justify-center rounded-full border border-white/80 bg-white/80 text-[#061126] backdrop-blur-xl active:scale-95"
         >
           <HomeArrowIcon />
         </Link>
@@ -87,7 +95,7 @@ function PlayPage() {
         <span />
       </header>
 
-      <section className="relative mt-6 min-h-[238px] overflow-hidden rounded-[28px] border border-black/[.06] shadow-[0_18px_42px_-30px_rgba(15,23,42,.38)]">
+      <section className="relative z-10 mt-6 min-h-[238px] overflow-hidden rounded-[28px] border border-black/[.06] shadow-[0_18px_42px_-30px_rgba(15,23,42,.38)]">
         <img
           src="/Red_vs_blue_1.png"
           alt=""
@@ -107,7 +115,7 @@ function PlayPage() {
         </div>
       </section>
 
-      <section className="mt-5 space-y-3.5">
+      <section className="relative z-10 mt-5 space-y-3.5">
         <PlayCard href="/match?flow=friend" title="Spela mot vän" recommendationId="play-friend" />
         <PlayCard href="/match-bot" title="Spela mot bot" recommendationId="play-bot" />
         <PlayCard href="/match?flow=team" title="Spela i lag" recommendationId="play-team" />
