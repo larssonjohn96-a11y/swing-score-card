@@ -199,3 +199,8 @@ main section.mt-4 > a[href="/spela"]:has(h2) > div:last-child::after {
   text-shadow: none;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
 }
+
+/* Temporarily hide Daily Challenge on the home page. */
+main > div > section:has(> a[href="/daily-challenge"]) {
+  display: none !important;
+}
