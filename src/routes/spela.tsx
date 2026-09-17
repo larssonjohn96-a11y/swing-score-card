@@ -80,11 +80,13 @@ function PlayPage() {
 
   return (
     <main className="relative mx-auto min-h-screen w-full max-w-md overflow-hidden bg-[#fcfcfa] pb-28 pt-6 text-[#061126]">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-[520px] overflow-hidden">
-        <div className="absolute -left-28 top-8 h-[330px] w-[330px] rounded-full bg-[#377dff]/24 blur-[88px]" />
-        <div className="absolute -right-28 top-12 h-[330px] w-[330px] rounded-full bg-[#ff5d67]/22 blur-[88px]" />
-        <div className="absolute left-[8%] top-[300px] h-[190px] w-[190px] rounded-full bg-[#68a5ff]/13 blur-[68px]" />
-        <div className="absolute right-[7%] top-[310px] h-[190px] w-[190px] rounded-full bg-[#ff8b92]/13 blur-[68px]" />
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -left-28 top-8 h-[350px] w-[350px] rounded-full bg-[#377dff]/24 blur-[92px]" />
+        <div className="absolute -right-28 top-12 h-[350px] w-[350px] rounded-full bg-[#ff5d67]/22 blur-[92px]" />
+        <div className="absolute -left-24 top-[430px] h-[360px] w-[360px] rounded-full bg-[#5b95ff]/17 blur-[105px]" />
+        <div className="absolute -right-24 top-[470px] h-[360px] w-[360px] rounded-full bg-[#ff7d86]/16 blur-[105px]" />
+        <div className="absolute -left-20 bottom-[-120px] h-[360px] w-[360px] rounded-full bg-[#79a9ff]/12 blur-[110px]" />
+        <div className="absolute -right-20 bottom-[-100px] h-[360px] w-[360px] rounded-full bg-[#ff9da3]/12 blur-[110px]" />
       </div>
 
       <header className="relative z-10 grid grid-cols-[52px_1fr_52px] items-center px-5">
