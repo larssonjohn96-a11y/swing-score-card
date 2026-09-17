@@ -24,34 +24,34 @@ jobs:
           p = Path('src/routes/match-bot.tsx')
           s = p.read_text()
 
-          # Remove country/flag from bot model and bot definitions.
+          # Remove country and flag from bot data/model.
           s = s.replace('  country: string;\n  flag: string;\n', '')
-          s = s.replace('  id, name, hcp, gender, role, tier, avatar, country, flag, intro, label,', '  id, name, hcp, gender, role, tier, avatar, intro, label,')
-          s = s.replace('  id: string; name: string; hcp: number; gender: "Kvinna" | "Man"; role: string; tier: BotProfile["tier"]; avatar: string; country: string; flag: string; intro: string; label: string;', '  id: string; name: string; hcp: number; gender: "Kvinna" | "Man"; role: string; tier: BotProfile["tier"]; avatar: string; intro: string; label: string;')
-          s = s.replace('    id, name, hcp, gender, role, tier, avatar, country, flag, intro,', '    id, name, hcp, gender, role, tier, avatar, intro,')
+          s = s.replace('country, flag, ', '')
+          s = s.replace('country: string; flag: string; ', '')
           s = re.sub(r', country: "[^"]*", flag: "[^"]*"', '', s)
 
-          # Remove flag and country rendering from selected-bot sticky header.
-          s = s.replace('                  <span className="text-lg">{bot.flag}</span>\n', '')
-          s = s.replace('<div className="mt-2 flex items-center justify-between border-t border-slate-200/80 pt-2 text-[10px] font-semibold text-slate-500"><span>{bot.country}</span><span className="capitalize">', '<div className="mt-2 flex items-center justify-end border-t border-slate-200/80 pt-2 text-[10px] font-semibold text-slate-500"><span className="capitalize">')
+          # Remove any remaining country/flag rendering in the selector header.
+          s = re.sub(r'\s*<span className="text-lg">\{bot\.flag\}</span>', '', s)
+          s = re.sub(r'<span>\{bot\.country\}</span>', '', s)
+          s = s.replace('items-center justify-between border-t', 'items-center justify-end border-t')
 
-          # Force the CTA to be truly viewport-fixed, independent of Tailwind class interpretation.
-          old = '<div className="fixed bottom-0 left-1/2 z-40 w-full max-w-md -translate-x-1/2 bg-gradient-to-t from-white via-white/95 to-white/0 px-5 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-8">'
-          new = '<div className="w-full bg-gradient-to-t from-white via-white/95 to-white/0 px-5 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-8" style={{ position: "fixed", left: "50%", bottom: 0, transform: "translateX(-50%)", width: "100%", maxWidth: "28rem", zIndex: 60 }}>'
-          if old not in s:
-              raise SystemExit('CTA wrapper pattern not found')
-          s = s.replace(old, new, 1)
+          # Force the play CTA to be viewport fixed. Match the wrapper by its unique gradient and max-width.
+          pattern = re.compile(r'<div className="[^"]*bg-gradient-to-t from-white via-white/95 to-white/0 px-5 pb-\[calc\(env\(safe-area-inset-bottom\)\+16px\)\] pt-8"(?: style=\{\{[^>]*\}\})?>')
+          replacement = '<div className="w-full bg-gradient-to-t from-white via-white/95 to-white/0 px-5 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-8" style={{ position: "fixed", left: "50%", bottom: 0, transform: "translateX(-50%)", width: "100%", maxWidth: "28rem", zIndex: 80 }}>'
+          s, n = pattern.subn(replacement, s, count=1)
+          if n == 0:
+              # fallback: directly replace known fixed wrapper fragment if formatting differs
+              s = s.replace('className="fixed bottom-0 left-1/2 z-40 w-full max-w-md -translate-x-1/2 bg-gradient-to-t from-white via-white/95 to-white/0 px-5 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-8"', 'className="w-full bg-gradient-to-t from-white via-white/95 to-white/0 px-5 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-8" style={{ position: "fixed", left: "50%", bottom: 0, transform: "translateX(-50%)", width: "100%", maxWidth: "28rem", zIndex: 80 }}', 1)
 
-          # More room behind fixed CTA so final tier stays accessible.
           s = s.replace('step === "bot" ? "pt-6 pb-40"', 'step === "bot" ? "pt-6 pb-52"')
+          s = s.replace('step === "bot" ? "pt-6 pb-44"', 'step === "bot" ? "pt-6 pb-52"')
 
           p.write_text(s)
           PY
-      - name: Remove temporary workflow and commit
+      - name: Commit changes
         run: |
-          git rm .github/workflows/fix-bot-selector-fixed-cta-v2.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add src/routes/match-bot.tsx
-          git commit -m "Keep bot CTA viewport-fixed and remove countries"
+          git commit -m "Fix bot selector CTA and remove countries"
           git push
