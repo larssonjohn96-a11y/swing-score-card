@@ -100,8 +100,8 @@ function HandicapTestsPage() {
       <div className="space-y-8 px-5 pt-5">
         <section>
           <div className="rounded-[24px] border border-blue-200 bg-blue-50/70 px-5 py-3.5">
-            <p className="text-[9px] font-black uppercase tracking-[.17em] text-blue-600">Snabbt test</p>
-            <h2 className="mt-1 text-[22px] font-black leading-tight text-foreground">Var står du idag?</h2>
+            <p className="text-[9px] font-black uppercase tracking-[.17em] text-blue-600">Gör ett test</p>
+            <h2 className="mt-1 text-[22px] font-black leading-tight text-foreground">Få ett handicapresultat direkt</h2>
             <p className="mt-1 text-[13px] font-medium leading-snug text-muted-foreground">Välj ett område och kör.</p>
           </div>
         </section>
