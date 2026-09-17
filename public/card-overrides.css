@@ -44,14 +44,14 @@ a[href^="/coach"][href*="category=bunker"] > div {
   background-repeat: no-repeat !important;
 }
 
-/* Off the Tee / Driver artwork for the HCP test browse card. */
+/* Off the Tee HCP artwork on the compact home browse card. */
 a[href="/kategori/driving"] > div {
   background-color: #314255 !important;
   background-image:
-    linear-gradient(to bottom, rgba(5, 9, 12, 0.05) 0%, rgba(5, 9, 12, 0.00) 56%, rgba(5, 9, 12, 0.28) 100%),
-    url('/Off_the_tee.png') !important;
+    linear-gradient(to bottom, rgba(5, 9, 12, 0.03) 0%, rgba(5, 9, 12, 0.00) 58%, rgba(5, 9, 12, 0.16) 100%),
+    url('/HCP_OFT_mobil.png') !important;
   background-size: cover !important;
-  background-position: 50% 46% !important;
+  background-position: 50% 50% !important;
   background-repeat: no-repeat !important;
 }
 
