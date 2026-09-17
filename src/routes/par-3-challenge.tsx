@@ -19,7 +19,7 @@ type SavedResult = {
 };
 
 const STORAGE_KEY = "sg4-par3-challenge-v1";
-const TARGETS = [125, 135, 140, 150, 155, 165, 175, 180, 190] as const;
+const TARGETS = [130, 140, 150, 160, 175, 185] as const;
 
 function shuffledTargets() {
   const values = [...TARGETS];
@@ -149,7 +149,7 @@ function Par3ChallengePage() {
         <p className="mt-7 text-xs font-semibold uppercase tracking-[0.22em] text-primary">Inspel · Standardiserat test</p>
         <h1 className="mt-2 font-display text-4xl leading-none">Par 3 Challenge</h1>
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-          9 slag från vanliga par 3-distanser. Avstånden blandas varje gång så du måste kalibrera om inför varje slag.
+          6 slag från vanliga par 3-distanser. Avstånden blandas varje gång så du måste kalibrera om inför varje slag.
         </p>
 
         <div className="mt-6 rounded-3xl border border-border bg-card p-5">
@@ -165,7 +165,7 @@ function Par3ChallengePage() {
         <div className="mt-3 grid grid-cols-2 gap-3">
           <div className="rounded-2xl border border-border bg-card p-4">
             <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Slag</p>
-            <p className="mt-1 font-display text-3xl">9</p>
+            <p className="mt-1 font-display text-3xl">6</p>
           </div>
           <div className="rounded-2xl border border-border bg-card p-4">
             <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">PB · snittmiss</p>
@@ -187,12 +187,12 @@ function Par3ChallengePage() {
           <button onClick={goBack} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card" aria-label="Tillbaka">
             <ArrowLeft className="h-4 w-4" />
           </button>
-          <span className="text-sm font-semibold">Slag {index + 1} av 9</span>
+          <span className="text-sm font-semibold">Slag {index + 1} av 6</span>
           <span className="w-10" />
         </div>
 
         <div className="mt-4 h-2 overflow-hidden rounded-full bg-muted">
-          <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${((index + 1) / 9) * 100}%` }} />
+          <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${((index + 1) / 6) * 100}%` }} />
         </div>
 
         <section className="mt-6 rounded-3xl border border-border bg-card p-6 text-center">
@@ -230,7 +230,7 @@ function Par3ChallengePage() {
         </section>
 
         <button onClick={register} className="mt-5 w-full rounded-2xl bg-primary py-4 font-semibold text-primary-foreground">
-          {index === 8 ? "Avsluta test" : "Nästa slag"}
+          {index === 5 ? "Avsluta test" : "Nästa slag"}
         </button>
       </main>
     );
@@ -246,7 +246,7 @@ function Par3ChallengePage() {
         </Link>
         <div>
           <h1 className="text-lg font-semibold">Par 3 Challenge</h1>
-          <p className="text-xs text-muted-foreground">9 slag · Resultat</p>
+          <p className="text-xs text-muted-foreground">6 slag · Resultat</p>
         </div>
       </div>
 
