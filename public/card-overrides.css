@@ -204,3 +204,14 @@ main section.mt-4 > a[href="/spela"]:has(h2) > div:last-child::after {
 main > div > section:has(> a[href="/daily-challenge"]) {
   display: none !important;
 }
+
+/* Home top navigation: label the HCP destination clearly. */
+header nav[aria-label="Snabbnavigering"] > a[href="/tester"] {
+  font-size: 0 !important;
+}
+
+header nav[aria-label="Snabbnavigering"] > a[href="/tester"]::after {
+  content: "HCP Tester";
+  font-size: 0.75rem;
+  font-weight: 900;
+}
