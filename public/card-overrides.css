@@ -1,0 +1,28 @@
+/* Home browse-card artwork overrides. Keep images full-bleed and crop focal points intentionally. */
+a[href^="/coach"][href*="category=around-the-green"] > div,
+a[href="/kategori/around-the-green"] > div {
+  background-color: #52724b !important;
+  background-image:
+    linear-gradient(to bottom, rgba(8, 10, 7, 0.04) 0%, rgba(8, 10, 7, 0.00) 58%, rgba(8, 10, 7, 0.18) 100%),
+    url('/0d286fd4-99fa-47eb-b39c-a7ff718ebdd6.png') !important;
+  background-size: cover !important;
+  background-position: 35% 50% !important;
+  background-repeat: no-repeat !important;
+}
+
+/* Reduce the old dark/grey cast on putting browse cards. */
+a[href^="/coach"][href*="category=putting"] > div,
+a[href="/kategori/puttning"] > div,
+a[href="/pga-tour-18-puttar"] > div,
+a[href="/tutor-test"] > div {
+  background-image: none !important;
+}
+
+/* Remove the old bunker background layer that was creating a grey lower block. */
+a[href^="/coach"][href*="category=bunker"] > div {
+  background-color: #4a433c !important;
+  background-image: url('/bunker-card.jpg') !important;
+  background-size: cover !important;
+  background-position: 50% 40% !important;
+  background-repeat: no-repeat !important;
+}
