@@ -36,10 +36,10 @@ const CATEGORY_IMAGE_POSITIONS: Record<string, string> = {
 };
 
 const CATEGORY_PROMPTS: Record<string, string> = {
-  driving: "Vad är din HCP-nivå från tee?",
-  approach: "Vad är din HCP-nivå på dina inspel?",
-  "around-the-green": "Vad är din HCP-nivå runt green?",
-  puttning: "Vad är din HCP-nivå på green?",
+  driving: "Hur bra är du från tee?",
+  approach: "Hur vassa är dina inspel?",
+  "around-the-green": "Hur stark är du runt green?",
+  puttning: "Hur säker är du på green?",
 };
 
 function toneFor(category: Category, index: number) {
@@ -91,25 +91,25 @@ function HandicapTestsPage() {
           <Link to="/" aria-label="Tillbaka" className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card"><ArrowLeft className="h-4 w-4" /></Link>
           <div className="min-w-0">
             <p className="text-[9px] font-black uppercase tracking-[.18em] text-blue-600">Få ett HCP-resultat</p>
-            <h1 className="mt-0.5 text-[26px] font-black leading-none text-foreground">HCP Tests</h1>
+            <h1 className="mt-0.5 text-[28px] font-black leading-none text-foreground">Hur bra är du?</h1>
           </div>
         </div>
-        <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground">Korta nivåtester med tydlig feedback direkt. Välj en del av spelet, gör testet och få ditt kategori-HCP.</p>
+        <p className="mt-2.5 max-w-sm text-[15px] font-medium leading-snug text-muted-foreground">Testa en del av spelet. Få svaret direkt.</p>
       </header>
 
-      <div className="space-y-8 px-5 pt-6">
+      <div className="space-y-8 px-5 pt-5">
         <section>
-          <div className="rounded-[26px] border border-blue-200 bg-blue-50/70 px-5 py-4">
-            <p className="text-[10px] font-black uppercase tracking-[.17em] text-blue-600">Snabbt · tydligt · jämförbart</p>
-            <h2 className="mt-1 text-[22px] font-black leading-tight text-foreground">Testa din nivå</h2>
-            <p className="mt-1.5 text-sm leading-snug text-muted-foreground">Hur bra är varje del av ditt spel egentligen?</p>
+          <div className="rounded-[24px] border border-blue-200 bg-blue-50/70 px-5 py-3.5">
+            <p className="text-[9px] font-black uppercase tracking-[.17em] text-blue-600">Snabbt test</p>
+            <h2 className="mt-1 text-[22px] font-black leading-tight text-foreground">Var står du idag?</h2>
+            <p className="mt-1 text-[13px] font-medium leading-snug text-muted-foreground">Välj ett område och kör.</p>
           </div>
         </section>
 
         <section>
           <div className="px-0.5">
             <h2 className="text-[24px] font-black leading-none text-foreground">Speed</h2>
-            <p className="mt-2 text-[15px] font-semibold leading-snug text-muted-foreground">Hur snabb är du jämfört med ditt HCP?</p>
+            <p className="mt-2 text-[15px] font-semibold leading-snug text-muted-foreground">Hur snabb är du?</p>
           </div>
           <div className="mt-3.5"><SpeedCard /></div>
         </section>
