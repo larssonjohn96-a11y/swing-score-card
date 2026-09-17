@@ -30,11 +30,11 @@ import { computeRevealState } from "@/lib/test-reveal-helpers";
 export const Route = createFileRoute("/speed")({
   head: () => ({
     meta: [
-      { title: "Speed Test – 3 drives | SG4" },
+      { title: "Ball Speed Test – 3 drives | SG4" },
       {
         name: "description",
         content:
-          "Speed Test: 3 drives, ball speed och valfri club head speed. Speed HCP och analys mätt i simulator eller på range.",
+          "Ball Speed Test: 3 drives, ball speed och valfri club head speed. Ball Speed HCP och analys mätt i simulator eller på range.",
       },
     ],
   }),
@@ -166,7 +166,7 @@ function SpeedPage() {
             <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
               Innan du börjar
             </p>
-            <h1 className="text-4xl leading-none">Speed Test</h1>
+            <h1 className="text-4xl leading-none">Ball Speed Test</h1>
           </div>
           <Link
             to="/kategori/$slug"
@@ -229,7 +229,7 @@ function SpeedPage() {
           onClick={startTest}
           className="mt-8 w-full rounded-2xl bg-primary py-5 font-[family-name:var(--font-display)] text-2xl text-primary-foreground"
         >
-          Starta Speed Test
+          Starta Ball Speed Test
         </button>
       </main>
     );
@@ -355,7 +355,7 @@ function SpeedPage() {
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-16 pt-10">
       <section className="rounded-3xl border border-border bg-card p-6 text-center shadow-[var(--shadow-glow)]">
-        <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Speed HCP</p>
+        <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Ball Speed HCP</p>
         <p className="mt-1 font-[family-name:var(--font-display)] text-8xl leading-none text-primary">
           {handicapLabel(result.handicap)}
         </p>
