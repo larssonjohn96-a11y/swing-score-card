@@ -19,12 +19,18 @@ function PlayCard({ href, title, recommendationId }: PlayCardProps) {
     <a
       href={href}
       onClick={() => recommendationId && recordRecommendationOpen(recommendationId)}
-      className="group flex min-h-[104px] items-center rounded-[26px] border border-white/75 bg-white/82 px-6 shadow-[0_14px_34px_-28px_rgba(15,23,42,.24)] backdrop-blur-xl transition-all active:scale-[.99] active:border-blue-300 active:bg-white"
+      className="group relative flex min-h-[108px] items-center overflow-hidden rounded-[28px] border border-white/65 bg-white/58 px-6 backdrop-blur-[20px] shadow-[0_18px_40px_-26px_rgba(15,23,42,.28),inset_0_1px_0_rgba(255,255,255,.86),inset_0_-1px_0_rgba(255,255,255,.24)] transition-all active:scale-[.995]"
     >
-      <span className="min-w-0 flex-1 font-display text-[29px] leading-[0.96] tracking-[-0.025em] text-[#061126]">
+      <span className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/42 via-white/12 to-black/[.035]" />
+      <span className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white/95 to-transparent" />
+      <span className="pointer-events-none absolute -left-10 top-1/2 h-24 w-24 -translate-y-1/2 rounded-full bg-blue-400/8 blur-2xl" />
+      <span className="pointer-events-none absolute -right-10 top-1/2 h-24 w-24 -translate-y-1/2 rounded-full bg-red-400/8 blur-2xl" />
+
+      <span className="relative z-10 min-w-0 flex-1 font-display text-[29px] leading-[0.96] tracking-[-0.025em] text-[#061126]">
         {title}
       </span>
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#f2c94c] text-[#071b14] shadow-[0_8px_20px_-12px_rgba(0,0,0,.45)] transition-transform group-active:translate-x-0.5">
+
+      <span className="relative z-10 flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/80 bg-white/52 text-[#d8a300] backdrop-blur-[18px] shadow-[0_10px_24px_-14px_rgba(15,23,42,.36),inset_0_1px_0_rgba(255,255,255,.86)] transition-transform group-active:translate-x-0.5">
         <ChevronRight className="h-5 w-5" strokeWidth={2.8} />
       </span>
     </a>
@@ -73,18 +79,19 @@ function PlayPage() {
   }, []);
 
   return (
-    <main
-      className="relative mx-auto min-h-screen w-full max-w-md overflow-hidden bg-[#fcfcfa] px-5 pb-28 pt-6 text-[#061126]"
-      style={{
-        backgroundImage:
-          "radial-gradient(circle at 0% 24%, rgba(37,99,235,.085), transparent 34%), radial-gradient(circle at 100% 30%, rgba(239,68,68,.075), transparent 34%), linear-gradient(180deg, #fcfcfa 0%, #fbfbf8 100%)",
-      }}
-    >
+    <main className="relative mx-auto min-h-screen w-full max-w-md overflow-hidden bg-[#fcfcfa] px-5 pb-28 pt-6 text-[#061126]">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[470px] overflow-hidden">
+        <div className="absolute -left-28 top-8 h-[330px] w-[330px] rounded-full bg-[#377dff]/24 blur-[88px]" />
+        <div className="absolute -right-28 top-12 h-[330px] w-[330px] rounded-full bg-[#ff5d67]/22 blur-[88px]" />
+        <div className="absolute left-[8%] top-[250px] h-[190px] w-[190px] rounded-full bg-[#68a5ff]/13 blur-[68px]" />
+        <div className="absolute right-[7%] top-[260px] h-[190px] w-[190px] rounded-full bg-[#ff8b92]/13 blur-[68px]" />
+      </div>
+
       <header className="relative z-10 grid grid-cols-[52px_1fr_52px] items-center">
         <Link
           to="/"
           aria-label="Gå till startsidan"
-          className="flex h-12 w-12 items-center justify-center rounded-full border border-white/80 bg-white/80 text-[#061126] backdrop-blur-xl active:scale-95"
+          className="flex h-12 w-12 items-center justify-center rounded-full border border-white/78 bg-white/52 text-[#061126] backdrop-blur-[18px] shadow-[inset_0_1px_0_rgba(255,255,255,.86),0_10px_24px_-18px_rgba(15,23,42,.28)] active:scale-95"
         >
           <HomeArrowIcon />
         </Link>
@@ -102,7 +109,9 @@ function PlayPage() {
           className="absolute inset-0 h-full w-full object-cover"
           style={{ objectPosition: "50% 30%" }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/[.02] via-black/[.04] to-black/75" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/[.01] via-black/[.04] to-black/76" />
+        <div className="absolute inset-y-0 left-0 w-1/2 bg-[#2f7dff]/12" />
+        <div className="absolute inset-y-0 right-0 w-1/2 bg-[#ff5e5e]/12" />
 
         <div className="relative z-10 flex min-h-[238px] flex-col justify-end px-5 pb-5 pt-6 text-white">
           <p className="text-[10px] font-black uppercase tracking-[.18em] text-white/82">Spela</p>
