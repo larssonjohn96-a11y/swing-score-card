@@ -72,7 +72,7 @@ const TEST_SECTIONS: TestSection[] = [
 
 function TestCardView({ test }: { test: TestCard }) {
   return (
-    <Link to={test.to} className="block w-[164px] shrink-0">
+    <Link to={test.to as any} className="block w-[164px] shrink-0">
       <article className={`relative flex h-[220px] flex-col justify-end overflow-hidden rounded-[24px] border border-black/[.04] px-4 pb-4 pt-4 text-white ${test.tone}`}>
         {test.imageSrc && (
           <>
