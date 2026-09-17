@@ -118,11 +118,15 @@ function BrowseHeading({ title, subtitle, action, to }: { title: string; subtitl
 const ROW_CLASS = "-mx-5 mt-3.5 flex gap-2 overflow-x-auto bg-transparent px-5 pb-0.5 scroll-smooth overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden";
 const CARD_BASE = "relative flex h-[220px] w-[164px] shrink-0 flex-col justify-end overflow-hidden rounded-[24px] border border-black/[.04] px-4 pb-4 pt-4 text-white";
 
-function SimpleCard({ label, title, tone }: { label: string; title: string; tone: string }) {
+function SimpleCard({ label, title, tone, image }: { label: string; title: string; tone: string; image?: string }) {
   return (
     <div className={`${CARD_BASE} ${tone}`}>
-      <span className="absolute left-4 top-4 text-[9px] font-black uppercase tracking-[.16em] text-white/68">{label}</span>
-      <h3 className="font-display text-[27px] leading-[.95] text-white">{title}</h3>
+      {image ? <>
+        <img src={image} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        <span className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/45" />
+      </> : null}
+      <span className="absolute left-4 top-4 z-10 text-[9px] font-black uppercase tracking-[.16em] text-white/78">{label}</span>
+      <h3 className="relative z-10 font-display text-[27px] leading-[.95] text-white">{title}</h3>
     </div>
   );
 }
@@ -261,26 +265,15 @@ function Home() {
     const onScroll = () => {
       const currentY = Math.max(0, window.scrollY);
       const delta = currentY - lastScrollYRef.current;
-      const nextDirection = delta > 0 ? "down" : delta < 0 ? "up" : scrollDirectionRef.current;
-      if (currentY <= 24) {
-        setNavVisible(true);
-        directionStartYRef.current = currentY;
-        scrollDirectionRef.current = nextDirection;
-        lastScrollYRef.current = currentY;
-        return;
-      }
-      if (nextDirection && nextDirection !== scrollDirectionRef.current) {
-        scrollDirectionRef.current = nextDirection;
+      if (Math.abs(delta) < 1) return;
+      const direction = delta > 0 ? "down" : "up";
+      if (scrollDirectionRef.current !== direction) {
+        scrollDirectionRef.current = direction;
         directionStartYRef.current = currentY;
       }
-      const travelled = Math.abs(currentY - directionStartYRef.current);
-      if (nextDirection === "down" && travelled >= 34) {
-        setNavVisible(false);
-        directionStartYRef.current = currentY;
-      } else if (nextDirection === "up" && travelled >= 22) {
-        setNavVisible(true);
-        directionStartYRef.current = currentY;
-      }
+      if (direction === "down" && currentY > 80 && currentY - directionStartYRef.current > 18) setNavVisible(false);
+      if (direction === "up" && directionStartYRef.current - currentY > 12) setNavVisible(true);
+      if (currentY <= 20) setNavVisible(true);
       lastScrollYRef.current = currentY;
     };
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -291,72 +284,61 @@ function Home() {
     setData(loadHomeData());
     setFriends(loadFriends());
     setTotalShots(loadTotalRegisteredShots());
-    if (user) {
-      void pushPlayerSnapshot();
-      void listFriendships().then((result) => {
-        const count = result.accepted.length;
-        saveCachedCloudFriendCount(count);
-        setCloudFriendCount(count);
-      });
-    }
-  }, [user, sessionsVersion]);
+  }, [sessionsVersion]);
 
   useEffect(() => {
-    const refreshShots = () => setTotalShots(loadTotalRegisteredShots());
-    const onVisibility = () => { if (document.visibilityState === "visible") refreshShots(); };
-    window.addEventListener("focus", refreshShots);
-    window.addEventListener("pageshow", refreshShots);
-    document.addEventListener("visibilitychange", onVisibility);
-    return () => {
-      window.removeEventListener("focus", refreshShots);
-      window.removeEventListener("pageshow", refreshShots);
-      document.removeEventListener("visibilitychange", onVisibility);
-    };
-  }, []);
+    if (!user?.id) return;
+    void pushPlayerSnapshot(user.id);
+    let cancelled = false;
+    void listFriendships(user.id).then((items) => {
+      if (cancelled) return;
+      setCloudFriendCount(items.length);
+      saveCachedCloudFriendCount(items.length);
+    }).catch(() => undefined);
+    return () => { cancelled = true; };
+  }, [user?.id]);
 
   useEffect(() => {
+    displayedShotsRef.current = displayedShots;
+  }, [displayedShots]);
+
+  useEffect(() => {
+    const from = Math.min(displayedShotsRef.current, totalShots);
     if (shotAnimationRef.current !== null) cancelAnimationFrame(shotAnimationRef.current);
     if (shotGlowTimeoutRef.current !== null) window.clearTimeout(shotGlowTimeoutRef.current);
-    const start = displayedShotsRef.current;
-    if (totalShots <= start) {
-      displayedShotsRef.current = totalShots;
+    if (from === totalShots) {
       setDisplayedShots(totalShots);
-      setShotCounterActive(false);
       savePreviousShotCount(totalShots);
+      setShotCounterActive(false);
       return;
     }
-    const delta = totalShots - start;
-    const duration = Math.min(1350, Math.max(520, 430 + delta * 28));
-    const startedAt = performance.now();
     setShotCounterActive(true);
-    const tick = (now: number) => {
-      const progress = Math.min(1, (now - startedAt) / duration);
+    const startAt = performance.now();
+    const duration = Math.min(1000, 340 + (totalShots - from) * 42);
+    const animate = (now: number) => {
+      const progress = Math.min(1, (now - startAt) / duration);
       const eased = 1 - Math.pow(1 - progress, 3);
-      const next = Math.min(totalShots, start + Math.floor(delta * eased));
-      if (next !== displayedShotsRef.current) {
-        displayedShotsRef.current = next;
-        setDisplayedShots(next);
-      }
+      const nextValue = Math.min(totalShots, Math.round(from + (totalShots - from) * eased));
+      setDisplayedShots(nextValue);
       if (progress < 1) {
-        shotAnimationRef.current = requestAnimationFrame(tick);
-        return;
+        shotAnimationRef.current = requestAnimationFrame(animate);
+      } else {
+        savePreviousShotCount(totalShots);
+        shotAnimationRef.current = null;
+        shotGlowTimeoutRef.current = window.setTimeout(() => setShotCounterActive(false), 720);
       }
-      displayedShotsRef.current = totalShots;
-      setDisplayedShots(totalShots);
-      savePreviousShotCount(totalShots);
-      shotAnimationRef.current = null;
-      shotGlowTimeoutRef.current = window.setTimeout(() => setShotCounterActive(false), 520);
     };
-    shotAnimationRef.current = requestAnimationFrame(tick);
-    return () => { if (shotAnimationRef.current !== null) cancelAnimationFrame(shotAnimationRef.current); };
+    shotAnimationRef.current = requestAnimationFrame(animate);
+    return () => {
+      if (shotAnimationRef.current !== null) cancelAnimationFrame(shotAnimationRef.current);
+      if (shotGlowTimeoutRef.current !== null) window.clearTimeout(shotGlowTimeoutRef.current);
+    };
   }, [totalShots]);
 
   const quickStart = useMemo<QuickStart>(() => {
-    const noBaseline = data.real === null && data.cats.every((category) => category.count === 0);
-    if (noBaseline) return { eyebrow: "Kom igång", title: "Gör ditt första HCP-test", detail: "Få ett första resultat och börja bygga din spelarprofil.", to: "/tester", activityId: "hcp-test" };
-    const playScore = Math.max(getBehaviorRecommendationScore("play-friend").score, getBehaviorRecommendationScore("play-bot").score, getBehaviorRecommendationScore("play-cup").score);
-    const practiceScore = getBehaviorRecommendationScore("practice").score;
-    const testScore = getBehaviorRecommendationScore("hcp-test").score;
+    const playScore = Math.max(getBehaviorRecommendationScore("play-friend"), getBehaviorRecommendationScore("play-bot"), getBehaviorRecommendationScore("play-cup"));
+    const testScore = getBehaviorRecommendationScore("hcp-test") + (data.cats.some((category) => category.count === 0) ? 0.22 : 0);
+    const practiceScore = getBehaviorRecommendationScore("practice") + (data.cats.some((category) => category.count > 0) ? 0.08 : 0);
     if (practiceScore >= playScore && practiceScore >= testScore) return { eyebrow: "Snabbstart", title: "Träna med coach", detail: "Tillbaka till Practice Mode.", to: "/coach", activityId: "practice" };
     if (testScore > playScore) return { eyebrow: "Snabbstart", title: "Gör ett nytt HCP-test", detail: "Få ett nytt resultat direkt.", to: "/tester", activityId: "hcp-test" };
     return { eyebrow: "Snabbstart", title: "Spela en match", detail: "Hoppa direkt tillbaka till spel.", to: "/spela", activityId: "play-friend" };
@@ -461,9 +443,9 @@ function Home() {
         <section className="mt-7">
           <BrowseHeading title="Träna med coach" subtitle="Practice Mode" action="Alla pass" to="/coach" />
           <DragScrollRow>
-            <Link to="/coach" search={{ category: "putting" }} onClick={() => recordRecommendationOpen("practice")} className="block shrink-0"><SimpleCard label="Practice" title="Puttning" tone="bg-[#5146d8]" /></Link>
-            <Link to="/coach" search={{ category: "around-the-green" }} onClick={() => recordRecommendationOpen("practice")} className="block shrink-0"><SimpleCard label="Practice" title="Chippning" tone="bg-[#118267]" /></Link>
-            <Link to="/coach" search={{ category: "bunker" }} onClick={() => recordRecommendationOpen("practice")} className="block shrink-0"><SimpleCard label="Practice" title="Bunker" tone="bg-[#c77a2c]" /></Link>
+            <Link to="/coach" search={{ category: "putting" }} onClick={() => recordRecommendationOpen("practice")} className="block shrink-0"><SimpleCard label="Practice" title="Puttning" tone="bg-[#5146d8]" image="/putting-card.jpg" /></Link>
+            <Link to="/coach" search={{ category: "around-the-green" }} onClick={() => recordRecommendationOpen("practice")} className="block shrink-0"><SimpleCard label="Practice" title="Chippning" tone="bg-[#118267]" image="/chip-card.jpg" /></Link>
+            <Link to="/coach" search={{ category: "bunker" }} onClick={() => recordRecommendationOpen("practice")} className="block shrink-0"><SimpleCard label="Practice" title="Bunker" tone="bg-[#c77a2c]" image="/bunker-card.jpg" /></Link>
             <Link to="/coach" onClick={() => recordRecommendationOpen("practice")} className="block shrink-0"><SimpleCard label="Practice" title="Alla pass" tone="bg-[#334155]" /></Link>
           </DragScrollRow>
         </section>
@@ -471,54 +453,11 @@ function Home() {
         <section className="mt-7">
           <BrowseHeading title="Testa din nivå" subtitle="HCP Test" action="Alla tester" to="/tester" />
           <DragScrollRow>
-            <Link to="/kategori/$slug" params={{ slug: "puttning" }} onClick={() => recordRecommendationOpen("hcp-test")} className="block shrink-0"><SimpleCard label="HCP Test" title="Putting" tone="bg-[#7656c9]" /></Link>
-            <Link to="/kategori/$slug" params={{ slug: "around-the-green" }} onClick={() => recordRecommendationOpen("hcp-test")} className="block shrink-0"><SimpleCard label="HCP Test" title="Around the Green" tone="bg-[#2d8a58]" /></Link>
-            <Link to="/kategori/$slug" params={{ slug: "approach" }} onClick={() => recordRecommendationOpen("hcp-test")} className="block shrink-0"><SimpleCard label="HCP Test" title="Approach" tone="bg-[#2f76b7]" /></Link>
-            <Link to="/kategori/$slug" params={{ slug: "driving" }} onClick={() => recordRecommendationOpen("hcp-test")} className="block shrink-0"><SimpleCard label="HCP Test" title="Off the Tee" tone="bg-[#3f4b5d]" /></Link>
+            <Link to="/kategori/$slug" params={{ slug: "puttning" }} className="block shrink-0"><SimpleCard label="HCP Test" title="Putting" tone="bg-[#7656c9]" image="/putting-card.jpg" /></Link>
+            <Link to="/kategori/$slug" params={{ slug: "around-the-green" }} className="block shrink-0"><SimpleCard label="HCP Test" title="Around the Green" tone="bg-[#2d8a58]" image="/chip-card.jpg" /></Link>
+            <Link to="/kategori/$slug" params={{ slug: "approach" }} className="block shrink-0"><SimpleCard label="HCP Test" title="Approach" tone="bg-[#3c73c4]" /></Link>
+            <Link to="/kategori/$slug" params={{ slug: "driving" }} className="block shrink-0"><SimpleCard label="HCP Test" title="Off the Tee" tone="bg-[#bb6e27]" /></Link>
           </DragScrollRow>
-        </section>
-
-        <section className="mt-7">
-          <div className="px-0.5">
-            <h2 className="text-[24px] font-black leading-none text-foreground">Mät precision och nivå</h2>
-            <p className="mt-1.5 text-[10px] font-black uppercase tracking-[.18em] text-muted-foreground">Benchmarks &amp; challenges</p>
-          </div>
-          <DragScrollRow>
-            <Link to="/pga-tour-18-puttar" className="block shrink-0"><SimpleCard label="Benchmark" title="18 puttar" tone="bg-[#a94c57]" /></Link>
-            <Link to="/tutor-test" className="block shrink-0"><SimpleCard label="Benchmark" title="Tutor Test" tone="bg-[#4955a7]" /></Link>
-            <Link to="/driver-konsekvens" className="block shrink-0"><SimpleCard label="Challenge" title="Konsekvens" tone="bg-[#a76632]" /></Link>
-            <Link to="/approach-pei-valj" className="block shrink-0"><SimpleCard label="Benchmark" title="PEI Approach" tone="bg-[#217d8c]" /></Link>
-          </DragScrollRow>
-        </section>
-
-        <section className="mt-5 overflow-hidden rounded-[24px] border border-white/75 bg-card/66 shadow-[0_16px_42px_-28px_rgba(15,23,42,.42),inset_0_1px_0_rgba(255,255,255,.95)] backdrop-blur-[28px] supports-[backdrop-filter]:bg-card/56">
-          <div className="flex items-center justify-between px-4 pt-4">
-            <div>
-              <p className="text-[9px] font-black uppercase tracking-[.17em] text-muted-foreground">Analys</p>
-              <h2 className="mt-1 text-[17px] font-black text-foreground">Jämför ditt spel</h2>
-            </div>
-            <Link to="/utveckling" className="flex items-center gap-1 text-[11px] font-bold text-emerald-700">Öppna <ChevronRight className="h-3.5 w-3.5" /></Link>
-          </div>
-
-          <div className="mt-2 flex gap-1.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {COMPARE_OPTIONS.map((option) => (
-              <button
-                key={option.id}
-                type="button"
-                onClick={() => setCompareTarget(option.id)}
-                className={`shrink-0 rounded-full px-3 py-1.5 text-[10px] font-black transition-colors ${compareTarget === option.id ? "bg-emerald-600 text-white" : "bg-black/[.045] text-muted-foreground"}`}
-              >{option.label}</button>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-[140px_1fr] items-center gap-2 px-3 pb-3 pt-1">
-            <RadarPreview categories={data.cats} benchmarkHcp={benchmarkHcp} />
-            <div className="min-w-0 pr-2">
-              <div className="flex items-center gap-2 text-[11px] font-bold"><span className="h-2.5 w-2.5 rounded-full bg-emerald-600" />Du</div>
-              <div className="mt-2 flex items-center gap-2 text-[11px] font-bold text-muted-foreground"><span className="h-0 w-4 border-t border-dashed border-slate-500" />{compareTarget === "friends" ? (friends.length ? `Vänner · HCP ${friendAverageHcp.toFixed(1)}` : "Vänner · referens") : `HCP ${compareTarget}`}</div>
-              <p className="mt-3 text-[10px] leading-snug text-muted-foreground">Off the Tee · Approach · Around the Green · Putting</p>
-            </div>
-          </div>
         </section>
       </div>
     </main>
