@@ -106,13 +106,21 @@ function HandicapTestsPage() {
           </div>
         </section>
 
+        <section>
+          <div className="px-0.5">
+            <h2 className="text-[24px] font-black leading-none text-foreground">Speed</h2>
+            <p className="mt-2 text-[15px] font-semibold leading-snug text-muted-foreground">Hur snabb är du jämfört med ditt HCP?</p>
+          </div>
+          <div className="mt-3.5"><SpeedCard /></div>
+        </section>
+
         {CATEGORIES.map((category) => {
           const single = category.tests.length === 1;
           return (
             <section key={category.slug}>
               <div className="px-0.5">
                 <h2 className="text-[24px] font-black leading-none text-foreground">{category.title}</h2>
-                <p className="mt-1.5 text-[11px] font-semibold text-muted-foreground">{CATEGORY_PROMPTS[category.slug] ?? category.subtitle}</p>
+                <p className="mt-2 text-[15px] font-semibold leading-snug text-muted-foreground">{CATEGORY_PROMPTS[category.slug] ?? category.subtitle}</p>
               </div>
               <div className={single ? "mt-3.5" : "mt-3.5 flex gap-2 overflow-hidden"}>
                 {category.tests.map((test, index) => <HcpCard key={`${category.slug}-${test.title}`} category={category} test={test} index={index} fullWidth={single} />)}
@@ -120,14 +128,6 @@ function HandicapTestsPage() {
             </section>
           );
         })}
-
-        <section>
-          <div className="px-0.5">
-            <h2 className="text-[24px] font-black leading-none text-foreground">Speed</h2>
-            <p className="mt-1.5 text-[11px] font-semibold text-muted-foreground">Hur snabb är du jämfört med ditt HCP?</p>
-          </div>
-          <div className="mt-3.5"><SpeedCard /></div>
-        </section>
       </div>
     </main>
   );
