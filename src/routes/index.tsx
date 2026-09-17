@@ -203,10 +203,10 @@ function handicapToScore(handicap: number) {
 
 function RadarPreview({ categories, benchmarkHcp }: { categories: CategoryHandicap[]; benchmarkHcp: number }) {
   const order = ["driving", "approach", "around-the-green", "puttning"];
-  const fallback = categories.length ? categories.reduce((sum, item) => sum + item.handicap, 0) / categories.length : 25;
+  const fallback = categories.length ? categories.reduce((sum, item) => sum + (item.handicap ?? 0), 0) / categories.length : 25;
   const values = order.map((id) => {
-    const item = categories.find((category) => category.id === id);
-    return handicapToScore(item?.count ? item.handicap : fallback);
+    const item = categories.find((category) => category.slug === id);
+    return handicapToScore(item?.count && item.handicap !== undefined ? item.handicap : fallback);
   });
   const benchmark = handicapToScore(benchmarkHcp);
   const center = 72;
@@ -288,12 +288,12 @@ function Home() {
 
   useEffect(() => {
     if (!user?.id) return;
-    void pushPlayerSnapshot(user.id);
+    void pushPlayerSnapshot();
     let cancelled = false;
-    void listFriendships(user.id).then((items) => {
+    void listFriendships().then((items) => {
       if (cancelled) return;
-      setCloudFriendCount(items.length);
-      saveCachedCloudFriendCount(items.length);
+      setCloudFriendCount(items.accepted.length);
+      saveCachedCloudFriendCount(items.accepted.length);
     }).catch(() => undefined);
     return () => { cancelled = true; };
   }, [user?.id]);
@@ -336,9 +336,9 @@ function Home() {
   }, [totalShots]);
 
   const quickStart = useMemo<QuickStart>(() => {
-    const playScore = Math.max(getBehaviorRecommendationScore("play-friend"), getBehaviorRecommendationScore("play-bot"), getBehaviorRecommendationScore("play-cup"));
-    const testScore = getBehaviorRecommendationScore("hcp-test") + (data.cats.some((category) => category.count === 0) ? 0.22 : 0);
-    const practiceScore = getBehaviorRecommendationScore("practice") + (data.cats.some((category) => category.count > 0) ? 0.08 : 0);
+    const playScore = Math.max(getBehaviorRecommendationScore("play-friend").score, getBehaviorRecommendationScore("play-bot").score, getBehaviorRecommendationScore("play-cup").score);
+    const testScore = getBehaviorRecommendationScore("hcp-test").score + (data.cats.some((category) => category.count === 0) ? 0.22 : 0);
+    const practiceScore = getBehaviorRecommendationScore("practice").score + (data.cats.some((category) => category.count > 0) ? 0.08 : 0);
     if (practiceScore >= playScore && practiceScore >= testScore) return { eyebrow: "Snabbstart", title: "Träna med coach", detail: "Tillbaka till Practice Mode.", to: "/coach", activityId: "practice" };
     if (testScore > playScore) return { eyebrow: "Snabbstart", title: "Gör ett nytt HCP-test", detail: "Få ett nytt resultat direkt.", to: "/tester", activityId: "hcp-test" };
     return { eyebrow: "Snabbstart", title: "Spela en match", detail: "Hoppa direkt tillbaka till spel.", to: "/spela", activityId: "play-friend" };

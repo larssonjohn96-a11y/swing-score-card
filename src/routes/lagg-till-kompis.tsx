@@ -124,7 +124,7 @@ function AddFriendPage() {
           <div className="mt-4 divide-y divide-border/60">
             {visibleProfiles.map((profile) => {
               const exists = existingIds.has(profile.id);
-              const hcp = "hcp" in profile ? profile.hcp : undefined;
+              const hcp = "hcp" in profile && typeof profile.hcp === "number" ? profile.hcp : undefined;
               return (
                 <article key={profile.id} className="flex items-center gap-4 py-4">
                   <div className="relative shrink-0">
