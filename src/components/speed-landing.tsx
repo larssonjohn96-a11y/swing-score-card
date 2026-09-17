@@ -23,8 +23,8 @@ export function SpeedLanding() {
         <SpeedHero />
       </div>
 
-      <p className="mt-4 text-xs uppercase tracking-[0.3em] text-flag">Speed</p>
-      <h1 className="mt-1 text-5xl leading-none">Speed Test</h1>
+      <p className="mt-4 text-xs uppercase tracking-[0.3em] text-flag">Ball Speed</p>
+      <h1 className="mt-1 text-5xl leading-none">Ball Speed Test</h1>
       <p className="mt-4 text-base leading-relaxed text-muted-foreground">
         Testa din bollhastighet på 3 drives och se hur du står dig mot andra HCP-nivåer.
       </p>
@@ -35,7 +35,7 @@ export function SpeedLanding() {
         to="/speed"
         className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-5 font-[family-name:var(--font-display)] text-2xl text-primary-foreground"
       >
-        Starta Speed Test
+        Starta Ball Speed Test
         <ArrowRight className="h-5 w-5" />
       </Link>
     </main>
