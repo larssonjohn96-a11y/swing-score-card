@@ -4,7 +4,10 @@ import { useEffect } from "react";
 import { recordRecommendationImpressions, recordRecommendationOpen } from "@/lib/sg4-recommender";
 
 export const Route = createFileRoute("/spela")({
-  head: () => ({ meta: [{ title: "Spela – SG4" }] }),
+  head: () => ({
+    meta: [{ title: "Spela – SG4" }],
+    links: [{ rel: "preload", href: "/Red_vs_blue_1.png", as: "image" }],
+  }),
   component: PlayPage,
 });
 
@@ -105,11 +108,14 @@ function PlayPage() {
       </header>
 
       <section className="relative z-10 mt-5 px-2">
-        <div className="relative w-full overflow-hidden rounded-[30px] border border-white/75 bg-white/18 shadow-[0_22px_48px_-30px_rgba(15,23,42,.34),inset_0_1px_0_rgba(255,255,255,.5)] backdrop-blur-[6px]">
+        <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[30px] border border-white/75 bg-gradient-to-br from-[#dfe9ff] via-[#f4f6fb] to-[#ffe5e8] shadow-[0_22px_48px_-30px_rgba(15,23,42,.34),inset_0_1px_0_rgba(255,255,255,.5)] backdrop-blur-[6px]">
           <img
             src="/Red_vs_blue_1.png"
             alt=""
-            className="block h-auto w-full object-contain"
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
+            className="block h-full w-full object-cover"
           />
           <div className="pointer-events-none absolute inset-0 rounded-[30px] ring-1 ring-inset ring-white/35" />
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/42" />
