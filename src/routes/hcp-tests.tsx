@@ -76,7 +76,7 @@ function SpeedCard() {
         <span className="absolute left-4 top-4 rounded-full bg-white/14 px-2 py-1 text-[9px] font-black uppercase tracking-[.15em] text-white/85 backdrop-blur-md">HCP Test</span>
         <div className="relative z-10">
           <p className="mb-2 text-[10px] font-black uppercase tracking-[.14em] text-white/72">6 drives</p>
-          <h3 className="font-display text-[30px] leading-[.95]">Speed Test</h3>
+          <h3 className="font-display text-[30px] leading-[.95]">Ball Speed Test</h3>
         </div>
       </article>
     </Link>
@@ -108,8 +108,8 @@ function HandicapTestsPage() {
 
         <section>
           <div className="px-0.5">
-            <h2 className="text-[24px] font-black leading-none text-foreground">Speed</h2>
-            <p className="mt-2 text-[15px] font-semibold leading-snug text-muted-foreground">Hur snabb är du?</p>
+            <h2 className="text-[24px] font-black leading-none text-foreground">Ball Speed</h2>
+            <p className="mt-2 text-[15px] font-semibold leading-snug text-muted-foreground">Hur snabb är din boll?</p>
           </div>
           <div className="mt-3.5"><SpeedCard /></div>
         </section>
