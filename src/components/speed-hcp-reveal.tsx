@@ -3,9 +3,9 @@ import { ArrowRight } from "lucide-react";
 import { handicapLabel } from "@/lib/speed";
 
 /**
- * "Vågen"-ögonblicket för Speed-testet – exakt samma mönster som Approach-
+ * "Vågen"-ögonblicket för Ball Speed-testet – exakt samma mönster som Approach-
  * pilotens ApproachHcpReveal (approach-hcp-reveal.tsx): spänning byggs upp
- * med en nedräkning och en siffra som rullar innan Speed-HCP:t landar.
+ * med en nedräkning och en siffra som rullar innan Ball Speed-HCP:t landar.
  * Ren presentation – värdet är redan färdigräknat.
  */
 export function SpeedHcpReveal({ hcp, onContinue }: { hcp: number; onContinue: () => void }) {
@@ -37,7 +37,7 @@ export function SpeedHcpReveal({ hcp, onContinue }: { hcp: number; onContinue: (
   return (
     <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#0b1710] px-8 text-center text-white">
       <p className="text-xs font-semibold uppercase tracking-[0.35em] text-white/40">
-        {stage === "done" ? "Din speed-nivå" : "Resultatet är klart"}
+        {stage === "done" ? "Din ball speed-nivå" : "Resultatet är klart"}
       </p>
 
       {stage === "suspense" ? (
@@ -58,7 +58,7 @@ export function SpeedHcpReveal({ hcp, onContinue }: { hcp: number; onContinue: (
       ) : (
         <>
           <p className="mt-4 text-xs font-semibold uppercase tracking-[0.25em] text-white/30">
-            Speed HCP
+            Ball Speed HCP
           </p>
           <p
             className={`font-[family-name:var(--font-display)] text-[7rem] leading-none tabular-nums transition-all duration-500 ${
