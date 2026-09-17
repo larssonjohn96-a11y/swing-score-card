@@ -25,6 +25,7 @@ const CATEGORY_TONES: Record<string, string[]> = {
 
 const CATEGORY_IMAGES: Record<string, string | undefined> = {
   puttning: "/b01e80c1-ac1d-4d11-81f0-5b9f362d0777.png",
+  approach: "/HCP_inspel.png",
 };
 
 function toneFor(category: Category, index: number) {
