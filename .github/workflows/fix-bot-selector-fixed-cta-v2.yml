@@ -1,0 +1,57 @@
+name: Fix bot selector fixed CTA v2
+
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-bot-selector-fixed-cta-v2.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Patch match-bot selector
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          p = Path('src/routes/match-bot.tsx')
+          s = p.read_text()
+
+          # Remove country/flag from bot model and bot definitions.
+          s = s.replace('  country: string;\n  flag: string;\n', '')
+          s = s.replace('  id, name, hcp, gender, role, tier, avatar, country, flag, intro, label,', '  id, name, hcp, gender, role, tier, avatar, intro, label,')
+          s = s.replace('  id: string; name: string; hcp: number; gender: "Kvinna" | "Man"; role: string; tier: BotProfile["tier"]; avatar: string; country: string; flag: string; intro: string; label: string;', '  id: string; name: string; hcp: number; gender: "Kvinna" | "Man"; role: string; tier: BotProfile["tier"]; avatar: string; intro: string; label: string;')
+          s = s.replace('    id, name, hcp, gender, role, tier, avatar, country, flag, intro,', '    id, name, hcp, gender, role, tier, avatar, intro,')
+          s = re.sub(r', country: "[^"]*", flag: "[^"]*"', '', s)
+
+          # Remove flag and country rendering from selected-bot sticky header.
+          s = s.replace('                  <span className="text-lg">{bot.flag}</span>\n', '')
+          s = s.replace('<div className="mt-2 flex items-center justify-between border-t border-slate-200/80 pt-2 text-[10px] font-semibold text-slate-500"><span>{bot.country}</span><span className="capitalize">', '<div className="mt-2 flex items-center justify-end border-t border-slate-200/80 pt-2 text-[10px] font-semibold text-slate-500"><span className="capitalize">')
+
+          # Force the CTA to be truly viewport-fixed, independent of Tailwind class interpretation.
+          old = '<div className="fixed bottom-0 left-1/2 z-40 w-full max-w-md -translate-x-1/2 bg-gradient-to-t from-white via-white/95 to-white/0 px-5 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-8">'
+          new = '<div className="w-full bg-gradient-to-t from-white via-white/95 to-white/0 px-5 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-8" style={{ position: "fixed", left: "50%", bottom: 0, transform: "translateX(-50%)", width: "100%", maxWidth: "28rem", zIndex: 60 }}>'
+          if old not in s:
+              raise SystemExit('CTA wrapper pattern not found')
+          s = s.replace(old, new, 1)
+
+          # More room behind fixed CTA so final tier stays accessible.
+          s = s.replace('step === "bot" ? "pt-6 pb-40"', 'step === "bot" ? "pt-6 pb-52"')
+
+          p.write_text(s)
+          PY
+      - name: Remove temporary workflow and commit
+        run: |
+          git rm .github/workflows/fix-bot-selector-fixed-cta-v2.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/routes/match-bot.tsx
+          git commit -m "Keep bot CTA viewport-fixed and remove countries"
+          git push
