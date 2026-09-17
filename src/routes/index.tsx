@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { Bell, ChevronRight, Flame, User, UserPlus } from "lucide-react";
+import { Bell, ChevronRight, User, UserPlus } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { computeEstimatedHandicap, hcpLabel, loadRealHandicap, type CategoryHandicap } from "@/lib/sg-handicap";
 import { computeStableCategoryHandicaps } from "@/lib/category-index";
@@ -16,7 +16,6 @@ import { loadBunkerSessions } from "@/lib/bunker";
 import { loadShortPuttSessions } from "@/lib/shortputt";
 import { loadLagPuttSessions } from "@/lib/lagputt";
 import { loadSpeedSessions } from "@/lib/speed";
-import { buildChallenge, challengeStreaks, ensureTodayRecord, loadDailyChallengeState } from "@/lib/daily-challenge";
 import {
   getBehaviorRecommendationScore,
   recordRecommendationImpressions,
@@ -392,15 +391,6 @@ function Home() {
   const benchmarkHcp = compareTarget === "tour" ? -5 : Number(compareTarget);
   const compareLabel = compareTarget === "tour" ? "Tour" : `HCP ${compareTarget}`;
 
-  const dailyState = loadDailyChallengeState();
-  const { record: dailyRecord } = ensureTodayRecord();
-  const dailyStreak = challengeStreaks(dailyState).daily;
-  const dailyDefinition = dailyRecord.selected ? buildChallenge(dailyRecord.selected, dailyState) : null;
-  const dailyDone = dailyRecord.status === "won" || dailyRecord.status === "lost";
-  const dailyStatus = dailyDone
-    ? dailyRecord.status === "won" ? "Klar för idag" : "Genomförd för idag"
-    : dailyDefinition ? `${dailyDefinition.label} · ${dailyDefinition.shortTask}` : "Välj 1 av 3 kategorier";
-
   return (
     <main className="mx-auto min-h-screen w-full max-w-md bg-background pb-28">
       <header className="sticky top-0 z-40 border-b border-border/70 bg-background/88 px-5 pt-[max(12px,env(safe-area-inset-top))] backdrop-blur-2xl">
@@ -422,7 +412,7 @@ function Home() {
         <div className={`overflow-hidden transition-[max-height,opacity,padding] duration-500 [transition-timing-function:cubic-bezier(.22,1,.36,1)] ${navVisible ? "max-h-16 pb-3 opacity-100" : "max-h-0 pb-0 opacity-0"}`}>
           <nav className={`-mx-1 flex gap-2 overflow-x-auto px-1 transition-transform duration-500 [transition-timing-function:cubic-bezier(.22,1,.36,1)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${navVisible ? "translate-y-0" : "-translate-y-1"}`} aria-label="Snabbnavigering">
             <Link to="/spela" className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black">Spela</Link>
-            <Link to="/tester" className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black">Train &amp; Test</Link>
+            <Link to="/tester" className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black">HCP Tester</Link>
             <Link to="/utveckling" className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black">Utveckling</Link>
             <Link to="/vanner" className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black">Vänner</Link>
           </nav>
@@ -488,18 +478,6 @@ function Home() {
               </div>
               <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
             </div>
-          </Link>
-        </section>
-
-        <section className="mt-2.5">
-          <Link to="/daily-challenge" className="flex min-h-[62px] items-center gap-3 rounded-[20px] border border-emerald-200/70 bg-white/78 px-4 py-2.5 shadow-[0_10px_24px_-18px_rgba(15,23,42,.18)] backdrop-blur-[18px] active:scale-[.99]">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-emerald-200/70 bg-emerald-50 text-emerald-700"><Flame className="h-[18px] w-[18px]" /></span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-[16px] font-black leading-none text-[#061126]">Dagens Challenge</span>
-              <span className="mt-1 block truncate text-[11px] leading-snug text-[#667085]">{dailyStatus}</span>
-            </span>
-            {dailyStreak > 0 && <span className="rounded-full border border-emerald-200/70 bg-emerald-50 px-2 py-1 text-[11px] font-bold text-emerald-700">🔥 {dailyStreak}</span>}
-            <ChevronRight className="h-4 w-4 shrink-0 text-[#98A2B3]" />
           </Link>
         </section>
 
