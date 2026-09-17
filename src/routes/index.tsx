@@ -40,17 +40,17 @@ type QuickStart = {
   to: "/tester" | "/spela" | "/coach";
   activityId: string;
 };
-type CompareTarget = "friends" | "5" | "10" | "15" | "20" | "30";
+type CompareTarget = "30" | "20" | "10" | "0" | "+3" | "tour";
 
 const CLOUD_FRIEND_COUNT_KEY = "sg4-home-cloud-friend-count-v1";
 const HOME_SHOT_COUNTER_KEY = "sg4-home-shot-counter-v1";
 const COMPARE_OPTIONS: { id: CompareTarget; label: string }[] = [
-  { id: "friends", label: "Vänner" },
-  { id: "5", label: "HCP 5" },
-  { id: "10", label: "HCP 10" },
-  { id: "15", label: "HCP 15" },
-  { id: "20", label: "HCP 20" },
   { id: "30", label: "HCP 30" },
+  { id: "20", label: "HCP 20" },
+  { id: "10", label: "HCP 10" },
+  { id: "0", label: "HCP 0" },
+  { id: "+3", label: "HCP +3" },
+  { id: "tour", label: "Tour" },
 ];
 
 function loadHomeData(): HomeData {
@@ -206,34 +206,51 @@ function handicapToScore(handicap: number) {
 function RadarPreview({ categories, benchmarkHcp }: { categories: CategoryHandicap[]; benchmarkHcp: number }) {
   const order = ["driving", "approach", "around-the-green", "puttning"];
   const fallback = categories.length ? categories.reduce((sum, item) => sum + item.handicap, 0) / categories.length : 25;
-  const values = order.map((id) => {
+  const categoryValues = order.map((id) => {
     const item = categories.find((category) => category.id === id);
     return handicapToScore(item?.count ? item.handicap : fallback);
   });
+  const total = categoryValues.reduce((sum, value) => sum + value, 0) / categoryValues.length;
+  const values = [categoryValues[0], categoryValues[1], categoryValues[2], categoryValues[3], total];
   const benchmark = handicapToScore(benchmarkHcp);
-  const center = 72;
-  const radius = 52;
-  const axes = [-Math.PI / 2, 0, Math.PI / 2, Math.PI];
+  const centerX = 170;
+  const centerY = 152;
+  const radius = 92;
+  const axes = Array.from({ length: 5 }, (_, index) => -Math.PI / 2 + index * ((Math.PI * 2) / 5));
   const point = (value: number, angle: number) => {
     const r = radius * value / 100;
-    return `${center + Math.cos(angle) * r},${center + Math.sin(angle) * r}`;
+    return `${centerX + Math.cos(angle) * r},${centerY + Math.sin(angle) * r}`;
   };
   const playerPoints = axes.map((angle, index) => point(values[index], angle)).join(" ");
   const benchmarkPoints = axes.map((angle) => point(benchmark, angle)).join(" ");
   const ring = (scale: number) => axes.map((angle) => point(scale, angle)).join(" ");
+  const labels = [
+    { x: 170, y: 28, text: "Off the Tee" },
+    { x: 310, y: 130, text: "Approach" },
+    { x: 274, y: 270, text: "Around Green" },
+    { x: 66, y: 270, text: "Putting" },
+    { x: 28, y: 130, text: "Totalt" },
+  ];
 
   return (
-    <svg viewBox="0 0 144 144" className="h-[132px] w-[132px] shrink-0" role="img" aria-label="Spindeldiagram över dina fyra spelkategorier">
-      <polygon points={ring(100)} fill="none" stroke="currentColor" className="text-foreground/12" strokeWidth="1" />
-      <polygon points={ring(67)} fill="none" stroke="currentColor" className="text-foreground/10" strokeWidth="1" />
-      <polygon points={ring(34)} fill="none" stroke="currentColor" className="text-foreground/8" strokeWidth="1" />
-      {axes.map((angle, index) => <line key={index} x1={center} y1={center} x2={Number(point(100, angle).split(",")[0])} y2={Number(point(100, angle).split(",")[1])} stroke="currentColor" className="text-foreground/10" strokeWidth="1" />)}
-      <polygon points={benchmarkPoints} fill="rgba(100,116,139,.06)" stroke="rgba(100,116,139,.65)" strokeWidth="1.5" strokeDasharray="4 3" />
-      <polygon points={playerPoints} fill="rgba(5,150,105,.18)" stroke="rgb(5,150,105)" strokeWidth="2" />
+    <svg viewBox="0 0 340 300" className="h-auto w-full" role="img" aria-label="Jämförelseanalys av ditt spel">
+      <polygon points={ring(100)} fill="none" stroke="rgba(15,23,42,.14)" strokeWidth="1" />
+      <polygon points={ring(75)} fill="none" stroke="rgba(15,23,42,.10)" strokeWidth="1" />
+      <polygon points={ring(50)} fill="none" stroke="rgba(15,23,42,.08)" strokeWidth="1" />
+      <polygon points={ring(25)} fill="none" stroke="rgba(15,23,42,.06)" strokeWidth="1" />
+      {axes.map((angle, index) => {
+        const [x, y] = point(100, angle).split(",").map(Number);
+        return <line key={index} x1={centerX} y1={centerY} x2={x} y2={y} stroke="rgba(15,23,42,.09)" strokeWidth="1" />;
+      })}
+      <polygon points={benchmarkPoints} fill="rgba(239,68,68,.08)" stroke="rgb(239,68,68)" strokeWidth="2" />
+      <polygon points={playerPoints} fill="rgba(2,132,199,.18)" stroke="rgb(2,132,199)" strokeWidth="2" />
       {axes.map((angle, index) => {
         const [x, y] = point(values[index], angle).split(",").map(Number);
-        return <circle key={index} cx={x} cy={y} r="2.8" fill="rgb(5,150,105)" />;
+        return <circle key={index} cx={x} cy={y} r="3.2" fill="rgb(2,132,199)" stroke="white" strokeWidth="1.5" />;
       })}
+      {labels.map((label) => (
+        <text key={label.text} x={label.x} y={label.y} textAnchor="middle" className="fill-slate-600 text-[10px] font-semibold">{label.text}</text>
+      ))}
     </svg>
   );
 }
@@ -244,7 +261,7 @@ function Home() {
   const [friends, setFriends] = useState<Friend[]>(() => loadFriends());
   const [cloudFriendCount, setCloudFriendCount] = useState(() => loadCachedCloudFriendCount());
   const [navVisible, setNavVisible] = useState(true);
-  const [compareTarget, setCompareTarget] = useState<CompareTarget>("friends");
+  const [compareTarget, setCompareTarget] = useState<CompareTarget>("0");
   const initialShotCountRef = useRef(loadTotalRegisteredShots());
   const [totalShots, setTotalShots] = useState(initialShotCountRef.current);
   const [displayedShots, setDisplayedShots] = useState(() => loadPreviousShotCount(initialShotCountRef.current));
@@ -371,8 +388,8 @@ function Home() {
   const totalFriends = friends.length + cloudFriendCount;
   const previewFriends = friends.slice(0, 3);
   const hcpValue = hcpLabel(data.real ?? data.estimated ?? 0);
-  const friendAverageHcp = friends.length ? friends.reduce((sum, friend) => sum + friend.handicap, 0) / friends.length : 18;
-  const benchmarkHcp = compareTarget === "friends" ? friendAverageHcp : Number(compareTarget);
+  const benchmarkHcp = compareTarget === "tour" ? -5 : Number(compareTarget);
+  const compareLabel = compareTarget === "tour" ? "Tour" : `HCP ${compareTarget}`;
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-md bg-background pb-28">
@@ -497,33 +514,58 @@ function Home() {
           </DragScrollRow>
         </section>
 
-        <section className="mt-5 overflow-hidden rounded-[24px] border border-white/75 bg-card/66 shadow-[0_16px_42px_-28px_rgba(15,23,42,.42),inset_0_1px_0_rgba(255,255,255,.95)] backdrop-blur-[28px] supports-[backdrop-filter]:bg-card/56">
-          <div className="flex items-center justify-between px-4 pt-4">
+        <section className="mt-8 pb-2">
+          <div className="flex items-end justify-between">
             <div>
-              <p className="text-[9px] font-black uppercase tracking-[.17em] text-muted-foreground">Analys</p>
-              <h2 className="mt-1 text-[17px] font-black text-foreground">Jämför ditt spel</h2>
+              <p className="font-display text-[28px] leading-none text-[#071b14]">ANALYS</p>
+              <p className="mt-1 text-[10px] font-black uppercase tracking-[.24em] text-muted-foreground">Jämförelseanalys</p>
             </div>
             <Link to="/utveckling" className="flex items-center gap-1 text-[11px] font-bold text-emerald-700">Öppna <ChevronRight className="h-3.5 w-3.5" /></Link>
           </div>
 
-          <div className="mt-2 flex gap-1.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="mt-5 flex items-start justify-center gap-6">
+            <div className="text-center">
+              <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-sky-500 bg-sky-50 text-sky-600"><User className="h-6 w-6" /></span>
+              <p className="mt-1.5 text-[11px] font-semibold text-foreground">Du</p>
+              <p className="text-[10px] text-muted-foreground">HCP {hcpValue}</p>
+            </div>
+            <div className="pt-5 font-display text-[16px] text-[#071b14]">VS</div>
+            <div className="text-center">
+              <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-red-400 bg-red-50 text-red-500"><User className="h-6 w-6" /></span>
+              <p className="mt-1.5 text-[11px] font-semibold text-foreground">{compareLabel}</p>
+              <p className="text-[10px] text-muted-foreground">Referens</p>
+            </div>
+          </div>
+
+          <div className="-mx-1 mt-4 flex flex-wrap justify-center gap-1.5 px-1">
             {COMPARE_OPTIONS.map((option) => (
               <button
                 key={option.id}
                 type="button"
                 onClick={() => setCompareTarget(option.id)}
-                className={`shrink-0 rounded-full px-3 py-1.5 text-[10px] font-black transition-colors ${compareTarget === option.id ? "bg-emerald-600 text-white" : "bg-black/[.045] text-muted-foreground"}`}
+                className={`rounded-full border px-3 py-1.5 text-[10px] font-bold transition-colors ${compareTarget === option.id ? "border-red-500 bg-red-500 text-white" : "border-slate-200 bg-white text-slate-600"}`}
               >{option.label}</button>
             ))}
           </div>
 
-          <div className="grid grid-cols-[140px_1fr] items-center gap-2 px-3 pb-3 pt-1">
+          <div className="mt-4 rounded-[22px] border border-slate-200 bg-white px-2 pb-2 pt-3 shadow-[0_18px_40px_-34px_rgba(15,23,42,.28)]">
             <RadarPreview categories={data.cats} benchmarkHcp={benchmarkHcp} />
-            <div className="min-w-0 pr-2">
-              <div className="flex items-center gap-2 text-[11px] font-bold"><span className="h-2.5 w-2.5 rounded-full bg-emerald-600" />Du</div>
-              <div className="mt-2 flex items-center gap-2 text-[11px] font-bold text-muted-foreground"><span className="h-0 w-4 border-t border-dashed border-slate-500" />{compareTarget === "friends" ? (friends.length ? `Vänner · HCP ${friendAverageHcp.toFixed(1)}` : "Vänner · referens") : `HCP ${compareTarget}`}</div>
-              <p className="mt-3 text-[10px] leading-snug text-muted-foreground">Off the Tee · Approach · Around the Green · Putting</p>
-            </div>
+          </div>
+
+          <div className="mt-2 flex flex-wrap justify-center gap-1.5">
+            {["Total", "Off the Tee", "Approach", "Around Green", "Putting"].map((label, index) => (
+              <span key={label} className={`rounded-full border px-3 py-1.5 text-[9px] font-bold ${index === 0 ? "border-[#071b14] bg-[#071b14] text-white" : "border-slate-200 bg-white text-slate-600"}`}>{label}</span>
+            ))}
+          </div>
+
+          <div className="mt-3 flex items-center justify-center gap-5 text-[10px] text-muted-foreground">
+            <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-sky-600" />Din nivå</span>
+            <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-red-500" />{compareLabel}</span>
+          </div>
+
+          <div className="mt-5 text-center">
+            <p className="text-[12px] text-muted-foreground">Vill du jämföra med andra spelare?</p>
+            <Link to="/utveckling" className="mt-2 inline-flex min-h-10 items-center justify-center rounded-full border border-slate-200 bg-white px-5 text-[12px] font-bold text-[#071b14] shadow-sm">Jämför <ChevronRight className="ml-1 h-3.5 w-3.5" /></Link>
           </div>
         </section>
       </div>
