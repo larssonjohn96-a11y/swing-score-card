@@ -5,6 +5,15 @@ import { TestHowItWorksLink } from "@/components/test-story";
 import { SPEED_STORY } from "@/lib/test-story-content";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 
+const BALL_SPEED_STORY = {
+  ...SPEED_STORY,
+  level: {
+    ...SPEED_STORY.level,
+    title: "SE DIN BALL SPEED-NIVÅ",
+    metricLabel: "Ball Speed HCP",
+  },
+};
+
 export function SpeedLanding() {
   useHideBottomNav(true);
 
@@ -29,7 +38,7 @@ export function SpeedLanding() {
         Testa din bollhastighet på 3 drives och se hur du står dig mot andra HCP-nivåer.
       </p>
 
-      <TestHowItWorksLink config={SPEED_STORY} />
+      <TestHowItWorksLink config={BALL_SPEED_STORY} />
 
       <Link
         to="/speed"
