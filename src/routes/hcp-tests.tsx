@@ -1,5 +1,5 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { ArrowLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { CATEGORIES, type Category, type CategoryTest } from "@/lib/categories";
 
 export const Route = createFileRoute("/hcp-tests")({
@@ -29,6 +29,13 @@ const CATEGORY_IMAGES: Record<string, string | undefined> = {
   driving: "/HCP_OFFtheTee_full.png",
 };
 
+const CATEGORY_PROMPTS: Record<string, string> = {
+  driving: "Vad är din HCP-nivå från tee?",
+  approach: "Vad är din HCP-nivå på dina inspel?",
+  "around-the-green": "Vad är din HCP-nivå runt green?",
+  puttning: "Vad är din HCP-nivå på green?",
+};
+
 function toneFor(category: Category, index: number) {
   const tones = CATEGORY_TONES[category.slug] ?? ["bg-[#334155]"];
   return tones[index % tones.length];
@@ -47,9 +54,8 @@ function HcpCard({ category, test, index, fullWidth = false }: { category: Categ
         )}
         <span className="absolute left-4 top-4 rounded-full bg-white/14 px-2 py-1 text-[9px] font-black uppercase tracking-[.15em] text-white/85 backdrop-blur-md">HCP Test</span>
         <div className="relative z-10">
-          <p className="mb-2 text-[10px] font-black uppercase tracking-[.14em] text-white/66">{test.number} slag</p>
+          <p className="mb-2 text-[10px] font-black uppercase tracking-[.14em] text-white/72">{test.number} slag</p>
           <h3 className={`font-display leading-[.95] ${fullWidth ? "text-[30px]" : "text-[25px]"}`}>{test.title}</h3>
-          <p className={`mt-2 leading-snug text-white/72 ${fullWidth ? "max-w-[300px] text-[12px]" : "line-clamp-3 text-[11px]"}`}>{test.subtitle}</p>
         </div>
       </article>
     </Link>
@@ -62,9 +68,8 @@ function SpeedCard() {
       <article className="relative flex h-[220px] flex-col justify-end overflow-hidden rounded-[24px] border border-black/[.04] bg-[#7a4f32] px-4 pb-4 pt-4 text-white">
         <span className="absolute left-4 top-4 rounded-full bg-white/14 px-2 py-1 text-[9px] font-black uppercase tracking-[.15em] text-white/85 backdrop-blur-md">HCP Test</span>
         <div className="relative z-10">
-          <p className="mb-2 text-[10px] font-black uppercase tracking-[.14em] text-white/66">6 drives</p>
+          <p className="mb-2 text-[10px] font-black uppercase tracking-[.14em] text-white/72">6 drives</p>
           <h3 className="font-display text-[30px] leading-[.95]">Speed Test</h3>
-          <p className="mt-2 max-w-[300px] text-[12px] leading-snug text-white/72">Mät bollhastighet och få ett Speed HCP från ett kort, tydligt test.</p>
         </div>
       </article>
     </Link>
@@ -90,7 +95,7 @@ function HandicapTestsPage() {
           <div className="rounded-[26px] border border-blue-200 bg-blue-50/70 px-5 py-4">
             <p className="text-[10px] font-black uppercase tracking-[.17em] text-blue-600">Snabbt · tydligt · jämförbart</p>
             <h2 className="mt-1 text-[22px] font-black leading-tight text-foreground">Testa din nivå</h2>
-            <p className="mt-1.5 text-sm leading-snug text-muted-foreground">Varje test är byggt för att ge ett konkret HCP-resultat utan ett långt träningspass.</p>
+            <p className="mt-1.5 text-sm leading-snug text-muted-foreground">Hur bra är varje del av ditt spel egentligen?</p>
           </div>
         </section>
 
@@ -98,12 +103,9 @@ function HandicapTestsPage() {
           const single = category.tests.length === 1;
           return (
             <section key={category.slug}>
-              <div className="flex items-end justify-between gap-3 px-0.5">
-                <div>
-                  <h2 className="text-[24px] font-black leading-none text-foreground">{category.title}</h2>
-                  <p className="mt-1.5 text-[10px] font-black uppercase tracking-[.16em] text-muted-foreground">{category.subtitle}</p>
-                </div>
-                <Link to="/kategori/$slug" params={{ slug: category.slug }} className="flex items-center gap-1 text-[11px] font-bold text-blue-600">Översikt <ChevronRight className="h-3.5 w-3.5" /></Link>
+              <div className="px-0.5">
+                <h2 className="text-[24px] font-black leading-none text-foreground">{category.title}</h2>
+                <p className="mt-1.5 text-[11px] font-semibold text-muted-foreground">{CATEGORY_PROMPTS[category.slug] ?? category.subtitle}</p>
               </div>
               <div className={single ? "mt-3.5" : "mt-3.5 flex gap-2 overflow-hidden"}>
                 {category.tests.map((test, index) => <HcpCard key={`${category.slug}-${test.title}`} category={category} test={test} index={index} fullWidth={single} />)}
@@ -115,7 +117,7 @@ function HandicapTestsPage() {
         <section>
           <div className="px-0.5">
             <h2 className="text-[24px] font-black leading-none text-foreground">Speed</h2>
-            <p className="mt-1.5 text-[10px] font-black uppercase tracking-[.16em] text-muted-foreground">Bollhastighet</p>
+            <p className="mt-1.5 text-[11px] font-semibold text-muted-foreground">Hur snabb är du jämfört med ditt HCP?</p>
           </div>
           <div className="mt-3.5"><SpeedCard /></div>
         </section>
