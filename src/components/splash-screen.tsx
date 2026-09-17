@@ -48,12 +48,12 @@ export function SplashScreen({ onDismiss }: { onDismiss: () => void }) {
       onClick={handleDismiss}
     >
       <img
-        src="/0d286fd4-99fa-47eb-b39c-a7ff718ebdd6.png"
+        src="/intro_off_the_tee.png"
         alt=""
         className="absolute inset-0 h-full w-full object-cover"
-        style={{ objectPosition: "18% 50%" }}
+        style={{ objectPosition: "50% 50%" }}
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-black/28 to-black/55" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/24 via-black/18 to-black/48" />
 
       <div className="relative z-10 flex w-full max-w-md flex-col items-center text-center">
         <span className="font-display text-[10rem] leading-none tracking-[0.04em] text-white drop-shadow-[0_2px_18px_rgba(0,0,0,.45)]">
