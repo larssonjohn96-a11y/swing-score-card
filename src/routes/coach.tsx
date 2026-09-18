@@ -1,3 +1,4 @@
+import { ChipStationPractice } from "@/components/chip-station-practice";
 import { CoachChallengeCard } from "@/components/coach-challenge-card";
 import { createChallenge, advanceChallenge, challengeGap, nextChallengeLevel, type PuttingChallenge, type ChallengeKind } from "@/lib/coach-challenges";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -783,6 +784,18 @@ function PlayWithCoachPage() {
         : aboveAveragePb
           ? "border-amber-200 bg-gradient-to-r from-amber-50 via-white to-orange-50 text-slate-950 shadow-[0_0_28px_-12px_rgba(245,158,11,.8)]"
           : "border-slate-200 bg-white text-slate-950";
+
+  // Chipping uses scored three-ball stations; other coach activities stay unchanged.
+  if (category === "around-the-green" && phase === "chip-setup") {
+    return <ChipStationPractice
+      key={user?.id ?? "guest"}
+      userId={user?.id ?? null}
+      authLoading={loading}
+      coach={coach}
+      surface={LIGHT_SURFACE}
+      onExit={() => setPhase("setup")}
+    />;
+  }
 
   return (
     <main data-challenge={puttingChallenge ? "active" : undefined} style={LIGHT_SURFACE} className="mx-auto min-h-screen w-full max-w-md bg-background px-5 pb-10 pt-[max(16px,env(safe-area-inset-top))] text-foreground">
