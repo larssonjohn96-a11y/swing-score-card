@@ -1,3 +1,5 @@
+import { StoredActivityReview } from "@/components/stored-activity-review";
+import { isActivityComplete } from "@/lib/activity-review";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Check, CheckCircle2, Info, Mountain, Target, X } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -120,6 +122,7 @@ function ShortPuttPage() {
   if (phase === "setup") {
     return (
       <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-16 pt-8">
+{isActivityComplete(phase) && <StoredActivityReview testId="short-putt" />}
         <header className="flex items-end justify-between">
           <div>
             <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
@@ -180,6 +183,7 @@ function ShortPuttPage() {
 
     return (
       <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-16 pt-4">
+{isActivityComplete(phase) && <StoredActivityReview testId="short-putt" />}
         <div className="flex items-center justify-between">
           <button
             onClick={back}
@@ -321,6 +325,7 @@ function ShortPuttPage() {
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-16 pt-6">
+{isActivityComplete(phase) && <StoredActivityReview testId="short-putt" />}
       <div className="flex items-center justify-between">
         <Link
           to="/kategori/$slug"

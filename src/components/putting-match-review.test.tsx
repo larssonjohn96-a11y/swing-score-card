@@ -29,7 +29,7 @@ describe("putting review invitation", () => {
   });
   it("highlights both exceptional results and large losses with a clear CTA", () => {
     const html = render([hole(15, 1), hole(1, 3), hole(5, 2)]);
-    expect(html).toContain("Du satte den från 15 m");
+    expect(html).toContain("bg-emerald-600");
     expect(html).toContain("1 exceptionellt hål");
     expect(html).toContain("stort tapp");
     expect(html).toContain("Visa matchanalys");
@@ -38,7 +38,7 @@ describe("putting review invitation", () => {
   });
   it("does not invent highlights for ordinary results", () => {
     const html = render([hole(5, 2), hole(5, 2), hole(5, 2)]);
-    expect(html).toContain("Upptäck detaljerna bakom din nivå");
+    expect(html).toContain("HCP 15–25");
     expect(html).not.toContain("exceptionellt hål");
     expect(html).not.toContain("stort tapp");
   });

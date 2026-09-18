@@ -1,3 +1,5 @@
+import { ActivityReview } from "@/components/activity-review";
+import { rawActivityOutcomes, isActivityComplete } from "@/lib/activity-review";
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, BarChart3, RotateCcw, X } from "lucide-react";
 import { useState } from "react";
@@ -8,7 +10,7 @@ import { LIGHT_SURFACE } from "@/routes/8-bollar";
 
 export type FocusKind = "wedge" | "iron";
 type Shot = { target: number; actual: number; lateral: number };
-type Session = { id: string; date: string; pei: number };
+type Session = { id: string; date: string; pei: number; shots?: Shot[] };
 
 const CONFIG = {
   wedge: { title: "Wedge PEI", min: 50, max: 120, key: LEGACY_KEYS.peiWedge, testId: "pei-wedge" },
@@ -103,7 +105,7 @@ export function PeiFocusTest({ kind }: { kind: FocusKind }) {
       const pei = totalPei(updated);
       const sessions = load(cfg.key);
       const id = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : String(Date.now());
-      const record: Session = { id, date: new Date().toISOString(), pei };
+      const record: Session = { id, date: new Date().toISOString(), pei, shots: updated };
       localStorage.setItem(cfg.key, JSON.stringify([...sessions, record]));
       recordSessionSaved(cfg.testId, record);
       setResult(pei);
@@ -130,6 +132,7 @@ export function PeiFocusTest({ kind }: { kind: FocusKind }) {
   if (phase === "intro") {
     return (
       <main style={LIGHT_SURFACE} className="mx-auto min-h-screen w-full max-w-md bg-background px-6 pb-16 pt-8 text-foreground">
+{isActivityComplete(phase) && <ActivityReview input={{ title: kind === "iron" ? "Iron PEI" : "Wedge PEI", outcomes: rawActivityOutcomes(shots) }} />}
         <Link to="/approach-pei-valj" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-300/80 bg-white/68 backdrop-blur-xl"><ArrowLeft className="h-4 w-4" /></Link>
         <section className="mt-6 rounded-[30px] border border-slate-300/80 bg-white/76 p-5 shadow-[0_20px_48px_-32px_rgba(15,23,42,.42)] backdrop-blur-2xl">
           <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Approach · PEI Precision</p>
@@ -150,6 +153,7 @@ export function PeiFocusTest({ kind }: { kind: FocusKind }) {
 
     return (
       <main style={LIGHT_SURFACE} className="mx-auto min-h-screen w-full max-w-md bg-background px-5 pb-36 pt-3 text-foreground">
+{isActivityComplete(phase) && <ActivityReview input={{ title: kind === "iron" ? "Iron PEI" : "Wedge PEI", outcomes: rawActivityOutcomes(shots) }} />}
         <div className="flex items-center justify-between">
           <button onClick={back} disabled={index === 0} className="rounded-full border border-slate-300/75 bg-white/58 p-2 text-slate-600 backdrop-blur-xl disabled:opacity-30"><ArrowLeft className="h-4 w-4" /></button>
           <span className="text-sm font-semibold">Slag {index + 1} / 18</span>
@@ -200,6 +204,7 @@ export function PeiFocusTest({ kind }: { kind: FocusKind }) {
 
   return (
     <main style={LIGHT_SURFACE} className="mx-auto min-h-screen w-full max-w-md bg-background px-6 pb-16 pt-8 text-foreground">
+{isActivityComplete(phase) && <ActivityReview input={{ title: kind === "iron" ? "Iron PEI" : "Wedge PEI", outcomes: rawActivityOutcomes(shots) }} />}
       <Link to="/approach-pei-valj" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-300/80 bg-white/68 backdrop-blur-xl"><ArrowLeft className="h-4 w-4" /></Link>
       <p className="mt-7 text-xs uppercase tracking-[0.22em] text-slate-500">{cfg.title}</p>
       <h1 className="mt-1 text-4xl">Resultat</h1>

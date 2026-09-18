@@ -1,3 +1,5 @@
+import { ActivityReview } from "@/components/activity-review";
+import { rawActivityOutcomes } from "@/lib/activity-review";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { Check } from "lucide-react";
 import {
@@ -89,6 +91,7 @@ function TornadoPage() {
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-24 pt-8">
+      {done && <ActivityReview input={{ title: "Tornado", outcomes: rawActivityOutcomes(putts) }} />}
       <header className="flex items-end justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">

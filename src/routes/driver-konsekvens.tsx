@@ -1,3 +1,5 @@
+import { StoredActivityReview } from "@/components/stored-activity-review";
+import { isActivityComplete } from "@/lib/activity-review";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, BarChart3 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -49,6 +51,7 @@ function DriverConsistencyPage() {
   const fairways=shots.filter((v,i)=>v===HOLES[i]?.hit).length;
 
   if(phase==="intro") return <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-20 pt-8">
+{isActivityComplete(phase) && <StoredActivityReview testId="driver-konsekvens" />}
     <div className="flex items-center justify-between">
       <Link to="/traning" search={{category:"off-the-tee"}} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card" aria-label="Tillbaka"><ArrowLeft className="h-4 w-4"/></Link>
       <Link to="/driver-konsekvens-historik" className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-2 text-xs font-semibold text-muted-foreground"><BarChart3 className="h-3.5 w-3.5"/> Progress</Link>
@@ -66,6 +69,7 @@ function DriverConsistencyPage() {
   </main>;
 
   if(phase==="test") return <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-8 pt-5">
+{isActivityComplete(phase) && <StoredActivityReview testId="driver-konsekvens" />}
     <div className="flex items-center justify-between"><button onClick={()=>index>0?(setIndex(index-1),setShots(shots.slice(0,-1))):setPhase("intro")} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card" aria-label="Tillbaka"><ArrowLeft className="h-4 w-4"/></button><span className="text-sm font-semibold">Hål {index+1} av 16</span><span className="w-10"/></div>
     <div className="mt-4 h-2 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-primary" style={{width:`${((index+1)/16)*100}%`}}/></div>
     <section className="mt-7 rounded-3xl border border-border bg-card p-6 text-center"><p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Fairway</p><p className="mt-2 font-display text-5xl">30 m</p><p className="mt-2 text-sm text-muted-foreground">Registrera var driven slutade</p></section>
@@ -77,9 +81,10 @@ function DriverConsistencyPage() {
 
   const result=shots.reduce((a,b)=>a+b,0); const isPb=best===null||result>=best;
   return <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-16 pt-7">
+{isActivityComplete(phase) && <StoredActivityReview testId="driver-konsekvens" />}
     <div className="flex items-center gap-3"><Link to="/traning" search={{category:"off-the-tee"}} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card" aria-label="Tillbaka"><ArrowLeft className="h-4 w-4"/></Link><div><h1 className="text-lg font-semibold">Driver med konsekvens</h1><p className="text-xs text-muted-foreground">Resultat</p></div></div>
     <section className={`mt-5 rounded-3xl border p-6 text-center ${isPb?"border-primary/30 bg-primary/[0.07]":"border-border bg-card"}`}><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-primary">Totalpoäng</p><p className="mt-2 font-display text-7xl leading-none">{result}</p>{isPb?<p className="mt-3 text-xs font-semibold text-primary">Personbästa</p>:<p className="mt-3 text-xs text-muted-foreground">PB {best}</p>}</section>
     <div className="mt-3 grid grid-cols-2 gap-3"><div className="rounded-2xl border border-border bg-card p-4"><p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Fairways</p><p className="mt-1 font-display text-3xl">{fairways}/16</p></div><div className="rounded-2xl border border-border bg-card p-4"><p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Träffprocent</p><p className="mt-1 font-display text-3xl">{Math.round((fairways/16)*100)}%</p></div></div>
-    <Link to="/driver-konsekvens-historik" className="mt-4 flex w-full items-center justify-center rounded-2xl border border-border py-4 font-semibold">Se progress</Link><button onClick={start} className="mt-3 w-full rounded-2xl bg-primary py-4 font-semibold text-primary-foreground">Kör igen</button>
+    <Link to="/driver-konsekvens-historik" className="mt-4 flex w-full items-center justify-center rounded-2xl border border-border py-4 font-semibold">Se progress</Link><button onClick={start} className="mt-3 w-full rounded-2xl border border-slate-200 bg-white py-4 font-semibold text-slate-950">Kör igen</button>
   </main>;
 }

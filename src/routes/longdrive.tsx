@@ -1,3 +1,4 @@
+import { StoredActivityReview } from "@/components/stored-activity-review";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -116,6 +117,7 @@ function LongDrivePage() {
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-16 pt-8">
+{<StoredActivityReview testId="long-drive" />}
       <header className="flex items-end justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">

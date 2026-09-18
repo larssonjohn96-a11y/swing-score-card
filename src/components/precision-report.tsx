@@ -1,3 +1,5 @@
+import { ActivityReview } from "@/components/activity-review";
+import { rawActivityOutcomes } from "@/lib/activity-review";
 import { Trophy } from "lucide-react";
 import {
   handicapFromPct,
@@ -26,6 +28,7 @@ export function PrecisionReport({
 
   return (
     <div className="space-y-4">
+<ActivityReview input={{ title: "Approach", handicap: result.handicap, outcomes: rawActivityOutcomes(shots) }} />
       <section className="rounded-[2rem] border border-border bg-card px-5 py-8 text-center">
         <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-muted-foreground">
           Din Approach-nivå

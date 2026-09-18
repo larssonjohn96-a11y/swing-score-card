@@ -1,3 +1,5 @@
+import { StoredActivityReview } from "@/components/stored-activity-review";
+import { isActivityComplete } from "@/lib/activity-review";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, BarChart3, RotateCcw, Target, Trophy, X } from "lucide-react";
 import { useState } from "react";
@@ -115,6 +117,7 @@ function ApproachPeiPage() {
   if (phase === "intro") {
     return (
       <main style={LIGHT_SURFACE} className="mx-auto min-h-screen w-full max-w-md bg-background px-6 pb-16 pt-8 text-foreground">
+{isActivityComplete(phase) && <StoredActivityReview testId="approach-pei" />}
         <div className="flex items-center justify-between">
           <Link to="/kategori/$slug" params={{ slug: "approach" }} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-300/80 bg-white/68 text-slate-600 backdrop-blur-xl"><ArrowLeft className="h-4 w-4" /></Link>
           <Link to="/approach-pei-historik" className="flex items-center gap-2 rounded-full border border-slate-300/80 bg-white/58 px-4 py-2 text-sm text-slate-600 backdrop-blur-xl"><BarChart3 className="h-4 w-4" /> Historik</Link>
@@ -140,6 +143,7 @@ function ApproachPeiPage() {
 
     return (
       <main style={LIGHT_SURFACE} className="mx-auto min-h-screen w-full max-w-md bg-background px-5 pb-36 pt-3 text-foreground">
+{isActivityComplete(phase) && <StoredActivityReview testId="approach-pei" />}
         <div className="flex items-center justify-between">
           <button onClick={back} disabled={index === 0} className="rounded-full border border-slate-300/75 bg-white/58 p-2 text-slate-600 backdrop-blur-xl disabled:opacity-30"><ArrowLeft className="h-4 w-4" /></button>
           <span className="text-sm font-semibold">Slag {index + 1} / {PEI_SHOT_COUNT}</span>
@@ -190,6 +194,7 @@ function ApproachPeiPage() {
 
   return (
     <main style={LIGHT_SURFACE} className="mx-auto min-h-screen w-full max-w-md bg-background px-6 pb-16 pt-6 text-foreground">
+{isActivityComplete(phase) && <StoredActivityReview testId="approach-pei" />}
       <Link to="/kategori/$slug" params={{ slug: "approach" }} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-300/80 bg-white/68 text-slate-600 backdrop-blur-xl"><ArrowLeft className="h-4 w-4" /></Link>
       <p className="mt-6 text-xs uppercase tracking-[0.25em] text-slate-500">Approach · Träningstest</p>
       <h1 className="mt-1 text-4xl leading-none">18-bollars PEI</h1>

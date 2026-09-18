@@ -76,8 +76,8 @@ export const SESSION_ADAPTERS: SessionAdapter[] = [
   adapter({ testId: "fifty-putt", label: "25 puttar", category: "puttning", testType: "training", storageKey: LEGACY_KEYS.fiftyPutt, dateField: "createdAt", shotsField: "entries", scoreField: "total" }),
   adapter({ testId: "tutor", label: "Tutor-test", category: "puttning", testType: "training", storageKey: LEGACY_KEYS.tutor, shotsField: "results", scoreField: "score" }),
   adapter({ testId: "approach-pei", label: "Approach PEI", category: "approach", testType: "training", storageKey: LEGACY_KEYS.approachPei, shotsField: "shots", scoreField: "pei" }),
-  adapter({ testId: "pei-wedge", label: "Wedge PEI", category: "approach", testType: "training", storageKey: LEGACY_KEYS.peiWedge, scoreField: "pei" }),
-  adapter({ testId: "pei-iron", label: "Iron PEI", category: "approach", testType: "training", storageKey: LEGACY_KEYS.peiIron, scoreField: "pei" }),
+  adapter({ testId: "pei-wedge", label: "Wedge PEI", category: "approach", testType: "training", storageKey: LEGACY_KEYS.peiWedge, shotsField: "shots", scoreField: "pei" }),
+  adapter({ testId: "pei-iron", label: "Iron PEI", category: "approach", testType: "training", storageKey: LEGACY_KEYS.peiIron, shotsField: "shots", scoreField: "pei" }),
   ...TRAINING_CORE_TESTS.map((t) =>
     adapter({ testId: t.testId, label: t.label, category: t.category, testType: "training", storageKey: trainingKey(t.testId), shotsField: "shots", scoreField: "total" }),
   ),

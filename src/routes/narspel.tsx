@@ -1,3 +1,5 @@
+import { StoredActivityReview } from "@/components/stored-activity-review";
+import { isActivityComplete } from "@/lib/activity-review";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, Check, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -114,6 +116,7 @@ function ShortGamePage() {
 
     return (
       <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-48 pt-4">
+{isActivityComplete(phase) && <StoredActivityReview testId="short-game" />}
         <div className="flex items-center justify-between">
           <button
             onClick={back}
@@ -240,6 +243,7 @@ function ShortGamePage() {
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-16 pt-10">
+{isActivityComplete(phase) && <StoredActivityReview testId="short-game" />}
       <p className="mb-6 flex items-center justify-center gap-1 text-xs text-primary">
         <Check className="h-4 w-4" /> Testet är klart
       </p>

@@ -1,3 +1,5 @@
+import { ActivityReview } from "@/components/activity-review";
+import { rawActivityOutcomes, isActivityComplete } from "@/lib/activity-review";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Flag, RotateCcw, Trophy, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -67,6 +69,7 @@ function LagPuttLadderPage() {
   if (phase === "setup") {
     return (
       <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-24 pt-8">
+{isActivityComplete(phase) && <ActivityReview input={{ title: "Lagputt Ladder", outcomes: rawActivityOutcomes(attempts) }} />}
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Putting · Challenge</p>
@@ -113,6 +116,7 @@ function LagPuttLadderPage() {
   if (phase === "playing") {
     return (
       <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-20 pt-5">
+{isActivityComplete(phase) && <ActivityReview input={{ title: "Lagputt Ladder", outcomes: rawActivityOutcomes(attempts) }} />}
         <div className="flex items-center justify-between text-sm">
           <span className="text-muted-foreground">Nivå {level + 1} av {LAG_PUTT_LADDER_DISTANCES.length}</span>
           <button onClick={() => setPhase("setup")} className="text-muted-foreground">Avbryt</button>
@@ -152,6 +156,7 @@ function LagPuttLadderPage() {
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-24 pt-10 text-center">
+{isActivityComplete(phase) && <ActivityReview input={{ title: "Lagputt Ladder", outcomes: rawActivityOutcomes(attempts) }} />}
       <Trophy className="mx-auto h-10 w-10 text-primary" />
       <p className="mt-4 text-xs uppercase tracking-[0.3em] text-muted-foreground">Lag Putt Ladder</p>
       <p className="mt-2 font-display text-8xl leading-none text-primary">{cleared || "0"}</p>
@@ -159,7 +164,7 @@ function LagPuttLadderPage() {
       {isPb ? <p className="mt-4 font-semibold text-primary">Nytt personbästa 🎉</p> : null}
       {last?.failedDistance ? <p className="mt-3 text-sm text-muted-foreground">Spelet tog slut på {last.failedDistance} m.</p> : <p className="mt-3 text-sm text-muted-foreground">Du klarade hela stegen.</p>}
 
-      <button onClick={start} className="mt-8 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-5 font-display text-2xl text-primary-foreground">
+      <button onClick={start} className="mt-8 flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white py-5 font-display text-2xl text-slate-950">
         <RotateCcw className="h-5 w-5" /> Kör igen
       </button>
       <Link to="/traning" search={{ category: "putting" }} className="mt-3 block w-full rounded-2xl border border-border py-4 text-sm font-semibold text-muted-foreground">

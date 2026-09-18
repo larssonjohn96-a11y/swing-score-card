@@ -1,3 +1,5 @@
+import { ActivityReview } from "@/components/activity-review";
+import { rawActivityOutcomes, isActivityComplete } from "@/lib/activity-review";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, RotateCcw, Trophy } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -142,6 +144,7 @@ function Par3ChallengePage() {
   if (phase === "intro") {
     return (
       <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-20 pt-8">
+{isActivityComplete(phase) && <ActivityReview input={{ title: "Par 3 Challenge", outcomes: rawActivityOutcomes(shots) }} />}
         <Link to="/standardiserade-tester" aria-label="Tillbaka" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card">
           <ArrowLeft className="h-4 w-4" />
         </Link>
@@ -183,6 +186,7 @@ function Par3ChallengePage() {
   if (phase === "test") {
     return (
       <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-10 pt-5">
+{isActivityComplete(phase) && <ActivityReview input={{ title: "Par 3 Challenge", outcomes: rawActivityOutcomes(shots) }} />}
         <div className="flex items-center justify-between">
           <button onClick={goBack} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card" aria-label="Tillbaka">
             <ArrowLeft className="h-4 w-4" />
@@ -240,6 +244,7 @@ function Par3ChallengePage() {
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-16 pt-7">
+{isActivityComplete(phase) && <ActivityReview input={{ title: "Par 3 Challenge", outcomes: rawActivityOutcomes(shots) }} />}
       <div className="flex items-center gap-3">
         <Link to="/standardiserade-tester" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card" aria-label="Tillbaka">
           <ArrowLeft className="h-4 w-4" />
@@ -266,7 +271,7 @@ function Par3ChallengePage() {
         ))}
       </div>
 
-      <button onClick={start} className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-4 font-semibold text-primary-foreground">
+      <button onClick={start} className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white py-4 font-semibold text-slate-950">
         <RotateCcw className="h-4 w-4" /> Kör igen
       </button>
     </main>

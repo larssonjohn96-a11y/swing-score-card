@@ -1,3 +1,5 @@
+import { StoredActivityReview } from "@/components/stored-activity-review";
+import { isActivityComplete } from "@/lib/activity-review";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Gauge, Radar, Trophy, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -161,6 +163,7 @@ function SpeedPage() {
     const devices = context === "simulator" ? SIMULATOR_DEVICES : RANGE_DEVICES;
     return (
       <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-16 pt-8">
+{isActivityComplete(phase) && <StoredActivityReview testId="speed" />}
         <header className="flex items-end justify-between">
           <div>
             <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
@@ -240,6 +243,7 @@ function SpeedPage() {
 
     return (
       <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-44 pt-4">
+{isActivityComplete(phase) && <StoredActivityReview testId="speed" />}
         <div className="flex items-center justify-between">
           <button
             onClick={back}
@@ -354,6 +358,7 @@ function SpeedPage() {
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-16 pt-10">
+{isActivityComplete(phase) && <StoredActivityReview testId="speed" />}
       <section className="rounded-3xl border border-border bg-card p-6 text-center shadow-[var(--shadow-glow)]">
         <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Ball Speed HCP</p>
         <p className="mt-1 font-[family-name:var(--font-display)] text-8xl leading-none text-primary">

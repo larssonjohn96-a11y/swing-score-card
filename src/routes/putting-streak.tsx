@@ -1,3 +1,5 @@
+import { ActivityReview } from "@/components/activity-review";
+import { rawActivityOutcomes, isActivityComplete } from "@/lib/activity-review";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, Flame, RotateCcw, Trophy } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -76,6 +78,7 @@ function PuttingStreakPage() {
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-24 pt-8">
+{isActivityComplete(phase) && <ActivityReview input={{ title: "Putting Streak", outcomes: [...PUTTING_STREAK_DISTANCES.slice(0,lastCleared).map((d,i) => ({ label: `Putt ${i+1}`, result: `Sänkt från ${d} m`, quality: "good" as const })), ...(lastCleared < PUTTING_STREAK_DISTANCES.length ? [{ label: `Putt ${lastCleared+1}`, result: `Missad från ${lastFailed} m`, quality: "poor" as const }] : [])] }} />}
       <header className="flex items-center justify-between">
         <Link
           to="/traning"
@@ -161,7 +164,7 @@ function PuttingStreakPage() {
           {lastCleared >= pb && lastCleared > 0 ? (
             <p className="mx-auto mt-4 inline-flex rounded-full bg-primary/10 px-4 py-2 text-sm font-bold text-primary">Nytt PB</p>
           ) : null}
-          <button onClick={start} className="mt-7 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-5 font-display text-2xl text-primary-foreground">
+          <button onClick={start} className="mt-7 flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white py-5 font-display text-2xl text-slate-950">
             <RotateCcw className="h-5 w-5" /> Kör igen
           </button>
         </section>

@@ -20,6 +20,7 @@ export type TrainingSession = {
   /** ett värde per slag, i ordning */
   shots: number[];
   total: number;
+  reviewContext?: { prompts: Prompt[]; options: ScoreOption[]; version: number };
 };
 
 const key = trainingKey;
@@ -37,7 +38,7 @@ export function loadSessions(testId: string): TrainingSession[] {
   }
 }
 
-export function saveSession(testId: string, shots: number[], variant?: string, club?: string): TrainingSession {
+export function saveSession(testId: string, shots: number[], variant?: string, club?: string, reviewContext?: TrainingSession["reviewContext"]): TrainingSession {
   const record: TrainingSession = {
     id:
       typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -46,6 +47,7 @@ export function saveSession(testId: string, shots: number[], variant?: string, c
     date: new Date().toISOString(),
     shots,
     total: shots.reduce((a, b) => a + b, 0),
+    ...(reviewContext ? { reviewContext } : {}),
     ...(variant ? { variant } : {}),
     ...(club ? { club } : {}),
   };

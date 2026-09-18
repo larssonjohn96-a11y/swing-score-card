@@ -1,3 +1,5 @@
+import { ActivityReview } from "@/components/activity-review";
+import { rawActivityOutcomes } from "@/lib/activity-review";
 import { Trophy } from "lucide-react";
 import { handicapLabel } from "@/lib/offtee";
 import { HcpBellCurve } from "@/components/hcp-bell-curve";
@@ -26,6 +28,7 @@ export function PuttingReport({
 }) {
   return (
     <div className="space-y-4">
+<ActivityReview input={{ title: "Putting", handicap: combinedHcp, outcomes: rawActivityOutcomes([...shortSession.putts, ...lagSession.putts]) }} />
       <section className="text-center">
         <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Putting HCP</p>
         <p className="mt-1 font-[family-name:var(--font-display)] text-8xl leading-none text-primary">

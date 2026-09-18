@@ -1,3 +1,4 @@
+import { ActivityReview } from "@/components/activity-review";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, BarChart3, ChevronDown, Pencil, RotateCcw, Undo2, Users, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -211,6 +212,7 @@ function GroupSessionPage() {
         </header>
         <section className="mt-6 rounded-3xl border border-border bg-card p-5">
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Klart · 40 slag per spelare</p>
+{isParticipant && <ActivityReview input={{title:"Din 8-bollsövning",outcomes:session.scores.filter(s => s.userId === user?.id).sort((a,b)=>a.shotIndex-b.shotIndex).map(s=>({label:`Slag ${s.shotIndex+1}`,result:["Över 3 m","Inom 3 m","Inom 2 m","Inom 1 m","Sänkt"][s.points] ?? String(s.points),quality:s.points>=2?"good":s.points===0?"poor":undefined}))}} />}
           <div className="mt-3 divide-y divide-border">
             {totals.map((row) => (
               <div key={row.userId} className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
@@ -220,7 +222,7 @@ function GroupSessionPage() {
             ))}
           </div>
         </section>
-        <Link to="/8-bollar-historik" className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-4 font-semibold text-primary-foreground"><BarChart3 className="h-4 w-4" /> Se min progress</Link>
+        <Link to="/8-bollar-historik" className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white py-4 font-semibold text-slate-950"><BarChart3 className="h-4 w-4" /> Se min progress</Link>
         <Link to="/8-bollar" className="mt-3 flex w-full items-center justify-center rounded-2xl border border-border bg-card py-4 font-semibold">Kör igen</Link>
       </main>
     );

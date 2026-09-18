@@ -1,3 +1,6 @@
+import { PuttingMatchReview } from "@/components/putting-match-review";
+import { ActivityReview } from "@/components/activity-review";
+import { scoredActivityOutcomes } from "@/lib/activity-review";
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, BarChart3, RotateCcw, User, Users, X } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -129,7 +132,7 @@ export function ScoredTest(props: ScoredTestProps) {
         const nextSelf = [...shots, value];
         setShots(nextSelf);
         if (nextSelf.length >= total && friendShots.length >= total) {
-          saveSession(props.testId, nextSelf, variant, club);
+          saveSession(props.testId, nextSelf, variant, club, { prompts, options: props.options, version: 1 });
           setPhase("result");
           return;
         }
@@ -140,7 +143,7 @@ export function ScoredTest(props: ScoredTestProps) {
       const nextFriend = [...friendShots, value];
       setFriendShots(nextFriend);
       if (nextFriend.length >= total && shots.length >= total) {
-        saveSession(props.testId, shots, variant, club);
+        saveSession(props.testId, shots, variant, club, { prompts, options: props.options, version: 1 });
         setPhase("result");
         return;
       }
@@ -152,7 +155,7 @@ export function ScoredTest(props: ScoredTestProps) {
     const next = [...shots, value];
     setShots(next);
     if (next.length >= total) {
-      saveSession(props.testId, next, variant, club);
+      saveSession(props.testId, next, variant, club, { prompts, options: props.options, version: 1 });
       setPhase("result");
     }
   }
@@ -296,8 +299,9 @@ export function ScoredTest(props: ScoredTestProps) {
 
       {analysis.metrics.length ? <section className="mt-3 grid grid-cols-2 gap-3">{analysis.metrics.map((m) => <div key={m.label} className="rounded-3xl border border-slate-300/80 bg-white/74 p-4 shadow-[0_18px_44px_-32px_rgba(15,23,42,.32)] backdrop-blur-2xl"><p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{m.label}</p><p className="mt-1.5 font-display text-2xl leading-none">{m.value}</p>{m.hint ? <p className="mt-1 text-[11px] text-muted-foreground">{m.hint}</p> : null}</div>)}</section> : null}
 
+      {props.testId === "pga-tour-18-puttar" ? <PuttingMatchReview activity="training" holes={shots.map((value,i) => ({distance:Number.parseFloat(prompts[i].primary.replace(",",".")),yourValue:value,completed:true}))} /> : <ActivityReview input={{ title: props.title, summary: `${analysis.headline.label}: ${analysis.headline.value}`, outcomes: scoredActivityOutcomes(shots, props.options, prompts.map(p => [p.primary, p.secondary].filter(Boolean).join(" · "))) }} />}
       <AnalysisSections sections={analysis.sections} liquidGlass={props.liquidGlass} />
-      <div className="mt-6 grid gap-3"><button onClick={() => { setShots([]); setFriendShots([]); setPhase("intro"); }} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-4 font-semibold text-primary-foreground"><RotateCcw className="h-4 w-4" /> Kör igen</button><Link to={props.historyTo} className={`flex w-full items-center justify-center gap-2 rounded-2xl border py-4 text-sm font-semibold ${glass}`}><BarChart3 className="h-4 w-4" /> Se progress</Link><Link to="/traning" search={{ category: category.id }} className={`flex w-full items-center justify-center gap-2 rounded-2xl border py-4 text-sm font-semibold text-muted-foreground ${glass}`}><ArrowLeft className="h-4 w-4" /> Tillbaka till {category.label}</Link></div>
+      <div className="mt-6 grid gap-3"><button onClick={() => { setShots([]); setFriendShots([]); setPhase("intro"); }} className="flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white py-4 font-semibold text-slate-950"><RotateCcw className="h-4 w-4" /> Kör igen</button><Link to={props.historyTo} className={`flex w-full items-center justify-center gap-2 rounded-2xl border py-4 text-sm font-semibold ${glass}`}><BarChart3 className="h-4 w-4" /> Se progress</Link><Link to="/traning" search={{ category: category.id }} className={`flex w-full items-center justify-center gap-2 rounded-2xl border py-4 text-sm font-semibold text-muted-foreground ${glass}`}><ArrowLeft className="h-4 w-4" /> Tillbaka till {category.label}</Link></div>
     </main>
   );
 }

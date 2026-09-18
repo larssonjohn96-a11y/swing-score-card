@@ -1,3 +1,5 @@
+import { ActivityReview } from "@/components/activity-review";
+import { rawActivityOutcomes } from "@/lib/activity-review";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, Sparkles, Star, Trophy } from "lucide-react";
 import {
@@ -44,6 +46,7 @@ export function OffTeeReport({
 
   return (
     <div className="space-y-4">
+<ActivityReview input={{ title: "Off the Tee", handicap: result.handicap, outcomes: rawActivityOutcomes(result.shots) }} />
       <OffTeeHero
         hcp={result.handicap}
         age={age}

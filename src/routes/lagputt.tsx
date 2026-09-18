@@ -1,3 +1,5 @@
+import { StoredActivityReview } from "@/components/stored-activity-review";
+import { isActivityComplete } from "@/lib/activity-review";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, BarChart3, RotateCcw, X } from "lucide-react";
 import { Fragment, useState } from "react";
@@ -71,6 +73,7 @@ function LagPuttPage() {
         style={LIGHT_SURFACE}
         className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background px-5 pb-5 pt-4 text-foreground"
       >
+{isActivityComplete(phase) && <StoredActivityReview testId="lag-putt-18" />}
         <div className="flex shrink-0 items-center justify-between">
           <Link to="/traning" search={{ category: undefined }} className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card">
             <ArrowLeft className="h-4 w-4" />
@@ -141,6 +144,7 @@ function LagPuttPage() {
         style={LIGHT_SURFACE}
         className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background px-5 pb-6 text-foreground"
       >
+{isActivityComplete(phase) && <StoredActivityReview testId="lag-putt-18" />}
         <div className="flex items-center justify-between pt-[max(1rem,env(safe-area-inset-top))]">
           <span className="text-sm font-semibold">
             Putt {index + 1} av {LAG18_TOTAL}
@@ -216,6 +220,7 @@ function LagPuttPage() {
       style={LIGHT_SURFACE}
       className="mx-auto min-h-screen w-full max-w-md bg-background px-5 pb-16 pt-6 text-foreground"
     >
+{isActivityComplete(phase) && <StoredActivityReview testId="lag-putt-18" />}
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Link to="/traning" search={{ category: undefined }} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card">
@@ -324,7 +329,7 @@ function LagPuttPage() {
 
       <button
         onClick={start}
-        className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-4 font-display text-xl text-primary-foreground"
+        className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white py-4 font-display text-xl text-slate-950"
       >
         <RotateCcw className="h-5 w-5" /> Kör igen
       </button>
