@@ -1,0 +1,88 @@
+name: Wire and validate chipping station practice
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/wire-chip-station-practice.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: wire-chip-station-practice
+  cancel-in-progress: false
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - name: Capture pre-existing TypeScript diagnostics
+        run: bunx tsc --noEmit > /tmp/chip-ts-before.log 2>&1 || true
+      - name: Wire isolated chipping module without changing other activities
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('src/routes/coach.tsx')
+          source = path.read_text()
+          import_line = 'import { ChipStationPractice } from "@/components/chip-station-practice";\n'
+          marker = '  // Chipping uses scored three-ball stations; other coach activities stay unchanged.\n'
+          anchor = '  return (\n    <main data-challenge={puttingChallenge'
+          if marker not in source:
+              assert source.count(anchor) == 1, 'Coach render changed: inspect before patching.'
+              insertion = marker + '''  if (category === "around-the-green" && phase === "chip-setup") {
+              return <ChipStationPractice
+                key={user?.id ?? "guest"}
+                userId={user?.id ?? null}
+                authLoading={loading}
+                coach={coach}
+                surface={LIGHT_SURFACE}
+                onExit={() => setPhase("setup")}
+              />;
+            }
+
+          '''
+              source = source.replace(anchor, insertion + anchor, 1)
+          if import_line not in source:
+              source = import_line + source
+          assert 'phase === "chip-setup"' in source and 'onExit={() => setPhase("setup")}' in source
+          path.write_text(source)
+          PY
+      - name: Format new station files
+        run: bunx prettier --write src/lib/chip-stations.ts src/lib/chip-stations.test.ts src/components/chip-station-practice.tsx
+      - name: Station regression tests
+        run: bunx vitest run src/lib/chip-stations.test.ts
+      - name: Check new code and route for TypeScript regressions
+        run: |
+          bunx tsc --noEmit > /tmp/chip-ts-after.log 2>&1 || true
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          before = Path('/tmp/chip-ts-before.log').read_text()
+          after = Path('/tmp/chip-ts-after.log').read_text()
+          def errors(text):
+              return {re.sub(r'\(\d+,\d+\)', '(line)', line) for line in text.splitlines() if 'error TS' in line}
+          new = errors(after) - errors(before)
+          own = [line for line in after.splitlines() if 'error TS' in line and ('chip-stations' in line or 'chip-station-practice' in line)]
+          if new or own:
+              print('\n'.join(sorted(new) + own))
+              raise SystemExit(1)
+          print(f'No new TypeScript errors; pre-existing diagnostic count: {len(errors(before))}')
+          PY
+      - name: Production build
+        run: bun run build
+      - name: Commit validated integration without rewriting history
+        run: |
+          git config user.name 'SG4 Implementation'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/routes/coach.tsx src/lib/chip-stations.ts src/lib/chip-stations.test.ts src/components/chip-station-practice.tsx
+          if git diff --cached --quiet; then
+            echo 'Station practice already integrated.'
+          else
+            git commit -m 'feat(chipping): activate validated three-ball station practice in coach mode'
+            git push origin HEAD:main
+          fi
+          git log -1 --format='Validated implementation commit: %H'
