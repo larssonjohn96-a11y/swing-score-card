@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   buildPuttingMatchReview,
+  coachPuttingReviewHoles,
+  puttingHcpDisplayBand,
   puttingReviewCategory,
   type ReviewHole,
 } from "./putting-match-review";
@@ -12,6 +14,36 @@ const hole = (distance: number, yourValue: number): ReviewHole => ({
 });
 
 describe("putting match review", () => {
+  it("analyses all 30 coach holes with the same engine as a match", () => {
+    const attempts = Array.from({ length: 30 }, (_, index) => ({
+      distance: [1, 5, 12][index % 3],
+      strokes: [1, 2, 3][index % 3],
+    }));
+    const result = buildPuttingMatchReview(coachPuttingReviewHoles(attempts));
+    expect(result.rows).toHaveLength(30);
+    expect(result.rows[29].hole).toBe(30);
+    expect(result.total).toBe(60);
+    expect(result.categories.reduce((sum, category) => sum + category.count, 0)).toBe(30);
+    expect(result.bands.map((band) => band.count)).toEqual([10, 10, 10]);
+    expect(result).toEqual(
+      buildPuttingMatchReview(attempts.map((attempt) => hole(attempt.distance, attempt.strokes))),
+    );
+    expect(buildPuttingMatchReview(coachPuttingReviewHoles([])).rows).toEqual([]);
+  });
+  it("uses five-point steps with bands no wider than ten", () => {
+    expect(puttingHcpDisplayBand(10)).toEqual({ low: 5, high: 15 });
+    expect(puttingHcpDisplayBand(20)).toEqual({ low: 15, high: 25 });
+    expect(puttingHcpDisplayBand(0)).toEqual({ low: 0, high: 10 });
+    expect(puttingHcpDisplayBand(54)).toEqual({ low: 45, high: 54 });
+    for (let estimate = 0; estimate <= 54; estimate += 0.5) {
+      const { low, high } = puttingHcpDisplayBand(estimate);
+      expect(high - low).toBeLessThanOrEqual(10);
+      expect(low).toBeLessThanOrEqual(estimate);
+      expect(high).toBeGreaterThanOrEqual(estimate);
+      expect(low % 5).toBe(0);
+      expect(high === 54 || high % 5 === 0).toBe(true);
+    }
+  });
   it("requires three valid, completed holes for an HCP estimate", () => {
     expect(buildPuttingMatchReview([]).hcpBand).toBeNull();
     expect(buildPuttingMatchReview([hole(2, 1), hole(8, 2)]).hcpBand).toBeNull();

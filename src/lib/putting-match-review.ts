@@ -4,7 +4,28 @@ export type ReviewHole = {
   distance?: number;
   yourValue?: number;
   winner?: "you" | "bot" | "tie";
+  completed?: boolean;
 };
+
+/** Map every recorded coach hole, including challenges, without inventing a match winner. */
+export function coachPuttingReviewHoles(
+  attempts: readonly { distance: number; strokes: number }[],
+): ReviewHole[] {
+  return attempts.map(({ distance, strokes }) => ({
+    distance,
+    yourValue: strokes,
+    completed: true,
+  }));
+}
+
+/** Ten-point display bands centred on five-point steps; not confidence intervals. */
+export function puttingHcpDisplayBand(estimate: number) {
+  const center = Math.round(Math.max(0, Math.min(54, estimate)) / 5) * 5;
+  return {
+    low: Math.min(45, Math.max(0, center - 5)),
+    high: Math.min(54, Math.max(10, center + 5)),
+  };
+}
 
 export const PUTT_REVIEW_CATEGORIES = [
   { id: "exceptional", label: "Exceptionellt", symbol: "★", tone: "text-teal-700 bg-teal-50" },
@@ -33,7 +54,7 @@ export function buildPuttingMatchReview(holes: readonly ReviewHole[]) {
   const rows = holes.flatMap((hole, index) => {
     const { distance, yourValue: putts } = hole;
     if (
-      !hole.winner ||
+      (!hole.winner && !hole.completed) ||
       typeof distance !== "number" ||
       !Number.isFinite(distance) ||
       distance <= 0 ||
@@ -68,8 +89,7 @@ export function buildPuttingMatchReview(holes: readonly ReviewHole[]) {
     estimate === null
       ? null
       : {
-          low: Math.max(0, Math.floor((estimate - 10) / 5) * 5),
-          high: Math.min(54, Math.ceil((estimate + 10) / 5) * 5),
+          ...puttingHcpDisplayBand(estimate),
         };
   const ordered = [...rows].sort((a, b) => b.gained - a.gained || a.hole - b.hole);
   const weakest = ordered.at(-1);

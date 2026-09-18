@@ -17,6 +17,16 @@ const render = (holes: ReviewHole[]) =>
   renderToStaticMarkup(createElement(PuttingMatchReview, { holes }));
 
 describe("putting review invitation", () => {
+  it("uses a training CTA when reviewing a coach session", () => {
+    const html = renderToStaticMarkup(
+      createElement(PuttingMatchReview, {
+        holes: [hole(1, 1), hole(5, 2), hole(12, 2)],
+        activity: "training",
+      }),
+    );
+    expect(html).toContain("Visa passanalys");
+    expect(html).not.toContain("Visa matchanalys");
+  });
   it("highlights both exceptional results and large losses with a clear CTA", () => {
     const html = render([hole(15, 1), hole(1, 3), hole(5, 2)]);
     expect(html).toContain("Du satte den från 15 m");

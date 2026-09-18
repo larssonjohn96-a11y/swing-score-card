@@ -14,7 +14,14 @@ import { formatPuttingDistance } from "@/lib/putting-match";
 
 const decimal = (value: number) => value.toFixed(1).replace(".", ",");
 
-export function PuttingMatchReview({ holes }: { holes: readonly ReviewHole[] }) {
+export function PuttingMatchReview({
+  holes,
+  activity = "match",
+}: {
+  holes: readonly ReviewHole[];
+  activity?: "match" | "training";
+}) {
+  const isTraining = activity === "training";
   const review = useMemo(() => buildPuttingMatchReview(holes), [holes]);
   const { canViewDetailedBreakdowns } = useSubscription();
   const [filter, setFilter] = useState<string | null>(null);
@@ -88,7 +95,7 @@ export function PuttingMatchReview({ holes }: { holes: readonly ReviewHole[] }) 
           </span>
           <span className="mt-4 flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 text-sm font-bold text-white shadow-[0_6px_16px_-6px_rgba(37,99,235,0.65)] transition-colors group-hover:from-blue-700 group-hover:to-indigo-700">
             {!canViewDetailedBreakdowns && <Lock aria-hidden="true" className="h-4 w-4" />}
-            Visa matchanalys
+            {isTraining ? "Visa passanalys" : "Visa matchanalys"}
             <ArrowRight
               aria-hidden="true"
               className="h-4 w-4 motion-safe:transition-transform motion-safe:group-hover:translate-x-1"
@@ -97,17 +104,19 @@ export function PuttingMatchReview({ holes }: { holes: readonly ReviewHole[] }) 
         </button>
       </DialogTrigger>
       <DialogContent className="max-h-[85dvh] w-[calc(100%-24px)] overflow-y-auto rounded-[28px] border-slate-200 bg-white p-5 text-slate-950 sm:rounded-[28px]">
-        <DialogTitle className="pr-6 font-display text-2xl">Match Review</DialogTitle>
+        <DialogTitle className="pr-6 font-display text-2xl">
+          {isTraining ? "Träningsanalys" : "Match Review"}
+        </DialogTitle>
         <DialogDescription className="sr-only">
-          Matchens estimerade puttingnivå och resultat hål för hål.
+          {isTraining ? "Passets" : "Matchens"} estimerade puttingnivå och resultat hål för hål.
         </DialogDescription>
         {!canViewDetailedBreakdowns ? (
           <div className="rounded-2xl bg-blue-50 p-5">
             <Lock className="mb-3 h-6 w-6 text-blue-600" />
             <h3 className="font-display text-xl">Förstå din HCP-nivå med SG4+</h3>
             <p className="mt-2 text-sm text-slate-600">
-              Lås upp matchens estimerade puttingnivå, kategorier, bästa hål och en genomgång hål
-              för hål.
+              Lås upp {isTraining ? "passets" : "matchens"} estimerade puttingnivå, kategorier,
+              bästa hål och en genomgång hål för hål.
             </p>
             <Link
               to="/premium"
@@ -254,10 +263,13 @@ export function PuttingMatchReview({ holes }: { holes: readonly ReviewHole[] }) 
               <p className="mt-2 leading-relaxed">
                 Startavstånd och antal puttar jämförs med SG4:s befintliga scratch- och HCP
                 20-kurvor. HCP-bandet är en grov modelluppskattning, inte ett statistiskt
-                konfidensintervall. Modellen är inte validerad för match-HCP och extrapoleras över
-                HCP 20. Ett kort pass påverkas mycket av dagsform och green. Inga missriktningar
-                eller enskilda returputtar registreras. Sudden death ingår inte. Reviewn ändrar inte
-                ditt etablerade eller officiella HCP.
+                konfidensintervall. Modellen är inte validerad för aktivitets-HCP och extrapoleras
+                över HCP 20. Ett kort pass påverkas mycket av dagsform och green. Inga
+                missriktningar eller enskilda returputtar registreras.{" "}
+                {isTraining
+                  ? "Alla registrerade hål i passet ingår, även coachutmaningar."
+                  : "Sudden death ingår inte."}{" "}
+                Reviewn ändrar inte ditt etablerade eller officiella HCP.
               </p>
             </details>
           </>
