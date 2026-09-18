@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Check, ChevronRight, Flag, Lock, RotateCcw, Target, Trophy } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { PuttingMatchReview } from "@/components/putting-match-review";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 import { LIGHT_SURFACE } from "./8-bollar";
 import {
@@ -780,6 +781,8 @@ function BotMatchPage() {
             </div>
             <div className="border-t border-slate-200 px-4 py-3 text-center"><p className="text-xs font-bold text-slate-800">{suddenDeathWinner === "you" ? `${playerName} vinner i sudden death` : suddenDeathWinner === "bot" ? `${bot.name} vinner i sudden death` : score.you > score.bot ? `${playerName} vinner över ${bot.name}` : score.bot > score.you ? `${bot.name} vinner` : "Matchen slutar delad"}</p><p className="mt-1 text-[10px] font-semibold text-slate-500">Blue · {playerName} · {score.you} hål&nbsp;&nbsp;•&nbsp;&nbsp;Red · {bot.name} · HCP {formatHcp(bot.hcp)} · {score.bot} hål{score.tie ? ` · ${score.tie} delade` : ""}</p></div>
           </section>
+
+          {category === "putting" ? <PuttingMatchReview holes={holes} /> : null}
 
           {cupContext ? (
             <section className="mt-4 overflow-hidden rounded-[26px] border border-amber-300 bg-amber-50/90 p-4 text-center shadow-sm">
