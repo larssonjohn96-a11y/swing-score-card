@@ -1,3 +1,5 @@
+import { CoachChallengeCard } from "@/components/coach-challenge-card";
+import { createChallenge, advanceChallenge, challengeGap, nextChallengeLevel, type PuttingChallenge, type ChallengeKind } from "@/lib/coach-challenges";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Check, ChevronRight, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -35,16 +37,6 @@ type ShortAttempt = { distance?: number; points: number; lie?: ChipLie };
 type IntroState = "coach" | "3" | "2" | "1" | "go" | "done";
 type ShortGamePb = { average: number; total: number };
 type PuttingFocus = "start-line" | "speed" | "green-reading" | "pressure";
-type PuttingChallenge = {
-  title: string;
-  detail: string;
-  category: "short" | "long" | "reading" | "pressure" | "skill";
-  distance: number;
-  remaining: number;
-  successes: number;
-  target: number;
-  rule: "make" | "max-two";
-};
 
 type PuttingCoachLog = {
   at: number;
@@ -296,7 +288,17 @@ function PlayWithCoachPage() {
   const poorCoachAtRef = useRef(0);
   const negativePuttingCoachAtRef = useRef(0);
   const lastPuttingTipAtRef = useRef(-10);
-  const lastChallengeAtRef = useRef(-10);
+  const [challengeCountdown, setChallengeCountdown] = useState(4);
+  const [challengeTotal, setChallengeTotal] = useState(4);
+  const [firstPuttRemaining, setFirstPuttRemaining] = useState("");
+  const [challengeFeedback, setChallengeFeedback] = useState("");
+  const lastChallengeKind = useRef<ChallengeKind | null>(null);
+  const challengeLevels = useRef<Record<ChallengeKind, { level: number; streak: number }>>({
+    pace: { level: 1, streak: 0 }, ladder: { level: 1, streak: 0 }, decider: { level: 1, streak: 0 },
+  });
+  const paceDistance = Number(firstPuttRemaining.replace(",", "."));
+  const paceValid = firstPuttRemaining.trim() !== "" && Number.isFinite(paceDistance) && paceDistance >= 0;
+  const paceConsistent = selectedPuttingStrokes === 1 || (paceValid && paceDistance > 0);
   const recentPuttingTipsRef = useRef<string[]>([]);
   const activePuttingCueRef = useRef<{ text: string; focus: PuttingFocus } | null>(null);
   const [confirmEnd, setConfirmEnd] = useState(false);
@@ -459,27 +461,37 @@ function PlayWithCoachPage() {
     showCoach(cue.text, 3600);
   }
 
-  function maybeStartPuttingChallenge(attempts: CoachPuttingAttempt[]) {
-    if (puttingChallenge || attempts.length < 5 || attempts.length - lastChallengeAtRef.current < 4) return null;
-    const shouldStart = Math.random() < Math.min(0.42, 0.16 + Math.max(0, attempts.length - lastChallengeAtRef.current - 4) * 0.06);
-    if (!shouldStart) return null;
+  function resetChallengeCountdown() {
+    const gap = challengeGap();
+    setChallengeCountdown(gap);
+    setChallengeTotal(gap);
+    setFirstPuttRemaining("");
+  }
 
-    const shortMisses = recentShortMisses(attempts);
-    const longThreePutts = recentThreePutts(attempts);
-    let challenge: PuttingChallenge;
-    if (shortMisses >= 2) {
-      challenge = { title: "2 av 3", detail: "Sänk två av tre från 1,5 m.", category: "short", distance: 1.5, remaining: 3, successes: 0, target: 2, rule: "make" };
-    } else if (longThreePutts >= 2) {
-      challenge = { title: "Stoppa treputten", detail: "Tre puttar från 10 m. Ingen treputt.", category: "long", distance: 10, remaining: 3, successes: 0, target: 3, rule: "max-two" };
-    } else if (Math.random() < 0.65) {
-      challenge = { title: "Major-putten", detail: "2 m. Föreställ dig att den är för vinsten.", category: "pressure", distance: 2, remaining: 1, successes: 0, target: 1, rule: "make" };
-    } else {
-      challenge = { title: "Lag zone", detail: "Två puttar från 12 m. Max två puttar på båda.", category: "reading", distance: 12, remaining: 2, successes: 0, target: 2, rule: "max-two" };
+  function maybeStartPuttingChallenge(attempts: CoachPuttingAttempt[]) {
+    if (challengeCountdown > 1) {
+      setChallengeCountdown(value => value - 1);
+      return null;
     }
-    lastChallengeAtRef.current = attempts.length;
+    const choices = (["pace", "ladder", "decider"] as ChallengeKind[]).filter(kind => kind !== lastChallengeKind.current);
+    const preferred = recentThreePutts(attempts) >= 2 ? "pace" : recentShortMisses(attempts) >= 2 ? "ladder" : null;
+    const kind = preferred && choices.includes(preferred) ? preferred : choices[Math.floor(Math.random() * choices.length)];
+    const challenge = createChallenge(kind, challengeLevels.current[kind].level);
+    lastChallengeKind.current = kind;
     setPuttingChallenge(challenge);
-    showCoach(`Coach Challenge: ${challenge.detail}`, 4200);
+    setFirstPuttRemaining("");
+    setChallengeFeedback("");
+    showCoach(challenge.detail, 4200);
     return challenge;
+  }
+
+  function skipPuttingChallenge() {
+    if (transitioning) return;
+    setPuttingChallenge(null);
+    setSelectedPuttingStrokes(null);
+    resetChallengeCountdown();
+    setDistance(nextCoachPuttingDistance(distance));
+    setChallengeFeedback("Tillbaka till vanliga hål.");
   }
 
   function startGame() {
@@ -502,7 +514,15 @@ function PlayWithCoachPage() {
     setDisplayedCoachText("");
     activePuttingCueRef.current = null;
     lastPuttingTipAtRef.current = -10;
-    lastChallengeAtRef.current = -10;
+    resetChallengeCountdown();
+    setChallengeFeedback("");
+    lastChallengeKind.current = null;
+    try {
+      const saved = JSON.parse(localStorage.getItem("sg4-challenge-levels-v1") ?? "null");
+      for (const kind of ["pace", "ladder", "decider"] as const) {
+        if (saved?.[kind] && [1, 2, 3].includes(saved[kind].level) && [-1, 0, 1].includes(saved[kind].streak)) challengeLevels.current[kind] = saved[kind];
+      }
+    } catch { /* Keep default levels if storage is unavailable. */ }
     negativePuttingCoachAtRef.current = 0;
     recentPuttingTipsRef.current = [];
     poorCoachAtRef.current = 0;
@@ -560,6 +580,8 @@ function PlayWithCoachPage() {
   function startFinalChallenge() {
     setConfirmEnd(false);
     setFinalChallenge(true);
+    setPuttingChallenge(null);
+    setFirstPuttRemaining("");
     if (category === "putting") {
       setSelectedPuttingStrokes(null);
       setDistance(3);
@@ -596,6 +618,8 @@ function PlayWithCoachPage() {
 
   function registerPutting(strokes: 1 | 2 | 3 | 4) {
     if (transitioning || category !== "putting") return;
+    if (puttingChallenge?.kind === "pace" && strokes !== 1 && (!paceValid || paceDistance <= 0)) return;
+    setChallengeFeedback("");
     setTransitioning(true);
     setSelectedPuttingStrokes(null);
     const sequence = puttingAttempts.length + 1;
@@ -603,7 +627,10 @@ function PlayWithCoachPage() {
     const activeFinalChallenge = finalChallenge;
     const activeChallenge = puttingChallenge;
     const playedDistance = distance;
-    const attempt = recordCoachPuttingAttempt(sessionId, sequence, playedDistance, strokes, coachId);
+    const attempt = recordCoachPuttingAttempt(sessionId, sequence, playedDistance, strokes, coachId, activeChallenge ? {
+      challenge_kind: activeChallenge.kind, challenge_level: activeChallenge.level,
+      ...(activeChallenge.kind === "pace" ? { first_putt_remaining_m: strokes === 1 ? 0 : paceDistance, target_radius_m: activeChallenge.radius } : {}),
+    } : undefined);
     const nextAttempts = [...puttingAttempts, attempt];
     const baseNextDistance = nextCoachPuttingDistance(playedDistance);
     const pressureWon = activePressure?.maxStrokes ? strokes <= activePressure.maxStrokes : false;
@@ -657,15 +684,16 @@ function PlayWithCoachPage() {
 
     let nextDistance = baseNextDistance;
     if (activeChallenge) {
-      const wonThis = activeChallenge.rule === "make" ? strokes === 1 : strokes <= 2;
-      const nextChallenge = {
-        ...activeChallenge,
-        remaining: activeChallenge.remaining - 1,
-        successes: activeChallenge.successes + (wonThis ? 1 : 0),
-      };
+      const nextChallenge = advanceChallenge(activeChallenge, strokes, strokes === 1 ? 0 : paceDistance);
+      setFirstPuttRemaining("");
       if (nextChallenge.remaining <= 0) {
         const success = nextChallenge.successes >= nextChallenge.target;
         setPuttingChallenge(null);
+        resetChallengeCountdown();
+        challengeLevels.current[activeChallenge.kind] = nextChallengeLevel(activeChallenge.level, challengeLevels.current[activeChallenge.kind].streak, success);
+        try { localStorage.setItem("sg4-challenge-levels-v1", JSON.stringify(challengeLevels.current)); } catch { /* optional persistence */ }
+        setChallengeFeedback(success ? "✓ Challenge klar! Nästa utmaning laddar." : "Utmaningen avslutad. Ny chans efter några hål.");
+        if (success) setConfetti(true);
         window.setTimeout(() => showCoach(success ? "Challenge klar. Bra under press." : "Challenge slut. Vi tar med oss lärdomen."), postCommentShown ? 900 : 180);
       } else {
         setPuttingChallenge(nextChallenge);
@@ -679,7 +707,7 @@ function PlayWithCoachPage() {
     window.setTimeout(() => {
       setDistance(nextDistance);
       setTransitioning(false);
-      if (!postCommentShown && !activeChallenge) window.setTimeout(() => showPuttingPreShotCue(nextDistance, nextAttempts), 220);
+      if (!postCommentShown && !activeChallenge && challengeCountdown > 1) window.setTimeout(() => showPuttingPreShotCue(nextDistance, nextAttempts), 220);
     }, 280);
   }
 
@@ -757,7 +785,7 @@ function PlayWithCoachPage() {
           : "border-slate-200 bg-white text-slate-950";
 
   return (
-    <main style={LIGHT_SURFACE} className="mx-auto min-h-screen w-full max-w-md bg-background px-5 pb-10 pt-[max(16px,env(safe-area-inset-top))] text-foreground">
+    <main data-challenge={puttingChallenge ? "active" : undefined} style={LIGHT_SURFACE} className="mx-auto min-h-screen w-full max-w-md bg-background px-5 pb-10 pt-[max(16px,env(safe-area-inset-top))] text-foreground">
       {phase === "setup" ? <>
         <header className="flex items-center justify-between">
           <Link to="/tester" aria-label="Tillbaka till Train & Test" className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-2xl shadow-sm">‹</Link>
@@ -810,6 +838,10 @@ function PlayWithCoachPage() {
 
       {phase === "play" ? <>
         <style>{`
+          main[data-challenge="active"]{background:linear-gradient(160deg,#fffdf4,#fffbeb,#fff)!important}
+          main[data-challenge="active"] section{border-color:#fcd34d}
+          main[data-challenge="active"] button.bg-blue-600{background:#b45309}
+          main[data-challenge="active"] button.bg-blue-600.text-white{color:white}
           @keyframes coachConfetti{0%{opacity:0;transform:translate3d(0,-12vh,0) rotate(0deg) scale(.7)}8%{opacity:1}100%{opacity:0;transform:translate3d(var(--cx),108vh,0) rotate(var(--cr)) scale(1.15)}}
           @keyframes topbarStateIn{0%{opacity:0;transform:translateY(5px) scale(.992)}100%{opacity:1;transform:translateY(0) scale(1)}}
           .sg4-topbar-state{animation:topbarStateIn 320ms cubic-bezier(.22,.61,.36,1) both}
@@ -840,28 +872,20 @@ function PlayWithCoachPage() {
           </div> : <div key="putt-normal" className="sg4-topbar-state grid h-full w-full grid-cols-[60%_40%] overflow-hidden"><div className="relative z-10 flex min-w-0 items-center bg-blue-600 px-5 pr-9 text-white after:absolute after:-right-6 after:top-0 after:h-full after:w-9 after:bg-blue-600 after:[clip-path:polygon(0_0,36%_0,100%_50%,36%_100%,0_100%)]"><div className="min-w-0"><p className="truncate font-display text-[30px] leading-none text-white">{playerName}</p><p className="mt-1.5 text-[10px] font-black uppercase tracking-[.14em] text-blue-100">{currentCount} slag registrerade</p></div></div><div className="relative flex min-w-0 items-center justify-end bg-white pl-8 pr-5 text-right"><div><p className="text-[8px] font-black uppercase tracking-[.12em] text-slate-500">Puttar</p><p className="mt-0.5 font-display text-[27px] leading-none text-slate-950">{puttingAttempts.reduce((sum, attempt) => sum + attempt.strokes, 0)}</p></div></div></div>}
         </header>
 
-        {category === "putting" && !introActive ? <section className="mt-3 h-[116px] rounded-[24px] border border-blue-100 bg-white px-4 py-3 shadow-[0_18px_42px_-32px_rgba(15,23,42,.45)]">
-          <div className="flex h-full items-center gap-3">
-            <span className="flex h-14 w-14 shrink-0 items-center justify-center text-[42px] leading-none">{coach.emoji}</span>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-[9px] font-black uppercase tracking-[.18em] text-blue-600">Alma</p>
-                <div className="flex items-center gap-1.5">
-                  {makeStreak >= 2 ? <span className="rounded-full bg-blue-50 px-2 py-1 text-[8px] font-black text-blue-700">🔥 {makeStreak} sänkta</span> : null}
-                  {avoidanceStreak >= 2 ? <span className="rounded-full bg-slate-100 px-2 py-1 text-[8px] font-black text-slate-600">🛡 {avoidanceStreak} utan 3-putt</span> : null}
-                </div>
-              </div>
-              <p className={`mt-1.5 line-clamp-2 min-h-[42px] text-[15px] font-semibold leading-[1.38] ${coachVisible || puttingChallenge ? "text-slate-950" : "text-slate-500"}`}>{displayedCoachText || " "}</p>
-            </div>
-          </div>
-        </section> : null}
+        {category === "putting" && !introActive ? <CoachChallengeCard challenge={puttingChallenge} left={challengeCountdown} total={challengeTotal} feedback={challengeFeedback || displayedCoachText} onSkip={skipPuttingChallenge} disabled={transitioning} finalChallenge={finalChallenge} /> : null}
 
         {category === "bunker" ? <section className="mt-3 rounded-[26px] border border-slate-200 bg-white px-5 py-6 text-center shadow-[0_18px_42px_-30px_rgba(15,23,42,.45)]"><p className="text-[9px] font-black uppercase tracking-[.18em] text-slate-400">Uppgift</p><h1 className="mt-1 font-display text-[42px] leading-none text-slate-950">Bunkerslag</h1><p className="mt-2 text-sm font-semibold text-slate-500">Slå så nära flaggan som möjligt.</p></section> : category === "putting" ? <section className="mt-3 rounded-[26px] border border-slate-200 bg-white px-5 py-5 text-center shadow-[0_18px_42px_-30px_rgba(15,23,42,.45)]"><p className="text-[9px] font-black uppercase tracking-[.18em] text-slate-400">Nästa putt</p><h1 className={`mt-1 font-display text-[45px] leading-none text-slate-950 transition-opacity ${transitioning ? "opacity-35" : "opacity-100"}`}>{formatDistance(distance)} m från hålet</h1><p className="mt-2 text-sm font-semibold text-slate-500">Spela hålet klart och registrera antal puttar</p></section> : <section className="mt-3 rounded-[26px] border border-slate-200 bg-white px-5 py-5 text-center shadow-[0_18px_42px_-30px_rgba(15,23,42,.45)]"><p className="text-[9px] font-black uppercase tracking-[.18em] text-slate-400">Situation</p><div className={`mt-1 flex items-center justify-center gap-2 whitespace-nowrap text-slate-600 transition-opacity ${transitioning ? "opacity-35" : "opacity-100"}`}><span className="font-display text-[46px] leading-none text-slate-950">{formatDistance(distance)} m</span><span className="font-display text-[33px] leading-none text-slate-500">• från {chipLie.toLowerCase()}</span></div><p className="mt-2 text-sm font-semibold text-slate-500">Slå så nära hålet som möjligt.</p></section>}
 
-        {category === "putting" ? <section className="mt-5"><div className="text-center"><h2 className="font-display text-[28px] leading-none text-slate-950">Hur många puttar tog det?</h2><p className="mt-2 text-sm font-semibold text-slate-500">Räkna alla puttar tills bollen är i koppen.</p></div><div className="mt-4 grid grid-cols-2 gap-3">{([1, 2, 3, 4] as const).map((strokes) => {
+        {category === "putting" ? <section className="mt-5">
+          {puttingChallenge?.kind === "pace" && <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-3">
+            <label htmlFor="first-putt-remaining" className="block text-sm font-bold text-amber-900">Kvar efter första putten (meter)</label>
+            <input id="first-putt-remaining" inputMode="decimal" type="text" disabled={transitioning || selectedPuttingStrokes === 1} value={selectedPuttingStrokes === 1 ? "0" : firstPuttRemaining} onChange={event => setFirstPuttRemaining(event.target.value)} placeholder="Exempel: 0,8" className="mt-2 w-full rounded-xl border border-amber-300 bg-white p-3 text-lg text-slate-950" />
+            <p className="mt-1 text-xs text-amber-800">Ange avståndet, putta sedan klart. Sänkt direkt = 1 putt och 0 m.</p>
+          </div>}
+          <div className="text-center"><h2 className="font-display text-[28px] leading-none text-slate-950">Hur många puttar tog det?</h2><p className="mt-2 text-sm font-semibold text-slate-500">Räkna alla puttar tills bollen är i koppen.</p></div><div className="mt-4 grid grid-cols-2 gap-3">{([1, 2, 3, 4] as const).map((strokes) => {
           const selected = selectedPuttingStrokes === strokes;
           return <button key={strokes} type="button" disabled={transitioning} onClick={() => setSelectedPuttingStrokes(strokes)} className={`relative min-h-[92px] rounded-[22px] border px-4 py-4 text-center shadow-sm transition active:scale-[.98] disabled:opacity-40 ${selected ? "border-blue-500 bg-blue-600 text-white ring-2 ring-blue-500/15" : "border-slate-200 bg-white text-slate-950"}`}>{selected ? <span className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full bg-white text-blue-600"><Check className="h-3.5 w-3.5" /></span> : null}<span className="block font-display text-[32px] leading-none">{strokes}</span><span className={`mt-1.5 block text-[10px] font-black uppercase tracking-[.08em] ${selected ? "text-blue-100" : "text-slate-500"}`}>{strokes === 1 ? "putt" : "puttar"}</span></button>;
-        })}</div><button type="button" disabled={transitioning || selectedPuttingStrokes === null} onClick={() => { if (selectedPuttingStrokes !== null) registerPutting(selectedPuttingStrokes); }} className="mt-4 flex w-full items-center justify-center gap-2 rounded-[20px] bg-blue-600 py-4 font-display text-xl text-white shadow-sm transition active:scale-[.99] disabled:cursor-not-allowed disabled:opacity-25">Registrera & nästa hål <ChevronRight className="h-5 w-5" /></button></section> : category === "around-the-green" ? <section className="mt-5"><div className="text-center"><p className="text-[10px] font-black uppercase tracking-[.16em] text-slate-400">Ditt resultat</p><h2 className="mt-1 font-display text-2xl text-slate-950">Hur nära hålet?</h2></div><div className="mt-3 grid grid-cols-2 gap-2.5">{CHIP_POINT_ZONES.map((zone) => {
+        })}</div><button type="button" disabled={transitioning || selectedPuttingStrokes === null || (puttingChallenge?.kind === "pace" && !paceConsistent)} onClick={() => { if (selectedPuttingStrokes !== null) registerPutting(selectedPuttingStrokes); }} className="mt-4 flex w-full items-center justify-center gap-2 rounded-[20px] bg-blue-600 py-4 font-display text-xl text-white shadow-sm transition active:scale-[.99] disabled:cursor-not-allowed disabled:opacity-25">Registrera & nästa hål <ChevronRight className="h-5 w-5" /></button></section> : category === "around-the-green" ? <section className="mt-5"><div className="text-center"><p className="text-[10px] font-black uppercase tracking-[.16em] text-slate-400">Ditt resultat</p><h2 className="mt-1 font-display text-2xl text-slate-950">Hur nära hålet?</h2></div><div className="mt-3 grid grid-cols-2 gap-2.5">{CHIP_POINT_ZONES.map((zone) => {
           const visualClass = zone.points === 5
             ? "col-span-2 min-h-[72px] border-blue-800 bg-gradient-to-r from-blue-800 to-blue-700 text-white shadow-[0_12px_28px_-18px_rgba(30,64,175,.65)]"
             : zone.points === 4

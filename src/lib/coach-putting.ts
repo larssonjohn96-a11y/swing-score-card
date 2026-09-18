@@ -9,6 +9,7 @@ export type CoachPuttingAttempt = {
   playedAt: string;
   distance: number;
   strokes: 1 | 2 | 3 | 4;
+  challenge?: { challenge_kind: string; challenge_level: number; first_putt_remaining_m?: number; target_radius_m?: number };
 };
 
 export type CoachQuestion = {
@@ -139,6 +140,7 @@ export function recordCoachPuttingAttempt(
   distance: number,
   strokes: 1 | 2 | 3 | 4,
   coachId: CoachId,
+  challenge?: CoachPuttingAttempt["challenge"],
 ): CoachPuttingAttempt {
   const playedAt = new Date().toISOString();
   const attemptSessionId = `${coachSessionId}:putt:${sequence}`;
@@ -151,12 +153,12 @@ export function recordCoachPuttingAttempt(
       distance_m: distance,
       first_putt_holed: strokes === 1,
       strokes_to_hole: strokes,
-      context: { hcp_eligible: true, independent_attempt: true, progression_format: false, format_id: "coach-putting-infinity-v1", coach_id: coachId, coach_session_id: coachSessionId },
+      context: { hcp_eligible: true, independent_attempt: true, progression_format: false, format_id: "coach-putting-infinity-v1", coach_id: coachId, coach_session_id: coachSessionId, ...challenge },
     }],
     session_metadata: { coach_session_id: coachSessionId, coach_id: coachId, infinity_mode: true },
   });
   recordEngineOutcome({ skill: "putting", distance, performance: puttingPerformanceFromStrokes(strokes), context: "game", activityId: "coach-putting" });
-  return { id: `${attemptSessionId}:shot:1`, coachSessionId, playedAt, distance, strokes };
+  return { id: `${attemptSessionId}:shot:1`, coachSessionId, playedAt, distance, strokes, ...(challenge ? { challenge } : {}) };
 }
 
 const LEARNING_LIBRARY: LearningEntry[] = [
