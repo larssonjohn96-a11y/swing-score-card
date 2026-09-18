@@ -7,6 +7,30 @@ import {
 } from "./activity-review";
 
 describe("shared activity review", () => {
+  it("classifies all six chip zones and selects the best and biggest loss", () => {
+    const review = buildActivityReview(shortGameReviewInput("Chip", [0, 1, 2, 3, 4, 5].map(points => ({ points, distance: 15 }))));
+    expect(review.counts.map(row => row.count)).toEqual([1, 1, 1, 1, 1, 1]);
+    expect(review.best?.label).toBe("Slag 6");
+    expect(review.worst?.label).toBe("Slag 1");
+    expect(review.handicap).toBeNull();
+  });
+  it("normalizes feet and metres and scales approach error to target distance", () => {
+    const rows = rawActivityOutcomes([
+      { distance: 10, feet: 1 / .3048 },
+      { distance: 10, proximity: 1 },
+      { target: 100, actualDistance: 100, lateral: 1, side: "right" },
+      { target: 100, carry: 60, offline: 0 },
+    ]);
+    expect(rows[0].category).toBe(rows[1].category);
+    expect(rows[2].category).toBe("Exceptionellt");
+    expect(rows[3].category).toBe("Stort tapp");
+  });
+  it("does not infer exceptional drives or major losses from binary hit data", () => {
+    expect(rawActivityOutcomes([{ hit: true, carry: 280 }, { hit: false, carry: 280 }]).map(row => row.category)).toEqual(["Bra", "Svagt"]);
+    const review = buildActivityReview({ title: "Drive", outcomes: rawActivityOutcomes([{ total: 250, sidled: 2 }, { total: 250, sidled: 40 }]) });
+    expect(review.best?.category).toBe("Exceptionellt");
+    expect(review.worst?.category).toBe("Stort tapp");
+  });
   it("does not invent HCP or quality from uncalibrated numeric scores", () => {
     const result = buildActivityReview({
       title: "Training",

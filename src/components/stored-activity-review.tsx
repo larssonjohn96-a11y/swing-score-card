@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { adapterForTest } from "@/lib/sessions/adapters";
-import { rawActivityOutcomes, type ActivityReviewInput } from "@/lib/activity-review";
+import { ACTIVITY_CATEGORIES, rawActivityOutcomes, type ActivityReviewInput } from "@/lib/activity-review";
 import { ActivityReview } from "./activity-review";
 import { PuttingMatchReview } from "./putting-match-review";
 import { coachPuttingReviewHoles, type ReviewHole } from "@/lib/putting-match-review";
@@ -46,6 +46,9 @@ export function StoredActivityReview({ testId }: { testId: string }) {
                   String(points),
                 quality:
                   points >= 2 ? ("good" as const) : points === 0 ? ("poor" as const) : undefined,
+                category: [ACTIVITY_CATEGORIES[5], ACTIVITY_CATEGORIES[3], ACTIVITY_CATEGORIES[2], ACTIVITY_CATEGORIES[1], ACTIVITY_CATEGORIES[0]][points],
+                rank: Number.isInteger(points) && points >= 0 && points <= 4 ? 4 - points : undefined,
+                basis: "Bedömt efter registrerad resultatzon.",
               }))
             : rawActivityOutcomes(shots);
         setInput({

@@ -159,7 +159,7 @@ function BunkerTrainingPage() {
 
   return (
     <main style={LIGHT_SURFACE} className="mx-auto min-h-screen w-full max-w-md bg-background px-5 pb-28 pt-6 text-foreground">
-{isActivityComplete(step) && <ActivityReview input={{ title: "Bunkerträning", outcomes: results.map((r,i) => ({ label: `Slag ${i+1}`, context: LIES.find(l => l.id === r.lie)?.title, result: r.zone ? ZONES.find(z => z.id === r.zone)?.label ?? r.zone : r.outcome === "green" ? "Green" : "Missad green", quality: r.outcome === "green" || ["holed","under-1","1-2"].includes(r.zone ?? "") ? "good" : r.outcome === "miss" || r.zone === "5-plus" ? "poor" : undefined })) }} />}
+{isActivityComplete(step) && <ActivityReview input={{ title: "Bunkerträning", outcomes: results.map((r,i) => ({ ...rawActivityOutcomes([{ ...r, hit: r.outcome === undefined ? undefined : r.outcome === "green" }])[0], label: `Slag ${i+1}`, context: LIES.find(l => l.id === r.lie)?.title, result: r.zone ? ZONES.find(z => z.id === r.zone)?.label ?? r.zone : r.outcome === "green" ? "Green" : "Missad green", quality: r.outcome === "green" || ["holed","under-1","1-2"].includes(r.zone ?? "") ? "good" : r.outcome === "miss" || r.zone === "5-plus" ? "poor" : undefined })) }} />}
       <header className="flex items-center justify-between">
         <Link to="/traning" search={{ category: "around-the-green" }} aria-label="Tillbaka till Närspel" className={`inline-flex h-10 w-10 items-center justify-center rounded-full border bg-white/70 ${glass}`}>
           <ChevronLeft className="h-5 w-5" />
