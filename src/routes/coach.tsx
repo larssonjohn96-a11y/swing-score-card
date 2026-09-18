@@ -629,7 +629,7 @@ function PlayWithCoachPage() {
     const playedDistance = distance;
     const attempt = recordCoachPuttingAttempt(sessionId, sequence, playedDistance, strokes, coachId, activeChallenge ? {
       challenge_kind: activeChallenge.kind, challenge_level: activeChallenge.level,
-      ...(activeChallenge.kind === "pace" ? { first_putt_remaining_m: strokes === 1 ? 0 : paceDistance, target_radius_m: activeChallenge.radius } : {}),
+      ...(activeChallenge.kind === "pace" ? { first_putt_remaining_m: strokes === 1 ? 0 : paceDistance, target_radius_m: activeChallenge.radius, first_putt_distance_is_estimate: true } : {}),
     } : undefined);
     const nextAttempts = [...puttingAttempts, attempt];
     const baseNextDistance = nextCoachPuttingDistance(playedDistance);
@@ -872,15 +872,37 @@ function PlayWithCoachPage() {
           </div> : <div key="putt-normal" className="sg4-topbar-state grid h-full w-full grid-cols-[60%_40%] overflow-hidden"><div className="relative z-10 flex min-w-0 items-center bg-blue-600 px-5 pr-9 text-white after:absolute after:-right-6 after:top-0 after:h-full after:w-9 after:bg-blue-600 after:[clip-path:polygon(0_0,36%_0,100%_50%,36%_100%,0_100%)]"><div className="min-w-0"><p className="truncate font-display text-[30px] leading-none text-white">{playerName}</p><p className="mt-1.5 text-[10px] font-black uppercase tracking-[.14em] text-blue-100">{currentCount} slag registrerade</p></div></div><div className="relative flex min-w-0 items-center justify-end bg-white pl-8 pr-5 text-right"><div><p className="text-[8px] font-black uppercase tracking-[.12em] text-slate-500">Puttar</p><p className="mt-0.5 font-display text-[27px] leading-none text-slate-950">{puttingAttempts.reduce((sum, attempt) => sum + attempt.strokes, 0)}</p></div></div></div>}
         </header>
 
-        {category === "putting" && !introActive ? <CoachChallengeCard challenge={puttingChallenge} left={challengeCountdown} total={challengeTotal} feedback={challengeFeedback || displayedCoachText} onSkip={skipPuttingChallenge} disabled={transitioning} finalChallenge={finalChallenge} /> : null}
+        {category === "putting" && !introActive ? <>
+          <section className="mt-3 h-[132px] rounded-[24px] border border-blue-100 bg-white px-4 py-3 shadow-sm">
+            <div className="flex h-full items-center gap-3">
+              <span className="shrink-0 text-[42px]" aria-hidden="true">{coach.emoji}</span>
+              <div className="min-w-0"><p className="text-[9px] font-black uppercase tracking-widest text-blue-600">{coach.name} · Din coach</p>
+                <p className="mt-1 text-sm font-semibold leading-snug text-slate-800">{puttingChallenge ? `Nu kör vi ${puttingChallenge.title.toLowerCase()}! Följ målet nedan och spela hålet klart. Efter utmaningen fortsätter vi med vanliga hål.` : challengeFeedback || displayedCoachText || "Spela hålet klart. Jag följer dina resultat och hjälper dig längs vägen."}</p>
+              </div>
+            </div>
+          </section>
+          <CoachChallengeCard challenge={puttingChallenge} left={challengeCountdown} total={challengeTotal} feedback={challengeFeedback} onSkip={skipPuttingChallenge} disabled={transitioning} finalChallenge={finalChallenge} />
+        </> : null}
 
         {category === "bunker" ? <section className="mt-3 rounded-[26px] border border-slate-200 bg-white px-5 py-6 text-center shadow-[0_18px_42px_-30px_rgba(15,23,42,.45)]"><p className="text-[9px] font-black uppercase tracking-[.18em] text-slate-400">Uppgift</p><h1 className="mt-1 font-display text-[42px] leading-none text-slate-950">Bunkerslag</h1><p className="mt-2 text-sm font-semibold text-slate-500">Slå så nära flaggan som möjligt.</p></section> : category === "putting" ? <section className="mt-3 rounded-[26px] border border-slate-200 bg-white px-5 py-5 text-center shadow-[0_18px_42px_-30px_rgba(15,23,42,.45)]"><p className="text-[9px] font-black uppercase tracking-[.18em] text-slate-400">Nästa putt</p><h1 className={`mt-1 font-display text-[45px] leading-none text-slate-950 transition-opacity ${transitioning ? "opacity-35" : "opacity-100"}`}>{formatDistance(distance)} m från hålet</h1><p className="mt-2 text-sm font-semibold text-slate-500">Spela hålet klart och registrera antal puttar</p></section> : <section className="mt-3 rounded-[26px] border border-slate-200 bg-white px-5 py-5 text-center shadow-[0_18px_42px_-30px_rgba(15,23,42,.45)]"><p className="text-[9px] font-black uppercase tracking-[.18em] text-slate-400">Situation</p><div className={`mt-1 flex items-center justify-center gap-2 whitespace-nowrap text-slate-600 transition-opacity ${transitioning ? "opacity-35" : "opacity-100"}`}><span className="font-display text-[46px] leading-none text-slate-950">{formatDistance(distance)} m</span><span className="font-display text-[33px] leading-none text-slate-500">• från {chipLie.toLowerCase()}</span></div><p className="mt-2 text-sm font-semibold text-slate-500">Slå så nära hålet som möjligt.</p></section>}
 
         {category === "putting" ? <section className="mt-5">
           {puttingChallenge?.kind === "pace" && <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-3">
-            <label htmlFor="first-putt-remaining" className="block text-sm font-bold text-amber-900">Kvar efter första putten (meter)</label>
-            <input id="first-putt-remaining" inputMode="decimal" type="text" disabled={transitioning || selectedPuttingStrokes === 1} value={selectedPuttingStrokes === 1 ? "0" : firstPuttRemaining} onChange={event => setFirstPuttRemaining(event.target.value)} placeholder="Exempel: 0,8" className="mt-2 w-full rounded-xl border border-amber-300 bg-white p-3 text-lg text-slate-950" />
-            <p className="mt-1 text-xs text-amber-800">Ange avståndet, putta sedan klart. Sänkt direkt = 1 putt och 0 m.</p>
+            <p className="text-sm font-bold text-amber-900">Hur långt från hålet stannade första putten?</p>
+            <p className="mt-1 text-xs text-amber-800">Välj närmaste avstånd. Putta sedan klart.</p>
+            <div className="mt-3 grid grid-cols-3 gap-2" role="group" aria-label="Avstånd efter första putten">
+              {[0, .25, .5, .75, 1, 1.5, 2, 3, 5].map(value => {
+                const selected = selectedPuttingStrokes === 1 ? value === 0 : firstPuttRemaining === String(value);
+                return <button key={value} type="button" disabled={transitioning} aria-pressed={selected} onClick={() => {
+                  setFirstPuttRemaining(String(value));
+                  if (value === 0) setSelectedPuttingStrokes(1);
+                  else if (selectedPuttingStrokes === 1) setSelectedPuttingStrokes(null);
+                }} className={`min-h-12 rounded-xl border px-2 py-2 text-sm font-bold transition ${selected ? "border-amber-600 bg-amber-600 text-white" : "border-amber-200 bg-white text-amber-950"}`}>
+                  {value === 0 ? "Sänkt" : value === 5 ? "5 m eller mer" : value < 1 ? `${value * 100} cm` : `${formatDistance(value)} m`}
+                </button>;
+              })}
+            </div>
+            <p className="mt-2 text-xs text-amber-800">5 m är även valet för längre avstånd. Avstånden är uppskattningar.</p>
           </div>}
           <div className="text-center"><h2 className="font-display text-[28px] leading-none text-slate-950">Hur många puttar tog det?</h2><p className="mt-2 text-sm font-semibold text-slate-500">Räkna alla puttar tills bollen är i koppen.</p></div><div className="mt-4 grid grid-cols-2 gap-3">{([1, 2, 3, 4] as const).map((strokes) => {
           const selected = selectedPuttingStrokes === strokes;

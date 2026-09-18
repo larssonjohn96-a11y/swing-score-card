@@ -9,7 +9,7 @@ export type CoachPuttingAttempt = {
   playedAt: string;
   distance: number;
   strokes: 1 | 2 | 3 | 4;
-  challenge?: { challenge_kind: string; challenge_level: number; first_putt_remaining_m?: number; target_radius_m?: number };
+  challenge?: { challenge_kind: string; challenge_level: number; first_putt_remaining_m?: number; target_radius_m?: number; first_putt_distance_is_estimate?: boolean };
 };
 
 export type CoachQuestion = {

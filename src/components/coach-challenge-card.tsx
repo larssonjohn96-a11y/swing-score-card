@@ -4,8 +4,13 @@ export function CoachChallengeCard({ challenge, left, total, feedback, onSkip, d
   challenge: PuttingChallenge | null; left: number; total: number; feedback: string;
   onSkip: () => void; disabled: boolean; finalChallenge?: boolean;
 }) {
-  const progress = challenge ? (challenge.distances.length - challenge.remaining) / challenge.distances.length : (total - left) / total;
-  return <section aria-label="Coach Challenge" className={`relative mt-3 h-[164px] overflow-hidden rounded-3xl border p-4 transition-colors duration-500 ${challenge ? "sg4-challenge-gold border-amber-300 bg-gradient-to-br from-amber-100 via-yellow-50 to-amber-200 shadow-[0_0_26px_-10px_#f59e0b]" : "border-amber-100 bg-white"}`}>
+  if (finalChallenge || (!challenge && left > 2)) return null;
+  const progress = challenge ? (challenge.distances.length - challenge.remaining) / challenge.distances.length : (3 - left) / 2;
+  if (!challenge) return <div className="mt-2 flex items-center justify-end gap-2 text-xs font-semibold text-amber-700" aria-live="polite">
+    <svg viewBox="0 0 24 24" className="h-6 w-6 -rotate-90" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="#fef3c7" strokeWidth="3"/><circle cx="12" cy="12" r="9" fill="none" stroke="#d97706" strokeWidth="3" strokeDasharray="56.55" strokeDashoffset={56.55*(1-progress)}/></svg>
+    Coach Challenge om {left} hål
+  </div>;
+  return <section aria-label="Coach Challenge" className={`relative mt-3 min-h-[164px] overflow-hidden rounded-3xl border p-4 transition-colors duration-500 ${challenge ? "sg4-challenge-gold border-amber-300 bg-gradient-to-br from-amber-100 via-yellow-50 to-amber-200 shadow-[0_0_26px_-10px_#f59e0b]" : "border-amber-100 bg-white"}`}>
     <style>{`
       @keyframes challengeReveal{0%{box-shadow:0 0 0 0 #fbbf2499;filter:brightness(1.3)}100%{box-shadow:0 0 26px -10px #f59e0b;filter:brightness(1)}}
       @keyframes challengeSparkle{0%{opacity:0;transform:translateY(12px) scale(.5)}40%{opacity:1}100%{opacity:0;transform:translateY(-30px) scale(1.2)}}
@@ -20,8 +25,8 @@ export function CoachChallengeCard({ challenge, left, total, feedback, onSkip, d
         <span className="absolute inset-0 flex items-center justify-center font-bold text-amber-700">{challenge || finalChallenge ? "✦" : left}</span>
       </div>
       <div className="min-w-0 flex-1" aria-live="polite">
-        <p className="text-[9px] font-black uppercase tracking-widest text-amber-700">{challenge ? `Coach Challenge · Nivå ${challenge.level}` : "Alma · Din coach"}</p>
-        <p className="mt-1 font-display text-xl leading-tight text-slate-950">{challenge ? challenge.title : finalChallenge ? "Sista utmaningen" : `Coach Challenge om ${left} hål`}</p>
+        <p className="text-[9px] font-black uppercase tracking-widest text-amber-700">{challenge ? `Nivå ${challenge.level}` : "Alma · Din coach"}</p>
+        <h2 className="font-display text-[32px] uppercase leading-none text-amber-900">Coach Challenge</h2><p className="mt-2 font-display text-2xl leading-tight text-slate-950">{challenge ? challenge.title : finalChallenge ? "Sista utmaningen" : `Coach Challenge om ${left} hål`}</p>
         <p className="mt-1 line-clamp-4 text-xs text-slate-600">{challenge ? `${challenge.distances.length > 1 ? `Hål ${challenge.distances.length-challenge.remaining+1}/3 · ` : ""}${challenge.detail}` : feedback || "Spela vidare. Din nästa utmaning närmar sig."}</p>
       </div>
     </div>
