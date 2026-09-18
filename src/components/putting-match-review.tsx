@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ChevronRight, Lock } from "lucide-react";
+import { ArrowRight, Lock, Sparkles, TrendingDown } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import {
   Dialog,
@@ -20,40 +20,86 @@ export function PuttingMatchReview({ holes }: { holes: readonly ReviewHole[] }) 
   const [filter, setFilter] = useState<string | null>(null);
   const hcp = review.hcpBand ? `${review.hcpBand.low}–${review.hcpBand.high}` : "–";
   const visibleRows = review.rows.filter((row) => !filter || row.category.id === filter);
+  const exceptional = review.categories.find((category) => category.id === "exceptional")!.count;
+  const excellent = review.categories.find((category) => category.id === "excellent")!.count;
+  const bigLosses = review.categories.find((category) => category.id === "loss")!.count;
+  const highlight =
+    exceptional > 0
+      ? `${exceptional} ${exceptional === 1 ? "exceptionellt hål" : "exceptionella hål"}`
+      : excellent > 0
+        ? `${excellent} ${excellent === 1 ? "utmärkt hål" : "utmärkta hål"}`
+        : null;
+  const headline =
+    exceptional > 0 && review.best?.putts === 1
+      ? `Du satte den från ${formatPuttingDistance(review.best.distance)}`
+      : exceptional > 0
+        ? "Ett resultat som sticker ut"
+        : bigLosses > 0
+          ? "Se var puttarna kostade mest"
+          : excellent > 0
+            ? "Se vad du gjorde riktigt bra"
+            : "Upptäck detaljerna bakom din nivå";
 
   return (
     <Dialog onOpenChange={() => setFilter(null)}>
       <DialogTrigger asChild>
         <button
           type="button"
-          className="mt-4 flex w-full items-center gap-3 rounded-[26px] border border-blue-200 bg-gradient-to-br from-white to-blue-50 p-5 text-left text-slate-950 shadow-sm focus-visible:outline-2 focus-visible:outline-blue-600"
+          className="group relative mt-4 block w-full overflow-hidden rounded-[26px] border border-blue-200 bg-gradient-to-br from-white via-blue-50/60 to-indigo-100/70 p-5 text-left text-slate-950 shadow-[0_12px_32px_-18px_rgba(37,99,235,0.45)] transition-shadow hover:shadow-[0_16px_36px_-16px_rgba(37,99,235,0.55)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-600"
         >
-          <span className="min-w-0 flex-1">
-            <span className="block text-[10px] font-black uppercase tracking-[0.15em] text-blue-700">
-              Matchens HCP-rating · Putting
+          <span className="flex items-start justify-between gap-3">
+            <span className="min-w-0">
+              <span className="block text-[10px] font-black uppercase tracking-[0.13em] text-blue-700">
+                Estimerad HCP-nivå · Putting
+              </span>
+              <span className="mt-2 block font-display text-4xl leading-none">
+                {canViewDetailedBreakdowns ? `HCP ${hcp}` : "Se din HCP-nivå"}
+              </span>
+              <span className="mt-2 block text-xs text-slate-500">
+                {review.total} puttar · {review.rows.length} hål
+              </span>
             </span>
-            <span className="mt-2 block font-display text-3xl">
-              {canViewDetailedBreakdowns ? `HCP ${hcp}` : "Se din HCP-nivå"}
-            </span>
-            <span className="mt-1 block text-xs text-slate-500">
-              {review.hcpBand ? "Preliminär nivå · " : "Begränsat underlag · "}
-              {review.rows.length} hål
-            </span>
-            <span className="mt-3 block text-sm font-bold text-blue-700">
-              Se matchens breakdown
+            <span
+              aria-hidden="true"
+              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-sm ${exceptional > 0 ? "bg-teal-100 text-teal-700" : "bg-white/90 text-blue-600"}`}
+            >
+              <Sparkles className="h-6 w-6" />
             </span>
           </span>
-          {canViewDetailedBreakdowns ? (
-            <ChevronRight className="h-6 w-6 shrink-0 text-blue-600" />
-          ) : (
-            <Lock className="h-5 w-5 shrink-0 text-blue-600" />
+          <span className="mt-5 block text-base font-bold leading-snug">{headline}</span>
+          {(highlight || bigLosses > 0) && (
+            <span className="mt-3 flex flex-wrap gap-2">
+              {highlight && (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-teal-200 bg-teal-50 px-2.5 py-1.5 text-xs font-bold text-teal-800">
+                  <Sparkles aria-hidden="true" className="h-3.5 w-3.5" />
+                  {highlight}
+                </span>
+              )}
+              {bigLosses > 0 && (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-orange-200 bg-orange-50 px-2.5 py-1.5 text-xs font-bold text-orange-800">
+                  <TrendingDown aria-hidden="true" className="h-3.5 w-3.5" />
+                  {bigLosses} {bigLosses === 1 ? "stort tapp" : "stora tapp"}
+                </span>
+              )}
+            </span>
           )}
+          <span className="mt-3 block text-xs leading-relaxed text-slate-600">
+            Se vad som lyfte resultatet och var du kan förbättra dig.
+          </span>
+          <span className="mt-4 flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 text-sm font-bold text-white shadow-[0_6px_16px_-6px_rgba(37,99,235,0.65)] transition-colors group-hover:from-blue-700 group-hover:to-indigo-700">
+            {!canViewDetailedBreakdowns && <Lock aria-hidden="true" className="h-4 w-4" />}
+            Visa matchanalys
+            <ArrowRight
+              aria-hidden="true"
+              className="h-4 w-4 motion-safe:transition-transform motion-safe:group-hover:translate-x-1"
+            />
+          </span>
         </button>
       </DialogTrigger>
       <DialogContent className="max-h-[85dvh] w-[calc(100%-24px)] overflow-y-auto rounded-[28px] border-slate-200 bg-white p-5 text-slate-950 sm:rounded-[28px]">
         <DialogTitle className="pr-6 font-display text-2xl">Match Review</DialogTitle>
-        <DialogDescription className="text-slate-500">
-          Din putting · {review.rows.length} ordinarie hål. Sudden death ingår inte.
+        <DialogDescription className="sr-only">
+          Matchens estimerade puttingnivå och resultat hål för hål.
         </DialogDescription>
         {!canViewDetailedBreakdowns ? (
           <div className="rounded-2xl bg-blue-50 p-5">
@@ -73,16 +119,16 @@ export function PuttingMatchReview({ holes }: { holes: readonly ReviewHole[] }) 
         ) : (
           <>
             <section className="rounded-2xl bg-blue-50 p-5 text-center">
-              <p className="text-xs font-bold text-blue-700">Estimerad puttingnivå för matchen</p>
+              <p className="text-xs font-bold text-blue-700">Estimerad HCP-nivå · Putting</p>
               <p className="mt-2 font-display text-4xl">HCP {hcp}</p>
               <p className="mt-2 text-xs text-slate-600">
-                {review.hcpBand
-                  ? "Preliminär modellnivå · låg tillförlitlighet"
-                  : "Minst tre registrerade hål behövs för ett estimat."}
+                {review.total} puttar · {review.rows.length} hål
               </p>
-              <p className="mt-2 text-xs text-slate-500">
-                Inte ditt totala eller officiella handicap.
-              </p>
+              {!review.hcpBand && (
+                <p className="mt-2 text-xs text-slate-500">
+                  Minst tre registrerade hål behövs för ett estimat.
+                </p>
+              )}
             </section>
             <div className="grid grid-cols-3 gap-2 text-center">
               {[
@@ -210,7 +256,8 @@ export function PuttingMatchReview({ holes }: { holes: readonly ReviewHole[] }) 
                 20-kurvor. HCP-bandet är en grov modelluppskattning, inte ett statistiskt
                 konfidensintervall. Modellen är inte validerad för match-HCP och extrapoleras över
                 HCP 20. Ett kort pass påverkas mycket av dagsform och green. Inga missriktningar
-                eller enskilda returputtar registreras. Reviewn ändrar inte ditt etablerade HCP.
+                eller enskilda returputtar registreras. Sudden death ingår inte. Reviewn ändrar inte
+                ditt etablerade eller officiella HCP.
               </p>
             </details>
           </>
