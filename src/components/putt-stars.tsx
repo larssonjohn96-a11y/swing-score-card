@@ -1,3 +1,4 @@
+import { STAR_STEPS, starLevel } from "@/lib/putt-course";
 import { Star } from "lucide-react";
 export function PuttStars({
   count = 0,
@@ -33,20 +34,25 @@ export function PuttStars({
     </span>
   );
 }
-export function PuttMilestones({ stars }: { stars: number }) {
-  const next = [4, 8, 12, 16].find((n) => n > stars);
+export function PuttMilestones({ stars, previous }: { stars: number; previous?: number }) {
+  const next = STAR_STEPS.find((n) => n > stars);
   return (
     <section className="rounded-3xl border border-amber-100 bg-white p-4">
       <div className="flex items-baseline justify-between">
-        <h2 className="font-bold">Stjärntrappan</h2>
+        <h2 className="font-bold">
+          {previous !== undefined ? `Ny nivå · ${starLevel(stars)} av 6!` : "Stjärntrappan"}
+        </h2>
         <strong className="text-amber-600">{stars} / 16 ★</strong>
       </div>
-      <div className="mt-3 flex items-end gap-2" aria-label="Milstolpar: 4, 8, 12 och 16 stjärnor">
-        {[4, 8, 12, 16].map((n, i) => (
+      <div
+        className="mt-3 flex items-end gap-2"
+        aria-label="Milstolpar: 3, 6, 9, 11, 13 och 16 stjärnor"
+      >
+        {STAR_STEPS.map((n, i) => (
           <div
             key={n}
-            className={`flex flex-1 items-center justify-center rounded-t-xl font-black ${stars >= n ? "bg-amber-400 text-amber-950" : "bg-slate-100 text-slate-400"}`}
-            style={{ height: 28 + i * 12 }}
+            className={`flex flex-1 items-center justify-center rounded-t-xl text-sm font-black ${previous !== undefined && previous < n && stars >= n ? "putt-level-up" : ""} ${stars >= n ? "bg-amber-400 text-amber-950" : "bg-slate-100 text-slate-400"}`}
+            style={{ height: 28 + i * 9, animationDelay: `${i * 130}ms` }}
           >
             {n} ★
           </div>

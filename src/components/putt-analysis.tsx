@@ -1,139 +1,242 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { ArrowRight, Lock } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from "./ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "./ui/dialog";
 import { useSubscription } from "@/lib/subscription";
+import { buildActivityReview, type ActivityCategory } from "@/lib/activity-review";
+import {
+  courseHandicap,
+  reviewRound,
+  roundPuttCategory,
+  roundStars,
+  puttsLabel,
+  type CourseRound,
+} from "@/lib/putt-course";
+
 import { useChipScreenColor } from "@/lib/use-chip-screen-color";
-import { reviewRound, courseHandicap, holeStars, type CourseRound } from "@/lib/putt-course";
+import { handicapLabel } from "@/lib/shortgame";
+
 export function PuttAnalysis({ round }: { round: CourseRound }) {
-  const [open, setOpen] = useState(false),
-    [stage, setStage] = useState(0),
-    [filter, setFilter] = useState<string | null>(null);
   const { canViewDetailedBreakdowns } = useSubscription();
+  const [open, setOpen] = useState(false);
+  const [skip, setSkip] = useState(false);
+  const [stage, setStage] = useState<"counting" | "result" | "fade" | "details">("counting");
+  const [filter, setFilter] = useState<ActivityCategory | null>(null);
+  useChipScreenColor(open && canViewDetailedBreakdowns && stage !== "details");
+  const groups = useRef<HTMLDivElement>(null);
   const hcp = courseHandicap(round);
-  const review = reviewRound(round);
-  useChipScreenColor(open && canViewDetailedBreakdowns && stage < 3);
+  const rows = reviewRound(round).rows.map((r) => ({
+    ...r,
+    category: roundPuttCategory(r.distance, r.putts, r.gained),
+  }));
+  const review = buildActivityReview({
+    title: "Rundanalys",
+    handicap: hcp,
+    modelId: "putt-course-v2",
+    outcomes: rows.map((r) => ({
+      label: `Hål ${r.hole}`,
+      context: `${r.distance} m`,
+      result: `${r.putts} puttar`,
+      rank: 0,
+      category: r.category.label as ActivityCategory,
+    })),
+  });
   useEffect(() => {
-    if (!open) return;
-    setStage(0);
+    if (!open || !canViewDetailedBreakdowns || skip) return;
     setFilter(null);
-    const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    setStage(reduced ? "result" : "counting");
     const timers = [
-      setTimeout(() => setStage(1), reduced ? 0 : 1400),
-      setTimeout(() => setStage(2), reduced ? 700 : 3200),
-      setTimeout(() => setStage(3), reduced ? 700 : 3850),
+      setTimeout(() => setStage("result"), reduced ? 0 : 1600),
+      setTimeout(() => setStage("fade"), reduced ? 900 : 3800),
+      setTimeout(() => setStage("details"), reduced ? 900 : 4450),
     ];
     return () => timers.forEach(clearTimeout);
-  }, [open]);
-  const rows = review.rows.map((r) => ({
-    ...r,
-    category:
-      r.category.id === "loss"
-        ? { id: "weak", label: "Svagt", tone: "bg-orange-50 text-orange-700" }
-        : r.category,
-  }));
+  }, [open, round.id, canViewDetailedBreakdowns, skip]);
+  const select = (category: ActivityCategory | null) => {
+    setFilter(category);
+    requestAnimationFrame(() =>
+      groups.current?.scrollIntoView({ block: "start", behavior: "smooth" }),
+    );
+  };
   return (
-    <>
-      <button className="putt-primary" onClick={() => setOpen(true)}>
-        Analys – se ditt handicap →
-      </button>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="!fixed !inset-0 !h-[100dvh] !w-full !max-w-none !translate-x-0 !translate-y-0 !rounded-none !border-0 !p-0 !gap-0 overflow-hidden !bg-slate-50 text-slate-950 [&>button]:z-50 [&>button]:bg-white [&>button]:p-2">
-          <DialogTitle className="sr-only">Puttrundans analys</DialogTitle>
-          <DialogDescription className="sr-only">
-            Estimerat putt-handicap och resultat per hål
-          </DialogDescription>
-          {!canViewDetailedBreakdowns ? (
-            <div className="m-auto max-w-sm p-6 text-center">
-              <h2 className="text-2xl font-black">Se ditt putt-handicap</h2>
-              <p className="my-4">Lås upp rundanalys och resultat hål för hål med SG4 Plus.</p>
-              <Link to="/premium" className="putt-primary">
-                Upptäck Plus
-              </Link>
-            </div>
-          ) : (
-            <>
-              <div
-                className="mx-auto w-full max-w-md overflow-y-auto p-5 pt-[max(56px,env(safe-area-inset-top))]"
-                aria-hidden={stage < 3}
-              >
-                <h2 className="text-2xl font-black">Estimerat putt-HCP</h2>
-                <div className="my-4 rounded-3xl bg-blue-100 p-5 text-center text-blue-700">
-                  <strong className="text-5xl">
-                    {hcp === null ? "–" : hcp.toFixed(1).replace(".", ",")}
-                  </strong>
-                  <p className="mt-2 text-sm">Den här rundan</p>
-                </div>
-                <div className="mb-4 flex flex-wrap gap-2">
-                  {[...new Map(rows.map((r) => [r.category.id, r.category])).values()].map((c) => (
-                    <button
-                      key={c.id}
-                      aria-pressed={filter === c.id}
-                      className={`min-h-11 rounded-xl px-3 font-bold ${c.tone} ${filter === c.id ? "ring-2 ring-blue-600" : ""}`}
-                      onClick={() => setFilter(filter === c.id ? null : c.id)}
-                    >
-                      {c.label} · {rows.filter((r) => r.category.id === c.id).length}
-                    </button>
-                  ))}
-                </div>
-                <h3 className="mb-3 font-black">Hål för hål</h3>
-                {rows
-                  .filter((r) => !filter || r.category.id === filter)
-                  .map((r) => (
-                    <section
-                      key={r.hole}
-                      className="mb-3 overflow-hidden rounded-2xl border bg-white"
-                    >
-                      <h4 className="flex justify-between bg-blue-50 p-3 font-bold">
-                        <span>
-                          Hål {r.hole} · {r.distance} m
-                        </span>
-                        <span>{holeStars(round.holes[r.hole - 1], r.hole - 1)} ★</span>
-                      </h4>
-                      <div className="flex items-center justify-between p-3">
-                        <span>
-                          {r.putts === 4 ? "4+" : r.putts} {r.putts === 1 ? "putt" : "puttar"}
-                        </span>
-                        <span
-                          className={`rounded-full px-3 py-1 text-sm font-bold ${r.category.tone}`}
-                        >
-                          {r.category.label}
-                        </span>
-                      </div>
-                    </section>
-                  ))}
-                <p className="my-4 text-xs text-slate-500">
-                  Uppskattning från rundans avstånd och puttar. Påverkar inte ditt officiella HCP.
-                  {round.holes.some((h) => h[0] === 4)
-                    ? " 4+ räknas som fyra puttar i uppskattningen."
-                    : ""}
-                </p>
-              </div>
-              {stage < 3 && (
-                <div
-                  className={`absolute inset-0 flex flex-col items-center justify-center bg-blue-600 text-white transition-opacity duration-700 ${stage === 2 ? "opacity-0" : "opacity-100"}`}
-                >
-                  <p className="mb-5 text-lg font-bold">
-                    {stage === 0 ? "Beräknar din runda…" : "Ditt estimerade putt-HCP"}
-                  </p>
-                  <div className="relative h-32 w-full text-center">
-                    <span
-                      className={`absolute inset-0 text-8xl font-black transition-all duration-700 ${stage === 0 ? "opacity-100 blur-0" : "opacity-0 blur-sm"}`}
-                      aria-hidden
-                    >
-                      ···
-                    </span>
-                    <strong
-                      className={`absolute inset-0 text-8xl font-black transition-all duration-700 ${stage === 0 ? "translate-y-3 opacity-0" : "translate-y-0 opacity-100"}`}
-                    >
-                      {hcp === null ? "–" : hcp.toFixed(1).replace(".", ",")}
+    <Dialog
+      open={open}
+      onOpenChange={(value) => {
+        setOpen(value);
+        if (value) {
+          setSkip(false);
+          setStage("counting");
+        }
+      }}
+    >
+      <style>{`@keyframes chipHcpDial{from{transform:translateY(0)}to{transform:translateY(-85.7%)}}.chip-hcp-dial{animation:chipHcpDial .65s linear infinite;line-height:96px}@media(prefers-reduced-motion:reduce){.chip-hcp-dial{animation:none}}`}</style>
+      <DialogTrigger asChild>
+        <button className="flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 py-3 font-bold text-white shadow-md">
+          {!canViewDetailedBreakdowns && <Lock className="h-4 w-4" />}Analys – se ditt handicap{" "}
+          <ArrowRight className="h-4 w-4" />
+        </button>
+      </DialogTrigger>
+      <DialogContent className="!animate-none !fixed !inset-0 !left-0 !top-0 !h-[100dvh] !max-h-none !w-full !max-w-none !translate-x-0 !translate-y-0 !rounded-none !border-0 !p-0 !gap-0 overflow-hidden !bg-transparent text-slate-950 [&>button]:z-30 [&>button]:bg-white [&>button]:p-2">
+        <DialogTitle className="sr-only">Rundanalys</DialogTitle>
+        <DialogDescription className="sr-only">
+          Ditt estimerade putt-handicap och slag för slag, grupperat per hål.
+        </DialogDescription>
+        {canViewDetailedBreakdowns ? (
+          <>
+            <div
+              className="flex h-full items-center justify-center px-3 py-6"
+              hidden={stage === "counting" || stage === "result"}
+            >
+              <div className="max-h-[85dvh] w-full max-w-md space-y-4 overflow-y-auto rounded-[26px] border border-slate-200 bg-white p-5 shadow-xl">
+                <div>
+                  <h2 className="text-2xl font-black">Estimerat putt-HCP</h2>
+                  <p className="mt-3 rounded-2xl bg-blue-50 p-4 text-center text-blue-700">
+                    <span className="block text-xs">Estimerad HCP-nivå</span>
+                    <strong className="mt-1 block text-3xl">
+                      {hcp === null ? "–" : handicapLabel(hcp)}
                     </strong>
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-3 rounded-2xl bg-slate-50 p-3 text-center">
+                  <div>
+                    <strong className="text-2xl text-blue-700">{puttsLabel(round)}</strong>
+                    <p className="text-xs text-slate-500">Totalt antal puttar</p>
+                  </div>
+                  <div>
+                    <strong className="text-2xl text-amber-600">{roundStars(round)} ★</strong>
+                    <p className="text-xs text-slate-500">Totalt antal stjärnor</p>
                   </div>
                 </div>
-              )}
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
-    </>
+                <div className="space-y-1.5" aria-label="Filtrera slag">
+                  {review.counts.map(({ category, count: baseCount }) => {
+                    const count = baseCount;
+                    return (
+                      <button
+                        key={category}
+                        disabled={!count}
+                        aria-pressed={filter === category}
+                        onClick={() => select(filter === category ? null : category)}
+                        className={`flex min-h-11 w-full items-center justify-between rounded-xl px-3 text-sm font-bold disabled:opacity-35 ${category === "Exceptionellt" ? "bg-teal-50 text-teal-700" : category === "Utmärkt" ? "bg-blue-50 text-blue-700" : category === "Bra" ? "bg-emerald-50 text-emerald-700" : category === "Förväntat" ? "bg-slate-100 text-slate-600" : category === "Svagt" ? "bg-orange-50 text-orange-700" : "bg-rose-50 text-rose-700"} ${filter === category ? "ring-2 ring-blue-500" : ""}`}
+                      >
+                        <span>{category}</span>
+                        <span>{count}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <div ref={groups} className="scroll-mt-5 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-black">{filter ?? "Hål för hål"}</h3>
+                    {filter && (
+                      <button
+                        className="min-h-11 text-sm font-bold text-blue-700"
+                        onClick={() => select(null)}
+                      >
+                        Visa alla slag
+                      </button>
+                    )}
+                  </div>
+                  {rows
+                    .filter((r) => !filter || r.category.label === filter)
+                    .map((r) => (
+                      <section
+                        key={r.hole}
+                        className="overflow-hidden rounded-2xl border border-slate-200"
+                        aria-label={`Hål ${r.hole}`}
+                      >
+                        <h4 className="bg-blue-50 p-3 font-black">
+                          Hål {r.hole} · {r.distance} m
+                        </h4>
+                        <div className="flex items-center justify-between border-t border-slate-100 p-3 text-sm">
+                          <strong>
+                            {r.putts}
+                            {round.model === 1 && r.putts === 4 ? "+" : ""}{" "}
+                            {r.putts === 1 ? "putt" : "puttar"}
+                          </strong>
+                          <span
+                            className={`rounded-full px-2 py-1 text-xs font-bold ${r.category.tone}`}
+                          >
+                            {r.category.label}
+                          </span>
+                        </div>
+                      </section>
+                    ))}
+                </div>
+              </div>
+            </div>
+            {stage !== "details" && (
+              <div
+                data-hcp-reveal={stage}
+                className={`absolute inset-0 flex flex-col items-center justify-center bg-blue-600 px-6 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] text-center text-white transition-opacity duration-700 motion-reduce:transition-none ${stage === "fade" ? "pointer-events-none opacity-0" : "opacity-100"}`}
+              >
+                <p className="text-sm font-bold uppercase tracking-widest">
+                  Din runda är analyserad
+                </p>
+                <p className="mt-5 text-lg">
+                  {stage === "counting"
+                    ? "Sammanställer ditt resultat…"
+                    : "Ditt estimerade putt-HCP"}
+                </p>
+                <div
+                  className="relative my-8 h-40 w-full max-w-sm"
+                  role="status"
+                  aria-live="polite"
+                >
+                  <div
+                    aria-hidden="true"
+                    className={`absolute inset-0 flex items-center justify-center overflow-hidden text-8xl font-black transition-all duration-700 motion-reduce:transition-none ${stage === "counting" ? "opacity-100" : "opacity-0 blur-sm"}`}
+                  >
+                    <span className="block h-24 overflow-hidden">
+                      <span className="block chip-hcp-dial">
+                        36
+                        <br />
+                        24
+                        <br />
+                        18
+                        <br />
+                        12
+                        <br />8<br />4<br />0
+                      </span>
+                    </span>
+                  </div>
+                  <div
+                    className={`absolute inset-0 flex items-center justify-center text-[clamp(88px,27vw,132px)] font-black leading-none tabular-nums transition-all duration-1000 ease-out motion-reduce:transition-none ${stage === "counting" ? "scale-95 opacity-0 blur-sm" : "scale-100 opacity-100 blur-0"}`}
+                  >
+                    {stage === "counting" ? (
+                      <span className="sr-only">Beräknar</span>
+                    ) : hcp === null ? (
+                      "–"
+                    ) : (
+                      handicapLabel(hcp)
+                    )}
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setSkip(true);
+                    setStage("details");
+                  }}
+                  className="min-h-12 rounded-full border border-white/40 px-6 text-sm font-bold"
+                >
+                  {stage === "counting" ? "Visa analys direkt" : "Se slag för slag"}
+                </button>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="mx-auto flex h-full max-w-md flex-col justify-center p-6 text-center">
+            <Lock className="mx-auto h-10 w-10 text-blue-600" />
+            <h2 className="mt-4 text-2xl font-black">Lås upp din rundanalys</h2>
+            <p className="mt-2 text-slate-500">
+              Se ditt estimerade handicap och analysen för varje hål med SG4+.
+            </p>
+            <Link to="/premium" className="mt-5 rounded-2xl bg-blue-600 p-4 font-bold text-white">
+              Se SG4+
+            </Link>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }

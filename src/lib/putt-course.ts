@@ -1,9 +1,9 @@
-import { buildPuttingMatchReview } from "./putting-match-review";
+import { buildPuttingMatchReview, puttingReviewCategory } from "./putting-match-review";
 export const COURSE_DISTANCES = [2, 8, 4, 10, 3, 12] as const;
 export const maxStars = (index: number) => (COURSE_DISTANCES[index] <= 3 ? 2 : 3);
 export type CourseRound = {
   id: string;
-  model: 1;
+  model: 1 | 2;
   startedAt: number;
   finishedAt: number;
   holes: number[][];
@@ -58,7 +58,7 @@ export function reduceCourse(state: CourseState, action: CourseAction): CourseSt
       ? state
       : {
           ...state,
-          active: { id: action.id, model: 1, startedAt: action.at, holes: [[]], phase: "play" },
+          active: { id: action.id, model: 2, startedAt: action.at, holes: [[]], phase: "play" },
         };
   if (!a) return state;
   const i = a.holes.length - 1;
@@ -66,7 +66,7 @@ export function reduceCourse(state: CourseState, action: CourseAction): CourseSt
     return a.phase !== "play" ||
       !Number.isInteger(action.putts) ||
       action.putts < 1 ||
-      action.putts > 4
+      action.putts > 99
       ? state
       : {
           ...state,
@@ -92,7 +92,7 @@ export function reduceCourse(state: CourseState, action: CourseAction): CourseSt
     if (!holes.length) return { ...state, active: null };
     const round: CourseRound = {
       id: a.id,
-      model: 1,
+      model: a.model,
       startedAt: a.startedAt,
       finishedAt: action.at,
       holes,
@@ -110,7 +110,7 @@ const validHoles = (v: unknown, complete: boolean): v is number[][] =>
     (h, i) =>
       Array.isArray(h) &&
       (complete || i < v.length - 1 ? h.length === 1 : h.length <= 1) &&
-      h.every((p) => Number.isInteger(p) && p >= 1 && p <= 4),
+      h.every((p) => Number.isInteger(p) && p >= 1 && p <= 99),
   );
 export function parseCourse(raw: string | null): CourseState {
   try {
@@ -124,7 +124,7 @@ export function parseCourse(raw: string | null): CourseState {
         typeof r.id !== "string" ||
         !r.id ||
         ids.has(r.id) ||
-        r.model !== 1 ||
+        (r.model !== 1 && r.model !== 2) ||
         !Number.isFinite(r.startedAt) ||
         !Number.isFinite(r.finishedAt) ||
         !validHoles(r.holes, true)
@@ -142,13 +142,13 @@ export function parseCourse(raw: string | null): CourseState {
       typeof a.id === "string" &&
       a.id &&
       !ids.has(a.id) &&
-      a.model === 1 &&
+      (a.model === 1 || a.model === 2) &&
       Number.isFinite(a.startedAt) &&
       validHoles(a.holes, false)
     )
       s.active = {
         id: a.id,
-        model: 1,
+        model: a.model,
         startedAt: a.startedAt,
         holes: a.holes,
         phase: a.holes.at(-1).length
@@ -174,4 +174,48 @@ export function puttGoal(active: CourseSession, history: CourseRound[], average 
   const realistic = COURSE_DISTANCES.slice(done).reduce((s, d) => s + (d >= 8 ? 2 : 1), 0) + 1;
   if (need <= 0) return { need: 0, target };
   return need <= remaining && need <= realistic && (average || need <= 5) ? { need, target } : null;
+}
+
+export const STAR_STEPS = [3, 6, 9, 11, 13, 16] as const;
+export const starLevel = (stars: number) => STAR_STEPS.filter((n) => stars >= n).length;
+export const totalPutts = (round: Pick<CourseRound, "holes">) =>
+  round.holes.reduce((sum, h) => sum + (h[0] ?? 0), 0);
+export const exactPutts = (round: Pick<CourseRound, "holes" | "model">) =>
+  round.model === 2 || !round.holes.some((h) => h[0] === 4);
+export const puttsLabel = (round: Pick<CourseRound, "holes" | "model">) =>
+  `${exactPutts(round) ? "" : "≥ "}${totalPutts(round)}`;
+export function puttStats(history: CourseRound[]) {
+  const full = history
+    .filter((r) => r.status === "full" && exactPutts(r))
+    .slice()
+    .sort((a, b) => b.finishedAt - a.finishedAt || b.id.localeCompare(a.id));
+  const recent = full.slice(0, 5);
+  return {
+    count: recent.length,
+    average: recent.length ? recent.reduce((s, r) => s + totalPutts(r), 0) / recent.length : null,
+    best: full.length ? Math.min(...full.map(totalPutts)) : null,
+  };
+}
+export function roundPuttCategory(distance: number, putts: number, gained: number) {
+  if ((distance <= 3 && putts >= 3) || putts >= 4)
+    return { id: "loss", label: "Stort tapp", tone: "bg-rose-100 text-rose-800" };
+  if (putts === 3) return { id: "weak", label: "Svagt", tone: "bg-orange-100 text-orange-800" };
+  return puttingReviewCategory(gained);
+}
+export function puttCountGoal(active: CourseSession, history: CourseRound[]) {
+  const done = active.holes.filter((h) => h.length).length,
+    remaining = 6 - done;
+  if (done < 4 || remaining < 1 || !exactPutts(active)) return null;
+  const stats = puttStats(history),
+    total = totalPutts(active);
+  for (const [target, label] of [
+    [stats.best, "puttrekord"],
+    [stats.average, "puttsnitt"],
+  ] as const) {
+    if (target === null) continue;
+    const budget = Math.ceil(target) - 1 - total;
+    if (budget >= remaining && budget <= remaining * 2)
+      return `${budget} puttar på ${remaining === 1 ? "sista hålet" : "sista två"} slår ditt ${label}.`;
+  }
+  return null;
 }

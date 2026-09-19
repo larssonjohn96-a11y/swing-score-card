@@ -1,3 +1,12 @@
+import {
+  totalPutts,
+  reviewRound,
+  puttStats,
+  puttsLabel,
+  roundPuttCategory,
+  STAR_STEPS,
+  starLevel,
+} from "./putt-course";
 import { describe, it, expect } from "vitest";
 import {
   COURSE_DISTANCES,
@@ -97,5 +106,50 @@ describe("Puttrundan fixed course", () => {
     expect(courseHandicap(round("full"))).not.toBeNull();
     expect(courseHandicap({ ...round("short"), holes: [[1]] })).toBeNull();
     expect(courseHandicap(round("one", 1))!).toBeLessThan(courseHandicap(round("three", 3))!);
+  });
+});
+
+describe("putt totals and updated analysis", () => {
+  it("keeps all putts, including more than four, through save and reload", () => {
+    let s = reduceCourse(emptyCourse(), { type: "start", id: "counts", at: 1 });
+    for (const putts of [3, 1, 2, 1, 5, 1]) {
+      s = reduceCourse(s, { type: "score", putts });
+      s = reduceCourse(s, { type: "next", at: 2 });
+      if (s.active?.phase === "halfway") s = reduceCourse(s, { type: "continue" });
+    }
+    const saved = parseCourse(JSON.stringify(s)).history[0];
+    expect(saved.model).toBe(2);
+    expect(totalPutts(saved)).toBe(13);
+    expect(reviewRound(saved).rows).toHaveLength(6);
+    expect(puttStats([saved]).best).toBe(13);
+  });
+  it("excludes capped legacy totals and partial rounds from putt records and mean", () => {
+    expect(puttsLabel(round("old", 4))).toBe("≥ 24");
+    expect(puttStats([round("old", 4)])).toEqual({ count: 0, best: null, average: null });
+    const exact = { ...round("new", 4), model: 2 as const };
+    expect(
+      puttStats([exact, round("better", 2), { ...round("half", 1), status: "front" as const }]),
+    ).toEqual({ count: 2, best: 12, average: 18 });
+  });
+  it("classifies costly short putts as Stort tapp and long three-putts as Svagt", () => {
+    for (const d of [2, 3]) expect(roundPuttCategory(d, 3, -1).label).toBe("Stort tapp");
+    for (const d of [4, 8, 10, 12]) {
+      expect(roundPuttCategory(d, 3, -1).label).toBe("Svagt");
+      expect(roundPuttCategory(d, 4, -1).label).toBe("Stort tapp");
+      expect(roundPuttCategory(d, 7, -1).label).toBe("Stort tapp");
+    }
+  });
+  it("has six milestones and only advances after crossing a new threshold", () => {
+    expect(STAR_STEPS).toEqual([3, 6, 9, 11, 13, 16]);
+    expect(starLevel(10)).toBe(starLevel(9));
+    expect(starLevel(11)).toBe(4);
+    expect(starLevel(16)).toBe(6);
+  });
+  it("lower putt totals are better and latest five are used", () => {
+    const history = Array.from({ length: 6 }, (_, i) => ({
+      ...round(String(i), i === 0 ? 1 : 2, i),
+      model: 2 as const,
+    }));
+    expect(puttStats(history)).toEqual({ count: 5, average: 12, best: 6 });
   });
 });

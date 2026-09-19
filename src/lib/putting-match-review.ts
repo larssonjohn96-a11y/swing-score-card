@@ -62,7 +62,7 @@ export function buildPuttingMatchReview(holes: readonly ReviewHole[]) {
       typeof putts !== "number" ||
       !Number.isInteger(putts) ||
       putts < 1 ||
-      putts > 5
+      putts > 99
     )
       return [];
     const expected = expectedPutts("hcp20", distance);
