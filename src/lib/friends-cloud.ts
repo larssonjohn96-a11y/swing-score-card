@@ -1,3 +1,5 @@
+import { chipAverage } from "./chip-competition";
+import { parseCourse, courseStorageKey } from "./chip-course";
 /**
  * Riktiga vänner (till skillnad från lib/friends.ts, som är manuellt
  * inskrivna namn+handicap utan koppling till ett konto).
@@ -57,18 +59,28 @@ export async function sendFriendRequest(addresseeId:string):Promise<boolean>{con
 export async function respondToFriendRequest(id:string,accept:boolean):Promise<boolean>{const{error}=await supabase.from("friendships").update({status:accept?"accepted":"declined",responded_at:new Date().toISOString()}).eq("id",id);return !error}
 export async function removeFriendship(id:string):Promise<boolean>{const{error}=await supabase.from("friendships").delete().eq("id",id);return !error}
 
-export async function listFriendships():Promise<{incoming:Friendship[];outgoing:Friendship[];accepted:Friendship[]}>{const empty={incoming:[],outgoing:[],accepted:[]};const{data:userData}=await supabase.auth.getUser();if(!userData.user)return empty;const uid=userData.user.id;const{data:rows,error}=await supabase.from("friendships").select("id, requester_id, addressee_id, status, created_at").or(`requester_id.eq.${uid},addressee_id.eq.${uid}`);if(error||!rows||!rows.length)return empty;const otherIds=[...new Set(rows.map(r=>r.requester_id===uid?r.addressee_id:r.requester_id))];const{data:profileRows}=await supabase.from("profiles").select("id, display_name, avatar_url").in("id",otherIds);const profileById=new Map((profileRows??[]).map(p=>[p.id,{id:p.id,displayName:p.display_name,avatarUrl:p.avatar_url}]));const incoming:Friendship[]=[];const outgoing:Friendship[]=[];const accepted:Friendship[]=[];for(const r of rows){const otherId=r.requester_id===uid?r.addressee_id:r.requester_id;const other=profileById.get(otherId);if(!other)continue;const friendship:Friendship={id:r.id,requesterId:r.requester_id,addresseeId:r.addressee_id,status:r.status as FriendshipStatus,createdAt:r.created_at,other};if(r.status==="accepted")accepted.push(friendship);else if(r.status==="pending"&&r.addressee_id===uid)incoming.push(friendship);else if(r.status==="pending"&&r.requester_id===uid)outgoing.push(friendship)}return{incoming,outgoing,accepted}}
+export async function listFriendships(strict=false):Promise<{incoming:Friendship[];outgoing:Friendship[];accepted:Friendship[]}>{const empty={incoming:[],outgoing:[],accepted:[]};const{data:userData}=await supabase.auth.getUser();if(!userData.user)return empty;const uid=userData.user.id;const{data:rows,error}=await supabase.from("friendships").select("id, requester_id, addressee_id, status, created_at").or(`requester_id.eq.${uid},addressee_id.eq.${uid}`);if(error&&strict)throw error;if(error||!rows||!rows.length)return empty;const otherIds=[...new Set(rows.map(r=>r.requester_id===uid?r.addressee_id:r.requester_id))];const{data:profileRows,error:profileError}=await supabase.from("profiles").select("id, display_name, avatar_url").in("id",otherIds);if(profileError&&strict)throw profileError;const profileById=new Map((profileRows??[]).map(p=>[p.id,{id:p.id,displayName:p.display_name,avatarUrl:p.avatar_url}]));const incoming:Friendship[]=[];const outgoing:Friendship[]=[];const accepted:Friendship[]=[];for(const r of rows){const otherId=r.requester_id===uid?r.addressee_id:r.requester_id;const other=profileById.get(otherId);if(!other)continue;const friendship:Friendship={id:r.id,requesterId:r.requester_id,addresseeId:r.addressee_id,status:r.status as FriendshipStatus,createdAt:r.created_at,other};if(r.status==="accepted")accepted.push(friendship);else if(r.status==="pending"&&r.addressee_id===uid)incoming.push(friendship);else if(r.status==="pending"&&r.requester_id===uid)outgoing.push(friendship)}return{incoming,outgoing,accepted}}
 
-export async function pushPlayerSnapshot():Promise<void>{
+export async function pushPlayerSnapshot(expectedUserId?: string):Promise<boolean>{
   const{data:userData}=await supabase.auth.getUser();
-  if(!userData.user)return;
+  if(!userData.user || (expectedUserId && userData.user.id !== expectedUserId))return false;
   const real=loadRealHandicap();
   const card:RatingCardData=computeRatingCard(real);
   const cats=computeStableCategoryHandicaps(undefined,real??undefined);
   const byCat=(slug:CategorySlug)=>cats.find(c=>c.slug===slug)?.handicap??null;
   const radarProfile=computeLocalSocialRadarProfile();
   const comparisonProfile=computeLocalComparisonProfile();
-  await (supabase.from("player_snapshots") as any).upsert({
+  const chipHistory = parseCourse(localStorage.getItem(courseStorageKey(userData.user.id))).history;
+  const chip = chipAverage(chipHistory);
+  const {data:previousChip,error:previousChipError} = await supabase.from("player_snapshots").select("comparison_profile").eq("user_id",userData.user.id).maybeSingle();
+  if(previousChipError)return false;
+  const previousMetrics = parseComparisonProfile(previousChip?.comparison_profile).training.filter(m=>m.key.startsWith("chip-round-"));
+  comparisonProfile.training.push(...(chip.count ? [
+    {key:"chip-round-points",label:"Chipprundan · snittpoäng",value:chip.points,unit:"p",decimals:1,higherIsBetter:true},
+    {key:"chip-round-stars",label:"Chipprundan · snittstjärnor",value:chip.stars,unit:"★",decimals:1,higherIsBetter:true},
+    {key:"chip-round-count",label:"Chipprundan · rundor i snittet",value:chip.count,unit:"",decimals:0,higherIsBetter:true},
+  ] : previousMetrics));
+  const {error} = await (supabase.from("player_snapshots") as any).upsert({
     user_id:userData.user.id,
     rating:card.rating,
     tier_key:card.tier.key,
@@ -84,6 +96,7 @@ export async function pushPlayerSnapshot():Promise<void>{
     test_count:cats.reduce((sum,c)=>sum+c.count,0),
     updated_at:new Date().toISOString(),
   });
+  return !error;
 }
 
 function mapSnapshot(d: any): PlayerSnapshot {
@@ -105,4 +118,4 @@ export async function listPublicSnapshots():Promise<(PlayerSnapshot&{displayName
  displayName:d.profiles?.display_name??"Okänd",// @ts-expect-error joined relation
  avatarUrl:d.profiles?.avatar_url??null}))}
 export async function setOwnSnapshotPublic(isPublic:boolean):Promise<boolean>{const{data:userData}=await supabase.auth.getUser();if(!userData.user)return false;const{error}=await supabase.from("player_snapshots").update({is_public:isPublic}).eq("user_id",userData.user.id);return !error}
-export async function fetchFriendSnapshot(userId:string):Promise<PlayerSnapshot|null>{const{data,error}=await supabase.from("player_snapshots").select("*").eq("user_id",userId).maybeSingle();if(error||!data)return null;return mapSnapshot(data)}
+export async function fetchFriendSnapshot(userId:string,strict=false):Promise<PlayerSnapshot|null>{const{data,error}=await supabase.from("player_snapshots").select("*").eq("user_id",userId).maybeSingle();if(error&&strict)throw error;if(error||!data)return null;return mapSnapshot(data)}

@@ -1,3 +1,6 @@
+import { ChipLeaderboard } from "./chip-leaderboard";
+import { chipRecordGoal } from "@/lib/chip-competition";
+import { pushPlayerSnapshot } from "@/lib/friends-cloud";
 import { handicapLabel } from "@/lib/shortgame";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import {
@@ -330,6 +333,7 @@ export function ChipStationPractice({
     if (previous.active && !next.active && next.history.some((r) => r.id === previous.active!.id)) {
       setReviewId(previous.active.id);
       setFreshRound(previous.active.id);
+      if(userId) void pushPlayerSnapshot(userId).catch(() => {});
     }
     return next;
   }
@@ -394,6 +398,7 @@ export function ChipStationPractice({
   const targets = holeTargets(index, lie, active?.model);
   const front = active ? segmentScore(active, "front") : null;
   const best = courseBests(state.history);
+  const recordGoal = active ? chipRecordGoal(active, state.history) : null;
   const pace = active ? coursePace(active, state.history) : null;
   const totalPoints = active?.holes.reduce((sum, h) => sum + holePoints(h), 0) ?? 0;
   const completed = active?.holes.filter((h) => h.length === 3).length ?? 0;
@@ -501,6 +506,7 @@ export function ChipStationPractice({
                 </h2>
                 <RecordRow best={best} />
                 <ChipProgress history={state.history} />
+                <ChipLeaderboard userId={userId} history={state.history} playerName={playerName} />
                 <button className={`${secondary} mt-4`} onClick={() => setHistoryOpen(true)}>
                   <History className="h-5 w-5" />
                   Tidigare rundor <span className="ml-auto text-slate-400">{history.length}</span>
@@ -583,6 +589,7 @@ export function ChipStationPractice({
               )}
               {(active.phase === "play" || active.phase === "result") && (
                 <section>
+                  {recordGoal && <div role="note" className="mb-2 flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-900"><Trophy className="h-4 w-4 shrink-0"/><span>{recordGoal}</span></div>}
                   {!registering ? (
                     <>
                       <div className={`${card} p-5 text-center`}>
