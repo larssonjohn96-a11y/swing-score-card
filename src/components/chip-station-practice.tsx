@@ -58,6 +58,7 @@ const segmentNames: Record<Segment, string> = {
   front: "Första tre",
   back: "Sista tre",
 };
+const starLabel = (value: number) => String(value).replace(".", ",");
 const uid = () => crypto.randomUUID();
 const dateLabel = (at: number) =>
   new Date(at).toLocaleDateString("sv-SE", { day: "numeric", month: "short" });
@@ -76,7 +77,7 @@ function Stars({
   return (
     <span
       className="inline-flex gap-1.5"
-      aria-label={`${values.filter((v) => v === 1).length} av 3 stjärnor`}
+      aria-label={`${starLabel(Math.floor(values.reduce((sum, v) => sum + v, 0) * 2) / 2)} av 3 stjärnor`}
     >
       {values.map((fill, i) => (
         <span key={i} className={`relative block ${large ? "h-11 w-11" : "h-4 w-4"}`}>
@@ -116,7 +117,7 @@ function CourseMap({
   lie,
   cursor,
   avatar,
-  model = 2,
+  model = 3,
 }: {
   holes: ChipPoints[][];
   lie: ChipLie;
@@ -162,9 +163,11 @@ function CourseMap({
         >
           <span
             aria-label={`Hål ${i + 1}, ${d} meter`}
-            className={`relative flex h-12 w-16 items-center justify-center gap-1 rounded-[50%] border-b-4 ${cursor === i ? "border-emerald-800 bg-emerald-600 text-white ring-4 ring-white/80" : "border-emerald-300 bg-emerald-200 text-emerald-900"}`}
+            className={`relative flex h-12 w-16 items-center justify-center gap-1 ${cursor === i ? "text-emerald-900" : "text-emerald-700"}`}
           >
-            <Flag className={`h-6 w-6 ${cursor === i ? "fill-white/30" : "fill-emerald-700/20"}`} />
+            <Flag
+              className={`h-6 w-6 ${cursor === i ? "fill-emerald-600/50" : "fill-emerald-700/20"}`}
+            />
             <strong className="text-lg">{i + 1}</strong>
           </span>
           <span className="rounded-full bg-white/75 px-2 text-sm font-bold text-emerald-950">
@@ -276,14 +279,19 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
   const active = state.active;
   const round = reviewId ? state.history.find((r) => r.id === reviewId) : undefined;
   const lie = round?.lie ?? active?.lie ?? state.lie;
-  const distances = courseDistances(round?.model ?? active?.model ?? 2);
+  const distances = courseDistances(round?.model ?? active?.model ?? 3);
   const index = active ? active.holes.length - 1 : 0;
   const shots = active?.holes[index] ?? [];
   const stars = active
     ? roundStars(active) +
       (active.phase === "play"
-        ? holeTargets(index, lie, active.model).filter((target) => holePoints(shots) >= target)
-            .length
+        ? Math.floor(
+            liveStars(
+              holePoints(shots),
+              holeTargets(index, lie, active.model),
+              active.model,
+            ).reduce((sum, fill) => sum + fill, 0) * 2,
+          ) / 2
         : 0)
     : 0;
   const atHome = !active && !round && !historyOpen;
@@ -341,7 +349,6 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
   }));
   const targets = holeTargets(index, lie, active?.model);
   const front = active ? segmentScore(active, "front") : null;
-  const oldFront = courseRecord(state.history, lie, "front", active?.model);
   const roundPosition = round ? state.history.findIndex((r) => r.id === round.id) : -1;
   const newRecords = round
     ? (["full", "front", "back"] as const).filter((segment) => {
@@ -445,7 +452,7 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
                     <div key={segment} className={`${card} rounded-2xl px-2 py-4 text-center`}>
                       <p className="text-sm font-bold text-slate-600">{segmentNames[segment]}</p>
                       <p className="mt-2 text-xl font-black text-blue-700">
-                        {best?.stars ?? "–"}
+                        {best ? starLabel(best.stars) : "–"}
                         <span className="text-sm text-slate-400">
                           /{segment === "full" ? 18 : 9}
                         </span>
@@ -482,7 +489,7 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
                 </span>
                 <span className="flex items-center gap-1 text-amber-700">
                   <Star className="h-4 w-4 fill-amber-400" />
-                  {stars}/{active.phase === "halfway" ? 9 : 18}
+                  {starLabel(stars)}/{active.phase === "halfway" ? 9 : 18}
                 </span>
               </div>
               {!registering && active.phase !== "halfway" && (
@@ -541,7 +548,15 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
                           </p>
                         </div>
                         <div className="mt-4 flex justify-center">
-                          <Stars fills={liveStars(holePoints(shots), targets)} large />
+                          <Stars
+                            count={holeStars(shots, index, lie, active.model)}
+                            fills={
+                              active.phase === "result"
+                                ? undefined
+                                : liveStars(holePoints(shots), targets, active.model)
+                            }
+                            large
+                          />
                         </div>
                         <div className="mt-4 flex items-center justify-between">
                           <h3 aria-live="polite" className="text-lg font-black">
@@ -614,17 +629,9 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
                     <h2 className="mt-3 text-2xl font-black">Halfway House</h2>
                     <p className="mt-2 text-base text-slate-600">Första tre klara</p>
                     <p className="mt-3 text-5xl font-black text-blue-700">
-                      {front.stars}
+                      {starLabel(front.stars)}
                       <span className="text-xl text-slate-400">/9 ★</span>
                     </p>
-                    <p className="mt-3 text-sm text-slate-600">
-                      {oldFront
-                        ? beatsScore(front, oldFront)
-                          ? `Nytt rekord för första tre! Tidigare ${oldFront.stars} ★ · ${oldFront.points} p.`
-                          : `Ditt rekord: ${oldFront.stars} ★ · ${oldFront.points} p.`
-                        : "Din första trehålsrunda."}
-                    </p>
-                    <p className="mt-2 text-sm text-slate-500">{front.points}/36 poäng</p>
                   </div>
                   <button
                     className={`${primary} mt-4`}
@@ -633,14 +640,13 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
                       setRegistering(false);
                     }}
                   >
-                    Fortsätt · 9 bollar kvar <ArrowRight className="h-5 w-5" />
+                    Sista 3 hålen <ArrowRight className="h-5 w-5" />
                   </button>
-                  <p className="my-3 text-center text-sm text-slate-500">
-                    Hål 4–6 · {distances.slice(3).join(", ")} m
-                  </p>
-                  <button className={secondary} onClick={finish}>
-                    <Check className="h-5 w-5" />
-                    Avsluta och spara första tre
+                  <button
+                    className="mt-2 min-h-12 w-full text-sm font-medium text-slate-500"
+                    onClick={finish}
+                  >
+                    Avsluta halv runda
                   </button>
                 </section>
               )}
@@ -682,7 +688,7 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
                               : `${r.holes.length} hål · avbruten`}
                         </span>
                         <span className="mt-1 block text-sm text-slate-500">
-                          {r.model === 1 ? "Tidigare bana · " : ""}
+                          {r.model !== 3 ? "Tidigare bana · " : ""}
                           {dateLabel(r.finishedAt)} ·{" "}
                           {r.holes.reduce((s, h) => s + holePoints(h), 0)} p
                         </span>
@@ -691,7 +697,8 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
                         </span>
                       </span>
                       <span className="flex items-center gap-2 text-lg font-black text-blue-700">
-                        {roundStars(r)}/{r.holes.length * 3} ★<ChevronRight className="h-5 w-5" />
+                        {starLabel(roundStars(r))}/{r.holes.length * 3} ★
+                        <ChevronRight className="h-5 w-5" />
                       </span>
                     </button>
                   ))}
@@ -715,10 +722,12 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
                   bollar
                 </p>
                 <p className="my-4 text-5xl font-black text-blue-700">
-                  {roundStars(round)}
+                  {starLabel(roundStars(round))}
                   <span className="text-xl text-slate-400">/{round.holes.length * 3} ★</span>
                 </p>
-                <p className="text-base font-bold text-emerald-700">Est. chipp-HCP {handicapLabel(courseHandicap(round)!)}</p>
+                <p className="text-base font-bold text-emerald-700">
+                  Est. chipp-HCP {handicapLabel(courseHandicap(round)!)}
+                </p>
                 {newRecords.length > 0 && (
                   <p className="rounded-xl bg-amber-50 p-3 text-base font-bold text-amber-800">
                     Nytt rekord ·{" "}
@@ -835,7 +844,8 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
           ))}
           <p className="text-sm">
             Exakt 1, 2 och 3 m räknas inom respektive zon. Stjärnorna tjänas på nytt varje runda.
-            Vid lika antal stjärnor avgör poängen. 3 poäng ger en stjärna, 6 ger två och 9 ger tre.
+            Vid lika antal stjärnor avgör poängen. 3 poäng ger en stjärna, 4 ger 1,5, 5 ger två, 6
+            ger 2,5 och 9 ger tre. 2 poäng ger en halv stjärna.
           </p>
           <table className="w-full text-center text-sm">
             <caption className="mb-2 text-left font-bold">Stjärnkrav · {lieName(lie)}</caption>

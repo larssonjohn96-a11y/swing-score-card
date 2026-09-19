@@ -104,7 +104,7 @@ describe("six-hole course flow", () => {
     expect(p.active?.holes[0]).toEqual([4, 4]);
     p = reduceCourse(p, { type: "score", points: 0 });
     expect(p.active?.holes).toEqual([[4, 4, 0]]);
-    expect(roundStars(p.active!)).toBe(2);
+    expect(roundStars(p.active!)).toBe(2.5);
   });
   it("discards incomplete holes when ending early and excludes partial segments from records", () => {
     let p = next(scoreHole(start()));
@@ -200,11 +200,19 @@ describe("live stars, bonus and round HCP", () => {
   it("fills stars continuously with one whole star at three points", () => {
     expect(liveStars(2)).toEqual([2 / 3, 0, 0]);
     expect(liveStars(3)).toEqual([1, 0, 0]);
-    expect(liveStars(5)).toEqual([1, 2 / 3, 0]);
+    expect(liveStars(4)).toEqual([1, 0.5, 0]);
+    expect(liveStars(5)).toEqual([1, 1, 0]);
+    expect(liveStars(6)).toEqual([1, 1, 0.5]);
     expect(liveStars(9)).toEqual([1, 1, 1]);
     expect(liveStars(12)).toEqual([1, 1, 1]);
     expect(holeStars([1, 1, 1], 0, "Fairway")).toBe(1);
-    expect(holeStars([2, 2, 2], 2, "Ruff")).toBe(2);
+    expect(holeStars([2, 2, 2], 2, "Ruff")).toBe(2.5);
+    expect(holeStars([2, 0, 0], 0, "Fairway")).toBe(0.5);
+    expect(holeStars([2, 2, 0], 0, "Fairway")).toBe(1.5);
+    expect(holeStars([2, 2, 2], 0, "Fairway", 2)).toBe(2);
+    const saved = full(front(start(), [2, 2, 2]), [2, 2, 2]);
+    expect(roundStars(saved.history[0])).toBe(15);
+    expect(parseCourse(JSON.stringify(saved))).toEqual(saved);
     expect(holeStars([3, 3, 3], 5, "Fairway")).toBe(3);
   });
   it("saves directly without a bonus after halfway", () => {
@@ -216,9 +224,11 @@ describe("live stars, bonus and round HCP", () => {
   });
   it("recovers a legacy pending bonus as the last ordinary hole result", () => {
     const pending = front();
-    const restored = parseCourse(JSON.stringify({...pending, active: {...pending.active, phase: "bonus"}}));
+    const restored = parseCourse(
+      JSON.stringify({ ...pending, active: { ...pending.active, phase: "bonus" } }),
+    );
     expect(restored.active?.phase).toBe("result");
-    const saved = reduceCourse(restored, {type: "finish", at: 400});
+    const saved = reduceCourse(restored, { type: "finish", at: 400 });
     expect(saved.history[0].holes.flat()).toHaveLength(9);
     expect(saved.active).toBeNull();
   });
