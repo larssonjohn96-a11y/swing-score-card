@@ -1,40 +1,40 @@
-import { ActivityReview } from "@/components/activity-review";
-import { ACTIVITY_CATEGORIES } from "@/lib/activity-review";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import {
   ArrowLeft,
   ArrowRight,
   Check,
   ChevronRight,
+  Coffee,
   Flag,
-  LockKeyhole,
-  RotateCcw,
+  History,
   Star,
   Trophy,
   Undo2,
+  UserRound,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ActivityReview } from "@/components/activity-review";
+import { ACTIVITY_CATEGORIES } from "@/lib/activity-review";
+import { supabase } from "@/integrations/supabase/client";
+import { CHIP_ZONES, type ChipLie, type ChipPoints } from "@/lib/chip-stations";
 import {
-  CHIP_STATIONS,
-  CHIP_ZONES,
-  ROUNDS_PER_PASS,
-  bestAt,
-  chipStorageKey,
-  emptyChipProgress,
-  goalAt,
-  parseChipProgress,
-  recommendStation,
-  reduceChipProgress,
-  roundTotal,
-  sessionRounds,
-  starTargets,
-  starsAt,
-  unlockedDistances,
-  type ChipAction,
-  type ChipLie,
-  type ChipPoints,
-  type ChipProgress,
-} from "@/lib/chip-stations";
+  COURSE_DISTANCES,
+  beatsScore,
+  courseRecord,
+  courseStorageKey,
+  emptyCourse,
+  holePoints,
+  holeStars,
+  holeTargets,
+  parseCourse,
+  reduceCourse,
+  roundStars,
+  segmentScore,
+  type CourseAction,
+  type CourseRound,
+  type Segment,
+} from "@/lib/chip-course";
 
 type Props = {
   userId: string | null;
@@ -44,13 +44,20 @@ type Props = {
   onExit: () => void;
 };
 const card =
-  "rounded-3xl border border-slate-200 bg-white shadow-[0_12px_36px_-24px_rgba(15,23,42,.25)]";
+  "rounded-3xl border border-slate-200 bg-white shadow-[0_10px_30px_-24px_rgba(15,23,42,.3)]";
 const primary =
   "flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl border-b-4 border-blue-800 bg-blue-600 px-4 py-3 text-base font-bold text-white active:translate-y-0.5 active:border-b-2 disabled:opacity-40";
 const secondary =
-  "flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700";
-const uid = () => crypto.randomUUID();
+  "flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base font-bold text-slate-700";
 const lieName = (lie: ChipLie) => (lie === "Fairway" ? "Kortklippt" : "Ruff");
+const segmentNames: Record<Segment, string> = {
+  full: "Hela rundan",
+  front: "Första tre",
+  back: "Sista tre",
+};
+const uid = () => crypto.randomUUID();
+const dateLabel = (at: number) =>
+  new Date(at).toLocaleDateString("sv-SE", { day: "numeric", month: "short" });
 function Stars({ count, large = false }: { count: number; large?: boolean }) {
   return (
     <span className="inline-flex gap-1" aria-label={`${count} av 3 stjärnor`}>
@@ -58,641 +65,784 @@ function Stars({ count, large = false }: { count: number; large?: boolean }) {
         <Star
           key={n}
           aria-hidden="true"
-          className={`${large ? "h-8 w-8" : "h-5 w-5"} ${n <= count ? "fill-amber-400 text-amber-500" : "fill-slate-100 text-slate-300"}`}
+          className={`${large ? "h-9 w-9" : "h-4 w-4"} ${n <= count ? "fill-amber-400 text-amber-500" : "fill-slate-100 text-slate-300"}`}
         />
       ))}
     </span>
   );
 }
+const positions = [
+  [16, 19],
+  [50, 19],
+  [84, 19],
+  [84, 81],
+  [50, 81],
+  [16, 81],
+];
+function CourseMap({
+  holes,
+  lie,
+  cursor,
+  avatar,
+}: {
+  holes: ChipPoints[][];
+  lie: ChipLie;
+  cursor: number | "halfway" | null;
+  avatar: string | null;
+}) {
+  const point =
+    cursor === "halfway" ? [12, 50] : typeof cursor === "number" ? positions[cursor] : null;
+  return (
+    <div
+      className="relative my-4 h-[280px] rounded-3xl border border-blue-100 bg-gradient-to-b from-blue-50 to-white"
+      aria-label="Banan: hål 1 till 3, Halfway House, hål 4 till 6"
+    >
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 320 280"
+        preserveAspectRatio="none"
+        className="absolute inset-0 h-full w-full"
+      >
+        <path
+          d="M51 53 H269 Q302 105 226 123 L160 140 L226 157 Q302 175 269 227 H51"
+          fill="none"
+          stroke="#dbeafe"
+          strokeWidth="12"
+          strokeLinecap="round"
+        />
+        <path
+          d="M51 53 H269 Q302 105 226 123 L160 140 L226 157 Q302 175 269 227 H51"
+          fill="none"
+          stroke="#93c5fd"
+          strokeWidth="2"
+          strokeDasharray="4 7"
+        />
+      </svg>
+      {COURSE_DISTANCES.map((distance, i) => {
+        const complete = holes[i]?.length === 3;
+        const active = cursor === i;
+        return (
+          <div
+            key={distance}
+            style={{ left: `${positions[i][0]}%`, top: `${positions[i][1]}%` }}
+            className="absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1"
+          >
+            <span
+              className={`flex h-11 w-11 items-center justify-center rounded-full border-b-4 text-lg font-black ${active ? "border-blue-800 bg-blue-600 text-white ring-4 ring-blue-100" : complete ? "border-blue-200 bg-blue-100 text-blue-800" : "border-slate-200 bg-white text-slate-500"}`}
+              aria-label={`Hål ${i + 1}, ${distance} meter${complete ? `, ${holeStars(holes[i], i, lie)} stjärnor` : ""}`}
+            >
+              {i + 1}
+            </span>
+            <span className="text-sm font-bold text-slate-600">{distance} m</span>
+            <Stars count={holeStars(holes[i] ?? [], i, lie)} />
+          </div>
+        );
+      })}
+      <div
+        className={`absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-2 rounded-2xl border px-3 py-2 ${cursor === "halfway" ? "border-amber-300 bg-amber-50" : "border-slate-200 bg-white"}`}
+      >
+        <Coffee className="h-5 w-5 text-amber-700" />
+        <span className="text-sm font-bold">Halfway House</span>
+      </div>
+      {point && (
+        <div
+          className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-full transition-[left,top] duration-700 ease-in-out motion-reduce:transition-none"
+          style={{
+            left: `${point[0]}%`,
+            top: `calc(${point[1]}% + ${cursor === "halfway" ? 20 : -24}px)`,
+          }}
+          aria-label={
+            cursor === "halfway" ? "Du är vid Halfway House" : `Du är vid hål ${Number(cursor) + 1}`
+          }
+        >
+          <Avatar className="h-10 w-10 border-[3px] border-white bg-blue-700 shadow-md">
+            <AvatarImage src={avatar ?? undefined} alt="Din avatar" />
+            <AvatarFallback className="bg-blue-700 text-white">
+              <UserRound className="h-6 w-6" />
+            </AvatarFallback>
+          </Avatar>
+        </div>
+      )}
+    </div>
+  );
+}
+function Scorecard({ round }: { round: Pick<CourseRound, "holes" | "lie"> }) {
+  return (
+    <div className={`${card} overflow-hidden`}>
+      <div className="grid grid-cols-[1fr_1fr_1fr] gap-2 border-b border-slate-100 px-4 py-3 text-sm font-bold text-slate-500">
+        <span>Hål</span>
+        <span>Poäng</span>
+        <span>Stjärnor</span>
+      </div>
+      {round.holes.map((shots, i) =>
+        shots.length === 3 ? (
+          <div
+            key={i}
+            className="grid min-h-12 grid-cols-[1fr_1fr_1fr] items-center gap-2 border-b border-slate-100 px-4 py-2 last:border-0"
+          >
+            <span className="text-sm font-bold">
+              {i + 1} · {COURSE_DISTANCES[i]} m
+            </span>
+            <strong>{holePoints(shots)}/12</strong>
+            <Stars count={holeStars(shots, i, round.lie)} />
+          </div>
+        ) : null,
+      )}
+    </div>
+  );
+}
 
-export function ChipStationPractice({
-  userId,
-  authLoading = false,
-  coach,
-  surface,
-  onExit,
-}: Props) {
-  const [progress, setProgress] = useState<ChipProgress>(emptyChipProgress);
-  const state = useRef(progress);
+export function ChipStationPractice({ userId, authLoading = false, surface, onExit }: Props) {
+  const [state, setState] = useState(emptyCourse);
+  const stateRef = useRef(state);
   const [ready, setReady] = useState(false);
   const [storageError, setStorageError] = useState(false);
-  const [lie, setLie] = useState<ChipLie>("Fairway");
-  const [detail, setDetail] = useState<number | null>(null);
   const [registering, setRegistering] = useState(false);
-  const [endDialog, setEndDialog] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [reviewId, setReviewId] = useState<string | null>(null);
   const [rules, setRules] = useState(false);
+  const [exitDialog, setExitDialog] = useState(false);
+  const [avatar, setAvatar] = useState<string | null>(null);
   const tapUntil = useRef(0);
-  const mapRef = useRef<HTMLDivElement>(null);
-  const key = chipStorageKey(userId);
+  const key = courseStorageKey(userId);
   useEffect(() => {
-    if (authLoading) return;
-    setReady(false);
+    if (authLoading) {
+      setReady(false);
+      return;
+    }
+    let next = emptyCourse();
     try {
-      const saved = parseChipProgress(localStorage.getItem(key));
-      // Keep historical scores; legacy multi-lie sessions resume via the new map.
-      if (saved.session && !saved.session.mode) saved.session = null;
-      state.current = saved;
-      setProgress(saved);
-      const raw = JSON.parse(localStorage.getItem(key) ?? "null");
-      const selected = localStorage.getItem(`${key}:lie`) ?? raw?.lie;
-      setLie(saved.session?.lies[0] ?? (selected === "Ruff" ? "Ruff" : "Fairway"));
-      setRegistering(!!saved.session?.current?.shots.length);
+      next = parseCourse(localStorage.getItem(key));
       setStorageError(false);
     } catch {
       setStorageError(true);
     }
+    stateRef.current = next;
+    setState(next);
+    setRegistering(next.active?.phase === "play" && !!next.active.holes.at(-1)?.length);
+    setReviewId(null);
+    setHistoryOpen(false);
     setReady(true);
   }, [key, authLoading]);
-  function commit(action: ChipAction) {
-    if (!ready) return;
-    const next = reduceChipProgress(state.current, action);
-    state.current = next;
-    setProgress(next);
+  useEffect(() => {
+    setAvatar(null);
+    if (!userId) return;
+    let alive = true;
+    void supabase
+      .from("profiles")
+      .select("avatar_url")
+      .eq("id", userId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (alive) setAvatar(data?.avatar_url ?? null);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [userId]);
+  function commit(action: CourseAction) {
+    if (!ready) return stateRef.current;
+    const previous = stateRef.current;
+    const next = reduceCourse(previous, action);
+    if (next === previous) return previous;
+    stateRef.current = next;
+    setState(next);
     try {
       localStorage.setItem(key, JSON.stringify(next));
       setStorageError(false);
     } catch {
       setStorageError(true);
     }
+    if (previous.active && !next.active && next.history.some((r) => r.id === previous.active!.id))
+      setReviewId(previous.active.id);
+    return next;
   }
-  function selectLie(value: ChipLie) {
-    setLie(value);
-    try {
-      localStorage.setItem(`${key}:lie`, value);
-    } catch {
-      setStorageError(true);
-    }
-  }
-  function begin(distance: number) {
-    commit({ type: "begin", distance, lie, id: uid(), at: Date.now() });
+  const active = state.active;
+  const round = reviewId ? state.history.find((r) => r.id === reviewId) : undefined;
+  const lie = round?.lie ?? active?.lie ?? state.lie;
+  const index = active ? active.holes.length - 1 : 0;
+  const shots = active?.holes[index] ?? [];
+  const stars = active ? roundStars(active) : 0;
+  const atHome = !active && !round && !historyOpen;
+  function start() {
+    commit({ type: "start", id: uid(), at: Date.now() });
+    setReviewId(null);
+    setHistoryOpen(false);
     setRegistering(false);
-    setDetail(null);
-    tapUntil.current = 0;
     window.scrollTo({ top: 0, behavior: "instant" });
   }
-  function start(mode: "guided" | "single", distance?: number) {
-    if (!unlockedDistances(state.current, lie).includes(distance ?? 8)) return;
-    commit({ type: "start", id: uid(), lies: [lie], at: Date.now(), mode });
-    begin(distance ?? 8);
-  }
-  function home() {
-    commit({ type: "home" });
+  function next() {
+    commit({ type: "next", at: Date.now() });
     setRegistering(false);
     window.scrollTo({ top: 0, behavior: "instant" });
   }
   function finish() {
-    commit({ type: "finish" });
-    setEndDialog(false);
+    commit({ type: "finish", at: Date.now() });
+    setExitDialog(false);
+    setRegistering(false);
     window.scrollTo({ top: 0, behavior: "instant" });
+  }
+  function back() {
+    if (round) {
+      setReviewId(null);
+    } else if (historyOpen) {
+      setHistoryOpen(false);
+    } else if (active) {
+      setExitDialog(true);
+    } else onExit();
   }
   function score(points: ChipPoints) {
     if (Date.now() < tapUntil.current) return;
     tapUntil.current = Date.now() + 300;
     commit({ type: "score", points });
   }
-  const session = progress.session;
-  const phase = session?.phase ?? "home";
-  const isHome = phase === "home" || phase === "stations";
-  const current = session?.current;
-  const rounds = sessionRounds(progress);
-  const unlocked = unlockedDistances(progress, lie);
-  const frontier = unlocked.at(-1)!;
-  const starCount = CHIP_STATIONS.reduce((sum, s) => sum + starsAt(progress, s.distance, lie), 0);
-  const featured = goalAt(progress, frontier, lie);
-  const recommendation = recommendStation(progress, lie);
-  const before = current
-    ? { ...progress, rounds: progress.rounds.filter((r) => r.id !== current.id) }
-    : progress;
-  const total = current ? roundTotal(current) : 0;
-  const oldBest = current ? bestAt(before, current.distance, lie) : null;
-  const newStars = current
-    ? starsAt(progress, current.distance, lie) - starsAt(before, current.distance, lie)
-    : 0;
-  const fresh = unlocked.filter((d) => !unlockedDistances(before, lie).includes(d));
-  const nextGoal = current ? goalAt(before, current.distance, lie) : featured;
-  const limit = session?.mode === "single" ? 1 : ROUNDS_PER_PASS;
-  const checkpoint = rounds.length >= limit;
-  const shots = rounds.flatMap((r) => r.shots);
-  const baseline = {
-    ...progress,
-    rounds: progress.rounds.filter((r) => r.sessionId !== session?.id),
-  };
-  const earned = CHIP_STATIONS.reduce(
-    (sum, s) => sum + starsAt(progress, s.distance, lie) - starsAt(baseline, s.distance, lie),
-    0,
-  );
-  const records = rounds.filter((r, i) => {
-    const previous = bestAt(
-      { ...baseline, rounds: [...baseline.rounds, ...rounds.slice(0, i)] },
-      r.distance,
-      r.lie,
-    );
-    return previous !== null && roundTotal(r) > previous;
-  }).length;
-  const retryDistance = rounds.length
-    ? [...rounds].sort((a, b) => {
-        const gap = (d: number) =>
-          goalAt(progress, d, lie).points - (bestAt(progress, d, lie) ?? 0);
-        return gap(a.distance) - gap(b.distance);
-      })[0].distance
-    : frontier;
-  const selectedOpen = detail !== null && unlocked.includes(detail);
+  const history = state.history
+    .filter((r) => r.lie === state.lie)
+    .slice()
+    .reverse();
+  const records = (["full", "front", "back"] as const).map((segment) => ({
+    segment,
+    best: courseRecord(state.history, state.lie, segment),
+  }));
+  const targets = holeTargets(index, lie);
+  const earned = holeStars(shots, index, lie);
+  const front = active ? segmentScore(active, "front") : null;
+  const oldFront = courseRecord(state.history, lie, "front");
+  const roundPosition = round ? state.history.findIndex((r) => r.id === round.id) : -1;
+  const newRecords = round
+    ? (["full", "front", "back"] as const).filter((segment) => {
+        const value = segmentScore(round, segment);
+        const before = courseRecord(state.history.slice(0, roundPosition), round.lie, segment);
+        return value && before && beatsScore(value, before);
+      })
+    : [];
 
   return (
     <main
+      data-chip-course="v1"
       style={{ ...surface, colorScheme: "light" }}
-      data-chip-stations="v2"
       className="mx-auto min-h-screen w-full max-w-md bg-slate-50 px-5 pb-[max(24px,env(safe-area-inset-bottom))] pt-[max(16px,env(safe-area-inset-top))] text-slate-950"
     >
-      <header className="mb-5 flex min-h-14 items-center justify-between gap-3">
+      <header className="mb-4 flex min-h-14 items-center justify-between gap-3">
         <button
+          onClick={back}
           aria-label="Tillbaka"
-          onClick={() => (isHome ? onExit() : phase === "summary" ? home() : setEndDialog(true))}
           className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white"
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <h1 className="text-xl font-black">Chippning</h1>
+        <h1 className="text-xl font-black">
+          {historyOpen && !round ? "Dina rundor" : "Chipprundan"}
+        </h1>
         <button onClick={() => setRules(true)} className="min-h-12 text-sm font-bold text-blue-700">
           Regler
         </button>
       </header>
       {!ready ? (
-        <p role="status">Laddar dina stationer…</p>
+        <p role="status" className="py-10 text-center">
+          Laddar din runda…
+        </p>
       ) : (
         <>
           {storageError && (
             <p role="alert" className="mb-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">
-              Resultaten kunde inte sparas på enheten. Håll sidan öppen tills de har sparats.
+              Rundan kunde inte sparas på enheten. Håll sidan öppen och{" "}
+              <button
+                className="min-h-11 font-bold underline"
+                onClick={() => {
+                  try {
+                    localStorage.setItem(key, JSON.stringify(stateRef.current));
+                    setStorageError(false);
+                  } catch {
+                    setStorageError(true);
+                  }
+                }}
+              >
+                försök spara igen
+              </button>
+              .
             </p>
           )}
-          {isHome && (
+          {(atHome || (historyOpen && !round)) && (
+            <div
+              aria-label="Underlag"
+              className="mb-4 grid grid-cols-2 gap-2 rounded-2xl bg-slate-200/70 p-1.5"
+            >
+              {(["Fairway", "Ruff"] as const).map((value) => (
+                <button
+                  key={value}
+                  aria-pressed={state.lie === value}
+                  onClick={() => commit({ type: "lie", lie: value })}
+                  className={`min-h-12 rounded-xl text-base font-bold ${state.lie === value ? "bg-white text-blue-700 shadow-sm" : "text-slate-600"}`}
+                >
+                  {lieName(value)}
+                </button>
+              ))}
+            </div>
+          )}
+          {atHome && (
             <>
-              <div
-                className="mb-4 grid grid-cols-2 gap-2 rounded-2xl bg-slate-200/70 p-1.5"
-                aria-label="Underlag"
-              >
-                {(["Fairway", "Ruff"] as const).map((value) => (
-                  <button
-                    key={value}
-                    aria-pressed={lie === value}
-                    onClick={() => selectLie(value)}
-                    className={`min-h-12 rounded-xl text-base font-bold ${lie === value ? "bg-white text-blue-700 shadow-sm" : "text-slate-600"}`}
-                  >
-                    {lieName(value)}
-                  </button>
-                ))}
-              </div>
-              <div className="mb-4 flex items-center justify-between text-sm font-bold">
-                <span className="flex items-center gap-1.5 text-amber-700">
-                  <Star className="h-5 w-5 fill-amber-400 text-amber-500" />
-                  {starCount}/18 stjärnor
-                </span>
-                <span className="text-slate-500">{unlocked.length}/6 stationer öppna</span>
-              </div>
-              <section className="relative overflow-hidden rounded-3xl border border-blue-200 bg-gradient-to-br from-blue-50 via-white to-blue-100 p-5">
-                <p className="text-sm font-bold text-blue-700">DIN NÄSTA UTMANING</p>
-                <div className="mt-3 flex items-center justify-between">
-                  <div>
-                    <h2 className="text-4xl font-black tracking-tight">
-                      {frontier} <span className="text-xl">meter</span>
-                    </h2>
-                    <p className="mt-1 text-sm text-slate-500">
-                      {lieName(lie)} · Rekord {bestAt(progress, frontier, lie) ?? "–"}/12
-                    </p>
-                  </div>
-                  <Stars count={starsAt(progress, frontier, lie)} large />
-                </div>
-                <p className="mt-4 text-base font-bold">
-                  {featured.label} · {featured.points} poäng
+              <section className={`${card} p-5`}>
+                <p className="text-sm font-bold text-blue-700">EN RUNDA. SEX HÅL.</p>
+                <h2 className="mt-2 text-2xl font-black">Hur många stjärnor tar du?</h2>
+                <p className="mb-5 mt-2 text-base text-slate-500">
+                  3 bollar per hål. Paus efter första tre.
                 </p>
-                <div className="mb-4 mt-2 h-2 overflow-hidden rounded-full bg-blue-100">
-                  <div
-                    className="h-full rounded-full bg-blue-500"
-                    style={{
-                      width: `${Math.min(100, ((bestAt(progress, frontier, lie) ?? 0) / featured.points) * 100)}%`,
-                    }}
-                  />
-                </div>
-                <button onClick={() => start("guided", frontier)} className={primary}>
-                  Starta runda · 9 bollar <ArrowRight className="h-5 w-5" />
+                <button className={primary} onClick={start}>
+                  Starta runda · hål 1 <ArrowRight className="h-5 w-5" />
                 </button>
                 <p className="mt-3 text-center text-sm text-slate-500">
-                  3 omgångar · 3 bollar från samma plats
+                  Börja på 8 m · {lieName(lie)}
                 </p>
               </section>
-              <button
-                className="my-2 min-h-12 w-full text-sm font-bold text-blue-700"
-                onClick={() =>
-                  mapRef.current?.scrollIntoView({ behavior: "instant", block: "start" })
-                }
-              >
-                Välj station ↓
-              </button>
-              <div ref={mapRef} className="scroll-mt-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-black">Din väg till 30 m</h2>
-                  <span className="text-sm text-slate-500">{lieName(lie)}</span>
-                </div>
-                <p className="mt-1 text-sm text-slate-500">Första stjärnan öppnar nästa station.</p>
-                <div className="relative mx-auto mt-5 max-w-[320px] pb-3">
-                  <svg
-                    aria-hidden="true"
-                    className="pointer-events-none absolute inset-0 h-full w-full"
-                    viewBox="0 0 320 792"
-                    preserveAspectRatio="none"
-                  >
-                    <path
-                      d="M96 45 C96 110 224 110 224 177 S96 243 96 309 S224 375 224 441 S96 507 96 573 S224 639 224 705"
-                      fill="none"
-                      stroke="#dbeafe"
-                      strokeWidth="12"
-                      strokeLinecap="round"
-                    />
-                    <path
-                      d="M96 45 C96 110 224 110 224 177 S96 243 96 309 S224 375 224 441 S96 507 96 573 S224 639 224 705"
-                      fill="none"
-                      stroke="#93c5fd"
-                      strokeWidth="2"
-                      strokeDasharray="5 8"
-                    />
-                  </svg>
-                  {CHIP_STATIONS.map((station, index) => {
-                    const open = unlocked.includes(station.distance);
-                    const active = station.distance === frontier;
-                    const count = starsAt(progress, station.distance, lie);
-                    return (
-                      <div
-                        key={station.distance}
-                        className={`relative flex h-[132px] flex-col items-center ${index % 2 ? "ml-[40%]" : "mr-[40%]"}`}
-                      >
-                        <button
-                          onClick={() => setDetail(station.distance)}
-                          aria-label={`${station.distance} meter, ${open ? `${count} stjärnor, rekord ${bestAt(progress, station.distance, lie) ?? 0} poäng` : "låst"}`}
-                          className={`relative flex h-[88px] w-[88px] shrink-0 flex-col items-center justify-center rounded-[30px] border-b-[6px] ${active ? "border-blue-800 bg-blue-600 text-white ring-4 ring-blue-200 ring-offset-4 ring-offset-slate-50" : open ? "border-blue-200 bg-white text-blue-700 shadow-sm" : "border-slate-300 bg-slate-200 text-slate-500"}`}
-                        >
-                          {active && (
-                            <span className="absolute -top-4 rounded-full bg-blue-950 px-3 py-1 text-xs font-bold text-white">
-                              NÄSTA
-                            </span>
-                          )}
-                          {open ? (
-                            count > 0 ? (
-                              <Check className="h-4 w-4" />
-                            ) : (
-                              <Flag className="h-4 w-4" />
-                            )
-                          ) : (
-                            <LockKeyhole className="h-4 w-4" />
-                          )}
-                          <span className="text-2xl font-black">
-                            {station.distance}
-                            <span className="ml-1 text-sm">m</span>
-                          </span>
-                        </button>
-                        <span className="mt-3 rounded-full bg-slate-50 px-2">
-                          <Stars count={count} />
+              <CourseMap holes={[]} lie={lie} cursor={0} avatar={avatar} />
+              <section>
+                <h2 className="mb-3 flex items-center gap-2 text-lg font-black">
+                  <Trophy className="h-5 w-5 text-amber-500" />
+                  Dina rekord
+                </h2>
+                <div className="grid grid-cols-3 gap-2">
+                  {records.map(({ segment, best }) => (
+                    <div key={segment} className={`${card} rounded-2xl px-2 py-4 text-center`}>
+                      <p className="text-sm font-bold text-slate-600">{segmentNames[segment]}</p>
+                      <p className="mt-2 text-xl font-black text-blue-700">
+                        {best?.stars ?? "–"}
+                        <span className="text-sm text-slate-400">
+                          /{segment === "full" ? 18 : 9}
                         </span>
-                      </div>
-                    );
-                  })}
+                      </p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        {best ? `${best.points} poäng` : "Inget resultat än"}
+                      </p>
+                    </div>
+                  ))}
                 </div>
-              </div>
-              <p className="text-center text-sm leading-6 text-slate-500">
+                <button className={`${secondary} mt-4`} onClick={() => setHistoryOpen(true)}>
+                  <History className="h-5 w-5" />
+                  Tidigare rundor <span className="ml-auto text-slate-400">{history.length}</span>
+                </button>
+              </section>
+              <p className="mt-5 text-center text-sm leading-6 text-slate-500">
                 {lie === "Fairway"
                   ? "Spela från kortklippt gräs utanför greenen."
                   : "Spela från längre gräs med bollen synlig."}{" "}
-                Avståndet är från bollen till hålet.
+                Samma underlag hela rundan.
               </p>
               <p className="mt-3 text-center text-xs text-slate-400">
-                Framsteg sparas på den här enheten{userId ? " för ditt konto" : " som gäst"}.
+                Rundor och rekord sparas på den här enheten.
               </p>
             </>
           )}
-          {phase === "play" && current && (
-            <section>
-              <div className="mb-4 flex items-center justify-between text-sm font-bold text-slate-500">
+          {active && !round && (
+            <>
+              <div className="flex items-center justify-between text-sm font-bold text-slate-500">
                 <span>
-                  {session?.mode === "single" ? "REKORDFÖRSÖK" : `OMGÅNG ${rounds.length + 1} AV 3`}
+                  {active.phase === "halfway"
+                    ? "FÖRSTA TRE KLARA"
+                    : `HÅL ${index + 1} AV 6 · ${lieName(lie)}`}
                 </span>
-                <span>{lieName(lie)}</span>
+                <span className="flex items-center gap-1 text-amber-700">
+                  <Star className="h-4 w-4 fill-amber-400" />
+                  {stars}/{active.phase === "halfway" ? 9 : 18}
+                </span>
               </div>
-              <div className="mb-5 flex gap-2">
-                {Array.from({ length: limit }, (_, i) => (
-                  <div
-                    key={i}
-                    className={`h-2 flex-1 rounded-full ${i <= rounds.length ? "bg-blue-600" : "bg-blue-100"}`}
-                  />
-                ))}
-              </div>
-              <div className={`${card} p-6 text-center`}>
-                <p className="text-sm font-bold text-blue-700">
-                  {oldBest === null ? "TA DIN FÖRSTA STJÄRNA" : "SLÅ DITT REKORD"}
-                </p>
-                <p className="my-4 text-7xl font-black tracking-tight">
-                  {current.distance}
-                  <span className="ml-2 text-2xl">m</span>
-                </p>
-                <Stars count={starsAt(before, current.distance, lie)} large />
-                <p className="mt-4 text-base font-bold">
-                  {nextGoal.label} · {nextGoal.points} poäng
-                </p>
-                <p className="mt-1 text-sm text-slate-500">Ditt rekord: {oldBest ?? "–"}/12</p>
-              </div>
-              {!registering ? (
-                <>
-                  <div className="my-5 rounded-2xl bg-blue-50 p-4 text-base leading-6">
-                    <strong>Tre bollar från samma plats.</strong>
-                    <p className="mt-1 text-slate-600">
-                      Slå alla tre. Gå sedan fram till hålet och registrera resultaten.
-                    </p>
-                  </div>
-                  <button className={primary} onClick={() => setRegistering(true)}>
-                    Registrera resultat <ChevronRight className="h-5 w-5" />
-                  </button>
-                </>
-              ) : (
-                <>
-                  <div className="my-4 flex items-center justify-between">
-                    <h2 className="text-lg font-black" aria-live="polite">
-                      Boll {current.shots.length + 1} av 3
-                    </h2>
-                    <span className="text-lg font-black text-blue-700">{total} p</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    {CHIP_ZONES.map((zone) => (
-                      <button
-                        key={zone.points}
-                        onClick={() => score(zone.points)}
-                        className={`flex min-h-16 items-center justify-between rounded-2xl border px-4 text-left ${zone.points === 4 ? "col-span-2 border-blue-700 bg-blue-600 text-white" : "border-blue-200 bg-blue-50 text-blue-900"}`}
-                      >
-                        <span className="text-base font-bold">{zone.label}</span>
-                        <strong className="text-xl">{zone.points} p</strong>
+              {!registering && (
+                <CourseMap
+                  holes={active.holes}
+                  lie={lie}
+                  cursor={active.phase === "halfway" ? "halfway" : index}
+                  avatar={avatar}
+                />
+              )}
+              {active.phase === "play" && (
+                <section>
+                  {!registering ? (
+                    <>
+                      <div className={`${card} p-5 text-center`}>
+                        <p className="text-sm font-bold text-blue-700">
+                          HÅL {index + 1} · {lieName(lie)}
+                        </p>
+                        <h2 className="my-3 text-6xl font-black">
+                          {COURSE_DISTANCES[index]}
+                          <span className="ml-2 text-2xl">m</span>
+                        </h2>
+                        <p className="text-base font-bold">Tre bollar från samma plats</p>
+                        <p className="mt-2 text-sm text-slate-500">
+                          Slå alla tre. Registrera sedan vid hålet.
+                        </p>
+                        <div className="mt-4 flex justify-center gap-5">
+                          {targets.map((p, i) => (
+                            <div key={p} className="text-center">
+                              <p className="text-sm font-bold text-amber-600">
+                                {"★".repeat(i + 1)}
+                              </p>
+                              <p className="text-sm text-slate-500">{p} p</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <button className={`${primary} mt-4`} onClick={() => setRegistering(true)}>
+                        Registrera resultat <ChevronRight className="h-5 w-5" />
                       </button>
-                    ))}
+                    </>
+                  ) : (
+                    <>
+                      <div className={`${card} mt-5 p-5`}>
+                        <div className="flex items-center justify-between">
+                          <h2 className="text-3xl font-black">{COURSE_DISTANCES[index]} m</h2>
+                          <p className="text-lg font-bold text-blue-700">
+                            {holePoints(shots)}/12 p
+                          </p>
+                        </div>
+                        <div className="mt-4 flex items-center justify-between">
+                          <h3 aria-live="polite" className="text-lg font-black">
+                            Boll {shots.length + 1} av 3
+                          </h3>
+                          <div className="flex gap-1">
+                            {[0, 1, 2].map((i) => (
+                              <span
+                                key={i}
+                                className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${shots[i] === undefined ? "bg-slate-100 text-slate-400" : "bg-blue-600 text-white"}`}
+                              >
+                                {shots[i] === undefined ? i + 1 : `${shots[i]}p`}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-4 grid grid-cols-2 gap-3">
+                        {CHIP_ZONES.map((z) => (
+                          <button
+                            key={z.points}
+                            onClick={() => {
+                              score(z.points);
+                              if (stateRef.current.active?.phase === "result") {
+                                setRegistering(false);
+                                window.scrollTo({ top: 0, behavior: "instant" });
+                              }
+                            }}
+                            className={`flex min-h-16 items-center justify-between rounded-2xl border px-4 text-left ${z.points === 4 ? "col-span-2 border-blue-700 bg-blue-600 text-white" : "border-blue-200 bg-blue-50 text-blue-900"}`}
+                          >
+                            <span className="text-base font-bold">{z.label}</span>
+                            <strong className="text-xl">{z.points} p</strong>
+                          </button>
+                        ))}
+                      </div>
+                      <button
+                        onClick={() => commit({ type: "undo" })}
+                        disabled={!shots.length}
+                        className="mt-3 flex min-h-12 items-center gap-2 text-sm font-bold text-slate-500 disabled:opacity-30"
+                      >
+                        <Undo2 className="h-4 w-4" />
+                        Ångra senaste
+                      </button>
+                    </>
+                  )}
+                </section>
+              )}
+              {active.phase === "result" && (
+                <section>
+                  <div
+                    className={`${card} p-5 text-center motion-safe:animate-in motion-safe:fade-in motion-safe:duration-300`}
+                  >
+                    <p className="text-sm font-bold text-slate-500">
+                      HÅL {index + 1} · {COURSE_DISTANCES[index]} M
+                    </p>
+                    <div className="my-4 flex justify-center">
+                      <Stars count={earned} large />
+                    </div>
+                    <h2 className="text-2xl font-black">
+                      {earned === 3
+                        ? "Full pott på hålet!"
+                        : earned > 0
+                          ? `${earned} ${earned === 1 ? "stjärna" : "stjärnor"} på hålet`
+                          : "Nästa hål, ny chans"}
+                    </h2>
+                    <p className="mt-2 text-base text-slate-500">{holePoints(shots)} av 12 poäng</p>
+                  </div>
+                  <button onClick={next} className={`${primary} mt-4`}>
+                    {index === 2
+                      ? "Till Halfway House"
+                      : index === 5
+                        ? "Se din runda"
+                        : `Nästa hål · ${COURSE_DISTANCES[index + 1]} m`}
+                    <ArrowRight className="h-5 w-5" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      commit({ type: "undo" });
+                      setRegistering(true);
+                    }}
+                    className="mt-2 min-h-12 w-full text-sm font-bold text-slate-500"
+                  >
+                    Rätta senaste bollen
+                  </button>
+                </section>
+              )}
+              {active.phase === "halfway" && front && (
+                <section>
+                  <div className="rounded-3xl border border-amber-200 bg-amber-50 p-6 text-center">
+                    <Coffee className="mx-auto h-9 w-9 text-amber-700" />
+                    <h2 className="mt-3 text-2xl font-black">Halfway House</h2>
+                    <p className="mt-2 text-base text-slate-600">Första tre klara</p>
+                    <p className="mt-3 text-5xl font-black text-blue-700">
+                      {front.stars}
+                      <span className="text-xl text-slate-400">/9 ★</span>
+                    </p>
+                    <p className="mt-3 text-sm text-slate-600">
+                      {oldFront
+                        ? beatsScore(front, oldFront)
+                          ? `Nytt rekord för första tre! Tidigare ${oldFront.stars} ★ · ${oldFront.points} p.`
+                          : `Ditt rekord: ${oldFront.stars} ★ · ${oldFront.points} p.`
+                        : "Din första trehålsrunda."}
+                    </p>
+                    <p className="mt-2 text-sm text-slate-500">{front.points}/36 poäng</p>
                   </div>
                   <button
-                    disabled={!current.shots.length}
-                    onClick={() => commit({ type: "undo" })}
-                    className="mt-3 flex min-h-12 items-center gap-2 text-sm font-bold text-slate-500 disabled:opacity-30"
+                    className={`${primary} mt-4`}
+                    onClick={() => {
+                      commit({ type: "continue" });
+                      setRegistering(false);
+                    }}
                   >
-                    <Undo2 className="h-4 w-4" />
-                    Ångra senaste
+                    Fortsätt · 9 bollar kvar <ArrowRight className="h-5 w-5" />
                   </button>
-                </>
+                  <p className="my-3 text-center text-sm text-slate-500">
+                    Hål 4–6 · 14, 16 och 20 m
+                  </p>
+                  <button className={secondary} onClick={finish}>
+                    <Check className="h-5 w-5" />
+                    Avsluta och spara första tre
+                  </button>
+                </section>
               )}
-            </section>
+            </>
           )}
-          {phase === "result" && current && (
+          {historyOpen && !round && !active && (
             <section>
-              <div
-                className={`${card} p-6 text-center motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95 motion-safe:duration-300`}
-              >
-                <p className="text-sm font-bold text-slate-500">
-                  {current.distance} m · {lieName(lie)} · 3 bollar
-                </p>
-                <p className="my-5 text-7xl font-black text-blue-600">
-                  {total}
-                  <span className="text-2xl text-slate-400">/12</span>
-                </p>
-                <Stars count={starsAt(progress, current.distance, lie)} large />
-                <h2 role="status" className="mt-4 text-2xl font-black">
-                  {fresh.length
-                    ? `${fresh[0]} meter upplåst!`
-                    : newStars > 0
-                      ? "Ny stjärna!"
-                      : oldBest !== null && total > oldBest
-                        ? "Nytt rekord!"
-                        : total < nextGoal.points
-                          ? `${nextGoal.points - total} poäng till målet`
-                          : "Försöket klart"}
-                </h2>
-                <p className="mt-2 text-sm text-slate-500">
-                  {oldBest === null
-                    ? "Ditt första resultat är sparat."
-                    : `Tidigare rekord: ${oldBest}/12`}
-                </p>
-                <div className="mt-5 flex justify-center gap-2">
-                  {current.shots.map((p, i) => (
-                    <span
-                      key={i}
-                      className="rounded-full bg-blue-50 px-3 py-2 text-sm font-bold text-blue-800"
+              <p className="mb-4 text-sm text-slate-500">
+                {lieName(state.lie)} · Stjärnor först, poäng vid lika.
+              </p>
+              {!history.length ? (
+                <div className={`${card} p-6 text-center`}>
+                  <Flag className="mx-auto h-8 w-8 text-blue-600" />
+                  <h2 className="mt-3 text-xl font-black">Din första runda väntar</h2>
+                  <p className="mt-2 text-base text-slate-500">
+                    Spela första tre eller hela rundan för att börja din historik.
+                  </p>
+                  <button onClick={start} className={`${primary} mt-5`}>
+                    Starta på 8 m
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {history.map((r) => (
+                    <button
+                      key={r.id}
+                      onClick={() => {
+                        setReviewId(r.id);
+                        window.scrollTo({ top: 0, behavior: "instant" });
+                      }}
+                      className={`${card} flex min-h-20 w-full items-center justify-between gap-3 p-4 text-left`}
                     >
-                      {p} p
-                    </span>
+                      <span>
+                        <span className="block text-base font-bold">
+                          {r.status === "full"
+                            ? "Hela rundan"
+                            : r.status === "front"
+                              ? "Första tre"
+                              : `${r.holes.length} hål · avbruten`}
+                        </span>
+                        <span className="mt-1 block text-sm text-slate-500">
+                          {dateLabel(r.finishedAt)} ·{" "}
+                          {r.holes.reduce((s, h) => s + holePoints(h), 0)} p
+                        </span>
+                      </span>
+                      <span className="flex items-center gap-2 text-lg font-black text-blue-700">
+                        {roundStars(r)}/{r.holes.length * 3} ★<ChevronRight className="h-5 w-5" />
+                      </span>
+                    </button>
                   ))}
                 </div>
-              </div>
-              <p className="my-4 text-center text-sm text-slate-500">
-                {rounds.length * 3} av {limit * 3} bollar klara
-              </p>
-              <button
-                className={primary}
-                onClick={() => (checkpoint ? finish() : begin(recommendation.distance))}
-              >
-                {checkpoint ? "Se din runda" : `Nästa omgång · ${recommendation.distance} m`}
-                <ArrowRight className="h-5 w-5" />
-              </button>
-              {!checkpoint && (
-                <p className="mt-3 text-center text-sm text-slate-500">{recommendation.reason}</p>
               )}
-              <button
-                onClick={() => {
-                  commit({ type: "undo" });
-                  setRegistering(true);
-                }}
-                className="mt-3 min-h-12 w-full text-sm font-bold text-slate-500"
-              >
-                Rätta senaste bollen
-              </button>
             </section>
           )}
-          {phase === "summary" && (
+          {round && (
             <section>
               <div className={`${card} p-6 text-center`}>
-                <Trophy className="mx-auto h-10 w-10 text-amber-500" />
-                <h2 className="mt-3 text-3xl font-black">Din runda</h2>
+                <Trophy className="mx-auto h-9 w-9 text-amber-500" />
+                <h2 className="mt-3 text-3xl font-black">
+                  {round.status === "full"
+                    ? "Rundan klar"
+                    : round.status === "front"
+                      ? "Första tre klara"
+                      : "Din sparade runda"}
+                </h2>
                 <p className="mt-2 text-sm text-slate-500">
-                  {shots.length} chippar · {lieName(lie)}
+                  {dateLabel(round.finishedAt)} · {lieName(round.lie)} · {round.holes.length * 3}{" "}
+                  bollar
                 </p>
-                <p className="mt-4 text-lg font-bold text-blue-700">
-                  {earned} nya stjärnor · {records} nya rekord
+                <p className="my-4 text-5xl font-black text-blue-700">
+                  {roundStars(round)}
+                  <span className="text-xl text-slate-400">/{round.holes.length * 3} ★</span>
                 </p>
-              </div>
-              <div className={`${card} mt-4 p-4`}>
-                <h3 className="mb-2 text-base font-black">Dina stationer</h3>
-                {rounds.map((r, i) => (
-                  <div
-                    key={r.id}
-                    className="flex min-h-14 items-center justify-between gap-2 border-t border-slate-100"
-                  >
-                    <span className="text-sm font-bold">
-                      {i + 1}. {r.distance} m
-                    </span>
-                    <Stars count={starsAt(progress, r.distance, r.lie)} />
-                    <strong>{roundTotal(r)}/12</strong>
-                  </div>
-                ))}
-              </div>
-              {shots.length > 0 && (
-                <div className={`${card} mt-4 p-5`}>
-                  <h3 className="text-base font-black">Rundans analys</h3>
-                  <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-                    {[
-                      ["Inom 1 m", shots.filter((p) => p >= 3).length],
-                      ["Inom 3 m", shots.filter((p) => p >= 1).length],
-                      ["Sänkta", shots.filter((p) => p === 4).length],
-                    ].map(([label, count]) => (
-                      <div key={label}>
-                        <p className="text-2xl font-black text-blue-700">{count}</p>
-                        <p className="text-sm text-slate-500">{label}</p>
-                      </div>
-                    ))}
-                  </div>
-                  <p className="mt-4 text-sm leading-6 text-slate-600">
-                    {shots.filter((p) => p === 0).length} av {shots.length} bollar slutade mer än 3
-                    m från hålet.{" "}
-                    {shots.every((p) => p >= 1)
-                      ? "Alla bollar stannade inom 3 m."
-                      : "Försök få fler bollar inom poängzonerna nästa gång."}
+                {newRecords.length > 0 && (
+                  <p className="rounded-xl bg-amber-50 p-3 text-base font-bold text-amber-800">
+                    Nytt rekord ·{" "}
+                    {newRecords.map((s) => segmentNames[s].toLowerCase()).join(" och ")}
                   </p>
-                </div>
-              )}
-              {shots.length > 0 && (
-                <div className="mt-4">
-                  <ActivityReview
-                    input={{
-                      title: "Chippning",
-                      modelId: "chip-three-ball-zones-v1",
-                      summary: `${shots.length} chippar`,
-                      outcomes: rounds.flatMap((r, ri) =>
-                        r.shots.map((points, si) => ({
-                          label: `Slag ${ri * 3 + si + 1}`,
-                          context: `${r.distance} m · ${lieName(r.lie)}`,
-                          result: CHIP_ZONES.find((z) => z.points === points)!.label,
-                          rank: 4 - points,
-                          category: ACTIVITY_CATEGORIES[4 - points],
-                          basis:
-                            "Registrerad poängzon. Avstånd och underlag är inte viktade i analysen.",
-                        })),
-                      ),
-                    }}
-                  />
-                </div>
-              )}
-              <div className="my-5 rounded-2xl bg-blue-50 p-4">
-                <p className="text-sm font-bold text-blue-700">
-                  NÄSTA UTMANING · {retryDistance} M
-                </p>
-                <p className="mt-1 text-base font-bold">
-                  {goalAt(progress, retryDistance, lie).label} ·{" "}
-                  {goalAt(progress, retryDistance, lie).points} poäng
-                </p>
+                )}
+                {round.status === "partial" && (
+                  <p className="text-sm text-slate-500">
+                    Avslutad före nästa delmål. Endast färdiga hål visas.
+                  </p>
+                )}
               </div>
-              <button onClick={() => start("single", retryDistance)} className={primary}>
-                <RotateCcw className="h-5 w-5" />
-                Försök igen · 3 bollar
-              </button>
-              <button onClick={() => start("guided", frontier)} className={`${secondary} mt-3`}>
-                Ny runda · 9 bollar
+              <div className="my-4 grid grid-cols-2 gap-3">
+                {(["front", "back"] as const).map((segment) => {
+                  const value = segmentScore(round, segment);
+                  return (
+                    <div key={segment} className={`${card} p-4 text-center`}>
+                      <p className="text-sm font-bold text-slate-500">{segmentNames[segment]}</p>
+                      <p className="mt-2 text-xl font-black">
+                        {value ? `${value.stars}/9 ★` : "Ej spelat klart"}
+                      </p>
+                      {value && <p className="mt-1 text-sm text-slate-500">{value.points}/36 p</p>}
+                    </div>
+                  );
+                })}
+              </div>
+              <Scorecard round={round} />
+              <div className="mt-4">
+                <ActivityReview
+                  input={{
+                    title: "Chipprundan",
+                    modelId: "chip-course-v1",
+                    summary: `${round.holes.length * 3} chippar`,
+                    outcomes: round.holes.flatMap((h, i) =>
+                      h.map((points, j) => ({
+                        label: `Hål ${i + 1} · boll ${j + 1}`,
+                        context: `${COURSE_DISTANCES[i]} m · ${lieName(round.lie)}`,
+                        result: CHIP_ZONES.find((z) => z.points === points)!.label,
+                        rank: 4 - points,
+                        category: ACTIVITY_CATEGORIES[4 - points],
+                        basis:
+                          "Registrerad poängzon. Avstånd och underlag är inte viktade i analysen.",
+                      })),
+                    ),
+                  }}
+                />
+              </div>
+              <button className={`${primary} mt-5`} onClick={start}>
+                Ny runda · börja på 8 m <ArrowRight className="h-5 w-5" />
               </button>
               <button
-                onClick={home}
-                className="mt-2 min-h-12 w-full text-sm font-bold text-slate-500"
-              >
-                Till stationskartan
-              </button>
-              <button
+                className={`${secondary} mt-3`}
                 onClick={() => {
-                  commit({ type: "home" });
-                  onExit();
+                  setReviewId(null);
+                  setHistoryOpen(true);
                 }}
-                className="min-h-12 w-full text-sm font-bold text-slate-500"
               >
-                Avsluta
+                Alla rundor
+              </button>
+              <button
+                className="mt-2 min-h-12 w-full text-sm font-bold text-slate-500"
+                onClick={() => {
+                  setReviewId(null);
+                  setHistoryOpen(false);
+                }}
+              >
+                Till banan
               </button>
             </section>
           )}
         </>
       )}
-      <Dialog
-        open={detail !== null}
-        onOpenChange={(open) => {
-          if (!open) setDetail(null);
-        }}
-      >
-        <DialogContent className="max-h-[85dvh] w-[calc(100%_-_2rem)] max-w-md overflow-y-auto rounded-3xl bg-white text-slate-950">
-          <DialogTitle className="text-2xl">
-            {detail} meter · {lieName(lie)}
+      <Dialog open={exitDialog} onOpenChange={setExitDialog}>
+        <DialogContent className="w-[calc(100%_-_2rem)] max-w-md rounded-3xl bg-white text-slate-950">
+          <DialogTitle>
+            {active?.phase === "halfway" ? "Spara första tre?" : "Pausa eller avsluta?"}
           </DialogTitle>
           <DialogDescription>
-            {selectedOpen
-              ? "Tre bollar. Slå ditt rekord eller ta nästa stjärna."
-              : `Ta första stjärnan på ${CHIP_STATIONS[Math.max(0, CHIP_STATIONS.findIndex((s) => s.distance === detail) - 1)].distance} m från ${lieName(lie).toLowerCase()} för att öppna.`}
+            Du kan lämna sidan och fortsätta senare. Om du avslutar sparas färdiga hål;
+            ofullständiga hål räknas inte.
           </DialogDescription>
-          {detail !== null && (
-            <>
-              <Stars count={starsAt(progress, detail, lie)} large />
-              <p className="text-base">
-                Ditt rekord: <strong>{bestAt(progress, detail, lie) ?? "–"}/12</strong>
-              </p>
-              <div className="grid grid-cols-3 gap-2">
-                {starTargets(detail, lie).map((target, i) => (
-                  <div key={target} className="rounded-xl bg-blue-50 p-3 text-center">
-                    <p className="text-sm text-slate-500">
-                      {i + 1} {i === 0 ? "stjärna" : "stjärnor"}
-                    </p>
-                    <strong>{target} p</strong>
-                  </div>
-                ))}
-              </div>
-              {selectedOpen && (
-                <button className={primary} onClick={() => start("single", detail)}>
-                  Spela station · 3 bollar
-                </button>
-              )}
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
-      <Dialog open={endDialog} onOpenChange={setEndDialog}>
-        <DialogContent className="w-[calc(100%_-_2rem)] max-w-md rounded-3xl bg-white text-slate-950">
-          <DialogTitle>Avsluta rundan?</DialogTitle>
-          <DialogDescription>
-            Färdiga omgångar är sparade. Ett ofullständigt försök räknas inte med.
-          </DialogDescription>
-          <button className={primary} onClick={finish}>
-            Visa resultat
+          <button
+            className={primary}
+            onClick={() => {
+              setExitDialog(false);
+              onExit();
+            }}
+          >
+            Pausa och lämna
           </button>
-          <button className={secondary} onClick={() => setEndDialog(false)}>
-            Fortsätt rundan
+          <button className={secondary} onClick={finish}>
+            Avsluta och spara
+          </button>
+          <button
+            className="min-h-12 text-sm font-bold text-slate-500"
+            onClick={() => setExitDialog(false)}
+          >
+            Fortsätt spela
           </button>
         </DialogContent>
       </Dialog>
       <Dialog open={rules} onOpenChange={setRules}>
         <DialogContent className="max-h-[85dvh] w-[calc(100%_-_2rem)] max-w-md overflow-y-auto rounded-3xl bg-white text-slate-950">
-          <DialogTitle>Tre bollar. Ett nytt mål.</DialogTitle>
+          <DialogTitle>Så spelar du chipprundan</DialogTitle>
           <DialogDescription>
-            Slå tre bollar från samma plats och underlag. Registrera sedan vid hålet. En guidad
-            runda innehåller tre omgångar.
+            Börja på 8 meter. Slå tre bollar per hål från samma plats. Registrera resultaten när du
+            kommer fram till hålet.
           </DialogDescription>
+          <p className="text-base">
+            Första tre: 8, 10, 12 m.
+            <br />
+            Sista tre: 14, 16, 20 m.
+          </p>
+          <p className="text-sm leading-6">
+            Vid Halfway House väljer du att spara första tre eller fortsätta. Alla hål spelas i
+            ordning, oavsett resultat. Avstånd mäts från bollen till hålet. Samma underlag hela
+            rundan.
+          </p>
           {CHIP_ZONES.map((z) => (
             <div
               key={z.points}
-              className="flex justify-between border-b border-slate-100 py-2 text-base"
+              className="flex justify-between border-b border-slate-100 py-1 text-base"
             >
               <span>{z.label}</span>
               <strong>{z.points} p</strong>
             </div>
           ))}
-          <p className="text-sm leading-6">
-            Första stjärnan öppnar nästa avstånd. Kortklippt och ruff har egna rekord och stjärnor.
-            Du kan alltid återvända till öppna stationer. Exakt 1, 2 och 3 meter räknas inom
-            respektive zon.
+          <p className="text-sm">
+            Exakt 1, 2 och 3 m räknas inom respektive zon. Stjärnorna tjänas på nytt varje runda.
+            Vid lika antal stjärnor avgör poängen.
           </p>
-          <p className="text-sm text-slate-500">
-            {coach.emoji} {coach.name}: Lägg tre bollar på samma underlag. I ruff ska bollen vara
-            synlig. Mät eller stega avståndet till hålet.
+          <table className="w-full text-center text-sm">
+            <caption className="mb-2 text-left font-bold">Stjärnkrav · {lieName(lie)}</caption>
+            <thead>
+              <tr>
+                <th>Hål</th>
+                <th>m</th>
+                <th>★</th>
+                <th>★★</th>
+                <th>★★★</th>
+              </tr>
+            </thead>
+            <tbody>
+              {COURSE_DISTANCES.map((d, i) => (
+                <tr key={d} className="border-t border-slate-100">
+                  <td className="py-2">{i + 1}</td>
+                  <td>{d}</td>
+                  {holeTargets(i, lie).map((p) => (
+                    <td key={p}>{p}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="text-xs text-slate-500">
+            Rekord jämförs separat för kortklippt och ruff. Stjärnorna är spelmål, inte ett
+            handicap.
           </p>
         </DialogContent>
       </Dialog>
