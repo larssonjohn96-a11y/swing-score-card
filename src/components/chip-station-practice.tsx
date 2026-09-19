@@ -14,8 +14,8 @@ import {
   Undo2,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
-import { ActivityReview } from "@/components/activity-review";
-import { ACTIVITY_CATEGORIES } from "@/lib/activity-review";
+import { ChipAnalysis } from "./chip-analysis";
+import { ChipProgress } from "./chip-progress";
 import { CHIP_ZONES, type ChipLie, type ChipPoints } from "@/lib/chip-stations";
 import {
   courseDistances,
@@ -58,13 +58,13 @@ function Stars({
   large = false,
   fills,
   celebrate = false,
-  broken = false,
+  zero = false,
 }: {
   count?: number;
   large?: boolean;
   fills?: number[];
   celebrate?: boolean;
-  broken?: boolean;
+  zero?: boolean;
 }) {
   const values = fills ?? [0, 1, 2].map((i) => Math.max(0, Math.min(1, count - i)));
   return (
@@ -76,9 +76,12 @@ function Stars({
         <span
           key={i}
           style={celebrate ? { animationDelay: `${i * 400 + 1200}ms` } : undefined}
-          className={`relative block ${large ? "h-11 w-11" : "h-4 w-4"} ${celebrate && fill === 0 ? "chip-empty-wiggle" : ""} ${broken ? "opacity-45 grayscale" : ""}`}
+          className={`relative block ${large ? "h-11 w-11" : "h-4 w-4"} ${celebrate && fill === 0 ? "chip-empty-wiggle" : ""} `}
         >
-          <Star aria-hidden="true" className="h-full w-full fill-white/70 text-slate-300" />
+          <Star
+            aria-hidden="true"
+            className={`h-full w-full ${zero ? "fill-slate-500 text-slate-600" : "fill-white/70 text-slate-300"}`}
+          />
           <span
             className="absolute inset-y-0 left-0 overflow-hidden transition-[width] duration-500 ease-out motion-reduce:transition-none"
             style={{ width: `${fill * 100}%` }}
@@ -88,11 +91,6 @@ function Stars({
               className={`${large ? "h-11 w-11" : "h-4 w-4"} fill-amber-400 text-amber-500`}
             />
           </span>
-          {broken && i === 2 && (
-            <svg aria-hidden="true" viewBox="0 0 44 44" className="absolute inset-0 h-full w-full">
-              <path d="m32 6-6 12 7 4-9 16" fill="none" stroke="#64748b" strokeWidth="2" />
-            </svg>
-          )}
           {fill === 1 && (
             <span
               key={`full-${fill}`}
@@ -120,7 +118,7 @@ function RevealStars({ count }: { count: number }) {
     );
     return () => timers.forEach(clearTimeout);
   }, [count]);
-  return <Stars fills={fills} large celebrate broken={count === 0} />;
+  return <Stars fills={fills} large celebrate zero={count === 0} />;
 }
 function RecordRow({ best }: { best: ReturnType<typeof courseBests> }) {
   return (
@@ -232,7 +230,10 @@ function CourseMap({
           <span className="rounded-full bg-white/75 px-2 text-sm font-bold text-emerald-950">
             {d} m
           </span>
-          <Stars count={holeStars(holes[i] ?? [], i, lie, model)} />
+          <Stars
+            count={holeStars(holes[i] ?? [], i, lie, model)}
+            zero={holes[i]?.length === 3 && holePoints(holes[i]) === 0}
+          />
         </div>
       ))}
       <div className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-1 whitespace-nowrap rounded-xl border border-emerald-200 bg-white/95 px-2 py-1 shadow-sm">
@@ -399,7 +400,6 @@ export function ChipStationPractice({
   const best = courseBests(state.history);
   const pace = active ? coursePace(active, state.history) : null;
   const totalPoints = active?.holes.reduce((sum, h) => sum + holePoints(h), 0) ?? 0;
-  const balls = active?.holes.flat().length ?? 0;
   const completed = active?.holes.filter((h) => h.length === 3).length ?? 0;
   const avgStars = active && completed ? roundStars(active) / completed : 0;
   const previous = round
@@ -482,6 +482,7 @@ export function ChipStationPractice({
                   Dina rekord
                 </h2>
                 <RecordRow best={best} />
+                <ChipProgress history={state.history} />
                 <button className={`${secondary} mt-4`} onClick={() => setHistoryOpen(true)}>
                   <History className="h-5 w-5" />
                   Tidigare rundor <span className="ml-auto text-slate-400">{history.length}</span>
@@ -500,42 +501,35 @@ export function ChipStationPractice({
           )}
           {active && !round && (
             <>
-              <header className="mb-3 rounded-2xl bg-blue-600 p-3 text-white">
-                <div className="flex items-center gap-2">
+              <header className="mb-3 flex min-h-20 overflow-hidden rounded-2xl border border-blue-600 bg-white shadow-sm">
+                <div
+                  className="relative flex min-w-0 flex-1 items-center gap-1 bg-blue-600 pl-1 pr-5 text-white"
+                  style={{ clipPath: "polygon(0 0,88% 0,100% 50%,88% 100%,0 100%)" }}
+                >
                   <button
                     aria-label="Tillbaka"
                     data-local-navigation
                     onClick={back}
-                    className="flex h-9 w-9 items-center justify-center !border-0 !bg-transparent !text-white"
+                    className="flex h-10 w-10 shrink-0 items-center justify-center !border-0 !bg-transparent !text-white"
                   >
                     <ArrowLeft className="h-5 w-5" />
                   </button>
-                  <span className="truncate font-bold">{playerName}</span>
+                  <span className="truncate text-lg font-black">{playerName}</span>
                 </div>
-                <div className="mt-1 grid grid-cols-3 gap-2 text-center">
+                <div className="grid shrink-0 grid-cols-2 items-center gap-4 px-3 text-center text-blue-700">
                   <div>
-                    <p className="flex items-center justify-center gap-1 text-xl font-black">
+                    <p className="flex items-center justify-center gap-1 text-2xl font-black">
                       {totalPoints}
-                      {pace?.onPace && (
-                        <Trophy aria-label="På PB-tempo" className="h-4 w-4 text-yellow-300" />
-                      )}
+                      {pace?.onPace && <Trophy className="h-4 w-4 text-amber-500" />}
                     </p>
-                    <p className="text-[10px] text-blue-100">Totalpoäng</p>
-                  </div>
-                  <div>
-                    <p className="text-xl font-black">
-                      {starLabel(balls ? totalPoints / balls : 0)}
-                    </p>
-                    <p className="text-[10px] text-blue-100">Poäng / boll</p>
+                    <p className="text-[10px] font-bold text-slate-500">POÄNG</p>
                   </div>
                   <div>
                     <p className="flex items-center justify-center gap-1 text-xl font-black">
                       {starLabel(avgStars)} ★
-                      {pace?.averageOnPace && (
-                        <Trophy aria-label="På PB-snitt" className="h-4 w-4 text-yellow-300" />
-                      )}
+                      {pace?.averageOnPace && <Trophy className="h-4 w-4 text-amber-500" />}
                     </p>
-                    <p className="text-[10px] text-blue-100">Snitt / klart hål</p>
+                    <p className="text-[10px] font-bold text-slate-500">SNITT / HÅL</p>
                   </div>
                 </div>
               </header>
@@ -603,7 +597,7 @@ export function ChipStationPractice({
                         </div>
                         <div className="mt-4 flex justify-center">
                           <Stars
-                            broken={active.phase === "result" && holePoints(shots) === 0}
+                            zero={active.phase === "result" && holePoints(shots) === 0}
                             count={holeStars(shots, index, lie, active.model)}
                             fills={
                               active.phase === "result"
@@ -635,31 +629,21 @@ export function ChipStationPractice({
                         Hur långt ifrån hålet?
                       </h3>
                       <div
-                        className="relative grid grid-cols-5 gap-1 rounded-2xl bg-blue-50 px-1 py-2"
+                        className="relative grid grid-cols-2 gap-2"
                         aria-label="Avstånd från hålet"
                       >
-                        <div
-                          aria-hidden="true"
-                          className="absolute left-[10%] right-[10%] top-7 h-0.5 bg-blue-300"
-                        />
                         {CHIP_ZONES.map((z) => (
                           <button
                             key={z.points}
                             aria-label={z.label}
                             onClick={() => score(z.points)}
                             disabled={active.phase === "result"}
-                            className="relative flex min-h-20 flex-col items-center justify-start gap-2 rounded-xl px-0.5 py-1 text-blue-900 active:bg-blue-200 disabled:opacity-45"
+                            className={`flex min-h-14 items-center justify-center gap-2 rounded-2xl border-2 px-3 text-base font-black active:scale-[.98] disabled:opacity-45 ${z.points === 4 ? "col-span-2 border-blue-600 bg-blue-600 text-white" : "border-blue-200 bg-blue-50 text-blue-900"}`}
                           >
-                            <span className="z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 border-blue-400 bg-white">
-                              {z.points === 4 ? (
-                                <Flag className="h-4 w-4 fill-yellow-400 text-yellow-600" />
-                              ) : (
-                                <span className="h-2 w-2 rounded-full bg-blue-600" />
-                              )}
-                            </span>
-                            <span className="text-center text-xs font-bold leading-tight">
-                              {z.label}
-                            </span>
+                            {z.points === 4 && (
+                              <Flag className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                            )}
+                            {z.label}
                           </button>
                         ))}
                       </div>
@@ -684,7 +668,7 @@ export function ChipStationPractice({
                           setConfirmation(null);
                         }}
                         disabled={!shots.length}
-                        className="mt-3 flex min-h-12 items-center gap-2 text-sm font-bold text-slate-500 disabled:opacity-30"
+                        className="mt-1 flex min-h-11 items-center gap-2 text-sm font-bold text-slate-500 disabled:opacity-30"
                       >
                         <Undo2 className="h-4 w-4" />
                         Ångra senaste
@@ -822,26 +806,7 @@ export function ChipStationPractice({
                 )}
               </div>
               <div className="mt-4">
-                <ActivityReview
-                  compact
-                  input={{
-                    title: "Estimerat chipp-HCP",
-                    handicap: courseHandicap(round),
-                    modelId: "chip-course-proximity-v1",
-                    summary: `${round.holes.length * 3} chippar`,
-                    outcomes: round.holes.flatMap((h, i) =>
-                      h.map((points, j) => ({
-                        label: `Hål ${i + 1} · boll ${j + 1}`,
-                        context: `${courseDistances(round.model)[i]} m`,
-                        result: CHIP_ZONES.find((z) => z.points === points)!.label,
-                        rank: 4 - points,
-                        category: ACTIVITY_CATEGORIES[4 - points],
-                        basis:
-                          "Registrerad poängzon. Avstånd och underlag är inte viktade i analysen.",
-                      })),
-                    ),
-                  }}
-                />
+                <ChipAnalysis round={round} />
               </div>
               <button
                 className={`${secondary} mt-3 !border-slate-950 !bg-slate-950 !text-white`}

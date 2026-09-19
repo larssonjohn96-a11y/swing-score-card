@@ -1,0 +1,224 @@
+import { useEffect, useRef, useState } from "react";
+import { ArrowRight, Lock } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "./ui/dialog";
+import { useSubscription } from "@/lib/subscription";
+import {
+  buildActivityReview,
+  ACTIVITY_CATEGORIES,
+  type ActivityCategory,
+} from "@/lib/activity-review";
+import { courseDistances, courseHandicap, holePoints, type CourseRound } from "@/lib/chip-course";
+import { CHIP_ZONES } from "@/lib/chip-stations";
+import { handicapLabel } from "@/lib/shortgame";
+
+export function ChipAnalysis({ round }: { round: CourseRound }) {
+  const { canViewDetailedBreakdowns } = useSubscription();
+  const [open, setOpen] = useState(false);
+  const [skip, setSkip] = useState(false);
+  const [stage, setStage] = useState<"counting" | "result" | "fade" | "details">("counting");
+  const [filter, setFilter] = useState<ActivityCategory | null>(null);
+  const groups = useRef<HTMLDivElement>(null);
+  const hcp = courseHandicap(round);
+  const review = buildActivityReview({
+    title: "Rundanalys",
+    handicap: hcp,
+    modelId: "chip-course-proximity-v1",
+    outcomes: round.holes.flatMap((shots, i) =>
+      shots.map((points, j) => ({
+        label: `Hål ${i + 1} · boll ${j + 1}`,
+        context: `${courseDistances(round.model)[i]} m`,
+        result: CHIP_ZONES.find((z) => z.points === points)!.label,
+        rank: 4 - points,
+        category: ACTIVITY_CATEGORIES[4 - points],
+      })),
+    ),
+  });
+  useEffect(() => {
+    if (!open || !canViewDetailedBreakdowns || skip) return;
+    setFilter(null);
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    setStage(reduced ? "result" : "counting");
+    const timers = [
+      setTimeout(() => setStage("result"), reduced ? 0 : 1600),
+      setTimeout(() => setStage("fade"), reduced ? 900 : 3200),
+      setTimeout(() => setStage("details"), reduced ? 900 : 3700),
+    ];
+    return () => timers.forEach(clearTimeout);
+  }, [open, round.id, canViewDetailedBreakdowns, skip]);
+  const select = (category: ActivityCategory | null) => {
+    setFilter(category);
+    requestAnimationFrame(() =>
+      groups.current?.scrollIntoView({ block: "start", behavior: "smooth" }),
+    );
+  };
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(value) => {
+        setOpen(value);
+        if (value) {
+          setSkip(false);
+          setStage("counting");
+        }
+      }}
+    >
+      <style>{`@keyframes chipHcpDial{from{transform:translateY(0)}to{transform:translateY(-85.7%)}}.chip-hcp-dial{animation:chipHcpDial .65s linear infinite;line-height:96px}@media(prefers-reduced-motion:reduce){.chip-hcp-dial{animation:none}}`}</style>
+      <DialogTrigger asChild>
+        <button className="flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 py-3 font-bold text-white shadow-md">
+          {!canViewDetailedBreakdowns && <Lock className="h-4 w-4" />}Analys – se ditt handicap{" "}
+          <ArrowRight className="h-4 w-4" />
+        </button>
+      </DialogTrigger>
+      <DialogContent className="!animate-none !fixed !inset-0 !left-0 !top-0 !h-[100dvh] !max-h-none !w-full !max-w-none !translate-x-0 !translate-y-0 !rounded-none !border-0 !p-0 !gap-0 overflow-hidden bg-white text-slate-950 [&>button]:z-30">
+        <DialogTitle className="sr-only">Rundanalys</DialogTitle>
+        <DialogDescription className="sr-only">
+          Ditt estimerade chipp-handicap och slag för slag, grupperat per hål.
+        </DialogDescription>
+        {canViewDetailedBreakdowns ? (
+          <>
+            <div
+              className="h-full overflow-y-auto p-5 pt-14"
+              hidden={stage === "counting" || stage === "result"}
+            >
+              <div className="mx-auto max-w-md space-y-5">
+                <div>
+                  <h2 className="text-2xl font-black">Din rundanalys</h2>
+                  <p className="mt-1 text-blue-700">
+                    Estimerat chipp-HCP <strong>{hcp === null ? "–" : handicapLabel(hcp)}</strong>
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-2" aria-label="Filtrera slag">
+                  {review.counts.map(({ category, count }) => (
+                    <button
+                      key={category}
+                      disabled={!count}
+                      aria-pressed={filter === category}
+                      onClick={() => select(filter === category ? null : category)}
+                      className={`flex min-h-12 items-center justify-between rounded-xl border px-3 text-sm font-bold disabled:opacity-35 ${filter === category ? "border-blue-600 bg-blue-600 text-white" : "border-blue-100 bg-blue-50 text-blue-900"}`}
+                    >
+                      <span>{category}</span>
+                      <span>{count}</span>
+                    </button>
+                  ))}
+                </div>
+                <div ref={groups} className="scroll-mt-5 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-black">{filter ?? "Hål för hål"}</h3>
+                    {filter && (
+                      <button
+                        className="min-h-11 text-sm font-bold text-blue-700"
+                        onClick={() => select(null)}
+                      >
+                        Visa alla slag
+                      </button>
+                    )}
+                  </div>
+                  {round.holes.map((shots, i) => {
+                    const selected = shots
+                      .map((points, j) => ({
+                        points,
+                        j,
+                        category: ACTIVITY_CATEGORIES[4 - points],
+                      }))
+                      .filter((row) => !filter || row.category === filter);
+                    return selected.length ? (
+                      <section
+                        key={i}
+                        className="overflow-hidden rounded-2xl border border-slate-200"
+                        aria-label={`Hål ${i + 1}`}
+                      >
+                        <h4 className="flex items-center justify-between bg-blue-50 p-3 font-black">
+                          <span>
+                            Hål {i + 1} · {courseDistances(round.model)[i]} m
+                          </span>
+                          <span>{holePoints(shots)} poäng</span>
+                        </h4>
+                        {selected.map(({ points, j, category }) => (
+                          <div
+                            key={j}
+                            className="flex items-center justify-between gap-3 border-t border-slate-100 p-3 text-sm"
+                          >
+                            <div>
+                              <p className="font-bold">
+                                Boll {j + 1} · {CHIP_ZONES.find((z) => z.points === points)!.label}
+                              </p>
+                              <p className="mt-1 text-xs text-slate-500">{category}</p>
+                            </div>
+                            <strong className="text-blue-700">+{points}</strong>
+                          </div>
+                        ))}
+                      </section>
+                    ) : null;
+                  })}
+                </div>
+              </div>
+            </div>
+            {stage !== "details" && (
+              <div
+                data-hcp-reveal={stage}
+                className={`absolute inset-0 flex flex-col items-center justify-center bg-blue-600 px-6 text-center text-white transition-opacity duration-500 motion-reduce:transition-none ${stage === "fade" ? "pointer-events-none opacity-0" : "opacity-100"}`}
+              >
+                <p className="text-sm font-bold uppercase tracking-widest">
+                  Din runda är analyserad
+                </p>
+                <p className="mt-5 text-lg">
+                  {stage === "counting"
+                    ? "Sammanställer ditt resultat…"
+                    : "Ditt estimerade chipp-HCP"}
+                </p>
+                <div
+                  className="my-8 flex h-28 items-center text-8xl font-black"
+                  role="status"
+                  aria-live="polite"
+                >
+                  {stage === "counting" ? (
+                    <span
+                      aria-label="Beräknar"
+                      className="relative block h-24 overflow-hidden tabular-nums"
+                    >
+                      <span aria-hidden="true" className="block chip-hcp-dial">
+                        36
+                        <br />
+                        24
+                        <br />
+                        18
+                        <br />
+                        12
+                        <br />8<br />4<br />0
+                      </span>
+                    </span>
+                  ) : hcp === null ? (
+                    "–"
+                  ) : (
+                    handicapLabel(hcp)
+                  )}
+                </div>
+                <button
+                  onClick={() => {
+                    setSkip(true);
+                    setStage("details");
+                  }}
+                  className="min-h-12 rounded-full border border-white/40 px-6 text-sm font-bold"
+                >
+                  {stage === "counting" ? "Visa analys direkt" : "Se slag för slag"}
+                </button>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="mx-auto flex h-full max-w-md flex-col justify-center p-6 text-center">
+            <Lock className="mx-auto h-10 w-10 text-blue-600" />
+            <h2 className="mt-4 text-2xl font-black">Lås upp din rundanalys</h2>
+            <p className="mt-2 text-slate-500">
+              Se ditt estimerade handicap och analysen för varje hål med SG4+.
+            </p>
+            <Link to="/premium" className="mt-5 rounded-2xl bg-blue-600 p-4 font-bold text-white">
+              Se SG4+
+            </Link>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
