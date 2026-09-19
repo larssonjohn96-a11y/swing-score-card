@@ -26,6 +26,7 @@ import { Route as ApproachPeiWedgeHistorikRouteImport } from './routes/approach-
 import { Route as BunkerRouteImport } from './routes/bunker'
 import { Route as BunkerTestRouteImport } from './routes/bunker-test'
 import { Route as BunkerTraningRouteImport } from './routes/bunker-traning'
+import { Route as BunkerrundanRouteImport } from './routes/bunkerrundan'
 import { Route as ChipRouteImport } from './routes/chip'
 import { Route as ChipprundanRouteImport } from './routes/chipprundan'
 import { Route as CoachRouteImport } from './routes/coach'
@@ -195,6 +196,11 @@ const BunkerTestRoute = BunkerTestRouteImport.update({
 const BunkerTraningRoute = BunkerTraningRouteImport.update({
   id: '/bunker-traning',
   path: '/bunker-traning',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BunkerrundanRoute = BunkerrundanRouteImport.update({
+  id: '/bunkerrundan',
+  path: '/bunkerrundan',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ChipRoute = ChipRouteImport.update({
@@ -640,6 +646,7 @@ export interface FileRoutesByFullPath {
   '/bunker': typeof BunkerRoute
   '/bunker-test': typeof BunkerTestRoute
   '/bunker-traning': typeof BunkerTraningRoute
+  '/bunkerrundan': typeof BunkerrundanRoute
   '/chip': typeof ChipRoute
   '/chipprundan': typeof ChipprundanRoute
   '/coach': typeof CoachRoute
@@ -743,6 +750,7 @@ export interface FileRoutesByTo {
   '/bunker': typeof BunkerRoute
   '/bunker-test': typeof BunkerTestRoute
   '/bunker-traning': typeof BunkerTraningRoute
+  '/bunkerrundan': typeof BunkerrundanRoute
   '/chip': typeof ChipRoute
   '/chipprundan': typeof ChipprundanRoute
   '/coach': typeof CoachRoute
@@ -847,6 +855,7 @@ export interface FileRoutesById {
   '/bunker': typeof BunkerRoute
   '/bunker-test': typeof BunkerTestRoute
   '/bunker-traning': typeof BunkerTraningRoute
+  '/bunkerrundan': typeof BunkerrundanRoute
   '/chip': typeof ChipRoute
   '/chipprundan': typeof ChipprundanRoute
   '/coach': typeof CoachRoute
@@ -952,6 +961,7 @@ export interface FileRouteTypes {
     | '/bunker'
     | '/bunker-test'
     | '/bunker-traning'
+    | '/bunkerrundan'
     | '/chip'
     | '/chipprundan'
     | '/coach'
@@ -1055,6 +1065,7 @@ export interface FileRouteTypes {
     | '/bunker'
     | '/bunker-test'
     | '/bunker-traning'
+    | '/bunkerrundan'
     | '/chip'
     | '/chipprundan'
     | '/coach'
@@ -1158,6 +1169,7 @@ export interface FileRouteTypes {
     | '/bunker'
     | '/bunker-test'
     | '/bunker-traning'
+    | '/bunkerrundan'
     | '/chip'
     | '/chipprundan'
     | '/coach'
@@ -1262,6 +1274,7 @@ export interface RootRouteChildren {
   BunkerRoute: typeof BunkerRoute
   BunkerTestRoute: typeof BunkerTestRoute
   BunkerTraningRoute: typeof BunkerTraningRoute
+  BunkerrundanRoute: typeof BunkerrundanRoute
   ChipRoute: typeof ChipRoute
   ChipprundanRoute: typeof ChipprundanRoute
   CoachRoute: typeof CoachRoute
@@ -1464,6 +1477,13 @@ declare module '@tanstack/react-router' {
       path: '/bunker-traning'
       fullPath: '/bunker-traning'
       preLoaderRoute: typeof BunkerTraningRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bunkerrundan': {
+      id: '/bunkerrundan'
+      path: '/bunkerrundan'
+      fullPath: '/bunkerrundan'
+      preLoaderRoute: typeof BunkerrundanRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/chip': {
@@ -2110,6 +2130,7 @@ const rootRouteChildren: RootRouteChildren = {
   BunkerRoute: BunkerRoute,
   BunkerTestRoute: BunkerTestRoute,
   BunkerTraningRoute: BunkerTraningRoute,
+  BunkerrundanRoute: BunkerrundanRoute,
   ChipRoute: ChipRoute,
   ChipprundanRoute: ChipprundanRoute,
   CoachRoute: CoachRoute,

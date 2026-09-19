@@ -1,3 +1,5 @@
+import { syncBunkerRounds } from './bunker-cloud';
+import { bunkerAverage, parseCourse as parseBunkerCourse, courseStorageKey as bunkerStorageKey } from './bunker-course';
 import { syncPuttRounds } from './putt-cloud';
 import { puttAverage, parseCourse as parsePuttCourse, courseStorageKey as puttStorageKey } from './putt-course';
 import { syncChipRounds } from "./chip-cloud";
@@ -67,7 +69,7 @@ export async function listFriendships(strict=false):Promise<{incoming:Friendship
 export async function pushPlayerSnapshot(expectedUserId?: string):Promise<boolean>{
   const{data:userData}=await supabase.auth.getUser();
   if(!userData.user || (expectedUserId && userData.user.id !== expectedUserId))return false;
-  try { await syncChipRounds(userData.user.id); await syncPuttRounds(userData.user.id); } catch { return false; }
+  try { await syncChipRounds(userData.user.id); await syncPuttRounds(userData.user.id); await syncBunkerRounds(userData.user.id); } catch { return false; }
   const {data:currentAuth}=await supabase.auth.getSession();
   if(currentAuth.session?.user.id!==userData.user.id)return false;
   const real=loadRealHandicap();
@@ -92,6 +94,13 @@ export async function pushPlayerSnapshot(expectedUserId?: string):Promise<boolea
     {key:'putt-round-stars',label:'Puttrundan · snittstjärnor',value:putt.stars,unit:'★',decimals:1,higherIsBetter:true},
     {key:'putt-round-count',label:'Puttrundan · rundor i snittet',value:putt.count,unit:'',decimals:0,higherIsBetter:true},
   ]:previousPutt));
+  const bunker=bunkerAverage(parseBunkerCourse(localStorage.getItem(bunkerStorageKey(userData.user.id))).history);
+  const previousBunker=parseComparisonProfile(previousChip?.comparison_profile).training.filter(m=>m.key.startsWith('bunker-round-'));
+  comparisonProfile.training.push(...(bunker.count?[
+    {key:'bunker-round-stars',label:'Bunkerrundan · snittstjärnor',value:bunker.stars,unit:'★',decimals:1,higherIsBetter:true},
+    {key:'bunker-round-points',label:'Bunkerrundan · snittpoäng',value:bunker.points,unit:'p',decimals:1,higherIsBetter:true},
+    {key:'bunker-round-count',label:'Bunkerrundan · rundor i snittet',value:bunker.count,unit:'',decimals:0,higherIsBetter:true},
+  ]:previousBunker));
   const {error} = await (supabase.from("player_snapshots") as any).upsert({
     user_id:userData.user.id,
     rating:card.rating,
