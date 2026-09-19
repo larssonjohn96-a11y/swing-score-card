@@ -41,8 +41,8 @@ export function ChipAnalysis({ round }: { round: CourseRound }) {
     setStage(reduced ? "result" : "counting");
     const timers = [
       setTimeout(() => setStage("result"), reduced ? 0 : 1600),
-      setTimeout(() => setStage("fade"), reduced ? 900 : 3200),
-      setTimeout(() => setStage("details"), reduced ? 900 : 3700),
+      setTimeout(() => setStage("fade"), reduced ? 900 : 3800),
+      setTimeout(() => setStage("details"), reduced ? 900 : 4450),
     ];
     return () => timers.forEach(clearTimeout);
   }, [open, round.id, canViewDetailedBreakdowns, skip]);
@@ -70,7 +70,7 @@ export function ChipAnalysis({ round }: { round: CourseRound }) {
           <ArrowRight className="h-4 w-4" />
         </button>
       </DialogTrigger>
-      <DialogContent className="!animate-none !fixed !inset-0 !left-0 !top-0 !h-[100dvh] !max-h-none !w-full !max-w-none !translate-x-0 !translate-y-0 !rounded-none !border-0 !p-0 !gap-0 overflow-hidden bg-white text-slate-950 [&>button]:z-30">
+      <DialogContent className="!animate-none !fixed !inset-0 !left-0 !top-0 !h-[100dvh] !max-h-none !w-full !max-w-none !translate-x-0 !translate-y-0 !rounded-none !border-0 !p-0 !gap-0 overflow-hidden !bg-transparent text-slate-950 [&>button]:z-30 [&>button]:bg-white [&>button]:p-2">
         <DialogTitle className="sr-only">Rundanalys</DialogTitle>
         <DialogDescription className="sr-only">
           Ditt estimerade chipp-handicap och slag för slag, grupperat per hål.
@@ -78,24 +78,24 @@ export function ChipAnalysis({ round }: { round: CourseRound }) {
         {canViewDetailedBreakdowns ? (
           <>
             <div
-              className="h-full overflow-y-auto p-5 pt-14"
+              className="flex h-full items-center justify-center px-3 py-6"
               hidden={stage === "counting" || stage === "result"}
             >
-              <div className="mx-auto max-w-md space-y-5">
+              <div className="max-h-[85dvh] w-full max-w-md space-y-4 overflow-y-auto rounded-[26px] border border-slate-200 bg-white p-5 shadow-xl">
                 <div>
-                  <h2 className="text-2xl font-black">Din rundanalys</h2>
-                  <p className="mt-1 text-blue-700">
-                    Estimerat chipp-HCP <strong>{hcp === null ? "–" : handicapLabel(hcp)}</strong>
+                  <h2 className="text-2xl font-black">Estimerat chipp-HCP</h2>
+                  <p className="mt-3 rounded-2xl bg-blue-50 p-4 text-center text-blue-700">
+                    <span className="block text-xs">Estimerad HCP-nivå</span><strong className="mt-1 block text-3xl">{hcp === null ? "–" : handicapLabel(hcp)}</strong>
                   </p>
                 </div>
-                <div className="grid grid-cols-2 gap-2" aria-label="Filtrera slag">
+                <div className="space-y-1.5" aria-label="Filtrera slag">
                   {review.counts.map(({ category, count }) => (
                     <button
                       key={category}
                       disabled={!count}
                       aria-pressed={filter === category}
                       onClick={() => select(filter === category ? null : category)}
-                      className={`flex min-h-12 items-center justify-between rounded-xl border px-3 text-sm font-bold disabled:opacity-35 ${filter === category ? "border-blue-600 bg-blue-600 text-white" : "border-blue-100 bg-blue-50 text-blue-900"}`}
+                      className={`flex min-h-11 w-full items-center justify-between rounded-xl px-3 text-sm font-bold disabled:opacity-35 ${category === "Exceptionellt" ? "bg-teal-50 text-teal-700" : category === "Utmärkt" ? "bg-blue-50 text-blue-700" : category === "Bra" ? "bg-emerald-50 text-emerald-700" : category === "Förväntat" ? "bg-slate-100 text-slate-600" : category === "Svagt" ? "bg-orange-50 text-orange-700" : "bg-rose-50 text-rose-700"} ${filter === category ? "ring-2 ring-blue-500" : ""}`}
                     >
                       <span>{category}</span>
                       <span>{count}</span>
@@ -157,7 +157,7 @@ export function ChipAnalysis({ round }: { round: CourseRound }) {
             {stage !== "details" && (
               <div
                 data-hcp-reveal={stage}
-                className={`absolute inset-0 flex flex-col items-center justify-center bg-blue-600 px-6 text-center text-white transition-opacity duration-500 motion-reduce:transition-none ${stage === "fade" ? "pointer-events-none opacity-0" : "opacity-100"}`}
+                className={`absolute inset-0 flex flex-col items-center justify-center bg-blue-600 px-6 text-center text-white transition-opacity duration-700 motion-reduce:transition-none ${stage === "fade" ? "pointer-events-none opacity-0" : "opacity-100"}`}
               >
                 <p className="text-sm font-bold uppercase tracking-widest">
                   Din runda är analyserad
@@ -168,16 +168,16 @@ export function ChipAnalysis({ round }: { round: CourseRound }) {
                     : "Ditt estimerade chipp-HCP"}
                 </p>
                 <div
-                  className="my-8 flex h-28 items-center text-8xl font-black"
+                  className="relative my-8 h-40 w-full max-w-sm"
                   role="status"
                   aria-live="polite"
                 >
-                  {stage === "counting" ? (
-                    <span
-                      aria-label="Beräknar"
-                      className="relative block h-24 overflow-hidden tabular-nums"
-                    >
-                      <span aria-hidden="true" className="block chip-hcp-dial">
+                  <div
+                    aria-hidden="true"
+                    className={`absolute inset-0 flex items-center justify-center overflow-hidden text-8xl font-black transition-all duration-700 motion-reduce:transition-none ${stage === "counting" ? "opacity-100" : "opacity-0 blur-sm"}`}
+                  >
+                    <span className="block h-24 overflow-hidden">
+                      <span className="block chip-hcp-dial">
                         36
                         <br />
                         24
@@ -188,11 +188,18 @@ export function ChipAnalysis({ round }: { round: CourseRound }) {
                         <br />8<br />4<br />0
                       </span>
                     </span>
-                  ) : hcp === null ? (
-                    "–"
-                  ) : (
-                    handicapLabel(hcp)
-                  )}
+                  </div>
+                  <div
+                    className={`absolute inset-0 flex items-center justify-center text-[clamp(88px,27vw,132px)] font-black leading-none tabular-nums transition-all duration-1000 ease-out motion-reduce:transition-none ${stage === "counting" ? "scale-95 opacity-0 blur-sm" : "scale-100 opacity-100 blur-0"}`}
+                  >
+                    {stage === "counting" ? (
+                      <span className="sr-only">Beräknar</span>
+                    ) : hcp === null ? (
+                      "–"
+                    ) : (
+                      handicapLabel(hcp)
+                    )}
+                  </div>
                 </div>
                 <button
                   onClick={() => {

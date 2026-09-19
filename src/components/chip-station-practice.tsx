@@ -292,6 +292,12 @@ export function ChipStationPractice({
   const [historyOpen, setHistoryOpen] = useState(false);
   const [reviewId, setReviewId] = useState<string | null>(null);
   const [freshRound, setFreshRound] = useState<string | null>(null);
+  const [holedShot, setHoledShot] = useState<number | null>(null);
+  useEffect(() => {
+    if (holedShot === null) return;
+    const timer = setTimeout(() => setHoledShot(null), 2700);
+    return () => clearTimeout(timer);
+  }, [holedShot]);
   const [rules, setRules] = useState(false);
   const [exitDialog, setExitDialog] = useState(false);
   const [confirmation, setConfirmation] = useState<{ ball: number; points: number } | null>(null);
@@ -386,11 +392,17 @@ export function ChipStationPractice({
     } else onExit();
   }
   function score(points: ChipPoints) {
-    if (Date.now() < tapUntil.current || stateRef.current.active?.phase !== "play") return;
+    if (
+      Date.now() < tapUntil.current ||
+      holedShot !== null ||
+      stateRef.current.active?.phase !== "play"
+    )
+      return;
     tapUntil.current = Date.now() + 550;
     const ball = stateRef.current.active.holes.at(-1)!.length + 1;
     commit({ type: "score", points });
     setConfirmation({ ball, points });
+    if (points === 4) setHoledShot(Date.now());
     if (confirmationTimer.current) clearTimeout(confirmationTimer.current);
     confirmationTimer.current = setTimeout(() => setConfirmation(null), 1300);
   }
@@ -424,8 +436,21 @@ export function ChipStationPractice({
       style={{ ...surface, colorScheme: "light" }}
       className={`chip-course mx-auto w-full max-w-md bg-slate-50 px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-[max(8px,env(safe-area-inset-top))] text-slate-950 ${active || round ? "chip-compact fixed inset-0 z-40 overflow-y-auto" : "min-h-screen"}`}
     >
-      <style>{`@keyframes chipConfetti{to{transform:translateY(110dvh) rotate(540deg);opacity:0}}.chip-confetti{animation:chipConfetti 2.6s ease-in forwards}@keyframes chipEmptyWiggle{0%,100%{transform:rotate(0)}35%{transform:rotate(-9deg)}70%{transform:rotate(9deg)}}.chip-empty-wiggle{animation:chipEmptyWiggle .5s ease-in-out}.chip-compact [role="status"]{height:36px}.chip-compact section>div.mt-1{padding:12px}.chip-compact section>div.mt-1 .mt-4{margin-top:8px}@keyframes chipStarPop{0%{transform:scale(.65);opacity:.5}60%{transform:scale(1.3);filter:drop-shadow(0 0 7px #fbbf24)}100%{transform:scale(1);opacity:1}}@keyframes chipCheck{0%{transform:translateY(8px);opacity:0}100%{transform:translateY(0);opacity:1}}body:has(.chip-compact){overflow:hidden}.sg4-route-transition:has(.chip-compact){animation:none;transform:none;will-change:auto;min-height:0}.chip-compact [aria-label="Golfbanan: första tre, Halfway House, sista tre"]{height:clamp(190px,29dvh,250px);margin:12px 0}.chip-compact header button{min-height:40px;height:40px}.chip-compact [role="status"]{min-height:36px;margin-bottom:0}.chip-compact section>div.text-center{padding:16px}.chip-compact h2.my-3{margin:8px 0;font-size:48px}.chip-compact section>div.text-center p.mt-2{margin-top:4px}.chip-star-pop{animation:chipStarPop .55s ease-out}.chip-check{animation:chipCheck .2s ease-out}@media(prefers-reduced-motion:reduce){.chip-star-pop,.chip-check,.chip-confetti,.chip-empty-wiggle{animation:none}.chip-confetti{display:none}}`}</style>
+      <style>{`@keyframes chipHoled{0%{opacity:0}15%,80%{opacity:1}100%{opacity:0}}.chip-holed{animation:chipHoled 2.7s ease-in-out both}@media(prefers-reduced-motion:reduce){.chip-holed{animation:none}}@keyframes chipConfetti{to{transform:translateY(110dvh) rotate(540deg);opacity:0}}.chip-confetti{animation:chipConfetti 2.6s ease-in forwards}@keyframes chipEmptyWiggle{0%,100%{transform:rotate(0)}35%{transform:rotate(-9deg)}70%{transform:rotate(9deg)}}.chip-empty-wiggle{animation:chipEmptyWiggle .5s ease-in-out}.chip-compact [role="status"]{height:36px}.chip-compact section>div.mt-1{padding:12px}.chip-compact section>div.mt-1 .mt-4{margin-top:8px}@keyframes chipStarPop{0%{transform:scale(.65);opacity:.5}60%{transform:scale(1.3);filter:drop-shadow(0 0 7px #fbbf24)}100%{transform:scale(1);opacity:1}}@keyframes chipCheck{0%{transform:translateY(8px);opacity:0}100%{transform:translateY(0);opacity:1}}body:has(.chip-compact){overflow:hidden}.sg4-route-transition:has(.chip-compact){animation:none;transform:none;will-change:auto;min-height:0}.chip-compact [aria-label="Golfbanan: första tre, Halfway House, sista tre"]{height:clamp(190px,29dvh,250px);margin:12px 0}.chip-compact header button{min-height:40px;height:40px}.chip-compact [role="status"]{min-height:36px;margin-bottom:0}.chip-compact section>div.text-center{padding:16px}.chip-compact h2.my-3{margin:8px 0;font-size:48px}.chip-compact section>div.text-center p.mt-2{margin-top:4px}.chip-star-pop{animation:chipStarPop .55s ease-out}.chip-check{animation:chipCheck .2s ease-out}@media(prefers-reduced-motion:reduce){.chip-star-pop,.chip-check,.chip-confetti,.chip-empty-wiggle{animation:none}.chip-confetti{display:none}}`}</style>
       {personalBest && freshRound === round?.id && <Confetti />}
+      {holedShot !== null && (
+        <div
+          data-holed-celebration
+          className="chip-holed pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-blue-600/90 text-white"
+        >
+          <Confetti />
+          <div className="relative text-center">
+            <Flag className="mx-auto h-14 w-14 fill-yellow-400 text-yellow-400" />
+            <p className="mt-4 text-6xl font-black">Sänkt!</p>
+            <p className="mt-3 text-2xl font-bold">+4 poäng</p>
+          </div>
+        </div>
+      )}
       {!round && !active && (
         <header className="mb-2 flex min-h-12 items-center justify-between gap-3">
           <button
@@ -439,7 +464,16 @@ export function ChipStationPractice({
           <h1 className="text-xl font-black">
             {historyOpen && !round ? "Dina rundor" : "Chipprundan"}
           </h1>
-          <span className="w-12" aria-hidden="true" />
+          {atHome ? (
+            <button
+              onClick={() => setRules(true)}
+              className="min-h-11 max-w-24 text-right text-sm font-bold leading-tight text-blue-700"
+            >
+              Så här spelar du
+            </button>
+          ) : (
+            <span className="w-12" aria-hidden="true" />
+          )}
         </header>
       )}
       {!ready ? (
@@ -488,12 +522,6 @@ export function ChipStationPractice({
                   Tidigare rundor <span className="ml-auto text-slate-400">{history.length}</span>
                 </button>
               </section>
-              <button
-                onClick={() => setRules(true)}
-                className="mt-3 min-h-11 w-full text-sm font-bold text-slate-500"
-              >
-                Så spelar du
-              </button>
               <p className="mt-3 text-center text-xs text-slate-400">
                 Rundor och rekord sparas på den här enheten.
               </p>
@@ -545,14 +573,11 @@ export function ChipStationPractice({
                   {confirmation && (
                     <div
                       key={`${index}-${confirmation.ball}`}
-                      className="chip-check flex items-center gap-2 rounded-full bg-emerald-100 px-4 py-2 text-sm font-bold text-emerald-800"
+                      className={`chip-check flex items-center gap-1 rounded-full px-3 py-2 text-sm font-bold ${confirmation.points === 0 ? "bg-slate-200 text-slate-600" : "bg-emerald-100 text-emerald-800"}`}
                     >
-                      <Check className="h-5 w-5" />
-                      {CHIP_ZONES.find((z) => z.points === confirmation.points)?.label} · +
+                      {confirmation.points > 0 ? "Snyggt! " : ""}
+                      {CHIP_ZONES.find((z) => z.points === confirmation.points)?.label}, +
                       {confirmation.points} poäng
-                      {confirmation.ball < 3
-                        ? ` → Boll ${confirmation.ball + 1}`
-                        : " · Hålet klart"}
                     </div>
                   )}
                 </div>
@@ -629,21 +654,29 @@ export function ChipStationPractice({
                         Hur långt ifrån hålet?
                       </h3>
                       <div
-                        className="relative grid grid-cols-2 gap-2"
+                        className="relative grid grid-cols-5 gap-1.5 py-2"
                         aria-label="Avstånd från hålet"
                       >
+                        <div
+                          aria-hidden="true"
+                          className="absolute left-[8%] right-[8%] top-11 h-1 rounded-full bg-blue-300"
+                        />
                         {CHIP_ZONES.map((z) => (
                           <button
                             key={z.points}
                             aria-label={z.label}
                             onClick={() => score(z.points)}
-                            disabled={active.phase === "result"}
-                            className={`flex min-h-14 items-center justify-center gap-2 rounded-2xl border-2 px-3 text-base font-black active:scale-[.98] disabled:opacity-45 ${z.points === 4 ? "col-span-2 border-blue-600 bg-blue-600 text-white" : "border-blue-200 bg-blue-50 text-blue-900"}`}
+                            disabled={active.phase === "result" || holedShot !== null}
+                            className="relative flex min-h-28 flex-col items-center justify-start gap-3 rounded-2xl border-2 border-blue-200 bg-blue-50/70 px-1 py-3 text-sm font-black text-blue-900 active:bg-blue-200 disabled:opacity-45"
                           >
-                            {z.points === 4 && (
-                              <Flag className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                            )}
-                            {z.label}
+                            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-blue-500 bg-white">
+                              {z.points === 4 ? (
+                                <Flag className="h-5 w-5 fill-yellow-400 text-yellow-500" />
+                              ) : (
+                                <span className="h-2.5 w-2.5 rounded-full bg-blue-600" />
+                              )}
+                            </span>
+                            <span className="leading-tight">{z.label}</span>
                           </button>
                         ))}
                       </div>
@@ -651,7 +684,7 @@ export function ChipStationPractice({
                         <button
                           onClick={next}
                           className={`${primary} mt-3`}
-                          disabled={!!confirmation}
+                          disabled={!!confirmation || holedShot !== null}
                         >
                           {index === 2
                             ? "Till Halfway House"
@@ -667,7 +700,7 @@ export function ChipStationPractice({
                           commit({ type: "undo" });
                           setConfirmation(null);
                         }}
-                        disabled={!shots.length}
+                        disabled={!shots.length || holedShot !== null}
                         className="mt-1 flex min-h-11 items-center gap-2 text-sm font-bold text-slate-500 disabled:opacity-30"
                       >
                         <Undo2 className="h-4 w-4" />
@@ -868,14 +901,30 @@ export function ChipStationPractice({
       </Dialog>
       <Dialog open={rules} onOpenChange={setRules}>
         <DialogContent className="max-h-[85dvh] w-[calc(100%_-_2rem)] max-w-md overflow-y-auto rounded-3xl bg-white text-slate-950">
-          <DialogTitle>Så spelar du</DialogTitle>
-          <DialogDescription>
-            Slå 3 bollar från avståndet på skärmen. Tryck sedan hur nära hålet varje boll stannade.
-          </DialogDescription>
-          <p className="text-sm">
-            Närmare hålet = fler poäng. 3 poäng fyller en stjärna. Max 3 stjärnor per hål.
+          <DialogTitle className="text-2xl font-black">Så här spelar du</DialogTitle>
+          <DialogDescription className="sr-only">Tre enkla steg för chipprundan.</DialogDescription>
+          <ol className="space-y-4 text-lg leading-snug">
+            <li>
+              <strong>1. Gå till avståndet.</strong>
+              <br />
+              Mät från flaggan.
+            </li>
+            <li>
+              <strong>2. Slå tre bollar.</strong>
+              <br />
+              Från samma plats.
+            </li>
+            <li>
+              <strong>3. Tryck på avståndet kvar.</strong>
+              <br />
+              En gång för varje boll.
+            </li>
+          </ol>
+          <p className="rounded-2xl bg-blue-50 p-4 text-base font-bold text-blue-800">
+            Närmare hålet = fler poäng.
+            <br />3 poäng = 1 stjärna.
           </p>
-          <p className="text-sm">Efter 3 hål: avsluta eller spela 3 till.</p>
+          <p className="text-base text-slate-500">Efter 3 hål: avsluta eller spela 3 till.</p>
         </DialogContent>
       </Dialog>
     </main>

@@ -18,6 +18,13 @@ export function ChipProgress({ history }: { history: CourseRound[] }) {
         276 *
           (span ? (rounds[i].finishedAt - rounds[0].finishedAt) / span : i / (rounds.length - 1));
   const y = (value: number) => 124 - value * 36;
+  const curve = values
+    .map((v, i) => {
+      if (!i) return `M ${x(i)} ${y(v)}`;
+      const middle = (x(i - 1) + x(i)) / 2;
+      return `C ${middle} ${y(values[i - 1])}, ${middle} ${y(v)}, ${x(i)} ${y(v)}`;
+    })
+    .join(" ");
   const chart = (interactive: boolean) => (
     <svg
       viewBox="0 0 320 148"
@@ -33,12 +40,13 @@ export function ChipProgress({ history }: { history: CourseRound[] }) {
           </text>
         </g>
       ))}
-      <polyline
-        points={values.map((v, i) => `${x(i)},${y(v)}`).join(" ")}
+      <path
+        d={curve}
         fill="none"
         stroke="#2563eb"
         strokeWidth="3"
         strokeLinejoin="round"
+        strokeLinecap="round"
       />
       {values.map((v, i) => (
         <g key={rounds[i].id}>
@@ -70,9 +78,9 @@ export function ChipProgress({ history }: { history: CourseRound[] }) {
       <DialogTrigger asChild>
         <button className="mt-4 w-full rounded-2xl border border-blue-100 bg-white p-4 text-left">
           <span className="flex items-center justify-between font-bold">
-            <span>Din utveckling</span>
+            <span>Resultat över tid</span>
             <span className="text-sm text-blue-700">
-              {values.length ? `${format(values.at(-1)!)} ★` : "Se progress"}
+              {values.length ? `${format(values.at(-1)!)} ★` : "Visa resultat"}
             </span>
           </span>
           {values.length ? (
@@ -87,7 +95,7 @@ export function ChipProgress({ history }: { history: CourseRound[] }) {
       </DialogTrigger>
       <DialogContent className="!animate-none !fixed !inset-0 !left-0 !top-0 !h-[100dvh] !max-h-none !w-full !max-w-none !translate-x-0 !translate-y-0 !rounded-none overflow-y-auto bg-white p-6 pt-14 text-slate-950">
         <div className="mx-auto w-full max-w-md">
-          <DialogTitle className="text-2xl font-black">Din utveckling</DialogTitle>
+          <DialogTitle className="text-2xl font-black">Resultat över tid</DialogTitle>
           <DialogDescription className="mt-2">
             Snittstjärnor per sexhålsrunda. Högre är bättre.
           </DialogDescription>
