@@ -13,6 +13,9 @@ import { CHIP_ZONES } from "@/lib/chip-stations";
 import { useChipScreenColor } from "@/lib/use-chip-screen-color";
 import { handicapLabel } from "@/lib/shortgame";
 
+const chipCategory = (category: ActivityCategory): ActivityCategory =>
+  category === "Stort tapp" ? "Svagt" : category;
+
 export function ChipAnalysis({ round }: { round: CourseRound }) {
   const { canViewDetailedBreakdowns } = useSubscription();
   const [open, setOpen] = useState(false);
@@ -32,7 +35,7 @@ export function ChipAnalysis({ round }: { round: CourseRound }) {
         context: `${courseDistances(round.model)[i]} m`,
         result: CHIP_ZONES.find((z) => z.points === points)!.label,
         rank: 4 - points,
-        category: ACTIVITY_CATEGORIES[4 - points],
+        category: chipCategory(ACTIVITY_CATEGORIES[4 - points]),
       })),
     ),
   });
@@ -94,18 +97,27 @@ export function ChipAnalysis({ round }: { round: CourseRound }) {
                   </p>
                 </div>
                 <div className="space-y-1.5" aria-label="Filtrera slag">
-                  {review.counts.map(({ category, count }) => (
-                    <button
-                      key={category}
-                      disabled={!count}
-                      aria-pressed={filter === category}
-                      onClick={() => select(filter === category ? null : category)}
-                      className={`flex min-h-11 w-full items-center justify-between rounded-xl px-3 text-sm font-bold disabled:opacity-35 ${category === "Exceptionellt" ? "bg-teal-50 text-teal-700" : category === "Utmärkt" ? "bg-blue-50 text-blue-700" : category === "Bra" ? "bg-emerald-50 text-emerald-700" : category === "Förväntat" ? "bg-slate-100 text-slate-600" : category === "Svagt" ? "bg-orange-50 text-orange-700" : "bg-rose-50 text-rose-700"} ${filter === category ? "ring-2 ring-blue-500" : ""}`}
-                    >
-                      <span>{category}</span>
-                      <span>{count}</span>
-                    </button>
-                  ))}
+                  {review.counts
+                    .filter(({ category }) => category !== "Stort tapp")
+                    .map(({ category, count: baseCount }) => {
+                      const count =
+                        baseCount +
+                        (category === "Svagt"
+                          ? review.counts.find((row) => row.category === "Stort tapp")!.count
+                          : 0);
+                      return (
+                        <button
+                          key={category}
+                          disabled={!count}
+                          aria-pressed={filter === category}
+                          onClick={() => select(filter === category ? null : category)}
+                          className={`flex min-h-11 w-full items-center justify-between rounded-xl px-3 text-sm font-bold disabled:opacity-35 ${category === "Exceptionellt" ? "bg-teal-50 text-teal-700" : category === "Utmärkt" ? "bg-blue-50 text-blue-700" : category === "Bra" ? "bg-emerald-50 text-emerald-700" : category === "Förväntat" ? "bg-slate-100 text-slate-600" : category === "Svagt" ? "bg-orange-50 text-orange-700" : "bg-rose-50 text-rose-700"} ${filter === category ? "ring-2 ring-blue-500" : ""}`}
+                        >
+                          <span>{category}</span>
+                          <span>{count}</span>
+                        </button>
+                      );
+                    })}
                 </div>
                 <div ref={groups} className="scroll-mt-5 space-y-3">
                   <div className="flex items-center justify-between">
@@ -124,7 +136,7 @@ export function ChipAnalysis({ round }: { round: CourseRound }) {
                       .map((points, j) => ({
                         points,
                         j,
-                        category: ACTIVITY_CATEGORIES[4 - points],
+                        category: chipCategory(ACTIVITY_CATEGORIES[4 - points]),
                       }))
                       .filter((row) => !filter || row.category === filter);
                     return selected.length ? (
