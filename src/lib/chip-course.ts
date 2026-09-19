@@ -174,7 +174,7 @@ export function reduceCourse(state: CourseState, action: CourseAction): CourseSt
   }
   if (action.type === "next") {
     if (active.phase !== "result") return state;
-    if (index === 5) return { ...state, active: { ...active, phase: "bonus" } };
+    if (index === 5) return finishRound(state, action.at);
     if (index === 2) return { ...state, active: { ...active, phase: "halfway" } };
     return { ...state, active: { ...active, holes: [...active.holes, []], phase: "play" } };
   }
@@ -184,7 +184,7 @@ export function reduceCourse(state: CourseState, action: CourseAction): CourseSt
   }
   if (action.type === "finish") {
     if (!active.holes.some((h) => h.length === 3)) return { ...state, active: null };
-    return { ...state, active: { ...active, phase: "bonus" } };
+    return finishRound(state, action.at);
   }
   if (action.type === "save") {
     if (active.phase !== "bonus" || (action.bonus !== undefined && !validBonus(action.bonus)))
@@ -266,14 +266,11 @@ export function parseCourse(raw: string | null): CourseState {
         lie: a.lie,
         startedAt: a.startedAt as number,
         holes: a.holes,
-        phase:
-          a.phase === "bonus" && a.holes.some((h) => h.length === 3)
-            ? "bonus"
-            : complete
-              ? a.phase === "halfway" && a.holes.length === 3
-                ? "halfway"
-                : "result"
-              : "play",
+        phase: complete
+          ? a.phase === "halfway" && a.holes.length === 3
+            ? "halfway"
+            : "result"
+          : "play",
       };
       state.lie = a.lie;
     }

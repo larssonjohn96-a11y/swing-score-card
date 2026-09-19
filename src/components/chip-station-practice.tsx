@@ -36,7 +36,6 @@ import {
   roundStars,
   segmentScore,
   type CourseAction,
-  type CourseRound,
   type Segment,
 } from "@/lib/chip-course";
 
@@ -200,32 +199,6 @@ function CourseMap({
     </div>
   );
 }
-function Scorecard({ round }: { round: CourseRound }) {
-  return (
-    <div className={`${card} overflow-hidden`}>
-      <div className="grid grid-cols-[1fr_1fr_1fr] gap-2 border-b border-slate-100 px-4 py-3 text-sm font-bold text-slate-500">
-        <span>Hål</span>
-        <span>Poäng</span>
-        <span>Stjärnor</span>
-      </div>
-      {round.holes.map((shots, i) =>
-        shots.length === 3 ? (
-          <div
-            key={i}
-            className="grid min-h-12 grid-cols-[1fr_1fr_1fr] items-center gap-2 border-b border-slate-100 px-4 py-2 last:border-0"
-          >
-            <span className="text-sm font-bold">
-              {i + 1} · {courseDistances(round.model)[i]} m
-            </span>
-            <strong>{holePoints(shots)}/12</strong>
-            <Stars count={holeStars(shots, i, round.lie, round.model)} />
-          </div>
-        ) : null,
-      )}
-    </div>
-  );
-}
-
 export function ChipStationPractice({ userId, authLoading = false, surface, onExit }: Props) {
   const [state, setState] = useState(emptyCourse);
   const stateRef = useRef(state);
@@ -238,8 +211,6 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
   const [exitDialog, setExitDialog] = useState(false);
   const [avatar, setAvatar] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState<{ ball: number; points: number } | null>(null);
-  const [bonusStarted, setBonusStarted] = useState(false);
-  const [bonusLeave, setBonusLeave] = useState("");
   const confirmationTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(
     () => () => {
@@ -263,12 +234,10 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
     }
     stateRef.current = next;
     setState(next);
-    setRegistering(next.active?.phase === "play" && !!next.active.holes.at(-1)?.length);
+    setRegistering(!!next.active?.holes.at(-1)?.length);
     setReviewId(null);
     setHistoryOpen(false);
     setConfirmation(null);
-    setBonusStarted(false);
-    setBonusLeave("");
     setReady(true);
   }, [key, authLoading]);
   useEffect(() => {
@@ -320,8 +289,6 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
   const atHome = !active && !round && !historyOpen;
   function start() {
     tapUntil.current = 0;
-    setBonusStarted(false);
-    setBonusLeave("");
     commit({ type: "start", id: uid(), at: Date.now() });
     setReviewId(null);
     setHistoryOpen(false);
@@ -338,7 +305,7 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
   }
   function finish() {
     commit({
-      type: stateRef.current.active?.phase === "bonus" ? "save" : "finish",
+      type: "finish",
       at: Date.now(),
     });
     setExitDialog(false);
@@ -364,14 +331,6 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
     if (confirmationTimer.current) clearTimeout(confirmationTimer.current);
     confirmationTimer.current = setTimeout(() => setConfirmation(null), 1300);
   }
-  function saveBonus(holed = false) {
-    const leave = holed ? 0 : Number(bonusLeave.replace(",", "."));
-    if (!holed && (!bonusLeave.trim() || !Number.isFinite(leave) || leave <= 0)) return;
-    commit({ type: "save", at: Date.now(), bonus: { leave, holed } });
-    setBonusLeave("");
-    setBonusStarted(false);
-    window.scrollTo({ top: 0, behavior: "instant" });
-  }
   const history = state.history
     .filter((r) => r.lie === state.lie)
     .slice()
@@ -381,7 +340,6 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
     best: courseRecord(state.history, state.lie, segment),
   }));
   const targets = holeTargets(index, lie, active?.model);
-  const earned = holeStars(shots, index, lie, active?.model);
   const front = active ? segmentScore(active, "front") : null;
   const oldFront = courseRecord(state.history, lie, "front", active?.model);
   const roundPosition = round ? state.history.findIndex((r) => r.id === round.id) : -1;
@@ -402,25 +360,30 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
     <main
       data-chip-course="v2"
       style={{ ...surface, colorScheme: "light" }}
-      className="mx-auto min-h-screen w-full max-w-md bg-slate-50 px-5 pb-[max(24px,env(safe-area-inset-bottom))] pt-[max(16px,env(safe-area-inset-top))] text-slate-950"
+      className={`chip-course mx-auto w-full max-w-md bg-slate-50 px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-[max(8px,env(safe-area-inset-top))] text-slate-950 ${active || round ? "chip-compact fixed inset-0 z-40 overflow-y-auto" : "min-h-screen"}`}
     >
-      <style>{`@keyframes chipStarPop{0%{transform:scale(.65);opacity:.5}60%{transform:scale(1.3);filter:drop-shadow(0 0 7px #fbbf24)}100%{transform:scale(1);opacity:1}}@keyframes chipCheck{0%{transform:translateY(8px);opacity:0}100%{transform:translateY(0);opacity:1}}.chip-star-pop{animation:chipStarPop .55s ease-out}.chip-check{animation:chipCheck .2s ease-out}@media(prefers-reduced-motion:reduce){.chip-star-pop,.chip-check{animation:none}}`}</style>
-      <header className="mb-4 flex min-h-14 items-center justify-between gap-3">
-        <button
-          onClick={back}
-          aria-label="Tillbaka"
-          data-local-navigation
-          className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <h1 className="text-xl font-black">
-          {historyOpen && !round ? "Dina rundor" : "Chipprundan"}
-        </h1>
-        <button onClick={() => setRules(true)} className="min-h-12 text-sm font-bold text-blue-700">
-          Regler
-        </button>
-      </header>
+      <style>{`@keyframes chipStarPop{0%{transform:scale(.65);opacity:.5}60%{transform:scale(1.3);filter:drop-shadow(0 0 7px #fbbf24)}100%{transform:scale(1);opacity:1}}@keyframes chipCheck{0%{transform:translateY(8px);opacity:0}100%{transform:translateY(0);opacity:1}}body:has(.chip-compact){overflow:hidden}.sg4-route-transition:has(.chip-compact){animation:none;transform:none;will-change:auto;min-height:0}.chip-compact [aria-label="Golfbanan: första tre, Halfway House, sista tre"]{height:clamp(190px,29dvh,250px);margin:12px 0}.chip-compact header button{min-height:40px;height:40px}.chip-compact [role="status"]{min-height:36px;margin-bottom:0}.chip-compact section>div.text-center{padding:16px}.chip-compact h2.my-3{margin:8px 0;font-size:48px}.chip-compact section>div.text-center p.mt-2{margin-top:4px}.chip-star-pop{animation:chipStarPop .55s ease-out}.chip-check{animation:chipCheck .2s ease-out}@media(prefers-reduced-motion:reduce){.chip-star-pop,.chip-check{animation:none}}`}</style>
+      {!round && (
+        <header className="mb-2 flex min-h-12 items-center justify-between gap-3">
+          <button
+            onClick={back}
+            aria-label="Tillbaka"
+            data-local-navigation
+            className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <h1 className="text-xl font-black">
+            {historyOpen && !round ? "Dina rundor" : "Chipprundan"}
+          </h1>
+          <button
+            onClick={() => setRules(true)}
+            className="min-h-12 text-sm font-bold text-blue-700"
+          >
+            Regler
+          </button>
+        </header>
+      )}
       {!ready ? (
         <p role="status" className="py-10 text-center">
           Laddar din runda…
@@ -466,19 +429,13 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
           {atHome && (
             <>
               <section className={`${card} p-5`}>
-                <h2 className="text-xl font-black">Dags för en runda?</h2>
-                <p className="mb-4 mt-1 text-sm text-slate-500">
-                  3 bollar per hål · paus efter första tre
-                </p>
+                <h2 className="mb-4 text-xl font-black">Dags för en chippingrunda?</h2>
                 <button className={primary} onClick={start}>
                   Starta rundan <ArrowRight className="h-5 w-5" />
                 </button>
-                <p className="mt-3 text-center text-sm text-slate-500">
-                  Börja på 8 m · {lieName(lie)}
-                </p>
+                <CourseMap holes={[]} lie={lie} cursor={0} avatar={avatar} />
               </section>
-              <CourseMap holes={[]} lie={lie} cursor={0} avatar={avatar} />
-              <section>
+              <section className="mt-4">
                 <h2 className="mb-3 flex items-center gap-2 text-lg font-black">
                   <Trophy className="h-5 w-5 text-amber-500" />
                   Dina rekord
@@ -521,21 +478,14 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
                 <span>
                   {active.phase === "halfway"
                     ? "FÖRSTA TRE KLARA"
-                    : active.phase === "bonus"
-                      ? "BONUSHÅLET · 11 M"
-                      : `HÅL ${index + 1} AV 6 · ${lieName(lie)}`}
+                    : `HÅL ${index + 1} AV 6 · ${lieName(lie)}`}
                 </span>
                 <span className="flex items-center gap-1 text-amber-700">
                   <Star className="h-4 w-4 fill-amber-400" />
-                  {stars}/
-                  {active.phase === "halfway"
-                    ? 9
-                    : active.phase === "bonus"
-                      ? active.holes.filter((h) => h.length === 3).length * 3
-                      : 18}
+                  {stars}/{active.phase === "halfway" ? 9 : 18}
                 </span>
               </div>
-              {!registering && active.phase !== "bonus" && (
+              {!registering && active.phase !== "halfway" && (
                 <CourseMap
                   model={active.model}
                   holes={active.holes}
@@ -560,80 +510,7 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
                   </div>
                 )}
               </div>
-              {active.phase === "bonus" && (
-                <section className="mt-3">
-                  <div className="rounded-3xl border border-emerald-200 bg-gradient-to-b from-emerald-100 to-white p-6 text-center">
-                    <Flag className="mx-auto h-10 w-10 fill-emerald-600/20 text-emerald-700" />
-                    <p className="mt-4 text-sm font-bold tracking-wider text-emerald-700">
-                      EN BOLL. EN CHANS.
-                    </p>
-                    <h2 className="mt-2 text-3xl font-black">Bonuschippen</h2>
-                    <p className="my-4 text-6xl font-black text-emerald-800">
-                      11<span className="ml-2 text-2xl">m</span>
-                    </p>
-                    <p className="text-base text-slate-600">Hur nära flaggan kommer du?</p>
-                    <p className="mt-2 text-sm text-slate-500">
-                      {lieName(lie)} · ditt bonusresultat sparas separat
-                    </p>
-                  </div>
-                  {!bonusStarted ? (
-                    <>
-                      <button className={`${primary} mt-5`} onClick={() => setBonusStarted(true)}>
-                        Spela bonushålet <ArrowRight className="h-5 w-5" />
-                      </button>
-                      <button
-                        className="mt-2 min-h-12 w-full text-sm font-bold text-slate-500"
-                        onClick={() => commit({ type: "save", at: Date.now() })}
-                      >
-                        Spara rundan utan bonus
-                      </button>
-                    </>
-                  ) : (
-                    <div className={`${card} mt-4 p-5`}>
-                      <p className="mb-4 text-base font-bold">
-                        Slå en chipp från 11 m. Mät sedan till hålet.
-                      </p>
-                      <button className={primary} onClick={() => saveBonus(true)}>
-                        Sänkt! <Flag className="h-5 w-5" />
-                      </button>
-                      <label htmlFor="bonus-leave" className="mb-2 mt-5 block text-sm font-bold">
-                        Avstånd kvar till hålet (meter)
-                      </label>
-                      <input
-                        id="bonus-leave"
-                        value={bonusLeave}
-                        onChange={(e) => setBonusLeave(e.target.value)}
-                        inputMode="decimal"
-                        placeholder="T.ex. 0,8"
-                        className="min-h-14 w-full rounded-xl border border-slate-300 bg-white px-4 text-xl font-bold"
-                      />
-                      <div className="my-3 flex gap-2">
-                        {[0.5, 1, 2, 3].map((n) => (
-                          <button
-                            key={n}
-                            onClick={() => setBonusLeave(String(n))}
-                            className="min-h-11 flex-1 rounded-xl bg-emerald-50 text-sm font-bold text-emerald-800"
-                          >
-                            {String(n).replace(".", ",")} m
-                          </button>
-                        ))}
-                      </div>
-                      <button
-                        className={secondary}
-                        disabled={
-                          !bonusLeave.trim() ||
-                          !Number.isFinite(Number(bonusLeave.replace(",", "."))) ||
-                          Number(bonusLeave.replace(",", ".")) <= 0
-                        }
-                        onClick={() => saveBonus()}
-                      >
-                        Spara bonus och runda <Check className="h-5 w-5" />
-                      </button>
-                    </div>
-                  )}
-                </section>
-              )}
-              {active.phase === "play" && (
+              {(active.phase === "play" || active.phase === "result") && (
                 <section>
                   {!registering ? (
                     <>
@@ -649,16 +526,6 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
                         <p className="mt-2 text-sm text-slate-500">
                           Slå alla tre. Registrera sedan vid hålet.
                         </p>
-                        <div className="mt-4 flex justify-center gap-5">
-                          {targets.map((p, i) => (
-                            <div key={p} className="text-center">
-                              <p className="text-sm font-bold text-amber-600">
-                                {"★".repeat(i + 1)}
-                              </p>
-                              <p className="text-sm text-slate-500">{p} p</p>
-                            </div>
-                          ))}
-                        </div>
                       </div>
                       <button className={`${primary} mt-4`} onClick={() => setRegistering(true)}>
                         Registrera resultat <ChevronRight className="h-5 w-5" />
@@ -666,7 +533,7 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
                     </>
                   ) : (
                     <>
-                      <div className={`${card} mt-5 p-5`}>
+                      <div className={`${card} mt-1 p-4`}>
                         <div className="flex items-center justify-between">
                           <h2 className="text-3xl font-black">{distances[index]} m</h2>
                           <p className="text-lg font-bold text-blue-700">
@@ -676,12 +543,11 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
                         <div className="mt-4 flex justify-center">
                           <Stars fills={liveStars(holePoints(shots), targets)} large />
                         </div>
-                        <p className="mt-2 text-center text-sm text-slate-500">
-                          {targets.join(" / ")} poäng · ★ / ★★ / ★★★
-                        </p>
                         <div className="mt-4 flex items-center justify-between">
                           <h3 aria-live="polite" className="text-lg font-black">
-                            Boll {shots.length + 1} av 3
+                            {active.phase === "result"
+                              ? "Hålet klart"
+                              : `Boll ${shots.length + 1} av 3`}
                           </h3>
                           <div className="flex gap-1">
                             {[0, 1, 2].map((i) => (
@@ -695,26 +561,39 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
                           </div>
                         </div>
                       </div>
-                      <div className="mt-4 grid grid-cols-2 gap-3">
+                      <h3 className="mb-2 mt-3 text-center text-base font-bold">
+                        Hur långt ifrån hålet?
+                      </h3>
+                      <div className="grid grid-cols-2 gap-2">
                         {CHIP_ZONES.map((z) => (
                           <button
                             key={z.points}
-                            onClick={() => {
-                              score(z.points);
-                              if (stateRef.current.active?.phase === "result") {
-                                setRegistering(false);
-                                window.scrollTo({ top: 0, behavior: "instant" });
-                              }
-                            }}
-                            className={`flex min-h-16 items-center justify-between rounded-2xl border px-4 text-left ${z.points === 4 ? "col-span-2 border-blue-700 bg-blue-600 text-white" : "border-blue-200 bg-blue-50 text-blue-900"}`}
+                            onClick={() => score(z.points)}
+                            disabled={active.phase === "result"}
+                            className={`flex min-h-12 items-center justify-between rounded-2xl border px-4 text-left disabled:opacity-45 ${z.points === 4 ? "col-span-2 border-blue-700 bg-blue-600 text-white" : "border-blue-200 bg-blue-50 text-blue-900"}`}
                           >
                             <span className="text-base font-bold">{z.label}</span>
                             <strong className="text-xl">{z.points} p</strong>
                           </button>
                         ))}
                       </div>
+                      {active.phase === "result" && (
+                        <button
+                          onClick={next}
+                          className={`${primary} mt-3`}
+                          disabled={!!confirmation}
+                        >
+                          {index === 2
+                            ? "Till Halfway House"
+                            : index === 5
+                              ? "Avsluta rundan"
+                              : `Nästa hål · ${distances[index + 1]} m`}
+                          <ArrowRight className="h-5 w-5" />
+                        </button>
+                      )}
                       <button
                         onClick={() => {
+                          tapUntil.current = 0;
                           commit({ type: "undo" });
                           setConfirmation(null);
                         }}
@@ -726,51 +605,6 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
                       </button>
                     </>
                   )}
-                </section>
-              )}
-              {active.phase === "result" && (
-                <section>
-                  <div
-                    className={`${card} p-5 text-center motion-safe:animate-in motion-safe:fade-in motion-safe:duration-300`}
-                  >
-                    <p className="text-sm font-bold text-slate-500">
-                      HÅL {index + 1} · {distances[index]} M
-                    </p>
-                    <div className="my-4 flex justify-center">
-                      <Stars
-                        key={`result-${active.id}-${index}-${holePoints(shots)}`}
-                        count={earned}
-                        large
-                        celebrate
-                      />
-                    </div>
-                    <h2 className="text-2xl font-black">
-                      {earned === 3
-                        ? "Full pott på hålet!"
-                        : earned > 0
-                          ? `${earned} ${earned === 1 ? "stjärna" : "stjärnor"} på hålet`
-                          : "Nästa hål, ny chans"}
-                    </h2>
-                    <p className="mt-2 text-base text-slate-500">{holePoints(shots)} av 12 poäng</p>
-                  </div>
-                  <button onClick={next} className={`${primary} mt-4`}>
-                    {index === 2
-                      ? "Till Halfway House"
-                      : index === 5
-                        ? "Till bonushålet · 11 m"
-                        : `Nästa hål · ${distances[index + 1]} m`}
-                    <ArrowRight className="h-5 w-5" />
-                  </button>
-                  <button
-                    onClick={() => {
-                      setConfirmation(null);
-                      commit({ type: "undo" });
-                      setRegistering(true);
-                    }}
-                    className="mt-2 min-h-12 w-full text-sm font-bold text-slate-500"
-                  >
-                    Rätta senaste bollen
-                  </button>
                 </section>
               )}
               {active.phase === "halfway" && front && (
@@ -873,7 +707,7 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
                   {round.status === "full"
                     ? "Rundan klar"
                     : round.status === "front"
-                      ? "Första tre klara"
+                      ? "Rundan klar"
                       : "Din sparade runda"}
                 </h2>
                 <p className="mt-2 text-sm text-slate-500">
@@ -884,6 +718,7 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
                   {roundStars(round)}
                   <span className="text-xl text-slate-400">/{round.holes.length * 3} ★</span>
                 </p>
+                <p className="text-base font-bold text-emerald-700">Est. chipp-HCP {handicapLabel(courseHandicap(round)!)}</p>
                 {newRecords.length > 0 && (
                   <p className="rounded-xl bg-amber-50 p-3 text-base font-bold text-amber-800">
                     Nytt rekord ·{" "}
@@ -896,34 +731,9 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
                   </p>
                 )}
               </div>
-              <div className="my-4 grid grid-cols-2 gap-3">
-                {(["front", "back"] as const).map((segment) => {
-                  const value = segmentScore(round, segment);
-                  return (
-                    <div key={segment} className={`${card} p-4 text-center`}>
-                      <p className="text-sm font-bold text-slate-500">{segmentNames[segment]}</p>
-                      <p className="mt-2 text-xl font-black">
-                        {value ? `${value.stars}/9 ★` : "Ej spelat klart"}
-                      </p>
-                      {value && <p className="mt-1 text-sm text-slate-500">{value.points}/36 p</p>}
-                    </div>
-                  );
-                })}
-              </div>
-              {round.bonus && (
-                <div className="my-4 rounded-3xl border border-emerald-200 bg-emerald-50 p-5">
-                  <p className="text-sm font-bold text-emerald-700">BONUSCHIPPEN · 11 M</p>
-                  <p className="mt-2 text-3xl font-black text-emerald-900">
-                    {round.bonus.holed
-                      ? "Sänkt!"
-                      : `${String(round.bonus.leave).replace(".", ",")} m från flaggan`}
-                  </p>
-                  <p className="mt-2 text-sm text-emerald-700">En boll · separat bonusresultat</p>
-                </div>
-              )}
-              <Scorecard round={round} />
               <div className="mt-4">
                 <ActivityReview
+                  compact
                   input={{
                     title: "Estimerat chipp-HCP",
                     handicap: courseHandicap(round),
@@ -943,16 +753,6 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
                   }}
                 />
               </div>
-              <p className="mt-3 text-sm leading-5 text-slate-500">
-                Rundans chipp-HCP är en grov uppskattning från poängzonerna, inte officiellt HCP.
-                Bonusslaget räknas separat.
-              </p>
-              <details className="mt-2 text-xs text-slate-500">
-                <summary className="min-h-11 cursor-pointer py-3">Så uppskattas HCP</summary>Zonerna
-                motsvarar ungefär 0, 0,5, 1,5, 2,5 och 7 m i appens närspelsmodell. Zonen över 3 m
-                är särskilt osäker. Underlag och startavstånd viktas inte; upprepade träningsslag
-                kan ge bättre resultat än spel på bana.
-              </details>
               <button className={`${primary} mt-5`} onClick={start}>
                 Ny runda · börja på 8 m <ArrowRight className="h-5 w-5" />
               </button>
@@ -1036,7 +836,6 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
           <p className="text-sm">
             Exakt 1, 2 och 3 m räknas inom respektive zon. Stjärnorna tjänas på nytt varje runda.
             Vid lika antal stjärnor avgör poängen. 3 poäng ger en stjärna, 6 ger två och 9 ger tre.
-            Avsluta med en valfri bonuschipp från 11 m.
           </p>
           <table className="w-full text-center text-sm">
             <caption className="mb-2 text-left font-bold">Stjärnkrav · {lieName(lie)}</caption>

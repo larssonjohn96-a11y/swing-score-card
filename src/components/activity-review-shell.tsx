@@ -13,6 +13,7 @@ import { useSubscription } from "@/lib/subscription";
 /** The only review card/dialog shell. All activity models supply data and detail content. */
 export function ActivityReviewShell({
   title,
+  compact = false,
   hcp,
   summary,
   positive,
@@ -22,6 +23,7 @@ export function ActivityReviewShell({
   children,
 }: {
   title: string;
+  compact?: boolean;
   hcp?: string | null;
   summary: string;
   positive?: string | null;
@@ -38,40 +40,50 @@ export function ActivityReviewShell({
           type="button"
           className="group mt-3 block w-full rounded-[22px] border border-blue-200 bg-gradient-to-br from-white to-blue-50 p-3.5 text-left text-slate-950 shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
         >
-          <span className="flex items-center justify-between gap-3">
-            <span className="min-w-0">
-              <span className="block text-[9px] font-black uppercase tracking-[.12em] text-blue-700">
-                {title}
+          {!compact && (
+            <>
+              <span className="flex items-center justify-between gap-3">
+                <span className="min-w-0">
+                  <span className="block text-[9px] font-black uppercase tracking-[.12em] text-blue-700">
+                    {title}
+                  </span>
+                  <span className="mt-1 block font-display text-3xl leading-none">
+                    {canViewDetailedBreakdowns
+                      ? hcp
+                        ? `HCP ${hcp}`
+                        : "Din resultatöversikt"
+                      : "Se din analys"}
+                  </span>
+                </span>
+                <span className="text-right text-xs text-slate-500">{summary}</span>
               </span>
-              <span className="mt-1 block font-display text-3xl leading-none">
-                {canViewDetailedBreakdowns
-                  ? hcp
-                    ? `HCP ${hcp}`
-                    : "Din resultatöversikt"
-                  : "Se din analys"}
-              </span>
-            </span>
-            <span className="text-right text-xs text-slate-500">{summary}</span>
-          </span>
-          {(positive || negative) && (
-            <span className="mt-2.5 flex flex-wrap gap-2">
-              {positive && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-teal-50 px-2 py-1 text-[11px] font-bold text-teal-800">
-                  <Sparkles aria-hidden="true" className="h-3.5 w-3.5" />
-                  {positive}
+              {(positive || negative) && (
+                <span className="mt-2.5 flex flex-wrap gap-2">
+                  {positive && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-teal-50 px-2 py-1 text-[11px] font-bold text-teal-800">
+                      <Sparkles aria-hidden="true" className="h-3.5 w-3.5" />
+                      {positive}
+                    </span>
+                  )}
+                  {negative && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 px-2 py-1 text-[11px] font-bold text-orange-800">
+                      <TrendingDown aria-hidden="true" className="h-3.5 w-3.5" />
+                      {negative}
+                    </span>
+                  )}
                 </span>
               )}
-              {negative && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 px-2 py-1 text-[11px] font-bold text-orange-800">
-                  <TrendingDown aria-hidden="true" className="h-3.5 w-3.5" />
-                  {negative}
-                </span>
-              )}
-            </span>
+            </>
           )}
-          <span className="mt-3 flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-3 py-2.5 text-sm font-bold text-white shadow-sm group-hover:bg-emerald-700">
+          <span
+            className={`${compact ? "" : "mt-3"} flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-3 py-2.5 text-sm font-bold text-white shadow-sm group-hover:bg-emerald-700`}
+          >
             {!canViewDetailedBreakdowns && <Lock aria-hidden="true" className="h-4 w-4" />}
-            {activity === "match" ? "Visa matchanalys" : "Visa passanalys"}
+            {compact
+              ? "Visa analys"
+              : activity === "match"
+                ? "Visa matchanalys"
+                : "Visa passanalys"}
             <ArrowRight aria-hidden="true" className="h-4 w-4" />
           </span>
         </button>

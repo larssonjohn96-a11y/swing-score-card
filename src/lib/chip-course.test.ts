@@ -45,7 +45,7 @@ describe("six-hole course flow", () => {
       }
     }
     expect(played).toEqual([8, 12, 16, 10, 14, 18]);
-    expect(p.active?.phase).toBe("bonus");
+    expect(p.active).toBeNull();
     p = reduceCourse(p, { type: "save", at: 300 });
     expect(p.active).toBeNull();
     expect(p.history[0].status).toBe("full");
@@ -76,7 +76,7 @@ describe("six-hole course flow", () => {
     expect(p.history).toHaveLength(0);
     expect(next(p)).toBe(p);
     p = reduceCourse(p, { type: "finish", at: 300 });
-    expect(p.active?.phase).toBe("bonus");
+    expect(p.active).toBeNull();
     p = reduceCourse(p, { type: "save", at: 300 });
     expect(p.history).toHaveLength(1);
     expect(p.history[0].status).toBe("front");
@@ -110,7 +110,7 @@ describe("six-hole course flow", () => {
     let p = next(scoreHole(start()));
     p = reduceCourse(p, { type: "score", points: 4 });
     p = reduceCourse(p, { type: "finish", at: 300 });
-    expect(p.active?.phase).toBe("bonus");
+    expect(p.active).toBeNull();
     p = reduceCourse(p, { type: "save", at: 300 });
     expect(p.history[0].holes).toHaveLength(1);
     expect(p.history[0].status).toBe("partial");
@@ -207,36 +207,20 @@ describe("live stars, bonus and round HCP", () => {
     expect(holeStars([2, 2, 2], 2, "Ruff")).toBe(2);
     expect(holeStars([3, 3, 3], 5, "Fairway")).toBe(3);
   });
-  it("stores one bonus independently after stopping at halfway", () => {
-    const p = reduceCourse(front(), { type: "finish", at: 300 });
-    expect(p.active?.phase).toBe("bonus");
-    const restored = parseCourse(JSON.stringify(p));
-    expect(restored).toEqual(p);
-    const saved = reduceCourse(restored, {
-      type: "save",
-      at: 400,
-      bonus: { leave: 0.8, holed: false },
-    });
+  it("saves directly without a bonus after halfway", () => {
+    const saved = reduceCourse(front(), { type: "finish", at: 300 });
+    expect(saved.active).toBeNull();
     expect(saved.history[0].holes.flat()).toHaveLength(9);
-    expect(saved.history[0].bonus).toEqual({ leave: 0.8, holed: false });
-    expect(roundStars(saved.history[0])).toBe(9);
-    expect(reduceCourse(saved, { type: "save", at: 401, bonus: { leave: 0, holed: true } })).toBe(
-      saved,
-    );
-  });
-  it("rejects malformed bonus distances and bypassing bonus phase", () => {
-    const draft = start();
-    expect(reduceCourse(draft, { type: "save", at: 200 })).toBe(draft);
-    const p = reduceCourse(front(), { type: "finish", at: 300 });
-    for (const bonus of [
-      { leave: -1, holed: false },
-      { leave: NaN, holed: false },
-      { leave: 1, holed: true },
-      { leave: 0, holed: false },
-    ])
-      expect(reduceCourse(p, { type: "save", at: 400, bonus })).toBe(p);
-    const saved = reduceCourse(p, { type: "save", at: 400, bonus: { leave: 0, holed: true } });
+    expect(saved.history[0].bonus).toBeUndefined();
     expect(parseCourse(JSON.stringify(saved))).toEqual(saved);
+  });
+  it("recovers a legacy pending bonus as the last ordinary hole result", () => {
+    const pending = front();
+    const restored = parseCourse(JSON.stringify({...pending, active: {...pending.active, phase: "bonus"}}));
+    expect(restored.active?.phase).toBe("result");
+    const saved = reduceCourse(restored, {type: "finish", at: 400});
+    expect(saved.history[0].holes.flat()).toHaveLength(9);
+    expect(saved.active).toBeNull();
   });
   it("estimates HCP from shots rather than stars and excludes bonus", () => {
     const good = full().history[0],
