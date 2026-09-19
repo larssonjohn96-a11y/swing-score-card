@@ -56,3 +56,23 @@ describe('rolling averages and replay goals',()=>{
    expect(chipAverageGoal(active([[2,2,2],[2,2,2],[2,2,2]],'halfway'),[round(2)])).toBe('19 poäng till slår ditt snitt.');
  });
 });
+
+import {chipPressureGoal,chipEncouragement} from './chip-competition';
+describe('late round average pressure',()=>{
+ it('stays hidden through the first four holes until hole four is complete',()=>{
+  expect(chipPressureGoal(active([[2,2,2],[2,2,2],[2,2,2],[2,2]]),[round(2)])).toBeNull();
+  expect(chipPressureGoal(active(Array.from({length:4},()=>[2,2,2]),'result'),[round(2)])).toBe('13 poäng till slår ditt snitt.');
+ });
+ it('hides unreachable, already passed and final results',()=>{
+  expect(chipPressureGoal(active([...Array.from({length:4},()=>[0,0,0]),[]]),[round(3)])).toBeNull();
+  expect(chipPressureGoal(active([...Array.from({length:4},()=>[3,3,3]),[]]),[round(1)])).toBeNull();
+  expect(chipPressureGoal(active(Array.from({length:6},()=>[2,2,2]),'result'),[round(2)])).toBeNull();
+ });
+ it('checks the actual balls remaining',()=>{
+  expect(chipPressureGoal(active([...Array.from({length:5},()=>[2,2,2]),[0,0]]),[round(2)])).toBeNull();
+ });
+ it('varies repeated scores without changing across renders',()=>{
+  expect(chipEncouragement(3,0)).not.toBe(chipEncouragement(3,1));
+  expect(chipEncouragement(3,1)).toBe(chipEncouragement(3,1));
+ });
+});

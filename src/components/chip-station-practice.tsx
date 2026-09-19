@@ -2,7 +2,7 @@ import { ChipAverageCard } from "./chip-average-card";
 import { ChipRoundImpact } from "./chip-round-impact";
 import { ChipOnboarding } from "./chip-onboarding";
 import { ChipLeaderboard } from "./chip-leaderboard";
-import { chipRecordGoal, chipAverage, chipAverageGoal, chipResultContext } from "@/lib/chip-competition";
+import { chipAverageGoal, chipPressureGoal, chipEncouragement, chipResultContext } from "@/lib/chip-competition";
 import { pushPlayerSnapshot } from "@/lib/friends-cloud";
 import { handicapLabel } from "@/lib/shortgame";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
@@ -293,7 +293,8 @@ export function ChipStationPractice({
   }, [holedShot]);
   const [rules, setRules] = useState(false);
   const [exitDialog, setExitDialog] = useState(false);
-  const [confirmation, setConfirmation] = useState<{ ball: number; points: number } | null>(null);
+  const [confirmation, setConfirmation] = useState<{ ball: number; points: number; comment: string } | null>(null);
+  const [revealPending, setRevealPending] = useState(false);
   const confirmationTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(
     () => () => {
@@ -401,7 +402,6 @@ export function ChipStationPractice({
     tapUntil.current = 0;
     commit({ type: "next", at: Date.now() });
     setRegistering(false);
-    setConfirmation(null);
     window.scrollTo({ top: 0, behavior: "instant" });
   }
   function finish() {
@@ -433,10 +433,11 @@ export function ChipStationPractice({
     tapUntil.current = Date.now() + 550;
     const ball = stateRef.current.active.holes.at(-1)!.length + 1;
     commit({ type: "score", points });
-    setConfirmation({ ball, points });
+    setConfirmation({ ball, points, comment: chipEncouragement(points, (index * 3) + ball - 1) });
+    setRevealPending(true);
     if (points === 4) setHoledShot(Date.now());
     if (confirmationTimer.current) clearTimeout(confirmationTimer.current);
-    confirmationTimer.current = setTimeout(() => setConfirmation(null), 1300);
+    confirmationTimer.current = setTimeout(() => setRevealPending(false), 1300);
   }
   const history = state.history.slice().reverse();
   const targets = holeTargets(index, lie, active?.model);
@@ -449,9 +450,8 @@ export function ChipStationPractice({
     : halfwayNeeded !== null && halfwayNeeded <= 24
       ? `${halfwayNeeded} poäng på sista tre slår ditt PB.`
       : null;
-  const currentAverage=chipAverage(state.history);
   const averageGoal=active?chipAverageGoal(active,state.history):null;
-  const recordGoal = active ? chipRecordGoal(active, state.history) ?? averageGoal : null;
+  const pressureGoal = active ? chipPressureGoal(active, state.history) : null;
   const pace = active ? coursePace(active, state.history) : null;
   const totalPoints = active?.holes.reduce((sum, h) => sum + holePoints(h), 0) ?? 0;
   const completed = active?.holes.filter((h) => h.length === 3).length ?? 0;
@@ -479,7 +479,7 @@ export function ChipStationPractice({
       style={{ ...surface, colorScheme: "light" }}
       className={`chip-course mx-auto w-full max-w-md bg-slate-50 px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-[max(8px,env(safe-area-inset-top))] text-slate-950 ${active || round ? "chip-compact fixed inset-0 z-40 overflow-y-auto" : "min-h-screen"}`}
     >
-      <style>{`.chip-full-stars > span > span:last-child > svg{filter:drop-shadow(0 0 3px #fbbf24) drop-shadow(0 0 6px #f59e0b88);overflow:visible}.chip-full-stars svg.fill-amber-400{fill:#fbbf24;stroke:#eab308}@keyframes chipHoled{0%{opacity:0}15%,80%{opacity:1}100%{opacity:0}}.chip-holed{animation:chipHoled 2.7s ease-in-out both}@media(prefers-reduced-motion:reduce){.chip-holed{animation:none}}@keyframes chipEmptyWiggle{0%,100%{transform:rotate(0)}35%{transform:rotate(-9deg)}70%{transform:rotate(9deg)}}.chip-empty-wiggle{animation:chipEmptyWiggle .5s ease-in-out}.chip-compact [role="status"]{height:36px}.chip-compact section>div.mt-1{padding:12px}.chip-compact section>div.mt-1 .mt-4{margin-top:8px}@keyframes chipStarPop{0%{transform:scale(.65);opacity:.5}60%{transform:scale(1.3)}100%{transform:scale(1);opacity:1}}@keyframes chipCheck{0%{transform:translateY(8px);opacity:0}100%{transform:translateY(0);opacity:1}}body:has(.chip-compact){overflow:hidden}.sg4-route-transition:has(.chip-compact){animation:none;transform:none;will-change:auto;min-height:0}.chip-compact [aria-label="Golfbanan: första tre, Halfway House, sista tre"]{height:clamp(190px,29dvh,250px);margin:12px 0}.chip-compact header button{min-height:40px;height:40px}.chip-compact [role="status"]{min-height:36px;margin-bottom:0}.chip-compact section>div.text-center{padding:16px}.chip-compact h2.my-3{margin:8px 0;font-size:48px}.chip-compact section>div.text-center p.mt-2{margin-top:4px}.chip-star-pop{animation:chipStarPop .55s ease-out}.chip-check{animation:chipCheck .2s ease-out}@media(prefers-reduced-motion:reduce){.chip-star-pop,.chip-check,.chip-confetti,.chip-empty-wiggle{animation:none}.chip-confetti{display:none}}`}</style>
+      <style>{`@keyframes chipPressureEnter{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}@keyframes chipPressurePulse{0%,100%{box-shadow:0 0 0 0 #fbbf2400}50%{box-shadow:0 0 0 4px #fbbf2425}}.chip-average-pressure{animation:chipPressureEnter .4s ease-out,chipPressurePulse 2.5s ease-in-out 2}@media(prefers-reduced-motion:reduce){.chip-average-pressure{animation:none}}.chip-full-stars > span > span:last-child > svg{filter:drop-shadow(0 0 3px #fbbf24) drop-shadow(0 0 6px #f59e0b88);overflow:visible}.chip-full-stars svg.fill-amber-400{fill:#fbbf24;stroke:#eab308}@keyframes chipHoled{0%{opacity:0}15%,80%{opacity:1}100%{opacity:0}}.chip-holed{animation:chipHoled 2.7s ease-in-out both}@media(prefers-reduced-motion:reduce){.chip-holed{animation:none}}@keyframes chipEmptyWiggle{0%,100%{transform:rotate(0)}35%{transform:rotate(-9deg)}70%{transform:rotate(9deg)}}.chip-empty-wiggle{animation:chipEmptyWiggle .5s ease-in-out}.chip-compact [role="status"]{height:36px}.chip-compact section>div.mt-1{padding:12px}.chip-compact section>div.mt-1 .mt-4{margin-top:8px}@keyframes chipStarPop{0%{transform:scale(.65);opacity:.5}60%{transform:scale(1.3)}100%{transform:scale(1);opacity:1}}@keyframes chipCheck{0%{transform:translateY(8px);opacity:0}100%{transform:translateY(0);opacity:1}}body:has(.chip-compact){overflow:hidden}.sg4-route-transition:has(.chip-compact){animation:none;transform:none;will-change:auto;min-height:0}.chip-compact [aria-label="Golfbanan: första tre, Halfway House, sista tre"]{height:clamp(190px,29dvh,250px);margin:12px 0}.chip-compact header button{min-height:40px;height:40px}.chip-compact [role="status"]{min-height:36px;margin-bottom:0}.chip-compact section>div.text-center.rounded-3xl{padding:16px}.chip-compact h2.my-3{margin:8px 0;font-size:48px}.chip-compact section>div.text-center p.mt-2{margin-top:4px}.chip-star-pop{animation:chipStarPop .55s ease-out}.chip-check{animation:chipCheck .2s ease-out}@media(prefers-reduced-motion:reduce){.chip-star-pop,.chip-check,.chip-confetti,.chip-empty-wiggle{animation:none}.chip-confetti{display:none}}`}</style>
       {personalBest && freshRound === round?.id && <ChipCelebration />}
       {holedShot !== null && (
         <div
@@ -551,7 +551,6 @@ export function ChipStationPractice({
                 <button className={primary} onClick={requestStart} disabled={!!userId && cloudStatus==="loading"}>
                   {userId && cloudStatus==="loading" ? "Hämtar rundor…" : "Starta rundan"} <ArrowRight className="h-5 w-5" />
                 </button>
-                {currentAverage.count>0&&<p className="mt-3 text-center text-sm font-bold text-blue-700">{currentAverage.points>=72?"Matcha ditt perfekta snitt: 72 poäng.":`Nästa mål: ${Math.floor(currentAverage.points)+1} poäng – över ditt snitt.`}</p>}
                 <CourseMap holes={[]} lie={lie} cursor={0} />
               </section>
               <ChipAverageCard history={state.history} />
@@ -610,7 +609,7 @@ export function ChipStationPractice({
               )}
               {registering && (
                 <div
-                  className="mb-2 flex min-h-12 items-center justify-center"
+                  className="!mb-4 flex !h-auto min-h-12 items-center justify-center py-1"
                   role="status"
                   aria-live="polite"
                 >
@@ -624,17 +623,9 @@ export function ChipStationPractice({
                   {confirmation && (
                     <div
                       key={`${index}-${confirmation.ball}`}
-                      className={`chip-check flex items-center gap-1 rounded-full px-3 py-2 text-sm font-bold ${confirmation.points === 0 ? "bg-slate-200 text-slate-600" : "bg-emerald-100 text-emerald-800"}`}
+                      className={`chip-check block w-full rounded-2xl px-3 py-2 text-center text-sm font-bold ${confirmation.points === 0 ? "bg-slate-200 text-slate-600" : "bg-emerald-100 text-emerald-800"}`}
                     >
-                      {
-                        [
-                          "Nästa sitter! ",
-                          "Bra kämpat! ",
-                          "Bra närspel! ",
-                          "Riktigt bra! ",
-                          "Fullträff! ",
-                        ][confirmation.points]
-                      }
+                      {active.phase === "result" && holeStars(shots, index, lie, active.model) === 3 ? "Full pott! " : `${confirmation.comment} `}
                       {CHIP_ZONES.find((z) => z.points === confirmation.points)?.label}, +
                       {confirmation.points} poäng
                     </div>
@@ -643,7 +634,7 @@ export function ChipStationPractice({
               )}
               {(active.phase === "play" || active.phase === "result") && (
                 <section>
-                  {recordGoal && <div role="note" className="mb-2 flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-900"><Trophy className="h-4 w-4 shrink-0"/><span>{recordGoal}</span></div>}
+                  {pressureGoal && <div role="note" className="chip-average-pressure relative mb-3 overflow-hidden rounded-2xl border border-amber-300 bg-amber-50 px-3 py-2 text-center text-amber-900"><p className="text-xs font-black uppercase tracking-wide">Nu gäller det</p><p className="mt-0.5 text-sm font-bold">{pressureGoal}</p></div>}
                   {!registering ? (
                     <>
                       <div className={`${card} p-5 text-center`}>
@@ -695,7 +686,7 @@ export function ChipStationPractice({
                         <h3 className="text-lg font-black text-blue-700">
                           {active.phase === "result" ? "Hålet klart" : `Boll ${shots.length + 1} av 3`}
                         </h3>
-                        <p className="text-base font-bold">Hur långt ifrån hålet?</p>
+                        {active.phase!=="result" && <p className="text-base font-bold">Hur långt ifrån hålet?</p>}
                       </div>
                       <div
                         className="relative grid grid-cols-5 gap-1.5 py-2"
@@ -741,7 +732,7 @@ export function ChipStationPractice({
                         <button
                           onClick={next}
                           className={`${primary} mt-3`}
-                          disabled={!!confirmation || holedShot !== null}
+                          disabled={revealPending || holedShot !== null}
                         >
                           {index === 2
                             ? "Till Halfway House"

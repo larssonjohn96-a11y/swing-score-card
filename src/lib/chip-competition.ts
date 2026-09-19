@@ -67,3 +67,26 @@ export function chipStandingChange(before: ReturnType<typeof chipAverage>, after
   return { before:before.count?rank(before.points):null, after:after.count?rank(after.points):null,
     passed:before.count && after.points>before.points ? ranked.filter(f=>f.points>=before.points && f.points<after.points).map(f=>f.name) : [] };
 }
+
+/** Late-round pressure only: at most eight points per hole and three per remaining ball. */
+export function chipPressureGoal(active: CourseSession, history: CourseRound[]): string | null {
+  if(active.model!==4 || (active.phase!=='play' && active.phase!=='result'))return null;
+  const completed=active.holes.filter(h=>h.length===3).length;
+  const ballsLeft=18-active.holes.reduce((sum,h)=>sum+h.length,0);
+  if(completed<4 || ballsLeft<=0)return null;
+  const average=chipAverage(history);
+  if(!average.count)return null;
+  const need=Math.floor(average.points)+1-active.holes.reduce((sum,h)=>sum+holePoints(h),0);
+  if(need<=0 || need>Math.min((6-completed)*8,ballsLeft*3))return null;
+  return `${need} poäng till slår ditt snitt.`;
+}
+export function chipEncouragement(points: number, shotIndex: number): string {
+  const comments=[
+    ['Nästa sitter!', 'Nytt slag, ny chans!', 'Fortsätt kämpa!'],
+    ['Bra kämpat!', 'Du är på gång!', 'Fortsätt så!'],
+    ['Bra närspel!', 'Fint slag!', 'Snyggt jobbat!'],
+    ['Riktigt bra!', 'Vilken chipp!', 'Suveränt!'],
+    ['Fullträff!', 'Den satt!', 'Vilket slag!'],
+  ];
+  return comments[points]?.[shotIndex%3] ?? 'Bra jobbat!';
+}

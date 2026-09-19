@@ -33,7 +33,7 @@ export function ChipLeaderboard({userId, history, playerName}:{userId:string|nul
     .sort((a,b)=>Number(b.count>0)-Number(a.count>0)||b.points-a.points||a.name.localeCompare(b.name));
   const fmt=(n:number)=>n.toFixed(1).replace('.',',');
   return <section className="mt-5 overflow-hidden rounded-3xl border border-blue-100 bg-white">
-    <div className="bg-blue-600 p-4 text-white"><h2 className="flex items-center gap-2 text-lg font-black"><Trophy className="h-5 w-5"/>Vännernas topplista</h2><p className="mt-1 text-sm text-blue-100">Snitt av senaste 5 hela rundorna</p></div>
+    <div className="bg-blue-600 p-4 text-white"><h2 className="flex items-center gap-2 text-lg font-black"><Trophy className="h-5 w-5"/>Topplista Vänner</h2><p className="mt-1 text-sm text-blue-100">Snitt av senaste 5 hela rundorna</p></div>
     <div className="flex justify-between px-4 pt-3 text-xs font-bold uppercase text-slate-400"><span>Spelare</span><span>Snittpoäng</span></div>
     <ol className="p-2">{all.map((r)=>{
       const rank=r.count?all.filter(x=>x.count>0&&x.points>r.points).length+1:null;
