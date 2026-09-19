@@ -420,7 +420,7 @@ export function ChipStationPractice({
       style={{ ...surface, colorScheme: "light" }}
       className={`chip-course mx-auto w-full max-w-md bg-slate-50 px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-[max(8px,env(safe-area-inset-top))] text-slate-950 ${active || round ? "chip-compact fixed inset-0 z-40 overflow-y-auto" : "min-h-screen"}`}
     >
-      <style>{`.chip-full-stars > span{filter:drop-shadow(0 0 4px #fbbf24) drop-shadow(0 0 9px #f59e0b88)}.chip-full-stars svg.fill-amber-400{fill:#fbbf24;stroke:#eab308}@keyframes chipHoled{0%{opacity:0}15%,80%{opacity:1}100%{opacity:0}}.chip-holed{animation:chipHoled 2.7s ease-in-out both}@media(prefers-reduced-motion:reduce){.chip-holed{animation:none}}@keyframes chipEmptyWiggle{0%,100%{transform:rotate(0)}35%{transform:rotate(-9deg)}70%{transform:rotate(9deg)}}.chip-empty-wiggle{animation:chipEmptyWiggle .5s ease-in-out}.chip-compact [role="status"]{height:36px}.chip-compact section>div.mt-1{padding:12px}.chip-compact section>div.mt-1 .mt-4{margin-top:8px}@keyframes chipStarPop{0%{transform:scale(.65);opacity:.5}60%{transform:scale(1.3);filter:drop-shadow(0 0 7px #fbbf24)}100%{transform:scale(1);opacity:1}}@keyframes chipCheck{0%{transform:translateY(8px);opacity:0}100%{transform:translateY(0);opacity:1}}body:has(.chip-compact){overflow:hidden}.sg4-route-transition:has(.chip-compact){animation:none;transform:none;will-change:auto;min-height:0}.chip-compact [aria-label="Golfbanan: första tre, Halfway House, sista tre"]{height:clamp(190px,29dvh,250px);margin:12px 0}.chip-compact header button{min-height:40px;height:40px}.chip-compact [role="status"]{min-height:36px;margin-bottom:0}.chip-compact section>div.text-center{padding:16px}.chip-compact h2.my-3{margin:8px 0;font-size:48px}.chip-compact section>div.text-center p.mt-2{margin-top:4px}.chip-star-pop{animation:chipStarPop .55s ease-out}.chip-check{animation:chipCheck .2s ease-out}@media(prefers-reduced-motion:reduce){.chip-star-pop,.chip-check,.chip-confetti,.chip-empty-wiggle{animation:none}.chip-confetti{display:none}}`}</style>
+      <style>{`.chip-full-stars > span > span:last-child > svg{filter:drop-shadow(0 0 3px #fbbf24) drop-shadow(0 0 6px #f59e0b88);overflow:visible}.chip-full-stars svg.fill-amber-400{fill:#fbbf24;stroke:#eab308}@keyframes chipHoled{0%{opacity:0}15%,80%{opacity:1}100%{opacity:0}}.chip-holed{animation:chipHoled 2.7s ease-in-out both}@media(prefers-reduced-motion:reduce){.chip-holed{animation:none}}@keyframes chipEmptyWiggle{0%,100%{transform:rotate(0)}35%{transform:rotate(-9deg)}70%{transform:rotate(9deg)}}.chip-empty-wiggle{animation:chipEmptyWiggle .5s ease-in-out}.chip-compact [role="status"]{height:36px}.chip-compact section>div.mt-1{padding:12px}.chip-compact section>div.mt-1 .mt-4{margin-top:8px}@keyframes chipStarPop{0%{transform:scale(.65);opacity:.5}60%{transform:scale(1.3)}100%{transform:scale(1);opacity:1}}@keyframes chipCheck{0%{transform:translateY(8px);opacity:0}100%{transform:translateY(0);opacity:1}}body:has(.chip-compact){overflow:hidden}.sg4-route-transition:has(.chip-compact){animation:none;transform:none;will-change:auto;min-height:0}.chip-compact [aria-label="Golfbanan: första tre, Halfway House, sista tre"]{height:clamp(190px,29dvh,250px);margin:12px 0}.chip-compact header button{min-height:40px;height:40px}.chip-compact [role="status"]{min-height:36px;margin-bottom:0}.chip-compact section>div.text-center{padding:16px}.chip-compact h2.my-3{margin:8px 0;font-size:48px}.chip-compact section>div.text-center p.mt-2{margin-top:4px}.chip-star-pop{animation:chipStarPop .55s ease-out}.chip-check{animation:chipCheck .2s ease-out}@media(prefers-reduced-motion:reduce){.chip-star-pop,.chip-check,.chip-confetti,.chip-empty-wiggle{animation:none}.chip-confetti{display:none}}`}</style>
       {personalBest && freshRound === round?.id && <ChipCelebration />}
       {holedShot !== null && (
         <div
@@ -609,7 +609,7 @@ export function ChipStationPractice({
                         <div className="flex items-center justify-between">
                           <h2 className="font-black">
                             <span className="block text-base text-blue-700">Hål {index + 1}</span>
-                            <span className="text-sm text-slate-500">
+                            <span className="block text-base font-bold text-slate-500">
                               {distances[index]} m från flaggan
                             </span>
                           </h2>
@@ -629,27 +629,13 @@ export function ChipStationPractice({
                             large
                           />
                         </div>
-                        <div className="mt-4 flex items-center justify-between">
-                          <h3 aria-live="polite" className="text-lg font-black">
-                            {active.phase === "result"
-                              ? "Hålet klart"
-                              : `Boll ${shots.length + 1} av 3`}
-                          </h3>
-                          <div className="flex gap-1">
-                            {[0, 1, 2].map((i) => (
-                              <span
-                                key={i}
-                                className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${shots[i] === undefined ? "bg-slate-100 text-slate-400" : "bg-blue-600 text-white"}`}
-                              >
-                                {shots[i] === undefined ? i + 1 : <Check className="h-4 w-4" />}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
                       </div>
-                      <h3 className="mb-2 mt-3 text-center text-base font-bold">
-                        Hur långt ifrån hålet?
-                      </h3>
+                      <div className="mb-2 mt-3 text-center" aria-live="polite">
+                        <h3 className="text-lg font-black text-blue-700">
+                          {active.phase === "result" ? "Hålet klart" : `Boll ${shots.length + 1} av 3`}
+                        </h3>
+                        <p className="text-base font-bold">Hur långt ifrån hålet?</p>
+                      </div>
                       <div
                         className="relative grid grid-cols-5 gap-1.5 py-2"
                         aria-label="Avstånd från hålet"
@@ -673,8 +659,21 @@ export function ChipStationPractice({
                                 <span className="h-2.5 w-2.5 rounded-full bg-blue-600" />
                               )}
                             </span>
-                            <span className="leading-tight">{z.label}</span>
+                            <span className="leading-tight">
+                              {z.points === 3 ? <>Inom<span className="block whitespace-nowrap">1 m</span></> : z.points === 0 ? <>Utanför<span className="block whitespace-nowrap">3 m</span></> : <span className="whitespace-nowrap">{z.label}</span>}
+                            </span>
                           </button>
+                        ))}
+                      </div>
+                      <div className="mt-2 flex justify-center gap-2" aria-label={`${shots.length} av 3 bollar registrerade`}>
+                        {[0, 1, 2].map((i) => (
+                          <span
+                            key={i}
+                            aria-label={`Boll ${i + 1}${shots[i] === undefined ? ": ej registrerad" : ": registrerad"}`}
+                            className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold transition-colors ${shots[i] === undefined ? "bg-slate-200 text-slate-500" : "bg-blue-600 text-white"}`}
+                          >
+                            {shots[i] === undefined ? i + 1 : <Check className="h-4 w-4" />}
+                          </span>
                         ))}
                       </div>
                       {active.phase === "result" && (
