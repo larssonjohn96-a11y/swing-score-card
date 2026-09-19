@@ -6,6 +6,7 @@ import {
   emptyChipProgress,
   goalAt,
   masteryAt,
+  starsAt,
   parseChipProgress,
   pointsForLeave,
   recentAt,
@@ -92,7 +93,7 @@ describe("unlocks, mastery and recommendations", () => {
     const p = play(start(), 8, [3, 3, 2]);
     expect(unlockedDistances(p)).toEqual([8, 12]);
     expect(recommendStation(p).distance).toBe(12);
-    expect(goalAt(p, 8)).toEqual({ points: 9, label: "Nå Silver" });
+    expect(goalAt(p, 8)).toEqual({ points: 10, label: "Ta stjärna 2" });
   });
   it("uses distance-dependent unlock thresholds", () => {
     expect(CHIP_STATIONS.map((s) => s.unlock)).toEqual([8, 7, 6, 5, 4, 3]);
@@ -193,4 +194,96 @@ describe("undo, persistence and pass boundaries", () => {
     expect(unlockedDistances(p)).toEqual([8, 12]);
     expect(recommendStation(p).distance).toBe(8);
   });
+});
+
+describe("guided rounds and independent lie progression", () => {
+  it("keeps fairway stars and unlocks out of rough", () => {
+    const p = play(start(), 8, [3, 3, 3]);
+    expect(starsAt(p, 8, "Fairway")).toBe(1);
+    expect(starsAt(p, 8, "Ruff")).toBe(0);
+    expect(bestAt(p, 8, "Ruff")).toBeNull();
+    expect(unlockedDistances(p, "Ruff")).toEqual([8]);
+    expect(
+      reduceChipProgress(p, {
+        type: "begin",
+        id: "rough-locked",
+        distance: 12,
+        lie: "Ruff",
+        at: 2,
+      }),
+    ).toBe(p);
+  });
+  it("caps a guided round at nine shots, then permits a new standalone attempt", () => {
+    let p = reduceChipProgress(emptyChipProgress(), {
+      type: "start",
+      id: "guided",
+      lies: ["Fairway"],
+      at: 1,
+      mode: "guided",
+    });
+    p = play(p, 8, [3, 3, 2]);
+    expect(recommendStation(p).distance).toBe(12);
+    p = play(p, 12, [3, 2, 2]);
+    p = play(p, 16, [2, 2, 2]);
+    expect(sessionRounds(p).flatMap((r) => r.shots)).toHaveLength(9);
+    expect(play(p, 8, [4, 4, 4])).toBe(p);
+    p = reduceChipProgress(p, { type: "finish" });
+    p = reduceChipProgress(p, {
+      type: "start",
+      id: "single",
+      lies: ["Fairway"],
+      at: 2,
+      mode: "single",
+    });
+    p = play(p, 8, [3, 3, 3]);
+    expect(sessionRounds(p)).toHaveLength(1);
+    expect(play(p, 8, [3, 3, 3])).toBe(p);
+    expect(parseChipProgress(JSON.stringify(p))).toEqual(p);
+  });
+  it("allows undo at the ninth shot without duplicating completion", () => {
+    let p = reduceChipProgress(emptyChipProgress(), {
+      type: "start",
+      id: "guided",
+      lies: ["Fairway"],
+      at: 1,
+      mode: "guided",
+    });
+    for (let i = 0; i < 3; i++) p = play(p, 8, [1, 1, 1]);
+    p = reduceChipProgress(p, { type: "undo" });
+    expect(sessionRounds(p)).toHaveLength(2);
+    p = reduceChipProgress(p, { type: "score", points: 2 });
+    expect(sessionRounds(p)).toHaveLength(3);
+    expect(roundTotal(p.rounds[2])).toBe(4);
+  });
+  it("retains known historical lie records and clears finished navigation", () => {
+    const p = play(start(), 8, [3, 3, 2]);
+    const restored = parseChipProgress(JSON.stringify(p));
+    const home = reduceChipProgress(restored, { type: "home" });
+    expect(home.session).toBeNull();
+    expect(bestAt(home, 8, "Fairway")).toBe(8);
+    expect(bestAt(home, 8, "Ruff")).toBeNull();
+  });
+});
+
+it("migrates external v2 records without losing lie-specific progress", () => {
+  const saved = {
+    version: 2,
+    lie: "Ruff",
+    rounds: [
+      {
+        id: "v2",
+        sessionId: "old",
+        mode: "standalone",
+        distance: 8,
+        lie: "Ruff",
+        shots: [3, 2, 2],
+        at: 1,
+      },
+    ],
+    session: null,
+  };
+  const p = parseChipProgress(JSON.stringify(saved));
+  expect(bestAt(p, 8, "Ruff")).toBe(7);
+  expect(unlockedDistances(p, "Ruff")).toEqual([8, 12]);
+  expect(unlockedDistances(p, "Fairway")).toEqual([8]);
 });
