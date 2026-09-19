@@ -398,6 +398,13 @@ export function ChipStationPractice({
   const targets = holeTargets(index, lie, active?.model);
   const front = active ? segmentScore(active, "front") : null;
   const best = courseBests(state.history);
+  const halfwayBest = active ? courseBests(state.history, active.model).points : null;
+  const halfwayNeeded = halfwayBest !== null && front ? halfwayBest + 1 - front.points : null;
+  const halfwayMessage = halfwayNeeded !== null && halfwayNeeded <= 0
+    ? "Nytt personbästa – avsluta hela rundan!"
+    : halfwayNeeded !== null && halfwayNeeded <= 24
+      ? `${halfwayNeeded} poäng på sista tre slår ditt PB.`
+      : "Bra jobbat!";
   const recordGoal = active ? chipRecordGoal(active, state.history) : null;
   const pace = active ? coursePace(active, state.history) : null;
   const totalPoints = active?.holes.reduce((sum, h) => sum + holePoints(h), 0) ?? 0;
@@ -719,17 +726,7 @@ export function ChipStationPractice({
                     <Coffee className="mx-auto h-9 w-9 text-amber-700" />
                     <h2 className="mt-3 text-2xl font-black">Halfway House</h2>
                     <p className="mt-2 text-base text-slate-600">
-                      {pace?.ahead
-                        ? "Över PB-tempo! Håller det hela vägen?"
-                        : pace?.onPace
-                          ? "Du håller PB-tempo. Fortsätt så!"
-                          : pace?.near
-                            ? "Du är nära PB-tempot. Det finns en chans!"
-                            : front.stars >= 7.5
-                              ? "Strålande! Fortsätt så."
-                              : front.stars >= 4.5
-                                ? "Bra jobbat! Redo för sista tre?"
-                                : "Bra kämpat! Nästa hål, ny chans."}
+                      {halfwayMessage}
                     </p>
                     <p className="mt-3 text-5xl font-black text-blue-700">
                       {starLabel(front.stars / 3)} ★
