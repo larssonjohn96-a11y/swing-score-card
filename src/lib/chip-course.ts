@@ -1,9 +1,14 @@
+import { handicapFromProximity } from "./shortgame";
 import { isChipPoints, type ChipLie, type ChipPoints } from "./chip-stations";
-export const COURSE_DISTANCES = [8, 10, 12, 14, 16, 20] as const;
+export const COURSE_DISTANCES = [8, 12, 16, 10, 14, 18] as const;
+const LEGACY_DISTANCES = [8, 10, 12, 14, 16, 20] as const;
+export const courseDistances = (model = 2) => (model === 1 ? LEGACY_DISTANCES : COURSE_DISTANCES);
+export type BonusChip = { leave: number; holed: boolean };
 export type Segment = "full" | "front" | "back";
 export type CourseRound = {
   id: string;
-  model: 1;
+  model: 1 | 2;
+  bonus?: BonusChip;
   lie: ChipLie;
   startedAt: number;
   finishedAt: number;
@@ -12,10 +17,11 @@ export type CourseRound = {
 };
 export type CourseSession = {
   id: string;
+  model: 1 | 2;
   lie: ChipLie;
   startedAt: number;
   holes: ChipPoints[][];
-  phase: "play" | "result" | "halfway";
+  phase: "play" | "result" | "halfway" | "bonus";
 };
 export type CourseState = {
   version: 1;
@@ -30,7 +36,8 @@ export type CourseAction =
   | { type: "undo" }
   | { type: "next"; at: number }
   | { type: "continue" }
-  | { type: "finish"; at: number };
+  | { type: "finish"; at: number }
+  | { type: "save"; at: number; bonus?: BonusChip };
 export const emptyCourse = (): CourseState => ({
   version: 1,
   lie: "Fairway",
@@ -41,24 +48,46 @@ export const courseStorageKey = (user: string | null) => `sg4-chip-course-v1:${u
 export const holePoints = (shots: readonly ChipPoints[]) =>
   shots.reduce<number>((a, b) => a + b, 0);
 /** Provisional course goals, versioned with saved rounds. No locks or ability rating. */
-export function holeTargets(index: number, lie: ChipLie): readonly number[] {
+export function holeTargets(index: number, lie: ChipLie, model = 2): readonly number[] {
+  if (model === 2) return index >= 0 && index < 6 ? [3, 6, 9] : [];
   const first = [8, 8, 7, 7, 6, 5][index];
   if (first === undefined) return [];
   return [first, first + 2, first + 4].map((n) =>
     Math.max(2, Math.min(12, n - (lie === "Ruff" ? 1 : 0))),
   );
 }
-export const holeStars = (shots: readonly ChipPoints[], index: number, lie: ChipLie) =>
-  shots.length === 3 ? holeTargets(index, lie).filter((n) => holePoints(shots) >= n).length : 0;
-export const roundStars = (round: Pick<CourseRound, "holes" | "lie">) =>
-  round.holes.reduce((sum, h, i) => sum + holeStars(h, i, round.lie), 0);
-export function segmentScore(round: Pick<CourseRound, "holes" | "lie">, segment: Segment) {
+export const holeStars = (shots: readonly ChipPoints[], index: number, lie: ChipLie, model = 2) =>
+  shots.length === 3
+    ? holeTargets(index, lie, model).filter((n) => holePoints(shots) >= n).length
+    : 0;
+export function liveStars(points: number, targets: readonly number[] = [3, 6, 9]) {
+  return targets.map((target, i) =>
+    Math.max(0, Math.min(1, (points - (targets[i - 1] ?? 0)) / (target - (targets[i - 1] ?? 0)))),
+  );
+}
+type ScoredRound = Pick<CourseRound, "holes" | "lie"> & { model?: 1 | 2 };
+/** Reuses SG4 proximity model. Coarse zones use representative distances; bonus excluded.
+ * This practice estimate must never be written into official or pooled handicap history.
+ */
+export function courseHandicap(round: ScoredRound): number | null {
+  const shots = round.holes.filter((h) => h.length === 3).flat();
+  if (!shots.length) return null;
+  const metres = [7, 2.5, 1.5, 0.5, 0];
+  return (
+    Math.round(
+      handicapFromProximity(shots.reduce<number>((s, p) => s + metres[p], 0) / shots.length) * 10,
+    ) / 10
+  );
+}
+export const roundStars = (round: ScoredRound) =>
+  round.holes.reduce((sum, h, i) => sum + holeStars(h, i, round.lie, round.model), 0);
+export function segmentScore(round: ScoredRound, segment: Segment) {
   const start = segment === "back" ? 3 : 0;
   const end = segment === "front" ? 3 : 6;
   const holes = round.holes.slice(start, end);
   if (holes.length !== end - start || holes.some((h) => h.length !== 3)) return null;
   return {
-    stars: holes.reduce((s, h, i) => s + holeStars(h, start + i, round.lie), 0),
+    stars: holes.reduce((s, h, i) => s + holeStars(h, start + i, round.lie, round.model), 0),
     points: holes.reduce((s, h) => s + holePoints(h), 0),
   };
 }
@@ -69,16 +98,17 @@ export function courseRecord(
   history: CourseRound[],
   lie: ChipLie,
   segment: Segment,
+  model = 2,
 ): (SegmentScore & { id: string }) | null {
   let best: (SegmentScore & { id: string }) | null = null;
   for (const round of history) {
-    if (round.lie !== lie) continue;
+    if (round.lie !== lie || round.model !== model) continue;
     const score = segmentScore(round, segment);
     if (score && beatsScore(score, best)) best = { ...score, id: round.id };
   }
   return best;
 }
-function finishRound(state: CourseState, at: number): CourseState {
+function finishRound(state: CourseState, at: number, bonus?: BonusChip): CourseState {
   const active = state.active;
   if (!active) return state;
   const holes = active.holes.filter((h) => h.length === 3);
@@ -86,7 +116,8 @@ function finishRound(state: CourseState, at: number): CourseState {
   if (state.history.some((r) => r.id === active.id)) return { ...state, active: null };
   const round: CourseRound = {
     id: active.id,
-    model: 1,
+    model: active.model,
+    ...(bonus ? { bonus } : {}),
     lie: active.lie,
     startedAt: active.startedAt,
     finishedAt: at,
@@ -105,7 +136,14 @@ export function reduceCourse(state: CourseState, action: CourseAction): CourseSt
     if (active || !action.id || state.history.some((r) => r.id === action.id)) return state;
     return {
       ...state,
-      active: { id: action.id, lie: state.lie, startedAt: action.at, holes: [[]], phase: "play" },
+      active: {
+        id: action.id,
+        model: 2,
+        lie: state.lie,
+        startedAt: action.at,
+        holes: [[]],
+        phase: "play",
+      },
     };
   }
   if (!active) return state;
@@ -124,7 +162,7 @@ export function reduceCourse(state: CourseState, action: CourseAction): CourseSt
     };
   }
   if (action.type === "undo") {
-    if (!shots.length || active.phase === "halfway") return state;
+    if (!shots.length || !["play", "result"].includes(active.phase)) return state;
     return {
       ...state,
       active: {
@@ -136,7 +174,7 @@ export function reduceCourse(state: CourseState, action: CourseAction): CourseSt
   }
   if (action.type === "next") {
     if (active.phase !== "result") return state;
-    if (index === 5) return finishRound(state, action.at);
+    if (index === 5) return { ...state, active: { ...active, phase: "bonus" } };
     if (index === 2) return { ...state, active: { ...active, phase: "halfway" } };
     return { ...state, active: { ...active, holes: [...active.holes, []], phase: "play" } };
   }
@@ -144,10 +182,28 @@ export function reduceCourse(state: CourseState, action: CourseAction): CourseSt
     if (active.phase !== "halfway" || active.holes.length !== 3) return state;
     return { ...state, active: { ...active, holes: [...active.holes, []], phase: "play" } };
   }
-  if (action.type === "finish") return finishRound(state, action.at);
+  if (action.type === "finish") {
+    if (!active.holes.some((h) => h.length === 3)) return { ...state, active: null };
+    return { ...state, active: { ...active, phase: "bonus" } };
+  }
+  if (action.type === "save") {
+    if (active.phase !== "bonus" || (action.bonus !== undefined && !validBonus(action.bonus)))
+      return state;
+    return finishRound(state, action.at, action.bonus);
+  }
   return state;
 }
 const object = (v: unknown): v is Record<string, unknown> => !!v && typeof v === "object";
+function validBonus(value: unknown): value is BonusChip {
+  return (
+    object(value) &&
+    typeof value.holed === "boolean" &&
+    typeof value.leave === "number" &&
+    Number.isFinite(value.leave) &&
+    value.leave >= 0 &&
+    (value.holed ? value.leave === 0 : value.leave > 0)
+  );
+}
 const validLie = (v: unknown): v is ChipLie => v === "Fairway" || v === "Ruff";
 function validHoles(value: unknown, complete: boolean): value is ChipPoints[][] {
   return (
@@ -176,7 +232,7 @@ export function parseCourse(raw: string | null): CourseState {
         typeof item.id !== "string" ||
         !item.id ||
         ids.has(item.id) ||
-        item.model !== 1 ||
+        (item.model !== 1 && item.model !== 2) ||
         !validLie(item.lie) ||
         !Number.isFinite(item.startedAt) ||
         !Number.isFinite(item.finishedAt) ||
@@ -185,7 +241,12 @@ export function parseCourse(raw: string | null): CourseState {
         continue;
       const status =
         item.holes.length === 6 ? "full" : item.holes.length === 3 ? "front" : "partial";
-      state.history.push({ ...item, status } as CourseRound);
+      const { bonus, ...rest } = item;
+      state.history.push({
+        ...rest,
+        status,
+        ...(validBonus(bonus) ? { bonus } : {}),
+      } as CourseRound);
       ids.add(item.id);
     }
     const a = data.active;
@@ -201,14 +262,18 @@ export function parseCourse(raw: string | null): CourseState {
       const complete = a.holes.at(-1)!.length === 3;
       state.active = {
         id: a.id,
+        model: a.model === 2 ? 2 : 1,
         lie: a.lie,
         startedAt: a.startedAt as number,
         holes: a.holes,
-        phase: complete
-          ? a.phase === "halfway" && a.holes.length === 3
-            ? "halfway"
-            : "result"
-          : "play",
+        phase:
+          a.phase === "bonus" && a.holes.some((h) => h.length === 3)
+            ? "bonus"
+            : complete
+              ? a.phase === "halfway" && a.holes.length === 3
+                ? "halfway"
+                : "result"
+              : "play",
       };
       state.lie = a.lie;
     }

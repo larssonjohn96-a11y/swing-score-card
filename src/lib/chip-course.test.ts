@@ -1,6 +1,9 @@
 import { describe, it, expect } from "vitest";
 import {
   COURSE_DISTANCES,
+  courseDistances,
+  courseHandicap,
+  liveStars,
   beatsScore,
   courseRecord,
   courseStorageKey,
@@ -26,11 +29,11 @@ function front(state = start(), points: ChipPoints[] = [3, 3, 3]) {
 function full(state = front(), points: ChipPoints[] = [3, 3, 3]) {
   state = reduceCourse(state, { type: "continue" });
   for (let i = 0; i < 3; i++) state = next(scoreHole(state, points));
-  return state;
+  return reduceCourse(state, { type: "save", at: 300 });
 }
 
 describe("six-hole course flow", () => {
-  it("always starts at 8m and follows exactly 8,10,12,14,16,20 without locks", () => {
+  it("always starts at 8m and follows exactly 8,12,16,10,14,18 without locks", () => {
     let p = start();
     const played: number[] = [];
     for (let i = 0; i < 6; i++) {
@@ -41,7 +44,9 @@ describe("six-hole course flow", () => {
         p = reduceCourse(p, { type: "continue" });
       }
     }
-    expect(played).toEqual([8, 10, 12, 14, 16, 20]);
+    expect(played).toEqual([8, 12, 16, 10, 14, 18]);
+    expect(p.active?.phase).toBe("bonus");
+    p = reduceCourse(p, { type: "save", at: 300 });
     expect(p.active).toBeNull();
     expect(p.history[0].status).toBe("full");
     expect(roundStars(p.history[0])).toBe(0);
@@ -71,6 +76,8 @@ describe("six-hole course flow", () => {
     expect(p.history).toHaveLength(0);
     expect(next(p)).toBe(p);
     p = reduceCourse(p, { type: "finish", at: 300 });
+    expect(p.active?.phase).toBe("bonus");
+    p = reduceCourse(p, { type: "save", at: 300 });
     expect(p.history).toHaveLength(1);
     expect(p.history[0].status).toBe("front");
     expect(p.active).toBeNull();
@@ -78,11 +85,12 @@ describe("six-hole course flow", () => {
     expect(courseRecord(p.history, "Fairway", "full")).toBeNull();
     expect(courseRecord(p.history, "Fairway", "back")).toBeNull();
   });
-  it("continues to 14m and ends with eighteen shots, not a separate back round", () => {
+  it("continues to 10m and ends with eighteen shots, not a separate back round", () => {
     let p = reduceCourse(front(), { type: "continue" });
     expect(p.active?.holes).toHaveLength(4);
     expect(p.active?.holes.at(-1)).toEqual([]);
     for (let i = 0; i < 3; i++) p = next(scoreHole(p));
+    p = reduceCourse(p, { type: "save", at: 300 });
     expect(p.history).toHaveLength(1);
     expect(p.history[0].holes.flat()).toHaveLength(18);
     expect(segmentScore(p.history[0], "back")).not.toBeNull();
@@ -96,12 +104,14 @@ describe("six-hole course flow", () => {
     expect(p.active?.holes[0]).toEqual([4, 4]);
     p = reduceCourse(p, { type: "score", points: 0 });
     expect(p.active?.holes).toEqual([[4, 4, 0]]);
-    expect(roundStars(p.active!)).toBe(1);
+    expect(roundStars(p.active!)).toBe(2);
   });
   it("discards incomplete holes when ending early and excludes partial segments from records", () => {
     let p = next(scoreHole(start()));
     p = reduceCourse(p, { type: "score", points: 4 });
     p = reduceCourse(p, { type: "finish", at: 300 });
+    expect(p.active?.phase).toBe("bonus");
+    p = reduceCourse(p, { type: "save", at: 300 });
     expect(p.history[0].holes).toHaveLength(1);
     expect(p.history[0].status).toBe("partial");
     expect(courseRecord(p.history, "Fairway", "front")).toBeNull();
@@ -183,5 +193,67 @@ describe("pause, persistence and data isolation", () => {
     p.history.push({ ...p.history[0], id: "bad", holes: [[4], [4, 4, 4]] });
     expect(parseCourse(JSON.stringify(p)).history).toHaveLength(1);
     expect(parseCourse("{bad")).toEqual(emptyCourse());
+  });
+});
+
+describe("live stars, bonus and round HCP", () => {
+  it("fills stars continuously with one whole star at three points", () => {
+    expect(liveStars(2)).toEqual([2 / 3, 0, 0]);
+    expect(liveStars(3)).toEqual([1, 0, 0]);
+    expect(liveStars(5)).toEqual([1, 2 / 3, 0]);
+    expect(liveStars(9)).toEqual([1, 1, 1]);
+    expect(liveStars(12)).toEqual([1, 1, 1]);
+    expect(holeStars([1, 1, 1], 0, "Fairway")).toBe(1);
+    expect(holeStars([2, 2, 2], 2, "Ruff")).toBe(2);
+    expect(holeStars([3, 3, 3], 5, "Fairway")).toBe(3);
+  });
+  it("stores one bonus independently after stopping at halfway", () => {
+    const p = reduceCourse(front(), { type: "finish", at: 300 });
+    expect(p.active?.phase).toBe("bonus");
+    const restored = parseCourse(JSON.stringify(p));
+    expect(restored).toEqual(p);
+    const saved = reduceCourse(restored, {
+      type: "save",
+      at: 400,
+      bonus: { leave: 0.8, holed: false },
+    });
+    expect(saved.history[0].holes.flat()).toHaveLength(9);
+    expect(saved.history[0].bonus).toEqual({ leave: 0.8, holed: false });
+    expect(roundStars(saved.history[0])).toBe(9);
+    expect(reduceCourse(saved, { type: "save", at: 401, bonus: { leave: 0, holed: true } })).toBe(
+      saved,
+    );
+  });
+  it("rejects malformed bonus distances and bypassing bonus phase", () => {
+    const draft = start();
+    expect(reduceCourse(draft, { type: "save", at: 200 })).toBe(draft);
+    const p = reduceCourse(front(), { type: "finish", at: 300 });
+    for (const bonus of [
+      { leave: -1, holed: false },
+      { leave: NaN, holed: false },
+      { leave: 1, holed: true },
+      { leave: 0, holed: false },
+    ])
+      expect(reduceCourse(p, { type: "save", at: 400, bonus })).toBe(p);
+    const saved = reduceCourse(p, { type: "save", at: 400, bonus: { leave: 0, holed: true } });
+    expect(parseCourse(JSON.stringify(saved))).toEqual(saved);
+  });
+  it("estimates HCP from shots rather than stars and excludes bonus", () => {
+    const good = full().history[0],
+      bad = full(front(start(), [0, 0, 0]), [0, 0, 0]).history[0];
+    expect(courseHandicap(good)).toBeLessThan(courseHandicap(bad)!);
+    expect(courseHandicap({ ...good, bonus: { leave: 0, holed: true } } as typeof good)).toBe(
+      courseHandicap(good),
+    );
+    expect(courseHandicap({ ...good, holes: [[]] })).toBeNull();
+    expect(courseHandicap({ ...good, holes: [...good.holes, [4]] })).toBe(courseHandicap(good));
+  });
+  it("preserves old distances and stars without mixing course records", () => {
+    const record = { ...full().history[0], model: 1 as const };
+    const p = parseCourse(JSON.stringify({ ...emptyCourse(), history: [record] }));
+    expect(courseDistances(record.model)).toEqual([8, 10, 12, 14, 16, 20]);
+    expect(roundStars(p.history[0])).toBe(11);
+    expect(courseRecord(p.history, "Fairway", "full")).toBeNull();
+    expect(courseRecord(p.history, "Fairway", "full", 1)?.stars).toBe(11);
   });
 });

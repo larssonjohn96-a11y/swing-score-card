@@ -216,7 +216,7 @@ function RootComponent() {
     const handleNavigationControl = (event: MouseEvent) => {
       const target = event.target as HTMLElement | null;
       const control = target?.closest<HTMLElement>("a,button");
-      if (!control) return;
+      if (!control || control.hasAttribute("data-local-navigation")) return;
       const label = control.getAttribute("aria-label")?.trim().toLowerCase() ?? "";
       const text = control.textContent?.trim().toLowerCase() ?? "";
       const hasArrowLeft = Boolean(control.querySelector(".lucide-arrow-left"));
