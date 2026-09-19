@@ -1,3 +1,4 @@
+import { syncChipRounds } from "./chip-cloud";
 import { chipAverage } from "./chip-competition";
 import { parseCourse, courseStorageKey } from "./chip-course";
 /**
@@ -64,6 +65,9 @@ export async function listFriendships(strict=false):Promise<{incoming:Friendship
 export async function pushPlayerSnapshot(expectedUserId?: string):Promise<boolean>{
   const{data:userData}=await supabase.auth.getUser();
   if(!userData.user || (expectedUserId && userData.user.id !== expectedUserId))return false;
+  try { await syncChipRounds(userData.user.id); } catch { return false; }
+  const {data:currentAuth}=await supabase.auth.getSession();
+  if(currentAuth.session?.user.id!==userData.user.id)return false;
   const real=loadRealHandicap();
   const card:RatingCardData=computeRatingCard(real);
   const cats=computeStableCategoryHandicaps(undefined,real??undefined);

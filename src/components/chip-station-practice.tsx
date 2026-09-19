@@ -1,5 +1,8 @@
+import { ChipAverageCard } from "./chip-average-card";
+import { ChipRoundImpact } from "./chip-round-impact";
+import { ChipOnboarding } from "./chip-onboarding";
 import { ChipLeaderboard } from "./chip-leaderboard";
-import { chipRecordGoal } from "@/lib/chip-competition";
+import { chipRecordGoal, chipAverage, chipAverageGoal, chipResultContext } from "@/lib/chip-competition";
 import { pushPlayerSnapshot } from "@/lib/friends-cloud";
 import { handicapLabel } from "@/lib/shortgame";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
@@ -273,6 +276,9 @@ export function ChipStationPractice({
   const [state, setState] = useState(emptyCourse);
   const stateRef = useRef(state);
   const [ready, setReady] = useState(false);
+  const [onboarding, setOnboarding] = useState(false);
+  const [cloudStatus, setCloudStatus] = useState<"loading"|"saved"|"error"|"local">("local");
+  const [cloudRetry, setCloudRetry] = useState(0);
   const [storageError, setStorageError] = useState(false);
   const [registering, setRegistering] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -317,6 +323,30 @@ export function ChipStationPractice({
     setConfirmation(null);
     setReady(true);
   }, [key, authLoading]);
+  useEffect(() => {
+    if(!ready || !userId){setCloudStatus("local");return;}
+    let live=true;
+    const refresh=()=>{
+      setCloudStatus("loading");
+      void pushPlayerSnapshot(userId).then(ok=>{if(live)setCloudStatus(ok?"saved":"error");}).catch(()=>{if(live)setCloudStatus("error");});
+    };
+    const update=(event:Event)=>{
+      if((event as CustomEvent).detail?.userId!==userId)return;
+      try {
+        const restored=parseCourse(localStorage.getItem(key));
+        if(JSON.stringify(restored.history)!==JSON.stringify(stateRef.current.history)){
+          const merged={...stateRef.current,history:restored.history};
+          stateRef.current=merged;
+          setState(merged);
+        }
+      } catch {if(live)setCloudStatus("error");}
+    };
+    window.addEventListener("sg4-chip-cloud-updated",update);
+    window.addEventListener("online",refresh);
+    window.addEventListener("focus",refresh);
+    refresh();
+    return ()=>{live=false;window.removeEventListener("sg4-chip-cloud-updated",update);window.removeEventListener("online",refresh);window.removeEventListener("focus",refresh);};
+  },[ready,userId,key,cloudRetry]);
   function commit(action: CourseAction) {
     if (!ready) return stateRef.current;
     const previous = stateRef.current;
@@ -333,7 +363,10 @@ export function ChipStationPractice({
     if (previous.active && !next.active && next.history.some((r) => r.id === previous.active!.id)) {
       setReviewId(previous.active.id);
       setFreshRound(previous.active.id);
-      if(userId) void pushPlayerSnapshot(userId).catch(() => {});
+      if(userId) {
+        setCloudStatus("loading");
+        void pushPlayerSnapshot(userId).then(ok=>setCloudStatus(ok?"saved":"error")).catch(()=>setCloudStatus("error"));
+      }
     }
     return next;
   }
@@ -344,6 +377,17 @@ export function ChipStationPractice({
   const index = active ? active.holes.length - 1 : 0;
   const shots = active?.holes[index] ?? [];
   const atHome = !active && !round && !historyOpen;
+  function requestStart() {
+    let seen=false;
+    try {seen=localStorage.getItem(`sg4-chip-intro-v1:${userId??"guest"}`)==="seen";} catch {}
+    if(!seen && !stateRef.current.history.length && !stateRef.current.active){setOnboarding(true);return;}
+    start();
+  }
+  function finishOnboarding() {
+    try {localStorage.setItem(`sg4-chip-intro-v1:${userId??"guest"}`,"seen");} catch {}
+    setOnboarding(false);
+    start();
+  }
   function start() {
     tapUntil.current = 0;
     commit({ type: "start", id: uid(), at: Date.now() });
@@ -405,7 +449,9 @@ export function ChipStationPractice({
     : halfwayNeeded !== null && halfwayNeeded <= 24
       ? `${halfwayNeeded} poäng på sista tre slår ditt PB.`
       : null;
-  const recordGoal = active ? chipRecordGoal(active, state.history) : null;
+  const currentAverage=chipAverage(state.history);
+  const averageGoal=active?chipAverageGoal(active,state.history):null;
+  const recordGoal = active ? chipRecordGoal(active, state.history) ?? averageGoal : null;
   const pace = active ? coursePace(active, state.history) : null;
   const totalPoints = active?.holes.reduce((sum, h) => sum + holePoints(h), 0) ?? 0;
   const completed = active?.holes.filter((h) => h.length === 3).length ?? 0;
@@ -418,6 +464,7 @@ export function ChipStationPractice({
     : [];
   const before = courseBests(previous, round?.model);
   const roundPoints = round?.holes.reduce((sum, h) => sum + holePoints(h), 0) ?? 0;
+  const roundContext=round?chipResultContext(round,state.history):null;
   const roundAverage = round ? roundStars(round) / round.holes.length : 0;
   const personalBest =
     !!round &&
@@ -501,11 +548,13 @@ export function ChipStationPractice({
             <>
               <section className={`${card} p-5`}>
                 <h2 className="mb-4 text-xl font-black">Dags för en chippingrunda?</h2>
-                <button className={primary} onClick={start}>
-                  Starta rundan <ArrowRight className="h-5 w-5" />
+                <button className={primary} onClick={requestStart} disabled={!!userId && cloudStatus==="loading"}>
+                  {userId && cloudStatus==="loading" ? "Hämtar rundor…" : "Starta rundan"} <ArrowRight className="h-5 w-5" />
                 </button>
+                {currentAverage.count>0&&<p className="mt-3 text-center text-sm font-bold text-blue-700">{currentAverage.points>=72?"Matcha ditt perfekta snitt: 72 poäng.":`Nästa mål: ${Math.floor(currentAverage.points)+1} poäng – över ditt snitt.`}</p>}
                 <CourseMap holes={[]} lie={lie} cursor={0} />
               </section>
+              <ChipAverageCard history={state.history} />
               <section className="mt-4">
                 <h2 className="mb-3 flex items-center gap-2 text-lg font-black">
                   <Trophy className="h-5 w-5 text-amber-500" />
@@ -519,9 +568,7 @@ export function ChipStationPractice({
                   Tidigare rundor <span className="ml-auto text-slate-400">{history.length}</span>
                 </button>
               </section>
-              <p className="mt-3 text-center text-xs text-slate-400">
-                Rundor och rekord sparas på den här enheten.
-              </p>
+
             </>
           )}
           {active && !round && (
@@ -728,7 +775,7 @@ export function ChipStationPractice({
                     <p className="mt-2 text-base font-bold text-slate-700">
                       {front.stars >= 7.5 ? "Strålande! Fortsätt så." : front.stars >= 4.5 ? "Bra jobbat!" : "Bra kämpat! Nästa hål, ny chans."}
                     </p>
-                    {halfwayMessage && <p className="mt-1 text-sm text-slate-600">{halfwayMessage}</p>}
+                    {(halfwayMessage || averageGoal) && <p className="mt-1 text-sm text-slate-600">{halfwayMessage || averageGoal}</p>}
                     <p className="mt-3 text-5xl font-black text-blue-700">
                       {starLabel(front.stars / 3)} ★
                       <span className="mt-2 block text-sm font-medium text-slate-500">
@@ -838,6 +885,7 @@ export function ChipStationPractice({
                     <Trophy aria-hidden="true" className="mr-1 inline h-4 w-4" /> Nytt personbästa!
                   </p>
                 )}
+                <ChipRoundImpact round={round} history={state.history} userId={userId} fresh={freshRound===round.id} personalBest={personalBest}/>
                 {round.status === "partial" && (
                   <p className="text-sm text-slate-500">
                     Avslutad före nästa delmål. Endast färdiga hål visas.
@@ -847,11 +895,12 @@ export function ChipStationPractice({
               <div className="mt-4">
                 <ChipAnalysis round={round} />
               </div>
+              <p className="mb-2 mt-4 text-center text-sm font-bold text-slate-700">{roundContext?.message}</p>
               <button
-                className={`${secondary} mt-3 !border-slate-950 !bg-slate-950 !text-white`}
+                className={`${secondary} !border-slate-950 !bg-slate-950 !text-white`}
                 onClick={start}
               >
-                Ny runda <ArrowRight className="h-5 w-5" />
+                Spela igen <ArrowRight className="h-5 w-5" />
               </button>
               <button
                 className={`${secondary} mt-3`}
@@ -876,6 +925,11 @@ export function ChipStationPractice({
           )}
         </>
       )}
+      {(atHome || round) && ready && <div className="mt-3 text-center text-xs text-slate-500">
+        {!userId ? "Gäst: rundorna sparas på den här enheten." : cloudStatus==="saved" ? "Rundorna är sparade på ditt konto." : cloudStatus==="loading" ? "Synkar dina rundor…" : "Sparat här. Kontosynk väntar."}
+        {userId&&cloudStatus==="error"&&<button className="ml-2 font-bold text-blue-600" onClick={()=>setCloudRetry(n=>n+1)}>Försök igen</button>}
+      </div>}
+      {onboarding&&<ChipOnboarding onDone={finishOnboarding} onClose={()=>setOnboarding(false)}/>}
       <Dialog open={exitDialog} onOpenChange={setExitDialog}>
         <DialogContent className="w-[calc(100%_-_2rem)] max-w-md rounded-3xl bg-white text-slate-950">
           <DialogTitle>
