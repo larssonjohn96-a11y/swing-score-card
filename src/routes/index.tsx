@@ -118,12 +118,12 @@ function BrowseHeading({ title, subtitle, action, to }: { title: string; subtitl
 const ROW_CLASS = "-mx-5 mt-3.5 flex gap-2 overflow-x-auto bg-transparent px-5 pb-0.5 scroll-smooth overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden";
 const CARD_BASE = "relative flex h-[220px] w-[164px] shrink-0 flex-col justify-end overflow-hidden rounded-[24px] border border-black/[.04] px-4 pb-4 pt-4 text-white";
 
-function SimpleCard({ label, title, tone, imageSrc }: { label: string; title: string; tone: string; imageSrc?: string }) {
+function SimpleCard({ label, title, tone, imageSrc, imagePosition }: { label: string; title: string; tone: string; imageSrc?: string; imagePosition?: string }) {
   return (
     <div className={`${CARD_BASE} ${tone}`}>
       {imageSrc && (
         <>
-          <img src={imageSrc} alt="" className="absolute inset-0 h-full w-full object-cover" />
+          <img src={imageSrc} alt="" className="absolute inset-0 h-full w-full object-cover" style={{ objectPosition: imagePosition }} />
           <span className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/15 to-black/5" />
         </>
       )}
@@ -487,7 +487,7 @@ function Home() {
         <section className="mt-7" aria-label="Spela en runda">
           <div className="flex items-end justify-between gap-3 px-0.5"><div><h2 className="text-[24px] font-black leading-none text-foreground">Spela en runda</h2><p className="mt-1.5 text-sm text-muted-foreground">Slå ditt personbästa och få ett HCP-resultat.</p></div><Link to="/spela-runda" className="shrink-0 text-xs font-bold text-blue-600">Alla rundor</Link></div>
           <DragScrollRow>
-            <Link to="/chipprundan" className="block shrink-0"><SimpleCard label="Spela själv" title="Chipprundan" tone="bg-[#118267]" imageSrc="/chip-card.jpg" /></Link>
+            <Link to="/chipprundan" className="block shrink-0"><SimpleCard label="Spela själv" title="Chipprundan" tone="bg-[#118267]" imageSrc="/0d286fd4-99fa-47eb-b39c-a7ff718ebdd6.png" imagePosition="18% 50%" /></Link>
           </DragScrollRow>
         </section>
 
