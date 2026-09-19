@@ -11,16 +11,12 @@ import {
   Star,
   Trophy,
   Undo2,
-  UserRound,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ActivityReview } from "@/components/activity-review";
 import { ACTIVITY_CATEGORIES } from "@/lib/activity-review";
-import { supabase } from "@/integrations/supabase/client";
 import { CHIP_ZONES, type ChipLie, type ChipPoints } from "@/lib/chip-stations";
 import {
-  COURSE_DISTANCES,
   courseDistances,
   courseHandicap,
   liveStars,
@@ -52,13 +48,12 @@ const primary =
   "flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl border-b-4 border-blue-800 bg-blue-600 px-4 py-3 text-base font-bold text-white active:translate-y-0.5 active:border-b-2 disabled:opacity-40";
 const secondary =
   "flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base font-bold text-slate-700";
-const lieName = (lie: ChipLie) => (lie === "Fairway" ? "Kortklippt" : "Ruff");
 const segmentNames: Record<Segment, string> = {
   full: "Hela rundan",
   front: "Första tre",
   back: "Sista tre",
 };
-const starLabel = (value: number) => String(value).replace(".", ",");
+const starLabel = (value: number) => value.toFixed(1).replace(".", ",");
 const uid = () => crypto.randomUUID();
 const dateLabel = (at: number) =>
   new Date(at).toLocaleDateString("sv-SE", { day: "numeric", month: "short" });
@@ -77,7 +72,7 @@ function Stars({
   return (
     <span
       className="inline-flex gap-1.5"
-      aria-label={`${starLabel(Math.floor(values.reduce((sum, v) => sum + v, 0) * 2) / 2)} av 3 stjärnor`}
+      aria-label={`${starLabel(values.reduce((sum, v) => sum + v, 0))} av 3 stjärnor`}
     >
       {values.map((fill, i) => (
         <span key={i} className={`relative block ${large ? "h-11 w-11" : "h-4 w-4"}`}>
@@ -105,31 +100,29 @@ function Stars({
   );
 }
 const positions = [
-  [16, 22],
-  [48, 14],
-  [83, 25],
-  [83, 76],
-  [49, 85],
-  [16, 75],
+  [16, 27],
+  [48, 25],
+  [83, 27],
+  [83, 73],
+  [49, 75],
+  [16, 73],
 ];
 function CourseMap({
   holes,
   lie,
   cursor,
-  avatar,
-  model = 3,
+  model = 4,
 }: {
   holes: ChipPoints[][];
   lie: ChipLie;
   cursor: number | "halfway" | null;
-  avatar: string | null;
   model?: number;
 }) {
   const point =
     cursor === "halfway" ? [12, 50] : typeof cursor === "number" ? positions[cursor] : null;
   return (
     <div
-      className="relative my-4 h-[310px] rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-100 via-green-50 to-emerald-100"
+      className="relative my-4 h-[310px] overflow-hidden rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-100 via-green-50 to-emerald-100"
       aria-label="Golfbanan: första tre, Halfway House, sista tre"
     >
       <svg
@@ -158,16 +151,14 @@ function CourseMap({
       {courseDistances(model).map((d, i) => (
         <div
           key={i}
-          className="absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1"
+          className="absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-0.5"
           style={{ left: `${positions[i][0]}%`, top: `${positions[i][1]}%` }}
         >
           <span
             aria-label={`Hål ${i + 1}, ${d} meter`}
-            className={`relative flex h-12 w-16 items-center justify-center gap-1 ${cursor === i ? "text-emerald-900" : "text-emerald-700"}`}
+            className={`relative flex h-8 w-16 items-center justify-center gap-1 ${cursor === i ? "text-emerald-900" : "text-emerald-700"}`}
           >
-            <Flag
-              className={`h-6 w-6 ${cursor === i ? "fill-emerald-600/50" : "fill-emerald-700/20"}`}
-            />
+            <Flag className="h-7 w-7 fill-yellow-400 text-yellow-600" />
             <strong className="text-lg">{i + 1}</strong>
           </span>
           <span className="rounded-full bg-white/75 px-2 text-sm font-bold text-emerald-950">
@@ -176,27 +167,42 @@ function CourseMap({
           <Stars count={holeStars(holes[i] ?? [], i, lie, model)} />
         </div>
       ))}
-      <div className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-2 rounded-2xl border border-emerald-200 bg-white/95 px-3 py-2 shadow-sm">
-        <Coffee className="h-5 w-5 shrink-0 text-amber-700" />
-        <span className="text-sm font-bold">Halfway House</span>
+      <div className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-1 whitespace-nowrap rounded-xl border border-emerald-200 bg-white/95 px-2 py-1 shadow-sm">
+        <Coffee className="h-4 w-4 shrink-0 text-amber-700" />
+        <span className="text-xs font-bold">Halfway House</span>
       </div>
       {point && (
         <div
           className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-full transition-[left,top] duration-700 ease-in-out motion-reduce:transition-none"
           style={{
-            left: `${point[0]}%`,
-            top: `calc(${point[1]}% + ${cursor === "halfway" ? 20 : -26}px)`,
+            left: `calc(${point[0]}% + 24px)`,
+            top: `calc(${point[1]}% - 16px)`,
           }}
           aria-label={
             cursor === "halfway" ? "Du är vid Halfway House" : `Du är vid hål ${Number(cursor) + 1}`
           }
         >
-          <Avatar className="h-10 w-10 border-[3px] border-white bg-blue-700 shadow-md">
-            <AvatarImage src={avatar ?? undefined} alt="Din avatar" />
-            <AvatarFallback className="bg-blue-700 text-white">
-              <UserRound className="h-6 w-6" />
-            </AvatarFallback>
-          </Avatar>
+          <svg
+            role="img"
+            aria-label="Golfare"
+            width="32"
+            height="38"
+            viewBox="0 0 32 38"
+            className="drop-shadow-sm"
+          >
+            <circle cx="13" cy="7" r="4" fill="#f4c7a1" />
+            <path d="M8 5q1-6 8-2l3 3H8" fill="#2563eb" />
+            <path d="M12 13l6 7-4 7-7-4 1-9z" fill="#2563eb" />
+            <path
+              d="M15 15l7 9M10 16l10 9"
+              stroke="#f4c7a1"
+              strokeWidth="3"
+              strokeLinecap="round"
+            />
+            <path d="M9 25l-3 10m8-9 2 9" stroke="#334155" strokeWidth="4" strokeLinecap="round" />
+            <path d="M21 24l7 10h-5" fill="none" stroke="#475569" strokeWidth="1.5" />
+            <circle cx="24" cy="36" r="1.5" fill="white" stroke="#94a3b8" />
+          </svg>
         </div>
       )}
     </div>
@@ -212,7 +218,6 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
   const [reviewId, setReviewId] = useState<string | null>(null);
   const [rules, setRules] = useState(false);
   const [exitDialog, setExitDialog] = useState(false);
-  const [avatar, setAvatar] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState<{ ball: number; points: number } | null>(null);
   const confirmationTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(
@@ -243,22 +248,6 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
     setConfirmation(null);
     setReady(true);
   }, [key, authLoading]);
-  useEffect(() => {
-    setAvatar(null);
-    if (!userId) return;
-    let alive = true;
-    void supabase
-      .from("profiles")
-      .select("avatar_url")
-      .eq("id", userId)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (alive) setAvatar(data?.avatar_url ?? null);
-      });
-    return () => {
-      alive = false;
-    };
-  }, [userId]);
   function commit(action: CourseAction) {
     if (!ready) return stateRef.current;
     const previous = stateRef.current;
@@ -279,21 +268,9 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
   const active = state.active;
   const round = reviewId ? state.history.find((r) => r.id === reviewId) : undefined;
   const lie = round?.lie ?? active?.lie ?? state.lie;
-  const distances = courseDistances(round?.model ?? active?.model ?? 3);
+  const distances = courseDistances(round?.model ?? active?.model ?? 4);
   const index = active ? active.holes.length - 1 : 0;
   const shots = active?.holes[index] ?? [];
-  const stars = active
-    ? roundStars(active) +
-      (active.phase === "play"
-        ? Math.floor(
-            liveStars(
-              holePoints(shots),
-              holeTargets(index, lie, active.model),
-              active.model,
-            ).reduce((sum, fill) => sum + fill, 0) * 2,
-          ) / 2
-        : 0)
-    : 0;
   const atHome = !active && !round && !historyOpen;
   function start() {
     tapUntil.current = 0;
@@ -339,10 +316,7 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
     if (confirmationTimer.current) clearTimeout(confirmationTimer.current);
     confirmationTimer.current = setTimeout(() => setConfirmation(null), 1300);
   }
-  const history = state.history
-    .filter((r) => r.lie === state.lie)
-    .slice()
-    .reverse();
+  const history = state.history.slice().reverse();
   const records = (["full", "front", "back"] as const).map((segment) => ({
     segment,
     best: courseRecord(state.history, state.lie, segment),
@@ -383,12 +357,7 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
           <h1 className="text-xl font-black">
             {historyOpen && !round ? "Dina rundor" : "Chipprundan"}
           </h1>
-          <button
-            onClick={() => setRules(true)}
-            className="min-h-12 text-sm font-bold text-blue-700"
-          >
-            Regler
-          </button>
+          <span className="w-12" aria-hidden="true" />
         </header>
       )}
       {!ready ? (
@@ -416,23 +385,6 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
               .
             </p>
           )}
-          {(atHome || (historyOpen && !round)) && (
-            <div
-              aria-label="Underlag"
-              className="mb-4 grid grid-cols-2 gap-2 rounded-2xl bg-slate-200/70 p-1.5"
-            >
-              {(["Fairway", "Ruff"] as const).map((value) => (
-                <button
-                  key={value}
-                  aria-pressed={state.lie === value}
-                  onClick={() => commit({ type: "lie", lie: value })}
-                  className={`min-h-12 rounded-xl text-base font-bold ${state.lie === value ? "bg-white text-blue-700 shadow-sm" : "text-slate-600"}`}
-                >
-                  {lieName(value)}
-                </button>
-              ))}
-            </div>
-          )}
           {atHome && (
             <>
               <section className={`${card} p-5`}>
@@ -440,7 +392,7 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
                 <button className={primary} onClick={start}>
                   Starta rundan <ArrowRight className="h-5 w-5" />
                 </button>
-                <CourseMap holes={[]} lie={lie} cursor={0} avatar={avatar} />
+                <CourseMap holes={[]} lie={lie} cursor={0} />
               </section>
               <section className="mt-4">
                 <h2 className="mb-3 flex items-center gap-2 text-lg font-black">
@@ -452,9 +404,9 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
                     <div key={segment} className={`${card} rounded-2xl px-2 py-4 text-center`}>
                       <p className="text-sm font-bold text-slate-600">{segmentNames[segment]}</p>
                       <p className="mt-2 text-xl font-black text-blue-700">
-                        {best ? starLabel(best.stars) : "–"}
-                        <span className="text-sm text-slate-400">
-                          /{segment === "full" ? 18 : 9}
+                        {best ? starLabel(best.stars / (segment === "full" ? 6 : 3)) : "–"} ★
+                        <span className="block text-xs font-medium text-slate-500">
+                          snitt / hål
                         </span>
                       </p>
                       <p className="mt-1 text-xs text-slate-500">
@@ -468,12 +420,12 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
                   Tidigare rundor <span className="ml-auto text-slate-400">{history.length}</span>
                 </button>
               </section>
-              <p className="mt-5 text-center text-sm leading-6 text-slate-500">
-                {lie === "Fairway"
-                  ? "Spela från kortklippt gräs utanför greenen."
-                  : "Spela från längre gräs med bollen synlig."}{" "}
-                Samma underlag hela rundan.
-              </p>
+              <button
+                onClick={() => setRules(true)}
+                className="mt-3 min-h-11 w-full text-sm font-bold text-slate-500"
+              >
+                Så spelar du
+              </button>
               <p className="mt-3 text-center text-xs text-slate-400">
                 Rundor och rekord sparas på den här enheten.
               </p>
@@ -481,50 +433,35 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
           )}
           {active && !round && (
             <>
-              <div className="flex items-center justify-between text-sm font-bold text-slate-500">
-                <span>
-                  {active.phase === "halfway"
-                    ? "FÖRSTA TRE KLARA"
-                    : `HÅL ${index + 1} AV 6 · ${lieName(lie)}`}
-                </span>
-                <span className="flex items-center gap-1 text-amber-700">
-                  <Star className="h-4 w-4 fill-amber-400" />
-                  {starLabel(stars)}/{active.phase === "halfway" ? 9 : 18}
-                </span>
-              </div>
               {!registering && active.phase !== "halfway" && (
-                <CourseMap
-                  model={active.model}
-                  holes={active.holes}
-                  lie={lie}
-                  cursor={active.phase === "halfway" ? "halfway" : index}
-                  avatar={avatar}
-                />
+                <CourseMap model={active.model} holes={active.holes} lie={lie} cursor={index} />
               )}
-              <div
-                className="mb-2 flex min-h-12 items-center justify-center"
-                role="status"
-                aria-live="polite"
-              >
-                {confirmation && (
-                  <div
-                    key={`${index}-${confirmation.ball}`}
-                    className="chip-check flex items-center gap-2 rounded-full bg-emerald-100 px-4 py-2 text-sm font-bold text-emerald-800"
-                  >
-                    <Check className="h-5 w-5" />
-                    Boll {confirmation.ball} sparad · +{confirmation.points} p
-                    {confirmation.ball < 3 ? ` → Boll ${confirmation.ball + 1}` : " · Hålet klart"}
-                  </div>
-                )}
-              </div>
+              {registering && (
+                <div
+                  className="mb-2 flex min-h-12 items-center justify-center"
+                  role="status"
+                  aria-live="polite"
+                >
+                  {confirmation && (
+                    <div
+                      key={`${index}-${confirmation.ball}`}
+                      className="chip-check flex items-center gap-2 rounded-full bg-emerald-100 px-4 py-2 text-sm font-bold text-emerald-800"
+                    >
+                      <Check className="h-5 w-5" />
+                      Boll {confirmation.ball} sparad · +{confirmation.points} p
+                      {confirmation.ball < 3
+                        ? ` → Boll ${confirmation.ball + 1}`
+                        : " · Hålet klart"}
+                    </div>
+                  )}
+                </div>
+              )}
               {(active.phase === "play" || active.phase === "result") && (
                 <section>
                   {!registering ? (
                     <>
                       <div className={`${card} p-5 text-center`}>
-                        <p className="text-sm font-bold text-blue-700">
-                          HÅL {index + 1} · {lieName(lie)}
-                        </p>
+                        <p className="text-2xl font-black text-blue-700">Hål {index + 1} av 6</p>
                         <h2 className="my-3 text-6xl font-black">
                           {distances[index]}
                           <span className="ml-2 text-2xl">m</span>
@@ -542,7 +479,12 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
                     <>
                       <div className={`${card} mt-1 p-4`}>
                         <div className="flex items-center justify-between">
-                          <h2 className="text-3xl font-black">{distances[index]} m</h2>
+                          <h2 className="font-black">
+                            <span className="block text-base text-blue-700">
+                              Hål {index + 1} av 6
+                            </span>
+                            <span className="text-3xl">{distances[index]} m</span>
+                          </h2>
                           <p className="text-lg font-bold text-blue-700">
                             {holePoints(shots)}/12 p
                           </p>
@@ -627,10 +569,18 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
                   <div className="rounded-3xl border border-amber-200 bg-amber-50 p-6 text-center">
                     <Coffee className="mx-auto h-9 w-9 text-amber-700" />
                     <h2 className="mt-3 text-2xl font-black">Halfway House</h2>
-                    <p className="mt-2 text-base text-slate-600">Första tre klara</p>
+                    <p className="mt-2 text-base text-slate-600">
+                      {front.stars >= 7.5
+                        ? "Strålande! Fortsätt så."
+                        : front.stars >= 4.5
+                          ? "Bra jobbat! Redo för sista tre?"
+                          : "Bra kämpat! Nästa hål, ny chans."}
+                    </p>
                     <p className="mt-3 text-5xl font-black text-blue-700">
-                      {starLabel(front.stars)}
-                      <span className="text-xl text-slate-400">/9 ★</span>
+                      {starLabel(front.stars / 3)} ★
+                      <span className="mt-2 block text-sm font-medium text-slate-500">
+                        snitt / hål · {front.points} poäng totalt
+                      </span>
                     </p>
                   </div>
                   <button
@@ -654,9 +604,7 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
           )}
           {historyOpen && !round && !active && (
             <section>
-              <p className="mb-4 text-sm text-slate-500">
-                {lieName(state.lie)} · Stjärnor först, poäng vid lika.
-              </p>
+              <p className="mb-4 text-sm text-slate-500">Stjärnor först, poäng vid lika.</p>
               {!history.length ? (
                 <div className={`${card} p-6 text-center`}>
                   <Flag className="mx-auto h-8 w-8 text-blue-600" />
@@ -688,7 +636,7 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
                               : `${r.holes.length} hål · avbruten`}
                         </span>
                         <span className="mt-1 block text-sm text-slate-500">
-                          {r.model !== 3 ? "Tidigare bana · " : ""}
+                          {r.model !== 4 ? "Tidigare bana · " : ""}
                           {dateLabel(r.finishedAt)} ·{" "}
                           {r.holes.reduce((s, h) => s + holePoints(h), 0)} p
                         </span>
@@ -697,7 +645,7 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
                         </span>
                       </span>
                       <span className="flex items-center gap-2 text-lg font-black text-blue-700">
-                        {starLabel(roundStars(r))}/{r.holes.length * 3} ★
+                        {starLabel(roundStars(r) / r.holes.length)} ★ snitt
                         <ChevronRight className="h-5 w-5" />
                       </span>
                     </button>
@@ -718,15 +666,16 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
                       : "Din sparade runda"}
                 </h2>
                 <p className="mt-2 text-sm text-slate-500">
-                  {dateLabel(round.finishedAt)} · {lieName(round.lie)} · {round.holes.length * 3}{" "}
-                  bollar
+                  {dateLabel(round.finishedAt)} · {round.holes.length * 3} bollar
                 </p>
                 <p className="my-4 text-5xl font-black text-blue-700">
-                  {starLabel(roundStars(round))}
-                  <span className="text-xl text-slate-400">/{round.holes.length * 3} ★</span>
+                  {starLabel(roundStars(round) / round.holes.length)} ★
+                  <span className="mt-2 block text-sm font-medium text-slate-500">
+                    snittstjärnor per hål
+                  </span>
                 </p>
                 <p className="text-base font-bold text-emerald-700">
-                  Est. chipp-HCP {handicapLabel(courseHandicap(round)!)}
+                  {round.holes.reduce((sum, shots) => sum + holePoints(shots), 0)} poäng totalt
                 </p>
                 {newRecords.length > 0 && (
                   <p className="rounded-xl bg-amber-50 p-3 text-base font-bold text-amber-800">
@@ -751,7 +700,7 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
                     outcomes: round.holes.flatMap((h, i) =>
                       h.map((points, j) => ({
                         label: `Hål ${i + 1} · boll ${j + 1}`,
-                        context: `${courseDistances(round.model)[i]} m · ${lieName(round.lie)}`,
+                        context: `${courseDistances(round.model)[i]} m`,
                         result: CHIP_ZONES.find((z) => z.points === points)!.label,
                         rank: 4 - points,
                         category: ACTIVITY_CATEGORIES[4 - points],
@@ -762,8 +711,8 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
                   }}
                 />
               </div>
-              <button className={`${primary} mt-5`} onClick={start}>
-                Ny runda · börja på 8 m <ArrowRight className="h-5 w-5" />
+              <button className={`${secondary} mt-3`} onClick={start}>
+                Ny runda <ArrowRight className="h-5 w-5" />
               </button>
               <button
                 className={`${secondary} mt-3`}
@@ -775,7 +724,7 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
                 Alla rundor
               </button>
               <button
-                className="mt-2 min-h-12 w-full text-sm font-bold text-slate-500"
+                className={`${secondary} mt-3`}
                 onClick={() => {
                   setReviewId(null);
                   setHistoryOpen(false);
@@ -818,62 +767,14 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
       </Dialog>
       <Dialog open={rules} onOpenChange={setRules}>
         <DialogContent className="max-h-[85dvh] w-[calc(100%_-_2rem)] max-w-md overflow-y-auto rounded-3xl bg-white text-slate-950">
-          <DialogTitle>Så spelar du chipprundan</DialogTitle>
+          <DialogTitle>Så spelar du</DialogTitle>
           <DialogDescription>
-            Börja på 8 meter. Slå tre bollar per hål från samma plats. Registrera resultaten när du
-            kommer fram till hålet.
+            Slå 3 bollar från avståndet på skärmen. Tryck sedan hur nära hålet varje boll stannade.
           </DialogDescription>
-          <p className="text-base">
-            Första tre: 8, 12, 16 m.
-            <br />
-            Sista tre: 10, 14, 18 m.
-          </p>
-          <p className="text-sm leading-6">
-            Vid Halfway House väljer du att spara första tre eller fortsätta. Alla hål spelas i
-            ordning, oavsett resultat. Avstånd mäts från bollen till hålet. Samma underlag hela
-            rundan.
-          </p>
-          {CHIP_ZONES.map((z) => (
-            <div
-              key={z.points}
-              className="flex justify-between border-b border-slate-100 py-1 text-base"
-            >
-              <span>{z.label}</span>
-              <strong>{z.points} p</strong>
-            </div>
-          ))}
           <p className="text-sm">
-            Exakt 1, 2 och 3 m räknas inom respektive zon. Stjärnorna tjänas på nytt varje runda.
-            Vid lika antal stjärnor avgör poängen. 3 poäng ger en stjärna, 4 ger 1,5, 5 ger två, 6
-            ger 2,5 och 9 ger tre. 2 poäng ger en halv stjärna.
+            Närmare hålet = fler poäng. 3 poäng fyller en stjärna. Max 3 stjärnor per hål.
           </p>
-          <table className="w-full text-center text-sm">
-            <caption className="mb-2 text-left font-bold">Stjärnkrav · {lieName(lie)}</caption>
-            <thead>
-              <tr>
-                <th>Hål</th>
-                <th>m</th>
-                <th>★</th>
-                <th>★★</th>
-                <th>★★★</th>
-              </tr>
-            </thead>
-            <tbody>
-              {COURSE_DISTANCES.map((d, i) => (
-                <tr key={d} className="border-t border-slate-100">
-                  <td className="py-2">{i + 1}</td>
-                  <td>{d}</td>
-                  {holeTargets(i, lie).map((p) => (
-                    <td key={p}>{p}</td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <p className="text-xs text-slate-500">
-            Rekord jämförs separat för kortklippt och ruff. Stjärnorna är spelmål, inte ett
-            handicap.
-          </p>
+          <p className="text-sm">Efter 3 hål: avsluta eller spela 3 till.</p>
         </DialogContent>
       </Dialog>
     </main>

@@ -38,7 +38,11 @@ export function ActivityReviewShell({
       <DialogTrigger asChild>
         <button
           type="button"
-          className="group mt-3 block w-full rounded-[22px] border border-blue-200 bg-gradient-to-br from-white to-blue-50 p-3.5 text-left text-slate-950 shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
+          className={
+            compact
+              ? "flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base font-bold text-slate-700"
+              : "group mt-3 block w-full rounded-[22px] border border-blue-200 bg-gradient-to-br from-white to-blue-50 p-3.5 text-left text-slate-950 shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
+          }
         >
           {!compact && (
             <>
@@ -76,11 +80,15 @@ export function ActivityReviewShell({
             </>
           )}
           <span
-            className={`${compact ? "" : "mt-3"} flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-3 py-2.5 text-sm font-bold text-white shadow-sm group-hover:bg-emerald-700`}
+            className={
+              compact
+                ? "flex items-center justify-center gap-2"
+                : "mt-3 flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-3 py-2.5 text-sm font-bold text-white shadow-sm group-hover:bg-emerald-700"
+            }
           >
             {!canViewDetailedBreakdowns && <Lock aria-hidden="true" className="h-4 w-4" />}
             {compact
-              ? "Visa analys"
+              ? `Analys · Est. HCP ${hcp ?? "–"}`
               : activity === "match"
                 ? "Visa matchanalys"
                 : "Visa passanalys"}

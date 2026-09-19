@@ -2,12 +2,12 @@ import { handicapFromProximity } from "./shortgame";
 import { isChipPoints, type ChipLie, type ChipPoints } from "./chip-stations";
 export const COURSE_DISTANCES = [8, 12, 16, 10, 14, 18] as const;
 const LEGACY_DISTANCES = [8, 10, 12, 14, 16, 20] as const;
-export const courseDistances = (model = 3) => (model === 1 ? LEGACY_DISTANCES : COURSE_DISTANCES);
+export const courseDistances = (model = 4) => (model === 1 ? LEGACY_DISTANCES : COURSE_DISTANCES);
 export type BonusChip = { leave: number; holed: boolean };
 export type Segment = "full" | "front" | "back";
 export type CourseRound = {
   id: string;
-  model: 1 | 2 | 3;
+  model: 1 | 2 | 3 | 4;
   bonus?: BonusChip;
   lie: ChipLie;
   startedAt: number;
@@ -17,7 +17,7 @@ export type CourseRound = {
 };
 export type CourseSession = {
   id: string;
-  model: 1 | 2 | 3;
+  model: 1 | 2 | 3 | 4;
   lie: ChipLie;
   startedAt: number;
   holes: ChipPoints[][];
@@ -48,7 +48,8 @@ export const courseStorageKey = (user: string | null) => `sg4-chip-course-v1:${u
 export const holePoints = (shots: readonly ChipPoints[]) =>
   shots.reduce<number>((a, b) => a + b, 0);
 /** Provisional course goals, versioned with saved rounds. No locks or ability rating. */
-export function holeTargets(index: number, lie: ChipLie, model = 3): readonly number[] {
+export function holeTargets(index: number, lie: ChipLie, model = 4): readonly number[] {
+  if (model === 4) return index >= 0 && index < 6 ? [3, 6, 9] : [];
   if (model === 3) return index >= 0 && index < 6 ? [3, 5, 9] : [];
   if (model === 2) return index >= 0 && index < 6 ? [3, 6, 9] : [];
   const first = [8, 8, 7, 7, 6, 5][index];
@@ -57,11 +58,13 @@ export function holeTargets(index: number, lie: ChipLie, model = 3): readonly nu
     Math.max(2, Math.min(12, n - (lie === "Ruff" ? 1 : 0))),
   );
 }
-export const holeStars = (shots: readonly ChipPoints[], index: number, lie: ChipLie, model = 3) =>
+export const holeStars = (shots: readonly ChipPoints[], index: number, lie: ChipLie, model = 4) =>
   shots.length === 3
-    ? model === 3
-      ? Math.floor(starProgress(holePoints(shots)) * 2) / 2
-      : holeTargets(index, lie, model).filter((n) => holePoints(shots) >= n).length
+    ? model === 4
+      ? Math.min(3, holePoints(shots) / 3)
+      : model === 3
+        ? Math.floor(starProgress(holePoints(shots)) * 2) / 2
+        : holeTargets(index, lie, model).filter((n) => holePoints(shots) >= n).length
     : 0;
 /** Smooth progress, with half-star milestones and a harder final half-star. */
 function starProgress(points: number) {
@@ -69,13 +72,14 @@ function starProgress(points: number) {
   if (points <= 6) return 1 + (points - 3) / 2;
   return Math.min(3, 2.5 + (points - 6) / 6);
 }
-export function liveStars(points: number, targets: readonly number[] = [3, 5, 9], model = 3) {
+export function liveStars(points: number, targets: readonly number[] = [3, 6, 9], model = 4) {
+  if (model === 4) return [0, 1, 2].map((i) => Math.max(0, Math.min(1, points / 3 - i)));
   if (model === 3) return [0, 1, 2].map((i) => Math.max(0, Math.min(1, starProgress(points) - i)));
   return targets.map((target, i) =>
     Math.max(0, Math.min(1, (points - (targets[i - 1] ?? 0)) / (target - (targets[i - 1] ?? 0)))),
   );
 }
-type ScoredRound = Pick<CourseRound, "holes" | "lie"> & { model?: 1 | 2 | 3 };
+type ScoredRound = Pick<CourseRound, "holes" | "lie"> & { model?: 1 | 2 | 3 | 4 };
 /** Reuses SG4 proximity model. Coarse zones use representative distances; bonus excluded.
  * This practice estimate must never be written into official or pooled handicap history.
  */
@@ -108,11 +112,11 @@ export function courseRecord(
   history: CourseRound[],
   lie: ChipLie,
   segment: Segment,
-  model = 3,
+  model = 4,
 ): (SegmentScore & { id: string }) | null {
   let best: (SegmentScore & { id: string }) | null = null;
   for (const round of history) {
-    if (round.lie !== lie || round.model !== model) continue;
+    if ((model < 4 && round.lie !== lie) || round.model !== model) continue;
     const score = segmentScore(round, segment);
     if (score && beatsScore(score, best)) best = { ...score, id: round.id };
   }
@@ -148,8 +152,8 @@ export function reduceCourse(state: CourseState, action: CourseAction): CourseSt
       ...state,
       active: {
         id: action.id,
-        model: 3,
-        lie: state.lie,
+        model: 4,
+        lie: "Fairway",
         startedAt: action.at,
         holes: [[]],
         phase: "play",
@@ -242,7 +246,7 @@ export function parseCourse(raw: string | null): CourseState {
         typeof item.id !== "string" ||
         !item.id ||
         ids.has(item.id) ||
-        (item.model !== 1 && item.model !== 2 && item.model !== 3) ||
+        (item.model !== 1 && item.model !== 2 && item.model !== 3 && item.model !== 4) ||
         !validLie(item.lie) ||
         !Number.isFinite(item.startedAt) ||
         !Number.isFinite(item.finishedAt) ||
@@ -272,7 +276,7 @@ export function parseCourse(raw: string | null): CourseState {
       const complete = a.holes.at(-1)!.length === 3;
       state.active = {
         id: a.id,
-        model: a.model === 3 ? 3 : a.model === 2 ? 2 : 1,
+        model: a.model === 4 ? 4 : a.model === 3 ? 3 : a.model === 2 ? 2 : 1,
         lie: a.lie,
         startedAt: a.startedAt as number,
         holes: a.holes,

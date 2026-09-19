@@ -104,7 +104,7 @@ describe("six-hole course flow", () => {
     expect(p.active?.holes[0]).toEqual([4, 4]);
     p = reduceCourse(p, { type: "score", points: 0 });
     expect(p.active?.holes).toEqual([[4, 4, 0]]);
-    expect(roundStars(p.active!)).toBe(2.5);
+    expect(roundStars(p.active!)).toBeCloseTo(8 / 3);
   });
   it("discards incomplete holes when ending early and excludes partial segments from records", () => {
     let p = next(scoreHole(start()));
@@ -144,9 +144,9 @@ describe("stars and comparable records", () => {
     expect(beatsScore({ stars: 5, points: 17 }, { stars: 5, points: 17 })).toBe(false);
     expect(beatsScore({ stars: 4, points: 36 }, { stars: 5, points: 17 })).toBe(false);
   });
-  it("compares the same underlay and same segment only", () => {
+  it("compares segments without a lie filter for new rounds", () => {
     const p = full();
-    expect(courseRecord(p.history, "Ruff", "full")).toBeNull();
+    expect(courseRecord(p.history, "Ruff", "full")).toEqual(courseRecord(p.history, "Fairway", "full"));
     const r = p.history[0];
     expect(segmentScore(r, "full")?.stars).toBe(
       segmentScore(r, "front")!.stars + segmentScore(r, "back")!.stars,
@@ -197,23 +197,18 @@ describe("pause, persistence and data isolation", () => {
 });
 
 describe("live stars, bonus and round HCP", () => {
-  it("fills stars continuously with one whole star at three points", () => {
-    expect(liveStars(2)).toEqual([2 / 3, 0, 0]);
-    expect(liveStars(3)).toEqual([1, 0, 0]);
-    expect(liveStars(4)).toEqual([1, 0.5, 0]);
-    expect(liveStars(5)).toEqual([1, 1, 0]);
-    expect(liveStars(6)).toEqual([1, 1, 0.5]);
-    expect(liveStars(9)).toEqual([1, 1, 1]);
-    expect(liveStars(12)).toEqual([1, 1, 1]);
-    expect(holeStars([1, 1, 1], 0, "Fairway")).toBe(1);
-    expect(holeStars([2, 2, 2], 2, "Ruff")).toBe(2.5);
-    expect(holeStars([2, 0, 0], 0, "Fairway")).toBe(0.5);
-    expect(holeStars([2, 2, 0], 0, "Fairway")).toBe(1.5);
-    expect(holeStars([2, 2, 2], 0, "Fairway", 2)).toBe(2);
+  it("uses exactly three points per star across live, saved and restored results", () => {
+    for (let points = 0; points <= 12; points += 0.5) {
+      expect(liveStars(points).reduce((sum, fill) => sum + fill, 0)).toBeCloseTo(Math.min(3, points / 3));
+    }
+    expect(liveStars(1.5)).toEqual([0.5, 0, 0]);
+    expect(liveStars(4.5)).toEqual([1, 0.5, 0]);
+    expect(liveStars(7.5)).toEqual([1, 1, 0.5]);
+    expect(holeStars([2, 2, 2], 0, "Fairway")).toBe(2);
+    expect(holeStars([2, 2, 2], 0, "Fairway", 3)).toBe(2.5);
     const saved = full(front(start(), [2, 2, 2]), [2, 2, 2]);
-    expect(roundStars(saved.history[0])).toBe(15);
+    expect(roundStars(saved.history[0])).toBe(12);
     expect(parseCourse(JSON.stringify(saved))).toEqual(saved);
-    expect(holeStars([3, 3, 3], 5, "Fairway")).toBe(3);
   });
   it("saves directly without a bonus after halfway", () => {
     const saved = reduceCourse(front(), { type: "finish", at: 300 });
