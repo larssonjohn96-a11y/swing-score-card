@@ -1,34 +1,25 @@
-/** Chipping Practice v1. Product thresholds, not a validated handicap model.
+/** Chipping Practice v2 – stations, stars and guided rounds.
+ * Product thresholds, not a validated handicap model.
  * Never reuse the old 0–5 match scale or feed these repeated shots into HCP tests.
  */
 export type ChipPoints = 0 | 1 | 2 | 3 | 4;
 export type ChipLie = "Fairway" | "Ruff";
-export type Mastery = "Bronze" | "Silver" | "Gold" | "Elite" | "Perfect";
-export type Station = {
-  distance: number;
-  unlock: number;
-  tiers: ReadonlyArray<{ name: Mastery; points: number }>;
+export type ChipMode = "guided" | "standalone";
+
+export const CHIP_DISTANCES = [8, 12, 16, 20, 25, 30] as const;
+export const ROUNDS_PER_GUIDED = 3;
+export const BALLS_PER_ROUND = 3;
+export const MAX_ROUND_POINTS = 12;
+export const CHIP_LIES: readonly ChipLie[] = ["Fairway", "Ruff"];
+export const CHIP_LIE_LABELS: Record<ChipLie, string> = {
+  Fairway: "Kortklippt",
+  Ruff: "Ruff",
+};
+export const CHIP_LIE_HELP: Record<ChipLie, string> = {
+  Fairway: "Kortklippt gräs utanför green.",
+  Ruff: "Längre gräs – bollen syns i ruffen.",
 };
 
-const station = (distance: number, unlock: number): Station => ({
-  distance,
-  unlock,
-  tiers: [
-    { name: "Bronze", points: unlock },
-    { name: "Silver", points: unlock + 1 },
-    { name: "Gold", points: unlock + 2 },
-    { name: "Elite", points: Math.min(11, unlock + 4) },
-    { name: "Perfect", points: 12 },
-  ],
-});
-export const CHIP_STATIONS: readonly Station[] = [
-  station(8, 8),
-  station(12, 7),
-  station(16, 6),
-  station(20, 5),
-  station(25, 4),
-  station(30, 3),
-];
 export const CHIP_ZONES: ReadonlyArray<{ points: ChipPoints; label: string; detail: string }> = [
   { points: 4, label: "Sänkt", detail: "Bollen i hål" },
   { points: 3, label: "Inom 1 m", detail: "Ej sänkt · högst 1 m" },
@@ -36,11 +27,29 @@ export const CHIP_ZONES: ReadonlyArray<{ points: ChipPoints; label: string; deta
   { points: 1, label: "2–3 m", detail: "Över 2 m · högst 3 m" },
   { points: 0, label: "Över 3 m", detail: "Mer än 3 m kvar" },
 ];
-export const ROUNDS_PER_PASS = 5;
 export const CHIP_STORAGE_PREFIX = "sg4-chip-stations-v1";
+
+export type StarThresholds = readonly [number, number, number];
+export type Station = { distance: number; index: number };
+export const CHIP_STATIONS: readonly Station[] = CHIP_DISTANCES.map((distance, index) => ({
+  distance,
+  index,
+}));
+
+/** Centralised star thresholds per station and lie. Never requires a perfect score. */
+export function starThresholds(distance: number, lie: ChipLie): StarThresholds {
+  const index = CHIP_DISTANCES.indexOf(distance as (typeof CHIP_DISTANCES)[number]);
+  if (index < 0) return [8, 10, 12];
+  const first = 8 - index; // 8,7,6,5,4,3
+  const penalty = lie === "Ruff" ? 1 : 0;
+  const clamp = (value: number) => Math.max(2, Math.min(MAX_ROUND_POINTS, value - penalty));
+  return [clamp(first), clamp(first + 2), clamp(first + 4)];
+}
+
 export type ChipRound = {
   id: string;
   sessionId: string;
+  mode: ChipMode;
   distance: number;
   lie: ChipLie;
   shots: ChipPoints[];
@@ -48,24 +57,46 @@ export type ChipRound = {
 };
 export type ChipSession = {
   id: string;
-  lies: ChipLie[];
-  phase: "stations" | "play" | "result" | "summary";
+  lie: ChipLie;
+  mode: ChipMode;
+  phase: "map" | "play" | "result" | "summary";
   current: ChipRound | null;
   startedAt: number;
 };
-export type ChipProgress = { version: 1; rounds: ChipRound[]; session: ChipSession | null };
+export type ChipProgress = {
+  version: 2;
+  lie: ChipLie;
+  rounds: ChipRound[];
+  session: ChipSession | null;
+};
 export type ChipAction =
-  | { type: "start"; id: string; lies: ChipLie[]; at: number }
-  | { type: "begin"; distance: number; lie: ChipLie; id: string; at: number }
+  | { type: "setLie"; lie: ChipLie }
+  | { type: "map" }
+  | { type: "startGuided"; id: string; roundId: string; distance: number; lie: ChipLie; at: number }
+  | {
+      type: "startStandalone";
+      id: string;
+      roundId: string;
+      distance: number;
+      lie: ChipLie;
+      at: number;
+    }
+  | { type: "next"; roundId: string; distance: number; at: number }
   | { type: "score"; points: ChipPoints }
   | { type: "undo" }
-  | { type: "stations" }
-  | { type: "finish" };
+  | { type: "finish" }
+  | { type: "exit" };
 
-export const emptyChipProgress = (): ChipProgress => ({ version: 1, rounds: [], session: null });
+export const emptyChipProgress = (): ChipProgress => ({
+  version: 2,
+  lie: "Fairway",
+  rounds: [],
+  session: null,
+});
 export const chipStorageKey = (userId: string | null) =>
   `${CHIP_STORAGE_PREFIX}:${userId ?? "guest"}`;
-export const getStation = (distance: number) => CHIP_STATIONS.find((s) => s.distance === distance);
+export const isChipDistance = (value: unknown): value is number =>
+  typeof value === "number" && CHIP_DISTANCES.includes(value as (typeof CHIP_DISTANCES)[number]);
 export const roundTotal = (round: Pick<ChipRound, "shots">) =>
   round.shots.reduce<number>((sum, p) => sum + p, 0);
 export const isChipPoints = (value: unknown): value is ChipPoints =>
@@ -74,132 +105,173 @@ export const pointsForLeave = (metres: number, holed = false): ChipPoints => {
   if (!Number.isFinite(metres) || metres < 0) throw new RangeError("Invalid leave distance");
   return holed ? 4 : metres <= 1 ? 3 : metres <= 2 ? 2 : metres <= 3 ? 1 : 0;
 };
-export function bestAt(progress: ChipProgress, distance: number): number | null {
-  const rounds = progress.rounds.filter((r) => r.distance === distance);
+
+export function bestAt(progress: ChipProgress, distance: number, lie: ChipLie): number | null {
+  const rounds = progress.rounds.filter((r) => r.distance === distance && r.lie === lie);
   return rounds.length ? Math.max(...rounds.map(roundTotal)) : null;
 }
-export function recentAt(progress: ChipProgress, distance: number): number | null {
-  const rounds = progress.rounds.filter((r) => r.distance === distance).slice(-5);
-  return rounds.length ? rounds.reduce((sum, r) => sum + roundTotal(r), 0) / rounds.length : null;
+export function starsFor(distance: number, lie: ChipLie, score: number | null): 0 | 1 | 2 | 3 {
+  if (score === null) return 0;
+  const tiers = starThresholds(distance, lie);
+  return tiers.filter((t) => score >= t).length as 0 | 1 | 2 | 3;
 }
-export function masteryAt(distance: number, score: number | null): Mastery | null {
-  if (score === null) return null;
-  const tiers = getStation(distance)?.tiers ?? [];
-  return [...tiers].reverse().find((t) => score >= t.points)?.name ?? null;
-}
-export function unlockedDistances(progress: ChipProgress): number[] {
-  const distances = [CHIP_STATIONS[0].distance];
-  for (let i = 0; i < CHIP_STATIONS.length - 1; i++) {
-    const current = CHIP_STATIONS[i];
-    if ((bestAt(progress, current.distance) ?? -1) < current.unlock) break;
-    distances.push(CHIP_STATIONS[i + 1].distance);
+export const starsAt = (progress: ChipProgress, distance: number, lie: ChipLie) =>
+  starsFor(distance, lie, bestAt(progress, distance, lie));
+
+/** One star on a station unlocks the next distance for the SAME lie. */
+export function unlockedDistances(progress: ChipProgress, lie: ChipLie): number[] {
+  const open = [CHIP_DISTANCES[0] as number];
+  for (let i = 0; i < CHIP_DISTANCES.length - 1; i++) {
+    if (starsAt(progress, CHIP_DISTANCES[i], lie) < 1) break;
+    open.push(CHIP_DISTANCES[i + 1]);
   }
-  return distances;
+  return open;
 }
-export function goalAt(
-  progress: ChipProgress,
-  distance: number,
-): { points: number; label: string } {
-  const config = getStation(distance)!;
-  const best = bestAt(progress, distance);
-  const next = CHIP_STATIONS[CHIP_STATIONS.indexOf(config) + 1];
-  if (best === null || best < config.unlock) {
-    return { points: config.unlock, label: next ? `Lås upp ${next.distance} m` : "Nå Bronze" };
-  }
-  const tier = config.tiers.find((t) => t.points > best);
-  return tier
-    ? { points: tier.points, label: `Nå ${tier.name}` }
-    : { points: 12, label: "Perfect igen" };
+export const isUnlocked = (progress: ChipProgress, distance: number, lie: ChipLie) =>
+  unlockedDistances(progress, lie).includes(distance);
+export function unlockRequirement(distance: number, lie: ChipLie): string | null {
+  const index = CHIP_DISTANCES.indexOf(distance as (typeof CHIP_DISTANCES)[number]);
+  if (index <= 0) return null;
+  const previous = CHIP_DISTANCES[index - 1];
+  return `Ta 1 stjärna på ${previous} m (${starThresholds(previous, lie)[0]} p) från ${CHIP_LIE_LABELS[lie].toLowerCase()}.`;
 }
+export function totalStars(progress: ChipProgress, lie: ChipLie) {
+  const earned = CHIP_DISTANCES.reduce((sum, d) => sum + starsAt(progress, d, lie), 0);
+  const available = unlockedDistances(progress, lie).length * 3;
+  return { earned, available, max: CHIP_DISTANCES.length * 3 };
+}
+
+export type ChipGoal = { points: number; star: 1 | 2 | 3 | null; label: string };
+export function goalAt(progress: ChipProgress, distance: number, lie: ChipLie): ChipGoal {
+  const best = bestAt(progress, distance, lie);
+  const tiers = starThresholds(distance, lie);
+  const index = tiers.findIndex((t) => (best ?? -1) < t);
+  if (index < 0) return { points: MAX_ROUND_POINTS, star: null, label: "Alla stjärnor tagna" };
+  const star = (index + 1) as 1 | 2 | 3;
+  const label =
+    star === 1 && distance !== CHIP_DISTANCES[CHIP_DISTANCES.length - 1]
+      ? `1 stjärna låser upp nästa avstånd`
+      : `Nå ${star} ${star === 1 ? "stjärna" : "stjärnor"}`;
+  return { points: tiers[index], star, label };
+}
+
 export const sessionRounds = (progress: ChipProgress) =>
   progress.rounds.filter((r) => r.sessionId === progress.session?.id);
 
-/** A transparent default recommendation; users can always pick another unlocked station.
- * No random jumps, no permanent skill estimates from a three-ball sample.
- */
-export function recommendStation(progress: ChipProgress): { distance: number; reason: string } {
-  const unlocked = unlockedDistances(progress);
-  const rounds = sessionRounds(progress);
-  const last = rounds.at(-1);
-  if (!last) return { distance: 8, reason: "Börja kort och hitta kontrollen." };
-  const index = CHIP_STATIONS.findIndex((s) => s.distance === last.distance);
-  const config = CHIP_STATIONS[index];
-  const prior = { ...progress, rounds: progress.rounds.filter((r) => r.id !== last.id) };
-  const fresh = unlocked.find((d) => !unlockedDistances(prior).includes(d));
-  if (fresh)
-    return {
-      distance: fresh,
-      reason: "Ny station upplåst. Du kan också stanna och förbättra rekordet.",
-    };
-  if (roundTotal(last) < config.unlock - 1 && index > 0) {
-    return {
-      distance: CHIP_STATIONS[index - 1].distance,
-      reason: "Ta ett kortare avstånd och bygg upp kontrollen igen.",
-    };
-  }
-  if (roundTotal(last) < config.unlock && (bestAt(progress, last.distance) ?? 0) < config.unlock) {
-    return {
-      distance: last.distance,
-      reason: "Stanna på den här stationen. Längre avstånd väntar.",
-    };
-  }
-  // Bring short-distance precision back regularly, even for advanced players.
-  if (rounds.length % 3 === 0 && unlocked.length > 1) {
-    const short = unlocked.slice(0, Math.max(1, Math.ceil(unlocked.length / 2)));
-    const choice = short.find((d) => d !== last.distance) ?? short[0];
-    return {
-      distance: choice,
-      reason: "Tillbaka till kort precision – nästa medalj finns även här.",
-    };
-  }
-  const unvisited = unlocked.find((d) => !rounds.some((r) => r.distance === d));
-  if (unvisited !== undefined)
-    return { distance: unvisited, reason: "Bygg kontroll på nästa upplåsta station." };
-  if (rounds.length >= 2 && rounds.at(-2)?.distance === last.distance && unlocked.length > 1) {
-    const neighbour = unlocked[Math.max(0, unlocked.indexOf(last.distance) - 1)];
-    return {
-      distance: neighbour === last.distance ? unlocked[1] : neighbour,
-      reason: "Byt station och jaga ett nytt mål.",
-    };
-  }
-  return {
-    distance: last.distance,
-    reason: "Ett nytt försök på samma avstånd, eller välj en annan station.",
+/** Transparent selection: familiar → near next star → frontier, with short-distance variety. */
+export function recommendStation(
+  progress: ChipProgress,
+  lie: ChipLie,
+  played: readonly number[] = sessionRounds(progress).map((r) => r.distance),
+): { distance: number; reason: string } {
+  const open = unlockedDistances(progress, lie);
+  if (open.length === 1)
+    return { distance: open[0], reason: "Enda upplåsta stationen – ta första stjärnan här." };
+  const last = played.at(-1);
+  const repeated = played.length >= 2 && played.at(-2) === last;
+  const avoid = (list: number[]) => {
+    const filtered = repeated ? list.filter((d) => d !== last) : list;
+    return filtered.length ? filtered : list;
   };
+  const frontier = open[open.length - 1];
+  const shortHalf = open.slice(0, Math.max(1, Math.ceil(open.length / 2)));
+
+  if (starsAt(progress, frontier, lie) === 0 && !repeated)
+    return { distance: frontier, reason: "Ny station – en stjärna räcker för att gå vidare." };
+
+  const unplayedShort = avoid(shortHalf.filter((d) => !played.includes(d)));
+  if (played.length && played.every((d) => d >= 20) && unplayedShort.length)
+    return { distance: unplayedShort[0], reason: "Tillbaka till kort precision." };
+
+  const nearGoal = avoid(
+    open
+      .filter((d) => starsAt(progress, d, lie) < 3)
+      .sort((a, b) => {
+        const gap = (d: number) => goalAt(progress, d, lie).points - (bestAt(progress, d, lie) ?? 0);
+        return gap(a) - gap(b) || a - b;
+      }),
+  );
+  if (nearGoal.length && starsAt(progress, nearGoal[0], lie) > 0)
+    return { distance: nearGoal[0], reason: "Du är nära nästa stjärna här." };
+
+  const unplayed = avoid(open.filter((d) => !played.includes(d)));
+  if (unplayed.length)
+    return { distance: unplayed[0], reason: "Bygg kontroll på nästa upplåsta station." };
+  if (nearGoal.length) return { distance: nearGoal[0], reason: "Närmast nästa stjärna." };
+  return { distance: avoid([...open])[0], reason: "Ett nytt försök på en upplåst station." };
 }
+
+/** Honest preview of the remaining guided stations; re-evaluated after every attempt. */
+export function plannedStations(
+  progress: ChipProgress,
+  lie: ChipLie,
+  remaining: number,
+): number[] {
+  const played = sessionRounds(progress).map((r) => r.distance);
+  const plan: number[] = [];
+  for (let i = 0; i < remaining; i++) {
+    const next = recommendStation(progress, lie, [...played, ...plan]).distance;
+    plan.push(next);
+  }
+  return plan;
+}
+
+const newRound = (
+  session: Pick<ChipSession, "id" | "mode" | "lie">,
+  id: string,
+  distance: number,
+  at: number,
+): ChipRound => ({
+  id,
+  sessionId: session.id,
+  mode: session.mode,
+  distance,
+  lie: session.lie,
+  shots: [],
+  at,
+});
 
 /** Pure state transitions: completion, unlocks and persistence cannot double-count taps. */
 export function reduceChipProgress(state: ChipProgress, action: ChipAction): ChipProgress {
   const session = state.session;
-  if (action.type === "start") {
-    const lies = [...new Set(action.lies)].filter(
-      (lie): lie is ChipLie => lie === "Fairway" || lie === "Ruff",
-    );
-    if (!lies.length) return state;
+  if (action.type === "setLie") {
+    if (!CHIP_LIES.includes(action.lie) || session) return state;
+    return state.lie === action.lie ? state : { ...state, lie: action.lie };
+  }
+  if (action.type === "startGuided" || action.type === "startStandalone") {
+    if (session) return state;
+    if (!CHIP_LIES.includes(action.lie) || !isUnlocked(state, action.distance, action.lie))
+      return state;
+    if (state.rounds.some((r) => r.id === action.roundId)) return state;
+    const mode: ChipMode = action.type === "startGuided" ? "guided" : "standalone";
+    const base = { id: action.id, mode, lie: action.lie };
     return {
       ...state,
-      session: { id: action.id, lies, phase: "stations", current: null, startedAt: action.at },
+      lie: action.lie,
+      session: {
+        ...base,
+        phase: "play",
+        startedAt: action.at,
+        current: newRound(base, action.roundId, action.distance, action.at),
+      },
     };
   }
   if (!session) return state;
-  if (action.type === "begin") {
-    if (session.phase === "play" && session.current?.shots.length) return state;
-    if (!unlockedDistances(state).includes(action.distance) || !session.lies.includes(action.lie))
-      return state;
-    if (state.rounds.some((r) => r.id === action.id)) return state;
+  if (action.type === "exit") return { ...state, session: null };
+  if (action.type === "map") {
+    if (session.current?.shots.length) return state;
+    return { ...state, session: { ...session, phase: "map", current: null } };
+  }
+  if (action.type === "next") {
+    if (session.current?.shots.length && session.phase === "play") return state;
+    if (!isUnlocked(state, action.distance, session.lie)) return state;
+    if (state.rounds.some((r) => r.id === action.roundId)) return state;
     return {
       ...state,
       session: {
         ...session,
         phase: "play",
-        current: {
-          id: action.id,
-          sessionId: session.id,
-          distance: action.distance,
-          lie: action.lie,
-          shots: [],
-          at: action.at,
-        },
+        current: newRound(session, action.roundId, action.distance, action.at),
       },
     };
   }
@@ -208,11 +280,11 @@ export function reduceChipProgress(state: ChipProgress, action: ChipAction): Chi
       session.phase !== "play" ||
       !session.current ||
       !isChipPoints(action.points) ||
-      session.current.shots.length >= 3
+      session.current.shots.length >= BALLS_PER_ROUND
     )
       return state;
     const current = { ...session.current, shots: [...session.current.shots, action.points] };
-    const complete = current.shots.length === 3;
+    const complete = current.shots.length === BALLS_PER_ROUND;
     return {
       ...state,
       rounds:
@@ -234,10 +306,6 @@ export function reduceChipProgress(state: ChipProgress, action: ChipAction): Chi
       },
     };
   }
-  if (action.type === "stations") {
-    if (session.phase === "play" && session.current?.shots.length) return state;
-    return { ...state, session: { ...session, phase: "stations", current: null } };
-  }
   if (action.type === "finish")
     return { ...state, session: { ...session, phase: "summary", current: null } };
   return state;
@@ -252,56 +320,54 @@ function validRound(value: unknown, complete: boolean): value is ChipRound {
     typeof value.id === "string" &&
     value.id.length > 0 &&
     typeof value.sessionId === "string" &&
-    typeof value.distance === "number" &&
-    !!getStation(value.distance) &&
+    isChipDistance(value.distance) &&
     (value.lie === "Fairway" || value.lie === "Ruff") &&
     typeof value.at === "number" &&
     Number.isFinite(value.at) &&
     Array.isArray(value.shots) &&
-    (complete ? value.shots.length === 3 : value.shots.length <= 3) &&
+    (complete ? value.shots.length === BALLS_PER_ROUND : value.shots.length <= BALLS_PER_ROUND) &&
     value.shots.every(isChipPoints)
   );
 }
-/** Ignore the legacy 0–5 scale and malformed records. Restore unfinished rounds safely. */
+/** Accepts v1 history (same three-ball shape with a known lie) and ignores the legacy 0–5 scale. */
 export function parseChipProgress(raw: string | null): ChipProgress {
   try {
     const data: unknown = JSON.parse(raw ?? "null");
-    if (!isRecord(data) || data.version !== 1 || !Array.isArray(data.rounds))
+    if (!isRecord(data) || (data.version !== 1 && data.version !== 2) || !Array.isArray(data.rounds))
       return emptyChipProgress();
     const ids = new Set<string>();
-    const rounds = data.rounds.filter((r): r is ChipRound => {
-      if (!validRound(r, true) || ids.has(r.id)) return false;
-      ids.add(r.id);
-      return true;
+    const rounds = data.rounds.flatMap((entry): ChipRound[] => {
+      if (!validRound(entry, true) || ids.has(entry.id)) return [];
+      ids.add(entry.id);
+      return [{ ...entry, mode: entry.mode === "standalone" ? "standalone" : "guided" }];
     });
-    const progress: ChipProgress = { version: 1, rounds, session: null };
+    const lie: ChipLie = data.lie === "Ruff" ? "Ruff" : "Fairway";
+    const progress: ChipProgress = { version: 2, lie, rounds, session: null };
     const session = data.session;
     if (
+      data.version !== 2 ||
       !isRecord(session) ||
       typeof session.id !== "string" ||
       typeof session.startedAt !== "number" ||
       !Number.isFinite(session.startedAt) ||
-      !Array.isArray(session.lies)
+      (session.lie !== "Fairway" && session.lie !== "Ruff") ||
+      !["map", "play", "result", "summary"].includes(String(session.phase))
     )
       return progress;
-    const lies = [
-      ...new Set(session.lies.filter((l): l is ChipLie => l === "Fairway" || l === "Ruff")),
-    ];
-    if (!lies.length || !["stations", "play", "result", "summary"].includes(String(session.phase)))
-      return progress;
+    const mode: ChipMode = session.mode === "standalone" ? "standalone" : "guided";
     const current =
       validRound(session.current, false) &&
       session.current.sessionId === session.id &&
-      lies.includes(session.current.lie) &&
-      unlockedDistances(progress).includes(session.current.distance)
+      session.current.lie === session.lie &&
+      isUnlocked(progress, session.current.distance, session.lie)
         ? session.current
         : null;
     let phase = session.phase as ChipSession["phase"];
-    if ((phase === "play" || phase === "result") && !current) phase = "stations";
+    if ((phase === "play" || phase === "result") && !current) phase = "map";
     if (current && (phase === "play" || phase === "result")) {
-      if (current.shots.length === 3) {
+      if (current.shots.length === BALLS_PER_ROUND) {
         phase = "result";
-        if (!ids.has(current.id)) rounds.push(current);
+        if (!ids.has(current.id)) rounds.push({ ...current, mode });
       } else {
         phase = "play";
         // An incomplete draft cannot simultaneously be a committed round.
@@ -310,7 +376,8 @@ export function parseChipProgress(raw: string | null): ChipProgress {
     }
     progress.session = {
       id: session.id,
-      lies,
+      lie: session.lie,
+      mode,
       startedAt: session.startedAt,
       phase,
       current: phase === "play" || phase === "result" ? current : null,

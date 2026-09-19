@@ -24,6 +24,7 @@ import { Route as TraningRouteImport } from './routes/traning'
 import { Route as TornadoRouteImport } from './routes/tornado'
 import { Route as TesterRouteImport } from './routes/tester'
 import { Route as TeeshotRouteImport } from './routes/teeshot'
+import { Route as StandardiseradeTesterRouteImport } from './routes/standardiserade-tester'
 import { Route as SpelaRouteImport } from './routes/spela'
 import { Route as SpeedTestRouteImport } from './routes/speed-test'
 import { Route as SpeedRouteImport } from './routes/speed'
@@ -46,6 +47,7 @@ import { Route as PrecisionRouteImport } from './routes/precision'
 import { Route as PitchRouteImport } from './routes/pitch'
 import { Route as PgaTour18PuttarHistorikRouteImport } from './routes/pga-tour-18-puttar-historik'
 import { Route as PgaTour18PuttarRouteImport } from './routes/pga-tour-18-puttar'
+import { Route as Par3ChallengeRouteImport } from './routes/par-3-challenge'
 import { Route as OffteeTestRouteImport } from './routes/offtee-test'
 import { Route as OffteeRouteImport } from './routes/offtee'
 import { Route as NotiserRouteImport } from './routes/notiser'
@@ -67,6 +69,7 @@ import { Route as KortputtRouteImport } from './routes/kortputt'
 import { Route as KontoRouteImport } from './routes/konto'
 import { Route as KlockPuttRouteImport } from './routes/klock-putt'
 import { Route as JamforRouteImport } from './routes/jamfor'
+import { Route as HcpTestsRouteImport } from './routes/hcp-tests'
 import { Route as HcpGoalRouteImport } from './routes/hcp-goal'
 import { Route as GreenReadingHistorikRouteImport } from './routes/green-reading-historik'
 import { Route as GreenReadingRouteImport } from './routes/green-reading'
@@ -74,6 +77,7 @@ import { Route as FairwayStreakRouteImport } from './routes/fairway-streak'
 import { Route as FairwayRouteImport } from './routes/fairway'
 import { Route as DriverKonsekvensHistorikRouteImport } from './routes/driver-konsekvens-historik'
 import { Route as DriverKonsekvensRouteImport } from './routes/driver-konsekvens'
+import { Route as DailyChallengeRouteImport } from './routes/daily-challenge'
 import { Route as CupRouteImport } from './routes/cup'
 import { Route as CombineRouteImport } from './routes/combine'
 import { Route as CoachRouteImport } from './routes/coach'
@@ -177,6 +181,11 @@ const TesterRoute = TesterRouteImport.update({
 const TeeshotRoute = TeeshotRouteImport.update({
   id: '/teeshot',
   path: '/teeshot',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StandardiseradeTesterRoute = StandardiseradeTesterRouteImport.update({
+  id: '/standardiserade-tester',
+  path: '/standardiserade-tester',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SpelaRoute = SpelaRouteImport.update({
@@ -292,6 +301,11 @@ const PgaTour18PuttarRoute = PgaTour18PuttarRouteImport.update({
   path: '/pga-tour-18-puttar',
   getParentRoute: () => rootRouteImport,
 } as any)
+const Par3ChallengeRoute = Par3ChallengeRouteImport.update({
+  id: '/par-3-challenge',
+  path: '/par-3-challenge',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OffteeTestRoute = OffteeTestRouteImport.update({
   id: '/offtee-test',
   path: '/offtee-test',
@@ -397,6 +411,11 @@ const JamforRoute = JamforRouteImport.update({
   path: '/jamfor',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HcpTestsRoute = HcpTestsRouteImport.update({
+  id: '/hcp-tests',
+  path: '/hcp-tests',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HcpGoalRoute = HcpGoalRouteImport.update({
   id: '/hcp-goal',
   path: '/hcp-goal',
@@ -431,6 +450,11 @@ const DriverKonsekvensHistorikRoute =
 const DriverKonsekvensRoute = DriverKonsekvensRouteImport.update({
   id: '/driver-konsekvens',
   path: '/driver-konsekvens',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DailyChallengeRoute = DailyChallengeRouteImport.update({
+  id: '/daily-challenge',
+  path: '/daily-challenge',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CupRoute = CupRouteImport.update({
@@ -602,6 +626,7 @@ export interface FileRoutesByFullPath {
   '/coach': typeof CoachRoute
   '/combine': typeof CombineRoute
   '/cup': typeof CupRoute
+  '/daily-challenge': typeof DailyChallengeRoute
   '/driver-konsekvens': typeof DriverKonsekvensRoute
   '/driver-konsekvens-historik': typeof DriverKonsekvensHistorikRoute
   '/fairway': typeof FairwayRoute
@@ -609,6 +634,7 @@ export interface FileRoutesByFullPath {
   '/green-reading': typeof GreenReadingRoute
   '/green-reading-historik': typeof GreenReadingHistorikRoute
   '/hcp-goal': typeof HcpGoalRoute
+  '/hcp-tests': typeof HcpTestsRoute
   '/jamfor': typeof JamforRouteWithChildren
   '/klock-putt': typeof KlockPuttRoute
   '/konto': typeof KontoRoute
@@ -630,6 +656,7 @@ export interface FileRoutesByFullPath {
   '/notiser': typeof NotiserRoute
   '/offtee': typeof OffteeRoute
   '/offtee-test': typeof OffteeTestRoute
+  '/par-3-challenge': typeof Par3ChallengeRoute
   '/pga-tour-18-puttar': typeof PgaTour18PuttarRoute
   '/pga-tour-18-puttar-historik': typeof PgaTour18PuttarHistorikRoute
   '/pitch': typeof PitchRoute
@@ -652,6 +679,7 @@ export interface FileRoutesByFullPath {
   '/speed': typeof SpeedRoute
   '/speed-test': typeof SpeedTestRoute
   '/spela': typeof SpelaRoute
+  '/standardiserade-tester': typeof StandardiseradeTesterRoute
   '/teeshot': typeof TeeshotRoute
   '/tester': typeof TesterRoute
   '/tornado': typeof TornadoRoute
@@ -698,6 +726,7 @@ export interface FileRoutesByTo {
   '/coach': typeof CoachRoute
   '/combine': typeof CombineRoute
   '/cup': typeof CupRoute
+  '/daily-challenge': typeof DailyChallengeRoute
   '/driver-konsekvens': typeof DriverKonsekvensRoute
   '/driver-konsekvens-historik': typeof DriverKonsekvensHistorikRoute
   '/fairway': typeof FairwayRoute
@@ -705,6 +734,7 @@ export interface FileRoutesByTo {
   '/green-reading': typeof GreenReadingRoute
   '/green-reading-historik': typeof GreenReadingHistorikRoute
   '/hcp-goal': typeof HcpGoalRoute
+  '/hcp-tests': typeof HcpTestsRoute
   '/jamfor': typeof JamforRouteWithChildren
   '/klock-putt': typeof KlockPuttRoute
   '/konto': typeof KontoRoute
@@ -726,6 +756,7 @@ export interface FileRoutesByTo {
   '/notiser': typeof NotiserRoute
   '/offtee': typeof OffteeRoute
   '/offtee-test': typeof OffteeTestRoute
+  '/par-3-challenge': typeof Par3ChallengeRoute
   '/pga-tour-18-puttar': typeof PgaTour18PuttarRoute
   '/pga-tour-18-puttar-historik': typeof PgaTour18PuttarHistorikRoute
   '/pitch': typeof PitchRoute
@@ -748,6 +779,7 @@ export interface FileRoutesByTo {
   '/speed': typeof SpeedRoute
   '/speed-test': typeof SpeedTestRoute
   '/spela': typeof SpelaRoute
+  '/standardiserade-tester': typeof StandardiseradeTesterRoute
   '/teeshot': typeof TeeshotRoute
   '/tester': typeof TesterRoute
   '/tornado': typeof TornadoRoute
@@ -795,6 +827,7 @@ export interface FileRoutesById {
   '/coach': typeof CoachRoute
   '/combine': typeof CombineRoute
   '/cup': typeof CupRoute
+  '/daily-challenge': typeof DailyChallengeRoute
   '/driver-konsekvens': typeof DriverKonsekvensRoute
   '/driver-konsekvens-historik': typeof DriverKonsekvensHistorikRoute
   '/fairway': typeof FairwayRoute
@@ -802,6 +835,7 @@ export interface FileRoutesById {
   '/green-reading': typeof GreenReadingRoute
   '/green-reading-historik': typeof GreenReadingHistorikRoute
   '/hcp-goal': typeof HcpGoalRoute
+  '/hcp-tests': typeof HcpTestsRoute
   '/jamfor': typeof JamforRouteWithChildren
   '/klock-putt': typeof KlockPuttRoute
   '/konto': typeof KontoRoute
@@ -823,6 +857,7 @@ export interface FileRoutesById {
   '/notiser': typeof NotiserRoute
   '/offtee': typeof OffteeRoute
   '/offtee-test': typeof OffteeTestRoute
+  '/par-3-challenge': typeof Par3ChallengeRoute
   '/pga-tour-18-puttar': typeof PgaTour18PuttarRoute
   '/pga-tour-18-puttar-historik': typeof PgaTour18PuttarHistorikRoute
   '/pitch': typeof PitchRoute
@@ -845,6 +880,7 @@ export interface FileRoutesById {
   '/speed': typeof SpeedRoute
   '/speed-test': typeof SpeedTestRoute
   '/spela': typeof SpelaRoute
+  '/standardiserade-tester': typeof StandardiseradeTesterRoute
   '/teeshot': typeof TeeshotRoute
   '/tester': typeof TesterRoute
   '/tornado': typeof TornadoRoute
@@ -893,6 +929,7 @@ export interface FileRouteTypes {
     | '/coach'
     | '/combine'
     | '/cup'
+    | '/daily-challenge'
     | '/driver-konsekvens'
     | '/driver-konsekvens-historik'
     | '/fairway'
@@ -900,6 +937,7 @@ export interface FileRouteTypes {
     | '/green-reading'
     | '/green-reading-historik'
     | '/hcp-goal'
+    | '/hcp-tests'
     | '/jamfor'
     | '/klock-putt'
     | '/konto'
@@ -921,6 +959,7 @@ export interface FileRouteTypes {
     | '/notiser'
     | '/offtee'
     | '/offtee-test'
+    | '/par-3-challenge'
     | '/pga-tour-18-puttar'
     | '/pga-tour-18-puttar-historik'
     | '/pitch'
@@ -943,6 +982,7 @@ export interface FileRouteTypes {
     | '/speed'
     | '/speed-test'
     | '/spela'
+    | '/standardiserade-tester'
     | '/teeshot'
     | '/tester'
     | '/tornado'
@@ -989,6 +1029,7 @@ export interface FileRouteTypes {
     | '/coach'
     | '/combine'
     | '/cup'
+    | '/daily-challenge'
     | '/driver-konsekvens'
     | '/driver-konsekvens-historik'
     | '/fairway'
@@ -996,6 +1037,7 @@ export interface FileRouteTypes {
     | '/green-reading'
     | '/green-reading-historik'
     | '/hcp-goal'
+    | '/hcp-tests'
     | '/jamfor'
     | '/klock-putt'
     | '/konto'
@@ -1017,6 +1059,7 @@ export interface FileRouteTypes {
     | '/notiser'
     | '/offtee'
     | '/offtee-test'
+    | '/par-3-challenge'
     | '/pga-tour-18-puttar'
     | '/pga-tour-18-puttar-historik'
     | '/pitch'
@@ -1039,6 +1082,7 @@ export interface FileRouteTypes {
     | '/speed'
     | '/speed-test'
     | '/spela'
+    | '/standardiserade-tester'
     | '/teeshot'
     | '/tester'
     | '/tornado'
@@ -1085,6 +1129,7 @@ export interface FileRouteTypes {
     | '/coach'
     | '/combine'
     | '/cup'
+    | '/daily-challenge'
     | '/driver-konsekvens'
     | '/driver-konsekvens-historik'
     | '/fairway'
@@ -1092,6 +1137,7 @@ export interface FileRouteTypes {
     | '/green-reading'
     | '/green-reading-historik'
     | '/hcp-goal'
+    | '/hcp-tests'
     | '/jamfor'
     | '/klock-putt'
     | '/konto'
@@ -1113,6 +1159,7 @@ export interface FileRouteTypes {
     | '/notiser'
     | '/offtee'
     | '/offtee-test'
+    | '/par-3-challenge'
     | '/pga-tour-18-puttar'
     | '/pga-tour-18-puttar-historik'
     | '/pitch'
@@ -1135,6 +1182,7 @@ export interface FileRouteTypes {
     | '/speed'
     | '/speed-test'
     | '/spela'
+    | '/standardiserade-tester'
     | '/teeshot'
     | '/tester'
     | '/tornado'
@@ -1182,6 +1230,7 @@ export interface RootRouteChildren {
   CoachRoute: typeof CoachRoute
   CombineRoute: typeof CombineRoute
   CupRoute: typeof CupRoute
+  DailyChallengeRoute: typeof DailyChallengeRoute
   DriverKonsekvensRoute: typeof DriverKonsekvensRoute
   DriverKonsekvensHistorikRoute: typeof DriverKonsekvensHistorikRoute
   FairwayRoute: typeof FairwayRoute
@@ -1189,6 +1238,7 @@ export interface RootRouteChildren {
   GreenReadingRoute: typeof GreenReadingRoute
   GreenReadingHistorikRoute: typeof GreenReadingHistorikRoute
   HcpGoalRoute: typeof HcpGoalRoute
+  HcpTestsRoute: typeof HcpTestsRoute
   JamforRoute: typeof JamforRouteWithChildren
   KlockPuttRoute: typeof KlockPuttRoute
   KontoRoute: typeof KontoRoute
@@ -1210,6 +1260,7 @@ export interface RootRouteChildren {
   NotiserRoute: typeof NotiserRoute
   OffteeRoute: typeof OffteeRoute
   OffteeTestRoute: typeof OffteeTestRoute
+  Par3ChallengeRoute: typeof Par3ChallengeRoute
   PgaTour18PuttarRoute: typeof PgaTour18PuttarRoute
   PgaTour18PuttarHistorikRoute: typeof PgaTour18PuttarHistorikRoute
   PitchRoute: typeof PitchRoute
@@ -1232,6 +1283,7 @@ export interface RootRouteChildren {
   SpeedRoute: typeof SpeedRoute
   SpeedTestRoute: typeof SpeedTestRoute
   SpelaRoute: typeof SpelaRoute
+  StandardiseradeTesterRoute: typeof StandardiseradeTesterRoute
   TeeshotRoute: typeof TeeshotRoute
   TesterRoute: typeof TesterRoute
   TornadoRoute: typeof TornadoRoute
@@ -1359,6 +1411,13 @@ declare module '@tanstack/react-router' {
       path: '/teeshot'
       fullPath: '/teeshot'
       preLoaderRoute: typeof TeeshotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/standardiserade-tester': {
+      id: '/standardiserade-tester'
+      path: '/standardiserade-tester'
+      fullPath: '/standardiserade-tester'
+      preLoaderRoute: typeof StandardiseradeTesterRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/spela': {
@@ -1515,6 +1574,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PgaTour18PuttarRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/par-3-challenge': {
+      id: '/par-3-challenge'
+      path: '/par-3-challenge'
+      fullPath: '/par-3-challenge'
+      preLoaderRoute: typeof Par3ChallengeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/offtee-test': {
       id: '/offtee-test'
       path: '/offtee-test'
@@ -1662,6 +1728,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof JamforRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/hcp-tests': {
+      id: '/hcp-tests'
+      path: '/hcp-tests'
+      fullPath: '/hcp-tests'
+      preLoaderRoute: typeof HcpTestsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/hcp-goal': {
       id: '/hcp-goal'
       path: '/hcp-goal'
@@ -1709,6 +1782,13 @@ declare module '@tanstack/react-router' {
       path: '/driver-konsekvens'
       fullPath: '/driver-konsekvens'
       preLoaderRoute: typeof DriverKonsekvensRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/daily-challenge': {
+      id: '/daily-challenge'
+      path: '/daily-challenge'
+      fullPath: '/daily-challenge'
+      preLoaderRoute: typeof DailyChallengeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cup': {
@@ -1974,6 +2054,7 @@ const rootRouteChildren: RootRouteChildren = {
   CoachRoute: CoachRoute,
   CombineRoute: CombineRoute,
   CupRoute: CupRoute,
+  DailyChallengeRoute: DailyChallengeRoute,
   DriverKonsekvensRoute: DriverKonsekvensRoute,
   DriverKonsekvensHistorikRoute: DriverKonsekvensHistorikRoute,
   FairwayRoute: FairwayRoute,
@@ -1981,6 +2062,7 @@ const rootRouteChildren: RootRouteChildren = {
   GreenReadingRoute: GreenReadingRoute,
   GreenReadingHistorikRoute: GreenReadingHistorikRoute,
   HcpGoalRoute: HcpGoalRoute,
+  HcpTestsRoute: HcpTestsRoute,
   JamforRoute: JamforRouteWithChildren,
   KlockPuttRoute: KlockPuttRoute,
   KontoRoute: KontoRoute,
@@ -2002,6 +2084,7 @@ const rootRouteChildren: RootRouteChildren = {
   NotiserRoute: NotiserRoute,
   OffteeRoute: OffteeRoute,
   OffteeTestRoute: OffteeTestRoute,
+  Par3ChallengeRoute: Par3ChallengeRoute,
   PgaTour18PuttarRoute: PgaTour18PuttarRoute,
   PgaTour18PuttarHistorikRoute: PgaTour18PuttarHistorikRoute,
   PitchRoute: PitchRoute,
@@ -2024,6 +2107,7 @@ const rootRouteChildren: RootRouteChildren = {
   SpeedRoute: SpeedRoute,
   SpeedTestRoute: SpeedTestRoute,
   SpelaRoute: SpelaRoute,
+  StandardiseradeTesterRoute: StandardiseradeTesterRoute,
   TeeshotRoute: TeeshotRoute,
   TesterRoute: TesterRoute,
   TornadoRoute: TornadoRoute,

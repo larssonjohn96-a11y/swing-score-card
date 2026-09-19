@@ -205,10 +205,10 @@ function handicapToScore(handicap: number) {
 
 function RadarPreview({ categories, benchmarkHcp }: { categories: CategoryHandicap[]; benchmarkHcp: number }) {
   const order = ["driving", "approach", "around-the-green", "puttning"];
-  const fallback = categories.length ? categories.reduce((sum, item) => sum + item.handicap, 0) / categories.length : 25;
+  const fallback = categories.length ? categories.reduce((sum, item) => sum + (item.handicap ?? 0), 0) / categories.length : 25;
   const categoryValues = order.map((id) => {
-    const item = categories.find((category) => category.id === id);
-    return handicapToScore(item?.count ? item.handicap : fallback);
+    const item = categories.find((category) => category.slug === id);
+    return handicapToScore(item?.count ? (item.handicap ?? fallback) : fallback);
   });
   const total = categoryValues.reduce((sum, value) => sum + value, 0) / categoryValues.length;
   const values = [categoryValues[0], categoryValues[1], categoryValues[2], categoryValues[3], total];

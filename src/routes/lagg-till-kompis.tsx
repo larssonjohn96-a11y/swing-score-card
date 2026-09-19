@@ -133,7 +133,7 @@ function AddFriendPage() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[18px] font-black text-foreground">{profile.displayName}</p>
-                    <p className="mt-1 truncate text-[15px] text-muted-foreground">{hcp !== undefined ? `HCP ${hcp.toFixed(1)}` : "SG4-spelare"}</p>
+                    <p className="mt-1 truncate text-[15px] text-muted-foreground">{typeof hcp === "number" ? `HCP ${hcp.toFixed(1)}` : "SG4-spelare"}</p>
                   </div>
                   <button type="button" onClick={() => add(profile)} disabled={exists || busyId === profile.id} aria-label={exists ? "Redan tillagd" : `Lägg till ${profile.displayName}`} className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#f3f4f7] text-[#079b55] disabled:opacity-40">
                     <UserPlus className="h-6 w-6" />
