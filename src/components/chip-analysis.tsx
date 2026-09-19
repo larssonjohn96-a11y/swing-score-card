@@ -10,6 +10,7 @@ import {
 } from "@/lib/activity-review";
 import { courseDistances, courseHandicap, holePoints, type CourseRound } from "@/lib/chip-course";
 import { CHIP_ZONES } from "@/lib/chip-stations";
+import { useChipScreenColor } from "@/lib/use-chip-screen-color";
 import { handicapLabel } from "@/lib/shortgame";
 
 export function ChipAnalysis({ round }: { round: CourseRound }) {
@@ -18,6 +19,7 @@ export function ChipAnalysis({ round }: { round: CourseRound }) {
   const [skip, setSkip] = useState(false);
   const [stage, setStage] = useState<"counting" | "result" | "fade" | "details">("counting");
   const [filter, setFilter] = useState<ActivityCategory | null>(null);
+  useChipScreenColor(open && canViewDetailedBreakdowns && stage !== "details");
   const groups = useRef<HTMLDivElement>(null);
   const hcp = courseHandicap(round);
   const review = buildActivityReview({
@@ -85,7 +87,10 @@ export function ChipAnalysis({ round }: { round: CourseRound }) {
                 <div>
                   <h2 className="text-2xl font-black">Estimerat chipp-HCP</h2>
                   <p className="mt-3 rounded-2xl bg-blue-50 p-4 text-center text-blue-700">
-                    <span className="block text-xs">Estimerad HCP-nivå</span><strong className="mt-1 block text-3xl">{hcp === null ? "–" : handicapLabel(hcp)}</strong>
+                    <span className="block text-xs">Estimerad HCP-nivå</span>
+                    <strong className="mt-1 block text-3xl">
+                      {hcp === null ? "–" : handicapLabel(hcp)}
+                    </strong>
                   </p>
                 </div>
                 <div className="space-y-1.5" aria-label="Filtrera slag">
@@ -143,7 +148,11 @@ export function ChipAnalysis({ round }: { round: CourseRound }) {
                               <p className="font-bold">
                                 Boll {j + 1} · {CHIP_ZONES.find((z) => z.points === points)!.label}
                               </p>
-                              <p className="mt-1 text-xs text-slate-500">{category}</p>
+                              <span
+                                className={`mt-1 inline-flex rounded-full px-2 py-1 text-xs font-bold ${category === "Exceptionellt" ? "bg-teal-100 text-teal-800" : category === "Utmärkt" ? "bg-blue-100 text-blue-800" : category === "Bra" ? "bg-emerald-100 text-emerald-800" : category === "Förväntat" ? "bg-slate-200 text-slate-700" : category === "Svagt" ? "bg-orange-100 text-orange-800" : "bg-rose-100 text-rose-800"}`}
+                              >
+                                {category}
+                              </span>
                             </div>
                             <strong className="text-blue-700">+{points}</strong>
                           </div>
@@ -157,7 +166,7 @@ export function ChipAnalysis({ round }: { round: CourseRound }) {
             {stage !== "details" && (
               <div
                 data-hcp-reveal={stage}
-                className={`absolute inset-0 flex flex-col items-center justify-center bg-blue-600 px-6 text-center text-white transition-opacity duration-700 motion-reduce:transition-none ${stage === "fade" ? "pointer-events-none opacity-0" : "opacity-100"}`}
+                className={`absolute inset-0 flex flex-col items-center justify-center bg-blue-600 px-6 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] text-center text-white transition-opacity duration-700 motion-reduce:transition-none ${stage === "fade" ? "pointer-events-none opacity-0" : "opacity-100"}`}
               >
                 <p className="text-sm font-bold uppercase tracking-widest">
                   Din runda är analyserad

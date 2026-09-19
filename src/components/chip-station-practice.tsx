@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { ChipAnalysis } from "./chip-analysis";
+import { ChipCelebration } from "./chip-celebration";
+import { useChipScreenColor } from "@/lib/use-chip-screen-color";
 import { ChipProgress } from "./chip-progress";
 import { CHIP_ZONES, type ChipLie, type ChipPoints } from "@/lib/chip-stations";
 import {
@@ -69,7 +71,7 @@ function Stars({
   const values = fills ?? [0, 1, 2].map((i) => Math.max(0, Math.min(1, count - i)));
   return (
     <span
-      className="inline-flex gap-1.5"
+      className={`inline-flex gap-1.5 ${values.every((v) => v === 1) ? "chip-full-stars" : ""}`}
       aria-label={`${starLabel(values.reduce((sum, v) => sum + v, 0))} av 3 stjärnor`}
     >
       {values.map((fill, i) => (
@@ -135,24 +137,6 @@ function RecordRow({ best }: { best: ReturnType<typeof courseBests> }) {
           <p className="text-xl font-black text-blue-700">{value}</p>
           <p className="mt-1 text-[11px] font-bold text-slate-500">{label}</p>
         </div>
-      ))}
-    </div>
-  );
-}
-function Confetti() {
-  return (
-    <div className="pointer-events-none fixed inset-0 z-50 overflow-hidden" aria-hidden="true">
-      {Array.from({ length: 36 }, (_, i) => (
-        <i
-          key={i}
-          className="chip-confetti absolute -top-4 h-3 w-2 rounded-sm"
-          style={{
-            left: `${(i * 37) % 100}%`,
-            background: ["#fbbf24", "#2563eb", "#10b981", "#fb7185"][i % 4],
-            animationDelay: `${(i % 8) * 90}ms`,
-            transform: `rotate(${i * 23}deg)`,
-          }}
-        />
       ))}
     </div>
   );
@@ -293,6 +277,7 @@ export function ChipStationPractice({
   const [reviewId, setReviewId] = useState<string | null>(null);
   const [freshRound, setFreshRound] = useState<string | null>(null);
   const [holedShot, setHoledShot] = useState<number | null>(null);
+  useChipScreenColor(holedShot !== null);
   useEffect(() => {
     if (holedShot === null) return;
     const timer = setTimeout(() => setHoledShot(null), 2700);
@@ -436,14 +421,14 @@ export function ChipStationPractice({
       style={{ ...surface, colorScheme: "light" }}
       className={`chip-course mx-auto w-full max-w-md bg-slate-50 px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-[max(8px,env(safe-area-inset-top))] text-slate-950 ${active || round ? "chip-compact fixed inset-0 z-40 overflow-y-auto" : "min-h-screen"}`}
     >
-      <style>{`@keyframes chipHoled{0%{opacity:0}15%,80%{opacity:1}100%{opacity:0}}.chip-holed{animation:chipHoled 2.7s ease-in-out both}@media(prefers-reduced-motion:reduce){.chip-holed{animation:none}}@keyframes chipConfetti{to{transform:translateY(110dvh) rotate(540deg);opacity:0}}.chip-confetti{animation:chipConfetti 2.6s ease-in forwards}@keyframes chipEmptyWiggle{0%,100%{transform:rotate(0)}35%{transform:rotate(-9deg)}70%{transform:rotate(9deg)}}.chip-empty-wiggle{animation:chipEmptyWiggle .5s ease-in-out}.chip-compact [role="status"]{height:36px}.chip-compact section>div.mt-1{padding:12px}.chip-compact section>div.mt-1 .mt-4{margin-top:8px}@keyframes chipStarPop{0%{transform:scale(.65);opacity:.5}60%{transform:scale(1.3);filter:drop-shadow(0 0 7px #fbbf24)}100%{transform:scale(1);opacity:1}}@keyframes chipCheck{0%{transform:translateY(8px);opacity:0}100%{transform:translateY(0);opacity:1}}body:has(.chip-compact){overflow:hidden}.sg4-route-transition:has(.chip-compact){animation:none;transform:none;will-change:auto;min-height:0}.chip-compact [aria-label="Golfbanan: första tre, Halfway House, sista tre"]{height:clamp(190px,29dvh,250px);margin:12px 0}.chip-compact header button{min-height:40px;height:40px}.chip-compact [role="status"]{min-height:36px;margin-bottom:0}.chip-compact section>div.text-center{padding:16px}.chip-compact h2.my-3{margin:8px 0;font-size:48px}.chip-compact section>div.text-center p.mt-2{margin-top:4px}.chip-star-pop{animation:chipStarPop .55s ease-out}.chip-check{animation:chipCheck .2s ease-out}@media(prefers-reduced-motion:reduce){.chip-star-pop,.chip-check,.chip-confetti,.chip-empty-wiggle{animation:none}.chip-confetti{display:none}}`}</style>
-      {personalBest && freshRound === round?.id && <Confetti />}
+      <style>{`.chip-full-stars{filter:drop-shadow(0 0 7px #fbbf2488) drop-shadow(0 0 16px #f59e0b55)}.chip-full-stars svg.fill-amber-400{fill:#fbbf24;stroke:#eab308}@keyframes chipHoled{0%{opacity:0}15%,80%{opacity:1}100%{opacity:0}}.chip-holed{animation:chipHoled 2.7s ease-in-out both}@media(prefers-reduced-motion:reduce){.chip-holed{animation:none}}@keyframes chipEmptyWiggle{0%,100%{transform:rotate(0)}35%{transform:rotate(-9deg)}70%{transform:rotate(9deg)}}.chip-empty-wiggle{animation:chipEmptyWiggle .5s ease-in-out}.chip-compact [role="status"]{height:36px}.chip-compact section>div.mt-1{padding:12px}.chip-compact section>div.mt-1 .mt-4{margin-top:8px}@keyframes chipStarPop{0%{transform:scale(.65);opacity:.5}60%{transform:scale(1.3);filter:drop-shadow(0 0 7px #fbbf24)}100%{transform:scale(1);opacity:1}}@keyframes chipCheck{0%{transform:translateY(8px);opacity:0}100%{transform:translateY(0);opacity:1}}body:has(.chip-compact){overflow:hidden}.sg4-route-transition:has(.chip-compact){animation:none;transform:none;will-change:auto;min-height:0}.chip-compact [aria-label="Golfbanan: första tre, Halfway House, sista tre"]{height:clamp(190px,29dvh,250px);margin:12px 0}.chip-compact header button{min-height:40px;height:40px}.chip-compact [role="status"]{min-height:36px;margin-bottom:0}.chip-compact section>div.text-center{padding:16px}.chip-compact h2.my-3{margin:8px 0;font-size:48px}.chip-compact section>div.text-center p.mt-2{margin-top:4px}.chip-star-pop{animation:chipStarPop .55s ease-out}.chip-check{animation:chipCheck .2s ease-out}@media(prefers-reduced-motion:reduce){.chip-star-pop,.chip-check,.chip-confetti,.chip-empty-wiggle{animation:none}.chip-confetti{display:none}}`}</style>
+      {personalBest && freshRound === round?.id && <ChipCelebration />}
       {holedShot !== null && (
         <div
           data-holed-celebration
-          className="chip-holed pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-blue-600/90 text-white"
+          className="chip-holed pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-blue-600 text-white"
         >
-          <Confetti />
+          <ChipCelebration />
           <div className="relative text-center">
             <Flag className="mx-auto h-14 w-14 fill-yellow-400 text-yellow-400" />
             <p className="mt-4 text-6xl font-black">Sänkt!</p>
@@ -570,12 +555,23 @@ export function ChipStationPractice({
                   role="status"
                   aria-live="polite"
                 >
+                  {!confirmation &&
+                    active.phase === "result" &&
+                    holeStars(shots, index, lie, active.model) === 3 && (
+                      <div className="chip-check rounded-full bg-amber-100 px-4 py-2 text-sm font-black text-amber-800">
+                        Full pott! Tre stjärnor! ★
+                      </div>
+                    )}
                   {confirmation && (
                     <div
                       key={`${index}-${confirmation.ball}`}
                       className={`chip-check flex items-center gap-1 rounded-full px-3 py-2 text-sm font-bold ${confirmation.points === 0 ? "bg-slate-200 text-slate-600" : "bg-emerald-100 text-emerald-800"}`}
                     >
-                      {confirmation.points > 0 ? "Snyggt! " : ""}
+                      {
+                        ["", "En bit kvar! ", "Bra närspel! ", "Nära! ", "Fullträff! "][
+                          confirmation.points
+                        ]
+                      }
                       {CHIP_ZONES.find((z) => z.points === confirmation.points)?.label}, +
                       {confirmation.points} poäng
                     </div>
@@ -587,7 +583,7 @@ export function ChipStationPractice({
                   {!registering ? (
                     <>
                       <div className={`${card} p-5 text-center`}>
-                        <p className="text-2xl font-black text-blue-700">Hål {index + 1} av 6</p>
+                        <p className="text-2xl font-black text-blue-700">Hål {index + 1}</p>
                         <h2 className="my-3 text-6xl font-black">
                           {distances[index]}
                           <span className="ml-2 text-2xl">m</span>
@@ -609,9 +605,7 @@ export function ChipStationPractice({
                       <div className={`${card} mt-1 p-4`}>
                         <div className="flex items-center justify-between">
                           <h2 className="font-black">
-                            <span className="block text-base text-blue-700">
-                              Hål {index + 1} av 6
-                            </span>
+                            <span className="block text-base text-blue-700">Hål {index + 1}</span>
                             <span className="text-sm text-slate-500">
                               {distances[index]} m från flaggan
                             </span>
@@ -822,6 +816,11 @@ export function ChipStationPractice({
                 <div className="my-4 flex justify-center">
                   <RevealStars key={round.id} count={roundAverage} />
                 </div>
+                {roundAverage >= 3 && (
+                  <p className="mb-2 rounded-full bg-amber-100 px-3 py-2 text-sm font-black text-amber-800">
+                    Full pott! Vilken runda!
+                  </p>
+                )}
                 <p className="text-3xl font-black text-blue-700">
                   {starLabel(roundAverage)}{" "}
                   <span className="text-sm font-medium text-slate-500">★ snitt / hål</span>
@@ -829,7 +828,7 @@ export function ChipStationPractice({
                 <p className="mt-3 text-xl font-black text-slate-900">{roundPoints} poäng totalt</p>
                 {personalBest && (
                   <p className="mt-3 rounded-xl bg-amber-50 p-2 text-sm font-bold text-amber-800">
-                    🏆 Nytt personbästa!
+                    <Trophy aria-hidden="true" className="mr-1 inline h-4 w-4" /> Nytt personbästa!
                   </p>
                 )}
                 {round.status === "partial" && (
