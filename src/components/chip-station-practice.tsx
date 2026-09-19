@@ -404,7 +404,7 @@ export function ChipStationPractice({
     ? "Nytt personbästa – avsluta hela rundan!"
     : halfwayNeeded !== null && halfwayNeeded <= 24
       ? `${halfwayNeeded} poäng på sista tre slår ditt PB.`
-      : "Bra jobbat!";
+      : null;
   const recordGoal = active ? chipRecordGoal(active, state.history) : null;
   const pace = active ? coursePace(active, state.history) : null;
   const totalPoints = active?.holes.reduce((sum, h) => sum + holePoints(h), 0) ?? 0;
@@ -725,9 +725,10 @@ export function ChipStationPractice({
                   <div className="rounded-3xl border border-amber-200 bg-amber-50 p-6 text-center">
                     <Coffee className="mx-auto h-9 w-9 text-amber-700" />
                     <h2 className="mt-3 text-2xl font-black">Halfway House</h2>
-                    <p className="mt-2 text-base text-slate-600">
-                      {halfwayMessage}
+                    <p className="mt-2 text-base font-bold text-slate-700">
+                      {front.stars >= 7.5 ? "Strålande! Fortsätt så." : front.stars >= 4.5 ? "Bra jobbat!" : "Bra kämpat! Nästa hål, ny chans."}
                     </p>
+                    {halfwayMessage && <p className="mt-1 text-sm text-slate-600">{halfwayMessage}</p>}
                     <p className="mt-3 text-5xl font-black text-blue-700">
                       {starLabel(front.stars / 3)} ★
                       <span className="mt-2 block text-sm font-medium text-slate-500">
