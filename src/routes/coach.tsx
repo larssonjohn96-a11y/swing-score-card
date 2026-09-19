@@ -1,7 +1,6 @@
-import { ChipStationPractice } from "@/components/chip-station-practice";
 import { CoachChallengeCard } from "@/components/coach-challenge-card";
 import { createChallenge, advanceChallenge, challengeGap, nextChallengeLevel, type PuttingChallenge, type ChallengeKind } from "@/lib/coach-challenges";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Check, ChevronRight, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
@@ -63,7 +62,6 @@ function readDeepLinkedCategory(): Category | null {
 
 const CATEGORIES: Array<{ id: Category; title: string; available: boolean }> = [
   { id: "putting", title: "Puttning", available: true },
-  { id: "around-the-green", title: "Chippning", available: true },
   { id: "bunker", title: "Bunker", available: true },
   { id: "approach", title: "Inspel", available: false },
   { id: "off-the-tee", title: "Driver", available: false },
@@ -262,6 +260,7 @@ function SpeechBubble({ avatar, name, text, fixed = false }: { avatar: string; n
 }
 
 function PlayWithCoachPage() {
+  const navigate = useNavigate();
   useHideBottomNav(true);
   const { user, loading } = useAuth();
   const coachId = DEFAULT_COACH_ID;
@@ -314,7 +313,7 @@ function PlayWithCoachPage() {
     setCategory(linkedCategory);
     setShortGamePb(readShortGamePb(linkedCategory));
     if (linkedCategory === "around-the-green") {
-      setPhase("chip-setup");
+      void navigate({to: "/chipprundan", replace: true});
       return;
     }
     setDistance(linkedCategory === "putting" ? nextCoachPuttingDistance() : 0);
@@ -400,7 +399,7 @@ function PlayWithCoachPage() {
 
   function continueFromSetup() {
     if (category === "around-the-green") {
-      setPhase("chip-setup");
+      void navigate({to: "/chipprundan", replace: true});
       return;
     }
     startGame();
@@ -785,18 +784,6 @@ function PlayWithCoachPage() {
           ? "border-amber-200 bg-gradient-to-r from-amber-50 via-white to-orange-50 text-slate-950 shadow-[0_0_28px_-12px_rgba(245,158,11,.8)]"
           : "border-slate-200 bg-white text-slate-950";
 
-  // Chipping uses scored three-ball stations; other coach activities stay unchanged.
-  if (category === "around-the-green" && phase === "chip-setup") {
-    return <ChipStationPractice
-      key={user?.id ?? "guest"}
-      userId={user?.id ?? null}
-      authLoading={loading}
-      playerName={playerName}
-      coach={coach}
-      surface={LIGHT_SURFACE}
-      onExit={() => setPhase("setup")}
-    />;
-  }
 
   return (
     <main data-challenge={puttingChallenge ? "active" : undefined} style={LIGHT_SURFACE} className="mx-auto min-h-screen w-full max-w-md bg-background px-5 pb-10 pt-[max(16px,env(safe-area-inset-top))] text-foreground">

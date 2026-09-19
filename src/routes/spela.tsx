@@ -135,6 +135,7 @@ function PlayPage() {
       </section>
 
       <section className="relative z-10 mt-5 space-y-3.5 px-5">
+        <PlayCard href="/spela-runda" title="Spela en runda" />
         <PlayCard href="/match?flow=friend" title="Spela mot vän" recommendationId="play-friend" />
         <PlayCard href="/match-bot" title="Spela mot bot" recommendationId="play-bot" />
         <PlayCard href="/match?flow=team" title="Spela i lag" recommendationId="play-team" />

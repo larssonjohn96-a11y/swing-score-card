@@ -41,7 +41,6 @@ type Props = {
   userId: string | null;
   playerName?: string;
   authLoading?: boolean;
-  coach: { name: string; emoji: string };
   surface?: CSSProperties;
   onExit: () => void;
 };

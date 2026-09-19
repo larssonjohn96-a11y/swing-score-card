@@ -171,14 +171,16 @@ function DragScrollRow({ children }: { children: React.ReactNode }) {
         const row = rowRef.current;
         if (!row) return;
         dragRef.current = { active: true, startX: event.clientX, startScrollLeft: row.scrollLeft, moved: false };
-        row.setPointerCapture(event.pointerId);
       }}
       onPointerMove={(event) => {
         const row = rowRef.current;
         const drag = dragRef.current;
         if (!row || !drag.active || event.pointerType === "touch") return;
         const delta = event.clientX - drag.startX;
-        if (Math.abs(delta) > 4) drag.moved = true;
+        if (Math.abs(delta) > 4 && !drag.moved) {
+          drag.moved = true;
+          row.setPointerCapture(event.pointerId);
+        }
         row.scrollLeft = drag.startScrollLeft - delta;
         if (drag.moved) event.preventDefault();
       }}
@@ -412,6 +414,7 @@ function Home() {
         <div className={`overflow-hidden transition-[max-height,opacity,padding] duration-500 [transition-timing-function:cubic-bezier(.22,1,.36,1)] ${navVisible ? "max-h-16 pb-3 opacity-100" : "max-h-0 pb-0 opacity-0"}`}>
           <nav className={`-mx-1 flex gap-2 overflow-x-auto px-1 transition-transform duration-500 [transition-timing-function:cubic-bezier(.22,1,.36,1)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${navVisible ? "translate-y-0" : "-translate-y-1"}`} aria-label="Snabbnavigering">
             <Link to="/spela" className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black">Spela</Link>
+            <Link to="/spela-runda" className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black">Spela en runda</Link>
             <Link to="/tester" className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black">HCP Tester</Link>
             <Link to="/utveckling" className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black">Utveckling</Link>
             <Link to="/vanner" className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black">Vänner</Link>
@@ -481,11 +484,17 @@ function Home() {
           </Link>
         </section>
 
+        <section className="mt-7" aria-label="Spela en runda">
+          <div className="flex items-end justify-between gap-3 px-0.5"><div><h2 className="text-[24px] font-black leading-none text-foreground">Spela en runda</h2><p className="mt-1.5 text-sm text-muted-foreground">Slå ditt personbästa och få ett HCP-resultat.</p></div><Link to="/spela-runda" className="shrink-0 text-xs font-bold text-blue-600">Alla rundor</Link></div>
+          <DragScrollRow>
+            <Link to="/chipprundan" className="block shrink-0"><SimpleCard label="Spela själv" title="Chipprundan" tone="bg-[#118267]" imageSrc="/chip-card.jpg" /></Link>
+          </DragScrollRow>
+        </section>
+
         <section className="mt-7">
           <BrowseHeading title="Träna" subtitle="Practice Mode" action="Alla pass" to="/coach" />
           <DragScrollRow>
             <Link to="/coach" search={{ category: "putting" }} onClick={() => recordRecommendationOpen("practice")} className="block shrink-0"><SimpleCard label="Practice" title="Puttning" tone="bg-[#5146d8]" /></Link>
-            <Link to="/coach" search={{ category: "around-the-green" }} onClick={() => recordRecommendationOpen("practice")} className="block shrink-0"><SimpleCard label="Practice" title="Chippning" tone="bg-[#118267]" /></Link>
             <Link to="/coach" search={{ category: "bunker" }} onClick={() => recordRecommendationOpen("practice")} className="block shrink-0"><SimpleCard label="Practice" title="Bunker" tone="bg-[#c77a2c]" /></Link>
             <Link to="/coach" onClick={() => recordRecommendationOpen("practice")} className="block shrink-0"><SimpleCard label="Practice" title="Alla pass" tone="bg-[#334155]" /></Link>
           </DragScrollRow>
