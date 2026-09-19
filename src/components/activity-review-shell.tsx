@@ -40,7 +40,7 @@ export function ActivityReviewShell({
           type="button"
           className={
             compact
-              ? "flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base font-bold text-slate-700"
+              ? "flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl border border-blue-700 bg-blue-600 px-4 py-3 text-base font-bold text-white shadow-md"
               : "group mt-3 block w-full rounded-[22px] border border-blue-200 bg-gradient-to-br from-white to-blue-50 p-3.5 text-left text-slate-950 shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
           }
         >
@@ -88,7 +88,7 @@ export function ActivityReviewShell({
           >
             {!canViewDetailedBreakdowns && <Lock aria-hidden="true" className="h-4 w-4" />}
             {compact
-              ? `Analys · Est. HCP ${hcp ?? "–"}`
+              ? `Analys – se ditt handicap · ${hcp ?? "–"}`
               : activity === "match"
                 ? "Visa matchanalys"
                 : "Visa passanalys"}

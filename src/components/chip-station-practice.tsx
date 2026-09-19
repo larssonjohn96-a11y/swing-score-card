@@ -10,6 +10,7 @@ import {
   History,
   Star,
   Trophy,
+  TreePine,
   Undo2,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -20,8 +21,8 @@ import {
   courseDistances,
   courseHandicap,
   liveStars,
-  beatsScore,
-  courseRecord,
+  courseBests,
+  coursePace,
   courseStorageKey,
   emptyCourse,
   holePoints,
@@ -32,11 +33,11 @@ import {
   roundStars,
   segmentScore,
   type CourseAction,
-  type Segment,
 } from "@/lib/chip-course";
 
 type Props = {
   userId: string | null;
+  playerName?: string;
   authLoading?: boolean;
   coach: { name: string; emoji: string };
   surface?: CSSProperties;
@@ -48,11 +49,6 @@ const primary =
   "flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl border-b-4 border-blue-800 bg-blue-600 px-4 py-3 text-base font-bold text-white active:translate-y-0.5 active:border-b-2 disabled:opacity-40";
 const secondary =
   "flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base font-bold text-slate-700";
-const segmentNames: Record<Segment, string> = {
-  full: "Hela rundan",
-  front: "Första tre",
-  back: "Sista tre",
-};
 const starLabel = (value: number) => value.toFixed(1).replace(".", ",");
 const uid = () => crypto.randomUUID();
 const dateLabel = (at: number) =>
@@ -62,11 +58,13 @@ function Stars({
   large = false,
   fills,
   celebrate = false,
+  broken = false,
 }: {
   count?: number;
   large?: boolean;
   fills?: number[];
   celebrate?: boolean;
+  broken?: boolean;
 }) {
   const values = fills ?? [0, 1, 2].map((i) => Math.max(0, Math.min(1, count - i)));
   return (
@@ -75,7 +73,11 @@ function Stars({
       aria-label={`${starLabel(values.reduce((sum, v) => sum + v, 0))} av 3 stjärnor`}
     >
       {values.map((fill, i) => (
-        <span key={i} className={`relative block ${large ? "h-11 w-11" : "h-4 w-4"}`}>
+        <span
+          key={i}
+          style={celebrate ? { animationDelay: `${i * 400 + 1200}ms` } : undefined}
+          className={`relative block ${large ? "h-11 w-11" : "h-4 w-4"} ${celebrate && fill === 0 ? "chip-empty-wiggle" : ""} ${broken ? "opacity-45 grayscale" : ""}`}
+        >
           <Star aria-hidden="true" className="h-full w-full fill-white/70 text-slate-300" />
           <span
             className="absolute inset-y-0 left-0 overflow-hidden transition-[width] duration-500 ease-out motion-reduce:transition-none"
@@ -86,6 +88,11 @@ function Stars({
               className={`${large ? "h-11 w-11" : "h-4 w-4"} fill-amber-400 text-amber-500`}
             />
           </span>
+          {broken && i === 2 && (
+            <svg aria-hidden="true" viewBox="0 0 44 44" className="absolute inset-0 h-full w-full">
+              <path d="m32 6-6 12 7 4-9 16" fill="none" stroke="#64748b" strokeWidth="2" />
+            </svg>
+          )}
           {fill === 1 && (
             <span
               key={`full-${fill}`}
@@ -97,6 +104,59 @@ function Stars({
         </span>
       ))}
     </span>
+  );
+}
+function RevealStars({ count }: { count: number }) {
+  const [fills, setFills] = useState([0, 0, 0]);
+  useEffect(() => {
+    const values = [0, 1, 2].map((i) => Math.max(0, Math.min(1, count - i)));
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setFills(values);
+      return;
+    }
+    setFills([0, 0, 0]);
+    const timers = values.map((fill, i) =>
+      setTimeout(() => setFills((old) => old.map((v, j) => (i === j ? fill : v))), 200 + i * 500),
+    );
+    return () => timers.forEach(clearTimeout);
+  }, [count]);
+  return <Stars fills={fills} large celebrate broken={count === 0} />;
+}
+function RecordRow({ best }: { best: ReturnType<typeof courseBests> }) {
+  return (
+    <div
+      className="grid grid-cols-3 gap-2 rounded-2xl border border-blue-100 bg-white p-3 text-center"
+      aria-label="High score"
+    >
+      {[
+        ["Hel runda", best.points === null ? "–" : `${best.points} p`],
+        ["Bästa snitt · 6 hål", best.average === null ? "–" : `${starLabel(best.average)} ★`],
+        ["Bästa hål", best.hole === null ? "–" : `${best.hole} p`],
+      ].map(([label, value]) => (
+        <div key={label}>
+          <p className="text-xl font-black text-blue-700">{value}</p>
+          <p className="mt-1 text-[11px] font-bold text-slate-500">{label}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+function Confetti() {
+  return (
+    <div className="pointer-events-none fixed inset-0 z-50 overflow-hidden" aria-hidden="true">
+      {Array.from({ length: 36 }, (_, i) => (
+        <i
+          key={i}
+          className="chip-confetti absolute -top-4 h-3 w-2 rounded-sm"
+          style={{
+            left: `${(i * 37) % 100}%`,
+            background: ["#fbbf24", "#2563eb", "#10b981", "#fb7185"][i % 4],
+            animationDelay: `${(i % 8) * 90}ms`,
+            transform: `rotate(${i * 23}deg)`,
+          }}
+        />
+      ))}
+    </div>
   );
 }
 const positions = [
@@ -148,6 +208,14 @@ function CourseMap({
           strokeDasharray="2 9"
         />
       </svg>
+      <TreePine
+        aria-hidden="true"
+        className="absolute left-[5%] top-[44%] h-8 w-8 fill-emerald-300 text-emerald-700"
+      />
+      <TreePine
+        aria-hidden="true"
+        className="absolute right-[3%] top-[43%] h-10 w-10 fill-emerald-400/60 text-emerald-700"
+      />
       {courseDistances(model).map((d, i) => (
         <div
           key={i}
@@ -208,7 +276,13 @@ function CourseMap({
     </div>
   );
 }
-export function ChipStationPractice({ userId, authLoading = false, surface, onExit }: Props) {
+export function ChipStationPractice({
+  userId,
+  playerName = "Du",
+  authLoading = false,
+  surface,
+  onExit,
+}: Props) {
   const [state, setState] = useState(emptyCourse);
   const stateRef = useRef(state);
   const [ready, setReady] = useState(false);
@@ -216,6 +290,7 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
   const [registering, setRegistering] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [reviewId, setReviewId] = useState<string | null>(null);
+  const [freshRound, setFreshRound] = useState<string | null>(null);
   const [rules, setRules] = useState(false);
   const [exitDialog, setExitDialog] = useState(false);
   const [confirmation, setConfirmation] = useState<{ ball: number; points: number } | null>(null);
@@ -261,8 +336,10 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
     } catch {
       setStorageError(true);
     }
-    if (previous.active && !next.active && next.history.some((r) => r.id === previous.active!.id))
+    if (previous.active && !next.active && next.history.some((r) => r.id === previous.active!.id)) {
       setReviewId(previous.active.id);
+      setFreshRound(previous.active.id);
+    }
     return next;
   }
   const active = state.active;
@@ -317,25 +394,29 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
     confirmationTimer.current = setTimeout(() => setConfirmation(null), 1300);
   }
   const history = state.history.slice().reverse();
-  const records = (["full", "front", "back"] as const).map((segment) => ({
-    segment,
-    best: courseRecord(state.history, state.lie, segment),
-  }));
   const targets = holeTargets(index, lie, active?.model);
   const front = active ? segmentScore(active, "front") : null;
-  const roundPosition = round ? state.history.findIndex((r) => r.id === round.id) : -1;
-  const newRecords = round
-    ? (["full", "front", "back"] as const).filter((segment) => {
-        const value = segmentScore(round, segment);
-        const before = courseRecord(
-          state.history.slice(0, roundPosition),
-          round.lie,
-          segment,
-          round.model,
-        );
-        return value && before && beatsScore(value, before);
-      })
+  const best = courseBests(state.history);
+  const pace = active ? coursePace(active, state.history) : null;
+  const totalPoints = active?.holes.reduce((sum, h) => sum + holePoints(h), 0) ?? 0;
+  const balls = active?.holes.flat().length ?? 0;
+  const completed = active?.holes.filter((h) => h.length === 3).length ?? 0;
+  const avgStars = active && completed ? roundStars(active) / completed : 0;
+  const previous = round
+    ? state.history.slice(
+        0,
+        state.history.findIndex((r) => r.id === round.id),
+      )
     : [];
+  const before = courseBests(previous, round?.model);
+  const roundPoints = round?.holes.reduce((sum, h) => sum + holePoints(h), 0) ?? 0;
+  const roundAverage = round ? roundStars(round) / round.holes.length : 0;
+  const personalBest =
+    !!round &&
+    ((round.status === "full" &&
+      ((before.points !== null && roundPoints > before.points) ||
+        (before.average !== null && roundAverage > before.average))) ||
+      (before.hole !== null && Math.max(...round.holes.map(holePoints)) > before.hole));
 
   return (
     <main
@@ -343,8 +424,9 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
       style={{ ...surface, colorScheme: "light" }}
       className={`chip-course mx-auto w-full max-w-md bg-slate-50 px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-[max(8px,env(safe-area-inset-top))] text-slate-950 ${active || round ? "chip-compact fixed inset-0 z-40 overflow-y-auto" : "min-h-screen"}`}
     >
-      <style>{`@keyframes chipStarPop{0%{transform:scale(.65);opacity:.5}60%{transform:scale(1.3);filter:drop-shadow(0 0 7px #fbbf24)}100%{transform:scale(1);opacity:1}}@keyframes chipCheck{0%{transform:translateY(8px);opacity:0}100%{transform:translateY(0);opacity:1}}body:has(.chip-compact){overflow:hidden}.sg4-route-transition:has(.chip-compact){animation:none;transform:none;will-change:auto;min-height:0}.chip-compact [aria-label="Golfbanan: första tre, Halfway House, sista tre"]{height:clamp(190px,29dvh,250px);margin:12px 0}.chip-compact header button{min-height:40px;height:40px}.chip-compact [role="status"]{min-height:36px;margin-bottom:0}.chip-compact section>div.text-center{padding:16px}.chip-compact h2.my-3{margin:8px 0;font-size:48px}.chip-compact section>div.text-center p.mt-2{margin-top:4px}.chip-star-pop{animation:chipStarPop .55s ease-out}.chip-check{animation:chipCheck .2s ease-out}@media(prefers-reduced-motion:reduce){.chip-star-pop,.chip-check{animation:none}}`}</style>
-      {!round && (
+      <style>{`@keyframes chipConfetti{to{transform:translateY(110dvh) rotate(540deg);opacity:0}}.chip-confetti{animation:chipConfetti 2.6s ease-in forwards}@keyframes chipEmptyWiggle{0%,100%{transform:rotate(0)}35%{transform:rotate(-9deg)}70%{transform:rotate(9deg)}}.chip-empty-wiggle{animation:chipEmptyWiggle .5s ease-in-out}.chip-compact [role="status"]{height:36px}.chip-compact section>div.mt-1{padding:12px}.chip-compact section>div.mt-1 .mt-4{margin-top:8px}@keyframes chipStarPop{0%{transform:scale(.65);opacity:.5}60%{transform:scale(1.3);filter:drop-shadow(0 0 7px #fbbf24)}100%{transform:scale(1);opacity:1}}@keyframes chipCheck{0%{transform:translateY(8px);opacity:0}100%{transform:translateY(0);opacity:1}}body:has(.chip-compact){overflow:hidden}.sg4-route-transition:has(.chip-compact){animation:none;transform:none;will-change:auto;min-height:0}.chip-compact [aria-label="Golfbanan: första tre, Halfway House, sista tre"]{height:clamp(190px,29dvh,250px);margin:12px 0}.chip-compact header button{min-height:40px;height:40px}.chip-compact [role="status"]{min-height:36px;margin-bottom:0}.chip-compact section>div.text-center{padding:16px}.chip-compact h2.my-3{margin:8px 0;font-size:48px}.chip-compact section>div.text-center p.mt-2{margin-top:4px}.chip-star-pop{animation:chipStarPop .55s ease-out}.chip-check{animation:chipCheck .2s ease-out}@media(prefers-reduced-motion:reduce){.chip-star-pop,.chip-check,.chip-confetti,.chip-empty-wiggle{animation:none}.chip-confetti{display:none}}`}</style>
+      {personalBest && freshRound === round?.id && <Confetti />}
+      {!round && !active && (
         <header className="mb-2 flex min-h-12 items-center justify-between gap-3">
           <button
             onClick={back}
@@ -399,22 +481,7 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
                   <Trophy className="h-5 w-5 text-amber-500" />
                   Dina rekord
                 </h2>
-                <div className="grid grid-cols-3 gap-2">
-                  {records.map(({ segment, best }) => (
-                    <div key={segment} className={`${card} rounded-2xl px-2 py-4 text-center`}>
-                      <p className="text-sm font-bold text-slate-600">{segmentNames[segment]}</p>
-                      <p className="mt-2 text-xl font-black text-blue-700">
-                        {best ? starLabel(best.stars / (segment === "full" ? 6 : 3)) : "–"} ★
-                        <span className="block text-xs font-medium text-slate-500">
-                          snitt / hål
-                        </span>
-                      </p>
-                      <p className="mt-1 text-xs text-slate-500">
-                        {best ? `${best.points} poäng` : "Inget resultat än"}
-                      </p>
-                    </div>
-                  ))}
-                </div>
+                <RecordRow best={best} />
                 <button className={`${secondary} mt-4`} onClick={() => setHistoryOpen(true)}>
                   <History className="h-5 w-5" />
                   Tidigare rundor <span className="ml-auto text-slate-400">{history.length}</span>
@@ -433,6 +500,45 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
           )}
           {active && !round && (
             <>
+              <header className="mb-3 rounded-2xl bg-blue-600 p-3 text-white">
+                <div className="flex items-center gap-2">
+                  <button
+                    aria-label="Tillbaka"
+                    data-local-navigation
+                    onClick={back}
+                    className="flex h-9 w-9 items-center justify-center !border-0 !bg-transparent !text-white"
+                  >
+                    <ArrowLeft className="h-5 w-5" />
+                  </button>
+                  <span className="truncate font-bold">{playerName}</span>
+                </div>
+                <div className="mt-1 grid grid-cols-3 gap-2 text-center">
+                  <div>
+                    <p className="flex items-center justify-center gap-1 text-xl font-black">
+                      {totalPoints}
+                      {pace?.onPace && (
+                        <Trophy aria-label="På PB-tempo" className="h-4 w-4 text-yellow-300" />
+                      )}
+                    </p>
+                    <p className="text-[10px] text-blue-100">Totalpoäng</p>
+                  </div>
+                  <div>
+                    <p className="text-xl font-black">
+                      {starLabel(balls ? totalPoints / balls : 0)}
+                    </p>
+                    <p className="text-[10px] text-blue-100">Poäng / boll</p>
+                  </div>
+                  <div>
+                    <p className="flex items-center justify-center gap-1 text-xl font-black">
+                      {starLabel(avgStars)} ★
+                      {pace?.averageOnPace && (
+                        <Trophy aria-label="På PB-snitt" className="h-4 w-4 text-yellow-300" />
+                      )}
+                    </p>
+                    <p className="text-[10px] text-blue-100">Snitt / klart hål</p>
+                  </div>
+                </div>
+              </header>
               {!registering && active.phase !== "halfway" && (
                 <CourseMap model={active.model} holes={active.holes} lie={lie} cursor={index} />
               )}
@@ -448,7 +554,8 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
                       className="chip-check flex items-center gap-2 rounded-full bg-emerald-100 px-4 py-2 text-sm font-bold text-emerald-800"
                     >
                       <Check className="h-5 w-5" />
-                      Boll {confirmation.ball} sparad · +{confirmation.points} p
+                      {CHIP_ZONES.find((z) => z.points === confirmation.points)?.label} · +
+                      {confirmation.points} poäng
                       {confirmation.ball < 3
                         ? ` → Boll ${confirmation.ball + 1}`
                         : " · Hålet klart"}
@@ -467,6 +574,9 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
                           <span className="ml-2 text-2xl">m</span>
                         </h2>
                         <p className="text-base font-bold">Tre bollar från samma plats</p>
+                        <p className="mt-1 text-sm text-slate-500">
+                          {distances[index]} m från flaggan
+                        </p>
                         <p className="mt-2 text-sm text-slate-500">
                           Slå alla tre. Registrera sedan vid hålet.
                         </p>
@@ -483,14 +593,17 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
                             <span className="block text-base text-blue-700">
                               Hål {index + 1} av 6
                             </span>
-                            <span className="text-3xl">{distances[index]} m</span>
+                            <span className="text-sm text-slate-500">
+                              {distances[index]} m från flaggan
+                            </span>
                           </h2>
                           <p className="text-lg font-bold text-blue-700">
-                            {holePoints(shots)}/12 p
+                            {holePoints(shots)} poäng
                           </p>
                         </div>
                         <div className="mt-4 flex justify-center">
                           <Stars
+                            broken={active.phase === "result" && holePoints(shots) === 0}
                             count={holeStars(shots, index, lie, active.model)}
                             fills={
                               active.phase === "result"
@@ -512,7 +625,7 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
                                 key={i}
                                 className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${shots[i] === undefined ? "bg-slate-100 text-slate-400" : "bg-blue-600 text-white"}`}
                               >
-                                {shots[i] === undefined ? i + 1 : `${shots[i]}p`}
+                                {shots[i] === undefined ? i + 1 : <Check className="h-4 w-4" />}
                               </span>
                             ))}
                           </div>
@@ -521,16 +634,32 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
                       <h3 className="mb-2 mt-3 text-center text-base font-bold">
                         Hur långt ifrån hålet?
                       </h3>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div
+                        className="relative grid grid-cols-5 gap-1 rounded-2xl bg-blue-50 px-1 py-2"
+                        aria-label="Avstånd från hålet"
+                      >
+                        <div
+                          aria-hidden="true"
+                          className="absolute left-[10%] right-[10%] top-7 h-0.5 bg-blue-300"
+                        />
                         {CHIP_ZONES.map((z) => (
                           <button
                             key={z.points}
+                            aria-label={z.label}
                             onClick={() => score(z.points)}
                             disabled={active.phase === "result"}
-                            className={`flex min-h-12 items-center justify-between rounded-2xl border px-4 text-left disabled:opacity-45 ${z.points === 4 ? "col-span-2 border-blue-700 bg-blue-600 text-white" : "border-blue-200 bg-blue-50 text-blue-900"}`}
+                            className="relative flex min-h-20 flex-col items-center justify-start gap-2 rounded-xl px-0.5 py-1 text-blue-900 active:bg-blue-200 disabled:opacity-45"
                           >
-                            <span className="text-base font-bold">{z.label}</span>
-                            <strong className="text-xl">{z.points} p</strong>
+                            <span className="z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 border-blue-400 bg-white">
+                              {z.points === 4 ? (
+                                <Flag className="h-4 w-4 fill-yellow-400 text-yellow-600" />
+                              ) : (
+                                <span className="h-2 w-2 rounded-full bg-blue-600" />
+                              )}
+                            </span>
+                            <span className="text-center text-xs font-bold leading-tight">
+                              {z.label}
+                            </span>
                           </button>
                         ))}
                       </div>
@@ -570,11 +699,17 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
                     <Coffee className="mx-auto h-9 w-9 text-amber-700" />
                     <h2 className="mt-3 text-2xl font-black">Halfway House</h2>
                     <p className="mt-2 text-base text-slate-600">
-                      {front.stars >= 7.5
-                        ? "Strålande! Fortsätt så."
-                        : front.stars >= 4.5
-                          ? "Bra jobbat! Redo för sista tre?"
-                          : "Bra kämpat! Nästa hål, ny chans."}
+                      {pace?.ahead
+                        ? "Över PB-tempo! Håller det hela vägen?"
+                        : pace?.onPace
+                          ? "Du håller PB-tempo. Fortsätt så!"
+                          : pace?.near
+                            ? "Du är nära PB-tempot. Det finns en chans!"
+                            : front.stars >= 7.5
+                              ? "Strålande! Fortsätt så."
+                              : front.stars >= 4.5
+                                ? "Bra jobbat! Redo för sista tre?"
+                                : "Bra kämpat! Nästa hål, ny chans."}
                     </p>
                     <p className="mt-3 text-5xl font-black text-blue-700">
                       {starLabel(front.stars / 3)} ★
@@ -604,7 +739,9 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
           )}
           {historyOpen && !round && !active && (
             <section>
-              <p className="mb-4 text-sm text-slate-500">Stjärnor först, poäng vid lika.</p>
+              <div className="sticky top-0 z-20 mb-4 bg-slate-50 py-2">
+                <RecordRow best={best} />
+              </div>
               {!history.length ? (
                 <div className={`${card} p-6 text-center`}>
                   <Flag className="mx-auto h-8 w-8 text-blue-600" />
@@ -665,22 +802,17 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
                       ? "Rundan klar"
                       : "Din sparade runda"}
                 </h2>
-                <p className="mt-2 text-sm text-slate-500">
-                  {dateLabel(round.finishedAt)} · {round.holes.length * 3} bollar
+                <div className="my-4 flex justify-center">
+                  <RevealStars key={round.id} count={roundAverage} />
+                </div>
+                <p className="text-3xl font-black text-blue-700">
+                  {starLabel(roundAverage)}{" "}
+                  <span className="text-sm font-medium text-slate-500">★ snitt / hål</span>
                 </p>
-                <p className="my-4 text-5xl font-black text-blue-700">
-                  {starLabel(roundStars(round) / round.holes.length)} ★
-                  <span className="mt-2 block text-sm font-medium text-slate-500">
-                    snittstjärnor per hål
-                  </span>
-                </p>
-                <p className="text-base font-bold text-emerald-700">
-                  {round.holes.reduce((sum, shots) => sum + holePoints(shots), 0)} poäng totalt
-                </p>
-                {newRecords.length > 0 && (
-                  <p className="rounded-xl bg-amber-50 p-3 text-base font-bold text-amber-800">
-                    Nytt rekord ·{" "}
-                    {newRecords.map((s) => segmentNames[s].toLowerCase()).join(" och ")}
+                <p className="mt-3 text-xl font-black text-slate-900">{roundPoints} poäng totalt</p>
+                {personalBest && (
+                  <p className="mt-3 rounded-xl bg-amber-50 p-2 text-sm font-bold text-amber-800">
+                    🏆 Nytt personbästa!
                   </p>
                 )}
                 {round.status === "partial" && (
@@ -711,7 +843,10 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
                   }}
                 />
               </div>
-              <button className={`${secondary} mt-3`} onClick={start}>
+              <button
+                className={`${secondary} mt-3 !border-slate-950 !bg-slate-950 !text-white`}
+                onClick={start}
+              >
                 Ny runda <ArrowRight className="h-5 w-5" />
               </button>
               <button
@@ -724,13 +859,14 @@ export function ChipStationPractice({ userId, authLoading = false, surface, onEx
                 Alla rundor
               </button>
               <button
+                data-local-navigation
                 className={`${secondary} mt-3`}
                 onClick={() => {
                   setReviewId(null);
                   setHistoryOpen(false);
                 }}
               >
-                Till banan
+                Tillbaka
               </button>
             </section>
           )}

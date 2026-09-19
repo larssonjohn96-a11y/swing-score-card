@@ -293,3 +293,37 @@ export function parseCourse(raw: string | null): CourseState {
     return emptyCourse();
   }
 }
+
+/** Full-round records are comparable; best hole includes any completed hole. */
+export function courseBests(history: CourseRound[], model = 4) {
+  const rounds = history.filter((r) => r.model === model);
+  const full = rounds.filter((r) => r.status === "full");
+  return {
+    points: full.length
+      ? Math.max(...full.map((r) => r.holes.reduce((s, h) => s + holePoints(h), 0)))
+      : null,
+    average: full.length ? Math.max(...full.map((r) => roundStars(r) / 6)) : null,
+    hole: rounds.length ? Math.max(...rounds.flatMap((r) => r.holes.map(holePoints))) : null,
+  };
+}
+/** Compare completed holes with the same holes in the highest-point full round. */
+export function coursePace(active: CourseSession, history: CourseRound[]) {
+  const completed = active.holes.filter((h) => h.length === 3);
+  const candidates = history.filter((r) => r.model === active.model && r.status === "full");
+  if (!completed.length || !candidates.length) return null;
+  const total = (holes: ChipPoints[][]) => holes.reduce((s, h) => s + holePoints(h), 0);
+  const best = candidates.reduce((a, b) => (total(a.holes) >= total(b.holes) ? a : b));
+  const points = total(completed),
+    target = total(best.holes.slice(0, completed.length));
+  const possible = points + (6 - completed.length) * 12;
+  return {
+    points,
+    target,
+    ahead: points > target,
+    onPace: points >= target,
+    near: points < target && target - points <= 3 && possible > total(best.holes),
+    averageOnPace:
+      roundStars({ ...active, holes: completed }) / completed.length >=
+      (courseBests(candidates, active.model).average ?? Infinity),
+  };
+}

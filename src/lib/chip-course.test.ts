@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import {
   COURSE_DISTANCES,
+  courseBests,
+  coursePace,
   courseDistances,
   courseHandicap,
   liveStars,
@@ -244,5 +246,23 @@ describe("live stars, bonus and round HCP", () => {
     expect(roundStars(p.history[0])).toBe(11);
     expect(courseRecord(p.history, "Fairway", "full")).toBeNull();
     expect(courseRecord(p.history, "Fairway", "full", 1)?.stars).toBe(11);
+  });
+});
+
+
+describe("record dashboard and live PB pace", () => {
+  it("keeps full-round totals and averages separate from shorter rounds", () => {
+    const whole = full(front(start(), [2,2,2]), [2,2,2]).history[0];
+    const half = reduceCourse(front(start(emptyCourse(), "half"), [4,4,4]), {type:"finish",at:400}).history[0];
+    expect(courseBests([whole, half])).toEqual({points:36, average:2, hole:12});
+    expect(courseBests([])).toEqual({points:null, average:null, hole:null});
+  });
+  it("compares the same completed holes and reports a close, attainable PB", () => {
+    const record = full(front(start(), [2,2,2]), [2,2,2]).history[0];
+    expect(coursePace(start().active!, [record])).toBeNull();
+    expect(coursePace(front(start(), [3,2,2]).active!, [record])?.ahead).toBe(true);
+    expect(coursePace(front(start(), [2,2,1]).active!, [record])?.near).toBe(true);
+    expect(coursePace(front(start(), [0,0,0]).active!, [record])?.near).toBe(false);
+    expect(coursePace(front().active!, [])).toBeNull();
   });
 });

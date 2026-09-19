@@ -791,6 +791,7 @@ function PlayWithCoachPage() {
       key={user?.id ?? "guest"}
       userId={user?.id ?? null}
       authLoading={loading}
+      playerName={playerName}
       coach={coach}
       surface={LIGHT_SURFACE}
       onExit={() => setPhase("setup")}
