@@ -488,6 +488,7 @@ function Home() {
           <div className="flex items-end justify-between gap-3 px-0.5"><div><h2 className="text-[24px] font-black leading-none text-foreground">Spela en runda</h2><p className="mt-1.5 text-sm text-muted-foreground">Slå ditt personbästa och få ett HCP-resultat.</p></div><Link to="/spela-runda" className="shrink-0 text-xs font-bold text-blue-600">Alla rundor</Link></div>
           <DragScrollRow>
             <Link to="/chipprundan" className="block shrink-0"><SimpleCard label="Spela själv" title="Chipprundan" tone="bg-[#118267]" imageSrc="/0d286fd4-99fa-47eb-b39c-a7ff718ebdd6.png" imagePosition="18% 50%" /></Link>
+            <Link to="/puttrundan" className="block shrink-0"><SimpleCard label="Spela själv" title="Puttrundan" tone="bg-[#118267]" imageSrc="/Putting_1.png" imagePosition="18% 50%" /></Link>
           </DragScrollRow>
         </section>
 

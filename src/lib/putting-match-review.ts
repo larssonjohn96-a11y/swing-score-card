@@ -97,6 +97,7 @@ export function buildPuttingMatchReview(holes: readonly ReviewHole[]) {
     rows,
     total,
     hcpBand,
+    estimate,
     average: rows.length ? total / rows.length : 0,
     onePutts: rows.filter((row) => row.putts === 1).length,
     threePutts: rows.filter((row) => row.putts >= 3).length,

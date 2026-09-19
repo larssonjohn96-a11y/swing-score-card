@@ -1,3 +1,5 @@
+import { syncPuttRounds } from './putt-cloud';
+import { puttAverage, parseCourse as parsePuttCourse, courseStorageKey as puttStorageKey } from './putt-course';
 import { syncChipRounds } from "./chip-cloud";
 import { chipAverage } from "./chip-competition";
 import { parseCourse, courseStorageKey } from "./chip-course";
@@ -65,7 +67,7 @@ export async function listFriendships(strict=false):Promise<{incoming:Friendship
 export async function pushPlayerSnapshot(expectedUserId?: string):Promise<boolean>{
   const{data:userData}=await supabase.auth.getUser();
   if(!userData.user || (expectedUserId && userData.user.id !== expectedUserId))return false;
-  try { await syncChipRounds(userData.user.id); } catch { return false; }
+  try { await syncChipRounds(userData.user.id); await syncPuttRounds(userData.user.id); } catch { return false; }
   const {data:currentAuth}=await supabase.auth.getSession();
   if(currentAuth.session?.user.id!==userData.user.id)return false;
   const real=loadRealHandicap();
@@ -84,6 +86,12 @@ export async function pushPlayerSnapshot(expectedUserId?: string):Promise<boolea
     {key:"chip-round-stars",label:"Chipprundan · snittstjärnor",value:chip.stars,unit:"★",decimals:1,higherIsBetter:true},
     {key:"chip-round-count",label:"Chipprundan · rundor i snittet",value:chip.count,unit:"",decimals:0,higherIsBetter:true},
   ] : previousMetrics));
+  const putt=puttAverage(parsePuttCourse(localStorage.getItem(puttStorageKey(userData.user.id))).history);
+  const previousPutt=parseComparisonProfile(previousChip?.comparison_profile).training.filter(m=>m.key.startsWith('putt-round-'));
+  comparisonProfile.training.push(...(putt.count?[
+    {key:'putt-round-stars',label:'Puttrundan · snittstjärnor',value:putt.stars,unit:'★',decimals:1,higherIsBetter:true},
+    {key:'putt-round-count',label:'Puttrundan · rundor i snittet',value:putt.count,unit:'',decimals:0,higherIsBetter:true},
+  ]:previousPutt));
   const {error} = await (supabase.from("player_snapshots") as any).upsert({
     user_id:userData.user.id,
     rating:card.rating,

@@ -71,6 +71,7 @@ import { Route as PremiumRouteImport } from './routes/premium'
 import { Route as PuttingRouteImport } from './routes/putting'
 import { Route as PuttingDataRouteImport } from './routes/putting-data'
 import { Route as PuttingStreakRouteImport } from './routes/putting-streak'
+import { Route as PuttrundanRouteImport } from './routes/puttrundan'
 import { Route as ShortPuttingTestRouteImport } from './routes/short-putting-test'
 import { Route as ShotShapingRouteImport } from './routes/shot-shaping'
 import { Route as ShotShaping9WindowRouteImport } from './routes/shot-shaping-9-window'
@@ -422,6 +423,11 @@ const PuttingStreakRoute = PuttingStreakRouteImport.update({
   path: '/putting-streak',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PuttrundanRoute = PuttrundanRouteImport.update({
+  id: '/puttrundan',
+  path: '/puttrundan',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ShortPuttingTestRoute = ShortPuttingTestRouteImport.update({
   id: '/short-putting-test',
   path: '/short-putting-test',
@@ -679,6 +685,7 @@ export interface FileRoutesByFullPath {
   '/putting': typeof PuttingRoute
   '/putting-data': typeof PuttingDataRoute
   '/putting-streak': typeof PuttingStreakRoute
+  '/puttrundan': typeof PuttrundanRoute
   '/short-putting-test': typeof ShortPuttingTestRoute
   '/shot-shaping': typeof ShotShapingRoute
   '/shot-shaping-9-window': typeof ShotShaping9WindowRoute
@@ -781,6 +788,7 @@ export interface FileRoutesByTo {
   '/putting': typeof PuttingRoute
   '/putting-data': typeof PuttingDataRoute
   '/putting-streak': typeof PuttingStreakRoute
+  '/puttrundan': typeof PuttrundanRoute
   '/short-putting-test': typeof ShortPuttingTestRoute
   '/shot-shaping': typeof ShotShapingRoute
   '/shot-shaping-9-window': typeof ShotShaping9WindowRoute
@@ -884,6 +892,7 @@ export interface FileRoutesById {
   '/putting': typeof PuttingRoute
   '/putting-data': typeof PuttingDataRoute
   '/putting-streak': typeof PuttingStreakRoute
+  '/puttrundan': typeof PuttrundanRoute
   '/short-putting-test': typeof ShortPuttingTestRoute
   '/shot-shaping': typeof ShotShapingRoute
   '/shot-shaping-9-window': typeof ShotShaping9WindowRoute
@@ -988,6 +997,7 @@ export interface FileRouteTypes {
     | '/putting'
     | '/putting-data'
     | '/putting-streak'
+    | '/puttrundan'
     | '/short-putting-test'
     | '/shot-shaping'
     | '/shot-shaping-9-window'
@@ -1090,6 +1100,7 @@ export interface FileRouteTypes {
     | '/putting'
     | '/putting-data'
     | '/putting-streak'
+    | '/puttrundan'
     | '/short-putting-test'
     | '/shot-shaping'
     | '/shot-shaping-9-window'
@@ -1192,6 +1203,7 @@ export interface FileRouteTypes {
     | '/putting'
     | '/putting-data'
     | '/putting-streak'
+    | '/puttrundan'
     | '/short-putting-test'
     | '/shot-shaping'
     | '/shot-shaping-9-window'
@@ -1295,6 +1307,7 @@ export interface RootRouteChildren {
   PuttingRoute: typeof PuttingRoute
   PuttingDataRoute: typeof PuttingDataRoute
   PuttingStreakRoute: typeof PuttingStreakRoute
+  PuttrundanRoute: typeof PuttrundanRoute
   ShortPuttingTestRoute: typeof ShortPuttingTestRoute
   ShotShapingRoute: typeof ShotShapingRoute
   ShotShaping9WindowRoute: typeof ShotShaping9WindowRoute
@@ -1768,6 +1781,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PuttingStreakRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/puttrundan': {
+      id: '/puttrundan'
+      path: '/puttrundan'
+      fullPath: '/puttrundan'
+      preLoaderRoute: typeof PuttrundanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/short-putting-test': {
       id: '/short-putting-test'
       path: '/short-putting-test'
@@ -2135,6 +2155,7 @@ const rootRouteChildren: RootRouteChildren = {
   PuttingRoute: PuttingRoute,
   PuttingDataRoute: PuttingDataRoute,
   PuttingStreakRoute: PuttingStreakRoute,
+  PuttrundanRoute: PuttrundanRoute,
   ShortPuttingTestRoute: ShortPuttingTestRoute,
   ShotShapingRoute: ShotShapingRoute,
   ShotShaping9WindowRoute: ShotShaping9WindowRoute,
