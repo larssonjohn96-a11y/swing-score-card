@@ -41,6 +41,7 @@ import { Route as GreenReadingRouteImport } from './routes/green-reading'
 import { Route as GreenReadingHistorikRouteImport } from './routes/green-reading-historik'
 import { Route as HcpGoalRouteImport } from './routes/hcp-goal'
 import { Route as HcpTestsRouteImport } from './routes/hcp-tests'
+import { Route as InspelsrundanRouteImport } from './routes/inspelsrundan'
 import { Route as JamforRouteImport } from './routes/jamfor'
 import { Route as KlockPuttRouteImport } from './routes/klock-putt'
 import { Route as KontoRouteImport } from './routes/konto'
@@ -272,6 +273,11 @@ const HcpGoalRoute = HcpGoalRouteImport.update({
 const HcpTestsRoute = HcpTestsRouteImport.update({
   id: '/hcp-tests',
   path: '/hcp-tests',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InspelsrundanRoute = InspelsrundanRouteImport.update({
+  id: '/inspelsrundan',
+  path: '/inspelsrundan',
   getParentRoute: () => rootRouteImport,
 } as any)
 const JamforRoute = JamforRouteImport.update({
@@ -661,6 +667,7 @@ export interface FileRoutesByFullPath {
   '/green-reading-historik': typeof GreenReadingHistorikRoute
   '/hcp-goal': typeof HcpGoalRoute
   '/hcp-tests': typeof HcpTestsRoute
+  '/inspelsrundan': typeof InspelsrundanRoute
   '/jamfor': typeof JamforRouteWithChildren
   '/klock-putt': typeof KlockPuttRoute
   '/konto': typeof KontoRoute
@@ -765,6 +772,7 @@ export interface FileRoutesByTo {
   '/green-reading-historik': typeof GreenReadingHistorikRoute
   '/hcp-goal': typeof HcpGoalRoute
   '/hcp-tests': typeof HcpTestsRoute
+  '/inspelsrundan': typeof InspelsrundanRoute
   '/jamfor': typeof JamforRouteWithChildren
   '/klock-putt': typeof KlockPuttRoute
   '/konto': typeof KontoRoute
@@ -870,6 +878,7 @@ export interface FileRoutesById {
   '/green-reading-historik': typeof GreenReadingHistorikRoute
   '/hcp-goal': typeof HcpGoalRoute
   '/hcp-tests': typeof HcpTestsRoute
+  '/inspelsrundan': typeof InspelsrundanRoute
   '/jamfor': typeof JamforRouteWithChildren
   '/klock-putt': typeof KlockPuttRoute
   '/konto': typeof KontoRoute
@@ -976,6 +985,7 @@ export interface FileRouteTypes {
     | '/green-reading-historik'
     | '/hcp-goal'
     | '/hcp-tests'
+    | '/inspelsrundan'
     | '/jamfor'
     | '/klock-putt'
     | '/konto'
@@ -1080,6 +1090,7 @@ export interface FileRouteTypes {
     | '/green-reading-historik'
     | '/hcp-goal'
     | '/hcp-tests'
+    | '/inspelsrundan'
     | '/jamfor'
     | '/klock-putt'
     | '/konto'
@@ -1184,6 +1195,7 @@ export interface FileRouteTypes {
     | '/green-reading-historik'
     | '/hcp-goal'
     | '/hcp-tests'
+    | '/inspelsrundan'
     | '/jamfor'
     | '/klock-putt'
     | '/konto'
@@ -1289,6 +1301,7 @@ export interface RootRouteChildren {
   GreenReadingHistorikRoute: typeof GreenReadingHistorikRoute
   HcpGoalRoute: typeof HcpGoalRoute
   HcpTestsRoute: typeof HcpTestsRoute
+  InspelsrundanRoute: typeof InspelsrundanRoute
   JamforRoute: typeof JamforRouteWithChildren
   KlockPuttRoute: typeof KlockPuttRoute
   KontoRoute: typeof KontoRoute
@@ -1582,6 +1595,13 @@ declare module '@tanstack/react-router' {
       path: '/hcp-tests'
       fullPath: '/hcp-tests'
       preLoaderRoute: typeof HcpTestsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inspelsrundan': {
+      id: '/inspelsrundan'
+      path: '/inspelsrundan'
+      fullPath: '/inspelsrundan'
+      preLoaderRoute: typeof InspelsrundanRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/jamfor': {
@@ -2145,6 +2165,7 @@ const rootRouteChildren: RootRouteChildren = {
   GreenReadingHistorikRoute: GreenReadingHistorikRoute,
   HcpGoalRoute: HcpGoalRoute,
   HcpTestsRoute: HcpTestsRoute,
+  InspelsrundanRoute: InspelsrundanRoute,
   JamforRoute: JamforRouteWithChildren,
   KlockPuttRoute: KlockPuttRoute,
   KontoRoute: KontoRoute,
