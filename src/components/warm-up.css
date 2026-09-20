@@ -601,3 +601,228 @@ body:has(.wu-shell) {
     transform: translateY(0);
   }
 }
+
+/* Area-first routine: quiet progress, large tasks and a clear next action. */
+.wu-footer {
+  padding-bottom: max(26px, calc(env(safe-area-inset-bottom) + 12px));
+}
+.wu-bar {
+  height: 5px;
+  background: #dfe7f1;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.wu-bar > span {
+  display: block;
+  height: 100%;
+  background: #2563eb;
+  border-radius: inherit;
+  transition: width 0.4s ease;
+}
+.wu-total {
+  display: grid;
+  gap: 7px;
+  color: #64748b;
+  font-size: 12px;
+  margin-bottom: 14px;
+}
+.wu-total .wu-bar {
+  height: 3px;
+}
+.wu-area-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.wu-area-heading h1 {
+  font-size: 28px;
+  line-height: 1.15;
+  font-weight: 800;
+  outline: none;
+}
+.wu-area-heading > span {
+  font-size: 13px;
+  color: #64748b;
+}
+.wu-task-heading {
+  margin-top: 12px;
+}
+.wu-task-heading h2 {
+  font-size: 25px;
+  line-height: 1.2;
+  font-weight: 750;
+  margin-top: 5px;
+}
+.wu-area-tasks {
+  display: grid;
+  gap: 10px;
+}
+.wu-area-tasks > div {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+}
+.wu-area-tasks strong {
+  font-size: 19px;
+}
+.wu-area-tasks small {
+  display: block;
+  color: #64748b;
+  font-size: 15px;
+  font-weight: 500;
+  margin-top: 2px;
+}
+.wu-order-row {
+  min-height: 72px;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  background: white;
+  padding: 10px 12px;
+}
+.wu-order-row strong {
+  font-size: 19px;
+  flex: 1;
+}
+.wu-order-row.is-held {
+  border-color: #2563eb;
+  background: #eff6ff;
+  box-shadow: 0 3px 12px #2563eb18;
+}
+.wu-drag {
+  touch-action: none;
+  cursor: grab;
+}
+.wu-drag:active {
+  cursor: grabbing;
+}
+.wu-countdown {
+  display: grid;
+  text-align: right;
+  line-height: 1.2;
+}
+.wu-countdown strong {
+  color: #2563eb;
+  font-size: 19px;
+}
+.wu-countdown small {
+  font-size: 11px;
+  font-weight: 500;
+  color: #64748b;
+}
+.wu-time-field {
+  display: grid;
+  gap: 10px;
+  font-size: 20px;
+  font-weight: 700;
+  margin-top: 12px;
+}
+.wu-time-field select {
+  width: 100%;
+  padding: 18px;
+  border: 2px solid #93b4fa;
+  border-radius: 20px;
+  font-size: 40px;
+  font-weight: 800;
+  color: #1d4ed8;
+  background: white;
+}
+.wu-duration-number {
+  text-align: center;
+  color: #2563eb;
+  font-size: 76px;
+  font-weight: 800;
+  line-height: 1.1;
+  margin: 16px 0;
+}
+.wu-duration-number small {
+  display: block;
+  font-size: 18px;
+  color: #64748b;
+  font-weight: 500;
+}
+.wu-slider {
+  width: 100%;
+  accent-color: #2563eb;
+  min-height: 40px;
+}
+.wu-facilities {
+  display: grid;
+  gap: 12px;
+}
+.wu-facilities .wu-choice {
+  justify-content: space-between;
+  min-height: 70px;
+  font-size: 21px;
+}
+.wu-finished {
+  color: #2563eb;
+  background: #e6efff;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  align-self: center;
+  margin: 16px 0;
+}
+.wu-question {
+  font-size: 23px;
+  font-weight: 750;
+}
+@media (max-height: 740px) {
+  .wu-content {
+    gap: 10px;
+  }
+  .wu-total {
+    margin-bottom: 4px;
+  }
+  .wu-task-heading {
+    margin-top: 4px;
+  }
+  .wu-distance {
+    padding: 8px 0;
+  }
+  .wu-distance > span {
+    font-size: 66px;
+  }
+  .wu-symbol {
+    min-height: 90px;
+    padding: 8px;
+  }
+  .wu-instruction {
+    font-size: 19px;
+    line-height: 1.4;
+  }
+  .wu-cue {
+    font-size: 15px;
+    line-height: 1.4;
+  }
+  .wu-footer {
+    padding-top: 8px;
+  }
+  .wu-order-row {
+    min-height: 64px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wu-bar > span {
+    transition: none;
+  }
+}
+@media (max-height: 740px) {
+  .wu-area-tasks {
+    gap: 8px;
+  }
+  .wu-area-tasks > div {
+    padding: 10px 12px;
+  }
+  .wu-content {
+    gap: 9px;
+  }
+}

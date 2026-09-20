@@ -10,6 +10,8 @@ import {
   startRoutine,
   completeVisit,
   advanceExercise,
+  beginVisit,
+  normalizePrefs,
   extendVisit,
   finishRoutine,
   goToVisit,
@@ -44,50 +46,64 @@ describe("warm-up exercise flow and routine memory", () => {
       [1, 3],
     ]);
     expect(visits.find((v) => v.kind === "range")?.exercises.at(-1)?.id).toBe("first-tee");
-    expect(visits.at(-1)?.kind).toBe("tee");
-    expect(visits.reduce((n, v) => n + v.minutes, 5)).toBeCloseTo(30);
+    expect(visits.some((v) => v.kind === "tee")).toBe(false);
+    expect(visits.reduce((n, v) => n + v.minutes, 0)).toBeCloseTo(30);
   });
-  it("keeps two putt visits distinct with different distances, progress and ratings after reload", () => {
-    const p = applyRoutineChange(routineDefaults(), "two-putts");
-    let s = startRoutine(p, {}, now, "split");
+  it("deduplicates putting visits and preserves the new area introduction on reload", () => {
+    const p = normalizePrefs({ ...routineDefaults(), order: ["putt", "range", "putt"] });
+    expect(p.order).toEqual(["putt", "range"]);
+    let s = startRoutine(p, {}, now, "flow");
+    expect(s.phase).toBe("intro");
+    expect(advanceExercise(s, now)).toEqual(s);
+    s = beginVisit(s, now);
     s = completeVisit(s, now + minute);
-    const first = s.visits[s.current];
-    expect(first.id).toBe("putt-0");
-    expect(first.exercises.map((e) => e.distance)).toEqual([8, 12]);
-    s = completeVisit(s, now + 3 * minute, "good");
-    const secondIndex = s.visits.findIndex((v) => v.id === "putt-1");
-    s = goToVisit(s, secondIndex, now + 5 * minute);
-    expect(s.visits[s.current].exercises.map((e) => e.distance)).toEqual([10, 1]);
-    const saved = parseRoutine(JSON.stringify({ ...emptyRoutine(), active: s }));
-    expect(saved.active?.current).toBe(secondIndex);
-    expect(saved.active?.done).toContain("putt-0");
-    expect(saved.active?.done).not.toContain("putt-1");
-    expect(saved.active?.ratings["putt-0"]).toBe("good");
+    expect(s.phase).toBe("intro");
+    expect(s.visits[s.current].kind).toBe("putt");
+    expect(parseRoutine(JSON.stringify({ ...emptyRoutine(), active: s })).active).toEqual(s);
   });
-  it("advances batches, persists the current exercise, then shows the station check", () => {
-    let s = startRoutine({ ...routineDefaults(), body: false, order: ["putt"] }, {}, now, "a");
+  it("advances batches and finishes without an extra questionnaire between areas", () => {
+    let s = beginVisit(
+      startRoutine({ ...routineDefaults(), body: false, order: ["putt"] }, {}, now, "a"),
+      now,
+    );
     s = advanceExercise(s, now);
     expect(s.exercise).toBe(1);
-    expect(s.phase).toBe("exercise");
     s = parseRoutine(JSON.stringify({ ...emptyRoutine(), active: s })).active!;
-    s = advanceExercise(advanceExercise(advanceExercise(s, now), now), now);
-    expect(s.phase).toBe("check");
-    expect(s.done).toEqual([]);
-    s = completeVisit(s, now + 10 * minute, "good");
-    expect(s.visits[s.current].kind).toBe("tee");
-    expect(advanceExercise(s, now + 11 * minute).finishedAt).toBe(now + 11 * minute);
+    s = advanceExercise(
+      advanceExercise(advanceExercise(s, now + minute), now + minute),
+      now + minute,
+    );
+    expect(s.done).toEqual(["putt-0"]);
+    expect(s.finishedAt).toBe(now + minute);
+  });
+  it("uses all duration minutes but protects walking time when a tee time was chosen", () => {
+    const duration = startRoutine(routineDefaults(), {}, now, "duration");
+    const tee = startRoutine({ ...routineDefaults(), timing: "tee" }, {}, now, "tee");
+    expect(duration.reserve).toBe(0);
+    expect(tee.reserve).toBe(5);
+    expect(duration.visits.reduce((n, v) => n + v.minutes, 0)).toBeCloseTo(30);
+    expect(tee.visits.reduce((n, v) => n + v.minutes, 0)).toBeCloseTo(25);
+    expect(
+      buildVisits(routineDefaults()).find((v) => v.kind === "chip")?.exercises[0].instruction,
+    ).toContain("1–2 meter från flaggan");
   });
   it("snooze and early completion never move the tee time or use the protected margin", () => {
-    const s = startRoutine(routineDefaults(), {}, now, "a", now + 35 * minute);
+    const s = startRoutine(
+      { ...routineDefaults(), timing: "tee" },
+      {},
+      now,
+      "a",
+      now + 35 * minute,
+    );
     const next = extendVisit(s, s.teeAt - s.reserve * minute - minute);
     expect(next.dueAt).toBe(s.teeAt - s.reserve * minute);
     expect(next.teeAt).toBe(s.teeAt);
     expect(completeVisit(s, now + minute).dueAt).toBeLessThanOrEqual(s.teeAt - s.reserve * minute);
   });
   it("reduces short routines to a useful station while preserving saved preferences", () => {
-    const p = { ...routineDefaults(), minutes: 10 };
+    const p = { ...routineDefaults(), timing: "tee" as const, minutes: 10 };
     const visits = buildVisits(p);
-    expect(visits.map((v) => v.kind)).toEqual(["body", "putt", "tee"]);
+    expect(visits.map((v) => v.kind)).toEqual(["body", "putt"]);
     expect(p.order).toEqual(["range", "chip", "putt"]);
     expect(() => startRoutine(p, {}, now, "a", now - minute)).toThrow();
   });

@@ -10,6 +10,7 @@ export { STATIONS, warmKey };
 export type { Station, Feeling };
 
 export type RoutinePrefs = {
+  timing?: "duration" | "tee";
   minutes: number;
   order: Station[];
   weights: Record<Station, number>;
@@ -42,6 +43,7 @@ export type RoutineChange =
   "keep" | "putt-first" | "range-last" | "two-putts" | "more-putt" | "more-chip" | "more-range";
 export type RoutineSession = {
   id: string;
+  timing?: "duration" | "tee";
   startedAt: number;
   teeAt: number;
   reserve: number;
@@ -51,7 +53,7 @@ export type RoutineSession = {
   exercise: number;
   visitAt: number;
   dueAt: number;
-  phase: "exercise" | "check";
+  phase: "intro" | "exercise" | "check";
   done: string[];
   skipped: string[];
   ratings: Record<string, Feeling>;
@@ -69,6 +71,7 @@ export type RoutineState = {
   history: RoutineSession[];
 };
 export const routineDefaults = (): RoutinePrefs => ({
+  timing: "duration",
   minutes: 30,
   order: ["range", "chip", "putt"],
   weights: legacyDefaults().weights,
@@ -93,12 +96,11 @@ export function normalizePrefs(value: Partial<RoutinePrefs>): RoutinePrefs {
   const order = Array.isArray(value.order)
     ? value.order
         .filter(isStation)
-        .filter(
-          (s, i, all) => all.slice(0, i).filter((k) => k === s).length < (s === "putt" ? 2 : 1),
-        )
+        .filter((s, i, all) => all.slice(0, i).filter((k) => k === s).length < 1)
         .slice(0, 5)
     : d.order;
   return {
+    timing: value.timing === "tee" ? "tee" : "duration",
     minutes: finite(value.minutes) ? clamp(Math.round(value.minutes), 5, 120) : d.minutes,
     order: order.length ? order : d.order,
     weights: Object.fromEntries(
@@ -133,7 +135,7 @@ const distanceTask = (kind: "putt" | "chip", d: number) =>
     kind === "putt" ? "Putta 3 bollar" : "Chippa 3 bollar",
     kind === "putt"
       ? "Putta mot samma hål. Samla bollarna när alla tre är slagna."
-      : "Slå från samma plats mot ett hål. Samla bollarna efter alla tre slagen.",
+      : "Sikta på en flagga. Försök få bollarna att stanna inom 1–2 meter från flaggan.",
     kind === "putt"
       ? d <= 2
         ? "Se bollen rulla på din valda startlinje."
@@ -145,9 +147,12 @@ export function buildVisits(p: RoutinePrefs, profile: WarmProfile = {}): Visit[]
   const prefs = normalizePrefs(p);
   const data = prefs.useStats ? profile : {};
   // A short routine drops whole visits instead of reducing every station to seconds.
-  const available = Math.max(2, prefs.minutes - Math.min(prefs.reserve, prefs.minutes - 2));
+  const available = Math.max(
+    2,
+    prefs.minutes - (prefs.timing === "tee" ? Math.min(prefs.reserve, prefs.minutes - 2) : 0),
+  );
   let order = [...prefs.order];
-  const stationBudget = available - (prefs.body ? 1 : 0) - 0.5;
+  const stationBudget = available - (prefs.body ? 1 : 0);
   const capacity = Math.max(1, Math.floor(stationBudget / 2.5));
   if (order.length > capacity) {
     const chosen = new Set<number>();
@@ -203,7 +208,7 @@ export function buildVisits(p: RoutinePrefs, profile: WarmProfile = {}): Visit[]
     (n, k) => n + prefs.weights[k] / order.filter((s) => s === k).length,
     0,
   );
-  const budget = Math.max(0.5, available - (visits[0]?.minutes ?? 0) - 0.5);
+  const budget = Math.max(0.5, available - (visits[0]?.minutes ?? 0));
   for (const kind of order) {
     const ordinal = counts[kind] ?? 0;
     counts[kind] = ordinal + 1;
@@ -306,20 +311,6 @@ export function buildVisits(p: RoutinePrefs, profile: WarmProfile = {}): Visit[]
       focus,
     });
   }
-  visits.push({
-    id: "tee",
-    kind: "tee",
-    title: "Redo för första tee",
-    minutes: 0.5,
-    exercises: [
-      exercise(
-        "tee-ready",
-        "Ta med rytmen",
-        "Välj ditt mål för första slaget. Ta ett lugnt andetag och använd din vanliga rutin.",
-        "Ett slag i taget.",
-      ),
-    ],
-  });
   return visits;
 }
 export function pendingVisits(s: RoutineSession) {
@@ -345,14 +336,15 @@ export function startRoutine(
     id,
     startedAt: now,
     teeAt,
-    reserve: Math.min(prefs.reserve, minutes - 2),
+    timing: prefs.timing,
+    reserve: prefs.timing === "tee" ? Math.min(prefs.reserve, minutes - 2) : 0,
     holes: prefs.holes,
     visits: buildVisits(prefs, profile),
     current: 0,
     exercise: 0,
     visitAt: now,
     dueAt: now,
-    phase: "exercise",
+    phase: "intro",
     done: [],
     skipped: [],
     ratings: {},
@@ -369,7 +361,7 @@ export function goToVisit(s: RoutineSession, index: number, now: number): Routin
     s.skipped.includes(s.visits[index].id)
   )
     return s;
-  const next = { ...s, current: index, exercise: 0, visitAt: now, phase: "exercise" as const };
+  const next = { ...s, current: index, exercise: 0, visitAt: now, phase: "intro" as const };
   return { ...next, dueAt: deadline(next, now) };
 }
 export function completeVisit(
@@ -392,13 +384,15 @@ export function completeVisit(
   );
   return index < 0 ? { ...next, finishedAt: now } : goToVisit(next, index, now);
 }
+export function beginVisit(s: RoutineSession, now: number): RoutineSession {
+  if (s.finishedAt || s.phase !== "intro") return s;
+  return { ...s, phase: "exercise", visitAt: now, dueAt: deadline(s, now) };
+}
 export function advanceExercise(s: RoutineSession, now: number): RoutineSession {
   if (s.finishedAt || s.phase !== "exercise") return s;
   const visit = s.visits[s.current];
   if (s.exercise < visit.exercises.length - 1) return { ...s, exercise: s.exercise + 1 };
-  return visit.kind === "body" || visit.kind === "tee"
-    ? completeVisit(s, now)
-    : { ...s, phase: "check" };
+  return completeVisit(s, now);
 }
 export function finishRoutine(s: RoutineSession, now: number): RoutineSession {
   return s.finishedAt
@@ -530,7 +524,7 @@ function validSession(v: unknown): v is RoutineSession {
   )
     return false;
   return (
-    (s.phase === "exercise" || s.phase === "check") &&
+    (s.phase === "intro" || s.phase === "exercise" || s.phase === "check") &&
     typeof s.manual === "boolean" &&
     (s.holes === 9 || s.holes === 18) &&
     !!s.ratings &&

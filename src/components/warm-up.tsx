@@ -1,19 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  Clock,
-  Flag,
-  Sun,
-  ChevronUp,
-  ChevronDown,
-  Plus,
-  Minus,
-  Settings2,
-  Sparkles,
-} from "lucide-react";
+import { GripVertical, ArrowLeft, ArrowRight, Check, Flag, Sun } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 import { useWarmUp } from "@/lib/use-warm-up";
@@ -24,13 +11,12 @@ import {
   normalizePrefs,
   buildVisits,
   startRoutine,
+  beginVisit,
   advanceExercise,
   completeVisit,
   extendVisit,
   finishRoutine,
-  goToVisit,
   pendingVisits,
-  applyRoutineChange,
   saveRoutineFeedback,
   routineFollowupDue,
   type RoutinePrefs,
@@ -38,16 +24,13 @@ import {
   type WarmProfile,
   type Feeling,
   type Station,
-  type RoutineChange,
   type Visit,
   type Exercise,
 } from "@/lib/warm-up-routine";
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import "./warm-up.css";
 
 const timeLabel = (at: number) =>
   new Date(at).toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" });
-const minuteLabel = (n: number) => (n < 1 ? "<1 min" : `${Math.round(n)} min`);
 function useClock() {
   const [now, setNow] = useState(Date.now);
   useEffect(() => {
@@ -144,6 +127,20 @@ function ExerciseVisual({ task, kind }: { task: Exercise; kind: Visit["kind"] })
     </div>
   );
 }
+function Progress({ value, label }: { value: number; label: string }) {
+  return (
+    <div
+      className="wu-bar"
+      role="progressbar"
+      aria-label={label}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={Math.round(value * 100)}
+    >
+      <span style={{ width: `${value * 100}%` }} />
+    </div>
+  );
+}
 function OrderEditor({
   prefs,
   setPrefs,
@@ -151,37 +148,64 @@ function OrderEditor({
   prefs: RoutinePrefs;
   setPrefs: (p: RoutinePrefs) => void;
 }) {
-  function move(i: number, delta: number) {
+  const dragging = useRef<Station | null>(null);
+  const [held, setHeld] = useState<Station | null>(null);
+  function move(kind: Station, to: number) {
+    const from = prefs.order.indexOf(kind);
+    if (from < 0 || from === to || to < 0 || to >= prefs.order.length) return;
     const order = [...prefs.order];
-    [order[i], order[i + delta]] = [order[i + delta], order[i]];
+    order.splice(from, 1);
+    order.splice(to, 0, kind);
     setPrefs({ ...prefs, order });
   }
   return (
-    <div className="wu-order">
+    <div
+      className="wu-order"
+      onPointerMove={(e) => {
+        if (!dragging.current) return;
+        const row = document
+          .elementFromPoint(e.clientX, e.clientY)
+          ?.closest<HTMLElement>("[data-order-index]");
+        if (row) move(dragging.current, Number(row.dataset.orderIndex));
+      }}
+      onPointerUp={() => {
+        dragging.current = null;
+        setHeld(null);
+      }}
+      onPointerCancel={() => {
+        dragging.current = null;
+        setHeld(null);
+      }}
+    >
+      <div className="wu-order-row">
+        <span className="wu-step-number">1</span>
+        <strong>Väck kroppen</strong>
+        <Check size={18} />
+      </div>
       {prefs.order.map((kind, i) => (
-        <div className="wu-order-row" key={`${kind}-${i}`}>
-          <span className="wu-step-number">{i + 1}</span>
-          <strong>
-            {STATIONS[kind].short}
-            {kind === "putt" && prefs.order.filter((k) => k === "putt").length === 2
-              ? ` ${prefs.order.slice(0, i + 1).filter((k) => k === "putt").length}`
-              : ""}
-          </strong>
+        <div
+          className={`wu-order-row ${held === kind ? "is-held" : ""}`}
+          key={kind}
+          data-order-index={i}
+        >
+          <span className="wu-step-number">{i + 2}</span>
+          <strong>{STATIONS[kind].title}</strong>
           <button
-            className="wu-icon"
-            aria-label={`Flytta ${STATIONS[kind].short} ${i + 1} upp`}
-            onClick={() => move(i, -1)}
-            disabled={i === 0}
+            className="wu-icon wu-drag"
+            aria-label={`Flytta ${STATIONS[kind].short}. Dra eller använd piltangenterna.`}
+            onPointerDown={(e) => {
+              dragging.current = kind;
+              setHeld(kind);
+              e.currentTarget.closest(".wu-order")!.setPointerCapture(e.pointerId);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+                e.preventDefault();
+                move(kind, i + (e.key === "ArrowUp" ? -1 : 1));
+              }
+            }}
           >
-            <ChevronUp size={20} />
-          </button>
-          <button
-            className="wu-icon"
-            aria-label={`Flytta ${STATIONS[kind].short} ${i + 1} ned`}
-            onClick={() => move(i, 1)}
-            disabled={i === prefs.order.length - 1}
-          >
-            <ChevronDown size={20} />
+            <GripVertical size={22} />
           </button>
         </div>
       ))}
@@ -198,50 +222,35 @@ function WarmExperience({ userId, loading }: { userId: string | null; loading: b
   const now = useClock();
   const [prefs, setPrefs] = useState<RoutinePrefs>(routineDefaults);
   const [initialized, setInitialized] = useState(false);
-  const [screen, setScreen] = useState<
-    "time" | "places" | "plan" | "order" | "par3" | "feedback" | "adapt" | "saved"
-  >("time");
+  const [screen, setScreen] = useState<"time" | "places" | "plan" | "feedback">("time");
   const [profile, setProfile] = useState<WarmProfile>({});
-  const [timeMode, setTimeMode] = useState<"duration" | "tee">("duration");
   const [teeTime, setTeeTime] = useState(0);
   const [timeOptions, setTimeOptions] = useState<number[]>([]);
   const [summaryId, setSummaryId] = useState<string | null>(null);
-  const [rating, setRating] = useState<Feeling>("good");
-  const [change, setChange] = useState<RoutineChange>("keep");
-  const [customFeedback, setCustomFeedback] = useState(false);
-  const [detail, setDetail] = useState<{ title: string; text: string } | null>(null);
-  const [options, setOptions] = useState(false);
   const [message, setMessage] = useState("");
   const content = useRef<HTMLDivElement>(null);
-  const lastPage = useRef("");
   const active = state.active;
-  const summary = state.history.find((s) => s.id === summaryId);
   const visit = active?.visits[active.current];
   const task = visit?.exercises[active?.exercise ?? 0];
-  const atTee = !!active && now >= active.teeAt - active.reserve * 60000;
-  const due = !!active && !active.manual && now >= active.dueAt;
-  const effectiveMinutes = timeMode === "tee" ? (teeTime - now) / 60000 : prefs.minutes;
+  const effectiveMinutes = prefs.timing === "tee" ? (teeTime - now) / 60000 : prefs.minutes;
   const validTime = effectiveMinutes >= 5 && effectiveMinutes <= 120;
-  const preview = buildVisits({ ...prefs, minutes: Math.max(5, effectiveMinutes) }, profile);
-  useEffect(() => {
-    if (!ready || initialized) return;
-    setPrefs(state.prefs);
+  const preview = buildVisits(
+    { ...prefs, body: true, minutes: Math.max(5, effectiveMinutes) },
+    profile,
+  );
+  function resetTime() {
     const base = Math.ceil(Date.now() / 300000) * 300000;
     const times = Array.from({ length: 23 }, (_, i) => base + (i + 1) * 300000);
     setTimeOptions(times);
     setTeeTime(times[5]);
-    const last = state.history[state.history.length - 1];
-    if (
-      !state.active &&
-      last?.finishedAt &&
-      !last.feedback &&
-      Date.now() - last.finishedAt < 2 * 3600000
-    ) {
-      setSummaryId(last.id);
-      setScreen("feedback");
+  }
+  useEffect(() => {
+    if (ready && !initialized) {
+      setPrefs({ ...state.prefs, body: true, par3: [] });
+      resetTime();
+      setInitialized(true);
     }
-    setInitialized(true);
-  }, [ready, initialized, state]);
+  }, [ready, initialized, state.prefs]);
   useEffect(() => {
     if (!ready) return;
     let disposed = false;
@@ -282,33 +291,40 @@ function WarmExperience({ userId, loading }: { userId: string | null; loading: b
     };
   }, [ready, userId]);
   const pageKey = active
-    ? `${active.id}:${active.current}:${active.exercise}:${active.phase}:${atTee}`
+    ? `${active.id}:${active.current}:${active.exercise}:${active.phase}`
     : screen;
   useEffect(() => {
-    if (lastPage.current === pageKey) return;
-    lastPage.current = pageKey;
     content.current?.scrollTo(0, 0);
     content.current?.querySelector<HTMLElement>("h1")?.focus({ preventScroll: true });
     setMessage("");
   }, [pageKey]);
   useEffect(() => {
-    if (!active || active.manual || (!due && !atTee) || document.visibilityState !== "visible")
+    if (
+      !active ||
+      active.manual ||
+      active.phase !== "exercise" ||
+      document.visibilityState !== "visible"
+    )
       return;
-    const key = `warm-reminded:${active.id}:${atTee ? "tee" : active.dueAt}`;
+    const ending = now >= active.teeAt - active.reserve * 60000;
+    if (!ending && now < active.dueAt) return;
+    const key = `warm-reminded:${active.id}:${ending ? "end" : active.dueAt}`;
     try {
       if (sessionStorage.getItem(key)) return;
       sessionStorage.setItem(key, "yes");
       if (typeof Notification !== "undefined" && Notification.permission === "granted")
         new Notification("My Warm Up", {
-          body: atTee
-            ? "Dags att gå till första tee."
-            : "Redo för nästa del? Du väljer när du går vidare.",
+          body: ending
+            ? active.timing === "duration"
+              ? "Din planerade uppvärmningstid är slut."
+              : "Dags att gå till första tee."
+            : "Redo för nästa område? Du väljer när du går vidare.",
           tag: "sg4-warm-up",
         });
     } catch {
-      /* In-app reminders remain available. */
+      /* The in-app reminder remains available. */
     }
-  }, [active?.id, active?.dueAt, active?.manual, due, atTee]);
+  }, [active, now]);
   function persist(next: RoutineSession) {
     const ok = update((s) =>
       next.finishedAt
@@ -323,382 +339,214 @@ function WarmExperience({ userId, loading }: { userId: string | null; loading: b
       setSummaryId(next.id);
       setScreen("feedback");
     }
-    return ok;
   }
-  function finish() {
-    if (active) {
-      persist(finishRoutine(active, Date.now()));
-      setOptions(false);
-    }
+  function home(rating?: Feeling) {
+    if (rating && summaryId && !update((s) => saveRoutineFeedback(s, summaryId, rating, "keep")))
+      return;
+    setSummaryId(null);
+    resetTime();
+    setScreen("time");
   }
   function start() {
     try {
-      const p = normalizePrefs(prefs),
-        at = Date.now();
+      const p = normalizePrefs({ ...prefs, body: true, par3: [] });
+      const at = Date.now();
       const next = startRoutine(
         p,
         profile,
         at,
         crypto.randomUUID(),
-        timeMode === "tee" ? teeTime : at + p.minutes * 60000,
+        p.timing === "tee" ? teeTime : at + p.minutes * 60000,
       );
-      save({
-        ...state,
-        prefs: { ...p, minutes: Math.round((next.teeAt - at) / 60000) },
-        active: next,
-      });
-      setSummaryId(null);
+      save({ ...state, prefs: p, active: next });
     } catch (e) {
       setMessage(e instanceof Error ? e.message : "Välj en ny starttid.");
     }
-  }
-  function saveFeedback() {
-    if (!summary) return;
-    if (
-      update((s) =>
-        saveRoutineFeedback(s, summary.id, rating, change, customFeedback ? prefs : undefined),
-      )
-    ) {
-      setPrefs(customFeedback ? prefs : applyRoutineChange(state.prefs, change));
-      setScreen("saved");
-    }
-  }
-  function back() {
-    if (active) {
-      setOptions(true);
-      return;
-    }
-    if (screen === "places") setScreen("time");
-    else if (screen === "plan") setScreen("places");
-    else if (screen === "order") setScreen(summaryId ? "adapt" : "plan");
-    else if (screen === "par3") setScreen("plan");
-    else if (screen === "adapt") setScreen("feedback");
   }
   let body: ReactNode;
   let footer: ReactNode;
   if (!ready || !initialized) body = <Heading eyebrow="My Warm Up" title="Förbereder din rutin…" />;
   else if (active && visit && task) {
-    const index = active.exercise;
-    const nextVisit = pendingVisits(active).find((v) => v.id !== visit.id);
-    if (atTee) {
-      body = (
-        <>
-          <Heading
-            eyebrow="Första tee väntar"
-            title="Ta med känslan"
-            text="Dags att gå till tee. Du behöver inte hinna alla delar."
-          />
-          <div className="wu-symbol">
-            <Flag size={78} />
-            <p>Start {timeLabel(active.teeAt)}</p>
-          </div>
-          <p className="wu-cue">
-            Välj ett tydligt mål. Ta ett lugnt andetag och använd din vanliga rutin.
-          </p>
-        </>
-      );
-      footer = <Action onClick={finish}>Klar – mot första tee</Action>;
-    } else if (active.phase === "check") {
-      body = (
-        <>
-          <Heading
-            eyebrow={`${visit.title} · klart`}
-            title="Hur känns det?"
-            text="Din känsla får styra nästa steg."
-          />
-          <div className="wu-feedback-options">
-            <button
-              className="wu-feedback-choice"
-              onClick={() => persist(completeVisit(active, Date.now(), "good"))}
-            >
-              <span>☀️</span>
-              <div>
-                <strong>Bra känsla</strong>
-                <small>Redo för nästa del</small>
-              </div>
-              <ArrowRight />
-            </button>
-            <button
-              className="wu-feedback-choice"
-              onClick={() => persist(completeVisit(active, Date.now(), "medium"))}
-            >
-              <span>👌</span>
-              <div>
-                <strong>Helt okej</strong>
-                <small>Jag går vidare</small>
-              </div>
-              <ArrowRight />
-            </button>
-            <button
-              className="wu-feedback-choice"
-              onClick={() => persist(extendVisit(active, Date.now()))}
-            >
-              <Clock />
-              <div>
-                <strong>Lite mer tid</strong>
-                <small>Upprepa lugnt · upp till 2 min</small>
-              </div>
-              <Plus />
-            </button>
-          </div>
-          <p className="wu-muted">
-            {nextVisit ? `Sedan: ${nextVisit.title}` : "Sedan: första tee"}
-          </p>
-        </>
-      );
-      footer = (
-        <button
-          className="wu-text-button"
-          onClick={() => persist(completeVisit(active, Date.now()))}
-        >
-          Gå vidare utan svar
-        </button>
-      );
-    } else {
-      body = (
-        <>
-          <div className="wu-progress-top">
-            <span>{visit.title}</span>
-            <span>
-              {index + 1} / {visit.exercises.length}
-            </span>
-          </div>
-          <div
-            className="wu-progress"
-            aria-label={`Övning ${index + 1} av ${visit.exercises.length}`}
-          >
-            {visit.exercises.map((e, i) => (
-              <span key={e.id} className={i <= index ? "is-done" : ""} />
-            ))}
-          </div>
-          <Heading
-            eyebrow={
-              visit.kind === "body"
-                ? "Börja mjukt"
-                : visit.kind === "tee"
-                  ? "Sista steget"
-                  : "Ditt nästa moment"
-            }
-            title={task.title}
-          />
-          <ExerciseVisual task={task} kind={visit.kind} />
-          <p className="wu-instruction">{task.instruction}</p>
-          <p className="wu-cue">{task.cue}</p>
-          {visit.focus && (
-            <button
-              className="wu-reason"
-              onClick={() => setDetail({ title: visit.focus!.reason, text: visit.focus!.detail })}
-            >
-              <Sparkles size={16} />
-              <span>{visit.focus.reason}</span>
-            </button>
-          )}
-          {due && (
-            <div className="wu-reminder" role="status">
-              <span>Redo att gå vidare?</span>
-              <button onClick={() => persist(extendVisit(active, Date.now()))}>2 min till</button>
-              <button onClick={() => persist({ ...active, phase: "check" })}>Nästa del</button>
-            </div>
-          )}
-        </>
-      );
-      footer = (
-        <>
-          <Action onClick={() => persist(advanceExercise(active, Date.now()))}>
-            {visit.kind === "tee"
-              ? "Redo för första tee"
-              : index < visit.exercises.length - 1
-                ? "Klar – nästa övning"
-                : "Klar med den här delen"}
-          </Action>
-          <div className="wu-footer-links">
-            <button
-              className="wu-text-button"
-              onClick={() => persist(completeVisit(active, Date.now(), undefined, true))}
-            >
-              Hoppa över delen
-            </button>
-            <span>
-              {active.manual
-                ? "I din takt"
-                : `${minuteLabel(Math.max(0, (active.dueAt - now) / 60000))} kvar här`}
-            </span>
-          </div>
-        </>
-      );
-    }
-  } else if (screen === "feedback" && summary) {
+    const next = pendingVisits(active).find((v) => v.id !== visit.id);
+    const last = active.exercise === visit.exercises.length - 1;
+    const totalProgress =
+      (active.done.length +
+        active.skipped.length +
+        (active.phase === "intro" ? 0 : active.exercise / visit.exercises.length)) /
+      active.visits.length;
+    const endAt = active.teeAt - active.reserve * 60000;
+    const due = !active.manual && now >= active.dueAt && active.phase === "exercise";
     body = (
       <>
-        <Heading
-          eyebrow="Uppvärmningen är klar"
-          title="Passade upplägget?"
-          text="Ett snabbt svar hjälper oss med din nästa rutin."
-        />
-        <div className="wu-feedback-options">
-          {(
-            [
-              ["good", "Ja, bra!", "☀️"],
-              ["medium", "Ganska bra", "👌"],
-              ["notyet", "Jag vill ändra", "🔄"],
-            ] as const
-          ).map(([value, label, icon]) => (
-            <button
-              key={value}
-              className="wu-feedback-choice"
-              onClick={() => {
-                setRating(value);
-                setChange("keep");
-                setCustomFeedback(false);
-                setPrefs(state.prefs);
-                setScreen("adapt");
-              }}
-            >
-              <span>{icon}</span>
-              <strong>{label}</strong>
-              <ArrowRight />
-            </button>
-          ))}
+        <div className="wu-total">
+          <span>Hela uppvärmningen</span>
+          <Progress value={totalProgress} label="Hela uppvärmningen" />
         </div>
-        <p className="wu-cue">Ta med ditt vanliga tempo till första slaget.</p>
+        {active.phase === "intro" ? (
+          <>
+            <Heading
+              eyebrow={active.current === 0 ? "Vi börjar här" : "Vidare till nästa område"}
+              title={visit.title}
+              text={
+                visit.kind === "body"
+                  ? "Börja med mjuka rörelser och lugna provsvingar."
+                  : `Ta dig till ${visit.title.toLocaleLowerCase("sv")}. Starta när du är på plats.`
+              }
+            />
+            <div className="wu-area-tasks">
+              {visit.exercises.map((e, i) => (
+                <div key={e.id}>
+                  <span className="wu-step-number">{i + 1}</span>
+                  <strong>
+                    {visit.kind === "putt"
+                      ? e.distance! <= 2
+                        ? "Korta puttar"
+                        : "Långa puttar"
+                      : e.title}
+                    {e.distance ? <small>{e.distance} meter</small> : null}
+                  </strong>
+                </div>
+              ))}
+            </div>
+          </>
+        ) : active.phase === "check" ? (
+          <Heading
+            eyebrow={visit.title}
+            title="Klart här"
+            text={next ? `Nästa område: ${next.title}` : "Du är klar med uppvärmningen."}
+          />
+        ) : (
+          <>
+            <div className="wu-area-heading">
+              <h1 tabIndex={-1}>{visit.title}</h1>
+              <span>
+                {active.exercise + 1} / {visit.exercises.length}
+              </span>
+            </div>
+            <Progress
+              value={active.exercise / visit.exercises.length}
+              label={`Progress inom ${visit.title}`}
+            />
+            <div className="wu-task-heading">
+              <p className="wu-eyebrow">
+                {visit.kind === "putt"
+                  ? task.distance! <= 2
+                    ? "Nu: korta puttar"
+                    : "Nu: långa puttar"
+                  : visit.kind === "range"
+                    ? task.id === "wedge"
+                      ? "Nu: wedgar"
+                      : task.id === "first-tee"
+                        ? "Nu: första utslaget"
+                        : "Nu: järnslag"
+                    : "Nästa övning"}
+              </p>
+              <h2>{task.title}</h2>
+            </div>
+            <ExerciseVisual task={task} kind={visit.kind} />
+            <p className="wu-instruction">{task.instruction}</p>
+            <p className="wu-cue">{task.cue}</p>
+          </>
+        )}
+        {now >= endAt ? (
+          <p className="wu-reminder" role="status">
+            {active.timing === "duration"
+              ? "Din planerade tid är slut. Avsluta när du är redo."
+              : "Dags att gå till första tee."}
+          </p>
+        ) : due ? (
+          <div className="wu-reminder" role="status">
+            <span>Redo för nästa område?</span>
+            <button onClick={() => persist(extendVisit(active, Date.now()))}>2 min till</button>
+            <button onClick={() => persist(completeVisit(active, Date.now()))}>Gå vidare</button>
+          </div>
+        ) : null}
       </>
     );
     footer = (
-      <Link to="/" data-local-navigation className="wu-text-button">
-        Svara senare – till startsidan
-      </Link>
+      <>
+        <Action
+          onClick={() =>
+            persist(
+              active.phase === "intro"
+                ? beginVisit(active, Date.now())
+                : active.phase === "check"
+                  ? completeVisit(active, Date.now())
+                  : advanceExercise(active, Date.now()),
+            )
+          }
+        >
+          {active.phase === "intro"
+            ? visit.kind === "body"
+              ? "Börja"
+              : "Jag är på plats – börja"
+            : last || active.phase === "check"
+              ? next
+                ? `Klar med ${visit.title.toLocaleLowerCase("sv")}`
+                : "Avsluta uppvärmningen"
+              : "Klar – nästa övning"}
+        </Action>
+        {active.phase === "exercise" && !last && (
+          <button
+            className="wu-text-button"
+            onClick={() => persist(completeVisit(active, Date.now()))}
+          >
+            Redan klar här? Vidare{next ? ` till ${next.title.toLocaleLowerCase("sv")}` : ""}
+          </button>
+        )}
+      </>
     );
-  } else if (screen === "adapt" && summary) {
-    const choices: [RoutineChange, string][] = [
-      ["keep", "Behåll rutinen"],
-      ["putt-first", "Putt först"],
-      ["range-last", "Range sist"],
-      ["two-putts", "Två puttpass"],
-    ];
-    const nextPrefs = customFeedback ? prefs : applyRoutineChange(state.prefs, change);
+  } else if (screen === "feedback") {
     body = (
       <>
-        <Heading
-          eyebrow="Din rutin blir mer personlig"
-          title="Till nästa gång?"
-          text="Behåll det som fungerar eller välj en ändring."
-        />
-        <div className="wu-grid">
-          {choices.map(([value, label]) => (
-            <Choice
-              key={value}
-              selected={!customFeedback && change === value}
-              onClick={() => {
-                setChange(value);
-                setCustomFeedback(false);
-              }}
-            >
+        <Heading eyebrow="My Warm Up" title="Uppvärmningen klar" text="Ha en fin runda!" />
+        <div className="wu-finished">
+          <Check size={48} />
+        </div>
+        <h2 className="wu-question">Känner du dig redo?</h2>
+        <p className="wu-muted">Frivilligt · ett tryck, sedan är du klar.</p>
+        <div className="wu-grid wu-three">
+          {(
+            [
+              ["good", "Ja!"],
+              ["medium", "Ganska"],
+              ["notyet", "Inte riktigt"],
+            ] as const
+          ).map(([value, label]) => (
+            <Choice key={value} onClick={() => home(value)}>
               {label}
             </Choice>
           ))}
         </div>
-        <div className="wu-next-routine">
-          <p className="wu-eyebrow">Nästa rutin</p>
-          <p>{nextPrefs.order.map((k) => STATIONS[k].short).join(" → ")}</p>
-        </div>
-        <button
-          className="wu-text-button"
-          onClick={() => {
-            setPrefs(nextPrefs);
-            setCustomFeedback(true);
-            setScreen("order");
-          }}
-        >
-          Ändra ordningen själv
-        </button>
-        <button
-          className="wu-text-button"
-          onClick={() => {
-            setPrefs(nextPrefs);
-            setCustomFeedback(true);
-            setOptions(true);
-          }}
-        >
-          Mer tid för en del
-        </button>
       </>
     );
-    footer = <Action onClick={saveFeedback}>Spara min rutin</Action>;
-  } else if (screen === "saved") {
-    body = (
-      <>
-        <div className="wu-saved-check">
-          <Check size={38} />
-        </div>
-        <Heading
-          eyebrow="Din rutin är sparad"
-          title="Redo för första tee"
-          text="Nästa gång utgår vi från det upplägg du valt."
-        />
-        <div className="wu-next-routine">
-          <p>{prefs.order.map((k) => STATIONS[k].short).join(" → ")}</p>
-        </div>
-        <p className="wu-cue">Välj ett tydligt mål och ta ett slag i taget.</p>
-      </>
-    );
-    footer = (
-      <Link to="/" data-local-navigation className="wu-primary">
-        Klart – till startsidan
-        <ArrowRight size={20} />
-      </Link>
-    );
+    footer = <Action onClick={() => home()}>Till uppvärmningens startsida</Action>;
   } else if (screen === "time") {
     body = (
       <>
         <Heading
           eyebrow="My Warm Up"
-          title="Redo från första tee"
-          text="En enkel rutin för kroppen, rytmen och dagens känsla."
+          title="Redo för första tee"
+          text="Välj din tid. Vi guidar dig hela vägen."
         />
-        <div className="wu-segment">
-          <Choice selected={timeMode === "duration"} onClick={() => setTimeMode("duration")}>
-            Tid att använda
+        <div className="wu-grid">
+          <Choice
+            selected={prefs.timing !== "tee"}
+            onClick={() => setPrefs({ ...prefs, timing: "duration" })}
+          >
+            Uppvärmningstid
           </Choice>
-          <Choice selected={timeMode === "tee"} onClick={() => setTimeMode("tee")}>
+          <Choice
+            selected={prefs.timing === "tee"}
+            onClick={() => setPrefs({ ...prefs, timing: "tee" })}
+          >
             Starttid på tee
           </Choice>
         </div>
-        {timeMode === "duration" ? (
+        {prefs.timing === "tee" ? (
           <>
-            <div className="wu-time-value">
-              {prefs.minutes}
-              <span>minuter</span>
-            </div>
-            <div className="wu-grid wu-four">
-              {[10, 20, 30, 45].map((n) => (
-                <Choice
-                  key={n}
-                  selected={prefs.minutes === n}
-                  onClick={() => setPrefs({ ...prefs, minutes: n })}
-                >
-                  {n}
-                </Choice>
-              ))}
-            </div>
-            <label className="wu-slider-label">
-              <span>5 min</span>
-              <span>60 min</span>
-              <input
-                aria-label="Tid till första tee i minuter"
-                type="range"
-                min={5}
-                max={60}
-                step={5}
-                value={Math.min(60, prefs.minutes)}
-                onChange={(e) => setPrefs({ ...prefs, minutes: Number(e.target.value) })}
-              />
-            </label>
-            <p className="wu-muted">Inklusive tid att ta dig till första tee.</p>
-          </>
-        ) : (
-          <>
-            <label className="wu-time-select">
-              Första tee
+            <label className="wu-time-field">
+              När slår du ut?
               <select
                 aria-label="Starttid på första tee"
                 value={teeTime}
@@ -713,32 +561,67 @@ function WarmExperience({ userId, loading }: { userId: string | null; loading: b
             </label>
             <p className="wu-muted">
               {validTime
-                ? `${Math.floor(effectiveMinutes)} minuter kvar. Vi planerar bakåt från din starttid.`
+                ? `${Math.floor(effectiveMinutes)} minuter till första tee`
                 : "Välj en starttid minst 5 minuter framåt."}
             </p>
+            <p className="wu-field-label">Gångtid & marginal till tee</p>
+            <div className="wu-grid wu-three">
+              {[3, 5, 8].map((n) => (
+                <Choice
+                  key={n}
+                  selected={prefs.reserve === n}
+                  onClick={() => setPrefs({ ...prefs, reserve: n })}
+                >
+                  {n} min
+                </Choice>
+              ))}
+            </div>
           </>
-        )}
-        {!!state.history.length && (
-          <p className="wu-memory">
-            <Sparkles size={17} /> Din sparade rutin följer med.
-          </p>
+        ) : (
+          <>
+            <div className="wu-duration-number">
+              {prefs.minutes}
+              <small>minuter</small>
+            </div>
+            <input
+              className="wu-slider"
+              aria-label="Uppvärmningens längd"
+              type="range"
+              min={5}
+              max={60}
+              step={5}
+              value={prefs.minutes}
+              onChange={(e) => setPrefs({ ...prefs, minutes: Number(e.target.value) })}
+            />
+            <div className="wu-grid wu-three">
+              {[15, 30, 45].map((n) => (
+                <Choice
+                  key={n}
+                  selected={prefs.minutes === n}
+                  onClick={() => setPrefs({ ...prefs, minutes: n })}
+                >
+                  {n} min
+                </Choice>
+              ))}
+            </div>
+          </>
         )}
       </>
     );
     footer = (
-      <Action onClick={() => setScreen("places")} disabled={!validTime}>
-        Välj platser
+      <Action disabled={!validTime} onClick={() => setScreen("places")}>
+        Nästa
       </Action>
     );
   } else if (screen === "places") {
     body = (
       <>
         <Heading
-          eyebrow="Steg 2 av 3"
-          title="Vad finns på plats?"
-          text="Välj de delar du vill hinna med."
+          eyebrow="Dina områden"
+          title="Var vill du värma upp?"
+          text="Välj de platser du vill använda."
         />
-        <div className="wu-grid">
+        <div className="wu-facilities">
           {(Object.keys(STATIONS) as Station[]).map((kind) => (
             <Choice
               key={kind}
@@ -752,173 +635,43 @@ function WarmExperience({ userId, loading }: { userId: string | null; loading: b
                 })
               }
             >
-              <span className="wu-place-icon">{STATIONS[kind].icon}</span>
-              {STATIONS[kind].short}
+              {STATIONS[kind].title}
+              {prefs.order.includes(kind) && <Check size={20} />}
             </Choice>
           ))}
         </div>
-        <Choice selected={prefs.body} onClick={() => setPrefs({ ...prefs, body: !prefs.body })}>
-          <Sun size={19} /> Väck kroppen {prefs.body && <Check size={18} />}
-        </Choice>
-        <p className="wu-field-label">Gångtid & marginal till tee</p>
-        <div className="wu-grid wu-three">
-          {[3, 5, 8].map((n) => (
-            <Choice
-              key={n}
-              selected={prefs.reserve === n}
-              onClick={() => setPrefs({ ...prefs, reserve: n })}
-            >
-              {n} min
-            </Choice>
-          ))}
-        </div>
-        <p className="wu-muted">För vägen mellan platserna och till första tee.</p>
       </>
     );
     footer = (
-      <Action disabled={!prefs.order.length} onClick={() => setScreen("plan")}>
-        Se min rutin
+      <Action
+        disabled={!prefs.order.length}
+        onClick={() => {
+          setPrefs({
+            ...prefs,
+            order: preview
+              .filter((v) => v.kind !== "body" && v.kind !== "tee")
+              .map((v) => v.kind as Station),
+          });
+          setScreen("plan");
+        }}
+      >
+        Nästa
       </Action>
     );
-  } else if (screen === "order") {
+  } else {
     body = (
       <>
         <Heading
-          eyebrow="Din ordning"
-          title="Så passar det dig"
-          text="Flytta delarna med pilarna."
+          eyebrow="Din rutin"
+          title="Så här värmer du upp"
+          text="Dra områdena till den ordning som passar dig."
         />
         <OrderEditor prefs={prefs} setPrefs={setPrefs} />
-        <Choice
-          selected={prefs.order.filter((k) => k === "putt").length === 2}
-          onClick={() =>
-            setPrefs(
-              prefs.order.filter((k) => k === "putt").length === 2
-                ? {
-                    ...prefs,
-                    order: prefs.order.filter((k, i, a) => k !== "putt" || a.indexOf(k) === i),
-                  }
-                : applyRoutineChange(prefs, "two-putts"),
-            )
-          }
-        >
-          Två puttpass · i början och slutet
-        </Choice>
-        <p className="wu-muted">Två pass delar på puttiden. Du kan flytta dem som du vill.</p>
       </>
     );
     footer = (
-      <Action onClick={() => setScreen(summaryId ? "adapt" : "plan")}>Använd ordningen</Action>
-    );
-  } else if (screen === "par3") {
-    body = (
-      <>
-        <Heading
-          eyebrow="Valfritt · dagens bana"
-          title="Förbered par 3-hålen"
-          text="Välj upp till 3 ungefärliga avstånd från din tee."
-        />
-        <div className="wu-grid wu-three">
-          {[80, 100, 120, 140, 160, 180, 200].map((d) => (
-            <Choice
-              key={d}
-              selected={prefs.par3.includes(d)}
-              disabled={prefs.par3.length >= 3 && !prefs.par3.includes(d)}
-              onClick={() =>
-                setPrefs({
-                  ...prefs,
-                  par3: prefs.par3.includes(d)
-                    ? prefs.par3.filter((n) => n !== d)
-                    : [...prefs.par3, d],
-                })
-              }
-            >
-              {d} m
-            </Choice>
-          ))}
-        </div>
-        <button className="wu-text-button" onClick={() => setPrefs({ ...prefs, par3: [] })}>
-          Vet inte – använd grundupplägget
-        </button>
-        <p className="wu-cue">
-          Avstånden blir mål för järnslagen på rangen. Välj klubban du brukar använda.
-        </p>
-      </>
-    );
-    footer = <Action onClick={() => setScreen("plan")}>Klart</Action>;
-  } else {
-    const focused = preview.find((v) => v.focus)?.focus;
-    const shortened =
-      preview.filter((v) => v.kind !== "body" && v.kind !== "tee").length < prefs.order.length;
-    body = (
-      <>
-        <Heading
-          eyebrow="Steg 3 av 3"
-          title="Din uppvärmning"
-          text={
-            shortened
-              ? "Ett kortare upplägg som ryms före första tee."
-              : "En övning i taget. Du väljer när du är klar."
-          }
-        />
-        <div className="wu-plan">
-          {preview.map((v) => (
-            <div key={v.id}>
-              <span className="wu-plan-dot" />
-              <strong>{v.title}</strong>
-              <span>{minuteLabel(v.minutes)}</span>
-            </div>
-          ))}
-          <div className="wu-plan-margin">
-            <Flag size={16} />
-            <span>Gångtid & marginal</span>
-            <strong>{Math.min(prefs.reserve, Math.max(1, effectiveMinutes - 2))} min</strong>
-          </div>
-        </div>
-        <div className="wu-grid">
-          <button className="wu-small-action" onClick={() => setScreen("order")}>
-            <Settings2 size={17} /> Ändra ordning
-          </button>
-          <button
-            className="wu-small-action"
-            disabled={!prefs.order.includes("range")}
-            onClick={() => setScreen("par3")}
-          >
-            <Flag size={17} /> Par 3-avstånd
-          </button>
-        </div>
-        {focused ? (
-          <button
-            className="wu-reason"
-            onClick={() =>
-              setDetail({
-                title: "Anpassat efter dina resultat",
-                text: preview
-                  .filter((v) => v.focus)
-                  .map((v) => v.focus!.detail)
-                  .filter((v, i, a) => a.indexOf(v) === i)
-                  .join("\n\n"),
-              })
-            }
-          >
-            <Sparkles size={18} />
-            <span>{focused.reason}</span>
-          </button>
-        ) : (
-          <p className="wu-muted">
-            {prefs.useStats
-              ? "Grundupplägg idag. Med fler sparade resultat kan vi välja personliga avstånd."
-              : "Dina val styr upplägget. Personliga resultat är avstängda."}
-          </p>
-        )}
-        <button className="wu-text-button" onClick={() => setOptions(true)}>
-          Inställningar & hur rutinen anpassas
-        </button>
-      </>
-    );
-    footer = (
-      <Action onClick={start} disabled={!validTime}>
-        Starta min uppvärmning
+      <Action disabled={!validTime} onClick={start}>
+        Starta uppvärmningen
       </Action>
     );
   }
@@ -926,32 +679,41 @@ function WarmExperience({ userId, loading }: { userId: string | null; loading: b
     <main className="wu-shell" aria-label="My Warm Up">
       <div className="wu-frame">
         <header className="wu-header">
-          {!active && (screen === "time" || screen === "feedback" || screen === "saved") ? (
+          {active ? (
+            <button
+              className="wu-text-button"
+              onClick={() => persist(finishRoutine(active, Date.now()))}
+            >
+              Avsluta
+            </button>
+          ) : screen === "time" ? (
             <Link to="/" data-local-navigation aria-label="Till startsidan" className="wu-icon">
               <ArrowLeft size={22} />
             </Link>
           ) : (
             <button
-              data-local-navigation
-              aria-label={active ? "Öppna uppvärmningsmenyn" : "Tillbaka"}
               className="wu-icon"
-              onClick={back}
+              aria-label="Tillbaka"
+              onClick={() =>
+                screen === "feedback" ? home() : setScreen(screen === "plan" ? "places" : "time")
+              }
             >
-              {active ? <Settings2 size={21} /> : <ArrowLeft size={22} />}
+              <ArrowLeft size={22} />
             </button>
           )}
           <span>MY WARM UP</span>
           {active ? (
-            <span className="wu-tee-time">
-              <Clock size={15} /> {timeLabel(active.teeAt)}
-            </span>
+            <div className="wu-countdown">
+              <strong>{Math.max(0, Math.ceil((active.teeAt - now) / 60000))} min</strong>
+              <small>{active.timing === "duration" ? "till klart" : "till tee"}</small>
+            </div>
           ) : (
-            <Sun size={21} className="text-blue-600" />
+            <span />
           )}
         </header>
         {(error || message) && (
           <p className="wu-error" role="alert">
-            {message || "Kunde inte spara. Försök igen innan du lämnar sidan."}
+            {message || "Kunde inte spara. Försök igen."}
           </p>
         )}
         <div ref={content} className="wu-content" key={pageKey}>
@@ -959,154 +721,6 @@ function WarmExperience({ userId, loading }: { userId: string | null; loading: b
         </div>
         <footer className="wu-footer">{footer}</footer>
       </div>
-      <Dialog open={!!detail} onOpenChange={(open) => !open && setDetail(null)}>
-        <DialogContent className="max-h-[85dvh] overflow-y-auto rounded-3xl">
-          <DialogTitle>{detail?.title}</DialogTitle>
-          <DialogDescription className="whitespace-pre-line text-base leading-relaxed">
-            {detail?.text}
-          </DialogDescription>
-        </DialogContent>
-      </Dialog>
-      <Dialog open={options} onOpenChange={setOptions}>
-        <DialogContent className="max-h-[85dvh] overflow-y-auto rounded-3xl">
-          <DialogTitle>{active ? "Din uppvärmning" : "Anpassa rutinen"}</DialogTitle>
-          <DialogDescription>
-            {active
-              ? "Du styr takten. Tiden till första tee ligger fast."
-              : "Dina val sparas på den här enheten."}
-          </DialogDescription>
-          {active ? (
-            <div className="wu-menu">
-              <Choice
-                selected={active.manual}
-                onClick={() => persist({ ...active, manual: !active.manual })}
-              >
-                Jag styr tiden själv
-              </Choice>
-              {pendingVisits(active)
-                .filter((v) => v.id !== visit?.id)
-                .map((v) => (
-                  <button
-                    className="wu-choice"
-                    key={v.id}
-                    onClick={() => {
-                      persist(goToVisit(active, active.visits.indexOf(v), Date.now()));
-                      setOptions(false);
-                    }}
-                  >
-                    Gå till {v.title}
-                    <ArrowRight size={18} />
-                  </button>
-                ))}
-              <button className="wu-primary" onClick={finish}>
-                Avsluta uppvärmningen
-                <Flag size={18} />
-              </button>
-              <Link to="/" data-local-navigation className="wu-text-button">
-                Till startsidan – spara min plats
-              </Link>
-              <p className="wu-muted">
-                Påminnelser visas när verktyget är öppet. På låst skärm kan de utebli; tiden stäms
-                av när du återvänder.
-              </p>
-              {typeof Notification !== "undefined" && Notification.permission !== "granted" && (
-                <button
-                  className="wu-text-button"
-                  onClick={async () => {
-                    try {
-                      const permission = await Notification.requestPermission();
-                      setMessage(
-                        permission === "granted"
-                          ? "Aviseringar är på."
-                          : "Påminnelser visas i verktyget.",
-                      );
-                    } catch {
-                      setMessage("Påminnelser visas i verktyget.");
-                    }
-                    setOptions(false);
-                  }}
-                >
-                  Tillåt webbläsaraviseringar
-                </button>
-              )}
-            </div>
-          ) : (
-            <div className="wu-menu">
-              <Choice
-                selected={prefs.useStats}
-                onClick={() => setPrefs({ ...prefs, useStats: !prefs.useStats })}
-              >
-                <Sparkles size={18} /> Använd mina sparade resultat
-              </Choice>
-              <p className="wu-field-label">Dagens runda</p>
-              <div className="wu-grid">
-                {([9, 18] as const).map((n) => (
-                  <Choice
-                    key={n}
-                    selected={prefs.holes === n}
-                    onClick={() => setPrefs({ ...prefs, holes: n })}
-                  >
-                    {n} hål
-                  </Choice>
-                ))}
-              </div>
-              <p className="wu-muted">
-                Vi frågar hur starten kändes när du kommer tillbaka efter rundan.
-              </p>
-              <p className="wu-field-label">Fördelning mellan stationerna</p>
-              {[...new Set(prefs.order)].map((k) => (
-                <div className="wu-weight" key={k}>
-                  <strong>{STATIONS[k].short}</strong>
-                  <button
-                    className="wu-icon"
-                    aria-label={`Mindre tid för ${STATIONS[k].short}`}
-                    disabled={prefs.weights[k] <= 1}
-                    onClick={() =>
-                      setPrefs({
-                        ...prefs,
-                        weights: { ...prefs.weights, [k]: Math.max(1, prefs.weights[k] - 2) },
-                      })
-                    }
-                  >
-                    <Minus size={18} />
-                  </button>
-                  <span>
-                    {minuteLabel(
-                      preview.filter((v) => v.kind === k).reduce((sum, v) => sum + v.minutes, 0),
-                    )}
-                  </span>
-                  <button
-                    className="wu-icon"
-                    aria-label={`Mer tid för ${STATIONS[k].short}`}
-                    disabled={prefs.weights[k] >= 30}
-                    onClick={() =>
-                      setPrefs({
-                        ...prefs,
-                        weights: { ...prefs.weights, [k]: Math.min(30, prefs.weights[k] + 2) },
-                      })
-                    }
-                  >
-                    <Plus size={18} />
-                  </button>
-                </div>
-              ))}
-              <p className="wu-muted">Flytta tid mellan delarna. Din totala tid ligger kvar.</p>
-              <button
-                className="wu-text-button"
-                onClick={() => {
-                  setOptions(false);
-                  setDetail({
-                    title: "Så bygger vi din rutin",
-                    text: "Vi börjar med mjuka rörelser, fortsätter med bekanta slag och förbereder första utslaget. När tillräckliga resultat finns från flera pass väljs putt-, chipp- och inspelsavstånd utifrån dina senaste 90 dagar. Vi ändrar inte din sving och beräknar inget HCP från uppvärmningen.\n\nDin återkoppling påverkar nästa rutin. Tider och antal slag är praktiska riktmärken; du kan alltid gå vidare tidigare.",
-                  });
-                }}
-              >
-                Så bygger vi din rutin
-              </button>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </main>
   );
 }
