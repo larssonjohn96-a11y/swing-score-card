@@ -87,6 +87,7 @@ import { Route as ShotValueRouteImport } from './routes/shot-value'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SpeedRouteImport } from './routes/speed'
 import { Route as SpeedTestRouteImport } from './routes/speed-test'
+import { Route as SpeedrundanRouteImport } from './routes/speedrundan'
 import { Route as SpelaRouteImport } from './routes/spela'
 import { Route as SpelaRundaRouteImport } from './routes/spela-runda'
 import { Route as StandardiseradeTesterRouteImport } from './routes/standardiserade-tester'
@@ -509,6 +510,11 @@ const SpeedTestRoute = SpeedTestRouteImport.update({
   path: '/speed-test',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SpeedrundanRoute = SpeedrundanRouteImport.update({
+  id: '/speedrundan',
+  path: '/speedrundan',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SpelaRoute = SpelaRouteImport.update({
   id: '/spela',
   path: '/spela',
@@ -719,6 +725,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
   '/speed-test': typeof SpeedTestRoute
+  '/speedrundan': typeof SpeedrundanRoute
   '/spela': typeof SpelaRoute
   '/spela-runda': typeof SpelaRundaRoute
   '/standardiserade-tester': typeof StandardiseradeTesterRoute
@@ -825,6 +832,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
   '/speed-test': typeof SpeedTestRoute
+  '/speedrundan': typeof SpeedrundanRoute
   '/spela': typeof SpelaRoute
   '/spela-runda': typeof SpelaRundaRoute
   '/standardiserade-tester': typeof StandardiseradeTesterRoute
@@ -932,6 +940,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speed': typeof SpeedRoute
   '/speed-test': typeof SpeedTestRoute
+  '/speedrundan': typeof SpeedrundanRoute
   '/spela': typeof SpelaRoute
   '/spela-runda': typeof SpelaRundaRoute
   '/standardiserade-tester': typeof StandardiseradeTesterRoute
@@ -1040,6 +1049,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/speed'
     | '/speed-test'
+    | '/speedrundan'
     | '/spela'
     | '/spela-runda'
     | '/standardiserade-tester'
@@ -1146,6 +1156,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/speed'
     | '/speed-test'
+    | '/speedrundan'
     | '/spela'
     | '/spela-runda'
     | '/standardiserade-tester'
@@ -1252,6 +1263,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/speed'
     | '/speed-test'
+    | '/speedrundan'
     | '/spela'
     | '/spela-runda'
     | '/standardiserade-tester'
@@ -1359,6 +1371,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SpeedRoute: typeof SpeedRoute
   SpeedTestRoute: typeof SpeedTestRoute
+  SpeedrundanRoute: typeof SpeedrundanRoute
   SpelaRoute: typeof SpelaRoute
   SpelaRundaRoute: typeof SpelaRundaRoute
   StandardiseradeTesterRoute: typeof StandardiseradeTesterRoute
@@ -1932,6 +1945,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SpeedTestRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/speedrundan': {
+      id: '/speedrundan'
+      path: '/speedrundan'
+      fullPath: '/speedrundan'
+      preLoaderRoute: typeof SpeedrundanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/spela': {
       id: '/spela'
       path: '/spela'
@@ -2231,6 +2251,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SpeedRoute: SpeedRoute,
   SpeedTestRoute: SpeedTestRoute,
+  SpeedrundanRoute: SpeedrundanRoute,
   SpelaRoute: SpelaRoute,
   SpelaRundaRoute: SpelaRundaRoute,
   StandardiseradeTesterRoute: StandardiseradeTesterRoute,

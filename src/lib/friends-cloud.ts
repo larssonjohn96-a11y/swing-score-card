@@ -1,3 +1,9 @@
+import { syncSpeedRounds } from "./speed-cloud";
+import {
+  speedAverage,
+  parseCourse as parseSpeedCourse,
+  courseStorageKey as speedStorageKey,
+} from "./speed-course";
 import { syncDriverRounds } from "./driver-cloud";
 import {
   driverAverage,
@@ -176,6 +182,7 @@ export async function pushPlayerSnapshot(expectedUserId?: string): Promise<boole
     await syncBunkerRounds(userData.user.id);
     await syncApproachRounds(userData.user.id);
     await syncDriverRounds(userData.user.id);
+    await syncSpeedRounds(userData.user.id);
   } catch {
     return false;
   }
@@ -347,6 +354,34 @@ export async function pushPlayerSnapshot(expectedUserId?: string): Promise<boole
           },
         ]
       : previousDriver),
+  );
+  const speed = speedAverage(
+    parseSpeedCourse(localStorage.getItem(speedStorageKey(userData.user.id))).history,
+  );
+  const previousSpeed = parseComparisonProfile(previousChip?.comparison_profile).training.filter(
+    (m) => m.key.startsWith("speed-round-"),
+  );
+  comparisonProfile.training.push(
+    ...(speed.count
+      ? [
+          {
+            key: "speed-round-points",
+            label: "Speedrundan · snittpoäng",
+            value: speed.points,
+            unit: "p",
+            decimals: 1,
+            higherIsBetter: true,
+          },
+          {
+            key: "speed-round-count",
+            label: "Speedrundan · rundor i snittet",
+            value: speed.count,
+            unit: "",
+            decimals: 0,
+            higherIsBetter: true,
+          },
+        ]
+      : previousSpeed),
   );
   const { error } = await (supabase.from("player_snapshots") as any).upsert({
     user_id: userData.user.id,
