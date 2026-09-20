@@ -1,3 +1,4 @@
+import { SpeedDistancePotential } from "@/components/speed-distance-potential";
 import { StoredActivityReview } from "@/components/stored-activity-review";
 import { isActivityComplete } from "@/lib/activity-review";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
@@ -396,6 +397,7 @@ function SpeedPage() {
         )}
       </div>
 
+      <div className="mt-4"><SpeedDistancePotential ballSpeed={result.topBallSpeed} /></div>
       <SpeedBestShotHighlight topBallSpeed={result.topBallSpeed} />
 
       <div className="mt-6">

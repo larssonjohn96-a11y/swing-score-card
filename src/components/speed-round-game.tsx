@@ -1,3 +1,4 @@
+import { SpeedDistancePotential } from "@/components/speed-distance-potential";
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Check, Trophy, Undo2 } from "lucide-react";
 import {
@@ -515,6 +516,7 @@ export function SpeedRoundGame({
             <br />
             Personlig referens: {fmt(round.reference)} mph
           </p>
+          <SpeedDistancePotential ballSpeed={objectiveResult(round).topBallSpeed} />
           <SpeedCourseAnalysis round={round} />
           <p className="text-center text-sm font-semibold text-slate-600">{replay}</p>
           <button className="speed-black" onClick={requestStart}>
