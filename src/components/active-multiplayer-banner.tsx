@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
 import { Link } from "@tanstack/react-router";
 import { ChevronRight, Flame, Target } from "lucide-react";
 import {
@@ -11,13 +10,6 @@ import {
   loadDailyChallengeState,
   type DailyChallengeRecord,
 } from "@/lib/daily-challenge";
-
-function findHomePlaySection() {
-  if (typeof document === "undefined") return null;
-  const links = Array.from(document.querySelectorAll<HTMLAnchorElement>('a[href="/spela"]'));
-  const playLink = links.find((link) => link.textContent?.includes("Utmana en vän"));
-  return playLink?.closest("section") ?? null;
-}
 
 function getChallengeCopy(record: DailyChallengeRecord) {
   const streaks = challengeStreaks(loadDailyChallengeState());
@@ -54,46 +46,16 @@ function getChallengeCopy(record: DailyChallengeRecord) {
   };
 }
 
-export function ActiveMultiplayerBanner() {
-  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
-  const [record, setRecord] = useState<DailyChallengeRecord>(() => ensureTodayRecord().record);
-
-  useEffect(() => {
-    let host: HTMLDivElement | null = null;
-    let cancelled = false;
-
-    const mount = () => {
-      if (cancelled) return true;
-      const section = findHomePlaySection();
-      if (!section) return false;
-      host = document.createElement("div");
-      host.dataset.dailyChallengeHome = "true";
-      section.insertAdjacentElement("afterend", host);
-      setPortalTarget(host);
-      return true;
-    };
-
-    if (!mount()) {
-      const timer = window.setInterval(() => {
-        if (mount()) window.clearInterval(timer);
-      }, 80);
-      const timeout = window.setTimeout(() => window.clearInterval(timer), 2500);
-      return () => {
-        cancelled = true;
-        window.clearInterval(timer);
-        window.clearTimeout(timeout);
-        host?.remove();
-      };
-    }
-
-    return () => {
-      cancelled = true;
-      host?.remove();
-    };
-  }, []);
-
+// The home page owns this card. The legacy root mount must not inject DOM
+// into a route that may still be hydrating.
+export function ActiveMultiplayerBanner({ inline = false }: { inline?: boolean }) {
+  return inline ? <DailyChallengeHomeCard /> : null;
+}
+function DailyChallengeHomeCard() {
+  const [record, setRecord] = useState<DailyChallengeRecord | null>(null);
   useEffect(() => {
     const refresh = () => setRecord(ensureTodayRecord().record);
+    refresh();
     window.addEventListener("focus", refresh);
     window.addEventListener("pageshow", refresh);
     return () => {
@@ -102,11 +64,11 @@ export function ActiveMultiplayerBanner() {
     };
   }, []);
 
-  const copy = useMemo(() => getChallengeCopy(record), [record]);
+  const copy = useMemo(() => (record ? getChallengeCopy(record) : null), [record]);
 
-  if (!portalTarget) return null;
+  if (!copy) return null;
 
-  return createPortal(
+  return (
     <section className="mt-2.5">
       <Link
         to="/daily-challenge"
@@ -116,13 +78,23 @@ export function ActiveMultiplayerBanner() {
             : "border-amber-200/80 bg-gradient-to-r from-amber-50/80 via-card to-emerald-50/55"
         }`}
       >
-        <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[15px] border ${copy.completed ? "border-emerald-200 bg-emerald-100/80 text-emerald-700" : "border-amber-200 bg-amber-100/80 text-amber-700"}`}>
-          {copy.completed ? <Flame className="h-[18px] w-[18px]" /> : <Target className="h-[18px] w-[18px]" />}
+        <span
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[15px] border ${copy.completed ? "border-emerald-200 bg-emerald-100/80 text-emerald-700" : "border-amber-200 bg-amber-100/80 text-amber-700"}`}
+        >
+          {copy.completed ? (
+            <Flame className="h-[18px] w-[18px]" />
+          ) : (
+            <Target className="h-[18px] w-[18px]" />
+          )}
         </span>
 
         <span className="min-w-0 flex-1">
-          <span className="block text-[10px] font-black uppercase tracking-[.16em] text-emerald-700">Dagens Challenge</span>
-          <span className="mt-0.5 block truncate text-[13px] font-semibold text-foreground/78">{copy.detail}</span>
+          <span className="block text-[10px] font-black uppercase tracking-[.16em] text-emerald-700">
+            Dagens Challenge
+          </span>
+          <span className="mt-0.5 block truncate text-[13px] font-semibold text-foreground/78">
+            {copy.detail}
+          </span>
         </span>
 
         <span className="shrink-0 rounded-full border border-white/80 bg-white/72 px-2 py-1 text-[10px] font-black text-foreground/70 shadow-sm">
@@ -130,7 +102,6 @@ export function ActiveMultiplayerBanner() {
         </span>
         <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-active:translate-x-0.5" />
       </Link>
-    </section>,
-    portalTarget,
+    </section>
   );
 }

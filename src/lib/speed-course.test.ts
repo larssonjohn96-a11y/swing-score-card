@@ -73,8 +73,9 @@ describe("speed round", () => {
     expect(roundStars(a)).toBe(18);
     expect(roundStars(b)).toBe(18);
     expect(roundPoints(b)).toBeGreaterThan(roundPoints(a));
-    expect(roundPoints({ ...a, reference: 200 })).toBe(roundPoints(a));
-    expect(courseHandicap({ ...a, reference: 200 })).toBe(courseHandicap(a));
+    const changedReference = { ...a, reference: 200 };
+    expect(roundPoints(changedReference)).toBe(roundPoints(a));
+    expect(courseHandicap(changedReference)).toBe(courseHandicap(a));
   });
   it("records exactly six shots with halfway, undo and reload; excludes incomplete rounds from rankings", () => {
     let s = reduceCourse(calibrated(), { type: "start", id: "six", at: 1 });

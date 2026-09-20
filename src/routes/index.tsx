@@ -1,3 +1,4 @@
+import { WarmUpHomeCard } from "@/components/warm-up";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { Bell, ChevronRight, User, UserPlus } from "lucide-react";
@@ -654,6 +655,12 @@ function Home() {
               Spela
             </Link>
             <Link
+              to="/uppvarmning"
+              className="shrink-0 rounded-full border border-blue-200 bg-blue-50 px-4 py-2.5 text-xs font-black text-blue-700"
+            >
+              Uppvärmning
+            </Link>
+            <Link
               to="/spela-runda"
               className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black"
             >
@@ -731,10 +738,6 @@ function Home() {
             </div>
           </Link>
         </section>
-
-        <div className="mt-4">
-          <ActiveMultiplayerBanner />
-        </div>
 
         <section className="mt-4">
           <Link
@@ -816,6 +819,9 @@ function Home() {
             </div>
           </Link>
         </section>
+
+        <ActiveMultiplayerBanner inline />
+        <WarmUpHomeCard />
 
         <section className="mt-7" aria-label="Spela en runda">
           <div className="flex items-end justify-between gap-3 px-0.5">

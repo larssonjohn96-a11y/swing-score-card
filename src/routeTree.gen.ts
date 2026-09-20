@@ -102,6 +102,7 @@ import { Route as TutorTestRouteImport } from './routes/tutor-test'
 import { Route as TutorTestHistorikRouteImport } from './routes/tutor-test-historik'
 import { Route as UppOchInRouteImport } from './routes/upp-och-in'
 import { Route as UppOchInHistorikRouteImport } from './routes/upp-och-in-historik'
+import { Route as UppvarmningRouteImport } from './routes/uppvarmning'
 import { Route as UtmaningarRouteImport } from './routes/utmaningar'
 import { Route as VannerRouteImport } from './routes/vanner'
 import { Route as WedgeStegeRouteImport } from './routes/wedge-stege'
@@ -585,6 +586,11 @@ const UppOchInHistorikRoute = UppOchInHistorikRouteImport.update({
   path: '/upp-och-in-historik',
   getParentRoute: () => rootRouteImport,
 } as any)
+const UppvarmningRoute = UppvarmningRouteImport.update({
+  id: '/uppvarmning',
+  path: '/uppvarmning',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const UtmaningarRoute = UtmaningarRouteImport.update({
   id: '/utmaningar',
   path: '/utmaningar',
@@ -740,6 +746,7 @@ export interface FileRoutesByFullPath {
   '/tutor-test-historik': typeof TutorTestHistorikRoute
   '/upp-och-in': typeof UppOchInRoute
   '/upp-och-in-historik': typeof UppOchInHistorikRoute
+  '/uppvarmning': typeof UppvarmningRoute
   '/utmaningar': typeof UtmaningarRoute
   '/vanner': typeof VannerRoute
   '/wedge-stege': typeof WedgeStegeRoute
@@ -847,6 +854,7 @@ export interface FileRoutesByTo {
   '/tutor-test-historik': typeof TutorTestHistorikRoute
   '/upp-och-in': typeof UppOchInRoute
   '/upp-och-in-historik': typeof UppOchInHistorikRoute
+  '/uppvarmning': typeof UppvarmningRoute
   '/utmaningar': typeof UtmaningarRoute
   '/vanner': typeof VannerRoute
   '/wedge-stege': typeof WedgeStegeRoute
@@ -955,6 +963,7 @@ export interface FileRoutesById {
   '/tutor-test-historik': typeof TutorTestHistorikRoute
   '/upp-och-in': typeof UppOchInRoute
   '/upp-och-in-historik': typeof UppOchInHistorikRoute
+  '/uppvarmning': typeof UppvarmningRoute
   '/utmaningar': typeof UtmaningarRoute
   '/vanner': typeof VannerRoute
   '/wedge-stege': typeof WedgeStegeRoute
@@ -1064,6 +1073,7 @@ export interface FileRouteTypes {
     | '/tutor-test-historik'
     | '/upp-och-in'
     | '/upp-och-in-historik'
+    | '/uppvarmning'
     | '/utmaningar'
     | '/vanner'
     | '/wedge-stege'
@@ -1171,6 +1181,7 @@ export interface FileRouteTypes {
     | '/tutor-test-historik'
     | '/upp-och-in'
     | '/upp-och-in-historik'
+    | '/uppvarmning'
     | '/utmaningar'
     | '/vanner'
     | '/wedge-stege'
@@ -1278,6 +1289,7 @@ export interface FileRouteTypes {
     | '/tutor-test-historik'
     | '/upp-och-in'
     | '/upp-och-in-historik'
+    | '/uppvarmning'
     | '/utmaningar'
     | '/vanner'
     | '/wedge-stege'
@@ -1386,6 +1398,7 @@ export interface RootRouteChildren {
   TutorTestHistorikRoute: typeof TutorTestHistorikRoute
   UppOchInRoute: typeof UppOchInRoute
   UppOchInHistorikRoute: typeof UppOchInHistorikRoute
+  UppvarmningRoute: typeof UppvarmningRoute
   UtmaningarRoute: typeof UtmaningarRoute
   VannerRoute: typeof VannerRoute
   WedgeStegeRoute: typeof WedgeStegeRoute
@@ -2050,6 +2063,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UppOchInHistorikRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/uppvarmning': {
+      id: '/uppvarmning'
+      path: '/uppvarmning'
+      fullPath: '/uppvarmning'
+      preLoaderRoute: typeof UppvarmningRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/utmaningar': {
       id: '/utmaningar'
       path: '/utmaningar'
@@ -2266,6 +2286,7 @@ const rootRouteChildren: RootRouteChildren = {
   TutorTestHistorikRoute: TutorTestHistorikRoute,
   UppOchInRoute: UppOchInRoute,
   UppOchInHistorikRoute: UppOchInHistorikRoute,
+  UppvarmningRoute: UppvarmningRoute,
   UtmaningarRoute: UtmaningarRoute,
   VannerRoute: VannerRoute,
   WedgeStegeRoute: WedgeStegeRoute,
