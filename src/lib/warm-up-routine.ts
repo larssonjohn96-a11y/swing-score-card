@@ -256,48 +256,32 @@ export function buildVisits(p: RoutinePrefs, profile: WarmProfile = {}): Visit[]
         ),
       ];
     } else {
-      focus = data.approach;
-      const target = prefs.par3.length
-        ? [...prefs.par3].sort(
-            (a, b) => Math.abs(a - (focus?.distance ?? a)) - Math.abs(b - (focus?.distance ?? b)),
-          )[0]
-        : (focus?.distance ?? 140);
-      const targets =
-        minutes >= 6
-          ? [...new Set([target, ...prefs.par3])].slice(0, minutes >= 10 ? 3 : 2)
-          : [target];
-      if (focus && prefs.par3.length && Math.abs(target - focus.distance) > 10) focus = undefined;
       exercises = [
         exercise(
-          "wedge",
-          "Slå 5 lugna wedgar",
-          "Välj ett nära mål. Börja med korta svingar och öka gradvis.",
-          "Hitta en bekväm bollträff och rytm.",
-          { count: 5 },
+          "bag",
+          "Arbeta dig upp genom bagen",
+          "Börja med lugna wedgar. Gå vidare till korta och sedan längre järn när bollträffen känns bra.",
+          "Öka svinglängden gradvis. Du väljer när du är redo att gå vidare.",
         ),
-        ...targets.map((d) =>
-          exercise(
-            `iron-${d}`,
-            "Slå 3 järnslag",
-            "Välj klubban du brukar slå den här längden med. Sikta mot ett stort mål.",
-            prefs.par3.includes(d)
-              ? "Förbered ett av par 3-avstånden du valt för dagens bana."
-              : "Använd ditt vanliga tempo och låt målet styra.",
-            { count: 3, distance: d },
-          ),
+        exercise(
+          "par3",
+          "Förbered ett par 3-utslag",
+          "Välj ett mål på rangen som liknar ett par 3-hål på dagens bana. Välj klubba, sikta och gör din vanliga rutin.",
+          "Om det saknas ett passande mål kan du gå vidare.",
         ),
         exercise(
           "first-tee",
-          "Spela första utslaget",
-          "Slå 3 bollar med klubban du tänker använda på första tee. Föreställ dig hålet och välj ett tydligt mål.",
-          "Gör din vanliga rutin inför varje slag.",
-          { count: 3 },
+          "Förbered första utslaget",
+          "Ta klubban du tänker använda på första tee. Föreställ dig hålet och slå mot ett tydligt mål.",
+          "Använd bara klubbor som är tillåtna på rangen. Annars går du vidare.",
+        ),
+        exercise(
+          "free",
+          "Avsluta med fria slag",
+          "Välj de klubbor och slag du vill känna lite mer på. Avsluta när du känner dig redo.",
+          "Behåll ditt vanliga tempo. Du behöver inte ändra tekniken.",
         ),
       ];
-      if (minutes < 4) {
-        exercises = [exercises[0], exercises[exercises.length - 1]];
-        focus = undefined;
-      }
     }
     visits.push({
       id: `${kind}-${ordinal}`,

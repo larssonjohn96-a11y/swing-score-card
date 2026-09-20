@@ -29,6 +29,12 @@ import {
 } from "@/lib/warm-up-routine";
 import "./warm-up.css";
 
+const AREA_IMAGES: Record<Station, string> = {
+  range: "/Off_the_tee.png",
+  chip: "/0d286fd4-99fa-47eb-b39c-a7ff718ebdd6.png",
+  putt: "/Putting_1.png",
+  bunker: "/bunker-card.jpg",
+};
 const timeLabel = (at: number) =>
   new Date(at).toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" });
 function useClock() {
@@ -222,7 +228,7 @@ function WarmExperience({ userId, loading }: { userId: string | null; loading: b
   const now = useClock();
   const [prefs, setPrefs] = useState<RoutinePrefs>(routineDefaults);
   const [initialized, setInitialized] = useState(false);
-  const [screen, setScreen] = useState<"time" | "places" | "plan" | "feedback">("time");
+  const [screen, setScreen] = useState<"intro" | "time" | "places" | "plan" | "feedback">("intro");
   const [profile, setProfile] = useState<WarmProfile>({});
   const [teeTime, setTeeTime] = useState(0);
   const [timeOptions, setTimeOptions] = useState<number[]>([]);
@@ -239,10 +245,10 @@ function WarmExperience({ userId, loading }: { userId: string | null; loading: b
     profile,
   );
   function resetTime() {
-    const base = Math.ceil(Date.now() / 300000) * 300000;
-    const times = Array.from({ length: 23 }, (_, i) => base + (i + 1) * 300000);
+    const base = Math.ceil(Date.now() / 60000) * 60000;
+    const times = Array.from({ length: 115 }, (_, i) => base + (i + 5) * 60000);
     setTimeOptions(times);
-    setTeeTime(times[5]);
+    setTeeTime(times[25]);
   }
   useEffect(() => {
     if (ready && !initialized) {
@@ -345,7 +351,7 @@ function WarmExperience({ userId, loading }: { userId: string | null; loading: b
       return;
     setSummaryId(null);
     resetTime();
-    setScreen("time");
+    setScreen("intro");
   }
   function start() {
     try {
@@ -385,29 +391,21 @@ function WarmExperience({ userId, loading }: { userId: string | null; loading: b
         {active.phase === "intro" ? (
           <>
             <Heading
-              eyebrow={active.current === 0 ? "Vi börjar här" : "Vidare till nästa område"}
-              title={visit.title}
-              text={
+              eyebrow={visit.kind === "body" ? "Vi börjar här" : "Byt område"}
+              title={
                 visit.kind === "body"
-                  ? "Börja med mjuka rörelser och lugna provsvingar."
-                  : `Ta dig till ${visit.title.toLocaleLowerCase("sv")}. Starta när du är på plats.`
+                  ? "Väck kroppen"
+                  : `Vidare till ${visit.title.toLocaleLowerCase("sv")}`
               }
+              text={visit.kind === "body" ? "Börja mjukt. Hitta ditt tempo." : undefined}
             />
-            <div className="wu-area-tasks">
-              {visit.exercises.map((e, i) => (
-                <div key={e.id}>
-                  <span className="wu-step-number">{i + 1}</span>
-                  <strong>
-                    {visit.kind === "putt"
-                      ? e.distance! <= 2
-                        ? "Korta puttar"
-                        : "Långa puttar"
-                      : e.title}
-                    {e.distance ? <small>{e.distance} meter</small> : null}
-                  </strong>
-                </div>
-              ))}
-            </div>
+            {visit.kind !== "body" && visit.kind !== "tee" ? (
+              <img className="wu-area-image" src={AREA_IMAGES[visit.kind]} alt={visit.title} />
+            ) : (
+              <div className="wu-transition-symbol">
+                <Flag size={80} strokeWidth={1.3} />
+              </div>
+            )}
           </>
         ) : active.phase === "check" ? (
           <Heading
@@ -438,12 +436,31 @@ function WarmExperience({ userId, loading }: { userId: string | null; loading: b
                       ? "Nu: wedgar"
                       : task.id === "first-tee"
                         ? "Nu: första utslaget"
-                        : "Nu: järnslag"
+                        : task.id === "free"
+                          ? "Nu: fria slag"
+                          : task.id === "bag"
+                            ? "Nu: genom bagen"
+                            : "Nu: par 3-utslag"
                     : "Nästa övning"}
               </p>
               <h2>{task.title}</h2>
             </div>
-            <ExerciseVisual task={task} kind={visit.kind} />
+            {visit.kind === "range" ? (
+              <div className="wu-range-visual" aria-hidden>
+                <Flag size={52} strokeWidth={1.5} />
+                <span>
+                  {task.id === "bag"
+                    ? "Kort → långt"
+                    : task.id === "par3"
+                      ? "Välj ett mål"
+                      : task.id === "first-tee"
+                        ? "Din utslagsrutin"
+                        : "Din känsla"}
+                </span>
+              </div>
+            ) : (
+              <ExerciseVisual task={task} kind={visit.kind} />
+            )}
             <p className="wu-instruction">{task.instruction}</p>
             <p className="wu-cue">{task.cue}</p>
           </>
@@ -521,6 +538,34 @@ function WarmExperience({ userId, loading }: { userId: string | null; loading: b
       </>
     );
     footer = <Action onClick={() => home()}>Till uppvärmningens startsida</Action>;
+  } else if (screen === "intro") {
+    body = (
+      <div className="wu-intro-copy">
+        <p className="wu-eyebrow">MY WARM UP</p>
+        <h1 tabIndex={-1}>
+          Din bästa start.
+          <br />
+          Redan före tee.
+        </h1>
+        <p>En personlig uppvärmning som guidar dig från första rörelsen till första utslaget.</p>
+        <ul>
+          <li>
+            <Check />
+            <span>Hitta bollträffen och ditt tempo</span>
+          </li>
+          <li>
+            <Check />
+            <span>Känn in farten på greenerna</span>
+          </li>
+          <li>
+            <Check />
+            <span>Kom förberedd till första tee</span>
+          </li>
+        </ul>
+        <p className="wu-intro-note">Din tid. Din ordning. Ingen registrering av slag.</p>
+      </div>
+    );
+    footer = <Action onClick={() => setScreen("time")}>Starta</Action>;
   } else if (screen === "time") {
     body = (
       <>
@@ -676,7 +721,10 @@ function WarmExperience({ userId, loading }: { userId: string | null; loading: b
     );
   }
   return (
-    <main className="wu-shell" aria-label="My Warm Up">
+    <main
+      className={`wu-shell ${!active && screen === "intro" ? "wu-intro" : ""}`}
+      aria-label="My Warm Up"
+    >
       <div className="wu-frame">
         <header className="wu-header">
           {active ? (
@@ -686,7 +734,7 @@ function WarmExperience({ userId, loading }: { userId: string | null; loading: b
             >
               Avsluta
             </button>
-          ) : screen === "time" ? (
+          ) : screen === "intro" ? (
             <Link to="/" data-local-navigation aria-label="Till startsidan" className="wu-icon">
               <ArrowLeft size={22} />
             </Link>
@@ -695,7 +743,9 @@ function WarmExperience({ userId, loading }: { userId: string | null; loading: b
               className="wu-icon"
               aria-label="Tillbaka"
               onClick={() =>
-                screen === "feedback" ? home() : setScreen(screen === "plan" ? "places" : "time")
+                screen === "feedback"
+                  ? home()
+                  : setScreen(screen === "plan" ? "places" : screen === "time" ? "intro" : "time")
               }
             >
               <ArrowLeft size={22} />
@@ -812,10 +862,10 @@ function WarmHome({ userId, loading }: { userId: string | null; loading: boolean
           </div>
           <h2 className="mt-3 text-2xl font-black">Redo för första tee</h2>
           <p className="mt-2 max-w-[290px] text-base leading-relaxed text-blue-50">
-            Din personliga uppvärmning. En enkel övning i taget.
+            Hitta känslan före första tee.
           </p>
           <span className="mt-5 inline-flex min-h-12 items-center gap-2 rounded-xl bg-white px-4 font-bold text-blue-700">
-            {ready && state.active ? "Fortsätt min uppvärmning" : "Starta min uppvärmning"}
+            {ready && state.active ? "Fortsätt" : "Hitta din rutin"}
             <ArrowRight size={18} />
           </span>
         </div>

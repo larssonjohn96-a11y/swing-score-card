@@ -45,7 +45,7 @@ describe("warm-up exercise flow and routine memory", () => {
       [10, 3],
       [1, 3],
     ]);
-    expect(visits.find((v) => v.kind === "range")?.exercises.at(-1)?.id).toBe("first-tee");
+    expect(visits.find((v) => v.kind === "range")?.exercises.at(-2)?.id).toBe("first-tee");
     expect(visits.some((v) => v.kind === "tee")).toBe(false);
     expect(visits.reduce((n, v) => n + v.minutes, 0)).toBeCloseTo(30);
   });
@@ -233,12 +233,17 @@ describe("warm-up personalization from actual results", () => {
       8, 14,
     ]);
   });
-  it("uses explicitly chosen par-3 distances rather than pretending to know the course", () => {
-    const p = { ...routineDefaults(), minutes: 45, par3: [100, 140, 160] };
-    const range = buildVisits(p).find((v) => v.kind === "range")!;
-    expect(range.exercises.filter((e) => e.distance).map((e) => e.distance)).toEqual([
-      100, 140, 160,
-    ]);
+  it("guides range progression without fixed shot counts or imposed distances", () => {
+    const range = buildVisits(
+      { ...routineDefaults(), par3: [80] },
+      { approach: { distance: 80, reason: "", detail: "", samples: 9 } },
+    ).find((v) => v.kind === "range")!;
+    expect(range.exercises.map((e) => e.id)).toEqual(["bag", "par3", "first-tee", "free"]);
+    expect(range.exercises.every((e) => e.count === undefined && e.distance === undefined)).toBe(
+      true,
+    );
+    expect(range.focus).toBeUndefined();
+    expect(range.exercises[2].cue).toContain("tillåtna");
   });
   it("excludes other accounts, voided shots, streaks, bots, and make/miss-only records", () => {
     const session: ShotSession = {
