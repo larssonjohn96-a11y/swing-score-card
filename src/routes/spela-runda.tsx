@@ -77,6 +77,24 @@ function RoundGamesPage() {
         </div>
       </Link>
       <Link
+        to="/driverrundan"
+        className="mt-6 block overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-sm"
+      >
+        <img src="/Off_the_tee.png" alt="" className="h-48 w-full object-cover object-[18%_50%]" />
+        <div className="flex items-center justify-between p-5">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-emerald-700">
+              Spela själv
+            </p>
+            <h2 className="mt-1 text-2xl font-black">Driverrundan</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              6 slag · personliga stjärnor · driverpoäng
+            </p>
+          </div>
+          <ChevronRight className="h-6 w-6 text-blue-600" />
+        </div>
+      </Link>
+      <Link
         to="/bunkerrundan"
         className="mt-6 block overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-sm"
       >

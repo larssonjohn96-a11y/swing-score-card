@@ -859,6 +859,15 @@ function Home() {
                 imagePosition="18% 50%"
               />
             </Link>
+            <Link to="/driverrundan" className="block shrink-0">
+              <SimpleCard
+                label="Spela själv"
+                title="Driverrundan"
+                tone="bg-[#118267]"
+                imageSrc="/Off_the_tee.png"
+                imagePosition="18% 50%"
+              />
+            </Link>
             <Link to="/bunkerrundan" className="block shrink-0">
               <SimpleCard
                 label="Spela själv"

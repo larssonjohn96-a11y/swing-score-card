@@ -1,3 +1,9 @@
+import { syncDriverRounds } from "./driver-cloud";
+import {
+  driverAverage,
+  parseCourse as parseDriverCourse,
+  courseStorageKey as driverStorageKey,
+} from "./driver-course";
 import { syncApproachRounds } from "./approach-cloud";
 import {
   approachAverage,
@@ -169,6 +175,7 @@ export async function pushPlayerSnapshot(expectedUserId?: string): Promise<boole
     await syncPuttRounds(userData.user.id);
     await syncBunkerRounds(userData.user.id);
     await syncApproachRounds(userData.user.id);
+    await syncDriverRounds(userData.user.id);
   } catch {
     return false;
   }
@@ -312,6 +319,34 @@ export async function pushPlayerSnapshot(expectedUserId?: string): Promise<boole
           },
         ]
       : previousApproach),
+  );
+  const driver = driverAverage(
+    parseDriverCourse(localStorage.getItem(driverStorageKey(userData.user.id))).history,
+  );
+  const previousDriver = parseComparisonProfile(previousChip?.comparison_profile).training.filter(
+    (m) => m.key.startsWith("driver-round-"),
+  );
+  comparisonProfile.training.push(
+    ...(driver.count
+      ? [
+          {
+            key: "driver-round-points",
+            label: "Driverrundan · snittpoäng",
+            value: driver.points,
+            unit: "p",
+            decimals: 1,
+            higherIsBetter: true,
+          },
+          {
+            key: "driver-round-count",
+            label: "Driverrundan · rundor i snittet",
+            value: driver.count,
+            unit: "",
+            decimals: 0,
+            higherIsBetter: true,
+          },
+        ]
+      : previousDriver),
   );
   const { error } = await (supabase.from("player_snapshots") as any).upsert({
     user_id: userData.user.id,

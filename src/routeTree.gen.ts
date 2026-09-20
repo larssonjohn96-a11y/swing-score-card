@@ -35,6 +35,7 @@ import { Route as CupRouteImport } from './routes/cup'
 import { Route as DailyChallengeRouteImport } from './routes/daily-challenge'
 import { Route as DriverKonsekvensRouteImport } from './routes/driver-konsekvens'
 import { Route as DriverKonsekvensHistorikRouteImport } from './routes/driver-konsekvens-historik'
+import { Route as DriverrundanRouteImport } from './routes/driverrundan'
 import { Route as FairwayRouteImport } from './routes/fairway'
 import { Route as FairwayStreakRouteImport } from './routes/fairway-streak'
 import { Route as GreenReadingRouteImport } from './routes/green-reading'
@@ -245,6 +246,11 @@ const DriverKonsekvensHistorikRoute =
     path: '/driver-konsekvens-historik',
     getParentRoute: () => rootRouteImport,
   } as any)
+const DriverrundanRoute = DriverrundanRouteImport.update({
+  id: '/driverrundan',
+  path: '/driverrundan',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FairwayRoute = FairwayRouteImport.update({
   id: '/fairway',
   path: '/fairway',
@@ -661,6 +667,7 @@ export interface FileRoutesByFullPath {
   '/daily-challenge': typeof DailyChallengeRoute
   '/driver-konsekvens': typeof DriverKonsekvensRoute
   '/driver-konsekvens-historik': typeof DriverKonsekvensHistorikRoute
+  '/driverrundan': typeof DriverrundanRoute
   '/fairway': typeof FairwayRoute
   '/fairway-streak': typeof FairwayStreakRoute
   '/green-reading': typeof GreenReadingRoute
@@ -766,6 +773,7 @@ export interface FileRoutesByTo {
   '/daily-challenge': typeof DailyChallengeRoute
   '/driver-konsekvens': typeof DriverKonsekvensRoute
   '/driver-konsekvens-historik': typeof DriverKonsekvensHistorikRoute
+  '/driverrundan': typeof DriverrundanRoute
   '/fairway': typeof FairwayRoute
   '/fairway-streak': typeof FairwayStreakRoute
   '/green-reading': typeof GreenReadingRoute
@@ -872,6 +880,7 @@ export interface FileRoutesById {
   '/daily-challenge': typeof DailyChallengeRoute
   '/driver-konsekvens': typeof DriverKonsekvensRoute
   '/driver-konsekvens-historik': typeof DriverKonsekvensHistorikRoute
+  '/driverrundan': typeof DriverrundanRoute
   '/fairway': typeof FairwayRoute
   '/fairway-streak': typeof FairwayStreakRoute
   '/green-reading': typeof GreenReadingRoute
@@ -979,6 +988,7 @@ export interface FileRouteTypes {
     | '/daily-challenge'
     | '/driver-konsekvens'
     | '/driver-konsekvens-historik'
+    | '/driverrundan'
     | '/fairway'
     | '/fairway-streak'
     | '/green-reading'
@@ -1084,6 +1094,7 @@ export interface FileRouteTypes {
     | '/daily-challenge'
     | '/driver-konsekvens'
     | '/driver-konsekvens-historik'
+    | '/driverrundan'
     | '/fairway'
     | '/fairway-streak'
     | '/green-reading'
@@ -1189,6 +1200,7 @@ export interface FileRouteTypes {
     | '/daily-challenge'
     | '/driver-konsekvens'
     | '/driver-konsekvens-historik'
+    | '/driverrundan'
     | '/fairway'
     | '/fairway-streak'
     | '/green-reading'
@@ -1295,6 +1307,7 @@ export interface RootRouteChildren {
   DailyChallengeRoute: typeof DailyChallengeRoute
   DriverKonsekvensRoute: typeof DriverKonsekvensRoute
   DriverKonsekvensHistorikRoute: typeof DriverKonsekvensHistorikRoute
+  DriverrundanRoute: typeof DriverrundanRoute
   FairwayRoute: typeof FairwayRoute
   FairwayStreakRoute: typeof FairwayStreakRoute
   GreenReadingRoute: typeof GreenReadingRoute
@@ -1553,6 +1566,13 @@ declare module '@tanstack/react-router' {
       path: '/driver-konsekvens-historik'
       fullPath: '/driver-konsekvens-historik'
       preLoaderRoute: typeof DriverKonsekvensHistorikRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/driverrundan': {
+      id: '/driverrundan'
+      path: '/driverrundan'
+      fullPath: '/driverrundan'
+      preLoaderRoute: typeof DriverrundanRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/fairway': {
@@ -2159,6 +2179,7 @@ const rootRouteChildren: RootRouteChildren = {
   DailyChallengeRoute: DailyChallengeRoute,
   DriverKonsekvensRoute: DriverKonsekvensRoute,
   DriverKonsekvensHistorikRoute: DriverKonsekvensHistorikRoute,
+  DriverrundanRoute: DriverrundanRoute,
   FairwayRoute: FairwayRoute,
   FairwayStreakRoute: FairwayStreakRoute,
   GreenReadingRoute: GreenReadingRoute,
