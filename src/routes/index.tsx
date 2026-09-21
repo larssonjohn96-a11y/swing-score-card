@@ -170,12 +170,14 @@ function SimpleCard({
   tone,
   imageSrc,
   imagePosition,
+  hcpAnalysis = false,
 }: {
   label: string;
   title: string;
   tone: string;
   imageSrc?: string;
   imagePosition?: string;
+  hcpAnalysis?: boolean;
 }) {
   return (
     <div className={`${CARD_BASE} ${tone}`}>
@@ -190,7 +192,8 @@ function SimpleCard({
           <span className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/15 to-black/5" />
         </>
       )}
-      <span className="absolute left-4 top-4 text-[9px] font-black uppercase tracking-[.16em] text-white/68">
+      {hcpAnalysis && <span className="absolute right-3 top-3 z-10 rounded-full bg-blue-600 px-2.5 py-1.5 text-[10px] font-bold text-white shadow-sm">HCP-analys</span>}
+      <span className={`absolute left-4 ${hcpAnalysis ? "top-12" : "top-4"} text-[9px] font-black uppercase tracking-[.16em] text-white/80`}>
         {label}
       </span>
       <h3 className="relative z-10 font-display text-[27px] leading-[.95] text-white">{title}</h3>
@@ -836,6 +839,7 @@ function Home() {
           <DragScrollRow>
             <Link to="/speedrundan" className="block shrink-0">
               <SimpleCard
+                hcpAnalysis
                 label="Speed"
                 title="Maxfart"
                 tone="bg-[#118267]"
@@ -845,6 +849,7 @@ function Home() {
             </Link>
             <Link to="/driverrundan" className="block shrink-0">
               <SimpleCard
+                hcpAnalysis
                 label="Driver"
                 title="Långt & rakt"
                 tone="bg-[#118267]"
@@ -854,6 +859,7 @@ function Home() {
             </Link>
             <Link to="/chipprundan" className="block shrink-0">
               <SimpleCard
+                hcpAnalysis
                 label="Chippning"
                 title="Närmast flaggan"
                 tone="bg-[#118267]"
@@ -863,6 +869,7 @@ function Home() {
             </Link>
             <Link to="/puttrundan" className="block shrink-0">
               <SimpleCard
+                hcpAnalysis
                 label="Puttning"
                 title="Sänk den!"
                 tone="bg-[#118267]"
@@ -872,6 +879,7 @@ function Home() {
             </Link>
             <Link to="/inspelsrundan" className="block shrink-0">
               <SimpleCard
+                hcpAnalysis
                 label="Inspel"
                 title="Mitt i prick"
                 tone="bg-[#118267]"
@@ -881,6 +889,7 @@ function Home() {
             </Link>
             <Link to="/bunkerrundan" className="block shrink-0">
               <SimpleCard
+                hcpAnalysis
                 label="Bunker"
                 title="Sandjakten"
                 tone="bg-[#118267]"
