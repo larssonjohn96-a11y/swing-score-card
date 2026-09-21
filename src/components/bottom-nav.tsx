@@ -161,7 +161,7 @@ export function BottomNav() {
             <span className="h-[2px] w-5 bg-border" />
             <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
           </div>
-          <SheetTitle className="text-left font-display text-[34px] leading-none">Spela</SheetTitle>
+          <SheetTitle className="text-left font-display text-[34px] leading-none">Match</SheetTitle>
           <p className="text-left text-sm text-muted-foreground">Välj hur du vill tävla.</p>
         </SheetHeader>
 

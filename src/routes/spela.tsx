@@ -5,7 +5,7 @@ import { recordRecommendationImpressions, recordRecommendationOpen } from "@/lib
 
 export const Route = createFileRoute("/spela")({
   head: () => ({
-    meta: [{ title: "Spela – SG4" }],
+    meta: [{ title: "Match – SG4" }],
     links: [{ rel: "preload", href: "/Red_vs_blue_1.png", as: "image" }],
   }),
   component: PlayPage,
@@ -102,7 +102,7 @@ function PlayPage() {
         </Link>
         <div className="text-center">
           <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#667b99]">SG4 Match</p>
-          <p className="mt-1 font-display text-[18px] leading-none text-[#061126]">Spela</p>
+          <p className="mt-1 font-display text-[18px] leading-none text-[#061126]">Match</p>
         </div>
         <span />
       </header>
@@ -123,7 +123,7 @@ function PlayPage() {
           <div className="pointer-events-none absolute inset-y-0 right-0 w-1/2 bg-[#ff5e5e]/8" />
 
           <div className="absolute inset-x-0 bottom-0 z-10 px-5 pb-5 text-white">
-            <p className="text-[10px] font-black uppercase tracking-[.18em] text-white/82">Spela</p>
+            <p className="text-[10px] font-black uppercase tracking-[.18em] text-white/82">Match</p>
             <h1 className="mt-1 font-display text-[36px] leading-[.94] tracking-[-0.03em] text-white drop-shadow-[0_2px_14px_rgba(0,0,0,.35)]">
               Välj din match
             </h1>
@@ -135,7 +135,6 @@ function PlayPage() {
       </section>
 
       <section className="relative z-10 mt-5 space-y-3.5 px-5">
-        <PlayCard href="/spela-runda" title="Spel & utmaningar" />
         <PlayCard href="/match?flow=friend" title="Spela mot vän" recommendationId="play-friend" />
         <PlayCard href="/match-bot" title="Spela mot bot" recommendationId="play-bot" />
         <PlayCard href="/match?flow=team" title="Spela i lag" recommendationId="play-team" />

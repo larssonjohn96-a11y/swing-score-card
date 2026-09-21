@@ -652,19 +652,21 @@ function Home() {
               to="/spela"
               className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black"
             >
-              Spela
-            </Link>
-            <Link
-              to="/uppvarmning"
-              className="shrink-0 rounded-full border border-blue-200 bg-blue-50 px-4 py-2.5 text-xs font-black text-blue-700"
-            >
-              Uppvärmning
+              Match
             </Link>
             <Link
               to="/spela-runda"
               className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black"
             >
               Spel & utmaningar
+            </Link>
+            <Link to="/coach" className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black">Träning</Link>
+            <Link to="/standardiserade-tester" className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black">Standardiserade tester</Link>
+            <Link
+              to="/uppvarmning"
+              className="shrink-0 rounded-full border border-blue-200 bg-blue-50 px-4 py-2.5 text-xs font-black text-blue-700"
+            >
+              Uppvärmning
             </Link>
             <Link
               to="/tester"
@@ -788,7 +790,7 @@ function Home() {
             <div className="flex items-center gap-3 px-5 py-4">
               <div className="min-w-0 flex-1">
                 <p className="text-[10px] font-black uppercase tracking-[.18em] text-blue-600">
-                  Spela
+                  Match
                 </p>
                 <h2 className="mt-1 text-xl font-black text-foreground">Utmana en vän</h2>
                 <div className="mt-3 flex items-center gap-2">
@@ -821,7 +823,6 @@ function Home() {
         </section>
 
         <ActiveMultiplayerBanner inline />
-        <WarmUpHomeCard />
 
         <section className="mt-7" aria-label="Spel & utmaningar">
           <div className="flex flex-wrap items-end justify-between gap-3 px-0.5">
@@ -896,7 +897,7 @@ function Home() {
         </section>
 
         <section className="mt-7">
-          <BrowseHeading title="Träna" subtitle="Practice Mode" action="Alla pass" to="/coach" />
+          <BrowseHeading title="Träning" subtitle="Practice Mode" action="Alla pass" to="/coach" />
           <DragScrollRow>
             <Link
               to="/coach"
@@ -923,6 +924,57 @@ function Home() {
             </Link>
           </DragScrollRow>
         </section>
+
+
+
+        <section className="mt-7">
+          <BrowseHeading
+            title="Standardiserade tester"
+            subtitle="Mät specifika delar av spelet"
+            action="Alla tester"
+            to="/standardiserade-tester"
+          />
+          <DragScrollRow>
+            <Link to="/8-bollar" className="block shrink-0">
+              <SimpleCard
+                label="Precision"
+                title="8 Bollar"
+                tone="bg-[#6757c7]"
+                imageSrc="/b01e80c1-ac1d-4d11-81f0-5b9f362d0777.png"
+              />
+            </Link>
+            <Link to="/tutor-test" className="block shrink-0">
+              <SimpleCard
+                label="Startlinje"
+                title="Tutor Test"
+                tone="bg-[#4955a7]"
+                imageSrc="/b01e80c1-ac1d-4d11-81f0-5b9f362d0777.png"
+              />
+            </Link>
+            <Link to="/pga-tour-18-puttar" className="block shrink-0">
+              <SimpleCard
+                label="Scoring"
+                title="18 Puttar"
+                tone="bg-[#a94c57]"
+                imageSrc="/b01e80c1-ac1d-4d11-81f0-5b9f362d0777.png"
+              />
+            </Link>
+            <Link to="/approach-pei-valj" className="block shrink-0">
+              <SimpleCard label="Precision" title="PEI Approach" tone="bg-[#217d8c]" />
+            </Link>
+            <Link to="/driver-konsekvens" className="block shrink-0">
+              <SimpleCard label="Konsekvens" title="Driver" tone="bg-[#a76632]" />
+            </Link>
+            <Link to="/upp-och-in" className="block shrink-0">
+              <SimpleCard label="Närspel" title="Upp & In" tone="bg-[#247760]" />
+            </Link>
+            <Link to="/standardiserade-tester" className="block shrink-0">
+              <SimpleCard label="Bibliotek" title="Alla tester" tone="bg-[#334155]" />
+            </Link>
+          </DragScrollRow>
+        </section>
+
+        <WarmUpHomeCard />
 
         <section className="mt-7">
           <BrowseHeading
@@ -968,53 +1020,6 @@ function Home() {
               className="block shrink-0"
             >
               <SimpleCard label="HCP Test" title="Off the Tee" tone="bg-[#3f4b5d]" />
-            </Link>
-          </DragScrollRow>
-        </section>
-
-        <section className="mt-7">
-          <BrowseHeading
-            title="Standardiserade tester"
-            subtitle="Mät specifika delar av spelet"
-            action="Alla tester"
-            to="/standardiserade-tester"
-          />
-          <DragScrollRow>
-            <Link to="/8-bollar" className="block shrink-0">
-              <SimpleCard
-                label="Precision"
-                title="8 Bollar"
-                tone="bg-[#6757c7]"
-                imageSrc="/b01e80c1-ac1d-4d11-81f0-5b9f362d0777.png"
-              />
-            </Link>
-            <Link to="/tutor-test" className="block shrink-0">
-              <SimpleCard
-                label="Startlinje"
-                title="Tutor Test"
-                tone="bg-[#4955a7]"
-                imageSrc="/b01e80c1-ac1d-4d11-81f0-5b9f362d0777.png"
-              />
-            </Link>
-            <Link to="/pga-tour-18-puttar" className="block shrink-0">
-              <SimpleCard
-                label="Scoring"
-                title="18 Puttar"
-                tone="bg-[#a94c57]"
-                imageSrc="/b01e80c1-ac1d-4d11-81f0-5b9f362d0777.png"
-              />
-            </Link>
-            <Link to="/approach-pei-valj" className="block shrink-0">
-              <SimpleCard label="Precision" title="PEI Approach" tone="bg-[#217d8c]" />
-            </Link>
-            <Link to="/driver-konsekvens" className="block shrink-0">
-              <SimpleCard label="Konsekvens" title="Driver" tone="bg-[#a76632]" />
-            </Link>
-            <Link to="/upp-och-in" className="block shrink-0">
-              <SimpleCard label="Närspel" title="Upp & In" tone="bg-[#247760]" />
-            </Link>
-            <Link to="/standardiserade-tester" className="block shrink-0">
-              <SimpleCard label="Bibliotek" title="Alla tester" tone="bg-[#334155]" />
             </Link>
           </DragScrollRow>
         </section>
