@@ -21,6 +21,42 @@ function RoundGamesPage() {
       <h1 className="mt-6 text-3xl font-black">Spel & utmaningar</h1>
       <p className="mt-2 text-base text-slate-500">Slå ditt personbästa och se din HCP-nivå.</p>
       <Link
+        to="/speedrundan"
+        className="relative mt-6 block overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-sm"
+      >
+        <span className="absolute right-3 top-3 z-10 rounded-full bg-blue-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm">HCP-analys</span>
+        <img src="/Off_the_tee.png" alt="" className="h-48 w-full object-cover object-[18%_50%]" />
+        <div className="flex items-center justify-between gap-3 p-5">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-emerald-700">
+               Speed
+            </p>
+            <h2 className="mt-1 text-2xl font-black">Maxfart</h2>
+            <p className="mt-1 text-sm text-slate-500">Upptäck din fart och längdpotential.</p>
+          </div>
+          <ChevronRight className="h-6 w-6 shrink-0 text-blue-600" />
+        </div>
+      </Link>
+      <Link
+        to="/driverrundan"
+        className="relative mt-6 block overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-sm"
+      >
+        <span className="absolute right-3 top-3 z-10 rounded-full bg-blue-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm">HCP-analys</span>
+        <img src="/Off_the_tee.png" alt="" className="h-48 w-full object-cover object-[18%_50%]" />
+        <div className="flex items-center justify-between gap-3 p-5">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-emerald-700">
+               Driver
+            </p>
+            <h2 className="mt-1 text-2xl font-black">Långt & rakt</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Hur långt kan du slå och hålla linjen?
+            </p>
+          </div>
+          <ChevronRight className="h-6 w-6 shrink-0 text-blue-600" />
+        </div>
+      </Link>
+      <Link
         to="/chipprundan"
         className="relative mt-6 block overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-sm"
       >
@@ -75,42 +111,6 @@ function RoundGamesPage() {
             </p>
             <h2 className="mt-1 text-2xl font-black">Mitt i prick</h2>
             <p className="mt-1 text-sm text-slate-500">Upptäck hur vassa dina inspel är.</p>
-          </div>
-          <ChevronRight className="h-6 w-6 shrink-0 text-blue-600" />
-        </div>
-      </Link>
-      <Link
-        to="/driverrundan"
-        className="relative mt-6 block overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-sm"
-      >
-        <span className="absolute right-3 top-3 z-10 rounded-full bg-blue-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm">HCP-analys</span>
-        <img src="/Off_the_tee.png" alt="" className="h-48 w-full object-cover object-[18%_50%]" />
-        <div className="flex items-center justify-between gap-3 p-5">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wide text-emerald-700">
-               Driver
-            </p>
-            <h2 className="mt-1 text-2xl font-black">Långt & rakt</h2>
-            <p className="mt-1 text-sm text-slate-500">
-              Hur långt kan du slå och hålla linjen?
-            </p>
-          </div>
-          <ChevronRight className="h-6 w-6 shrink-0 text-blue-600" />
-        </div>
-      </Link>
-      <Link
-        to="/speedrundan"
-        className="relative mt-6 block overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-sm"
-      >
-        <span className="absolute right-3 top-3 z-10 rounded-full bg-blue-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm">HCP-analys</span>
-        <img src="/Off_the_tee.png" alt="" className="h-48 w-full object-cover object-[18%_50%]" />
-        <div className="flex items-center justify-between gap-3 p-5">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wide text-emerald-700">
-               Speed
-            </p>
-            <h2 className="mt-1 text-2xl font-black">Maxfart</h2>
-            <p className="mt-1 text-sm text-slate-500">Upptäck din fart och längdpotential.</p>
           </div>
           <ChevronRight className="h-6 w-6 shrink-0 text-blue-600" />
         </div>

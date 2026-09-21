@@ -834,6 +834,24 @@ function Home() {
             </Link>
           </div>
           <DragScrollRow>
+            <Link to="/speedrundan" className="block shrink-0">
+              <SimpleCard
+                label="Speed"
+                title="Maxfart"
+                tone="bg-[#118267]"
+                imageSrc="/Off_the_tee.png"
+                imagePosition="18% 50%"
+              />
+            </Link>
+            <Link to="/driverrundan" className="block shrink-0">
+              <SimpleCard
+                label="Driver"
+                title="Långt & rakt"
+                tone="bg-[#118267]"
+                imageSrc="/Off_the_tee.png"
+                imagePosition="18% 50%"
+              />
+            </Link>
             <Link to="/chipprundan" className="block shrink-0">
               <SimpleCard
                 label="Chippning"
@@ -858,24 +876,6 @@ function Home() {
                 title="Mitt i prick"
                 tone="bg-[#118267]"
                 imageSrc="/Approach_shot.png"
-                imagePosition="18% 50%"
-              />
-            </Link>
-            <Link to="/driverrundan" className="block shrink-0">
-              <SimpleCard
-                label="Driver"
-                title="Långt & rakt"
-                tone="bg-[#118267]"
-                imageSrc="/Off_the_tee.png"
-                imagePosition="18% 50%"
-              />
-            </Link>
-            <Link to="/speedrundan" className="block shrink-0">
-              <SimpleCard
-                label="Speed"
-                title="Maxfart"
-                tone="bg-[#118267]"
-                imageSrc="/Off_the_tee.png"
                 imagePosition="18% 50%"
               />
             </Link>
