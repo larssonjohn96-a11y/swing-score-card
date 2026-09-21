@@ -145,7 +145,7 @@ function BrowseHeading({
   to: string;
 }) {
   return (
-    <div className="flex items-end justify-between gap-3 px-0.5">
+    <div className="flex flex-wrap items-end justify-between gap-3 px-0.5">
       <div>
         <h2 className="text-[24px] font-black leading-none text-foreground">{title}</h2>
         <p className="mt-1.5 text-[10px] font-black uppercase tracking-[.18em] text-muted-foreground">
@@ -664,7 +664,7 @@ function Home() {
               to="/spela-runda"
               className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black"
             >
-              Spela en runda
+              Spel & utmaningar
             </Link>
             <Link
               to="/tester"
@@ -823,25 +823,25 @@ function Home() {
         <ActiveMultiplayerBanner inline />
         <WarmUpHomeCard />
 
-        <section className="mt-7" aria-label="Spela en runda">
-          <div className="flex items-end justify-between gap-3 px-0.5">
+        <section className="mt-7" aria-label="Spel & utmaningar">
+          <div className="flex flex-wrap items-end justify-between gap-3 px-0.5">
             <div>
               <h2 className="text-[24px] font-black leading-none text-foreground">
-                Spela en runda
+                Spel & utmaningar
               </h2>
               <p className="mt-1.5 text-sm text-muted-foreground">
-                Slå ditt personbästa och få ett HCP-resultat.
+                Slå ditt personbästa och se din HCP-nivå.
               </p>
             </div>
             <Link to="/spela-runda" className="shrink-0 text-xs font-bold text-blue-600">
-              Alla rundor
+              Visa alla
             </Link>
           </div>
           <DragScrollRow>
             <Link to="/chipprundan" className="block shrink-0">
               <SimpleCard
-                label="Spela själv"
-                title="Chipprundan"
+                label="Chippning"
+                title="Närmast flaggan"
                 tone="bg-[#118267]"
                 imageSrc="/0d286fd4-99fa-47eb-b39c-a7ff718ebdd6.png"
                 imagePosition="18% 50%"
@@ -849,8 +849,8 @@ function Home() {
             </Link>
             <Link to="/puttrundan" className="block shrink-0">
               <SimpleCard
-                label="Spela själv"
-                title="Puttrundan"
+                label="Puttning"
+                title="Sänk den!"
                 tone="bg-[#118267]"
                 imageSrc="/Putting_1.png"
                 imagePosition="18% 50%"
@@ -858,8 +858,8 @@ function Home() {
             </Link>
             <Link to="/inspelsrundan" className="block shrink-0">
               <SimpleCard
-                label="Spela själv"
-                title="Inspelsrundan"
+                label="Inspel"
+                title="Mitt i prick"
                 tone="bg-[#118267]"
                 imageSrc="/Approach_shot.png"
                 imagePosition="18% 50%"
@@ -867,8 +867,8 @@ function Home() {
             </Link>
             <Link to="/driverrundan" className="block shrink-0">
               <SimpleCard
-                label="Spela själv"
-                title="Driverrundan"
+                label="Driver"
+                title="Långt & rakt"
                 tone="bg-[#118267]"
                 imageSrc="/Off_the_tee.png"
                 imagePosition="18% 50%"
@@ -876,8 +876,8 @@ function Home() {
             </Link>
             <Link to="/speedrundan" className="block shrink-0">
               <SimpleCard
-                label="Spela själv"
-                title="Speedrundan"
+                label="Speed"
+                title="Maxfart"
                 tone="bg-[#118267]"
                 imageSrc="/Off_the_tee.png"
                 imagePosition="18% 50%"
@@ -885,8 +885,8 @@ function Home() {
             </Link>
             <Link to="/bunkerrundan" className="block shrink-0">
               <SimpleCard
-                label="Spela själv"
-                title="Bunkerrundan"
+                label="Bunker"
+                title="Sandjakten"
                 tone="bg-[#118267]"
                 imageSrc="/bunker-round.svg"
                 imagePosition="18% 50%"
