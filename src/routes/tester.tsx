@@ -5,5 +5,5 @@ export const Route = createFileRoute("/tester")({
 });
 
 function LegacyTesterRedirect() {
-  return <Navigate to="/hcp-tests" replace />;
+  return <Navigate to="/standardiserade-tester" replace />;
 }

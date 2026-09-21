@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { CATEGORIES } from "@/lib/categories";
 import { ArrowLeft, ChevronRight } from "lucide-react";
 
 export const Route = createFileRoute("/standardiserade-tester")({
@@ -26,7 +27,7 @@ type TestSection = {
   tests: TestCard[];
 };
 
-const TEST_SECTIONS: TestSection[] = [
+const EXISTING_SECTIONS: TestSection[] = [
   {
     title: "Puttning",
     subtitle: "Startlinje, kortputt och längdkontroll",
@@ -70,6 +71,24 @@ const TEST_SECTIONS: TestSection[] = [
     ],
   },
 ];
+
+// The former HCP tests now live alongside the other tests for each skill.
+// Read the existing registry so each original protocol remains accessible.
+const CATEGORY_SECTION: Record<string, string> = {
+  puttning: "Puttning", "around-the-green": "Närspel", approach: "Inspel", driving: "Off the Tee",
+};
+const TEST_SECTIONS: TestSection[] = EXISTING_SECTIONS.map(section => {
+  const additions = CATEGORIES.filter(category => CATEGORY_SECTION[category.slug] === section.title)
+    .flatMap(category => category.tests.map(test => ({
+      to: test.to, title: test.title, label: "Nivåtest", description: test.subtitle,
+      tone: section.tests[0]?.tone ?? "bg-[#334155]",
+    })));
+  const tests = [...additions, ...section.tests];
+  return { ...section, tests: tests.filter((test, i) => tests.findIndex(t => t.to === test.to) === i) };
+});
+TEST_SECTIONS.push({ title: "Speed", subtitle: "Bollhastighet och längdpotential", tests: [
+  { to: "/speed-test", title: "Ball Speed Test", label: "Bollhastighet", description: "Mät din bollhastighet och få analys av din nivå och driverpotential.", tone: "bg-[#7a4f32]" },
+] });
 
 function TestCardView({ test }: { test: TestCard }) {
   return (

@@ -43,7 +43,7 @@ type QuickStart = {
   eyebrow: string;
   title: string;
   detail: string;
-  to: "/tester" | "/spela" | "/coach";
+  to: "/standardiserade-tester" | "/spela" | "/coach";
   activityId: string;
 };
 type CompareTarget = "30" | "20" | "10" | "0" | "+3" | "tour";
@@ -560,9 +560,9 @@ function Home() {
     if (noBaseline)
       return {
         eyebrow: "Kom igång",
-        title: "Gör ditt första HCP-test",
+        title: "Gör ditt första test",
         detail: "Få ett första resultat och börja bygga din spelarprofil.",
-        to: "/tester",
+        to: "/standardiserade-tester",
         activityId: "hcp-test",
       };
     const playScore = Math.max(
@@ -583,9 +583,9 @@ function Home() {
     if (testScore > playScore)
       return {
         eyebrow: "Snabbstart",
-        title: "Gör ett nytt HCP-test",
+        title: "Gör ett nytt test",
         detail: "Få ett nytt resultat direkt.",
-        to: "/tester",
+        to: "/standardiserade-tester",
         activityId: "hcp-test",
       };
     return {
@@ -668,12 +668,7 @@ function Home() {
             >
               Uppvärmning
             </Link>
-            <Link
-              to="/tester"
-              className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black"
-            >
-              HCP Tester
-            </Link>
+
             <Link
               to="/utveckling"
               className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black"
@@ -976,53 +971,7 @@ function Home() {
 
         <WarmUpHomeCard />
 
-        <section className="mt-7">
-          <BrowseHeading
-            title="Testa din nivå"
-            subtitle="Få ett HCP-resultat"
-            action="Alla HCP-test"
-            to="/tester"
-          />
-          <DragScrollRow>
-            <Link
-              to="/kategori/$slug"
-              params={{ slug: "puttning" }}
-              onClick={() => recordRecommendationOpen("hcp-test")}
-              className="block shrink-0"
-            >
-              <SimpleCard
-                label="HCP Test"
-                title="Putting"
-                tone="bg-[#7656c9]"
-                imageSrc="/b01e80c1-ac1d-4d11-81f0-5b9f362d0777.png"
-              />
-            </Link>
-            <Link
-              to="/kategori/$slug"
-              params={{ slug: "around-the-green" }}
-              onClick={() => recordRecommendationOpen("hcp-test")}
-              className="block shrink-0"
-            >
-              <SimpleCard label="HCP Test" title="Around the Green" tone="bg-[#2d8a58]" />
-            </Link>
-            <Link
-              to="/kategori/$slug"
-              params={{ slug: "approach" }}
-              onClick={() => recordRecommendationOpen("hcp-test")}
-              className="block shrink-0"
-            >
-              <SimpleCard label="HCP Test" title="Approach" tone="bg-[#2f76b7]" />
-            </Link>
-            <Link
-              to="/kategori/$slug"
-              params={{ slug: "driving" }}
-              onClick={() => recordRecommendationOpen("hcp-test")}
-              className="block shrink-0"
-            >
-              <SimpleCard label="HCP Test" title="Off the Tee" tone="bg-[#3f4b5d]" />
-            </Link>
-          </DragScrollRow>
-        </section>
+
 
         <section className="mt-8 pb-2">
           <div className="flex items-end justify-between">
