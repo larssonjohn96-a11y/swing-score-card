@@ -32,7 +32,7 @@ function UtvecklingPage() {
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-28 pt-4">
-      <div className="pt-3"><p className="text-[10px] font-black uppercase tracking-[.2em] text-blue-600">Jämför</p><h1 className="mt-1 font-display text-[38px] leading-none">Hur står du dig?</h1><p className="mt-3 text-sm text-muted-foreground">Jämför din totala SG4-nivå med olika handicapnivåer eller en vän.</p></div>
+      <div className="pt-3"><p className="text-[10px] font-black uppercase tracking-[.2em] text-blue-600">Jämför</p><h1 className="mt-1 font-display text-[38px] leading-none">Hur står du dig?</h1><p className="mt-3 text-sm text-muted-foreground">Jämför din nivå med olika handicapnivåer eller en vän.</p></div>
 
       {!data ? null : !hasData ? (
         <p className="mt-10 rounded-3xl border border-dashed border-border bg-card/50 p-6 text-center text-sm text-muted-foreground">
