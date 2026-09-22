@@ -159,7 +159,7 @@ function StandardizedTestsPage() {
       </div>
 
       <div className="space-y-8 px-5 pt-8">
-        {favoriteTests.length ? <section>
+        <section>
           <div className="px-0.5">
             <h2 className="text-[24px] font-black leading-none text-foreground">Mina favoriter</h2>
             <p className="mt-1.5 text-[10px] font-black uppercase tracking-[.16em] text-muted-foreground">Dina sparade tester</p>
@@ -173,10 +173,16 @@ function StandardizedTestsPage() {
               ] as const).map(([id, label]) => <button key={id} type="button" onClick={() => setFavoriteFilter(id)} className={`shrink-0 rounded-full border px-3 py-1.5 text-[10px] font-bold transition ${favoriteFilter === id ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-transparent text-muted-foreground"}`}>{label}</button>)}
             </div>
           </div>
-          <div className="-mx-5 mt-3.5 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {visibleFavoriteTests.map(test => <TestCardView key={`favorite-${test.to}`} test={test} favorite onToggleFavorite={() => toggleFavorite(test.to)} />)}
+          <div className="-mx-5 mt-3.5 flex min-h-[221px] gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {visibleFavoriteTests.length ? visibleFavoriteTests.map(test => <TestCardView key={`favorite-${test.to}`} test={test} favorite onToggleFavorite={() => toggleFavorite(test.to)} />) : (
+              <div className="flex h-[220px] w-[164px] shrink-0 flex-col items-center justify-center rounded-[24px] border border-dashed border-slate-200 bg-slate-50/60 px-4 text-center">
+                <Star className="h-6 w-6 text-slate-300" />
+                <p className="mt-3 text-sm font-bold text-slate-500">Ingen favorit sparad</p>
+                <p className="mt-1 text-[11px] leading-snug text-slate-400">Stjärnmarkera ett test för att lägga det här.</p>
+              </div>
+            )}
           </div>
-        </section> : null}
+        </section>
         {TEST_SECTIONS.map((section) => (
           <section key={section.title}>
             <div className="px-0.5">
