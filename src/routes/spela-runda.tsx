@@ -33,7 +33,7 @@ function RoundGamesPage() {
       <section className="mt-6 px-1">
         <p className="text-[10px] font-black uppercase tracking-[.2em] text-blue-600">Spel & utmaningar</p>
         <h1 className="mt-1 font-display text-[38px] leading-none">Hur bra är ditt spel?</h1>
-        <p className="mt-3 max-w-sm text-sm leading-relaxed text-slate-500">Spela en kategori och få din nivå direkt efter rundan. Vilken är du bäst på?</p>
+        <p className="mt-3 max-w-sm text-sm leading-relaxed text-slate-500">Välj en kategori, spela och se din nivå. Vilken är du bäst på?</p>
       </section>
       <section className="mt-7">
         <h2 className="px-0.5 font-display text-[26px] leading-none">Mina favoriter</h2>
