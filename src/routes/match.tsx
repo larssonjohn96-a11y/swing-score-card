@@ -45,10 +45,10 @@ const LOCAL_MATCH_KEY = "sg4.active-match.v1";
 
 const CATEGORIES = [
   { id: "putting", title: "Puttning", subtitle: "Putting", description: "Spela en riktig puttingmatch hål för hål. Färre puttar vinner hålet." },
-  { id: "around-the-green", title: "Närspel", subtitle: "Närmast flaggan", description: "Samma mål för båda. Närmast hålet vinner." },
+  { id: "around-the-green", title: "Chippning", subtitle: "Chipping", description: "Chippingmatch mot samma mål. Närmast hålet vinner." },
   { id: "bunker", title: "Bunker", subtitle: "Bunkerslag", description: "Samma bunkerläge för båda. Närmast hålet vinner." },
   { id: "approach", title: "Inspel", subtitle: "Järn & wedge · närmast flaggan", description: "Slå mot samma mål från varierade avstånd. Närmast flaggan vinner." },
-  { id: "off-the-tee", title: "Utslag", subtitle: "Längd & precision", description: "Längsta godkända drive inom en 30 meter bred fairway vinner." },
+  { id: "off-the-tee", title: "Driver", subtitle: "Driver · fairway", description: "Längsta godkända drive inom en 30 meter bred fairway vinner." },
   { id: "speed", title: "Speed", subtitle: "Ball speed", description: "Match Play i speed. Högsta ball speed vinner varje omgång." },
 ] as const;
 
@@ -903,10 +903,9 @@ function MatchPlayPage() {
         <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Match</p>
         <h1 className="mt-1 font-display text-4xl">Vad ska ni tävla i?</h1>
       </section>
-      <div className="mt-6 grid grid-cols-2 gap-3">{CATEGORIES.map((i) => { const active = category === i.id; return <button key={i.id} onClick={() => { setCategory(i.id); setScoringMode("match"); }} className={`relative flex min-h-[116px] w-full flex-col justify-end rounded-[24px] border p-4 text-left transition active:scale-[.985] ${active ? selectedRing : glass}`}>
+      <div className="mt-6 grid grid-cols-2 gap-3">{CATEGORIES.map((i) => { const active = category === i.id; return <button key={i.id} onClick={() => { setCategory(i.id); setScoringMode("match"); }} className={`relative flex min-h-32 w-full items-center rounded-[26px] border p-4 text-left transition active:scale-[.985] ${active ? selectedRing : glass}`}>
         {active ? <SelectedCheck /> : null}
-        <span className={`font-display text-[25px] leading-none ${active ? "text-blue-700" : "text-slate-950"}`}>{i.title}</span>
-        <span className="mt-1.5 text-[11px] font-medium text-slate-500">{i.subtitle}</span>
+        <span className="font-display text-[27px] leading-[.95] text-slate-950">{i.title}</span>
       </button>; })}</div>
       <button disabled={!category} onClick={() => {
         if (!category) return;
