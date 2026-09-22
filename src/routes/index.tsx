@@ -673,7 +673,7 @@ function Home() {
         <section className="grid grid-cols-[1.6fr_1fr] gap-2">
           <Link
             to="/vanner"
-            className="relative flex h-[64px] items-center overflow-hidden rounded-[22px] border border-white/75 bg-card/66 px-3.5 shadow-[0_14px_38px_-24px_rgba(15,23,42,.42),inset_0_1px_0_rgba(255,255,255,.95)] backdrop-blur-[28px] supports-[backdrop-filter]:bg-card/56"
+            className="relative flex h-[64px] items-center overflow-hidden rounded-[22px] border border-sky-200/70 bg-sky-50/70 px-3.5 shadow-[0_14px_38px_-24px_rgba(15,23,42,.32),inset_0_1px_0_rgba(255,255,255,.95)] backdrop-blur-[28px]"
           >
             <span className="pointer-events-none absolute inset-[1px] rounded-[21px] border border-white/22" />
             <div className="relative z-10 flex w-full items-center justify-start">
@@ -705,7 +705,7 @@ function Home() {
               </div>
             </div>
           </Link>
-          <Link to="/jamfor" className="relative flex h-[64px] items-center justify-center overflow-hidden rounded-[22px] border border-white/75 bg-card/66 px-3 text-center shadow-[0_14px_38px_-24px_rgba(15,23,42,.42),inset_0_1px_0_rgba(255,255,255,.95)] backdrop-blur-[28px] supports-[backdrop-filter]:bg-card/56">
+          <Link to="/jamfor" className="relative flex h-[64px] items-center justify-center overflow-hidden rounded-[22px] border border-red-200/70 bg-red-50/60 px-3 text-center shadow-[0_14px_38px_-24px_rgba(15,23,42,.32),inset_0_1px_0_rgba(255,255,255,.95)] backdrop-blur-[28px]">
             <span className="pointer-events-none absolute inset-[1px] rounded-[21px] border border-white/22" />
             <span className="relative z-10"><span className="block text-[10px] font-black uppercase tracking-[.12em] text-blue-600">Jämför</span><strong className="mt-0.5 block text-sm font-black">H2H</strong></span>
           </Link>
