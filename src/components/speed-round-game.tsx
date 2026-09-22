@@ -252,21 +252,14 @@ export function SpeedRoundGame({
       setFresh(null);
     } else onExit();
   }
+  const allFullRounds = state.history.filter((r) => r.status === "full");
+  const allBallSpeeds = allFullRounds.flatMap((r) => r.holes.flatMap((hole) => hole.map((shot) => shot.ballSpeed).filter((v) => Number.isFinite(v) && v > 0)));
+  const recordBallSpeed = allBallSpeeds.length ? Math.max(...allBallSpeeds) : null;
+  const averageBallSpeed = allBallSpeeds.length ? allBallSpeeds.reduce((sum, v) => sum + v, 0) / allBallSpeeds.length : null;
   const records = (
     <div className="grid grid-cols-2 gap-3 rounded-2xl bg-blue-50 p-4 text-center">
-      <div>
-        <strong className="block text-2xl text-amber-600">{best.stars ?? "–"} / 9 ★</strong>
-        <p className="text-xs text-slate-500">Personligt stjärnrekord</p>
-      </div>
-      <div>
-        <strong className="block text-2xl text-blue-700">
-          {best.points === null ? "–" : best.points}
-        </strong>
-        <p className="text-xs text-slate-500">Bästa speedpoäng · max 100</p>
-      </div>
-      <p className="col-span-2 text-sm text-blue-700">
-        Snabbaste slag: <strong>{best.top === null ? "–" : fmt(best.top)} mph</strong>
-      </p>
+      <div><strong className="block text-2xl text-blue-700">{recordBallSpeed === null ? "–" : fmt(recordBallSpeed)} mph</strong><p className="text-xs text-slate-500">Högsta ball speed</p></div>
+      <div><strong className="block text-2xl text-blue-700">{averageBallSpeed === null ? "–" : fmt(averageBallSpeed)} mph</strong><p className="text-xs text-slate-500">Snitt ball speed</p></div>
     </div>
   );
   if (!ready) return <main className="p-8 text-center">Laddar Speedrundan…</main>;
@@ -470,48 +463,16 @@ export function SpeedRoundGame({
                     : "Bra spelat!"}
             </h1>
             <div className="mt-4 grid grid-cols-2 gap-3 rounded-3xl bg-white p-4">
-              <div>
-                <strong className="text-5xl font-black text-amber-500">
-                  {String(stars).replace(".", ",")}
-                </strong>
-                <p className="mt-2 text-xs text-slate-500">av {round.holes.length * 3} stjärnor</p>
-              </div>
-              <div>
-                <strong className="text-4xl font-black text-blue-700">{roundPoints(round)}</strong>
-                <p className="mt-2 text-xs text-slate-500">Speedpoäng · max 100</p>
-              </div>
+              <div><strong className="text-4xl font-black text-blue-700">{fmt(objectiveResult(round).topBallSpeed)}</strong><p className="mt-2 text-xs text-slate-500">Högsta ball speed · mph</p></div>
+              <div><strong className="text-4xl font-black text-blue-700">{fmt(objectiveResult(round).avgBallSpeed)}</strong><p className="mt-2 text-xs text-slate-500">Snitt ball speed · mph</p></div>
             </div>
           </div>
-          {round.status === "full" && (
-            <>
-              {levelUp && fresh === round.id && (
-                <SpeedMilestones stars={stars} previous={oldBest.stars ?? 0} />
-              )}
-              <div
-                className={`rounded-2xl bg-blue-50 p-4 text-center ${beatAverage && fresh === round.id ? "speed-average-win" : ""}`}
-              >
-                <p className="text-sm font-bold text-blue-700">
-                  Rundsnitt · senaste {speedAverage([...before, round]).count}
-                </p>
-                <strong className="text-2xl text-blue-700">
-                  {oldAverage.count ? `${fmt(oldAverage.points)} → ` : ""}
-                  {fmt(speedAverage([...before, round]).points)} p
-                </strong>
-              </div>
-            </>
-          )}
           <SpeedRoundImpact
             round={round}
             before={before}
             userId={userId}
             fresh={fresh === round.id}
           />
-          <p className="text-center text-sm text-slate-500">
-            {fmt(objectiveResult(round).avgBallSpeed)} mph i snitt ·{" "}
-            {fmt(objectiveResult(round).topBallSpeed)} mph topp
-            <br />
-            Personlig referens: {fmt(round.reference)} mph
-          </p>
           <SpeedDistancePotential ballSpeed={objectiveResult(round).topBallSpeed} />
           <SpeedCourseAnalysis round={round} />
           <p className="text-center text-sm font-semibold text-slate-600">{replay}</p>
@@ -572,8 +533,8 @@ export function SpeedRoundGame({
                   </small>
                 </span>
                 <span className="text-right">
-                  <strong className="block text-xl text-amber-600">{roundStars(r)} ★</strong>
-                  <span className="text-xs text-blue-700">{roundPoints(r)} speedpoäng →</span>
+                  <strong className="block text-xl text-blue-700">{fmt(objectiveResult(r).topBallSpeed)} mph</strong>
+                  <span className="text-xs text-slate-500">Snitt {fmt(objectiveResult(r).avgBallSpeed)} mph →</span>
                 </span>
               </button>
             ))}
