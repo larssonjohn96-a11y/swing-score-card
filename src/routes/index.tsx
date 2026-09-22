@@ -676,7 +676,7 @@ function Home() {
             className="relative flex h-[64px] items-center overflow-hidden rounded-[22px] border border-white/75 bg-card/66 px-3.5 shadow-[0_14px_38px_-24px_rgba(15,23,42,.42),inset_0_1px_0_rgba(255,255,255,.95)] backdrop-blur-[28px] supports-[backdrop-filter]:bg-card/56"
           >
             <span className="pointer-events-none absolute inset-[1px] rounded-[21px] border border-white/22" />
-            <div className="relative z-10 flex w-full items-center justify-start">
+            <div className="relative z-10 flex w-full items-center justify-between gap-3">
               <div className="flex shrink-0 -space-x-2">
                 {previewFriends.length ? (
                   previewFriends.map((friend, index) => (
@@ -703,6 +703,7 @@ function Home() {
                   Vänner
                 </span>
               </div>
+              <span className="shrink-0 rounded-full border border-blue-200 bg-blue-50/80 px-3 py-1.5 text-[10px] font-black uppercase tracking-[.1em] text-blue-700">Jämför H2H</span>
             </div>
           </Link>
 
