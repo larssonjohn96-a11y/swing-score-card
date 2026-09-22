@@ -580,15 +580,7 @@ export function SpeedRoundGame({
         </>
       ) : (
         <>
-          <div className="mb-3 flex items-center justify-between">
-            <button
-              data-local-navigation
-              aria-label="Tillbaka"
-              className="flex h-11 w-11 items-center justify-center"
-              onClick={back}
-            >
-              <ArrowLeft />
-            </button>
+          <div className="mb-3 flex justify-end">
             <button className="min-h-11 font-bold text-blue-600" onClick={() => setRules(true)}>
               Så här spelar du
             </button>
