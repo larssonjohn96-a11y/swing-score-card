@@ -1,4 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
+import { Star } from "lucide-react";
 import { CATEGORIES } from "@/lib/categories";
 
 export const Route = createFileRoute("/standardiserade-tester")({
@@ -93,9 +95,12 @@ const TEST_SECTIONS = TEST_ORDER
   .map(title => TEST_SECTIONS_UNSORTED.find(section => section.title === title))
   .filter((section): section is TestSection => Boolean(section));
 
-function TestCardView({ test }: { test: TestCard }) {
+const FAVORITES_KEY = "sg4-test-favorites-v1";
+
+function TestCardView({ test, favorite, onToggleFavorite }: { test: TestCard; favorite: boolean; onToggleFavorite: () => void }) {
   return (
-    <Link to={test.to as any} search={(test.search ?? {}) as any} className="block w-[164px] shrink-0">
+    <div className="relative w-[164px] shrink-0">
+      <Link to={test.to as any} search={(test.search ?? {}) as any} className="block">
       <article className={`relative flex h-[220px] flex-col justify-end overflow-hidden rounded-[24px] border border-black/[.04] px-4 pb-4 pt-4 text-white ${test.tone}`}>
         {test.imageSrc && (
           <>
@@ -109,11 +114,28 @@ function TestCardView({ test }: { test: TestCard }) {
           <p className="mt-2 line-clamp-2 text-[11px] leading-snug text-white/72">{test.description}</p>
         </div>
       </article>
-    </Link>
+      </Link>
+      <button type="button" aria-label={favorite ? `Ta bort ${test.title} från favoriter` : `Lägg till ${test.title} i favoriter`} aria-pressed={favorite} onClick={(event) => { event.preventDefault(); event.stopPropagation(); onToggleFavorite(); }} className="absolute right-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-black/20 text-white backdrop-blur-md transition active:scale-95">
+        <Star className={`h-5 w-5 ${favorite ? "fill-amber-300 text-amber-300" : "text-white"}`} />
+      </button>
+    </div>
   );
 }
 
 function StandardizedTestsPage() {
+  const [favorites, setFavorites] = useState<string[]>([]);
+  useEffect(() => {
+    try { const parsed = JSON.parse(localStorage.getItem(FAVORITES_KEY) ?? "[]"); if (Array.isArray(parsed)) setFavorites(parsed.filter((item): item is string => typeof item === "string")); } catch {}
+  }, []);
+  const allTests = useMemo(() => TEST_SECTIONS.flatMap(section => section.tests), []);
+  const favoriteTests = favorites.map(to => allTests.find(test => test.to === to)).filter((test): test is TestCard => Boolean(test));
+  function toggleFavorite(to: string) {
+    setFavorites(current => {
+      const next = current.includes(to) ? current.filter(item => item !== to) : [...current, to];
+      try { localStorage.setItem(FAVORITES_KEY, JSON.stringify(next)); } catch {}
+      return next;
+    });
+  }
   return (
     <main className="mx-auto min-h-screen w-full max-w-md bg-background pb-28">
       <div className="px-5 pt-6">
@@ -123,6 +145,15 @@ function StandardizedTestsPage() {
       </div>
 
       <div className="space-y-8 px-5 pt-8">
+        {favoriteTests.length ? <section>
+          <div className="px-0.5">
+            <h2 className="text-[24px] font-black leading-none text-foreground">Mina favoriter</h2>
+            <p className="mt-1.5 text-[10px] font-black uppercase tracking-[.16em] text-muted-foreground">Dina sparade tester</p>
+          </div>
+          <div className="-mx-5 mt-3.5 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {favoriteTests.map(test => <TestCardView key={`favorite-${test.to}`} test={test} favorite onToggleFavorite={() => toggleFavorite(test.to)} />)}
+          </div>
+        </section> : null}
         {TEST_SECTIONS.map((section) => (
           <section key={section.title}>
             <div className="flex items-end justify-between gap-3 px-0.5">
@@ -132,7 +163,7 @@ function StandardizedTestsPage() {
               </div>
             </div>
             <div className="-mx-5 mt-3.5 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {section.tests.map((test) => <TestCardView key={`${section.title}-${test.title}`} test={test} />)}
+              {section.tests.map((test) => <TestCardView key={`${section.title}-${test.title}`} test={test} favorite={favorites.includes(test.to)} onToggleFavorite={() => toggleFavorite(test.to)} />)}
             </div>
           </section>
         ))}
