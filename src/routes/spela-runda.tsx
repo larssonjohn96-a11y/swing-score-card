@@ -38,7 +38,7 @@ function RoundGamesPage() {
       <section className="mt-7">
         <h2 className="px-0.5 font-display text-[26px] leading-none">Mina favoriter</h2>
         <div className="-mx-5 mt-3 flex min-h-[190px] gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {favoriteGames.length ? favoriteGames.map(game=><Card key={game.to} game={game} small />) : <div className="flex h-[190px] w-[164px] shrink-0 flex-col items-center justify-center rounded-[24px] border border-dashed border-slate-200 bg-white px-4 text-center"><Star className="h-6 w-6 text-slate-300"/><p className="mt-3 text-sm font-bold text-slate-500">Inga favoriter än</p><p className="mt-1 text-[11px] text-slate-400">Tryck på stjärnan på ett spel.</p></div>}
+          {favoriteGames.length ? favoriteGames.map(game=><Card key={game.to} game={game} small />) : <div className="flex h-[190px] w-[164px] shrink-0 flex-col items-center justify-center rounded-[24px] border border-dashed border-slate-200 bg-white px-4 text-center"><Star className="h-6 w-6 text-slate-300"/><p className="mt-3 text-xs font-medium leading-snug text-slate-500">Tryck på ★ uppe till höger på ett spel för att lägga till det här.</p></div>}
         </div>
       </section>
       <section className="mt-8">
