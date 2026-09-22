@@ -881,26 +881,7 @@ function Home() {
           </DragScrollRow>
         </section>
 
-        <section className="mt-7">
-          <BrowseHeading
-            title="Testa ditt spel"
-            subtitle="Hur bra är du på olika delar av spelet?"
-            action="Alla tester"
-            to="/standardiserade-tester"
-          />
-          <Link to="/standardiserade-tester" className="relative mt-4 block h-[168px] overflow-hidden rounded-[26px] border border-slate-200 bg-slate-900 shadow-sm">
-            <img src="/b01e80c1-ac1d-4d11-81f0-5b9f362d0777.png" alt="" className="absolute inset-0 h-full w-full object-cover object-center" />
-            <span className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/38 to-black/10" />
-            <div className="absolute inset-0 flex items-end justify-between gap-4 p-5 text-white">
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[.18em] text-white/70">Tester</p>
-                <h3 className="mt-1 font-display text-[31px] leading-none">Testa ditt spel</h3>
-                <p className="mt-2 text-xs font-medium text-white/75">Välj ett test. Sätt ett resultat.</p>
-              </div>
-              <span className="mb-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15 backdrop-blur-md"><ChevronRight className="h-4 w-4" /></span>
-            </div>
-          </Link>
-        </section>
+
 
 
       </div>
