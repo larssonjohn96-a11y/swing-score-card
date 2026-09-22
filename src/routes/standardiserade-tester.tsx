@@ -2,6 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { CalendarDays, Check, Star } from "lucide-react";
 import { CATEGORIES } from "@/lib/categories";
+import { collectLocalSessions } from "@/lib/sessions";
+import { useSessionsVersion } from "@/lib/sessions/use-sessions";
 
 export const Route = createFileRoute("/standardiserade-tester")({
   head: () => ({
@@ -131,6 +133,9 @@ function StandardizedTestsPage() {
   const [focusCategory, setFocusCategory] = useState<FocusCategory>("Närspel");
   const [focusWeeks, setFocusWeeks] = useState(4);
   const [focusTests, setFocusTests] = useState<string[]>([]);
+  const [libraryFavoritesOpen, setLibraryFavoritesOpen] = useState(false);
+  const [libraryAllOpen, setLibraryAllOpen] = useState(false);
+  const sessionsVersion = useSessionsVersion();
   useEffect(() => {
     try { const parsed = JSON.parse(localStorage.getItem(FAVORITES_KEY) ?? "[]"); if (Array.isArray(parsed)) setFavorites(parsed.filter((item): item is string => typeof item === "string")); } catch {}
     try { const parsed = JSON.parse(localStorage.getItem(FOCUS_BLOCKS_KEY) ?? "[]"); if (Array.isArray(parsed)) setFocusBlocks(parsed); } catch {}
@@ -153,6 +158,19 @@ function StandardizedTestsPage() {
     return test.label.toLowerCase().includes("längdkontroll") || test.title === "Lag Putt";
   });
   const activeFocus = focusBlocks.find(block => !block.endedAt);
+  const focusRouteToTestIds: Record<string, string[]> = {
+    "/tutor-test": ["tutor"], "/pga-tour-18-puttar": ["pga-tour-18-puttar"], "/lagputt": ["lag-putt-18"], "/green-reading": ["green-reading"], "/50-bollar": ["fifty-putt"],
+    "/8-bollar": ["eight-ball"], "/upp-och-in": ["upp-och-in"], "/approach-pei-valj": ["approach-pei"], "/approach-pei-wedge": ["pei-wedge"], "/approach-pei-iron": ["pei-iron"],
+    "/wedge-stege": ["wedge-stege"], "/driver-konsekvens": ["driver-konsekvens"], "/longdrive": ["long-drive"], "/speed-test": ["speed"],
+  };
+  const focusSessionCount = useMemo(() => {
+    if (!activeFocus || typeof window === "undefined") return 0;
+    const start = Date.parse(activeFocus.startedAt);
+    const ids = new Set(activeFocus.testPaths.flatMap(path => focusRouteToTestIds[path] ?? []));
+    return collectLocalSessions().filter(session => ids.has(session.testId) && Date.parse(session.playedAt) >= start).length;
+  }, [activeFocus?.id, activeFocus?.startedAt, activeFocus?.testPaths.join("|"), sessionsVersion]);
+  const focusDaysLeft = activeFocus ? Math.max(0, Math.ceil((Date.parse(activeFocus.startedAt) + activeFocus.weeks * 7 * 86400000 - Date.now()) / 86400000)) : 0;
+  const activeFocusTests = activeFocus ? activeFocus.testPaths.map(path => allTests.find(test => test.to === path)).filter((test): test is TestCard => Boolean(test)) : [];
   const completedFocus = focusBlocks.filter(block => block.endedAt);
   const focusSection = TEST_SECTIONS.find(section => section.title === focusCategory);
   function saveFocusBlocks(next: FocusBlock[]) {
@@ -216,6 +234,23 @@ function StandardizedTestsPage() {
         </>}
         {completedFocus.length ? <section className="mt-10"><h2 className="text-xl font-black">Tidigare block</h2><div className="mt-3 space-y-2">{completedFocus.map(block => <div key={block.id} className="rounded-2xl border border-slate-200 bg-white p-4"><strong>{block.category}</strong><p className="mt-1 text-xs text-slate-500">{block.weeks} veckor · {block.testPaths.length} tester · avslutat {new Date(block.endedAt!).toLocaleDateString("sv-SE")}</p></div>)}</div></section> : null}
       </div> : <>
+      {activeFocus ? <section className="px-5 pt-6">
+        <div className="flex items-end justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[.18em] text-blue-600">Aktivt fokus · ${activeFocus.category}</p>
+            <h2 className="mt-1 text-[24px] font-black leading-none">Dina fokustester</h2>
+          </div>
+          <button type="button" onClick={() => setTab("focus")} className="text-xs font-bold text-blue-600">Visa block</button>
+        </div>
+        <div className="mt-3 flex gap-3 text-[11px] text-slate-500">
+          <span>Start ${new Date(activeFocus.startedAt).toLocaleDateString("sv-SE")}</span>
+          <span>·</span><span>${focusDaysLeft} dagar kvar</span><span>·</span><span>${focusSessionCount} tester gjorda</span>
+        </div>
+        <div className="-mx-5 mt-3.5 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {activeFocusTests.map(test => <TestCardView key={`focus-${test.to}`} test={test} favorite={favorites.includes(test.to)} onToggleFavorite={() => toggleFavorite(test.to)} />)}
+        </div>
+      </section> : null}
+      
       <div className="px-5 pt-6">
         <p className="text-[10px] font-black uppercase tracking-[.2em] text-blue-600">Testa & utveckla</p>
         <h1 className="mt-1 font-display text-[38px] leading-none text-foreground">Testa & utveckla ditt spel</h1>
@@ -224,8 +259,10 @@ function StandardizedTestsPage() {
 
       <div className="space-y-8 px-5 pt-8">
         <section>
+          {activeFocus ? <button type="button" onClick={() => setLibraryFavoritesOpen(open => !open)} className="flex w-full items-center justify-between px-0.5 text-left"><span><h2 className="text-[20px] font-black">Mina favoriter</h2><span className="text-[10px] uppercase tracking-[.16em] text-muted-foreground">Dina sparade tester</span></span><span className="text-xl text-slate-400">{libraryFavoritesOpen ? "−" : "+"}</span></button> : null}
+          {(!activeFocus || libraryFavoritesOpen) ? <>
           <div className="px-0.5">
-            <h2 className="text-[24px] font-black leading-none text-foreground">Mina favoriter</h2>
+            <h2 className={activeFocus ? "hidden" : "text-[24px] font-black leading-none text-foreground"}>Mina favoriter</h2>
             <p className="mt-1.5 text-[10px] font-black uppercase tracking-[.16em] text-muted-foreground">Dina sparade tester</p>
             <div className="mt-3 flex gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {([
@@ -246,8 +283,10 @@ function StandardizedTestsPage() {
               </div>
             )}
           </div>
+          </> : null}
         </section>
-        {TEST_SECTIONS.map((section) => (
+        {activeFocus ? <button type="button" onClick={() => setLibraryAllOpen(open => !open)} className="flex w-full items-center justify-between border-t border-slate-200 pt-5 text-left"><span><strong className="text-[20px]">Alla tester</strong><span className="mt-1 block text-[10px] uppercase tracking-[.16em] text-muted-foreground">Testbibliotek</span></span><span className="text-xl text-slate-400">{libraryAllOpen ? "−" : "+"}</span></button> : null}
+        {(!activeFocus || libraryAllOpen) ? TEST_SECTIONS.map((section) => (
           <section key={section.title}>
             <div className="px-0.5">
               <h2 className="text-[24px] font-black leading-none text-foreground">{section.title}</h2>
