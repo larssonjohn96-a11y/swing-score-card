@@ -663,7 +663,7 @@ function Home() {
             >
               Spel & utmaningar
             </Link>
-            <Link to="/coach" className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black">Träning</Link>
+            <Link to="/coach" search={{}} className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black">Träning</Link>
             <Link to="/standardiserade-tester" className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black">Standardiserade tester</Link>
             <Link
               to="/uppvarmning"
@@ -901,10 +901,10 @@ function Home() {
         </section>
 
         <section className="mt-7">
-          <BrowseHeading title="Träning" subtitle="Practice Mode" action="Alla pass" to="/coach" />
+          <BrowseHeading title="Träning" subtitle="Practice Mode" action="Alla pass" to="/coach" search={{}} />
           <DragScrollRow>
             <Link
-              to="/coach"
+              to="/coach" search={{}}
               search={{ category: "putting" }}
               onClick={() => recordRecommendationOpen("practice")}
               className="block shrink-0"
@@ -912,7 +912,7 @@ function Home() {
               <SimpleCard label="Practice" title="Puttning" tone="bg-[#5146d8]" />
             </Link>
             <Link
-              to="/coach"
+              to="/coach" search={{}}
               search={{ category: "bunker" }}
               onClick={() => recordRecommendationOpen("practice")}
               className="block shrink-0"
@@ -920,7 +920,7 @@ function Home() {
               <SimpleCard label="Practice" title="Bunker" tone="bg-[#c77a2c]" />
             </Link>
             <Link
-              to="/coach"
+              to="/coach" search={{}}
               onClick={() => recordRecommendationOpen("practice")}
               className="block shrink-0"
             >
