@@ -883,8 +883,8 @@ function Home() {
 
         <section className="mt-7">
           <BrowseHeading
-            title="Testa & utveckla ditt spel"
-            subtitle="Testa dig. Slå ditt resultat."
+            title="Testa ditt spel"
+            subtitle="Hur bra är du på olika delar av spelet?"
             action="Alla tester"
             to="/standardiserade-tester"
           />
