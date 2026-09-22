@@ -124,13 +124,13 @@ function EightBallPage() {
 {isActivityComplete(phase) && <StoredActivityReview testId="eight-ball" />}
       <div className="flex shrink-0 items-center justify-between">
         <Link to="/kategori/$slug" params={{ slug: "around-the-green" }} className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card"><ArrowLeft className="h-4 w-4" /></Link>
-        <Link to="/8-bollar-historik" className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground"><BarChart3 className="h-3.5 w-3.5"/> Progress</Link>
+        
       </div>
 
-      <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">Around the Green · Träningstest</p>
+      <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">Around the Green · 8 stationer</p>
       <h1 className="mt-2 font-display text-3xl leading-none">8-bollsövningen</h1>
       <p className="mt-2 text-sm font-semibold text-primary">40 slag · 8 stationer · 5 varv</p>
-      <p className="mt-2.5 text-[13px] leading-relaxed text-muted-foreground">Träna chip, pitch, lobb och bunker och mät hur nära hålet du kommer.</p>
+      <p className="mt-2.5 text-[13px] leading-relaxed text-muted-foreground">8 olika lägen runt green. Hur nära hålet kan du komma?</p>
 
       <section className="mt-5 rounded-2xl border border-border bg-card p-4">
         <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Stationer</p>
@@ -208,7 +208,7 @@ function EightBallPage() {
       <section className="mt-5"><p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Score breakdown</p><div className="mt-3 overflow-hidden rounded-2xl border border-border bg-card"><table className="w-full table-fixed text-center text-[10px]"><thead><tr className="border-b border-border text-muted-foreground"><th className="w-[28%] px-2 py-2.5 text-left font-semibold">Station</th><th className="px-1 py-2.5 font-semibold text-primary">Tot</th>{Array.from({ length: ROUNDS }, (_, i) => <th key={i} className={`px-1 py-2.5 font-semibold ${i + 1 === bestRoundNumber ? "text-primary" : ""}`}>V{i + 1}</th>)}</tr></thead><tbody>{STATIONS.map((s, stationIdx) => { const row = Array.from({ length: ROUNDS }, (_, r) => scores[r * STATIONS.length + stationIdx] ?? 0); const rowTotal = row.reduce((a, b) => a + b, 0); return <tr key={stationIdx} className="border-t border-border/60 odd:bg-muted/40"><td className="px-2 py-2.5 text-left leading-tight"><b>{stationIdx + 1}. {s.type}</b><br /><span className="text-muted-foreground">{s.distance} m</span></td><td className="px-1 py-2.5 font-semibold tabular-nums text-primary">{rowTotal}</td>{row.map((v, i) => <td key={i} className={`px-1 py-2.5 tabular-nums ${i + 1 === bestRoundNumber ? "font-semibold text-primary" : ""}`}>{v}</td>)}</tr>; })}<tr className="border-t border-border bg-muted/70 font-semibold"><td className="px-2 py-2.5 text-left">Alla</td><td className="px-1 py-2.5 tabular-nums text-primary">{total}</td>{roundTotals.map((v, i) => <td key={i} className={`px-1 py-2.5 tabular-nums ${v === bestRound ? "text-primary" : ""}`}>{v}</td>)}</tr></tbody></table></div></section>
 
       <button onClick={start} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white py-4 font-display text-xl text-slate-950"><RotateCcw className="h-5 w-5" /> Kör igen</button>
-      <Link to="/8-bollar-historik" className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-border bg-card py-4 font-semibold"><BarChart3 className="h-4 w-4" /> Se utveckling</Link>
+      
     </main>
   );
 }
