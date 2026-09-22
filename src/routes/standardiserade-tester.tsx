@@ -197,7 +197,7 @@ function StandardizedTestsPage() {
     <main className="mx-auto min-h-screen w-full max-w-md bg-background pb-28">
       <div className="px-5 pt-5">
         <div className="grid grid-cols-2 rounded-2xl bg-slate-100 p-1">
-          <button type="button" onClick={() => setTab("library")} className={`rounded-xl px-3 py-2.5 text-sm font-bold transition ${tab === "library" ? "bg-white text-slate-950 shadow-sm" : "text-slate-500"}`}>Testbibliotek</button>
+          <button type="button" onClick={() => setTab("library")} className={`rounded-xl px-3 py-2.5 text-sm font-bold transition ${tab === "library" ? "bg-white text-slate-950 shadow-sm" : "text-slate-500"}`}>Tester</button>
           <button type="button" onClick={() => setTab("focus")} className={`rounded-xl px-3 py-2.5 text-sm font-bold transition ${tab === "focus" ? "bg-white text-slate-950 shadow-sm" : "text-slate-500"}`}>Mitt fokus</button>
         </div>
       </div>
@@ -226,10 +226,22 @@ function StandardizedTestsPage() {
           </div>
           <button type="button" disabled={focusTests.length < 2} onClick={startFocusBlock} className="mt-6 min-h-12 w-full rounded-2xl bg-blue-600 px-4 font-bold text-white disabled:opacity-35">Starta fokusblock</button>
         </> : <>
-          <p className="text-[10px] font-black uppercase tracking-[.2em] text-blue-600">Aktivt fokusblock</p>
-          <h1 className="mt-1 font-display text-[40px] leading-none">{activeFocus.category}</h1>
-          <div className="mt-4 flex items-center gap-2 text-sm text-slate-500"><CalendarDays className="h-4 w-4" />{activeFocus.weeks} veckor · start {new Date(activeFocus.startedAt).toLocaleDateString("sv-SE")}</div>
-          <div className="mt-6 space-y-3">{activeFocus.testPaths.map(path => { const test = allTests.find(item => item.to === path); return test ? <Link key={path} to={test.to as any} search={(test.search ?? {}) as any} className="block rounded-[22px] border border-slate-200 bg-white p-4"><p className="text-xs font-bold uppercase tracking-wide text-blue-600">Fokustest</p><h2 className="mt-1 text-xl font-black">{test.title}</h2><p className="mt-1 text-xs text-slate-500">{test.description}</p></Link> : null; })}</div>
+          <section className="overflow-hidden rounded-[28px] border border-emerald-200 bg-gradient-to-br from-emerald-700 to-emerald-600 p-5 text-white shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+              <span className="rounded-full bg-white/15 px-3 py-1.5 text-[10px] font-black uppercase tracking-[.16em]">Aktivt fokusblock</span>
+              <span className="text-xs font-bold text-white/75">{activeFocus.weeks} veckor</span>
+            </div>
+            <h1 className="mt-5 font-display text-[42px] leading-none">{activeFocus.category}</h1>
+            <div className="mt-5 grid grid-cols-3 gap-2">
+              <div className="rounded-2xl bg-white/10 p-3"><span className="block text-[10px] uppercase tracking-wide text-white/65">Start</span><strong className="mt-1 block text-sm">{new Date(activeFocus.startedAt).toLocaleDateString("sv-SE")}</strong></div>
+              <div className="rounded-2xl bg-white/10 p-3"><span className="block text-[10px] uppercase tracking-wide text-white/65">Kvar</span><strong className="mt-1 block text-sm">{focusDaysLeft} dagar</strong></div>
+              <div className="rounded-2xl bg-white/10 p-3"><span className="block text-[10px] uppercase tracking-wide text-white/65">Gjorda</span><strong className="mt-1 block text-sm">{focusSessionCount} test</strong></div>
+            </div>
+            <button type="button" onClick={() => setTab("library")} className="mt-5 flex min-h-12 w-full items-center justify-center rounded-2xl bg-white font-bold text-emerald-800">Gå till tester</button>
+          </section>
+          <div className="-mx-5 mt-6 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {activeFocusTests.map(test => <TestCardView key={`active-focus-${test.to}`} test={test} favorite={favorites.includes(test.to)} onToggleFavorite={() => toggleFavorite(test.to)} />)}
+          </div>
           <button type="button" onClick={finishFocusBlock} className="mt-6 min-h-12 w-full rounded-2xl border border-slate-300 bg-white font-bold">Avsluta block</button>
         </>}
         {completedFocus.length ? <section className="mt-10"><h2 className="text-xl font-black">Tidigare block</h2><div className="mt-3 space-y-2">{completedFocus.map(block => <div key={block.id} className="rounded-2xl border border-slate-200 bg-white p-4"><strong>{block.category}</strong><p className="mt-1 text-xs text-slate-500">{block.weeks} veckor · {block.testPaths.length} tester · avslutat {new Date(block.endedAt!).toLocaleDateString("sv-SE")}</p></div>)}</div></section> : null}
@@ -285,7 +297,7 @@ function StandardizedTestsPage() {
           </div>
           </> : null}
         </section>
-        {activeFocus ? <button type="button" onClick={() => setLibraryAllOpen(open => !open)} className="flex w-full items-center justify-between border-t border-slate-200 pt-5 text-left"><span><strong className="text-[20px]">Alla tester</strong><span className="mt-1 block text-[10px] uppercase tracking-[.16em] text-muted-foreground">Testbibliotek</span></span><span className="text-xl text-slate-400">{libraryAllOpen ? "−" : "+"}</span></button> : null}
+        {activeFocus ? <button type="button" onClick={() => setLibraryAllOpen(open => !open)} className="flex w-full items-center justify-between border-t border-slate-200 pt-5 text-left"><span><strong className="text-[20px]">Alla tester</strong><span className="mt-1 block text-[10px] uppercase tracking-[.16em] text-muted-foreground">Alla kategorier</span></span><span className="text-xl text-slate-400">{libraryAllOpen ? "−" : "+"}</span></button> : null}
         {(!activeFocus || libraryAllOpen) ? TEST_SECTIONS.map((section) => (
           <section key={section.title}>
             <div className="px-0.5">
