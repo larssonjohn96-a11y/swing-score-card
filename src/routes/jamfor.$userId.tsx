@@ -30,13 +30,7 @@ const CATEGORY_ROWS: Array<{ slug: ComparisonCategory; label: string }> = [
   { slug: "puttning", label: "Putting" },
 ];
 
-const FOCUS_OPTIONS: Array<[Focus,string]> = [
-  ["all","Hela spelet"],
-  ["driving","Off the Tee"],
-  ["approach","Approach"],
-  ["around-the-green","Around Green"],
-  ["puttning","Putting"],
-];
+const FOCUS_OPTIONS: Array<[Focus,string]> = [["all","Hela spelet"],["driving","Utslag"],["approach","Inspel"],["around-the-green","Närspel"],["puttning","Puttning"]];
 
 const SHOT_LABELS: Record<ComparisonCategory,string> = {
   driving: "Drives registrerade",
@@ -202,9 +196,11 @@ export function CompareFriendContent({ userId, onBack }: { userId:string; onBack
     ];
   },[local,friendSnapshot,focus]);
 
-  const performanceRows = useMemo(() => local && friendSnapshot ? matchRows(local.comparison.performance, friendSnapshot.comparisonProfile.performance, focus) : [],[local,friendSnapshot,focus]);
-  const trainingRows = useMemo(() => local && friendSnapshot ? matchRows(local.comparison.training, friendSnapshot.comparisonProfile.training, focus) : [],[local,friendSnapshot,focus]);
-  const recordRows = useMemo(() => local && friendSnapshot ? matchRows(local.comparison.records, friendSnapshot.comparisonProfile.records, focus) : [],[local,friendSnapshot,focus]);
+  const performanceRows = useMemo(() => {
+    if (!local || !friendSnapshot) return [];
+    const allowed = new Set(["avg-ball-speed","avg-drive","approach-proximity","three-putt-avoid","putting-1-2"]);
+    return matchRows(local.comparison.performance.filter(item=>allowed.has(item.key)), friendSnapshot.comparisonProfile.performance.filter(item=>allowed.has(item.key)), focus);
+  },[local,friendSnapshot,focus]);
 
   if (loading || !user) return <Shell onBack={onBack} note={loading ? null : "Logga in för att jämföra med vänner."} />;
 
@@ -241,15 +237,10 @@ export function CompareFriendContent({ userId, onBack }: { userId:string; onBack
           })}
         </div>
       ) : null}
-      <p className="mt-2 text-xs text-muted-foreground">{focus === "all" ? "Visar de viktigaste statsen från hela spelet." : `Visar en djupare breakdown för ${focusLabel}.`}</p>
+      <p className="mt-2 text-xs text-muted-foreground">{focus === "all" ? "Visar jämförbara snitt och nivåer från hela spelet." : `Visar jämförbara snitt för ${focusLabel}.`}</p>
     </div>
 
     {message ? <div className={`mt-5 rounded-2xl p-4 text-sm text-muted-foreground ${glassCard}`}>{message}</div> : null}
-
-    <section className="mt-6">
-      <SectionTitle>Tester & registrerade slag</SectionTitle>
-      <MetricTable rows={activityRows}/>
-    </section>
 
     <section className="mt-7">
       <SectionTitle>Handicap per kategori{focus !== "all" ? ` · ${focusLabel}` : ""}</SectionTitle>
@@ -261,17 +252,8 @@ export function CompareFriendContent({ userId, onBack }: { userId:string; onBack
       {performanceRows.length ? <MetricTable rows={performanceRows}/> : <Empty/>}
     </section>
 
-    <section className="mt-7">
-      <SectionTitle>Träningsresultat{focus !== "all" ? ` · ${focusLabel}` : ""}</SectionTitle>
-      {trainingRows.length ? <MetricTable rows={trainingRows}/> : <Empty/>}
-    </section>
 
-    <section className="mt-7">
-      <SectionTitle>Personliga rekord{focus !== "all" ? ` · ${focusLabel}` : ""}</SectionTitle>
-      {recordRows.length ? <MetricTable rows={recordRows}/> : <Empty/>}
-    </section>
-
-    <p className="mt-7 text-center text-[11px] leading-relaxed text-muted-foreground">Jämförelsen delar bara aggregerade resultat och personliga rekord – aldrig rå slagdata.</p>
+    <p className="mt-7 text-center text-[11px] leading-relaxed text-muted-foreground">Jämförelsen bygger på aggregerade snitt och handicapnivåer – inte enskilda rekordslag.</p>
   </main>;
 }
 
