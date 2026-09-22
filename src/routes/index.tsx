@@ -708,28 +708,7 @@ function Home() {
 
         </section>
 
-        <section className="mt-4">
-          <Link
-            to={quickStart.to}
-            onClick={() => recordRecommendationOpen(quickStart.activityId)}
-            className="group flex items-center gap-4 rounded-[26px] border border-blue-200 bg-blue-50/70 px-5 py-5"
-          >
-            <div className="min-w-0 flex-1">
-              <p className="text-[10px] font-black uppercase tracking-[.18em] text-blue-600">
-                {quickStart.eyebrow}
-              </p>
-              <h1 className="mt-1.5 text-[22px] font-black leading-tight text-foreground">
-                {quickStart.title}
-              </h1>
-              <p className="mt-1.5 text-sm leading-snug text-muted-foreground">
-                {quickStart.detail}
-              </p>
-            </div>
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white">
-              <ChevronRight className="h-5 w-5" />
-            </span>
-          </Link>
-        </section>
+
 
         <section className="mt-4">
           <Link
