@@ -161,7 +161,7 @@ function BrowseHeading({
 const ROW_CLASS =
   "-mx-5 mt-3.5 flex gap-2 overflow-x-auto bg-transparent px-5 pb-0.5 scroll-smooth overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden";
 const CARD_BASE =
-  "relative flex h-[220px] w-[164px] shrink-0 flex-col justify-end overflow-hidden rounded-[24px] border border-black/[.04] px-4 pb-4 pt-4 text-white";
+  "relative flex h-[238px] w-[178px] shrink-0 flex-col justify-end overflow-hidden rounded-[24px] border border-black/[.04] px-4 pb-4 pt-4 text-white";
 
 function SimpleCard({
   label,
@@ -169,14 +169,14 @@ function SimpleCard({
   tone,
   imageSrc,
   imagePosition,
-  hcpAnalysis = false,
+  subtitle,
 }: {
   label: string;
   title: string;
   tone: string;
   imageSrc?: string;
   imagePosition?: string;
-  hcpAnalysis?: boolean;
+  subtitle?: string;
 }) {
   return (
     <div className={`${CARD_BASE} ${tone}`}>
@@ -191,11 +191,11 @@ function SimpleCard({
           <span className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/15 to-black/5" />
         </>
       )}
-      {hcpAnalysis && <span className="absolute right-3 top-3 z-10 rounded-full bg-blue-600 px-2.5 py-1.5 text-[10px] font-bold text-white shadow-sm">HCP-analys</span>}
-      <span className={`absolute left-4 ${hcpAnalysis ? "top-12" : "top-4"} text-[9px] font-black uppercase tracking-[.16em] text-white/80`}>
-        {label}
-      </span>
-      <h3 className="relative z-10 font-display text-[27px] leading-[.95] text-white">{title}</h3>
+      <span className="absolute left-4 top-4 text-[9px] font-black uppercase tracking-[.16em] text-white/80">{label}</span>
+      <div className="relative z-10">
+        <h3 className="font-display text-[27px] leading-[.95] text-white">{title}</h3>
+        {subtitle ? <p className="mt-2 text-[12px] font-semibold leading-snug text-white/80">{subtitle}</p> : null}
+      </div>
     </div>
   );
 }
@@ -810,7 +810,7 @@ function Home() {
                 Spel & utmaningar
               </h2>
               <p className="mt-1.5 text-sm text-muted-foreground">
-                Slå ditt personbästa och se din HCP-nivå.
+                Välj en utmaning. Slå ditt rekord.
               </p>
             </div>
             <Link to="/spela-runda" className="shrink-0 text-xs font-bold text-blue-600">
@@ -820,9 +820,9 @@ function Home() {
           <DragScrollRow>
             <Link to="/speedrundan" className="block shrink-0">
               <SimpleCard
-                hcpAnalysis
                 label="Speed"
                 title="Maxfart"
+                subtitle="Hur hårt kan du slå?"
                 tone="bg-[#118267]"
                 imageSrc="/Off_the_tee.png"
                 imagePosition="18% 50%"
@@ -830,9 +830,9 @@ function Home() {
             </Link>
             <Link to="/driverrundan" className="block shrink-0">
               <SimpleCard
-                hcpAnalysis
                 label="Driver"
                 title="Långt & rakt"
+                subtitle="Hur långt och rakt kan du slå?"
                 tone="bg-[#118267]"
                 imageSrc="/Off_the_tee.png"
                 imagePosition="18% 50%"
@@ -840,9 +840,9 @@ function Home() {
             </Link>
             <Link to="/chipprundan" className="block shrink-0">
               <SimpleCard
-                hcpAnalysis
                 label="Chippning"
                 title="Närmast flaggan"
+                subtitle="Hur nära flaggan kan du komma?"
                 tone="bg-[#118267]"
                 imageSrc="/0d286fd4-99fa-47eb-b39c-a7ff718ebdd6.png"
                 imagePosition="18% 50%"
@@ -850,9 +850,9 @@ function Home() {
             </Link>
             <Link to="/puttrundan" className="block shrink-0">
               <SimpleCard
-                hcpAnalysis
                 label="Puttning"
                 title="Sänk den!"
+                subtitle="Hur många kan du sänka?"
                 tone="bg-[#118267]"
                 imageSrc="/Putting_1.png"
                 imagePosition="18% 50%"
@@ -860,9 +860,9 @@ function Home() {
             </Link>
             <Link to="/inspelsrundan" className="block shrink-0">
               <SimpleCard
-                hcpAnalysis
                 label="Inspel"
                 title="Mitt i prick"
+                subtitle="Hur nära kan du slå?"
                 tone="bg-[#118267]"
                 imageSrc="/Approach_shot.png"
                 imagePosition="18% 50%"
@@ -870,9 +870,9 @@ function Home() {
             </Link>
             <Link to="/bunkerrundan" className="block shrink-0">
               <SimpleCard
-                hcpAnalysis
                 label="Bunker"
                 title="Sandjakten"
+                subtitle="Hur nära kan du komma från sanden?"
                 tone="bg-[#118267]"
                 imageSrc="/bunker-round.svg"
                 imagePosition="18% 50%"
