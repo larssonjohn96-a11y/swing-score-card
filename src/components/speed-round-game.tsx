@@ -597,17 +597,28 @@ export function SpeedRoundGame({
               Så här spelar du
             </button>
           </div>
-          <section className="rounded-3xl border bg-white px-4 pt-5">
-            <h1 className="text-2xl font-black">Dags för en speedrunda?</h1>
-            <button className="speed-primary mt-4" onClick={requestStart}>
-              Starta rundan →
-            </button>
-            <SpeedCourseMap holes={[]} cursor={null} reference={reference ?? 0} />
-            {reference !== null && (
-              <p className="pb-3 text-center text-sm text-slate-500">
-                Din referens inför nästa runda: {fmt(reference)} mph
+          <section className="overflow-hidden rounded-[30px] border border-slate-200 bg-white">
+            <div className="relative h-52 overflow-hidden bg-slate-900">
+              <img src="/Off_the_tee.png" alt="" className="h-full w-full object-cover object-[18%_50%]" />
+              <span className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 p-5 text-white">
+                <p className="text-[10px] font-black uppercase tracking-[.2em] text-white/75">Ball Speed Challenge</p>
+                <h1 className="mt-1 font-display text-[40px] leading-none">Hur hårt kan du slå?</h1>
+              </div>
+            </div>
+            <div className="p-5">
+              <p className="text-sm leading-relaxed text-slate-600">
+                Sex slag. Läs av bollhastigheten och försök slå ditt eget rekord. Ju mer fart, desto fler stjärnor.
               </p>
-            )}
+              <div className="mt-4 grid grid-cols-2 gap-2 text-center">
+                <div className="rounded-2xl bg-slate-50 p-3"><strong className="block text-xl">6</strong><span className="text-xs text-slate-500">slag</span></div>
+                <div className="rounded-2xl bg-slate-50 p-3"><strong className="block text-xl">18 ★</strong><span className="text-xs text-slate-500">max</span></div>
+              </div>
+              {reference !== null && (
+                <p className="mt-3 text-center text-xs text-slate-500">Din referens: {fmt(reference)} mph</p>
+              )}
+              <button className="speed-primary mt-4" onClick={requestStart}>Spela →</button>
+            </div>
           </section>
           <div className="mt-4 rounded-3xl border bg-white p-4">
             <h2 className="font-black">Ditt rundsnitt</h2>
