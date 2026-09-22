@@ -1,6 +1,6 @@
 import { computeSpeedResult } from "./speed";
 export type CourseShot = { ballSpeed: number };
-export const COURSE_DISTANCES = [1, 2, 3, 4, 5, 6] as const;
+export const COURSE_DISTANCES = [1, 2, 3] as const;
 export const maxStars = (_index: number) => 3;
 export type CourseRound = {
   id: string;
@@ -147,11 +147,10 @@ export function reduceCourse(state: CourseState, action: CourseAction): CourseSt
       ? state
       : { ...state, active: { ...a, holes: [...a.holes, []], phase: "play" } };
   if (action.type === "next" && a.phase !== "result") return state;
-  if (action.type === "next" && i < 5)
+  if (action.type === "next" && i < 2)
     return {
       ...state,
-      active:
-        i === 2 ? { ...a, phase: "halfway" } : { ...a, holes: [...a.holes, []], phase: "play" },
+      active: { ...a, holes: [...a.holes, []], phase: "play" },
     };
   if (action.type === "finish" || action.type === "next") {
     const holes = a.holes.filter((h) => h.length === 1);
@@ -163,7 +162,7 @@ export function reduceCourse(state: CourseState, action: CourseAction): CourseSt
       startedAt: a.startedAt,
       finishedAt: action.at,
       holes,
-      status: holes.length === 6 ? "full" : holes.length === 3 ? "front" : "partial",
+      status: holes.length === 3 ? "full" : "partial",
     };
     return { ...state, active: null, history: [...state.history, round] };
   }
@@ -172,7 +171,7 @@ export function reduceCourse(state: CourseState, action: CourseAction): CourseSt
 const validHoles = (v: unknown, complete: boolean): v is CourseShot[][] =>
   Array.isArray(v) &&
   v.length > 0 &&
-  v.length <= 6 &&
+  v.length <= 3 &&
   v.every(
     (h, i) =>
       Array.isArray(h) &&
@@ -208,7 +207,7 @@ export function parseCourse(raw: string | null): CourseState {
       ids.add(r.id);
       s.history.push({
         ...r,
-        status: r.holes.length === 6 ? "full" : r.holes.length === 3 ? "front" : "partial",
+        status: r.holes.length === 3 ? "full" : "partial",
       });
     }
     const a = d.active;
@@ -247,7 +246,7 @@ export function validShot(v: unknown): v is CourseShot {
   const s = v as CourseShot;
   return Number.isFinite(s.ballSpeed) && s.ballSpeed > 0 && s.ballSpeed <= 250;
 }
-export const STAR_STEPS = [3, 6, 9, 12, 15, 18] as const;
+export const STAR_STEPS = [1.5, 3, 4.5, 6, 7.5, 9] as const;
 export const starLevel = (stars: number) => STAR_STEPS.filter((n) => stars >= n).length;
 export function speedBests(history: CourseRound[]) {
   const full = history.filter((r) => r.status === "full");
@@ -261,7 +260,7 @@ export function speedGoal(active: CourseSession, history: CourseRound[]) {
   const full = history.filter((r) => r.status === "full");
   if (!full.length) return null;
   const done = active.holes.filter((h) => h.length).length,
-    left = 6 - done;
+    left = 3 - done;
   if (!left) return null;
   const best = speedBests(full).stars!,
     total = roundStars(active),
