@@ -24,11 +24,14 @@ import { CHIP_POINT_ZONES, generateChipMatchDistances } from "@/lib/chip-match";
 import { chipPerformanceFromPoints, recordEngineOutcome } from "@/lib/sg4-engine";
 
 export const Route = createFileRoute("/coach")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    category: typeof search.category === "string" ? search.category : undefined,
+  }),
   head: () => ({ meta: [{ title: "Practice Mode – Träna med coach | SG4" }] }),
   component: PlayWithCoachPage,
 });
 
-type Phase = "setup" | "chip-setup" | "play" | "summary";
+type Phase = "setup" | "chip-setup" | "bunker-setup" | "play" | "summary";
 type Category = "putting" | "around-the-green" | "bunker" | "approach" | "off-the-tee" | "speed";
 type PressureChallenge = { title: string; detail: string; maxStrokes?: 1 | 2; minPoints?: number };
 type ChipLieOption = "fairway" | "rough" | "both";
@@ -316,6 +319,10 @@ function PlayWithCoachPage() {
       void navigate({to: "/chipprundan", replace: true});
       return;
     }
+    if (linkedCategory === "bunker") {
+      setPhase("bunker-setup");
+      return;
+    }
     setDistance(linkedCategory === "putting" ? nextCoachPuttingDistance() : 0);
     setIntroState("done");
     setTransitioning(false);
@@ -398,6 +405,10 @@ function PlayWithCoachPage() {
   }
 
   function continueFromSetup() {
+    if (category === "bunker") {
+      setPhase("bunker-setup");
+      return;
+    }
     if (category === "around-the-green") {
       void navigate({to: "/chipprundan", replace: true});
       return;
@@ -789,7 +800,7 @@ function PlayWithCoachPage() {
     <main data-challenge={puttingChallenge ? "active" : undefined} style={LIGHT_SURFACE} className="mx-auto min-h-screen w-full max-w-md bg-background px-5 pb-10 pt-[max(16px,env(safe-area-inset-top))] text-foreground">
       {phase === "setup" ? <>
         <header className="flex items-center justify-between">
-          <Link to="/tester" aria-label="Tillbaka till Train & Test" className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-2xl shadow-sm">‹</Link>
+          <Link to="/" aria-label="Tillbaka till startsidan" className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-2xl shadow-sm">‹</Link>
           <div className="text-center"><p className="text-[10px] font-black uppercase tracking-[.18em] text-slate-400">Practice Mode</p><p className="text-sm font-black text-slate-900">Träna med coach</p></div>
           <span className="h-10 w-10" />
         </header>
@@ -834,6 +845,31 @@ function PlayWithCoachPage() {
             })}
           </div>
           <button type="button" onClick={startGame} className="mt-5 flex w-full items-center justify-center gap-2 rounded-[20px] bg-blue-600 py-4 font-display text-xl text-white shadow-sm transition active:scale-[.99]">Starta träning <ChevronRight className="h-5 w-5" /></button>
+        </section>
+      </> : null}
+
+      {phase === "bunker-setup" ? <>
+        <header className="flex items-center justify-between">
+          <button type="button" onClick={() => setPhase("setup")} aria-label="Tillbaka till träningsval" className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-2xl shadow-sm">‹</button>
+          <div className="text-center"><p className="text-[10px] font-black uppercase tracking-[.18em] text-slate-400">Practice Mode</p><p className="text-sm font-black text-slate-900">Bunker</p></div>
+          <span className="h-10 w-10" />
+        </header>
+
+        <section className="mt-6"><SpeechBubble avatar={coach.emoji} name={coach.name} text="Vill du att jag styr passet, eller bygger du ett eget upplägg?" /></section>
+
+        <section className="mt-8">
+          <p className="text-[10px] font-black uppercase tracking-[.18em] text-slate-400">Bunker</p>
+          <h1 className="mt-1 font-display text-[38px] leading-none text-slate-950">Välj upplägg</h1>
+          <div className="mt-5 space-y-3">
+            <button type="button" onClick={startGame} className="w-full rounded-[24px] border border-slate-200 bg-white px-5 py-5 text-left transition active:scale-[.99]">
+              <p className="font-display text-[26px] leading-none text-slate-950">Guidad träning</p>
+              <p className="mt-2 text-sm font-semibold text-slate-500">Jag styr slagen och kommenterar under passet.</p>
+            </button>
+            <Link to="/bunker-traning" className="block w-full rounded-[24px] border border-slate-200 bg-white px-5 py-5 text-left transition active:scale-[.99]">
+              <p className="font-display text-[26px] leading-none text-slate-950">Egen träning</p>
+              <p className="mt-2 text-sm font-semibold text-slate-500">Bygg ditt eget pass med valbara lies och antal slag.</p>
+            </Link>
+          </div>
         </section>
       </> : null}
 
@@ -937,7 +973,7 @@ function PlayWithCoachPage() {
         {category !== "putting" && shortAttempts.length > 0 ? <ActivityReview input={shortGameReviewInput(categoryLabel, shortAttempts, category === "bunker")} /> : null}
         {category === "putting" ? <section className="mt-6 grid grid-cols-3 gap-2.5"><div className="rounded-[22px] border border-slate-200 bg-white p-3 text-center"><p className="text-[9px] font-black uppercase text-slate-400">Snitt</p><p className="mt-1 font-display text-2xl">{puttingSummary.avg}</p></div><div className="rounded-[22px] border border-slate-200 bg-white p-3 text-center"><p className="text-[9px] font-black uppercase text-slate-400">1-putt</p><p className="mt-1 font-display text-2xl">{puttingSummary.onePuttPct}%</p></div><div className="rounded-[22px] border border-slate-200 bg-white p-3 text-center"><p className="text-[9px] font-black uppercase text-slate-400">3-putt+</p><p className="mt-1 font-display text-2xl">{puttingSummary.threePuttPct}%</p></div></section> : <section className="mt-6 grid grid-cols-3 gap-2.5"><div className="rounded-[22px] border border-slate-200 bg-white p-3 text-center"><p className="text-[9px] font-black uppercase text-slate-400">Snitt / slag</p><p className="mt-1 font-display text-2xl">{shortGameAverage}</p></div><div className="rounded-[22px] border border-slate-200 bg-white p-3 text-center"><p className="text-[9px] font-black uppercase text-slate-400">Total</p><p className="mt-1 font-display text-2xl">{shortTotal} P</p></div><div className="rounded-[22px] border border-slate-200 bg-white p-3 text-center"><p className="text-[9px] font-black uppercase text-slate-400">Inom 2 m</p><p className="mt-1 font-display text-2xl">{shortGameInsideTwo}%</p></div></section>}
         <section className="mt-5"><SpeechBubble avatar={coach.emoji} name={coach.name} text={category === "putting" ? (puttingSummary.threePuttPct >= 25 ? "Vi behöver få ner treputtarna. Nästa pass lägger vi mer vikt på fartkontroll från längre håll." : "Stabilt pass. Nästa gång bygger vi vidare på samma rutin.") : shortGameHoled > 0 ? "Bra pass. Du fick dessutom i en boll — den bonusen tar vi varje gång." : shortGameInsideTwo >= 60 ? "Bra kontroll runt målet. Nästa pass kan vi höja svårigheten lite." : "Nästa pass vill jag se fler bollar inom två meter. Landningspunkten blir vårt huvudfokus."} /></section>
-        <section className="mt-6 space-y-2.5"><button type="button" onClick={startGame} className="w-full rounded-[20px] border border-slate-200 bg-white py-4 font-display text-xl text-slate-950">Träna igen</button><button type="button" onClick={() => { setPhase("setup"); setCategory(null); }} className="w-full rounded-[20px] border border-slate-200 bg-white py-4 font-display text-xl text-slate-950">Byt kategori</button><Link to="/tester" className="flex w-full items-center justify-center rounded-[20px] border border-slate-200 bg-white py-4 font-display text-xl text-slate-950">Klar</Link></section>
+        <section className="mt-6 space-y-2.5"><button type="button" onClick={startGame} className="w-full rounded-[20px] border border-slate-200 bg-white py-4 font-display text-xl text-slate-950">Träna igen</button><button type="button" onClick={() => { setPhase("setup"); setCategory(null); }} className="w-full rounded-[20px] border border-slate-200 bg-white py-4 font-display text-xl text-slate-950">Byt kategori</button><Link to="/" className="flex w-full items-center justify-center rounded-[20px] border border-slate-200 bg-white py-4 font-display text-xl text-slate-950">Klar</Link></section>
       </> : null}
     </main>
   );
