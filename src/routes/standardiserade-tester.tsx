@@ -121,7 +121,7 @@ function TestCardView({ test, favorite, onToggleFavorite }: { test: TestCard; fa
 
 function StandardizedTestsPage() {
   const [favorites, setFavorites] = useState<string[]>([]);
-  const [puttingFilter, setPuttingFilter] = useState<"all" | "startlinje" | "green-reading" | "langdkontroll">("all");
+  const [puttingFilter, setPuttingFilter] = useState<"all" | "startlinje" | "green-reading" | "langdkontroll" | "kortputt">("all");
   const [favoriteFilter, setFavoriteFilter] = useState<"all" | "puttning" | "narspel" | "inspel" | "utslag">("all");
   useEffect(() => {
     try { const parsed = JSON.parse(localStorage.getItem(FAVORITES_KEY) ?? "[]"); if (Array.isArray(parsed)) setFavorites(parsed.filter((item): item is string => typeof item === "string")); } catch {}
@@ -140,6 +140,7 @@ function StandardizedTestsPage() {
   const filteredPuttingTests = (tests: TestCard[]) => puttingFilter === "all" ? tests : tests.filter(test => {
     if (puttingFilter === "startlinje") return test.label.toLowerCase().includes("startlinje") || test.title === "Tutor Test";
     if (puttingFilter === "green-reading") return test.label.toLowerCase().includes("läsning") || test.title === "Green Reading";
+    if (puttingFilter === "kortputt") return test.label.toLowerCase().includes("kortputt") || test.title === "Klockputt" || test.title === "25-bollsövningen";
     return test.label.toLowerCase().includes("längdkontroll") || test.title === "Lag Putt";
   });
   function toggleFavorite(to: string) {
@@ -186,6 +187,7 @@ function StandardizedTestsPage() {
                   ["all", "Alla"],
                   ["startlinje", "Startlinje"],
                   ["green-reading", "Green reading"],
+                  ["kortputt", "Kortputtar"],
                   ["langdkontroll", "Längdkontroll"],
                 ] as const).map(([id, label]) => <button key={id} type="button" onClick={() => setPuttingFilter(id)} className={`shrink-0 rounded-full border px-3 py-1.5 text-[10px] font-bold transition ${puttingFilter === id ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-transparent text-muted-foreground"}`}>{label}</button>)}
               </div> : null}
