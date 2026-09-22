@@ -5,7 +5,7 @@ import { LIGHT_SURFACE } from "./8-bollar";
 export const Route = createFileRoute("/shot-shaping")({
   head: () => ({
     meta: [
-      { title: "Shot Shaping – Träningstester | SG4" },
+      { title: "Shot Shaping – Tester | SG4" },
       { name: "description", content: "Tre träningstester för bollkontroll: konstant shape, växlande draw/fade och 9 Window Drill." },
     ],
   }),
@@ -30,9 +30,9 @@ function ShotShapingFamily() {
       </div>
 
       <section className="mt-5 overflow-hidden rounded-[30px] border border-slate-300/80 bg-white/82 p-5 shadow-[0_20px_48px_-32px_rgba(15,23,42,0.42)] backdrop-blur-2xl">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-500">Träningstester</p>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-500">Tester</p>
         <h1 className="mt-2 font-display text-4xl leading-none">Shot Shaping</h1>
-        <p className="mt-3 max-w-[30ch] text-[13px] leading-relaxed text-slate-600">Träna kontroll över bollens form och höjd. Välj test och följ din utveckling.</p>
+        <p className="mt-3 max-w-[30ch] text-[13px] leading-relaxed text-slate-600">Välj en bollflykt och se hur många du kan kontrollera.</p>
       </section>
 
       <div className="mt-5 mb-2 flex items-center justify-between">
