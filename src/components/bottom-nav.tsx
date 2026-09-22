@@ -144,49 +144,20 @@ export function BottomNav() {
     </nav>
 
     <Sheet open={playOpen} onOpenChange={setPlayOpen}>
-      <SheetContent
-        side="bottom"
-        className="max-h-[80dvh] overflow-y-auto rounded-t-[34px] border-white/80 bg-background/95 px-4 pb-[calc(88px+env(safe-area-inset-bottom))] pt-5 shadow-[0_-24px_70px_-30px_rgba(15,23,42,.38)] backdrop-blur-[30px] duration-500 ease-out sm:px-5"
-      >
+      <SheetContent side="bottom" className="rounded-t-[34px] border-white/80 bg-background/96 px-5 pb-[calc(88px+env(safe-area-inset-bottom))] pt-5 backdrop-blur-[30px]">
         <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-slate-400/55" aria-hidden="true" />
-        <SheetHeader className="space-y-1.5 pr-10">
-          <div className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full bg-blue-500" />
-            <span className="h-[2px] w-5 bg-border" />
-            <span className="text-[10px] font-black uppercase tracking-[.18em] text-muted-foreground">Head to Head</span>
-            <span className="h-[2px] w-5 bg-border" />
-            <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
-          </div>
-          <SheetTitle className="text-left font-display text-[34px] leading-none">Match</SheetTitle>
-          <p className="text-left text-sm text-muted-foreground">Välj hur du vill tävla.</p>
-        </SheetHeader>
-
-        <div className="relative mt-4 aspect-[16/7] w-full overflow-hidden rounded-[26px] border border-white/75 bg-gradient-to-r from-blue-100 via-white to-red-100 shadow-[0_16px_34px_-24px_rgba(15,23,42,.45)]">
-          <img
-            src="/Red_vs_blue_1.png"
-            alt=""
-            loading="eager"
-            fetchPriority="high"
-            decoding="async"
-            className="h-full w-full object-cover"
-          />
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/18 via-transparent to-transparent" />
-        </div>
-
-        <div className="mt-4 space-y-2.5">
-          {PLAY_LINKS.map((item) => {
-            const tone = playToneClasses(item.tone);
-            const inner = <>
-              <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-[17px] shadow-[inset_0_1px_0_rgba(255,255,255,.75)] ${tone.icon}`}><item.icon className="h-5 w-5" /></span>
-              <span className="min-w-0 flex-1"><span className="block font-display text-[19px] leading-none">{item.label}</span><span className="mt-1.5 block text-[12px] leading-snug text-muted-foreground">{item.description}</span></span>
-              <ChevronRight className={`h-4 w-4 shrink-0 ${tone.arrow}`} />
-            </>;
-            if (item.to === "/match?flow=friend" || item.to === "/match?flow=team") {
-              const flow = item.to.endsWith("team") ? "team" : "friend";
-              return <button key={item.to} type="button" onClick={() => { setPlayOpen(false); navigate({ to: "/match", search: { flow } as any }); }} className={`flex w-full items-center gap-3.5 rounded-[24px] border px-4 py-3.5 text-left shadow-[0_12px_32px_-28px_rgba(15,23,42,.28)] transition-transform active:scale-[.985] ${tone.card}`}>{inner}</button>;
-            }
-            return <Link key={item.to} to={item.to} onClick={() => setPlayOpen(false)} className={`flex items-center gap-3.5 rounded-[24px] border px-4 py-3.5 shadow-[0_12px_32px_-28px_rgba(15,23,42,.28)] transition-transform active:scale-[.985] ${tone.card}`}>{inner}</Link>;
-          })}
+        <SheetHeader className="pr-10"><SheetTitle className="text-left font-display text-[34px] leading-none">Spela</SheetTitle><p className="text-left text-sm text-muted-foreground">Hur vill du spela?</p></SheetHeader>
+        <div className="mt-5 grid grid-cols-2 gap-3">
+          <button type="button" onClick={() => { setPlayOpen(false); navigate({ to: "/match", search: { flow: "friend" } as any }); }} className="relative min-h-[190px] overflow-hidden rounded-[28px] border border-blue-200 bg-gradient-to-br from-blue-50 via-white to-red-50 p-4 text-left shadow-sm active:scale-[.985]">
+            <img src="/Red_vs_blue_1.png" alt="" className="absolute inset-x-0 top-0 h-[105px] w-full object-cover" />
+            <span className="absolute inset-x-0 top-0 h-[105px] bg-gradient-to-t from-white via-white/10 to-transparent" />
+            <span className="absolute inset-x-0 bottom-0 p-4"><span className="block font-display text-[25px] leading-none">Match</span><span className="mt-1.5 block text-xs text-muted-foreground">Spela mot vän eller bot.</span><ChevronRight className="absolute bottom-5 right-4 h-4 w-4 text-blue-600" /></span>
+          </button>
+          <Link to="/spela-runda" onClick={() => setPlayOpen(false)} className="relative min-h-[190px] overflow-hidden rounded-[28px] border border-emerald-200 bg-emerald-50/50 p-4 text-left shadow-sm active:scale-[.985]">
+            <img src="/Off_the_tee.png" alt="" className="absolute inset-x-0 top-0 h-[105px] w-full object-cover" />
+            <span className="absolute inset-x-0 top-0 h-[105px] bg-gradient-to-t from-white via-white/10 to-transparent" />
+            <span className="absolute inset-x-0 bottom-0 p-4"><span className="block font-display text-[25px] leading-none">Spela själv</span><span className="mt-1.5 block text-xs text-muted-foreground">Välj kategori och spela en runda.</span><ChevronRight className="absolute bottom-5 right-4 h-4 w-4 text-emerald-700" /></span>
+          </Link>
         </div>
       </SheetContent>
     </Sheet>
