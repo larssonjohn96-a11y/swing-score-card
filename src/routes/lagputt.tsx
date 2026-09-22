@@ -24,12 +24,12 @@ export const Route = createFileRoute("/lagputt")({
       {
         name: "description",
         content:
-          "Lagputtest: 18 puttar från 8 till 22 meter. Signerad poäng per putt, lägre totalscore är bättre. Träningstest utan HCP.",
+          "Lagputtest: 18 puttar från 8 till 22 meter. Signerad poäng per putt, lägre totalscore är bättre. ",
       },
-      { property: "og:title", content: "Lag putt – träningstest | SG4" },
+      { property: "og:title", content: "Lag putt – 18 puttar | SG4" },
       {
         property: "og:description",
-        content: "18 puttar, 8–22 meter. Mät din längdkontroll och följ utvecklingen över tid.",
+        content: "18 puttar, 8–22 meter. 18 puttar från 8–22 meter. Hur lågt kan du gå?",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -78,16 +78,11 @@ function LagPuttPage() {
           <Link to="/traning" search={{ category: undefined }} className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card">
             <ArrowLeft className="h-4 w-4" />
           </Link>
-          <Link
-            to="/lagputt-historik"
-            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground"
-          >
-            <BarChart3 className="h-3.5 w-3.5" /> Progress
-          </Link>
+          
         </div>
 
         <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-          Putting · Träningstest
+          Putting · 18 puttar
         </p>
         <h1 className="mt-2 font-display text-3xl leading-none">Lag putt</h1>
         <p className="mt-2.5 text-[13px] leading-relaxed text-muted-foreground">
