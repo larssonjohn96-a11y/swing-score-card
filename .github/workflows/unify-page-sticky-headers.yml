@@ -1,0 +1,257 @@
+name: Unify page sticky headers
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [.github/workflows/unify-page-sticky-headers.yml]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sg4-unify-page-sticky-headers
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+      - name: Apply shared header and remove duplicate page controls
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          import textwrap
+
+          def replace_once(source, old, new):
+              assert source.count(old) == 1, f'Expected exactly one occurrence: {old[:100]}'
+              return source.replace(old, new, 1)
+
+          root_path = Path('src/routes/__root.tsx')
+          root = root_path.read_text(encoding='utf-8')
+          map_start = root.index('const ACTIVITY_HEADER_TITLES: Record<string, string> = {')
+          function_start = root.index('function ActivityStickyHeader(', map_start)
+          end = root.index('type WakeLockHandle = {', function_start)
+          existing_titles = root[map_start:function_start].strip()
+          # The same component already wraps games outside the animated route outlet.
+          root = root[:map_start] + root[end:]
+          root = replace_once(root, 'import { ArrowLeft } from "lucide-react";', 'import { ActivityStickyHeader } from "@/components/activity-sticky-header";')
+          assert root.count('<ActivityStickyHeader pathname={location.pathname} />') == 1
+          root_path.write_text(root, encoding='utf-8')
+
+          Path('src/lib/hub-header.ts').write_text(textwrap.dedent('''\
+          export type HubHeader = { title: string; to: "/" };
+
+          const HUB_HEADERS: Readonly<Record<string, HubHeader>> = {
+            "/spela-runda": { title: "Spel & utmaningar", to: "/" },
+            "/standardiserade-tester": { title: "Standardiserade tester", to: "/" },
+            "/utveckling": { title: "Analys & utveckling", to: "/" },
+            "/spela": { title: "Match", to: "/" },
+          };
+
+          /** Index routes may be reached with or without a trailing slash. */
+          export function normalizeHeaderPath(pathname: string): string {
+            return pathname.replace(/\\/+$/, "") || "/";
+          }
+
+          /** Only hub pages exit directly to Home; active game navigation is unchanged. */
+          export function getHubHeader(pathname: string): HubHeader | null {
+            return HUB_HEADERS[normalizeHeaderPath(pathname)] ?? null;
+          }
+          '''), encoding='utf-8')
+
+          header = textwrap.dedent('''\
+          import { Link } from "@tanstack/react-router";
+          import { ArrowLeft } from "lucide-react";
+          import { getHubHeader, normalizeHeaderPath } from "@/lib/hub-header";
+
+          ''') + existing_titles + '\n\n' + textwrap.dedent('''\
+          const BACK_BUTTON_CLASS =
+            "flex h-10 w-10 items-center justify-center rounded-full text-slate-800 transition active:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2";
+
+          export function ActivityStickyHeader({ pathname }: { pathname: string }) {
+            const normalizedPath = normalizeHeaderPath(pathname);
+            const hub = getHubHeader(normalizedPath);
+            const title = hub?.title ?? ACTIVITY_HEADER_TITLES[normalizedPath];
+            if (!title) return null;
+
+            return (
+              <header
+                data-activity-sticky-header
+                className="sticky top-0 z-[60] border-b border-slate-200/70 bg-white/88 pt-[env(safe-area-inset-top)] backdrop-blur-2xl"
+              >
+                <div className="mx-auto grid h-[58px] w-full max-w-md grid-cols-[44px_minmax(0,1fr)_44px] items-center px-3">
+                  {hub ? (
+                    <Link
+                      to={hub.to}
+                      data-local-navigation
+                      aria-label="Tillbaka till startsidan"
+                      className={BACK_BUTTON_CLASS}
+                    >
+                      <ArrowLeft className="h-5 w-5" aria-hidden="true" />
+                    </Link>
+                  ) : (
+                    <button
+                      type="button"
+                      data-dynamic-back
+                      aria-label="Tillbaka"
+                      className={BACK_BUTTON_CLASS}
+                    >
+                      <ArrowLeft className="h-5 w-5" aria-hidden="true" />
+                    </button>
+                  )}
+                  <p className="min-w-0 truncate text-center text-[14px] font-extrabold tracking-[-.01em] text-slate-950">
+                    {title}
+                  </p>
+                  <span aria-hidden="true" />
+                </div>
+              </header>
+            );
+          }
+          ''')
+          Path('src/components/activity-sticky-header.tsx').write_text(header, encoding='utf-8')
+
+          match_path = Path('src/routes/spela.tsx')
+          match = match_path.read_text(encoding='utf-8')
+          match = replace_once(match, 'import { Link, createFileRoute } from "@tanstack/react-router";', 'import { createFileRoute } from "@tanstack/react-router";')
+          arrow_start = match.index('function HomeArrowIcon() {')
+          arrow_end = match.index('function PlayPage() {', arrow_start)
+          match = match[:arrow_start] + match[arrow_end:]
+          header_start = match.index('      <header className="relative z-10 grid grid-cols-[52px_1fr_52px] items-center px-5">')
+          header_end = match.index('      </header>', header_start) + len('      </header>')
+          match = match[:header_start] + match[header_end:]
+          match = replace_once(match, 'bg-[#fcfcfa] pb-28 pt-6 text-[#061126]', 'bg-[#fcfcfa] pb-28 pt-4 text-[#061126]')
+          match = replace_once(match, '<section className="relative z-10 mt-5 px-2">', '<section className="relative z-10 px-2">')
+          assert 'HomeArrowIcon' not in match and '<header' not in match
+          match_path.write_text(match, encoding='utf-8')
+
+          analysis_path = Path('src/routes/utveckling.index.tsx')
+          analysis = analysis_path.read_text(encoding='utf-8')
+          analysis = replace_once(analysis, 'max-w-md px-5 pb-28 pt-10', 'max-w-md px-5 pb-28 pt-4')
+          analysis = replace_once(analysis,
+              '<p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">SG4</p>\n      <h1 className="mt-2 font-display text-4xl leading-none">Analys</h1>',
+              '<h1 className="sr-only">Analys & utveckling</h1>')
+          analysis_path.write_text(analysis, encoding='utf-8')
+
+          tests_page = Path('src/routes/standardiserade-tester.tsx').read_text(encoding='utf-8')
+          assert '<header' not in tests_page and 'ArrowLeft' not in tests_page, 'Review existing test-library header before adding another'
+          print('Shared sticky header added for Tests, Analysis/development, Match and Games. Only hub buttons navigate directly home.')
+          PY
+      - uses: oven-sh/setup-bun@v2
+      - name: Install locked dependencies
+        run: bun install --frozen-lockfile
+      - name: Add regression coverage
+        run: |
+          cat > src/components/activity-sticky-header.test.tsx <<'TSX'
+          import React, { type ComponentProps } from "react";
+          import { readFileSync } from "node:fs";
+          import { renderToStaticMarkup } from "react-dom/server";
+          import { describe, expect, it, vi } from "vitest";
+          import { getHubHeader } from "@/lib/hub-header";
+
+          vi.mock("@tanstack/react-router", () => ({
+            Link: ({ to, children, ...props }: ComponentProps<"a"> & { to: string }) => (
+              <a href={to} {...props}>{children}</a>
+            ),
+          }));
+
+          import { ActivityStickyHeader } from "./activity-sticky-header";
+
+          const render = (pathname: string) => renderToStaticMarkup(<ActivityStickyHeader pathname={pathname} />);
+          const routes = ["/spela-runda", "/standardiserade-tester", "/utveckling", "/spela"];
+
+          describe("shared sticky headers on SG4 hub pages", () => {
+            it.each(routes)("provides one sticky home button and a title on %s", (pathname) => {
+              const html = render(pathname);
+              expect(html).toContain('data-activity-sticky-header');
+              expect(html).toContain('sticky top-0');
+              expect(html).toContain('href="/"');
+              expect(html).toContain('data-local-navigation');
+              expect(html).toContain('aria-label="Tillbaka till startsidan"');
+              expect(html).not.toContain('data-dynamic-back');
+              expect(html.match(/<a\b/g)).toHaveLength(1);
+              expect(html).not.toContain('<button');
+              expect(getHubHeader(pathname)?.title.length).toBeGreaterThan(0);
+            });
+
+            it("uses precisely the Games button design on the other hub pages", () => {
+              const buttonClass = (pathname: string) => render(pathname).match(/<a[^>]*class="([^"]*)"/)?.[1];
+              const expected = buttonClass("/spela-runda");
+              expect(expected).toBeTruthy();
+              for (const pathname of routes) expect(buttonClass(pathname)).toBe(expected);
+            });
+
+            it("supports trailing-slash index URLs and preserves the correct page titles", () => {
+              for (const pathname of routes) expect(render(`${pathname}/`)).toBe(render(pathname));
+              expect(render("/standardiserade-tester")).toContain('Standardiserade tester');
+              expect(render("/utveckling/")).toContain('Analys &amp; utveckling');
+              expect(render("/spela")).toContain('Match');
+            });
+
+            it("keeps safe-area padding outside the fixed-height content row", () => {
+              const html = render("/spela");
+              expect(html.match(/<header[^>]*>/)?.[0]).toContain('pt-[env(safe-area-inset-top)]');
+              const row = html.match(/<div[^>]*>/)?.[0] ?? '';
+              expect(row).toContain('h-[58px]');
+              expect(row).not.toContain('pt-[env');
+            });
+
+            it("does not reroute active games or add headers to Home", () => {
+              for (const pathname of ["/", "/match", "/match-bot", "/utveckling/driving"]) {
+                expect(getHubHeader(pathname)).toBeNull();
+                expect(render(pathname)).toBe('');
+              }
+              const game = render("/speedrundan");
+              expect(game).toContain('Ball Speed Challenge');
+              expect(game).toContain('data-dynamic-back');
+              expect(game).not.toContain('href="/"');
+            });
+
+            it("mounts once outside route animations and keeps direct home links out of global interception", () => {
+              const root = readFileSync('src/routes/__root.tsx', 'utf8');
+              expect(root.match(/<ActivityStickyHeader\b/g)).toHaveLength(1);
+              expect(root.indexOf('<ActivityStickyHeader')).toBeLessThan(root.indexOf('className="sg4-route-transition"'));
+              expect(root).toContain('control.hasAttribute("data-local-navigation")');
+              expect(root).not.toContain('function ActivityStickyHeader');
+            });
+
+            it("removes the duplicate Match header while preserving every match option", () => {
+              const match = readFileSync('src/routes/spela.tsx', 'utf8');
+              expect(match).not.toContain('HomeArrowIcon');
+              expect(match).not.toContain('<header');
+              expect(match).toContain('href="/match?flow=friend"');
+              expect(match).toContain('href="/match-bot"');
+              expect(match).toContain('href="/match?flow=team"');
+              const tests = readFileSync('src/routes/standardiserade-tester.tsx', 'utf8');
+              expect(tests).not.toContain('<header');
+              expect(tests).not.toContain('ArrowLeft');
+              const analysis = readFileSync('src/routes/utveckling.index.tsx', 'utf8');
+              expect(analysis).toContain('<h1 className="sr-only">Analys & utveckling</h1>');
+            });
+          });
+          TSX
+          bunx prettier --write src/lib/hub-header.ts src/components/activity-sticky-header.tsx src/components/activity-sticky-header.test.tsx
+      - name: Production build
+        run: bun run build
+      - name: Typecheck
+        run: bunx tsc --noEmit
+      - name: Header regression tests
+        run: bun run test src/components/activity-sticky-header.test.tsx
+      - name: Commit verified changes atomically
+        run: |
+          git diff --check
+          git diff --stat -- src/routes/__root.tsx src/routes/spela.tsx src/routes/utveckling.index.tsx
+          git add src/routes/__root.tsx src/routes/spela.tsx src/routes/utveckling.index.tsx src/lib/hub-header.ts src/components/activity-sticky-header.tsx src/components/activity-sticky-header.test.tsx
+          git rm .github/workflows/unify-page-sticky-headers.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Use shared sticky titles and home buttons on Tests, Analysis and Match"
+          # A normal push fails safely if another editor has pushed concurrently.
+          git push origin HEAD:main
+          git rev-parse HEAD
