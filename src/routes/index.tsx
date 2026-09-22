@@ -652,7 +652,7 @@ function Home() {
             >
               Spel & utmaningar
             </Link>
-                        <Link to="/standardiserade-tester" className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black">Standardiserade tester</Link>
+                        <Link to="/standardiserade-tester" className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black">Testa & utveckla</Link>
             <Link
               to="/utveckling"
               className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black"
@@ -883,8 +883,8 @@ function Home() {
 
         <section className="mt-7">
           <BrowseHeading
-            title="Standardiserade tester"
-            subtitle="Mät specifika delar av spelet"
+            title="Testa & utveckla ditt spel"
+            subtitle="Mät, fokusera och följ din utveckling."
             action="Alla tester"
             to="/standardiserade-tester"
           />
