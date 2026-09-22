@@ -13,7 +13,6 @@ import {
   type LongDriveSession,
   type LongDriveUnit,
 } from "@/lib/longdrive";
-import { LEVELS } from "@/lib/levels";
 
 export const Route = createFileRoute("/longdrive")({
   head: () => ({
@@ -22,12 +21,12 @@ export const Route = createFileRoute("/longdrive")({
       {
         name: "description",
         content:
-          "Long drive-test med 3 försök per omgång. Logga carry för varje slag, se längsta och snitt samt utvecklingen över tid.",
+          "Long drive-test med 3 försök per omgång. Logga carry för varje slag, se längsta och snitt.",
       },
       { property: "og:title", content: "Long drive – 3 försök carry" },
       {
         property: "og:description",
-        content: "Tre utslag per test, bara carry räknas. Följ längsta drive och snitt över tid.",
+        content: "Tre utslag per test, bara carry räknas. Se din längsta drive och ditt snitt.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -35,10 +34,6 @@ export const Route = createFileRoute("/longdrive")({
   }),
   component: LongDrivePage,
 });
-
-function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString("sv-SE", { day: "numeric", month: "short" });
-}
 
 const EMPTY = Array.from({ length: LONG_DRIVE_ATTEMPTS }, () => "");
 
@@ -55,25 +50,6 @@ function LongDrivePage() {
   }, []);
 
   const stats = useMemo(() => longDriveStats(sessions), [sessions]);
-  const chartData = useMemo(
-    () =>
-      sessions.map((s) => ({
-        label: fmtDate(s.date),
-        best: Number(sessionBest(s).toFixed(1)),
-        snitt: Number(sessionAvg(s).toFixed(1)),
-      })),
-    [sessions],
-  );
-
-  const chartUnit = sessions.length ? sessions[sessions.length - 1].unit : unit;
-  const refLines = useMemo(() => {
-    const yds = chartUnit === "yds";
-    return LEVELS.map((l) => {
-      const y = yds ? l.carryYds : l.carryM;
-      return { y, text: `${l.label} ${y}` };
-    });
-  }, [chartUnit]);
-
   const parsed = values.map((v) => {
     const n = Number(v.replace(",", "."));
     return v.trim() && Number.isFinite(n) && n > 0 ? n : undefined;
