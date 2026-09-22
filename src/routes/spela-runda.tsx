@@ -14,7 +14,7 @@ const GAMES = [
   { to:"/driverrundan", title:"Utslag", subtitle:"Hur långt och rakt kan du slå?", image:"/Off_the_tee.png", hcp:true },
   { to:"/inspelsrundan", title:"Inspel", subtitle:"Hur nära kan du slå?", image:"/Approach_shot.png", hcp:true },
   { to:"/puttrundan", title:"Puttning", subtitle:"Hur bra puttar du?", image:"/Putting_1.png", hcp:true },
-  { to:"/chipprundan", title:"Närspel", subtitle:"Hur nära flaggan kan du komma?", image:"/0d286fd4-99fa-47eb-b39c-a7ff718ebdd6.png", hcp:true },
+  { to:"/chipprundan", title:"Chip", subtitle:"Hur nära flaggan kan du komma?", image:"/0d286fd4-99fa-47eb-b39c-a7ff718ebdd6.png", hcp:true },
   { to:"/bunkerrundan", title:"Bunker", subtitle:"Hur bra är du från sanden?", image:"/bunker-round.svg", hcp:true },
 ] as const;
 function RoundGamesPage() {
