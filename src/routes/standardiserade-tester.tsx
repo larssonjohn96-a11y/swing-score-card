@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { CalendarDays, Check, Star } from "lucide-react";
+import { CalendarDays, Check, ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { CATEGORIES } from "@/lib/categories";
 import { collectLocalSessions } from "@/lib/sessions";
 import { useSessionsVersion } from "@/lib/sessions/use-sessions";
@@ -135,6 +135,8 @@ function StandardizedTestsPage() {
   const [focusTests, setFocusTests] = useState<string[]>([]);
   const [libraryFavoritesOpen, setLibraryFavoritesOpen] = useState(false);
   const [libraryAllOpen, setLibraryAllOpen] = useState(false);
+  const [focusView, setFocusView] = useState<"overview" | "calendar" | "history">("overview");
+  const [calendarOffset, setCalendarOffset] = useState(0);
   const sessionsVersion = useSessionsVersion();
   useEffect(() => {
     try { const parsed = JSON.parse(localStorage.getItem(FAVORITES_KEY) ?? "[]"); if (Array.isArray(parsed)) setFavorites(parsed.filter((item): item is string => typeof item === "string")); } catch {}
@@ -170,6 +172,28 @@ function StandardizedTestsPage() {
     return collectLocalSessions().filter(session => ids.has(session.testId) && Date.parse(session.playedAt) >= start).length;
   }, [activeFocus?.id, activeFocus?.startedAt, activeFocus?.testPaths.join("|"), sessionsVersion]);
   const focusDaysLeft = activeFocus ? Math.max(0, Math.ceil((Date.parse(activeFocus.startedAt) + activeFocus.weeks * 7 * 86400000 - Date.now()) / 86400000)) : 0;
+  const sessions = useMemo(() => typeof window === "undefined" ? [] : collectLocalSessions(), [sessionsVersion, focusSessionCount]);
+  const sessionsForBlock = (block: FocusBlock) => {
+    const start = Date.parse(block.startedAt);
+    const end = block.endedAt ? Date.parse(block.endedAt) : start + block.weeks * 7 * 86400000;
+    const ids = new Set(block.testPaths.flatMap(path => focusRouteToTestIds[path] ?? []));
+    return sessions.filter(session => ids.has(session.testId) && Date.parse(session.playedAt) >= start && Date.parse(session.playedAt) <= end);
+  };
+  const blockProgress = activeFocus ? activeFocus.testPaths.map(path => {
+    const test = allTests.find(item => item.to === path);
+    const ids = new Set(focusRouteToTestIds[path] ?? []);
+    const rows = sessionsForBlock(activeFocus).filter(session => ids.has(session.testId)).sort((a,b) => Date.parse(a.playedAt) - Date.parse(b.playedAt));
+    const value = (row: typeof rows[number]) => row.score ?? row.testHandicap;
+    const first = rows.find(row => value(row) !== null);
+    const last = [...rows].reverse().find(row => value(row) !== null);
+    return { path, title: test?.title ?? path, count: rows.length, first: first ? value(first) : null, last: last ? value(last) : null };
+  }) : [];
+  const calendarBase = activeFocus ? new Date(activeFocus.startedAt) : new Date();
+  const calendarMonth = new Date(calendarBase.getFullYear(), calendarBase.getMonth() + calendarOffset, 1);
+  const calendarYear = calendarMonth.getFullYear(), calendarMonthIndex = calendarMonth.getMonth();
+  const calendarDays = Array.from({length: new Date(calendarYear, calendarMonthIndex + 1, 0).getDate()}, (_,i) => i + 1);
+  const calendarStartOffset = (new Date(calendarYear, calendarMonthIndex, 1).getDay() + 6) % 7;
+  const activeSessionDates = new Set((activeFocus ? sessionsForBlock(activeFocus) : []).map(session => new Date(session.playedAt).toLocaleDateString("sv-SE")));
   const activeFocusTests = activeFocus ? activeFocus.testPaths.map(path => allTests.find(test => test.to === path)).filter((test): test is TestCard => Boolean(test)) : [];
   const completedFocus = focusBlocks.filter(block => block.endedAt);
   const focusSection = TEST_SECTIONS.find(section => section.title === focusCategory);
@@ -239,12 +263,23 @@ function StandardizedTestsPage() {
             </div>
             <button type="button" onClick={() => setTab("library")} className="mt-5 flex min-h-12 w-full items-center justify-center rounded-2xl bg-white font-bold text-emerald-800">Gå till tester</button>
           </section>
-          <div className="-mx-5 mt-6 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {activeFocusTests.map(test => <TestCardView key={`active-focus-${test.to}`} test={test} favorite={favorites.includes(test.to)} onToggleFavorite={() => toggleFavorite(test.to)} />)}
+          <div className="mt-5 grid grid-cols-3 rounded-2xl bg-slate-100 p-1">
+            {([["overview","Utveckling"],["calendar","Kalender"],["history","Historik"]] as const).map(([id,label]) => <button key={id} type="button" onClick={() => setFocusView(id)} className={`rounded-xl px-2 py-2 text-xs font-bold ${focusView === id ? "bg-white shadow-sm" : "text-slate-500"}`}>{label}</button>)}
           </div>
+          {focusView === "overview" ? <>
+            <div className="-mx-5 mt-5 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {activeFocusTests.map(test => <TestCardView key={`active-focus-${test.to}`} test={test} favorite={favorites.includes(test.to)} onToggleFavorite={() => toggleFavorite(test.to)} />)}
+            </div>
+            <section className="mt-6"><h2 className="text-lg font-black">Utveckling i blocket</h2><div className="mt-3 space-y-2">{blockProgress.map(item => <div key={item.path} className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-4"><span><strong className="block text-sm">{item.title}</strong><span className="text-xs text-slate-400">{item.count} genomförda</span></span><span className="text-right text-xs text-slate-500">{item.first === null ? "Väntar på första resultat" : <><strong className="text-slate-900">{Number(item.first).toFixed(1)}</strong>{item.last !== null && item.count > 1 ? <> → <strong className="text-slate-900">{Number(item.last).toFixed(1)}</strong></> : null}</>}</span></div>)}</div></section>
+          </> : focusView === "calendar" ? <section className="mt-5 rounded-[24px] border border-slate-200 bg-white p-4">
+            <div className="flex items-center justify-between"><button type="button" onClick={() => setCalendarOffset(v => v - 1)} className="p-2"><ChevronLeft className="h-4 w-4" /></button><strong className="text-sm">{calendarMonth.toLocaleDateString("sv-SE",{month:"long",year:"numeric"})}</strong><button type="button" onClick={() => setCalendarOffset(v => v + 1)} className="p-2"><ChevronRight className="h-4 w-4" /></button></div>
+            <div className="mt-4 grid grid-cols-7 text-center text-[10px] font-bold text-slate-400">{["M","T","O","T","F","L","S"].map((d,i)=><span key={i}>{d}</span>)}</div>
+            <div className="mt-2 grid grid-cols-7 gap-y-2 text-center text-xs">{Array.from({length:calendarStartOffset}).map((_,i)=><span key={`blank-${i}`} />)}{calendarDays.map(day => { const date = new Date(calendarYear,calendarMonthIndex,day); const key=date.toLocaleDateString("sv-SE"); const hit=activeSessionDates.has(key); return <span key={day} className={`mx-auto flex h-8 w-8 items-center justify-center rounded-full ${hit ? "bg-emerald-600 font-bold text-white" : "text-slate-600"}`}>{day}</span>})}</div>
+            <p className="mt-4 text-center text-[11px] text-slate-400">Grönt = minst ett fokustest genomfört.</p>
+          </section> : <section className="mt-5"><h2 className="text-lg font-black">Tidigare block</h2>{completedFocus.length ? <div className="mt-3 space-y-2">{completedFocus.map(block => { const rows=sessionsForBlock(block); return <div key={block.id} className="rounded-2xl border border-slate-200 bg-white p-4"><div className="flex justify-between gap-3"><strong>{block.category}</strong><span className="text-xs text-slate-400">{block.weeks} veckor</span></div><p className="mt-1 text-xs text-slate-500">{new Date(block.startedAt).toLocaleDateString("sv-SE")} – {new Date(block.endedAt!).toLocaleDateString("sv-SE")} · {rows.length} tester</p></div>})}</div> : <div className="mt-3 rounded-2xl border border-dashed border-slate-200 p-5 text-center text-sm text-slate-400">Inga avslutade fokusblock ännu.</div>}</section>}
           <button type="button" onClick={finishFocusBlock} className="mt-6 min-h-12 w-full rounded-2xl border border-slate-300 bg-white font-bold">Avsluta block</button>
         </>}
-        {completedFocus.length ? <section className="mt-10"><h2 className="text-xl font-black">Tidigare block</h2><div className="mt-3 space-y-2">{completedFocus.map(block => <div key={block.id} className="rounded-2xl border border-slate-200 bg-white p-4"><strong>{block.category}</strong><p className="mt-1 text-xs text-slate-500">{block.weeks} veckor · {block.testPaths.length} tester · avslutat {new Date(block.endedAt!).toLocaleDateString("sv-SE")}</p></div>)}</div></section> : null}
+        
       </div> : <>
       {activeFocus ? <section className="px-5 pt-6">
         <div className="flex items-end justify-between gap-3">
