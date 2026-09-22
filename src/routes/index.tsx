@@ -780,12 +780,13 @@ function Home() {
             <h2 className="text-[24px] font-black leading-none text-foreground">Spel & utmaningar</h2>
             <p className="mt-1.5 text-sm text-muted-foreground">Välj en utmaning. Slå ditt rekord.</p>
           </div>
-          <Link to="/spela-runda" className="group mt-4 flex min-h-[112px] items-center gap-4 rounded-[26px] border border-border bg-card/85 px-5 py-4 shadow-[0_14px_34px_-28px_rgba(15,23,42,.35)] transition-transform active:scale-[.99]">
-            <span className="min-w-0 flex-1">
-              <span className="block font-display text-[27px] leading-none">Spela</span>
-              <span className="mt-2 block text-sm text-muted-foreground">Välj kategori och utmana dig själv.</span>
+          <Link to="/spela-runda" className="group relative mt-4 block min-h-[220px] overflow-hidden rounded-[26px] border border-border bg-card shadow-sm transition-transform active:scale-[.99]">
+            <img src="/Off_the_tee.png" alt="" className="absolute inset-0 h-full w-full object-cover object-[18%_50%]" />
+            <span className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-black/5" />
+            <span className="absolute inset-x-0 bottom-0 flex items-end gap-4 p-5 text-white">
+              <span className="min-w-0 flex-1"><span className="block font-display text-[30px] leading-none">Spela</span><span className="mt-2 block text-sm text-white/80">Välj kategori och utmana dig själv.</span></span>
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/18 backdrop-blur-md"><ChevronRight className="h-5 w-5" /></span>
             </span>
-            <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
           </Link>
         </section>
 
