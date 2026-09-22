@@ -1,6 +1,6 @@
 import { LEGACY_KEYS } from "@/lib/sessions/keys";
 import { recordSessionDeleted, recordSessionSaved } from "@/lib/sessions/sync";
-export const LONG_DRIVE_ATTEMPTS = 6;
+export const LONG_DRIVE_ATTEMPTS = 3;
 
 export type LongDriveUnit = "m" | "yds";
 
@@ -8,7 +8,7 @@ export type LongDriveSession = {
   id: string;
   /** ISO-datum, YYYY-MM-DD */
   date: string;
-  /** carry per försök, 6 st */
+  /** carry per försök, 3 st */
   carries: number[];
   unit: LongDriveUnit;
   note?: string;
