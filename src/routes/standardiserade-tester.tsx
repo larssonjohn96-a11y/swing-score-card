@@ -6,7 +6,7 @@ import { CATEGORIES } from "@/lib/categories";
 export const Route = createFileRoute("/standardiserade-tester")({
   head: () => ({
     meta: [
-      { title: "Standardiserade tester – SG4" },
+      { title: "Testa & utveckla ditt spel – SG4" },
       { name: "description", content: "Bibliotek med standardiserade golftester för specifika delar av spelet." },
     ],
   }),
@@ -222,9 +222,9 @@ function StandardizedTestsPage() {
         {completedFocus.length ? <section className="mt-10"><h2 className="text-xl font-black">Tidigare block</h2><div className="mt-3 space-y-2">{completedFocus.map(block => <div key={block.id} className="rounded-2xl border border-slate-200 bg-white p-4"><strong>{block.category}</strong><p className="mt-1 text-xs text-slate-500">{block.weeks} veckor · {block.testPaths.length} tester · avslutat {new Date(block.endedAt!).toLocaleDateString("sv-SE")}</p></div>)}</div></section> : null}
       </div> : <>
       <div className="px-5 pt-6">
-        <p className="text-[10px] font-black uppercase tracking-[.2em] text-blue-600">Testbibliotek</p>
-        <h1 className="mt-1 font-display text-[38px] leading-none text-foreground">Testa hela ditt spel</h1>
-        <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground">Mät en del i taget och följ samma test över tid.</p>
+        <p className="text-[10px] font-black uppercase tracking-[.2em] text-blue-600">Testa & utveckla</p>
+        <h1 className="mt-1 font-display text-[38px] leading-none text-foreground">Testa & utveckla ditt spel</h1>
+        <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground">Mät, fokusera och följ din utveckling.</p>
       </div>
 
       <div className="space-y-8 px-5 pt-8">
