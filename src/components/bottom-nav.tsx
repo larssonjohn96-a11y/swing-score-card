@@ -13,7 +13,7 @@ const LEFT_TABS = [
 ] as const;
 
 const RIGHT_TABS = [
-  { to: "/utveckling", label: "Analys", icon: Gauge, exact: false },
+  { to: "/utveckling", label: "Jämför", icon: Gauge, exact: false },
 ] as const;
 
 const PLAY_LINKS = [
