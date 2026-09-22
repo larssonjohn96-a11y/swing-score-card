@@ -31,7 +31,7 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "SG4 – Hem" },
-      { name: "description", content: "Spela, testa och följ din utveckling i SG4." },
+      { name: "description", content: "Spela, testa och slå dina resultat i SG4." },
     ],
   }),
   component: Home,
@@ -884,7 +884,7 @@ function Home() {
         <section className="mt-7">
           <BrowseHeading
             title="Testa & utveckla ditt spel"
-            subtitle="Mät, fokusera och följ din utveckling."
+            subtitle="Testa dig. Slå ditt resultat."
             action="Alla tester"
             to="/standardiserade-tester"
           />
