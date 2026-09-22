@@ -759,7 +759,8 @@ function Home() {
                 <p className="text-[10px] font-black uppercase tracking-[.18em] text-blue-600">
                   Match
                 </p>
-                <h2 className="mt-1 text-xl font-black text-foreground">Utmana en vän</h2>
+                <h2 className="mt-1 text-xl font-black text-foreground">Match</h2>
+                <p className="mt-1 text-sm text-muted-foreground">Utmana en vän eller spela mot en bot.</p>
                 <div className="mt-3 flex items-center gap-2">
                   <div className="flex -space-x-2">
                     {previewFriends.length ? (
