@@ -1,4 +1,4 @@
-import { Link, createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { ChevronRight } from "lucide-react";
 import { useEffect } from "react";
 import { recordRecommendationImpressions, recordRecommendationOpen } from "@/lib/sg4-recommender";
@@ -40,24 +40,6 @@ function PlayCard({ href, title, recommendationId }: PlayCardProps) {
   );
 }
 
-function HomeArrowIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      fill="none"
-      className="h-6 w-6"
-      stroke="currentColor"
-      strokeWidth="2.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M19 12H5" />
-      <path d="m12 19-7-7 7-7" />
-    </svg>
-  );
-}
-
 function PlayPage() {
   useEffect(() => {
     recordRecommendationImpressions(["play-bot", "play-friend", "play-team"]);
@@ -82,7 +64,7 @@ function PlayPage() {
   }, []);
 
   return (
-    <main className="relative mx-auto min-h-screen w-full max-w-md overflow-hidden bg-[#fcfcfa] pb-28 pt-6 text-[#061126]">
+    <main className="relative mx-auto min-h-screen w-full max-w-md overflow-hidden bg-[#fcfcfa] pb-28 pt-4 text-[#061126]">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute -left-28 top-8 h-[350px] w-[350px] rounded-full bg-[#377dff]/24 blur-[92px]" />
         <div className="absolute -right-28 top-12 h-[350px] w-[350px] rounded-full bg-[#ff5d67]/22 blur-[92px]" />
@@ -92,22 +74,9 @@ function PlayPage() {
         <div className="absolute -right-20 bottom-[-100px] h-[360px] w-[360px] rounded-full bg-[#ff9da3]/12 blur-[110px]" />
       </div>
 
-      <header className="relative z-10 grid grid-cols-[52px_1fr_52px] items-center px-5">
-        <Link
-          to="/"
-          aria-label="Gå till startsidan"
-          className="flex h-12 w-12 items-center justify-center rounded-full border border-white/78 bg-white/52 text-[#061126] backdrop-blur-[18px] shadow-[inset_0_1px_0_rgba(255,255,255,.86),0_10px_24px_-18px_rgba(15,23,42,.28)] active:scale-95"
-        >
-          <HomeArrowIcon />
-        </Link>
-        <div className="text-center">
-          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#667b99]">SG4 Match</p>
-          <p className="mt-1 font-display text-[18px] leading-none text-[#061126]">Match</p>
-        </div>
-        <span />
-      </header>
 
-      <section className="relative z-10 mt-5 px-2">
+
+      <section className="relative z-10 px-2">
         <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[30px] border border-white/75 bg-gradient-to-br from-[#dfe9ff] via-[#f4f6fb] to-[#ffe5e8] shadow-[0_22px_48px_-30px_rgba(15,23,42,.34),inset_0_1px_0_rgba(255,255,255,.5)] backdrop-blur-[6px]">
           <img
             src="/Red_vs_blue_1.png"

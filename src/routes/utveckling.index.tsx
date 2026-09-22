@@ -46,9 +46,8 @@ function UtvecklingPage() {
   const hasData = data?.cats.some((c) => c.count > 0) ?? false;
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-28 pt-10">
-      <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">SG4</p>
-      <h1 className="mt-2 font-display text-4xl leading-none">Analys</h1>
+    <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-28 pt-4">
+      <h1 className="sr-only">Analys & utveckling</h1>
 
       {!data ? null : !hasData ? (
         <p className="mt-10 rounded-3xl border border-dashed border-border bg-card/50 p-6 text-center text-sm text-muted-foreground">

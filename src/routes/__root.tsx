@@ -9,7 +9,7 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ActivityStickyHeader } from "@/components/activity-sticky-header";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -133,60 +133,6 @@ function trainingFallback(pathname: string, search: string) {
   return TRAINING_CATEGORY_PARENT[pathname] ?? null;
 }
 
-
-const ACTIVITY_HEADER_TITLES: Record<string, string> = {
-  "/spela-runda": "Spel & utmaningar",
-  "/speedrundan": "Ball Speed Challenge",
-  "/driverrundan": "Långt & rakt",
-  "/chipprundan": "Närmast flaggan",
-  "/puttrundan": "Sänk den!",
-  "/inspelsrundan": "Mitt i prick",
-  "/bunkerrundan": "Sandjakten",
-  "/longdrive": "Long Drive",
-  "/8-bollar": "8 Bollar",
-  "/upp-och-in": "Upp & In",
-  "/tutor-test": "Tutor Test",
-  "/pga-tour-18-puttar": "18 Puttar",
-  "/lagputt": "Lag Putt",
-  "/green-reading": "Green Reading",
-  "/klock-putt": "Klockputt",
-  "/50-bollar": "25-bollsövningen",
-  "/par-3-challenge": "Par 3 Challenge",
-  "/approach-pei-valj": "PEI Approach",
-  "/approach-pei-wedge": "PEI Wedge",
-  "/approach-pei-iron": "PEI Iron",
-  "/shot-shaping": "Shot Shaping",
-  "/wedge-stege": "Wedge Stege",
-  "/driver-konsekvens": "Driver Consistency",
-  "/fairway-streak": "Fairway Streak",
-  "/speed-test": "Ball Speed Test",
-  "/bunker-test": "Bunkertest",
-  "/narspel-test": "Närspelstest",
-  "/offtee-test": "Off the Tee Test",
-  "/putting": "Putting Test",
-  "/approach": "Approach Test",
-};
-
-function ActivityStickyHeader({ pathname }: { pathname: string }) {
-  const title = ACTIVITY_HEADER_TITLES[pathname];
-  if (!title) return null;
-  return (
-    <div className="sticky top-0 z-[60] border-b border-slate-200/70 bg-white/88 backdrop-blur-2xl">
-      <div className="mx-auto grid h-[58px] w-full max-w-md grid-cols-[44px_1fr_44px] items-center px-3 pt-[env(safe-area-inset-top)]">
-        <button
-          type="button"
-          data-dynamic-back
-          aria-label="Tillbaka"
-          className="flex h-10 w-10 items-center justify-center rounded-full text-slate-800 transition active:bg-slate-100"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <p className="truncate text-center text-[14px] font-extrabold tracking-[-.01em] text-slate-950">{title}</p>
-        <span />
-      </div>
-    </div>
-  );
-}
 
 type WakeLockHandle = {
   released?: boolean;
