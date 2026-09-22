@@ -233,7 +233,7 @@ export function SpeedRoundGame({
   const goal = active ? speedGoal(active, state.history) : null;
   const replay =
     round?.status !== "full"
-      ? "Redo för alla sex slag?"
+      ? "Redo för alla tre slag?"
       : beatAverage
         ? "Över ditt snitt – bygg vidare nästa runda!"
         : oldAverage.count &&
@@ -255,7 +255,7 @@ export function SpeedRoundGame({
   const records = (
     <div className="grid grid-cols-2 gap-3 rounded-2xl bg-blue-50 p-4 text-center">
       <div>
-        <strong className="block text-2xl text-amber-600">{best.stars ?? "–"} / 18 ★</strong>
+        <strong className="block text-2xl text-amber-600">{best.stars ?? "–"} / 9 ★</strong>
         <p className="text-xs text-slate-500">Personligt stjärnrekord</p>
       </div>
       <div>
@@ -322,7 +322,7 @@ export function SpeedRoundGame({
                   </div>
                   <div className="text-center">
                     <strong className="text-xl">
-                      {active.holes.filter((h) => h.length).length}/6
+                      {active.holes.filter((h) => h.length).length}/3
                     </strong>
                     <p className="text-[10px] font-bold">SLAG</p>
                   </div>
@@ -419,14 +419,10 @@ export function SpeedRoundGame({
                       setConfirmation(null);
                       setEdit(undefined);
                       commit({ type: "next", at: Date.now() });
-                      setMoving(index !== 2 && index !== 5);
+                      setMoving(index !== 2);
                     }}
                   >
-                    {index === 5
-                      ? "Se rundans resultat"
-                      : index === 2
-                        ? "Till Halfway House"
-                        : `Nästa slag · ${index + 2}`}{" "}
+                    {index === 2 ? "Se rundans resultat" : `Nästa slag · ${index + 2}`}{" "}
                     →
                   </button>
                   <button
@@ -455,7 +451,7 @@ export function SpeedRoundGame({
         </div>
       ) : view === "result" && round ? (
         <div className="space-y-4 pt-5">
-          {(pb || stars === 18) && fresh === round.id && <ChipCelebration />}
+          {(pb || stars === 9) && fresh === round.id && <ChipCelebration />}
           <div className="text-center">
             <p className="text-sm font-bold uppercase text-blue-600">
               {round.status === "full"
@@ -467,7 +463,7 @@ export function SpeedRoundGame({
             <h1 className="mt-2 text-3xl font-black">
               {pb
                 ? "Nytt personbästa!"
-                : stars === 18
+                : stars === 9
                   ? "Alla stjärnor!"
                   : beatAverage
                     ? "Över ditt snitt!"
@@ -520,7 +516,7 @@ export function SpeedRoundGame({
           <SpeedCourseAnalysis round={round} />
           <p className="text-center text-sm font-semibold text-slate-600">{replay}</p>
           <button className="speed-black" onClick={requestStart}>
-            Spela igen · 6 slag
+            Spela igen · 3 slag
           </button>
           <button
             className="speed-secondary"
@@ -608,11 +604,11 @@ export function SpeedRoundGame({
             </div>
             <div className="p-5">
               <p className="text-sm leading-relaxed text-slate-600">
-                Sex slag. Läs av bollhastigheten och försök slå ditt eget rekord. Ju mer fart, desto fler stjärnor.
+                Tre slag. Läs av bollhastigheten och försök slå ditt eget rekord. Ju mer fart, desto fler stjärnor.
               </p>
               <div className="mt-4 grid grid-cols-2 gap-2 text-center">
-                <div className="rounded-2xl bg-slate-50 p-3"><strong className="block text-xl">6</strong><span className="text-xs text-slate-500">slag</span></div>
-                <div className="rounded-2xl bg-slate-50 p-3"><strong className="block text-xl">18 ★</strong><span className="text-xs text-slate-500">max</span></div>
+                <div className="rounded-2xl bg-slate-50 p-3"><strong className="block text-xl">3</strong><span className="text-xs text-slate-500">slag</span></div>
+                <div className="rounded-2xl bg-slate-50 p-3"><strong className="block text-xl">9 ★</strong><span className="text-xs text-slate-500">max</span></div>
               </div>
               {reference !== null && (
                 <p className="mt-3 text-center text-xs text-slate-500">Din referens: {fmt(reference)} mph</p>
@@ -684,7 +680,7 @@ export function SpeedRoundGame({
         <DialogContent className="max-w-sm rounded-3xl bg-white text-slate-950">
           <DialogTitle className="text-2xl">Så här spelar du</DialogTitle>
           <DialogDescription className="text-lg">
-            Sex slag med driver. Läs av bollhastigheten.
+            Tre slag med driver. Läs av bollhastigheten.
           </DialogDescription>
           <ol className="space-y-3 text-lg">
             <li>1. Värm upp och slå med driver.</li>
