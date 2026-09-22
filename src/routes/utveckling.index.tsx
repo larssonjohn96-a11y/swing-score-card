@@ -6,7 +6,6 @@ import { AnalysisRadarSwitcher } from "@/components/analysis-radar-switcher";
 
 export const Route = createFileRoute("/utveckling/")({ component: UtvecklingPage });
 
-const DAY = 86400000;
 type Data = {
   real: number | null;
   cats: CategoryHandicap[];
@@ -16,6 +15,7 @@ type Data = {
 function loadData(): Data {
   const real = loadRealHandicap();
   const cats = computeStableCategoryHandicaps(undefined, real ?? undefined);
+  const total = computeEstimatedHandicap(cats);
   return {
     real,
     cats,
