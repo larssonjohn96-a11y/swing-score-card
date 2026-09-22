@@ -249,14 +249,14 @@ function StandardizedTestsPage() {
       {activeFocus ? <section className="px-5 pt-6">
         <div className="flex items-end justify-between gap-3">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[.18em] text-blue-600">Aktivt fokus · ${activeFocus.category}</p>
+            <p className="text-[10px] font-black uppercase tracking-[.18em] text-blue-600">Aktivt fokus · {activeFocus.category}</p>
             <h2 className="mt-1 text-[24px] font-black leading-none">Dina fokustester</h2>
           </div>
           <button type="button" onClick={() => setTab("focus")} className="text-xs font-bold text-blue-600">Visa block</button>
         </div>
         <div className="mt-3 flex gap-3 text-[11px] text-slate-500">
-          <span>Start ${new Date(activeFocus.startedAt).toLocaleDateString("sv-SE")}</span>
-          <span>·</span><span>${focusDaysLeft} dagar kvar</span><span>·</span><span>${focusSessionCount} tester gjorda</span>
+          <span>Start {new Date(activeFocus.startedAt).toLocaleDateString("sv-SE")}</span>
+          <span>·</span><span>{focusDaysLeft} dagar kvar</span><span>·</span><span>{focusSessionCount} tester gjorda</span>
         </div>
         <div className="-mx-5 mt-3.5 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {activeFocusTests.map(test => <TestCardView key={`focus-${test.to}`} test={test} favorite={favorites.includes(test.to)} onToggleFavorite={() => toggleFavorite(test.to)} />)}
