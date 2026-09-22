@@ -192,9 +192,9 @@ function StandardizedTestsPage() {
           <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {(["Puttning","Närspel","Inspel","Off the Tee"] as FocusCategory[]).map(category => <button key={category} type="button" onClick={() => { setFocusCategory(category); setFocusTests([]); }} className={`shrink-0 rounded-full border px-4 py-2 text-xs font-bold ${focusCategory === category ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 text-slate-600"}`}>{category}</button>)}
           </div>
-          <h2 className="mt-7 text-xl font-black">2. Välj längd</h2>
+          <h2 className="mt-7 text-xl font-black">2. Välj antal veckor</h2>
           <div className="mt-3 grid grid-cols-5 gap-2">
-            {[2,3,4,5,6].map(weeks => <button key={weeks} type="button" onClick={() => setFocusWeeks(weeks)} className={`rounded-2xl border py-3 text-sm font-bold ${focusWeeks === weeks ? "border-blue-600 bg-blue-600 text-white" : "border-slate-200 bg-white"}`}>{weeks}<span className="block text-[9px] font-medium opacity-70">v</span></button>)}
+            {[2,3,4,5,6].map(weeks => <button key={weeks} type="button" onClick={() => setFocusWeeks(weeks)} className={`rounded-2xl border py-3 text-sm font-bold ${focusWeeks === weeks ? "border-blue-600 bg-blue-600 text-white" : "border-slate-200 bg-white"}`}><span className="block text-base">{weeks}</span><span className="block text-[10px] font-semibold opacity-75">{weeks === 1 ? "vecka" : "veckor"}</span></button>)}
           </div>
           <p className="mt-2 text-xs text-slate-400">4 veckor rekommenderas.</p>
           <h2 className="mt-7 text-xl font-black">3. Välj tester</h2>
