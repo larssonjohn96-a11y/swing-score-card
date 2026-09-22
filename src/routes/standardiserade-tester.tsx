@@ -1,9 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { CalendarDays, Check, Star } from "lucide-react";
+import { Star } from "lucide-react";
 import { CATEGORIES } from "@/lib/categories";
-import { collectLocalSessions } from "@/lib/sessions";
-import { useSessionsVersion } from "@/lib/sessions/use-sessions";
 
 export const Route = createFileRoute("/standardiserade-tester")({
   head: () => ({
@@ -98,10 +96,6 @@ const TEST_SECTIONS = TEST_ORDER
   .filter((section): section is TestSection => Boolean(section));
 
 const FAVORITES_KEY = "sg4-test-favorites-v1";
-const FOCUS_BLOCKS_KEY = "sg4-focus-blocks-v1";
-type FocusCategory = "Puttning" | "Närspel" | "Inspel" | "Off the Tee";
-type FocusBlock = { id: string; category: FocusCategory; weeks: number; testPaths: string[]; startedAt: string; endedAt?: string };
-
 function TestCardView({ test, favorite, onToggleFavorite }: { test: TestCard; favorite: boolean; onToggleFavorite: () => void }) {
   return (
     <div className={`relative h-[220px] w-[164px] shrink-0 overflow-hidden rounded-[24px] border border-black/[.04] text-white ${test.tone}`}>
@@ -128,17 +122,8 @@ function StandardizedTestsPage() {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [puttingFilter, setPuttingFilter] = useState<"all" | "startlinje" | "green-reading" | "langdkontroll" | "kortputt">("all");
   const [favoriteFilter, setFavoriteFilter] = useState<"all" | "puttning" | "narspel" | "inspel" | "utslag">("all");
-  const [tab, setTab] = useState<"focus" | "library">("library");
-  const [focusBlocks, setFocusBlocks] = useState<FocusBlock[]>([]);
-  const [focusCategory, setFocusCategory] = useState<FocusCategory>("Närspel");
-  const [focusWeeks, setFocusWeeks] = useState(4);
-  const [focusTests, setFocusTests] = useState<string[]>([]);
-  const [libraryFavoritesOpen, setLibraryFavoritesOpen] = useState(false);
-  const [libraryAllOpen, setLibraryAllOpen] = useState(false);
-  const sessionsVersion = useSessionsVersion();
   useEffect(() => {
     try { const parsed = JSON.parse(localStorage.getItem(FAVORITES_KEY) ?? "[]"); if (Array.isArray(parsed)) setFavorites(parsed.filter((item): item is string => typeof item === "string")); } catch {}
-    try { const parsed = JSON.parse(localStorage.getItem(FOCUS_BLOCKS_KEY) ?? "[]"); if (Array.isArray(parsed)) setFocusBlocks(parsed); } catch {}
   }, []);
   const allTests = useMemo(() => TEST_SECTIONS.flatMap(section => section.tests), []);
   const favoriteTests = favorites.map(to => allTests.find(test => test.to === to)).filter((test): test is TestCard => Boolean(test));
@@ -157,35 +142,6 @@ function StandardizedTestsPage() {
     if (puttingFilter === "kortputt") return test.label.toLowerCase().includes("kortputt") || test.title === "Klockputt" || test.title === "25-bollsövningen";
     return test.label.toLowerCase().includes("längdkontroll") || test.title === "Lag Putt";
   });
-  const activeFocus = focusBlocks.find(block => !block.endedAt);
-  const focusRouteToTestIds: Record<string, string[]> = {
-    "/tutor-test": ["tutor"], "/pga-tour-18-puttar": ["pga-tour-18-puttar"], "/lagputt": ["lag-putt-18"], "/green-reading": ["green-reading"], "/50-bollar": ["fifty-putt"],
-    "/8-bollar": ["eight-ball"], "/upp-och-in": ["upp-och-in"], "/approach-pei-valj": ["approach-pei"], "/approach-pei-wedge": ["pei-wedge"], "/approach-pei-iron": ["pei-iron"],
-    "/wedge-stege": ["wedge-stege"], "/driver-konsekvens": ["driver-konsekvens"], "/longdrive": ["long-drive"], "/speed-test": ["speed"],
-  };
-  const focusSessionCount = useMemo(() => {
-    if (!activeFocus || typeof window === "undefined") return 0;
-    const start = Date.parse(activeFocus.startedAt);
-    const ids = new Set(activeFocus.testPaths.flatMap(path => focusRouteToTestIds[path] ?? []));
-    return collectLocalSessions().filter(session => ids.has(session.testId) && Date.parse(session.playedAt) >= start).length;
-  }, [activeFocus?.id, activeFocus?.startedAt, activeFocus?.testPaths.join("|"), sessionsVersion]);
-  const focusDaysLeft = activeFocus ? Math.max(0, Math.ceil((Date.parse(activeFocus.startedAt) + activeFocus.weeks * 7 * 86400000 - Date.now()) / 86400000)) : 0;
-  const activeFocusTests = activeFocus ? activeFocus.testPaths.map(path => allTests.find(test => test.to === path)).filter((test): test is TestCard => Boolean(test)) : [];
-  const completedFocus = focusBlocks.filter(block => block.endedAt);
-  const focusSection = TEST_SECTIONS.find(section => section.title === focusCategory);
-  function saveFocusBlocks(next: FocusBlock[]) {
-    setFocusBlocks(next);
-    try { localStorage.setItem(FOCUS_BLOCKS_KEY, JSON.stringify(next)); } catch {}
-  }
-  function startFocusBlock() {
-    if (focusTests.length < 2 || focusTests.length > 4) return;
-    saveFocusBlocks([{ id: crypto.randomUUID(), category: focusCategory, weeks: focusWeeks, testPaths: focusTests, startedAt: new Date().toISOString() }, ...focusBlocks]);
-    setFocusTests([]);
-  }
-  function finishFocusBlock() {
-    if (!activeFocus) return;
-    saveFocusBlocks(focusBlocks.map(block => block.id === activeFocus.id ? { ...block, endedAt: new Date().toISOString() } : block));
-  }
   function toggleFavorite(to: string) {
     setFavorites(current => {
       const next = current.includes(to) ? current.filter(item => item !== to) : [...current, to];
@@ -195,131 +151,31 @@ function StandardizedTestsPage() {
   }
   return (
     <main className="mx-auto min-h-screen w-full max-w-md bg-background pb-28">
-      <div className="px-5 pt-5">
-        <div className="grid grid-cols-2 rounded-2xl bg-slate-100 p-1">
-          <button type="button" onClick={() => setTab("library")} className={`rounded-xl px-3 py-2.5 text-sm font-bold transition ${tab === "library" ? "bg-white text-slate-950 shadow-sm" : "text-slate-500"}`}>Tester</button>
-          <button type="button" onClick={() => setTab("focus")} className={`rounded-xl px-3 py-2.5 text-sm font-bold transition ${tab === "focus" ? "bg-white text-slate-950 shadow-sm" : "text-slate-500"}`}>Mitt fokus</button>
-        </div>
-      </div>
-      {tab === "focus" ? <div className="px-5 pb-8 pt-6">
-        {!activeFocus ? <>
-          <p className="text-[10px] font-black uppercase tracking-[.2em] text-blue-600">Mitt fokus</p>
-          <h1 className="mt-1 font-display text-[38px] leading-none text-foreground">Fokusera på en del</h1>
-          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">Välj ett område och 2–4 tester. Följ samma tester i 2–6 veckor och se utvecklingen från start till slut.</p>
-          <h2 className="mt-8 text-xl font-black">1. Välj fokus</h2>
-          <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {(["Puttning","Närspel","Inspel","Off the Tee"] as FocusCategory[]).map(category => <button key={category} type="button" onClick={() => { setFocusCategory(category); setFocusTests([]); }} className={`shrink-0 rounded-full border px-4 py-2 text-xs font-bold ${focusCategory === category ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 text-slate-600"}`}>{category}</button>)}
-          </div>
-          <h2 className="mt-7 text-xl font-black">2. Välj antal veckor</h2>
-          <div className="mt-3 grid grid-cols-5 gap-2">
-            {[2,3,4,5,6].map(weeks => <button key={weeks} type="button" onClick={() => setFocusWeeks(weeks)} className={`rounded-2xl border py-3 text-sm font-bold ${focusWeeks === weeks ? "border-blue-600 bg-blue-600 text-white" : "border-slate-200 bg-white"}`}><span className="block text-base">{weeks}</span><span className="block text-[10px] font-semibold opacity-75">{weeks === 1 ? "vecka" : "veckor"}</span></button>)}
-          </div>
-          <p className="mt-2 text-xs text-slate-400">4 veckor rekommenderas.</p>
-          <h2 className="mt-7 text-xl font-black">3. Välj tester</h2>
-          <p className="mt-1 text-xs text-slate-500">{focusTests.length}/4 valda · välj 2–4, helst 3.</p>
-          <div className="-mx-5 mt-3.5 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {(focusSection?.tests ?? []).map(test => { const selected = focusTests.includes(test.to); return <button key={test.to} type="button" onClick={() => setFocusTests(current => selected ? current.filter(path => path !== test.to) : current.length < 4 ? [...current, test.to] : current)} className={`relative h-[220px] w-[164px] shrink-0 overflow-hidden rounded-[24px] border text-left text-white transition ${selected ? "border-blue-400 ring-2 ring-blue-500 ring-offset-2" : "border-black/[.04]"} ${test.tone}`}>
-              {test.imageSrc ? <><img src={test.imageSrc} alt="" className="absolute inset-0 h-full w-full object-cover" /><span className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/18 to-black/5" /></> : null}
-              {selected ? <span className="absolute right-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-blue-600"><Check className="h-5 w-5" /></span> : null}
-              <span className="absolute inset-x-0 bottom-0 z-10 p-4"><strong className="block font-display text-[25px] leading-[.95]">{test.title}</strong><span className="mt-2 line-clamp-2 block text-[11px] leading-snug text-white/75">{test.description}</span></span>
-            </button>})}
-          </div>
-          <button type="button" disabled={focusTests.length < 2} onClick={startFocusBlock} className="mt-6 min-h-12 w-full rounded-2xl bg-blue-600 px-4 font-bold text-white disabled:opacity-35">Starta fokusblock</button>
-        </> : <>
-          <section className="overflow-hidden rounded-[28px] border border-emerald-200 bg-gradient-to-br from-emerald-700 to-emerald-600 p-5 text-white shadow-sm">
-            <div className="flex items-center justify-between gap-3">
-              <span className="rounded-full bg-white/15 px-3 py-1.5 text-[10px] font-black uppercase tracking-[.16em]">Aktivt fokusblock</span>
-              <span className="text-xs font-bold text-white/75">{activeFocus.weeks} veckor</span>
-            </div>
-            <h1 className="mt-5 font-display text-[42px] leading-none">{activeFocus.category}</h1>
-            <div className="mt-5 grid grid-cols-3 gap-2">
-              <div className="rounded-2xl bg-white/10 p-3"><span className="block text-[10px] uppercase tracking-wide text-white/65">Start</span><strong className="mt-1 block text-sm">{new Date(activeFocus.startedAt).toLocaleDateString("sv-SE")}</strong></div>
-              <div className="rounded-2xl bg-white/10 p-3"><span className="block text-[10px] uppercase tracking-wide text-white/65">Kvar</span><strong className="mt-1 block text-sm">{focusDaysLeft} dagar</strong></div>
-              <div className="rounded-2xl bg-white/10 p-3"><span className="block text-[10px] uppercase tracking-wide text-white/65">Gjorda</span><strong className="mt-1 block text-sm">{focusSessionCount} test</strong></div>
-            </div>
-            <button type="button" onClick={() => setTab("library")} className="mt-5 flex min-h-12 w-full items-center justify-center rounded-2xl bg-white font-bold text-emerald-800">Gå till tester</button>
-          </section>
-          <div className="-mx-5 mt-6 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {activeFocusTests.map(test => <TestCardView key={`active-focus-${test.to}`} test={test} favorite={favorites.includes(test.to)} onToggleFavorite={() => toggleFavorite(test.to)} />)}
-          </div>
-          <button type="button" onClick={finishFocusBlock} className="mt-6 min-h-12 w-full rounded-2xl border border-slate-300 bg-white font-bold">Avsluta block</button>
-        </>}
-        {completedFocus.length ? <section className="mt-10"><h2 className="text-xl font-black">Tidigare block</h2><div className="mt-3 space-y-2">{completedFocus.map(block => <div key={block.id} className="rounded-2xl border border-slate-200 bg-white p-4"><strong>{block.category}</strong><p className="mt-1 text-xs text-slate-500">{block.weeks} veckor · {block.testPaths.length} tester · avslutat {new Date(block.endedAt!).toLocaleDateString("sv-SE")}</p></div>)}</div></section> : null}
-      </div> : <>
-      {activeFocus ? <section className="px-5 pt-6">
-        <div className="flex items-end justify-between gap-3">
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-[.18em] text-blue-600">Aktivt fokus · ${activeFocus.category}</p>
-            <h2 className="mt-1 text-[24px] font-black leading-none">Dina fokustester</h2>
-          </div>
-          <button type="button" onClick={() => setTab("focus")} className="text-xs font-bold text-blue-600">Visa block</button>
-        </div>
-        <div className="mt-3 flex gap-3 text-[11px] text-slate-500">
-          <span>Start ${new Date(activeFocus.startedAt).toLocaleDateString("sv-SE")}</span>
-          <span>·</span><span>${focusDaysLeft} dagar kvar</span><span>·</span><span>${focusSessionCount} tester gjorda</span>
-        </div>
-        <div className="-mx-5 mt-3.5 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {activeFocusTests.map(test => <TestCardView key={`focus-${test.to}`} test={test} favorite={favorites.includes(test.to)} onToggleFavorite={() => toggleFavorite(test.to)} />)}
-        </div>
-      </section> : null}
-      
       <div className="px-5 pt-6">
-        <p className="text-[10px] font-black uppercase tracking-[.2em] text-blue-600">Testa & utveckla</p>
-        <h1 className="mt-1 font-display text-[38px] leading-none text-foreground">Testa & utveckla ditt spel</h1>
-        <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground">Mät, fokusera och följ din utveckling.</p>
+        <p className="text-[10px] font-black uppercase tracking-[.2em] text-blue-600">Tester</p>
+        <h1 className="mt-1 font-display text-[38px] leading-none text-foreground">Testa ditt spel</h1>
+        <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground">Välj ett test, slå ditt resultat och följ hur ditt spel förändras över tid.</p>
       </div>
-
       <div className="space-y-8 px-5 pt-8">
         <section>
-          {activeFocus ? <button type="button" onClick={() => setLibraryFavoritesOpen(open => !open)} className="flex w-full items-center justify-between px-0.5 text-left"><span><h2 className="text-[20px] font-black">Mina favoriter</h2><span className="text-[10px] uppercase tracking-[.16em] text-muted-foreground">Dina sparade tester</span></span><span className="text-xl text-slate-400">{libraryFavoritesOpen ? "−" : "+"}</span></button> : null}
-          {(!activeFocus || libraryFavoritesOpen) ? <>
           <div className="px-0.5">
-            <h2 className={activeFocus ? "hidden" : "text-[24px] font-black leading-none text-foreground"}>Mina favoriter</h2>
-            <p className="mt-1.5 text-[10px] font-black uppercase tracking-[.16em] text-muted-foreground">Dina sparade tester</p>
+            <h2 className="text-[24px] font-black leading-none text-foreground">Mina favoriter</h2>
+            <p className="mt-1.5 text-[10px] font-black uppercase tracking-[.16em] text-muted-foreground">Tester du gillar</p>
             <div className="mt-3 flex gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {([
-                ["all", "Alla"],
-                ["puttning", "Puttning"],
-                ["narspel", "Närspel"],
-                ["inspel", "Inspel"],
-                ["utslag", "Utslag"],
-              ] as const).map(([id, label]) => <button key={id} type="button" onClick={() => setFavoriteFilter(id)} className={`shrink-0 rounded-full border px-3 py-1.5 text-[10px] font-bold transition ${favoriteFilter === id ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-transparent text-muted-foreground"}`}>{label}</button>)}
+              {([["all","Alla"],["puttning","Puttning"],["narspel","Närspel"],["inspel","Inspel"],["utslag","Utslag"]] as const).map(([id,label]) => <button key={id} type="button" onClick={() => setFavoriteFilter(id)} className={`shrink-0 rounded-full border px-3 py-1.5 text-[10px] font-bold transition ${favoriteFilter === id ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-transparent text-muted-foreground"}`}>{label}</button>)}
             </div>
           </div>
           <div className="-mx-5 mt-3.5 flex min-h-[221px] gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {visibleFavoriteTests.length ? visibleFavoriteTests.map(test => <TestCardView key={`favorite-${test.to}`} test={test} favorite onToggleFavorite={() => toggleFavorite(test.to)} />) : (
-              <div className="flex h-[220px] w-[164px] shrink-0 flex-col items-center justify-center rounded-[24px] border border-dashed border-slate-200 bg-slate-50/60 px-4 text-center">
-                <Star className="h-6 w-6 text-slate-300" />
-                <p className="mt-3 text-sm font-bold text-slate-500">Ingen favorit sparad</p>
-                <p className="mt-1 text-[11px] leading-snug text-slate-400">Stjärnmarkera ett test för att lägga det här.</p>
-              </div>
-            )}
+            {visibleFavoriteTests.length ? visibleFavoriteTests.map(test => <TestCardView key={`favorite-${test.to}`} test={test} favorite onToggleFavorite={() => toggleFavorite(test.to)} />) : <div className="flex h-[220px] w-[164px] shrink-0 flex-col items-center justify-center rounded-[24px] border border-dashed border-slate-200 bg-slate-50/60 px-4 text-center"><Star className="h-6 w-6 text-slate-300" /><p className="mt-3 text-sm font-bold text-slate-500">Ingen favorit sparad</p><p className="mt-1 text-[11px] leading-snug text-slate-400">Stjärnmarkera ett test för att lägga det här.</p></div>}
           </div>
-          </> : null}
         </section>
-        {activeFocus ? <button type="button" onClick={() => setLibraryAllOpen(open => !open)} className="flex w-full items-center justify-between border-t border-slate-200 pt-5 text-left"><span><strong className="text-[20px]">Alla tester</strong><span className="mt-1 block text-[10px] uppercase tracking-[.16em] text-muted-foreground">Alla kategorier</span></span><span className="text-xl text-slate-400">{libraryAllOpen ? "−" : "+"}</span></button> : null}
-        {(!activeFocus || libraryAllOpen) ? TEST_SECTIONS.map((section) => (
-          <section key={section.title}>
-            <div className="px-0.5">
-              <h2 className="text-[24px] font-black leading-none text-foreground">{section.title}</h2>
-              <p className="mt-1.5 text-[10px] font-black uppercase tracking-[.16em] text-muted-foreground">{section.subtitle}</p>
-              {section.title === "Puttning" ? <div className="mt-3 flex gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                {([
-                  ["all", "Alla"],
-                  ["startlinje", "Startlinje"],
-                  ["green-reading", "Green reading"],
-                  ["kortputt", "Kortputtar"],
-                  ["langdkontroll", "Längdkontroll"],
-                ] as const).map(([id, label]) => <button key={id} type="button" onClick={() => setPuttingFilter(id)} className={`shrink-0 rounded-full border px-3 py-1.5 text-[10px] font-bold transition ${puttingFilter === id ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-transparent text-muted-foreground"}`}>{label}</button>)}
-              </div> : null}
-            </div>
-            <div className="-mx-5 mt-3.5 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {(section.title === "Puttning" ? filteredPuttingTests(section.tests) : section.tests).map((test) => <TestCardView key={`${section.title}-${test.title}`} test={test} favorite={favorites.includes(test.to)} onToggleFavorite={() => toggleFavorite(test.to)} />)}
-            </div>
-          </section>
-        ))}
+        {TEST_SECTIONS.map(section => <section key={section.title}>
+          <div className="px-0.5"><h2 className="text-[24px] font-black leading-none text-foreground">{section.title}</h2><p className="mt-1.5 text-[10px] font-black uppercase tracking-[.16em] text-muted-foreground">{section.subtitle}</p>
+          {section.title === "Puttning" ? <div className="mt-3 flex gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{([["all","Alla"],["startlinje","Startlinje"],["green-reading","Green reading"],["kortputt","Kortputtar"],["langdkontroll","Längdkontroll"]] as const).map(([id,label]) => <button key={id} type="button" onClick={() => setPuttingFilter(id)} className={`shrink-0 rounded-full border px-3 py-1.5 text-[10px] font-bold transition ${puttingFilter === id ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-transparent text-muted-foreground"}`}>{label}</button>)}</div> : null}</div>
+          <div className="-mx-5 mt-3.5 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{(section.title === "Puttning" ? filteredPuttingTests(section.tests) : section.tests).map(test => <TestCardView key={`${section.title}-${test.title}`} test={test} favorite={favorites.includes(test.to)} onToggleFavorite={() => toggleFavorite(test.to)} />)}</div>
+        </section>)}
       </div>
-      </>}
     </main>
   );
+}
 }
