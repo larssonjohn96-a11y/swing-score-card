@@ -135,6 +135,7 @@ function trainingFallback(pathname: string, search: string) {
 
 
 const ACTIVITY_HEADER_TITLES: Record<string, string> = {
+  "/spela-runda": "Spel & utmaningar",
   "/speedrundan": "Ball Speed Challenge",
   "/driverrundan": "Långt & rakt",
   "/chipprundan": "Närmast flaggan",
