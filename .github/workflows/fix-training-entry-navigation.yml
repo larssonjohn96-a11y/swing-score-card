@@ -1,0 +1,154 @@
+name: Repair training entry navigation
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [.github/workflows/fix-training-entry-navigation.yml]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: repair-training-entry-navigation
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+      - name: Apply narrowly scoped navigation repair
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def change(path, old, new, count=1):
+              p = Path(path)
+              source = p.read_text(encoding='utf-8')
+              if old not in source and new in source:
+                  return
+              assert source.count(old) == count, f'Unexpected source for {path}: {old[:80]}'
+              p.write_text(source.replace(old, new), encoding='utf-8')
+
+          home = Path('src/routes/index.tsx')
+          source = home.read_text(encoding='utf-8')
+          # Remove the erroneous blanket props, preserving existing category searches.
+          source = source.replace('to="/coach" search={{}}', 'to="/coach"')
+          home.write_text(source, encoding='utf-8')
+
+          change('src/routes/coach.tsx',
+              'validateSearch: (search: Record<string, unknown>) => ({',
+              'validateSearch: (search: Record<string, unknown>): { category?: string } => ({')
+
+          change('src/routes/50-bollar.tsx',
+              'validateSearch:(search:Record<string,unknown>)=>({from:parseTestEntryOrigin(search.from)})',
+              'validateSearch:(search:Record<string,unknown>):{from?:ReturnType<typeof parseTestEntryOrigin>}=>({from:parseTestEntryOrigin(search.from)})')
+          change('src/routes/50-bollar.tsx',
+              'navigate({to:"/50-bollar-resultat"})',
+              'navigate({to:"/50-bollar-resultat",search:{from}})')
+          change('src/routes/50-bollar.tsx',
+              '<Link to="/50-bollar-resultat" className=',
+              '<Link to="/50-bollar-resultat" search={{from}} className=')
+
+          result_path = 'src/routes/50-bollar-resultat.tsx'
+          change(result_path,
+              'export const Route=createFileRoute("/50-bollar-resultat")({head:',
+              'import { fiftyBallBackTarget, parseTestEntryOrigin } from "@/lib/test-entry-origin";\nexport const Route=createFileRoute("/50-bollar-resultat")({validateSearch:(search:Record<string,unknown>):{from?:ReturnType<typeof parseTestEntryOrigin>}=>({from:parseTestEntryOrigin(search.from)}),head:')
+          change(result_path,
+              'function FiftyBallResultsPage(){const sessions=',
+              'function FiftyBallResultsPage(){const{from}=Route.useSearch();const backTarget=fiftyBallBackTarget(from);const sessions=')
+          change(result_path, 'to="/50-bollar" search={{}}', 'to="/50-bollar" search={{from}}', count=2)
+          change(result_path,
+              '<Link to="/traning" search={{category:"putting"}} className=',
+              '<Link to={backTarget.to} search={backTarget.search as any} className=')
+          change(result_path,
+              '/> Tillbaka till Putting</Link>',
+              '/> {from === "tester" ? "Tillbaka till tester" : "Tillbaka till Putting"}</Link>')
+
+          tests = '''import { readFileSync } from "node:fs";
+          import { describe, expect, it } from "vitest";
+          import { CATEGORIES } from "./categories";
+          import { FIFTY_PUTT_TOTAL, FIFTY_PUTT_DISTANCES, FIFTY_PUTT_ROUNDS } from "./fifty-putts";
+
+          const source = (file: string) => readFileSync(`src/${file}`, "utf8");
+
+          describe("training and standardized test categorization", () => {
+            it("lists the unchanged 25-ball protocol under Putting only", () => {
+              const library = source("routes/standardiserade-tester.tsx");
+              const putting = library.slice(library.indexOf('title: "Puttning"'), library.indexOf('title: "Närspel"'));
+              const shortGame = library.slice(library.indexOf('title: "Närspel"'), library.indexOf('title: "Inspel"'));
+              expect(putting).toContain('to: "/50-bollar", title: "25-bollsövningen", label: "Kortputt"');
+              expect(shortGame).not.toContain('/50-bollar');
+              expect(library).not.toContain('title: "50 Bollar"');
+              expect(FIFTY_PUTT_TOTAL).toBe(25);
+              expect(FIFTY_PUTT_ROUNDS).toBe(5);
+              expect([...FIFTY_PUTT_DISTANCES]).toEqual([1, 2, 3, 4, 5]);
+            });
+            it("moves only the configurable bunker activity out of Tests", () => {
+              const library = source("routes/standardiserade-tester.tsx");
+              expect(library).not.toContain('/bunker-traning');
+              expect(library).toContain('/fairway-streak');
+              expect(CATEGORIES.flatMap(category => category.tests).some(test => test.to === '/bunker-test')).toBe(true);
+            });
+            it("keeps both bunker practice choices under the existing coach entry", () => {
+              const coach = source("routes/coach.tsx");
+              expect(coach).toContain('Guidad träning');
+              expect(coach).toContain('Egen träning');
+              expect(coach).toContain('to="/bunker-traning"');
+              expect(coach).toMatch(/if \(linkedCategory === "bunker"\) \{\s*setPhase\("bunker-setup"\);\s*return;/);
+              expect(coach).not.toContain('to="/tester"');
+            });
+            it("returns self-directed bunker practice to its category choice", () => {
+              expect(source("routes/bunker-traning.tsx")).toContain('to="/coach" search={{ category: "bunker" }}');
+            });
+            it("preserves the tests origin through completion, history and retry", () => {
+              const exercise = source("routes/50-bollar.tsx");
+              const result = source("routes/50-bollar-resultat.tsx");
+              expect(exercise).toContain('navigate({to:"/50-bollar-resultat",search:{from}})');
+              expect(exercise).toContain('to="/50-bollar-resultat" search={{from}}');
+              expect(result.match(/to="\/50-bollar" search=\{\{from\}\}/g)).toHaveLength(2);
+              expect(result).toContain('fiftyBallBackTarget(from)');
+            });
+            it("does not overwrite existing Home category deep links", () => {
+              const home = source("routes/index.tsx");
+              expect(home).not.toContain('to="/coach" search={{}}');
+              expect(home).toContain('search={{ category: "putting" }}');
+              expect(home).toContain('search={{ category: "bunker" }}');
+            });
+          });
+          '''
+          # The surrounding YAML indentation has already been removed from this script.
+          Path('src/lib/training-category-navigation.test.ts').write_text(
+              '\n'.join(line[10:] if line.startswith('          ') else line for line in tests.splitlines()) + '\n',
+              encoding='utf-8')
+          print('Navigation repair and six regression tests prepared.')
+          PY
+      - uses: oven-sh/setup-bun@v2
+      - name: Install locked dependencies
+        run: bun install --frozen-lockfile
+      - name: Production build
+        run: bun run build
+      - name: Typecheck
+        run: bunx tsc --noEmit
+      - name: Targeted regression tests
+        run: bun run test src/lib/test-entry-origin.test.ts src/lib/training-category-navigation.test.ts
+      - name: Review diff and commit verified source changes
+        run: |
+          git diff --check
+          git diff --stat
+          git add src/routes/index.tsx src/routes/coach.tsx src/routes/50-bollar.tsx src/routes/50-bollar-resultat.tsx src/lib/training-category-navigation.test.ts
+          if git diff --cached --quiet; then
+            echo "No remaining navigation repair to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Fix optional training navigation and preserve putting test origin"
+          # Normal push only: never overwrite another editor's concurrent changes.
+          git push origin HEAD:main
+          git rev-parse HEAD
