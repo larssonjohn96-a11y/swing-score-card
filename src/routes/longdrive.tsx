@@ -29,16 +29,16 @@ import { ChartCard } from "@/components/chart-card";
 export const Route = createFileRoute("/longdrive")({
   head: () => ({
     meta: [
-      { title: "Long drive – 6 försök carry per test" },
+      { title: "Long drive – 3 försök carry per test" },
       {
         name: "description",
         content:
-          "Long drive-test med 6 försök per omgång. Logga carry för varje slag, se längsta och snitt samt utvecklingen över tid.",
+          "Long drive-test med 3 försök per omgång. Logga carry för varje slag, se längsta och snitt samt utvecklingen över tid.",
       },
-      { property: "og:title", content: "Long drive – 6 försök carry" },
+      { property: "og:title", content: "Long drive – 3 försök carry" },
       {
         property: "og:description",
-        content: "Sex utslag per test, bara carry räknas. Följ längsta drive och snitt över tid.",
+        content: "Tre utslag per test, bara carry räknas. Följ längsta drive och snitt över tid.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -126,8 +126,7 @@ function LongDrivePage() {
           <h1 className="text-4xl leading-none">Long drive</h1>
         </div>
         <Link
-          to="/kategori/$slug"
-          params={{ slug: "driving" }}
+          to="/spela-runda"
           className="rounded-full border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
         >
           Tillbaka
@@ -349,7 +348,7 @@ function LongDrivePage() {
       <section className="mt-8 rounded-2xl border border-border bg-card/60 p-4 text-sm text-muted-foreground">
         <h2 className="text-base text-foreground">Så funkar testet</h2>
         <p className="mt-2">
-          Sex utslag med driver per test. Endast carry räknas – roll bortses från. Fyll i carry för
+          Tre utslag med driver per test. Endast carry räknas – roll bortses från. Fyll i carry för
           varje slag så får du längsta drive och snitt för omgången, och kan följa utvecklingen över
           tid.
         </p>
