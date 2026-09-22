@@ -19,6 +19,7 @@ type TestCard = {
   description: string;
   tone: string;
   imageSrc?: string;
+  search?: Record<string, string>;
 };
 
 type TestSection = {
@@ -37,6 +38,7 @@ const EXISTING_SECTIONS: TestSection[] = [
       { to: "/lagputt", title: "Lag Putt", label: "Längdkontroll", description: "Mät fart och proximity på längre puttar.", tone: "bg-[#7b6a9c]" },
       { to: "/green-reading", title: "Green Reading", label: "Läsning", description: "Testa beslut och greenläsning.", tone: "bg-[#426b5d]" },
       { to: "/klock-putt", title: "Klockputt", label: "Kortputt", description: "Standardiserad kontroll runt hålet.", tone: "bg-[#9a5d78]" },
+      { to: "/50-bollar", title: "25-bollsövningen", label: "Kortputt", description: "Fem bollar från 1–5 meter. Håla ut varje boll och räkna alla slag.", tone: "bg-[#3c8068]", search: { from: "tester" } },
     ],
   },
   {
@@ -45,8 +47,6 @@ const EXISTING_SECTIONS: TestSection[] = [
     tests: [
       { to: "/8-bollar", title: "8 Bollar", label: "Precision", description: "Ett snabbt standardtest för närspelsprecision.", tone: "bg-[#6757c7]", imageSrc: "/b01e80c1-ac1d-4d11-81f0-5b9f362d0777.png" },
       { to: "/upp-och-in", title: "Upp & In", label: "Scoring", description: "Mät förmågan att rädda slag runt green.", tone: "bg-[#247760]" },
-      { to: "/50-bollar", title: "50 Bollar", label: "Närspel", description: "Större test för ett stabilt närspelsbenchmark.", tone: "bg-[#3c8068]" },
-      { to: "/bunker-traning", title: "Bunker", label: "Bunker", description: "Mät kontroll och proximity från bunker.", tone: "bg-[#b87936]" },
     ],
   },
   {
