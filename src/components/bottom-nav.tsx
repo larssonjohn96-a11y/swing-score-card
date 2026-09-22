@@ -154,7 +154,7 @@ export function BottomNav() {
             <span className="absolute inset-x-0 bottom-0 p-4"><span className="block font-display text-[25px] leading-none">Match</span><span className="mt-1.5 block text-xs text-muted-foreground">Spela mot vän eller bot.</span><ChevronRight className="absolute bottom-5 right-4 h-4 w-4 text-blue-600" /></span>
           </button>
           <Link to="/spela-runda" onClick={() => setPlayOpen(false)} className="relative block min-h-[205px] w-full overflow-hidden rounded-[28px] border border-emerald-200 bg-white text-left shadow-sm active:scale-[.985]">
-            <img src="/Off_the_tee.png" alt="" className="absolute inset-x-0 top-0 h-[125px] w-full object-cover" />
+            <img src="/Red_vs_blue_1.png" alt="" className="absolute inset-x-0 top-0 h-[125px] w-full object-cover" />
             <span className="absolute inset-x-0 top-0 h-[125px] bg-gradient-to-t from-white via-white/10 to-transparent" />
             <span className="absolute inset-x-0 bottom-0 p-4"><span className="block font-display text-[25px] leading-none">Spela själv</span><span className="mt-1.5 block text-xs text-muted-foreground">Välj kategori och spela.</span><ChevronRight className="absolute bottom-5 right-4 h-4 w-4 text-emerald-700" /></span>
           </Link>
