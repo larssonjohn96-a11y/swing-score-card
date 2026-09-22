@@ -652,7 +652,7 @@ function Home() {
             >
               Spel & utmaningar
             </Link>
-                        <Link to="/standardiserade-tester" className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black">Tester</Link>
+                        
             <Link
               to="/utveckling"
               className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black"
