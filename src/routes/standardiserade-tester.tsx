@@ -154,7 +154,7 @@ function StandardizedTestsPage() {
       <div className="px-5 pt-6">
         <p className="text-[10px] font-black uppercase tracking-[.2em] text-blue-600">Tester</p>
         <h1 className="mt-1 font-display text-[38px] leading-none text-foreground">Testa ditt spel</h1>
-        <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground">Välj ett test, slå ditt resultat och följ hur ditt spel förändras över tid.</p>
+        <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground">Hur bra är du på olika delar av spelet?</p>
       </div>
       <div className="space-y-8 px-5 pt-8">
         <section>
