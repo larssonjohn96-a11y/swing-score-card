@@ -126,7 +126,7 @@ function StandardizedTestsPage() {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [puttingFilter, setPuttingFilter] = useState<"all" | "startlinje" | "green-reading" | "langdkontroll" | "kortputt">("all");
   const [favoriteFilter, setFavoriteFilter] = useState<"all" | "puttning" | "narspel" | "inspel" | "utslag">("all");
-  const [tab, setTab] = useState<"focus" | "library">("focus");
+  const [tab, setTab] = useState<"focus" | "library">("library");
   const [focusBlocks, setFocusBlocks] = useState<FocusBlock[]>([]);
   const [focusCategory, setFocusCategory] = useState<FocusCategory>("Närspel");
   const [focusWeeks, setFocusWeeks] = useState(4);
@@ -179,24 +179,15 @@ function StandardizedTestsPage() {
     <main className="mx-auto min-h-screen w-full max-w-md bg-background pb-28">
       <div className="px-5 pt-5">
         <div className="grid grid-cols-2 rounded-2xl bg-slate-100 p-1">
-          <button type="button" onClick={() => setTab("focus")} className={`rounded-xl px-3 py-2.5 text-sm font-bold transition ${tab === "focus" ? "bg-white text-slate-950 shadow-sm" : "text-slate-500"}`}>Mitt fokus</button>
           <button type="button" onClick={() => setTab("library")} className={`rounded-xl px-3 py-2.5 text-sm font-bold transition ${tab === "library" ? "bg-white text-slate-950 shadow-sm" : "text-slate-500"}`}>Testbibliotek</button>
+          <button type="button" onClick={() => setTab("focus")} className={`rounded-xl px-3 py-2.5 text-sm font-bold transition ${tab === "focus" ? "bg-white text-slate-950 shadow-sm" : "text-slate-500"}`}>Mitt fokus</button>
         </div>
       </div>
       {tab === "focus" ? <div className="px-5 pb-8 pt-6">
         {!activeFocus ? <>
-          <p className="text-[10px] font-black uppercase tracking-[.2em] text-blue-600">Periodiserat fokus</p>
-          <h1 className="mt-1 font-display text-[40px] leading-none text-foreground">Bli tydligt bättre på en del</h1>
-          <p className="mt-4 text-sm leading-relaxed text-muted-foreground">Fokusera extra på en del av spelet under en begränsad period, medan resten kan hållas på underhållsnivå. SG4 samlar samma tester i ett block så du kan se utvecklingen från början till slut.</p>
-          <div className="mt-5 rounded-[24px] border border-blue-100 bg-blue-50/60 p-4">
-            <p className="text-sm font-bold text-slate-900">Så fungerar ett fokusblock</p>
-            <div className="mt-3 space-y-2 text-sm text-slate-600">
-              <p><Check className="mr-2 inline h-4 w-4 text-blue-600" />Välj en del av spelet.</p>
-              <p><Check className="mr-2 inline h-4 w-4 text-blue-600" />Välj 2–4 tester · 3 rekommenderas.</p>
-              <p><Check className="mr-2 inline h-4 w-4 text-blue-600" />Arbeta fokuserat i 2–6 veckor.</p>
-              <p><Check className="mr-2 inline h-4 w-4 text-blue-600" />Jämför testresultaten från start till slut.</p>
-            </div>
-          </div>
+          <p className="text-[10px] font-black uppercase tracking-[.2em] text-blue-600">Mitt fokus</p>
+          <h1 className="mt-1 font-display text-[38px] leading-none text-foreground">Fokusera på en del</h1>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">Välj ett område och 2–4 tester. Följ samma tester i 2–6 veckor och se utvecklingen från start till slut.</p>
           <h2 className="mt-8 text-xl font-black">1. Välj fokus</h2>
           <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {(["Puttning","Närspel","Inspel","Off the Tee"] as FocusCategory[]).map(category => <button key={category} type="button" onClick={() => { setFocusCategory(category); setFocusTests([]); }} className={`shrink-0 rounded-full border px-4 py-2 text-xs font-bold ${focusCategory === category ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 text-slate-600"}`}>{category}</button>)}
@@ -208,8 +199,12 @@ function StandardizedTestsPage() {
           <p className="mt-2 text-xs text-slate-400">4 veckor rekommenderas.</p>
           <h2 className="mt-7 text-xl font-black">3. Välj tester</h2>
           <p className="mt-1 text-xs text-slate-500">{focusTests.length}/4 valda · välj 2–4, helst 3.</p>
-          <div className="mt-3 space-y-2">
-            {(focusSection?.tests ?? []).map(test => { const selected = focusTests.includes(test.to); return <button key={test.to} type="button" onClick={() => setFocusTests(current => selected ? current.filter(path => path !== test.to) : current.length < 4 ? [...current, test.to] : current)} className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left ${selected ? "border-blue-500 bg-blue-50" : "border-slate-200 bg-white"}`}><span><strong className="block text-sm">{test.title}</strong><span className="text-xs text-slate-500">{test.description}</span></span>{selected ? <Check className="h-5 w-5 shrink-0 text-blue-600" /> : null}</button>})}
+          <div className="-mx-5 mt-3.5 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {(focusSection?.tests ?? []).map(test => { const selected = focusTests.includes(test.to); return <button key={test.to} type="button" onClick={() => setFocusTests(current => selected ? current.filter(path => path !== test.to) : current.length < 4 ? [...current, test.to] : current)} className={`relative h-[220px] w-[164px] shrink-0 overflow-hidden rounded-[24px] border text-left text-white transition ${selected ? "border-blue-400 ring-2 ring-blue-500 ring-offset-2" : "border-black/[.04]"} ${test.tone}`}>
+              {test.imageSrc ? <><img src={test.imageSrc} alt="" className="absolute inset-0 h-full w-full object-cover" /><span className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/18 to-black/5" /></> : null}
+              {selected ? <span className="absolute right-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-blue-600"><Check className="h-5 w-5" /></span> : null}
+              <span className="absolute inset-x-0 bottom-0 z-10 p-4"><strong className="block font-display text-[25px] leading-[.95]">{test.title}</strong><span className="mt-2 line-clamp-2 block text-[11px] leading-snug text-white/75">{test.description}</span></span>
+            </button>})}
           </div>
           <button type="button" disabled={focusTests.length < 2} onClick={startFocusBlock} className="mt-6 min-h-12 w-full rounded-2xl bg-blue-600 px-4 font-bold text-white disabled:opacity-35">Starta fokusblock</button>
         </> : <>
