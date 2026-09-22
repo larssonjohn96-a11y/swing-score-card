@@ -1,10 +1,11 @@
 import { loadOffTeeSessions } from "@/lib/offtee-store";
-import { collectApproachShots } from "@/lib/approach-global";
+import { collectApproachShots, approachProximityPct } from "@/lib/approach-global";
 import { collectAroundGreenShots } from "@/lib/around-green-global";
 import { collectLagHoleOutStarts, collectPuttStarts, groupedLagHoleOutStats, puttingMakeStats } from "@/lib/putting-global";
 import { PROGRESS_TESTS, summarize } from "@/lib/progress";
 import { topScores } from "@/lib/highlights";
 import { LEGACY_KEYS } from "@/lib/sessions/keys";
+import { loadSpeedSessions } from "@/lib/speed";
 
 export type ComparisonCategory = "driving" | "approach" | "around-the-green" | "puttning";
 
@@ -98,6 +99,12 @@ export function computeLocalComparisonProfile(): SocialComparisonProfile {
       { key: "driver-dispersion", label: "Driver dispersion", value: stdDev(sides), unit: "m", decimals: 1, higherIsBetter: false, category: "driving", overview: false },
     );
   }
+
+  const approach = collectApproachShots();
+  if (approach.length) performance.push({ key:"approach-proximity", label:"Snitt närhet inspel", value:avg(approach.map(shot => Math.hypot(shot.lengthError, shot.lateralError))), unit:"m", decimals:1, higherIsBetter:false, category:"approach" });
+
+  const speedShots = loadSpeedSessions().flatMap(session => session.shots.map(shot => shot.ballSpeed).filter(value => Number.isFinite(value) && value > 0));
+  if (speedShots.length) performance.push({ key:"avg-ball-speed", label:"Snitt ball speed", value:avg(speedShots), unit:"mph", decimals:1, higherIsBetter:true, category:"driving" });
 
   const oneToTwo = puttingOneToTwoPct();
   if (oneToTwo !== undefined) performance.push({ key: "putting-1-2", label: "Sänk% 1–2 m", value: oneToTwo, unit: "%", decimals: 0, higherIsBetter: true, category: "puttning" });
