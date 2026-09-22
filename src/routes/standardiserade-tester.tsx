@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Star } from "lucide-react";
+import { CalendarDays, Check, Star } from "lucide-react";
 import { CATEGORIES } from "@/lib/categories";
 
 export const Route = createFileRoute("/standardiserade-tester")({
@@ -96,6 +96,9 @@ const TEST_SECTIONS = TEST_ORDER
   .filter((section): section is TestSection => Boolean(section));
 
 const FAVORITES_KEY = "sg4-test-favorites-v1";
+const FOCUS_BLOCKS_KEY = "sg4-focus-blocks-v1";
+type FocusCategory = "Puttning" | "Närspel" | "Inspel" | "Off the Tee";
+type FocusBlock = { id: string; category: FocusCategory; weeks: number; testPaths: string[]; startedAt: string; endedAt?: string };
 
 function TestCardView({ test, favorite, onToggleFavorite }: { test: TestCard; favorite: boolean; onToggleFavorite: () => void }) {
   return (
@@ -123,8 +126,14 @@ function StandardizedTestsPage() {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [puttingFilter, setPuttingFilter] = useState<"all" | "startlinje" | "green-reading" | "langdkontroll" | "kortputt">("all");
   const [favoriteFilter, setFavoriteFilter] = useState<"all" | "puttning" | "narspel" | "inspel" | "utslag">("all");
+  const [tab, setTab] = useState<"focus" | "library">("focus");
+  const [focusBlocks, setFocusBlocks] = useState<FocusBlock[]>([]);
+  const [focusCategory, setFocusCategory] = useState<FocusCategory>("Närspel");
+  const [focusWeeks, setFocusWeeks] = useState(4);
+  const [focusTests, setFocusTests] = useState<string[]>([]);
   useEffect(() => {
     try { const parsed = JSON.parse(localStorage.getItem(FAVORITES_KEY) ?? "[]"); if (Array.isArray(parsed)) setFavorites(parsed.filter((item): item is string => typeof item === "string")); } catch {}
+    try { const parsed = JSON.parse(localStorage.getItem(FOCUS_BLOCKS_KEY) ?? "[]"); if (Array.isArray(parsed)) setFocusBlocks(parsed); } catch {}
   }, []);
   const allTests = useMemo(() => TEST_SECTIONS.flatMap(section => section.tests), []);
   const favoriteTests = favorites.map(to => allTests.find(test => test.to === to)).filter((test): test is TestCard => Boolean(test));
@@ -143,6 +152,22 @@ function StandardizedTestsPage() {
     if (puttingFilter === "kortputt") return test.label.toLowerCase().includes("kortputt") || test.title === "Klockputt" || test.title === "25-bollsövningen";
     return test.label.toLowerCase().includes("längdkontroll") || test.title === "Lag Putt";
   });
+  const activeFocus = focusBlocks.find(block => !block.endedAt);
+  const completedFocus = focusBlocks.filter(block => block.endedAt);
+  const focusSection = TEST_SECTIONS.find(section => section.title === focusCategory);
+  function saveFocusBlocks(next: FocusBlock[]) {
+    setFocusBlocks(next);
+    try { localStorage.setItem(FOCUS_BLOCKS_KEY, JSON.stringify(next)); } catch {}
+  }
+  function startFocusBlock() {
+    if (focusTests.length < 2 || focusTests.length > 4) return;
+    saveFocusBlocks([{ id: crypto.randomUUID(), category: focusCategory, weeks: focusWeeks, testPaths: focusTests, startedAt: new Date().toISOString() }, ...focusBlocks]);
+    setFocusTests([]);
+  }
+  function finishFocusBlock() {
+    if (!activeFocus) return;
+    saveFocusBlocks(focusBlocks.map(block => block.id === activeFocus.id ? { ...block, endedAt: new Date().toISOString() } : block));
+  }
   function toggleFavorite(to: string) {
     setFavorites(current => {
       const next = current.includes(to) ? current.filter(item => item !== to) : [...current, to];
@@ -152,6 +177,50 @@ function StandardizedTestsPage() {
   }
   return (
     <main className="mx-auto min-h-screen w-full max-w-md bg-background pb-28">
+      <div className="px-5 pt-5">
+        <div className="grid grid-cols-2 rounded-2xl bg-slate-100 p-1">
+          <button type="button" onClick={() => setTab("focus")} className={`rounded-xl px-3 py-2.5 text-sm font-bold transition ${tab === "focus" ? "bg-white text-slate-950 shadow-sm" : "text-slate-500"}`}>Mitt fokus</button>
+          <button type="button" onClick={() => setTab("library")} className={`rounded-xl px-3 py-2.5 text-sm font-bold transition ${tab === "library" ? "bg-white text-slate-950 shadow-sm" : "text-slate-500"}`}>Testbibliotek</button>
+        </div>
+      </div>
+      {tab === "focus" ? <div className="px-5 pb-8 pt-6">
+        {!activeFocus ? <>
+          <p className="text-[10px] font-black uppercase tracking-[.2em] text-blue-600">Periodiserat fokus</p>
+          <h1 className="mt-1 font-display text-[40px] leading-none text-foreground">Bli tydligt bättre på en del</h1>
+          <p className="mt-4 text-sm leading-relaxed text-muted-foreground">Fokusera extra på en del av spelet under en begränsad period, medan resten kan hållas på underhållsnivå. SG4 samlar samma tester i ett block så du kan se utvecklingen från början till slut.</p>
+          <div className="mt-5 rounded-[24px] border border-blue-100 bg-blue-50/60 p-4">
+            <p className="text-sm font-bold text-slate-900">Så fungerar ett fokusblock</p>
+            <div className="mt-3 space-y-2 text-sm text-slate-600">
+              <p><Check className="mr-2 inline h-4 w-4 text-blue-600" />Välj en del av spelet.</p>
+              <p><Check className="mr-2 inline h-4 w-4 text-blue-600" />Välj 2–4 tester · 3 rekommenderas.</p>
+              <p><Check className="mr-2 inline h-4 w-4 text-blue-600" />Arbeta fokuserat i 2–6 veckor.</p>
+              <p><Check className="mr-2 inline h-4 w-4 text-blue-600" />Jämför testresultaten från start till slut.</p>
+            </div>
+          </div>
+          <h2 className="mt-8 text-xl font-black">1. Välj fokus</h2>
+          <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {(["Puttning","Närspel","Inspel","Off the Tee"] as FocusCategory[]).map(category => <button key={category} type="button" onClick={() => { setFocusCategory(category); setFocusTests([]); }} className={`shrink-0 rounded-full border px-4 py-2 text-xs font-bold ${focusCategory === category ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 text-slate-600"}`}>{category}</button>)}
+          </div>
+          <h2 className="mt-7 text-xl font-black">2. Välj längd</h2>
+          <div className="mt-3 grid grid-cols-5 gap-2">
+            {[2,3,4,5,6].map(weeks => <button key={weeks} type="button" onClick={() => setFocusWeeks(weeks)} className={`rounded-2xl border py-3 text-sm font-bold ${focusWeeks === weeks ? "border-blue-600 bg-blue-600 text-white" : "border-slate-200 bg-white"}`}>{weeks}<span className="block text-[9px] font-medium opacity-70">v</span></button>)}
+          </div>
+          <p className="mt-2 text-xs text-slate-400">4 veckor rekommenderas.</p>
+          <h2 className="mt-7 text-xl font-black">3. Välj tester</h2>
+          <p className="mt-1 text-xs text-slate-500">{focusTests.length}/4 valda · välj 2–4, helst 3.</p>
+          <div className="mt-3 space-y-2">
+            {(focusSection?.tests ?? []).map(test => { const selected = focusTests.includes(test.to); return <button key={test.to} type="button" onClick={() => setFocusTests(current => selected ? current.filter(path => path !== test.to) : current.length < 4 ? [...current, test.to] : current)} className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left ${selected ? "border-blue-500 bg-blue-50" : "border-slate-200 bg-white"}`}><span><strong className="block text-sm">{test.title}</strong><span className="text-xs text-slate-500">{test.description}</span></span>{selected ? <Check className="h-5 w-5 shrink-0 text-blue-600" /> : null}</button>})}
+          </div>
+          <button type="button" disabled={focusTests.length < 2} onClick={startFocusBlock} className="mt-6 min-h-12 w-full rounded-2xl bg-blue-600 px-4 font-bold text-white disabled:opacity-35">Starta fokusblock</button>
+        </> : <>
+          <p className="text-[10px] font-black uppercase tracking-[.2em] text-blue-600">Aktivt fokusblock</p>
+          <h1 className="mt-1 font-display text-[40px] leading-none">{activeFocus.category}</h1>
+          <div className="mt-4 flex items-center gap-2 text-sm text-slate-500"><CalendarDays className="h-4 w-4" />{activeFocus.weeks} veckor · start {new Date(activeFocus.startedAt).toLocaleDateString("sv-SE")}</div>
+          <div className="mt-6 space-y-3">{activeFocus.testPaths.map(path => { const test = allTests.find(item => item.to === path); return test ? <Link key={path} to={test.to as any} search={(test.search ?? {}) as any} className="block rounded-[22px] border border-slate-200 bg-white p-4"><p className="text-xs font-bold uppercase tracking-wide text-blue-600">Fokustest</p><h2 className="mt-1 text-xl font-black">{test.title}</h2><p className="mt-1 text-xs text-slate-500">{test.description}</p></Link> : null; })}</div>
+          <button type="button" onClick={finishFocusBlock} className="mt-6 min-h-12 w-full rounded-2xl border border-slate-300 bg-white font-bold">Avsluta block</button>
+        </>}
+        {completedFocus.length ? <section className="mt-10"><h2 className="text-xl font-black">Tidigare block</h2><div className="mt-3 space-y-2">{completedFocus.map(block => <div key={block.id} className="rounded-2xl border border-slate-200 bg-white p-4"><strong>{block.category}</strong><p className="mt-1 text-xs text-slate-500">{block.weeks} veckor · {block.testPaths.length} tester · avslutat {new Date(block.endedAt!).toLocaleDateString("sv-SE")}</p></div>)}</div></section> : null}
+      </div> : <>
       <div className="px-5 pt-6">
         <p className="text-[10px] font-black uppercase tracking-[.2em] text-blue-600">Testbibliotek</p>
         <h1 className="mt-1 font-display text-[38px] leading-none text-foreground">Testa hela ditt spel</h1>
@@ -204,6 +273,7 @@ function StandardizedTestsPage() {
           </section>
         ))}
       </div>
+      </>}
     </main>
   );
 }
