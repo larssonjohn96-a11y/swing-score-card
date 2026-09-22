@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { CATEGORIES } from "@/lib/categories";
-import { ChevronRight } from "lucide-react";
 
 export const Route = createFileRoute("/standardiserade-tester")({
   head: () => ({
@@ -131,7 +130,6 @@ function StandardizedTestsPage() {
                 <h2 className="text-[24px] font-black leading-none text-foreground">{section.title}</h2>
                 <p className="mt-1.5 text-[10px] font-black uppercase tracking-[.16em] text-muted-foreground">{section.subtitle}</p>
               </div>
-              <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
             </div>
             <div className="-mx-5 mt-3.5 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {section.tests.map((test) => <TestCardView key={`${section.title}-${test.title}`} test={test} />)}
