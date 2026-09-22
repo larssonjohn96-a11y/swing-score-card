@@ -71,7 +71,7 @@ function RoundGamesPage() {
                 <p className="text-xs font-bold uppercase tracking-wide text-emerald-700">
                    Driver
                 </p>
-                <h2 className="mt-1 text-2xl font-black">Långt & rakt</h2>
+                <h2 className="mt-1 text-2xl font-black">Utslag</h2>
                 <p className="mt-1 text-sm text-slate-500">
                   Hur långt och rakt kan du slå?
                 </p>
@@ -99,7 +99,7 @@ function RoundGamesPage() {
                 <p className="text-xs font-bold uppercase tracking-wide text-emerald-700">
                    Inspel
                 </p>
-                <h2 className="mt-1 text-2xl font-black">Mitt i prick</h2>
+                <h2 className="mt-1 text-2xl font-black">Inspel</h2>
                 <p className="mt-1 text-sm text-slate-500">Hur nära kan du slå?</p>
               </div>
               <ChevronRight className="h-6 w-6 shrink-0 text-blue-600" />
@@ -121,7 +121,7 @@ function RoundGamesPage() {
                 <p className="text-xs font-bold uppercase tracking-wide text-emerald-700">
                    Puttning
                 </p>
-                <h2 className="mt-1 text-2xl font-black">Sänk den!</h2>
+                <h2 className="mt-1 text-2xl font-black">Puttning</h2>
                 <p className="mt-1 text-sm text-slate-500">Hur många kan du sänka?</p>
               </div>
               <ChevronRight className="h-6 w-6 shrink-0 text-blue-600" />
@@ -147,7 +147,7 @@ function RoundGamesPage() {
                 <p className="text-xs font-bold uppercase tracking-wide text-emerald-700">
                    Chippning
                 </p>
-                <h2 className="mt-1 text-2xl font-black">Närmast flaggan</h2>
+                <h2 className="mt-1 text-2xl font-black">Närspel</h2>
                 <p className="mt-1 text-sm text-slate-500">Hur nära flaggan kan du komma?</p>
               </div>
               <ChevronRight className="h-6 w-6 shrink-0 text-blue-600" />
@@ -164,7 +164,7 @@ function RoundGamesPage() {
                 <p className="text-xs font-bold uppercase tracking-wide text-emerald-700">
                    Bunker
                 </p>
-                <h2 className="mt-1 text-2xl font-black">Sandjakten</h2>
+                <h2 className="mt-1 text-2xl font-black">Bunker</h2>
                 <p className="mt-1 text-sm text-slate-500">Hur nära kan du komma från sanden?</p>
               </div>
               <ChevronRight className="h-6 w-6 shrink-0 text-blue-600" />
