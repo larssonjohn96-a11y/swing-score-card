@@ -58,7 +58,7 @@ type Row = { subject: string; du: number; target: number; raw?: string; targetRa
 type ChartRow = Row & { duChart: number; targetChart: number };
 type PuttingKey = "0-1" | "1-2" | "2-3" | "3-5" | "three-putt";
 
-const TABS: [View, string][] = [["total", "Total"], ["driving", "Off the Tee"], ["approach", "Approach"], ["around", "Around Green"], ["putting", "Putting"]];
+const TABS: [View, string][] = [["total", "Total"]];
 const QUICK = BENCHMARK_LEVELS.filter((level) => ["30", "20", "10", "0", "+3", "Tour"].includes(level.label));
 const DEFAULT_LEVEL = QUICK.find((level) => level.label === "0") ?? QUICK[0];
 const defaultTarget = (): CompareTarget => ({ label: DEFAULT_LEVEL.label, hcp: DEFAULT_LEVEL.hcp, categoryHcp: DEFAULT_LEVEL.categoryHcp });
@@ -372,7 +372,7 @@ export function AnalysisRadarSwitcher({ cats, totalHandicap }: { cats: CategoryH
       {QUICK.map((level) => <button key={level.label} type="button" onClick={() => setTarget({ label: level.label, hcp: level.hcp, categoryHcp: level.categoryHcp })} className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${!target.isFriend && target.label === level.label ? "border-chart-3 bg-chart-3 text-background" : "border-border text-muted-foreground"}`}>{level.label === "Tour" ? "Tour" : `HCP ${level.label}`}</button>)}
     </div>
 
-    <p className="mt-4 text-center text-xs uppercase tracking-[0.25em] text-muted-foreground">Jämförelseanalys</p>
+    <p className="mt-4 text-center text-xs uppercase tracking-[0.25em] text-muted-foreground">Din nivå jämfört med {targetLabel}</p>
 
     <div className="mt-4 h-96 w-full overflow-hidden rounded-3xl border border-border bg-card p-2">
       <ResponsiveContainer width="100%" height="100%">
@@ -389,7 +389,6 @@ export function AnalysisRadarSwitcher({ cats, totalHandicap }: { cats: CategoryH
 
     {friendDetailMissing ? <div className="mt-2 rounded-2xl border border-amber-300/60 bg-amber-50 px-4 py-3 text-xs leading-relaxed text-amber-900">{targetLabel} saknar ännu synkad detaljdata för den här kategorin. Vi visar därför inte en falsk jämn HCP-ring. Profilen uppdateras automatiskt när spelaren öppnar den nya versionen av SG4.</div> : null}
 
-    <div className="-mx-1 mt-2 overflow-x-auto px-1 pb-1"><div className="flex w-max min-w-full justify-center gap-1.5">{TABS.map(([key, label]) => <button key={key} type="button" onClick={() => setView(key)} className={`shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-semibold transition-colors ${view === key ? "border-foreground bg-foreground text-background" : "border-border bg-card text-muted-foreground"}`}>{label}</button>)}</div></div>
 
     <div className="mt-3 flex justify-center gap-4 text-[11px] text-muted-foreground"><span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-chart-4" />Din nivå</span>{!friendDetailMissing ? <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-chart-3" />{targetLabel}</span> : null}</div>
 
