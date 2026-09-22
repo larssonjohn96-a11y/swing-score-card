@@ -652,12 +652,12 @@ function Home() {
             >
               Spel & utmaningar
             </Link>
-                        <Link to="/standardiserade-tester" className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black">Testa & utveckla</Link>
+                        <Link to="/standardiserade-tester" className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black">Tester</Link>
             <Link
               to="/utveckling"
               className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black"
             >
-              Utveckling
+              Analys
             </Link>
             <Link
               to="/vanner"
@@ -893,9 +893,9 @@ function Home() {
             <span className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/38 to-black/10" />
             <div className="absolute inset-0 flex items-end justify-between gap-4 p-5 text-white">
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[.18em] text-white/70">Tester & fokus</p>
+                <p className="text-[10px] font-black uppercase tracking-[.18em] text-white/70">Tester</p>
                 <h3 className="mt-1 font-display text-[31px] leading-none">Testa ditt spel</h3>
-                <p className="mt-2 text-xs font-medium text-white/75">Mät resultat. Följ utvecklingen.</p>
+                <p className="mt-2 text-xs font-medium text-white/75">Välj ett test. Sätt ett resultat.</p>
               </div>
               <span className="mb-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15 backdrop-blur-md"><ChevronRight className="h-4 w-4" /></span>
             </div>
