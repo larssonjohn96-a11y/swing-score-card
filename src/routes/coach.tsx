@@ -24,7 +24,7 @@ import { CHIP_POINT_ZONES, generateChipMatchDistances } from "@/lib/chip-match";
 import { chipPerformanceFromPoints, recordEngineOutcome } from "@/lib/sg4-engine";
 
 export const Route = createFileRoute("/coach")({
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (search: Record<string, unknown>): { category?: string } => ({
     category: typeof search.category === "string" ? search.category : undefined,
   }),
   head: () => ({ meta: [{ title: "Practice Mode – Träna med coach | SG4" }] }),
