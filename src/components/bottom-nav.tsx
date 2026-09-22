@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { Bot, BriefcaseBusiness, ChevronRight, Gauge, GraduationCap, Home, Menu, Plus, Target, Trophy, UserRound, Users } from "lucide-react";
+import { Bot, BriefcaseBusiness, ChevronRight, GitCompareArrows, GraduationCap, Home, Menu, Plus, Target, Trophy, UserRound, Users } from "lucide-react";
 import { useBottomNavVisibility } from "@/lib/bottom-nav-visibility";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { computeAchievements, computeMilestones, countUncollected } from "@/lib/trophy-room";
@@ -13,7 +13,7 @@ const LEFT_TABS = [
 ] as const;
 
 const RIGHT_TABS = [
-  { to: "/utveckling", label: "Jämför", icon: Gauge, exact: false },
+  { to: "/utveckling", label: "Jämför", icon: GitCompareArrows, exact: false },
 ] as const;
 
 const PLAY_LINKS = [
