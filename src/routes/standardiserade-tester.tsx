@@ -127,6 +127,8 @@ function StandardizedTestsPage() {
   }, []);
   const allTests = useMemo(() => TEST_SECTIONS.flatMap(section => section.tests), []);
   const favoriteTests = favorites.map(to => allTests.find(test => test.to === to)).filter((test): test is TestCard => Boolean(test));
+  const popularPaths = ["/speed-test", "/longdrive", "/par-3-challenge", "/pga-tour-18-puttar", "/8-bollar"];
+  const popularTests = popularPaths.map(to => allTests.find(test => test.to === to)).filter((test): test is TestCard => Boolean(test));
   const favoriteCategory = (test: TestCard) => {
     const section = TEST_SECTIONS.find(section => section.tests.some(item => item.to === test.to))?.title;
     if (section === "Puttning") return "puttning";
@@ -167,6 +169,15 @@ function StandardizedTestsPage() {
           </div>
           <div className="-mx-5 mt-3.5 flex min-h-[221px] gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {visibleFavoriteTests.length ? visibleFavoriteTests.map(test => <TestCardView key={`favorite-${test.to}`} test={test} favorite onToggleFavorite={() => toggleFavorite(test.to)} />) : <div className="flex h-[220px] w-[164px] shrink-0 flex-col items-center justify-center rounded-[24px] border border-dashed border-slate-200 bg-slate-50/60 px-4 text-center"><Star className="h-6 w-6 text-slate-300" /><p className="mt-3 text-sm font-bold text-slate-500">Ingen favorit sparad</p><p className="mt-1 text-[11px] leading-snug text-slate-400">Stjärnmarkera ett test för att lägga det här.</p></div>}
+          </div>
+        </section>
+        <section>
+          <div className="px-0.5">
+            <h2 className="text-[24px] font-black leading-none text-foreground">Populärt just nu</h2>
+            <p className="mt-1.5 text-[10px] font-black uppercase tracking-[.16em] text-muted-foreground">Ett kul test från varje del av spelet</p>
+          </div>
+          <div className="-mx-5 mt-3.5 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {popularTests.map(test => <TestCardView key={`popular-${test.to}`} test={test} favorite={favorites.includes(test.to)} onToggleFavorite={() => toggleFavorite(test.to)} />)}
           </div>
         </section>
         {TEST_SECTIONS.map(section => <section key={section.title}>
