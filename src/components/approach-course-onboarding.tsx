@@ -4,7 +4,7 @@ import { Star, Flag } from "lucide-react";
 const steps = [
   {
     title: "Gå till första hålet",
-    text: "Jag är Alma! Sikta på målet 125 m bort. Ett slag per hål.",
+    text: "Jag är Alma! Sikta på avståndet som visas. Ett slag per hål.",
   },
   {
     title: "Registrera längd och sidled.",

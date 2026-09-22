@@ -1,11 +1,16 @@
+import { generateRoundDistances, validRoundDistances } from "./round-distances";
 import { handicapFromProximity } from "./shortgame";
 import { isChipPoints, type ChipLie, type ChipPoints } from "./chip-stations";
 export const COURSE_DISTANCES = [8, 12, 16, 10, 14, 18] as const;
 const LEGACY_DISTANCES = [8, 10, 12, 14, 16, 20] as const;
-export const courseDistances = (model = 4) => (model === 1 ? LEGACY_DISTANCES : COURSE_DISTANCES);
+export const courseDistances = (
+  model = 4,
+  round?: { distances?: number[] } | null,
+): readonly number[] => round?.distances ?? (model === 1 ? LEGACY_DISTANCES : COURSE_DISTANCES);
 export type BonusChip = { leave: number; holed: boolean };
 export type Segment = "full" | "front" | "back";
 export type CourseRound = {
+  distances?: number[];
   id: string;
   model: 1 | 2 | 3 | 4;
   bonus?: BonusChip;
@@ -16,6 +21,7 @@ export type CourseRound = {
   status: "full" | "front" | "partial";
 };
 export type CourseSession = {
+  distances?: number[];
   id: string;
   model: 1 | 2 | 3 | 4;
   lie: ChipLie;
@@ -129,6 +135,7 @@ function finishRound(state: CourseState, at: number, bonus?: BonusChip): CourseS
   if (!holes.length) return { ...state, active: null };
   if (state.history.some((r) => r.id === active.id)) return { ...state, active: null };
   const round: CourseRound = {
+    distances: active.distances,
     id: active.id,
     model: active.model,
     ...(bonus ? { bonus } : {}),
@@ -151,6 +158,7 @@ export function reduceCourse(state: CourseState, action: CourseAction): CourseSt
     return {
       ...state,
       active: {
+        distances: generateRoundDistances("chip", action.id, state.history.at(-1)?.distances),
         id: action.id,
         model: 4,
         lie: "Fairway",
@@ -247,6 +255,7 @@ export function parseCourse(raw: string | null): CourseState {
         !item.id ||
         ids.has(item.id) ||
         (item.model !== 1 && item.model !== 2 && item.model !== 3 && item.model !== 4) ||
+        (item.distances !== undefined && !validRoundDistances(item.distances)) ||
         !validLie(item.lie) ||
         !Number.isFinite(item.startedAt) ||
         !Number.isFinite(item.finishedAt) ||
@@ -271,10 +280,12 @@ export function parseCourse(raw: string | null): CourseState {
       !ids.has(a.id) &&
       validLie(a.lie) &&
       Number.isFinite(a.startedAt) &&
+      (a.distances === undefined || validRoundDistances(a.distances)) &&
       validHoles(a.holes, false)
     ) {
       const complete = a.holes.at(-1)!.length === 3;
       state.active = {
+        distances: a.distances,
         id: a.id,
         model: a.model === 4 ? 4 : a.model === 3 ? 3 : a.model === 2 ? 2 : 1,
         lie: a.lie,

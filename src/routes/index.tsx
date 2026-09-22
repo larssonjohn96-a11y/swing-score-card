@@ -429,7 +429,6 @@ function Home() {
   const [data, setData] = useState<HomeData>(() => loadHomeData());
   const [friends, setFriends] = useState<Friend[]>(() => loadFriends());
   const [cloudFriendCount, setCloudFriendCount] = useState(() => loadCachedCloudFriendCount());
-  const [navVisible, setNavVisible] = useState(true);
   const [compareTarget, setCompareTarget] = useState<CompareTarget>("0");
   const initialShotCountRef = useRef(loadTotalRegisteredShots());
   const [totalShots, setTotalShots] = useState(initialShotCountRef.current);
@@ -440,9 +439,6 @@ function Home() {
   const displayedShotsRef = useRef(displayedShots);
   const shotAnimationRef = useRef<number | null>(null);
   const shotGlowTimeoutRef = useRef<number | null>(null);
-  const lastScrollYRef = useRef(0);
-  const directionStartYRef = useRef(0);
-  const scrollDirectionRef = useRef<"up" | "down" | null>(null);
   const sessionsVersion = useSessionsVersion();
   const profile = loadCardProfile();
 
@@ -453,39 +449,6 @@ function Home() {
       "play-cup",
       "hcp-test",
     ]);
-  }, []);
-
-  useEffect(() => {
-    const initialY = Math.max(0, window.scrollY);
-    lastScrollYRef.current = initialY;
-    directionStartYRef.current = initialY;
-    const onScroll = () => {
-      const currentY = Math.max(0, window.scrollY);
-      const delta = currentY - lastScrollYRef.current;
-      const nextDirection = delta > 0 ? "down" : delta < 0 ? "up" : scrollDirectionRef.current;
-      if (currentY <= 24) {
-        setNavVisible(true);
-        directionStartYRef.current = currentY;
-        scrollDirectionRef.current = nextDirection;
-        lastScrollYRef.current = currentY;
-        return;
-      }
-      if (nextDirection && nextDirection !== scrollDirectionRef.current) {
-        scrollDirectionRef.current = nextDirection;
-        directionStartYRef.current = currentY;
-      }
-      const travelled = Math.abs(currentY - directionStartYRef.current);
-      if (nextDirection === "down" && travelled >= 34) {
-        setNavVisible(false);
-        directionStartYRef.current = currentY;
-      } else if (nextDirection === "up" && travelled >= 22) {
-        setNavVisible(true);
-        directionStartYRef.current = currentY;
-      }
-      lastScrollYRef.current = currentY;
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   useEffect(() => {
@@ -633,11 +596,9 @@ function Home() {
             </Link>
           </div>
         </div>
-        <div
-          className={`overflow-hidden transition-[max-height,opacity,padding] duration-500 [transition-timing-function:cubic-bezier(.22,1,.36,1)] ${navVisible ? "max-h-16 pb-3 opacity-100" : "max-h-0 pb-0 opacity-0"}`}
-        >
+        <div className="pb-3">
           <nav
-            className={`-mx-1 flex gap-2 overflow-x-auto px-1 transition-transform duration-500 [transition-timing-function:cubic-bezier(.22,1,.36,1)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${navVisible ? "translate-y-0" : "-translate-y-1"}`}
+            className="-mx-1 flex gap-2 overflow-x-auto px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             aria-label="Snabbnavigering"
           >
             <Link

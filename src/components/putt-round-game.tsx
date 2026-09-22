@@ -2,7 +2,7 @@ import { useChipScreenColor } from "@/lib/use-chip-screen-color";
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Check, Trophy, Undo2 } from "lucide-react";
 import {
-  COURSE_DISTANCES,
+  courseDistances,
   totalPutts,
   puttsLabel,
   exactPutts,
@@ -183,7 +183,7 @@ export function PuttRoundGame({
     tap.current = Date.now() + 450;
     commit({ type: "score", putts });
     setMany(null);
-    if (putts === 1 && COURSE_DISTANCES[index] > 5) setLongPutt(COURSE_DISTANCES[index]);
+    if (putts === 1 && distances[index] > 5) setLongPutt(distances[index]);
     setConfirmation(
       comments[Math.min(2, putts - 1)][(index + Math.floor(state.history.length / 2)) % 3],
     );
@@ -191,6 +191,7 @@ export function PuttRoundGame({
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => setPending(false), 1100);
   }
+  const distances = courseDistances(state.active);
   const active = state.active,
     index = active ? active.holes.length - 1 : 0,
     shots = active?.holes[index] ?? [],
@@ -202,12 +203,12 @@ export function PuttRoundGame({
   const stats = puttStats(state.history);
   const countGoal = active ? puttCountGoal(active, state.history) : null;
   const completed = active?.holes.filter((h) => h.length).length ?? 0;
-  const holeHistory = state.history.filter((r) => r.holes[index]?.length);
+  const holeHistory = state.history.filter((r) => r.holes[index]?.length && courseDistances(r)[index] === distances[index]);
   const holeBest = holeHistory.length
-    ? Math.max(...holeHistory.map((r) => holeStars(r.holes[index], index)))
+    ? Math.max(...holeHistory.map((r) => holeStars(r.holes[index], index, courseDistances(r))))
     : null;
   const holeGoal =
-    holeBest !== null && holeBest < maxStars(index)
+    holeBest !== null && holeBest < maxStars(index, distances)
       ? `En sänkning slår ditt bästa på hål ${index + 1}.`
       : null;
   const pbGoal = active ? puttGoal(active, state.history) : null,
@@ -348,7 +349,7 @@ export function PuttRoundGame({
                 </div>
               </header>
               <div className="putt-map">
-                <PuttCourseMap holes={active.holes} cursor={index} />
+                <PuttCourseMap holes={active.holes} distances={distances} cursor={index} />
               </div>
             </>
           )}
@@ -396,7 +397,7 @@ export function PuttRoundGame({
           ) : moving ? (
             <section className="rounded-3xl border bg-white p-6 text-center">
               <p className="font-bold text-blue-600">Nästa hål · Hål {index + 1}</p>
-              <h1 className="my-4 text-6xl font-black">{COURSE_DISTANCES[index]} m</h1>
+              <h1 className="my-4 text-6xl font-black">{distances[index]} m</h1>
               <p className="mb-5 text-slate-500">En boll från den nya platsen.</p>
               <button className="putt-primary" onClick={() => setMoving(false)}>
                 Spela hål {index + 1} →
@@ -409,18 +410,18 @@ export function PuttRoundGame({
                   <div>
                     <h1 className="text-xl font-black text-blue-700">Hål {index + 1}</h1>
                     <p className="text-lg font-bold text-slate-500">
-                      {COURSE_DISTANCES[index]} m från hålet
+                      {distances[index]} m från hålet
                     </p>
                   </div>
-                  <strong className="text-blue-700">{holeStars(shots, index)} ★</strong>
+                  <strong className="text-blue-700">{holeStars(shots, index, distances)} ★</strong>
                 </div>
                 <div className="mt-2 flex justify-center">
                   <PuttStars
                     key={`${active.id}-${index}-${shots[0] ?? "empty"}`}
-                    count={holeStars(shots, index)}
-                    max={maxStars(index)}
+                    count={holeStars(shots, index, distances)}
+                    max={maxStars(index, distances)}
                     large
-                    zero={shots.length > 0 && holeStars(shots, index) === 0}
+                    zero={shots.length > 0 && holeStars(shots, index, distances) === 0}
                   />
                 </div>
                 {shots[0] === 1 && (
@@ -449,11 +450,11 @@ export function PuttRoundGame({
               {confirmation && (
                 <div
                   role="status"
-                  className={`flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-bold ${holeStars(shots, index) > 0 ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-600"}`}
+                  className={`flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-bold ${holeStars(shots, index, distances) > 0 ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-600"}`}
                 >
                   <Check className="h-4 w-4" />
                   {confirmation}{" "}
-                  {holeStars(shots, index) > 0 ? `+${holeStars(shots, index)} ★` : ""}
+                  {holeStars(shots, index, distances) > 0 ? `+${holeStars(shots, index, distances)} ★` : ""}
                 </div>
               )}
               {active.phase === "play" && !(avgGoal || pbGoal || countGoal) && holeGoal && (
@@ -484,7 +485,7 @@ export function PuttRoundGame({
                       ? "Se rundans resultat"
                       : index === 2
                         ? "Till Halfway House"
-                        : `Nästa hål · ${COURSE_DISTANCES[index + 1]} m`}{" "}
+                        : `Nästa hål · ${distances[index + 1]} m`}{" "}
                     →
                   </button>
                   <button
@@ -532,7 +533,7 @@ export function PuttRoundGame({
               <div>
                 <strong className="text-5xl font-black text-amber-500">{roundTotal}</strong>
                 <p className="mt-2 text-xs text-slate-500">
-                  av {round.holes.reduce((n, _, i) => n + maxStars(i), 0)} stjärnor
+                  av {round.holes.reduce((n, _, i) => n + maxStars(i, courseDistances(round)), 0)} stjärnor
                 </p>
               </div>
               <div>
@@ -672,6 +673,7 @@ export function PuttRoundGame({
             <button className="putt-primary mt-4" onClick={requestStart}>
               Starta rundan →
             </button>
+            <p className="mt-3 text-center text-sm text-slate-500">Nya slumpade avstånd varje runda.</p>
             <PuttCourseMap holes={[]} cursor={null} />
           </section>
           <div className="mt-4 rounded-3xl border bg-white p-4">

@@ -1,9 +1,13 @@
+import { generateRoundDistances, validRoundDistances } from "./round-distances";
 import { approachProximity, type ApproachResult } from "./approach-match";
 import { handicapFromPct } from "./precision";
 export type CourseShot = ApproachResult;
 export const COURSE_DISTANCES = [125, 90, 140, 115, 155, 135] as const;
+export const courseDistances = (round?: { distances?: number[] } | null): readonly number[] =>
+  round?.distances ?? COURSE_DISTANCES;
 export const maxStars = (_index: number) => 3;
 export type CourseRound = {
+  distances?: number[];
   id: string;
   model: 1;
   startedAt: number;
@@ -24,22 +28,31 @@ export type CourseAction =
 export const emptyCourse = (): CourseState => ({ version: 1, history: [], active: null });
 export const courseStorageKey = (user: string | null) =>
   `sg4-approach-course-v1:${user ?? "guest"}`;
-export function holeStars(shots: readonly CourseShot[], index: number) {
+export function holeStars(
+  shots: readonly CourseShot[],
+  index: number,
+  distances: readonly number[] = COURSE_DISTANCES,
+) {
   if (!shots.length) return 0;
-  const d = approachProximity(shots[0], COURSE_DISTANCES[index]);
+  const d = approachProximity(shots[0], distances[index]);
   return d <= 5 ? 3 : d <= 10 ? 2 : d <= 20 ? 1 : 0;
 }
-export const roundStars = (r: Pick<CourseRound, "holes">) =>
-  r.holes.reduce((s, h, i) => s + holeStars(h, i), 0);
-export const shotMiss = (shot: CourseShot, index: number) =>
-  approachProximity(shot, COURSE_DISTANCES[index]);
-export const averageMiss = (r: Pick<CourseRound, "holes">) => {
-  const filled = r.holes.flatMap((h, i) => (h.length ? [shotMiss(h[0], i)] : []));
+export const roundStars = (r: Pick<CourseRound, "holes" | "distances">) =>
+  r.holes.reduce((s, h, i) => s + holeStars(h, i, courseDistances(r)), 0);
+export const shotMiss = (
+  shot: CourseShot,
+  index: number,
+  distances: readonly number[] = COURSE_DISTANCES,
+) => approachProximity(shot, distances[index]);
+export const averageMiss = (r: Pick<CourseRound, "holes" | "distances">) => {
+  const filled = r.holes.flatMap((h, i) =>
+    h.length ? [shotMiss(h[0], i, courseDistances(r))] : [],
+  );
   return filled.length ? filled.reduce((s, n) => s + n, 0) / filled.length : 0;
 };
-export function courseHandicap(r: Pick<CourseRound, "holes">) {
+export function courseHandicap(r: Pick<CourseRound, "holes" | "distances">) {
   const errors = r.holes.flatMap((h, i) =>
-    h.length ? [(100 * shotMiss(h[0], i)) / COURSE_DISTANCES[i]] : [],
+    h.length ? [(100 * shotMiss(h[0], i, courseDistances(r))) / courseDistances(r)[i]] : [],
   );
   return errors.length >= 3
     ? handicapFromPct(errors.reduce((s, n) => s + n, 0) / errors.length)
@@ -61,7 +74,18 @@ export function reduceCourse(state: CourseState, action: CourseAction): CourseSt
       ? state
       : {
           ...state,
-          active: { id: action.id, model: 1, startedAt: action.at, holes: [[]], phase: "play" },
+          active: {
+            distances: generateRoundDistances(
+              "approach",
+              action.id,
+              state.history.at(-1)?.distances,
+            ),
+            id: action.id,
+            model: 1,
+            startedAt: action.at,
+            holes: [[]],
+            phase: "play",
+          },
         };
   if (!a) return state;
   const i = a.holes.length - 1;
@@ -91,6 +115,7 @@ export function reduceCourse(state: CourseState, action: CourseAction): CourseSt
     const holes = a.holes.filter((h) => h.length === 1);
     if (!holes.length) return { ...state, active: null };
     const round: CourseRound = {
+      distances: a.distances,
       id: a.id,
       model: a.model,
       startedAt: a.startedAt,
@@ -127,6 +152,7 @@ export function parseCourse(raw: string | null): CourseState {
         r.model !== 1 ||
         !Number.isFinite(r.startedAt) ||
         !Number.isFinite(r.finishedAt) ||
+        (r.distances !== undefined && !validRoundDistances(r.distances)) ||
         !validHoles(r.holes, true)
       )
         continue;
@@ -144,9 +170,11 @@ export function parseCourse(raw: string | null): CourseState {
       !ids.has(a.id) &&
       a.model === 1 &&
       Number.isFinite(a.startedAt) &&
+      (a.distances === undefined || validRoundDistances(a.distances)) &&
       validHoles(a.holes, false)
     )
       s.active = {
+        distances: a.distances,
         id: a.id,
         model: a.model,
         startedAt: a.startedAt,

@@ -32,7 +32,7 @@ export function ChipAnalysis({ round }: { round: CourseRound }) {
     outcomes: round.holes.flatMap((shots, i) =>
       shots.map((points, j) => ({
         label: `Hål ${i + 1} · boll ${j + 1}`,
-        context: `${courseDistances(round.model)[i]} m`,
+        context: `${courseDistances(round.model, round)[i]} m`,
         result: CHIP_ZONES.find((z) => z.points === points)!.label,
         rank: 4 - points,
         category: chipCategory(ACTIVITY_CATEGORIES[4 - points]),
@@ -147,7 +147,7 @@ export function ChipAnalysis({ round }: { round: CourseRound }) {
                       >
                         <h4 className="flex items-center justify-between bg-blue-50 p-3 font-black">
                           <span>
-                            Hål {i + 1} · {courseDistances(round.model)[i]} m
+                            Hål {i + 1} · {courseDistances(round.model, round)[i]} m
                           </span>
                           <span>{holePoints(shots)} poäng</span>
                         </h4>

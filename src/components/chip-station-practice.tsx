@@ -159,11 +159,13 @@ function CourseMap({
   lie,
   cursor,
   model = 4,
+  distances = courseDistances(model),
 }: {
   holes: ChipPoints[][];
   lie: ChipLie;
   cursor: number | "halfway" | null;
   model?: number;
+  distances?: readonly number[];
 }) {
   const point =
     cursor === "halfway" ? [12, 50] : typeof cursor === "number" ? positions[cursor] : null;
@@ -203,7 +205,7 @@ function CourseMap({
         aria-hidden="true"
         className="absolute right-[3%] top-[43%] h-10 w-10 fill-emerald-400/60 text-emerald-700"
       />
-      {courseDistances(model).map((d, i) => (
+      {distances.map((d, i) => (
         <div
           key={i}
           className="absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-0.5"
@@ -374,7 +376,7 @@ export function ChipStationPractice({
   const active = state.active;
   const round = reviewId ? state.history.find((r) => r.id === reviewId) : undefined;
   const lie = round?.lie ?? active?.lie ?? state.lie;
-  const distances = courseDistances(round?.model ?? active?.model ?? 4);
+  const distances = courseDistances(round?.model ?? active?.model ?? 4, round ?? active);
   const index = active ? active.holes.length - 1 : 0;
   const shots = active?.holes[index] ?? [];
   const atHome = !active && !round && !historyOpen;
@@ -551,6 +553,7 @@ export function ChipStationPractice({
                 <button className={primary} onClick={requestStart} disabled={!!userId && cloudStatus==="loading"}>
                   {userId && cloudStatus==="loading" ? "Hämtar rundor…" : "Starta rundan"} <ArrowRight className="h-5 w-5" />
                 </button>
+                <p className="mt-3 text-center text-sm text-slate-500">Nya slumpade avstånd varje runda.</p>
                 <CourseMap holes={[]} lie={lie} cursor={0} />
               </section>
               <ChipAverageCard history={state.history} />
@@ -605,7 +608,7 @@ export function ChipStationPractice({
                 </div>
               </header>
               {!registering && active.phase !== "halfway" && (
-                <CourseMap model={active.model} holes={active.holes} lie={lie} cursor={index} />
+                <CourseMap distances={distances} model={active.model} holes={active.holes} lie={lie} cursor={index} />
               )}
               {registering && (
                 <div

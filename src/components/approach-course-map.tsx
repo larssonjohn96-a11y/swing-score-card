@@ -11,9 +11,11 @@ const positions = [
 ];
 export function ApproachCourseMap({
   holes,
+  distances = COURSE_DISTANCES,
   cursor,
 }: {
   holes: import("@/lib/approach-course").CourseShot[][];
+  distances?: readonly number[];
   cursor: number | "halfway" | null;
 }) {
   const point =
@@ -54,7 +56,7 @@ export function ApproachCourseMap({
         aria-hidden="true"
         className="absolute right-[3%] top-[43%] h-10 w-10 fill-emerald-400/60 text-emerald-700"
       />
-      {COURSE_DISTANCES.map((d, i) => (
+      {distances.map((d, i) => (
         <div
           key={i}
           className="approach-map-hole absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-0.5"
@@ -71,9 +73,9 @@ export function ApproachCourseMap({
             {d} m
           </span>
           <Stars
-            count={holeStars(holes[i] ?? [], i)}
+            count={holeStars(holes[i] ?? [], i, distances)}
             max={maxStars(i)}
-            zero={holes[i]?.length === 1 && holeStars(holes[i], i) === 0}
+            zero={holes[i]?.length === 1 && holeStars(holes[i], i, distances) === 0}
           />
         </div>
       ))}

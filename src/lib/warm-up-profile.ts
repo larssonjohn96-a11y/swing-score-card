@@ -1,7 +1,8 @@
+import { validRoundDistances } from "./round-distances";
 import {
   parseCourse as parsePutt,
   courseStorageKey as puttKey,
-  COURSE_DISTANCES as puttDistances,
+  courseDistances as puttDistances,
 } from "./putt-course";
 import {
   parseCourse as parseChip,
@@ -11,7 +12,7 @@ import {
 import {
   parseCourse as parseApproach,
   courseStorageKey as approachKey,
-  COURSE_DISTANCES as approachDistances,
+  courseDistances as approachDistances,
 } from "./approach-course";
 import { approachProximity } from "./approach-match";
 import { loadLocalShotEvents, loadLocalShotSessions } from "./shot-bank/store";
@@ -184,13 +185,13 @@ export function readWarmProfile(
   read(() =>
     parsePutt(storage.getItem(puttKey(userId))).history.forEach((r) =>
       r.holes.forEach((h, i) => {
-        if (h.length && puttDistances[i])
+        if (h.length && puttDistances(r)[i])
           observations.push({
             id: `putt-course:${r.id}:${i}`,
             session: `putt-course:${r.id}`,
             at: r.finishedAt,
             kind: "putt",
-            distance: puttDistances[i],
+            distance: puttDistances(r)[i],
             value: h[0],
           });
       }),
@@ -207,7 +208,7 @@ export function readWarmProfile(
               session: `chip-course:${r.id}`,
               at: r.finishedAt,
               kind: "chip",
-              distance: chipDistances(r.model)[i],
+              distance: chipDistances(r.model, r)[i],
               value,
             });
           }),
@@ -217,14 +218,14 @@ export function readWarmProfile(
   read(() =>
     parseApproach(storage.getItem(approachKey(userId))).history.forEach((r) =>
       r.holes.forEach((h, i) => {
-        if (h.length && approachDistances[i])
+        if (h.length && approachDistances(r)[i])
           observations.push({
             id: `approach-course:${r.id}:${i}`,
             session: `approach-course:${r.id}`,
             at: r.finishedAt,
             kind: "approach",
-            distance: approachDistances[i],
-            value: approachProximity(h[0], approachDistances[i]),
+            distance: approachDistances(r)[i],
+            value: approachProximity(h[0], approachDistances(r)[i]),
           });
       }),
     ),
@@ -293,8 +294,8 @@ export function testObservations(sessions: TestSession[]): WarmObservation[] {
     };
     if (["putt-course-round", "chip-course-round", "approach-course-round"].includes(s.testId)) {
       const round = s.metrics.round as
-        { id?: string; lie?: string; model?: number; holes?: unknown[][] } | undefined;
-      if (!round?.id || !Array.isArray(round.holes)) return [];
+        { id?: string; lie?: string; model?: number; holes?: unknown[][]; distances?: number[] } | undefined;
+      if (!round?.id || !Array.isArray(round.holes) || (round.distances !== undefined && !validRoundDistances(round.distances))) return [];
       round.holes.forEach((h, i) => {
         if (!Array.isArray(h)) return;
         if (
@@ -303,7 +304,7 @@ export function testObservations(sessions: TestSession[]): WarmObservation[] {
           Number(h[0]) >= 1 &&
           Number(h[0]) <= 10
         )
-          add(i, "putt", puttDistances[i], h[0], "putt-course", round.id);
+          add(i, "putt", puttDistances(round)[i], h[0], "putt-course", round.id);
         if (s.testId === "chip-course-round" && round.lie === "Fairway")
           h.forEach((value, j) => {
             if (typeof value === "number" && value >= 0 && value <= 4)
@@ -312,7 +313,7 @@ export function testObservations(sessions: TestSession[]): WarmObservation[] {
                 session: `chip-course:${round.id}`,
                 at,
                 kind: "chip",
-                distance: chipDistances(round.model)[i],
+                distance: chipDistances(round.model, round)[i],
                 value,
               });
           });
@@ -323,9 +324,9 @@ export function testObservations(sessions: TestSession[]): WarmObservation[] {
             add(
               i,
               "approach",
-              approachDistances[i],
+              approachDistances(round)[i],
               Math.hypot(
-                shot.actualDistance - approachDistances[i],
+                shot.actualDistance - approachDistances(round)[i],
                 shot.side === "center" ? 0 : shot.lateral,
               ),
               "approach-course",

@@ -11,7 +11,7 @@ import {
 } from "@/lib/activity-review";
 import {
   courseHandicap,
-  COURSE_DISTANCES,
+  courseDistances,
   shotMiss,
   averageMiss,
   roundStars,
@@ -35,10 +35,10 @@ export function ApproachCourseAnalysis({ round }: { round: CourseRound }) {
       ? [
           {
             hole: i + 1,
-            target: COURSE_DISTANCES[i],
+            target: courseDistances(round)[i],
             shot: h[0],
-            miss: shotMiss(h[0], i),
-            category: rawActivityOutcomes([{ ...h[0], target: COURSE_DISTANCES[i] }])[0],
+            miss: shotMiss(h[0], i, courseDistances(round)),
+            category: rawActivityOutcomes([{ ...h[0], target: courseDistances(round)[i] }])[0],
           },
         ]
       : [],

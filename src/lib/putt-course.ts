@@ -1,7 +1,12 @@
+import { generateRoundDistances, validRoundDistances } from "./round-distances";
 import { buildPuttingMatchReview, puttingReviewCategory } from "./putting-match-review";
 export const COURSE_DISTANCES = [2, 8, 4, 10, 3, 12] as const;
-export const maxStars = (index: number) => (COURSE_DISTANCES[index] <= 3 ? 2 : 3);
+export const courseDistances = (round?: { distances?: number[] } | null): readonly number[] =>
+  round?.distances ?? COURSE_DISTANCES;
+export const maxStars = (index: number, distances: readonly number[] = COURSE_DISTANCES) =>
+  distances[index] <= 3 ? 2 : 3;
 export type CourseRound = {
+  distances?: number[];
   id: string;
   model: 1 | 2;
   startedAt: number;
@@ -21,27 +26,32 @@ export type CourseAction =
   | { type: "continue" };
 export const emptyCourse = (): CourseState => ({ version: 1, history: [], active: null });
 export const courseStorageKey = (user: string | null) => `sg4-putt-course-v1:${user ?? "guest"}`;
-export const holeStars = (shots: readonly number[], index: number) =>
+export const holeStars = (
+  shots: readonly number[],
+  index: number,
+  distances: readonly number[] = COURSE_DISTANCES,
+) =>
   !shots.length
     ? 0
     : shots[0] === 1
-      ? maxStars(index)
+      ? maxStars(index, distances)
       : shots[0] === 2
-        ? COURSE_DISTANCES[index] >= 8
+        ? distances[index] >= 8
           ? 2
           : 1
         : 0;
-export const roundStars = (round: Pick<CourseRound, "holes">) =>
-  round.holes.reduce((s, h, i) => s + holeStars(h, i), 0);
-export const reviewRound = (round: Pick<CourseRound, "holes">) =>
+export const roundStars = (round: Pick<CourseRound, "holes" | "distances">) =>
+  round.holes.reduce((s, h, i) => s + holeStars(h, i, courseDistances(round)), 0);
+export const reviewRound = (round: Pick<CourseRound, "holes" | "distances">) =>
   buildPuttingMatchReview(
     round.holes.map((h, i) => ({
-      distance: COURSE_DISTANCES[i],
+      distance: courseDistances(round)[i],
       yourValue: h[0],
       completed: !!h.length,
     })),
   );
-export const courseHandicap = (round: Pick<CourseRound, "holes">) => reviewRound(round).estimate;
+export const courseHandicap = (round: Pick<CourseRound, "holes" | "distances">) =>
+  reviewRound(round).estimate;
 export function puttAverage(history: CourseRound[]) {
   const rounds = history
     .filter((r) => r.status === "full")
@@ -58,7 +68,14 @@ export function reduceCourse(state: CourseState, action: CourseAction): CourseSt
       ? state
       : {
           ...state,
-          active: { id: action.id, model: 2, startedAt: action.at, holes: [[]], phase: "play" },
+          active: {
+            distances: generateRoundDistances("putt", action.id, state.history.at(-1)?.distances),
+            id: action.id,
+            model: 2,
+            startedAt: action.at,
+            holes: [[]],
+            phase: "play",
+          },
         };
   if (!a) return state;
   const i = a.holes.length - 1;
@@ -91,6 +108,7 @@ export function reduceCourse(state: CourseState, action: CourseAction): CourseSt
     const holes = a.holes.filter((h) => h.length === 1);
     if (!holes.length) return { ...state, active: null };
     const round: CourseRound = {
+      distances: a.distances,
       id: a.id,
       model: a.model,
       startedAt: a.startedAt,
@@ -127,6 +145,7 @@ export function parseCourse(raw: string | null): CourseState {
         (r.model !== 1 && r.model !== 2) ||
         !Number.isFinite(r.startedAt) ||
         !Number.isFinite(r.finishedAt) ||
+        (r.distances !== undefined && !validRoundDistances(r.distances)) ||
         !validHoles(r.holes, true)
       )
         continue;
@@ -144,9 +163,11 @@ export function parseCourse(raw: string | null): CourseState {
       !ids.has(a.id) &&
       (a.model === 1 || a.model === 2) &&
       Number.isFinite(a.startedAt) &&
+      (a.distances === undefined || validRoundDistances(a.distances)) &&
       validHoles(a.holes, false)
     )
       s.active = {
+        distances: a.distances,
         id: a.id,
         model: a.model,
         startedAt: a.startedAt,
@@ -169,16 +190,21 @@ export function puttGoal(active: CourseSession, history: CourseRound[], average 
   if (average && done < 4) return null;
   const target = average ? puttAverage(full).stars : Math.max(...full.map(roundStars));
   const need = Math.floor(target) + 1 - roundStars(active);
-  const remaining = COURSE_DISTANCES.slice(done).reduce((s, _, j) => s + maxStars(done + j), 0);
+  const remaining = courseDistances(active)
+    .slice(done)
+    .reduce((s, _, j) => s + maxStars(done + j, courseDistances(active)), 0);
   // A two-putt on each remaining hole is a realistic target; one extra star allows a one-putt opportunity.
-  const realistic = COURSE_DISTANCES.slice(done).reduce((s, d) => s + (d >= 8 ? 2 : 1), 0) + 1;
+  const realistic =
+    courseDistances(active)
+      .slice(done)
+      .reduce((s, d) => s + (d >= 8 ? 2 : 1), 0) + 1;
   if (need <= 0) return { need: 0, target };
   return need <= remaining && need <= realistic && (average || need <= 5) ? { need, target } : null;
 }
 
 export const STAR_STEPS = [3, 6, 9, 11, 13, 16] as const;
 export const starLevel = (stars: number) => STAR_STEPS.filter((n) => stars >= n).length;
-export const totalPutts = (round: Pick<CourseRound, "holes">) =>
+export const totalPutts = (round: Pick<CourseRound, "holes" | "distances">) =>
   round.holes.reduce((sum, h) => sum + (h[0] ?? 0), 0);
 export const exactPutts = (round: Pick<CourseRound, "holes" | "model">) =>
   round.model === 2 || !round.holes.some((h) => h[0] === 4);

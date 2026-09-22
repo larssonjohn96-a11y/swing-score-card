@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   COURSE_DISTANCES,
+  courseDistances,
   emptyCourse,
   reduceCourse,
   parseCourse,
@@ -73,7 +74,7 @@ describe("Inspelsrundan", () => {
   it("plays six one-shot holes with halfway after three and saves each input unchanged", () => {
     let s = reduceCourse(emptyCourse(), { type: "start", id: "round", at: 1 });
     for (let i = 0; i < 6; i++) {
-      const result = shot(COURSE_DISTANCES[i], 6, 8, i % 2 ? "left" : "right");
+      const result = shot(courseDistances(s.active)[i], 6, 8, i % 2 ? "left" : "right");
       s = reduceCourse(s, { type: "score", shot: result });
       expect(s.active?.phase).toBe("result");
       expect(reduceCourse(s, { type: "score", shot: result })).toBe(s);

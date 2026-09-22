@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Check, Trophy, Undo2 } from "lucide-react";
 import {
-  COURSE_DISTANCES,
+  courseDistances,
   approachAverage,
   approachBests,
   approachGoal,
@@ -181,11 +181,12 @@ export function ApproachRoundGame({
     if (Date.now() < tap.current || stateRef.current.active?.phase !== "play") return;
     tap.current = Date.now() + 400;
     if (!commit({ type: "score", shot })) return;
-    setConfirmation(comments[holeStars([shot], index)][(index + state.history.length) % 2]);
+    setConfirmation(comments[holeStars([shot], index, distances)][(index + state.history.length) % 2]);
     setPending(true);
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => setPending(false), 1200);
   }
+  const distances = courseDistances(state.active);
   const active = state.active,
     index = active ? active.holes.length - 1 : 0,
     shots = active?.holes[index] ?? [],
@@ -280,7 +281,7 @@ export function ApproachRoundGame({
                 </div>
               </header>
               <div className="approach-map">
-                <ApproachCourseMap holes={active.holes} cursor={index} />
+                <ApproachCourseMap holes={active.holes} distances={distances} cursor={index} />
               </div>
             </>
           )}
@@ -317,7 +318,7 @@ export function ApproachRoundGame({
           ) : moving ? (
             <section className="space-y-4 rounded-3xl border bg-white p-6 text-center">
               <p className="font-bold text-blue-600">Nästa hål · Hål {index + 1}</p>
-              <h1 className="text-6xl font-black">{COURSE_DISTANCES[index]} m</h1>
+              <h1 className="text-6xl font-black">{distances[index]} m</h1>
               <p className="text-slate-500">Ett slag mot det nya målet.</p>
               <button className="approach-primary" onClick={() => setMoving(false)}>
                 Spela hål {index + 1} →
@@ -329,22 +330,22 @@ export function ApproachRoundGame({
                 <div className="flex items-center justify-between">
                   <h1 className="text-lg font-black text-blue-700">Hål {index + 1}</h1>
                   <strong className="text-xl text-slate-700">
-                    Mål {COURSE_DISTANCES[index]} m
+                    Mål {distances[index]} m
                   </strong>
                 </div>
                 <div className="mt-1 flex justify-center">
                   <ApproachStars
                     key={`${active.id}-${index}-${shots.length}`}
-                    count={holeStars(shots, index)}
+                    count={holeStars(shots, index, distances)}
                     large
-                    zero={shots.length === 1 && holeStars(shots, index) === 0}
+                    zero={shots.length === 1 && holeStars(shots, index, distances) === 0}
                   />
                 </div>
               </section>
               {active.phase === "play" ? (
                 <ApproachRoundEntry
                   key={`${active.id}-${index}`}
-                  target={COURSE_DISTANCES[index]}
+                  target={distances[index]}
                   initial={edit}
                   onScore={score}
                 />
@@ -352,16 +353,16 @@ export function ApproachRoundGame({
                 <>
                   <div
                     role="status"
-                    className={`rounded-2xl p-4 text-center ${holeStars(shots, index) ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-600"}`}
+                    className={`rounded-2xl p-4 text-center ${holeStars(shots, index, distances) ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-600"}`}
                   >
                     <p className="flex items-center justify-center gap-2 font-bold">
                       <Check className="h-4 w-4" />
                       {confirmation ?? "Slaget är registrerat"}
                     </p>
                     <strong className="mt-2 block text-3xl">
-                      {fmt(shotMiss(shots[0], index))} m
+                      {fmt(shotMiss(shots[0], index, distances))} m
                     </strong>
-                    <p className="text-sm">från målet · +{holeStars(shots, index)} ★</p>
+                    <p className="text-sm">från målet · +{holeStars(shots, index, distances)} ★</p>
                     <p className="mt-2 text-xs">{formatApproachResult(shots[0])}</p>
                   </div>
                   <button
@@ -378,7 +379,7 @@ export function ApproachRoundGame({
                       ? "Se rundans resultat"
                       : index === 2
                         ? "Till Halfway House"
-                        : `Nästa hål · ${COURSE_DISTANCES[index + 1]} m`}{" "}
+                        : `Nästa hål · ${distances[index + 1]} m`}{" "}
                     →
                   </button>
                   <button
@@ -549,6 +550,7 @@ export function ApproachRoundGame({
             <button className="approach-primary mt-4" onClick={requestStart}>
               Starta rundan →
             </button>
+            <p className="mt-3 text-center text-sm text-slate-500">Nya slumpade avstånd varje runda.</p>
             <ApproachCourseMap holes={[]} cursor={null} />
           </section>
           <div className="mt-4 rounded-3xl border bg-white p-4">
