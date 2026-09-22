@@ -147,16 +147,16 @@ export function BottomNav() {
       <SheetContent side="bottom" className="rounded-t-[34px] border-white/80 bg-background/96 px-5 pb-[calc(88px+env(safe-area-inset-bottom))] pt-5 backdrop-blur-[30px]">
         <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-slate-400/55" aria-hidden="true" />
         <SheetHeader className="pr-10"><SheetTitle className="text-left font-display text-[34px] leading-none">Spela</SheetTitle><p className="text-left text-sm text-muted-foreground">Hur vill du spela?</p></SheetHeader>
-        <div className="mt-5 grid grid-cols-2 gap-3">
-          <button type="button" onClick={() => { setPlayOpen(false); navigate({ to: "/match", search: { flow: "friend" } as any }); }} className="relative min-h-[190px] overflow-hidden rounded-[28px] border border-blue-200 bg-gradient-to-br from-blue-50 via-white to-red-50 p-4 text-left shadow-sm active:scale-[.985]">
-            <img src="/Red_vs_blue_1.png" alt="" className="absolute inset-x-0 top-0 h-[105px] w-full object-cover" />
-            <span className="absolute inset-x-0 top-0 h-[105px] bg-gradient-to-t from-white via-white/10 to-transparent" />
+        <div className="mt-5 space-y-3">
+          <button type="button" onClick={() => { setPlayOpen(false); navigate({ to: "/match", search: { flow: "friend" } as any }); }} className="relative block min-h-[205px] w-full overflow-hidden rounded-[28px] border border-blue-200 bg-white text-left shadow-sm active:scale-[.985]">
+            <img src="/Red_vs_blue_1.png" alt="" className="absolute inset-x-0 top-0 h-[125px] w-full object-cover" />
+            <span className="absolute inset-x-0 top-0 h-[125px] bg-gradient-to-t from-white via-white/10 to-transparent" />
             <span className="absolute inset-x-0 bottom-0 p-4"><span className="block font-display text-[25px] leading-none">Match</span><span className="mt-1.5 block text-xs text-muted-foreground">Spela mot vän eller bot.</span><ChevronRight className="absolute bottom-5 right-4 h-4 w-4 text-blue-600" /></span>
           </button>
-          <Link to="/spela-runda" onClick={() => setPlayOpen(false)} className="relative min-h-[190px] overflow-hidden rounded-[28px] border border-emerald-200 bg-emerald-50/50 p-4 text-left shadow-sm active:scale-[.985]">
-            <img src="/Off_the_tee.png" alt="" className="absolute inset-x-0 top-0 h-[105px] w-full object-cover" />
-            <span className="absolute inset-x-0 top-0 h-[105px] bg-gradient-to-t from-white via-white/10 to-transparent" />
-            <span className="absolute inset-x-0 bottom-0 p-4"><span className="block font-display text-[25px] leading-none">Spela själv</span><span className="mt-1.5 block text-xs text-muted-foreground">Välj kategori och spela en runda.</span><ChevronRight className="absolute bottom-5 right-4 h-4 w-4 text-emerald-700" /></span>
+          <Link to="/spela-runda" onClick={() => setPlayOpen(false)} className="relative block min-h-[205px] w-full overflow-hidden rounded-[28px] border border-emerald-200 bg-white text-left shadow-sm active:scale-[.985]">
+            <img src="/Off_the_tee.png" alt="" className="absolute inset-x-0 top-0 h-[125px] w-full object-cover" />
+            <span className="absolute inset-x-0 top-0 h-[125px] bg-gradient-to-t from-white via-white/10 to-transparent" />
+            <span className="absolute inset-x-0 bottom-0 p-4"><span className="block font-display text-[25px] leading-none">Spela själv</span><span className="mt-1.5 block text-xs text-muted-foreground">Välj kategori och spela.</span><ChevronRight className="absolute bottom-5 right-4 h-4 w-4 text-emerald-700" /></span>
           </Link>
         </div>
       </SheetContent>
