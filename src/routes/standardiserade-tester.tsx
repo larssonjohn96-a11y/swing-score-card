@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { CATEGORIES } from "@/lib/categories";
-import { ArrowLeft, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 
 export const Route = createFileRoute("/standardiserade-tester")({
   head: () => ({
@@ -77,7 +77,7 @@ const EXISTING_SECTIONS: TestSection[] = [
 const CATEGORY_SECTION: Record<string, string> = {
   puttning: "Puttning", "around-the-green": "Närspel", approach: "Inspel", driving: "Off the Tee",
 };
-const TEST_SECTIONS: TestSection[] = EXISTING_SECTIONS.map(section => {
+const TEST_SECTIONS_UNSORTED: TestSection[] = EXISTING_SECTIONS.map(section => {
   const additions = CATEGORIES.filter(category => CATEGORY_SECTION[category.slug] === section.title)
     .flatMap(category => category.tests.map(test => ({
       to: test.to, title: test.title, label: "Nivåtest", description: test.subtitle,
@@ -86,9 +86,13 @@ const TEST_SECTIONS: TestSection[] = EXISTING_SECTIONS.map(section => {
   const tests = [...additions, ...section.tests];
   return { ...section, tests: tests.filter((test, i) => tests.findIndex(t => t.to === test.to) === i) };
 });
-TEST_SECTIONS.push({ title: "Speed", subtitle: "Bollhastighet och längdpotential", tests: [
+TEST_SECTIONS_UNSORTED.push({ title: "Speed", subtitle: "Bollhastighet och längdpotential", tests: [
   { to: "/speed-test", title: "Ball Speed Test", label: "Bollhastighet", description: "Mät din bollhastighet och få analys av din nivå och driverpotential.", tone: "bg-[#7a4f32]" },
 ] });
+const TEST_ORDER = ["Speed", "Off the Tee", "Inspel", "Puttning", "Närspel"] as const;
+const TEST_SECTIONS = TEST_ORDER
+  .map(title => TEST_SECTIONS_UNSORTED.find(section => section.title === title))
+  .filter((section): section is TestSection => Boolean(section));
 
 function TestCardView({ test }: { test: TestCard }) {
   return (
@@ -113,18 +117,13 @@ function TestCardView({ test }: { test: TestCard }) {
 function StandardizedTestsPage() {
   return (
     <main className="mx-auto min-h-screen w-full max-w-md bg-background pb-28">
-      <header className="sticky top-0 z-30 border-b border-border/70 bg-background/90 px-5 pb-4 pt-[max(14px,env(safe-area-inset-top))] backdrop-blur-2xl">
-        <div className="flex items-center gap-3">
-          <Link to="/" aria-label="Tillbaka" className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card"><ArrowLeft className="h-4 w-4" /></Link>
-          <div className="min-w-0">
-            <p className="text-[9px] font-black uppercase tracking-[.18em] text-blue-600">Testbibliotek</p>
-            <h1 className="mt-0.5 text-[26px] font-black leading-none text-foreground">Standardiserade tester</h1>
-          </div>
-        </div>
-        <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground">Mät specifika delar av spelet med återkommande tester och jämför samma test över tid.</p>
-      </header>
+      <div className="px-5 pt-6">
+        <p className="text-[10px] font-black uppercase tracking-[.2em] text-blue-600">Testbibliotek</p>
+        <h1 className="mt-1 font-display text-[38px] leading-none text-foreground">Testa hela ditt spel</h1>
+        <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground">Mät en del i taget och följ samma test över tid.</p>
+      </div>
 
-      <div className="space-y-8 px-5 pt-6">
+      <div className="space-y-8 px-5 pt-8">
         {TEST_SECTIONS.map((section) => (
           <section key={section.title}>
             <div className="flex items-end justify-between gap-3 px-0.5">
