@@ -903,7 +903,7 @@ function MatchPlayPage() {
         <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Match</p>
         <h1 className="mt-1 font-display text-4xl">Vad ska ni tävla i?</h1>
       </section>
-      <div className="mt-6 grid grid-cols-2 gap-3">{CATEGORIES.map((i) => { const active = category === i.id; return <button key={i.id} onClick={() => { setCategory(i.id); setScoringMode("match"); }} className={`relative flex min-h-32 w-full items-center rounded-[26px] border p-4 text-left transition active:scale-[.985] ${active ? selectedRing : glass}`}>
+      <div className="mt-6 grid grid-cols-2 gap-3">{CATEGORIES.map((i) => { const active = category === i.id; return <button key={i.id} onClick={() => { setCategory(i.id); setScoringMode("match"); }} className={`relative flex min-h-32 w-full items-center rounded-[26px] border p-4 text-left transition active:scale-[.985] ${glass} ${active ? "ring-2 ring-blue-500/45 border-blue-400/80" : ""}`}>
         {active ? <SelectedCheck /> : null}
         <span className="font-display text-[27px] leading-[.95] text-slate-950">{i.title}</span>
       </button>; })}</div>
