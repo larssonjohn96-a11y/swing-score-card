@@ -108,7 +108,9 @@ function totalRows(cats: CategoryHandicap[], total: number | undefined, target: 
     const targetHcp = targetHcpFor(target, cat.slug);
     return { subject: cat.title, du: cat.handicap !== undefined ? ratingFromHandicap(cat.handicap) : 0, target: ratingFromHandicap(targetHcp), hcp: cat.handicap, targetHcp };
   });
-  return [...main, { subject: "Totalt", du: total !== undefined ? ratingFromHandicap(total) : 0, target: ratingFromHandicap(target.hcp), hcp: total, targetHcp: target.hcp }];
+  const speed = cats.find((cat) => cat.slug === "speed");
+  const speedTargetHcp = targetHcpFor(target, "speed");
+  return [...main, { subject: "Speed", du: speed?.handicap !== undefined ? ratingFromHandicap(speed.handicap) : 0, target: ratingFromHandicap(speedTargetHcp), hcp: speed?.handicap, targetHcp: speedTargetHcp }];
 }
 
 function drivingRows(target: CompareTarget): Row[] {
