@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, ChevronRight, Crosshair, Dumbbell, Sparkles, Zap } from "lucide-react";
+import { ChevronRight, Crosshair, Dumbbell, Sparkles, Zap } from "lucide-react";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 
 export const Route = createFileRoute("/spela-runda")({
@@ -10,14 +10,6 @@ function RoundGamesPage() {
   useHideBottomNav(true);
   return (
     <main className="mx-auto min-h-screen max-w-md bg-slate-50 px-5 pb-8 pt-[max(16px,env(safe-area-inset-top))] text-slate-950">
-      <Link
-        to="/"
-        data-local-navigation
-        aria-label="Tillbaka till startsidan"
-        className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white"
-      >
-        <ArrowLeft className="h-5 w-5" />
-      </Link>
       <section className="mt-6 overflow-hidden rounded-[30px] border border-slate-200 bg-white p-5">
         <p className="text-[10px] font-black uppercase tracking-[.2em] text-blue-600">SG4 Games</p>
         <h1 className="mt-1 font-display text-[38px] leading-none">Vad är din styrka?</h1>
