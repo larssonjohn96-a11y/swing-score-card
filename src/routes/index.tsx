@@ -1,4 +1,3 @@
-import { WarmUpHomeCard } from "@/components/warm-up";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { Bell, ChevronRight, User, UserPlus } from "lucide-react";
@@ -32,7 +31,7 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "SG4 – Hem" },
-      { name: "description", content: "Spela, testa, träna och följ din utveckling i SG4." },
+      { name: "description", content: "Spela, testa och följ din utveckling i SG4." },
     ],
   }),
   component: Home,
@@ -43,7 +42,7 @@ type QuickStart = {
   eyebrow: string;
   title: string;
   detail: string;
-  to: "/standardiserade-tester" | "/spela" | "/coach";
+  to: "/standardiserade-tester" | "/spela";
   activityId: string;
 };
 type CompareTarget = "30" | "20" | "10" | "0" | "+3" | "tour";
@@ -453,7 +452,6 @@ function Home() {
       "play-bot",
       "play-cup",
       "hcp-test",
-      "practice",
     ]);
   }, []);
 
@@ -573,16 +571,7 @@ function Home() {
       getBehaviorRecommendationScore("play-bot").score,
       getBehaviorRecommendationScore("play-cup").score,
     );
-    const practiceScore = getBehaviorRecommendationScore("practice").score;
     const testScore = getBehaviorRecommendationScore("hcp-test").score;
-    if (practiceScore >= playScore && practiceScore >= testScore)
-      return {
-        eyebrow: "Snabbstart",
-        title: "Träna med coach",
-        detail: "Tillbaka till Practice Mode.",
-        to: "/coach",
-        activityId: "practice",
-      };
     if (testScore > playScore)
       return {
         eyebrow: "Snabbstart",
@@ -663,15 +652,7 @@ function Home() {
             >
               Spel & utmaningar
             </Link>
-            <Link to="/coach" className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black">Träning</Link>
-            <Link to="/standardiserade-tester" className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black">Standardiserade tester</Link>
-            <Link
-              to="/uppvarmning"
-              className="shrink-0 rounded-full border border-blue-200 bg-blue-50 px-4 py-2.5 text-xs font-black text-blue-700"
-            >
-              Uppvärmning
-            </Link>
-
+                        <Link to="/standardiserade-tester" className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black">Standardiserade tester</Link>
             <Link
               to="/utveckling"
               className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black"
@@ -901,37 +882,6 @@ function Home() {
         </section>
 
         <section className="mt-7">
-          <BrowseHeading title="Träning" subtitle="Practice Mode" action="Alla pass" to="/coach" />
-          <DragScrollRow>
-            <Link
-              to="/coach"
-              search={{ category: "putting" }}
-              onClick={() => recordRecommendationOpen("practice")}
-              className="block shrink-0"
-            >
-              <SimpleCard label="Practice" title="Puttning" tone="bg-[#5146d8]" />
-            </Link>
-            <Link
-              to="/coach"
-              search={{ category: "bunker" }}
-              onClick={() => recordRecommendationOpen("practice")}
-              className="block shrink-0"
-            >
-              <SimpleCard label="Practice" title="Bunker" tone="bg-[#c77a2c]" />
-            </Link>
-            <Link
-              to="/coach"
-              onClick={() => recordRecommendationOpen("practice")}
-              className="block shrink-0"
-            >
-              <SimpleCard label="Practice" title="Alla pass" tone="bg-[#334155]" />
-            </Link>
-          </DragScrollRow>
-        </section>
-
-
-
-        <section className="mt-7">
           <BrowseHeading
             title="Standardiserade tester"
             subtitle="Mät specifika delar av spelet"
@@ -977,10 +927,6 @@ function Home() {
             </Link>
           </DragScrollRow>
         </section>
-
-        <WarmUpHomeCard />
-
-
 
         <section className="mt-8 pb-2">
           <div className="flex items-end justify-between">
