@@ -792,81 +792,17 @@ function Home() {
         <ActiveMultiplayerBanner inline />
 
         <section className="mt-7" aria-label="Spel & utmaningar">
-          <div className="flex flex-wrap items-end justify-between gap-3 px-0.5">
-            <div>
-              <h2 className="text-[24px] font-black leading-none text-foreground">
-                Spel & utmaningar
-              </h2>
-              <p className="mt-1.5 text-sm text-muted-foreground">
-                Välj en utmaning. Slå ditt rekord.
-              </p>
-            </div>
-            <Link to="/spela-runda" className="shrink-0 text-xs font-bold text-blue-600">
-              Visa alla
-            </Link>
+          <div className="px-0.5">
+            <h2 className="text-[24px] font-black leading-none text-foreground">Spel & utmaningar</h2>
+            <p className="mt-1.5 text-sm text-muted-foreground">Välj en utmaning. Slå ditt rekord.</p>
           </div>
-          <DragScrollRow>
-            <Link to="/speedrundan" className="block shrink-0">
-              <SimpleCard
-                label="Speed"
-                title="Maxfart"
-                subtitle="Hur hårt kan du slå?"
-                tone="bg-[#118267]"
-                imageSrc="/Off_the_tee.png"
-                imagePosition="18% 50%"
-              />
-            </Link>
-            <Link to="/driverrundan" className="block shrink-0">
-              <SimpleCard
-                label="Driver"
-                title="Långt & rakt"
-                subtitle="Hur långt och rakt kan du slå?"
-                tone="bg-[#118267]"
-                imageSrc="/Off_the_tee.png"
-                imagePosition="18% 50%"
-              />
-            </Link>
-            <Link to="/chipprundan" className="block shrink-0">
-              <SimpleCard
-                label="Chippning"
-                title="Närmast flaggan"
-                subtitle="Hur nära flaggan kan du komma?"
-                tone="bg-[#118267]"
-                imageSrc="/0d286fd4-99fa-47eb-b39c-a7ff718ebdd6.png"
-                imagePosition="18% 50%"
-              />
-            </Link>
-            <Link to="/puttrundan" className="block shrink-0">
-              <SimpleCard
-                label="Puttning"
-                title="Sänk den!"
-                subtitle="Hur många kan du sänka?"
-                tone="bg-[#118267]"
-                imageSrc="/Putting_1.png"
-                imagePosition="18% 50%"
-              />
-            </Link>
-            <Link to="/inspelsrundan" className="block shrink-0">
-              <SimpleCard
-                label="Inspel"
-                title="Mitt i prick"
-                subtitle="Hur nära kan du slå?"
-                tone="bg-[#118267]"
-                imageSrc="/Approach_shot.png"
-                imagePosition="18% 50%"
-              />
-            </Link>
-            <Link to="/bunkerrundan" className="block shrink-0">
-              <SimpleCard
-                label="Bunker"
-                title="Sandjakten"
-                subtitle="Hur nära kan du komma från sanden?"
-                tone="bg-[#118267]"
-                imageSrc="/bunker-round.svg"
-                imagePosition="18% 50%"
-              />
-            </Link>
-          </DragScrollRow>
+          <Link to="/spela-runda" className="group mt-4 flex min-h-[112px] items-center gap-4 rounded-[26px] border border-border bg-card/85 px-5 py-4 shadow-[0_14px_34px_-28px_rgba(15,23,42,.35)] transition-transform active:scale-[.99]">
+            <span className="min-w-0 flex-1">
+              <span className="block font-display text-[27px] leading-none">Spela</span>
+              <span className="mt-2 block text-sm text-muted-foreground">Välj kategori och utmana dig själv.</span>
+            </span>
+            <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+          </Link>
         </section>
 
 
