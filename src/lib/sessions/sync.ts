@@ -103,6 +103,7 @@ export function recordSessionSaved(testId: string, record: LegacyRecord): TestSe
   const session = canonicalize(testId, record);
   if (!session) return null;
   recordEngineSession(session);
+  notifySessionsChanged();
   enqueueUpsert(session);
   emit();
   void flushOutbox().catch(() => undefined);
@@ -113,6 +114,7 @@ export function recordSessionSaved(testId: string, record: LegacyRecord): TestSe
 export function recordSessionDeleted(testId: string, legacyId: string) {
   if (!hasStorage()) return;
   enqueueDelete(cloudIdFor(testId, legacyId), testId);
+  notifySessionsChanged();
   emit();
   void flushOutbox().catch(() => undefined);
 }
