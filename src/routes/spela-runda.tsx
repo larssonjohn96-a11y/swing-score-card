@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ChevronRight } from "lucide-react";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
-import { GlobalSectionHeader } from "@/components/global-section-header";
 
 export const Route = createFileRoute("/spela-runda")({
   head: () => ({ meta: [{ title: "Spel & utmaningar – SG4" }] }),
@@ -10,7 +9,7 @@ export const Route = createFileRoute("/spela-runda")({
 function RoundGamesPage() {
   useHideBottomNav(true);
   return (
-    <><GlobalSectionHeader /><main className="mx-auto min-h-screen max-w-md bg-slate-50 px-5 pb-8 text-slate-950">
+    <main className="mx-auto min-h-screen max-w-md bg-slate-50 px-5 pb-8 pt-[max(16px,env(safe-area-inset-top))] text-slate-950">
       <section className="mt-6 px-1">
         <p className="text-[10px] font-black uppercase tracking-[.2em] text-blue-600">Spel & utmaningar</p>
         <h1 className="mt-1 font-display text-[38px] leading-none">Hur bra är ditt spel?</h1>
@@ -167,6 +166,6 @@ function RoundGamesPage() {
           </Link>
         </div>
       </section>
-    </main></>
+    </main>
   );
 }
