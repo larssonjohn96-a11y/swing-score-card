@@ -376,7 +376,12 @@ export function AnalysisRadarSwitcher({ cats, totalHandicap }: { cats: CategoryH
 
     <p className="mt-4 text-center text-xs uppercase tracking-[0.25em] text-muted-foreground">Din nivå jämfört med {targetLabel}</p>
 
-    <div className="mt-4 h-96 w-full overflow-hidden rounded-3xl border border-border bg-card p-2">
+    <div className="mt-4 overflow-hidden rounded-3xl border border-border bg-card">
+      <div className="flex items-center justify-between border-b border-border/60 px-4 py-3">
+        <span className="text-[10px] font-black uppercase tracking-[.16em] text-muted-foreground">Totalt HCP</span>
+        <div className="flex items-center gap-3 text-sm font-bold"><span className="text-blue-600">Du {totalHandicap === undefined ? "–" : hcpLabel(totalHandicap)}</span><span className="text-muted-foreground">vs</span><span className="text-red-600">{targetLabel} {hcpLabel(target.hcp)}</span></div>
+      </div>
+      <div className="h-96 w-full p-2">
       <ResponsiveContainer width="100%" height="100%">
         <RadarChart data={data} outerRadius="70%">
           <PolarGrid stroke="var(--border)" />
@@ -387,19 +392,14 @@ export function AnalysisRadarSwitcher({ cats, totalHandicap }: { cats: CategoryH
           <Tooltip content={<RadarTooltip targetLabel={targetLabel} />} />
         </RadarChart>
       </ResponsiveContainer>
+      </div>
     </div>
 
     {friendDetailMissing ? <div className="mt-2 rounded-2xl border border-amber-300/60 bg-amber-50 px-4 py-3 text-xs leading-relaxed text-amber-900">{targetLabel} saknar ännu synkad detaljdata för den här kategorin. Vi visar därför inte en falsk jämn HCP-ring. Profilen uppdateras automatiskt när spelaren öppnar den nya versionen av SG4.</div> : null}
 
 
     <div className="mt-3 flex justify-center gap-4 text-[11px] text-muted-foreground"><span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-chart-4" />Din nivå</span>{!friendDetailMissing ? <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-chart-3" />{targetLabel}</span> : null}</div>
-    <div className="mt-5 overflow-hidden rounded-2xl border border-border bg-card">
-      <p className="pt-3 text-center text-[10px] font-black uppercase tracking-[.16em] text-muted-foreground">Totalt HCP</p>
-      <div className="mt-2 grid grid-cols-2">
-        <div className="bg-blue-500/10 px-4 py-3 text-center"><span className="block text-[10px] font-bold uppercase tracking-wide text-blue-600">Du</span><strong className="mt-0.5 block font-display text-2xl text-blue-700">{totalHandicap === undefined ? "–" : hcpLabel(totalHandicap)}</strong></div>
-        <div className="bg-red-500/10 px-4 py-3 text-center"><span className="block text-[10px] font-bold uppercase tracking-wide text-red-600">{targetLabel}</span><strong className="mt-0.5 block font-display text-2xl text-red-700">{hcpLabel(target.hcp)}</strong></div>
-      </div>
-    </div>
+
 
     <p className="mt-4 text-center text-sm text-muted-foreground">Vill du jämföra med andra spelare?</p>
     <button type="button" onClick={() => setPickerOpen(true)} className="mx-auto mt-2 flex w-fit items-center gap-1.5 rounded-full border border-border px-5 py-2.5 text-sm font-semibold transition-colors hover:border-primary">Jämför<span aria-hidden>›</span></button>
