@@ -108,7 +108,6 @@ function TestCardView({ test, favorite, onToggleFavorite }: { test: TestCard; fa
             <span className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/18 to-black/5" />
           </>
         )}
-        <span className="absolute left-4 top-4 text-[9px] font-black uppercase tracking-[.16em] text-white/70">{test.label}</span>
         <div className="relative z-10">
           <h3 className="font-display text-[25px] leading-[.95]">{test.title}</h3>
           <p className="mt-2 line-clamp-2 text-[11px] leading-snug text-white/72">{test.description}</p>
