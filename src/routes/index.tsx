@@ -706,18 +706,6 @@ function Home() {
             </div>
           </Link>
 
-          <Link
-            to="/utveckling"
-            className={`relative flex h-[64px] items-center justify-center overflow-hidden rounded-[22px] border px-2 text-center backdrop-blur-[28px] transition-[background-color,border-color,box-shadow] duration-500 ${shotCounterActive ? "border-emerald-300/70 bg-card/76 shadow-[0_14px_38px_-24px_rgba(15,23,42,.42),inset_0_1px_0_rgba(255,255,255,.95),0_0_26px_rgba(16,185,129,.20)] supports-[backdrop-filter]:bg-card/66" : "border-white/75 bg-card/66 shadow-[0_14px_38px_-24px_rgba(15,23,42,.42),inset_0_1px_0_rgba(255,255,255,.95)] supports-[backdrop-filter]:bg-card/56"}`}
-          >
-            <span className="pointer-events-none absolute inset-[1px] rounded-[21px] border border-white/22" />
-            <div className="relative z-10 flex flex-col items-center justify-center">
-              <HeritageShotCounter value={displayedShots} active={shotCounterActive} />
-              <span className="mt-0.5 text-[8px] font-bold uppercase tracking-[.07em] text-foreground/58">
-                Registrerade slag
-              </span>
-            </div>
-          </Link>
         </section>
 
         <section className="mt-4">
