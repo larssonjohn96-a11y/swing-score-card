@@ -122,11 +122,21 @@ function TestCardView({ test, favorite, onToggleFavorite }: { test: TestCard; fa
 function StandardizedTestsPage() {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [puttingFilter, setPuttingFilter] = useState<"all" | "startlinje" | "green-reading" | "langdkontroll">("all");
+  const [favoriteFilter, setFavoriteFilter] = useState<"all" | "puttning" | "narspel" | "inspel" | "utslag">("all");
   useEffect(() => {
     try { const parsed = JSON.parse(localStorage.getItem(FAVORITES_KEY) ?? "[]"); if (Array.isArray(parsed)) setFavorites(parsed.filter((item): item is string => typeof item === "string")); } catch {}
   }, []);
   const allTests = useMemo(() => TEST_SECTIONS.flatMap(section => section.tests), []);
   const favoriteTests = favorites.map(to => allTests.find(test => test.to === to)).filter((test): test is TestCard => Boolean(test));
+  const favoriteCategory = (test: TestCard) => {
+    const section = TEST_SECTIONS.find(section => section.tests.some(item => item.to === test.to))?.title;
+    if (section === "Puttning") return "puttning";
+    if (section === "Närspel") return "narspel";
+    if (section === "Inspel") return "inspel";
+    if (section === "Off the Tee" || section === "Speed") return "utslag";
+    return null;
+  };
+  const visibleFavoriteTests = favoriteFilter === "all" ? favoriteTests : favoriteTests.filter(test => favoriteCategory(test) === favoriteFilter);
   const filteredPuttingTests = (tests: TestCard[]) => puttingFilter === "all" ? tests : tests.filter(test => {
     if (puttingFilter === "startlinje") return test.label.toLowerCase().includes("startlinje") || test.title === "Tutor Test";
     if (puttingFilter === "green-reading") return test.label.toLowerCase().includes("läsning") || test.title === "Green Reading";
@@ -152,9 +162,18 @@ function StandardizedTestsPage() {
           <div className="px-0.5">
             <h2 className="text-[24px] font-black leading-none text-foreground">Mina favoriter</h2>
             <p className="mt-1.5 text-[10px] font-black uppercase tracking-[.16em] text-muted-foreground">Dina sparade tester</p>
+            <div className="mt-3 flex gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {([
+                ["all", "Alla"],
+                ["puttning", "Puttning"],
+                ["narspel", "Närspel"],
+                ["inspel", "Inspel"],
+                ["utslag", "Utslag"],
+              ] as const).map(([id, label]) => <button key={id} type="button" onClick={() => setFavoriteFilter(id)} className={`shrink-0 rounded-full border px-3 py-1.5 text-[10px] font-bold transition ${favoriteFilter === id ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-transparent text-muted-foreground"}`}>{label}</button>)}
+            </div>
           </div>
           <div className="-mx-5 mt-3.5 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {favoriteTests.map(test => <TestCardView key={`favorite-${test.to}`} test={test} favorite onToggleFavorite={() => toggleFavorite(test.to)} />)}
+            {visibleFavoriteTests.map(test => <TestCardView key={`favorite-${test.to}`} test={test} favorite onToggleFavorite={() => toggleFavorite(test.to)} />)}
           </div>
         </section> : null}
         {TEST_SECTIONS.map((section) => (
