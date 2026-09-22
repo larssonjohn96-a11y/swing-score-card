@@ -888,44 +888,16 @@ function Home() {
             action="Alla tester"
             to="/standardiserade-tester"
           />
-          <DragScrollRow>
-            <Link to="/8-bollar" className="block shrink-0">
-              <SimpleCard
-                label="Precision"
-                title="8 Bollar"
-                tone="bg-[#6757c7]"
-                imageSrc="/b01e80c1-ac1d-4d11-81f0-5b9f362d0777.png"
-              />
-            </Link>
-            <Link to="/tutor-test" className="block shrink-0">
-              <SimpleCard
-                label="Startlinje"
-                title="Tutor Test"
-                tone="bg-[#4955a7]"
-                imageSrc="/b01e80c1-ac1d-4d11-81f0-5b9f362d0777.png"
-              />
-            </Link>
-            <Link to="/pga-tour-18-puttar" className="block shrink-0">
-              <SimpleCard
-                label="Scoring"
-                title="18 Puttar"
-                tone="bg-[#a94c57]"
-                imageSrc="/b01e80c1-ac1d-4d11-81f0-5b9f362d0777.png"
-              />
-            </Link>
-            <Link to="/approach-pei-valj" className="block shrink-0">
-              <SimpleCard label="Precision" title="PEI Approach" tone="bg-[#217d8c]" />
-            </Link>
-            <Link to="/driver-konsekvens" className="block shrink-0">
-              <SimpleCard label="Konsekvens" title="Driver" tone="bg-[#a76632]" />
-            </Link>
-            <Link to="/upp-och-in" className="block shrink-0">
-              <SimpleCard label="Närspel" title="Upp & In" tone="bg-[#247760]" />
-            </Link>
-            <Link to="/standardiserade-tester" className="block shrink-0">
-              <SimpleCard label="Bibliotek" title="Alla tester" tone="bg-[#334155]" />
-            </Link>
-          </DragScrollRow>
+          <Link to="/standardiserade-tester" className="mt-4 flex min-h-[150px] items-end overflow-hidden rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex w-full items-end justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[.18em] text-blue-600">Tester & fokusblock</p>
+                <h3 className="mt-1 font-display text-[30px] leading-none text-slate-950">Öppna Testa & utveckla</h3>
+                <p className="mt-2 text-sm text-slate-500">Testbibliotek, favoriter och periodiserat fokus på ett ställe.</p>
+              </div>
+              <ChevronRight className="mb-1 h-5 w-5 shrink-0 text-blue-600" />
+            </div>
+          </Link>
         </section>
 
         <section className="mt-8 pb-2">
