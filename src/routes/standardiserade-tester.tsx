@@ -99,24 +99,22 @@ const FAVORITES_KEY = "sg4-test-favorites-v1";
 
 function TestCardView({ test, favorite, onToggleFavorite }: { test: TestCard; favorite: boolean; onToggleFavorite: () => void }) {
   return (
-    <div className="relative w-[164px] shrink-0">
-      <Link to={test.to as any} search={(test.search ?? {}) as any} className="block">
-      <article className={`relative flex h-[220px] flex-col justify-end overflow-hidden rounded-[24px] border border-black/[.04] px-4 pb-4 pt-4 text-white ${test.tone}`}>
-        {test.imageSrc && (
-          <>
-            <img src={test.imageSrc} alt="" className="absolute inset-0 h-full w-full object-cover" />
-            <span className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/18 to-black/5" />
-          </>
-        )}
-        <div className="relative z-10">
-          <h3 className="font-display text-[25px] leading-[.95]">{test.title}</h3>
-          <p className="mt-2 line-clamp-2 text-[11px] leading-snug text-white/72">{test.description}</p>
-        </div>
-      </article>
+    <div className={`relative h-[220px] w-[164px] shrink-0 overflow-hidden rounded-[24px] border border-black/[.04] text-white ${test.tone}`}>
+      {test.imageSrc && (
+        <>
+          <img src={test.imageSrc} alt="" className="absolute inset-0 h-full w-full object-cover" />
+          <span className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/18 to-black/5" />
+        </>
+      )}
+      <div className="absolute inset-x-0 top-0 z-20 flex h-[34%] items-start justify-end p-3">
+        <button type="button" aria-label={favorite ? `Ta bort ${test.title} från favoriter` : `Lägg till ${test.title} i favoriter`} aria-pressed={favorite} onClick={onToggleFavorite} className="flex h-10 w-10 items-center justify-center rounded-full bg-black/20 text-white backdrop-blur-md transition active:scale-95">
+          <Star className={`h-5 w-5 ${favorite ? "fill-amber-300 text-amber-300" : "text-white"}`} />
+        </button>
+      </div>
+      <Link to={test.to as any} search={(test.search ?? {}) as any} className="absolute inset-x-0 bottom-0 z-10 flex h-[66%] flex-col justify-end px-4 pb-4 pt-3">
+        <h3 className="font-display text-[25px] leading-[.95]">{test.title}</h3>
+        <p className="mt-2 line-clamp-2 text-[11px] leading-snug text-white/72">{test.description}</p>
       </Link>
-      <button type="button" aria-label={favorite ? `Ta bort ${test.title} från favoriter` : `Lägg till ${test.title} i favoriter`} aria-pressed={favorite} onClick={(event) => { event.preventDefault(); event.stopPropagation(); onToggleFavorite(); }} className="absolute right-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-black/20 text-white backdrop-blur-md transition active:scale-95">
-        <Star className={`h-5 w-5 ${favorite ? "fill-amber-300 text-amber-300" : "text-white"}`} />
-      </button>
     </div>
   );
 }
