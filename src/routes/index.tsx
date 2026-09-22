@@ -363,7 +363,7 @@ function RadarPreview({
       viewBox="0 0 340 300"
       className="h-auto w-full"
       role="img"
-      aria-label="Jämförelseanalys av ditt spel"
+      aria-label="Jämför din nivå av ditt spel"
     >
       <polygon points={ring(100)} fill="none" stroke="rgba(15,23,42,.14)" strokeWidth="1" />
       <polygon points={ring(75)} fill="none" stroke="rgba(15,23,42,.10)" strokeWidth="1" />
@@ -905,9 +905,9 @@ function Home() {
         <section className="mt-8 pb-2">
           <div className="flex items-end justify-between">
             <div>
-              <p className="font-display text-[28px] leading-none text-[#071b14]">ANALYS</p>
+              <p className="font-display text-[28px] leading-none text-[#071b14]">JÄMFÖR</p>
               <p className="mt-1 text-[10px] font-black uppercase tracking-[.24em] text-muted-foreground">
-                Jämförelseanalys
+                Jämför din nivå
               </p>
             </div>
             <Link
