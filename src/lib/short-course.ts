@@ -1,144 +1,101 @@
-export type ShortHole = { par: number; metres: number | null };
-export type ShortCourse = { id: string; name: string; holes: ShortHole[] };
-export type ShortScore = { you: number | null; other: number | null };
-export type ShortRound = {
-  id: string;
-  course: ShortCourse;
-  mode: "solo" | "friend" | "bot";
-  format: "stroke" | "match";
+export type Side = "you" | "other";
+export type HoleScore = { you: number; other: number; length: number };
+export type CourseGame = {
+  mode: "friend" | "bot";
+  format: "match" | "stroke";
   names: [string, string];
+  holes: number;
+  allowance: number;
+  recipient: Side;
   botLevel: number;
-  botScores: number[];
-  scores: ShortScore[];
-  started: string;
-  finished?: string;
+  rolls: number[];
+  scores: HoleScore[];
+  draft: HoleScore;
 };
-export type ShortCourseStore = {
-  courses: ShortCourse[];
-  history: ShortRound[];
-  active: ShortRound | null;
-};
-export const emptyShortCourses = (): ShortCourseStore => ({
-  courses: [],
-  history: [],
-  active: null,
-});
-export function courseKey(course: ShortCourse) {
-  return JSON.stringify([course.id, course.holes]);
+/** Spread remainder from hole one; full cycles give a stroke on every hole. */
+export function distributeStrokes(holes: number, total: number): number[] {
+  const result = Array(holes).fill(Math.floor(total / holes));
+  const remainder = total % holes;
+  for (let i = 0; i < remainder; i++) result[Math.floor((i * holes) / remainder)]++;
+  return result;
 }
-export function validCourse(c: ShortCourse) {
-  return (
-    !!c &&
-    typeof c.id === "string" &&
-    typeof c.name === "string" &&
-    c.name.trim().length > 0 &&
-    Array.isArray(c.holes) &&
-    c.holes.length >= 1 &&
-    c.holes.length <= 18 &&
-    c.holes.every(
-      (h) =>
-        h &&
-        Number.isInteger(h.par) &&
-        h.par >= 3 &&
-        h.par <= 5 &&
-        (h.metres === null || (Number.isInteger(h.metres) && h.metres >= 20 && h.metres <= 600)),
-    )
-  );
+export function netHole(game: CourseGame, score: HoleScore, index: number): HoleScore {
+  const extra = distributeStrokes(game.holes, game.allowance)[index];
+  return { ...score, [game.recipient]: score[game.recipient] - extra };
 }
-export function validRound(r: ShortRound) {
-  const score = (n: unknown) =>
-    n === null || (typeof n === "number" && Number.isInteger(n) && n >= 1 && n <= 30);
-  return (
-    !!r &&
-    typeof r.id === "string" &&
-    validCourse(r.course) &&
-    ["solo", "friend", "bot"].includes(r.mode) &&
-    ["stroke", "match"].includes(r.format) &&
-    Array.isArray(r.names) &&
-    r.names.length === 2 &&
-    r.names.every((n) => typeof n === "string") &&
-    Array.isArray(r.scores) &&
-    r.scores.length <= r.course.holes.length &&
-    r.scores.every((s) => s && score(s.you) && score(s.other)) &&
-    Array.isArray(r.botScores) &&
-    (r.mode !== "bot" ||
-      (r.botScores.length === r.course.holes.length &&
-        r.botScores.every((n) => typeof n === "number" && score(n))))
-  );
-}
-export function parseShortCourses(raw: string | null): ShortCourseStore {
-  if (!raw) return emptyShortCourses();
-  const data = JSON.parse(raw);
-  if (
-    !Array.isArray(data.courses) ||
-    !data.courses.every(validCourse) ||
-    !Array.isArray(data.history) ||
-    !data.history.every(validRound) ||
-    (data.active !== null && !validRound(data.active))
-  )
-    throw new Error("Invalid short-course data");
-  return data;
-}
-export function completeTotal(round: ShortRound, side: "you" | "other" = "you"): number | null {
-  if (
-    round.scores.length !== round.course.holes.length ||
-    round.scores.some((s) => s[side] === null)
-  )
-    return null;
-  return round.scores.reduce((sum, s) => sum + s[side]!, 0);
-}
-export function personalBest(history: ShortRound[], course: ShortCourse) {
-  const rounds = history.filter(
-    (r) => r.finished && courseKey(r.course) === courseKey(course) && completeTotal(r) !== null,
-  );
-  return rounds.sort((a, b) => completeTotal(a)! - completeTotal(b)!)[0] ?? null;
-}
-export function holeWinner(s: ShortScore): "you" | "other" | "tie" {
-  if (s.you === s.other) return "tie";
-  if (s.you === null) return "other";
-  if (s.other === null) return "you";
-  return s.you < s.other ? "you" : "other";
-}
-export function matchStatus(round: ShortRound) {
-  const diff = round.scores.reduce(
-    (n, s) => n + (holeWinner(s) === "you" ? 1 : holeWinner(s) === "other" ? -1 : 0),
-    0,
-  );
-  const left = round.course.holes.length - round.scores.length;
+export function matchStatus(game: CourseGame) {
+  const diff = game.scores.reduce((sum, score, i) => {
+    const net = netHole(game, score, i);
+    return sum + (net.you < net.other ? 1 : net.you > net.other ? -1 : 0);
+  }, 0);
   return {
     diff,
-    left,
-    decided: Math.abs(diff) > left,
-    leader: diff > 0 ? round.names[0] : diff < 0 ? round.names[1] : null,
+    left: game.holes - game.scores.length,
+    decided: Math.abs(diff) > game.holes - game.scores.length,
   };
 }
-/** Virtual opponent: pre-generated independently of the player's scores. */
-export function shortBotScores(course: ShortCourse, level: number, random = Math.random): number[] {
-  return course.holes.map((h) => {
-    const roll = random();
-    const offset =
-      level === 0
-        ? roll < 0.1
-          ? 0
-          : roll < 0.4
-            ? 1
-            : roll < 0.8
-              ? 2
-              : 3
-        : level === 1
-          ? roll < 0.12
-            ? -1
-            : roll < 0.55
-              ? 0
-              : roll < 0.9
-                ? 1
-                : 2
-          : roll < 0.25
-            ? -1
-            : roll < 0.85
-              ? 0
-              : 1;
-    const longer = h.metres !== null && h.par === 3 && h.metres > 150 && random() < 0.35 ? 1 : 0;
-    return Math.max(1, h.par + offset + longer);
-  });
+export function totals(game: CourseGame, net = false): [number, number] {
+  const sum: [number, number] = game.scores.reduce<[number, number]>(
+    (a, s) => [a[0] + s.you, a[1] + s.other],
+    [0, 0],
+  );
+  if (net) sum[game.recipient === "you" ? 0 : 1] -= game.allowance;
+  return sum;
+}
+/** Approximate virtual score based only on distance, difficulty and a fixed roll. */
+export function botScore(length: number, level: number, roll: number) {
+  const baseline = length <= 200 ? 3 : length <= 400 ? 4 : 5;
+  const offset =
+    level === 0
+      ? roll < 0.1
+        ? 0
+        : roll < 0.4
+          ? 1
+          : roll < 0.8
+            ? 2
+            : 3
+      : level === 1
+        ? roll < 0.12
+          ? -1
+          : roll < 0.55
+            ? 0
+            : roll < 0.9
+              ? 1
+              : 2
+        : roll < 0.25
+          ? -1
+          : roll < 0.85
+            ? 0
+            : 1;
+  return Math.max(1, baseline + offset);
+}
+export function parseGame(raw: string | null): CourseGame | null {
+  if (!raw) return null;
+  const g = JSON.parse(raw);
+  const integer = (v: unknown, min: number, max: number) =>
+    typeof v === "number" && Number.isInteger(v) && v >= min && v <= max;
+  const score = (s: HoleScore) =>
+    s && integer(s.you, 1, 30) && integer(s.other, 1, 30) && integer(s.length, 20, 650);
+  if (
+    !g ||
+    !["friend", "bot"].includes(g.mode) ||
+    !["match", "stroke"].includes(g.format) ||
+    !Array.isArray(g.names) ||
+    g.names.length !== 2 ||
+    !g.names.every((n: unknown) => typeof n === "string" && n.trim()) ||
+    !integer(g.holes, 1, 18) ||
+    !integer(g.allowance, 0, 36) ||
+    !["you", "other"].includes(g.recipient) ||
+    !integer(g.botLevel, 0, 2) ||
+    !Array.isArray(g.rolls) ||
+    g.rolls.length !== g.holes ||
+    !g.rolls.every((n: unknown) => typeof n === "number" && n >= 0 && n < 1) ||
+    !Array.isArray(g.scores) ||
+    g.scores.length > g.holes ||
+    !g.scores.every(score) ||
+    !score(g.draft)
+  ) {
+    throw new Error("Invalid active game");
+  }
+  return g;
 }
