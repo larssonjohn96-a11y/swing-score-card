@@ -244,6 +244,7 @@ export function SpeedChallengeAnalysis({
             <nav aria-label="Analysens stories" className="mt-4 flex shrink-0 items-center gap-3">
               {story > 0 && (
                 <Button
+                  data-local-navigation
                   aria-label="Föregående story"
                   onClick={() => setStory((s) => Math.max(0, s - 1))}
                   className="h-14 w-14 shrink-0 rounded-full border border-white/30 bg-transparent text-white hover:bg-white/10"
@@ -252,6 +253,7 @@ export function SpeedChallengeAnalysis({
                 </Button>
               )}
               <Button
+                data-local-navigation
                 onClick={next}
                 className="min-h-14 flex-1 rounded-full bg-white text-base font-bold text-blue-700 hover:bg-blue-50"
               >
