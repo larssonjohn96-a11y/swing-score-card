@@ -12,10 +12,14 @@ export function speedPyramidTier(percentile: number) {
         ? 2
         : percentile >= 50
           ? 3
-          : 4;
+          : percentile >= 25
+            ? 4
+            : percentile >= 10
+              ? 5
+              : 6;
 }
 
-const labels = ["Topp 1 %", "Topp 10 %", "Topp 25 %", "Övre halvan", "Nedre halvan"];
+const labels = ["Topp 1 %", "Topp 10 %", "Topp 25 %", "Övre halvan", "Topp 75 %", "Topp 90 %", "Bas"];
 
 export function SpeedComparisonPyramid({
   title,
@@ -36,8 +40,14 @@ export function SpeedComparisonPyramid({
     `Du är i den absoluta toppen ${group}!`,
     `Riktigt stark fart – du tillhör toppskiktet ${group}.`,
     `Stark bollhastighet – du ligger i den övre fjärdedelen ${group}.`,
-    `Du ligger i den övre halvan ${group}.`,
-    "Här finns mer fart att upptäcka – utmana ditt eget resultat!",
+    `Snyggt jobbat! Du ligger i den övre halvan ${group}.`,
+    ageGroup
+      ? "Bra jobbat! Du är en bit på vägen i din åldersgrupp. Fortsätt så!"
+      : "Bra jobbat! Du är en bit på vägen – fortsätt så!",
+    ageGroup
+      ? "Bra kämpat! Det finns mer fart att upptäcka i din åldersgrupp. Fortsätt träna i din takt!"
+      : "Bra kämpat! Fortsätt träna i din takt och upptäck din fart!",
+    "Bra att du testar! Varje försök är en chans att lära känna din sving. Fortsätt så!",
   ][tier];
   const [visibleCharacters, setVisibleCharacters] = useState(0);
   useEffect(() => {
@@ -67,7 +77,7 @@ export function SpeedComparisonPyramid({
     <section
       className={`rounded-3xl border p-5 ${ageGroup ? "border-sky-200 bg-sky-50" : "border-violet-200 bg-violet-50"}`}
     >
-      {tier <= 1 && <ChipCelebration key={`${ageGroup}-${tier}`} grand />}
+      {tier <= 3 && <ChipCelebration key={`${ageGroup}-${tier}`} grand={tier <= 1} subtle={tier > 1} />}
       <div className="mb-4 flex items-center gap-3">
         <span
           className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${ageGroup ? "bg-sky-100 text-sky-700" : "bg-violet-100 text-violet-700"}`}
@@ -76,17 +86,18 @@ export function SpeedComparisonPyramid({
         </span>
         <h3 className="text-xl font-black text-slate-950">{title}</h3>
       </div>
+      <style>{`@keyframes speed-tier-glow { from { opacity: .35; } to { opacity: 1; } } .speed-tier-glow { animation: speed-tier-glow 1.2s ease-out both; } @media (prefers-reduced-motion: reduce) { .speed-tier-glow { animation: none; } }`}</style>
       <svg
-        viewBox="0 0 320 208"
+        viewBox="0 0 340 264"
         className="mx-auto mt-3 w-full max-w-xs"
         role="img"
         aria-label={`${title}: ${labels[tier]}. Den blå delen visar din nivå.`}
       >
         {labels.map((label, i) => {
-          const y1 = 6 + i * 38,
-            y2 = y1 + 34;
-          const top = i * 17,
-            bottom = (i + 1) * 17;
+          const y1 = 6 + i * 36,
+            y2 = y1 + 32;
+          const top = i * 12,
+            bottom = (i + 1) * 12;
           return (
             <g key={label} data-active={i === tier ? "true" : "false"}>
               <polygon
@@ -94,6 +105,7 @@ export function SpeedComparisonPyramid({
                 fill={i === tier ? "#1558ff" : "#eef1f5"}
                 stroke={i === tier ? "#1558ff" : "#dce2ea"}
                 strokeWidth="1"
+                className={i === tier && tier > 3 ? "speed-tier-glow" : undefined}
               />
               <text
                 x="198"

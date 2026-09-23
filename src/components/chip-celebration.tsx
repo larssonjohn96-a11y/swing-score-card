@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 
 /** A short, finite canvas celebration shared by holed chips and personal bests. */
-export function ChipCelebration({ grand = false }: { grand?: boolean }) {
+export function ChipCelebration({ grand = false, subtle = false }: { grand?: boolean; subtle?: boolean }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -19,7 +19,7 @@ export function ChipCelebration({ grand = false }: { grand?: boolean }) {
       const n = Math.sin(i * 127.1 + 73.7) * 43758.5453;
       return n - Math.floor(n);
     };
-    const paper = Array.from({ length: grand ? 240 : 90 }, (_, i) => ({
+    const paper = Array.from({ length: subtle ? 0 : grand ? 240 : 90 }, (_, i) => ({
       x: random(i + 1) * width,
       y: -20 - random(i + 101) * height * 0.6,
       vx: (random(i + 201) - 0.5) * 80,
@@ -29,12 +29,14 @@ export function ChipCelebration({ grand = false }: { grand?: boolean }) {
       size: 4 + random(i + 601) * 4,
       color: colors[i % colors.length],
     }));
-    const sparks = [0, 1, 2].flatMap((b) =>
-      Array.from({ length: grand ? 48 : 24 }, (_, i) => ({
+    const sparkCount = subtle ? 18 : grand ? 48 : 24;
+    const duration = subtle ? 1.5 : grand ? 4 : 2.7;
+    const sparks = (subtle ? [2] : [0, 1, 2]).flatMap((b) =>
+      Array.from({ length: sparkCount }, (_, i) => ({
         x: width * [0.22, 0.78, 0.5][b],
         y: height * [0.25, 0.32, 0.2][b],
-        at: [0.15, 0.65, 1.1][b],
-        angle: (i * Math.PI) / 12,
+        at: subtle ? 0.15 : [0.15, 0.65, 1.1][b],
+        angle: (i * Math.PI * 2) / sparkCount,
         speed: 55 + random(i + b * 24 + 701) * 65,
         color: colors[(i + b) % colors.length],
       })),
@@ -44,8 +46,8 @@ export function ChipCelebration({ grand = false }: { grand?: boolean }) {
     const draw = (now: number) => {
       const t = (now - start) / 1000;
       ctx.clearRect(0, 0, width, height);
-      if (t > (grand ? 4 : 2.7)) return;
-      const fade = Math.min(1, t / 0.2) * Math.min(1, ((grand ? 4 : 2.7) - t) / 0.55);
+      if (t > duration) return;
+      const fade = Math.min(1, t / 0.2) * Math.min(1, (duration - t) / 0.55);
       for (const p of paper) {
         ctx.save();
         ctx.globalAlpha = Math.max(0, fade * 0.95);
@@ -80,11 +82,12 @@ export function ChipCelebration({ grand = false }: { grand?: boolean }) {
       cancelAnimationFrame(frame);
       ctx.clearRect(0, 0, width, height);
     };
-  }, [grand]);
+  }, [grand, subtle]);
   return (
     <canvas
       ref={canvas}
       aria-hidden="true"
+      data-celebration-size={subtle ? "subtle" : grand ? "grand" : "standard"}
       data-chip-celebration
       className="pointer-events-none fixed inset-0 z-50 h-full w-full"
     />
