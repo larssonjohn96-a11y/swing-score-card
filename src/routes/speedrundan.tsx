@@ -6,7 +6,7 @@ import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/speedrundan")({
-  head: () => ({ meta: [{ title: "Speedrundan – Spela en runda | SG4" }] }),
+  head: () => ({ meta: [{ title: "Ball Speed Challenge | SG4" }] }),
   component: SpeedRoundPage,
 });
 function SpeedRoundPage() {

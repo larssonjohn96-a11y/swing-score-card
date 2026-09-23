@@ -23,7 +23,13 @@ export type CourseState = {
   active: CourseSession | null;
 };
 export type CourseAction =
-  | { type: "start"; id: string; at: number; baselineAverage?: number | null; baselinePb?: number | null }
+  | {
+      type: "start";
+      id: string;
+      at: number;
+      baselineAverage?: number | null;
+      baselinePb?: number | null;
+    }
   | { type: "calibrate"; length: number }
   | { type: "score"; shot: CourseShot }
   | { type: "undo" }
@@ -231,7 +237,8 @@ export function parseCourse(raw: string | null): CourseState {
         ...r,
         status: r.holes.length === 3 ? "full" : "partial",
         baselineAverage:
-          r.baselineAverage === null || (Number.isFinite(r.baselineAverage) && r.baselineAverage > 0)
+          r.baselineAverage === null ||
+          (Number.isFinite(r.baselineAverage) && r.baselineAverage > 0)
             ? r.baselineAverage
             : undefined,
         baselinePb:
@@ -259,13 +266,10 @@ export function parseCourse(raw: string | null): CourseState {
         reference: a.reference,
         startedAt: a.startedAt,
         holes: a.holes,
-        phase: a.holes.at(-1).length
-          ? a.phase === "halfway" && a.holes.length === 3
-            ? "halfway"
-            : "result"
-          : "play",
+        phase: a.holes.at(-1).length ? "result" : "play",
         baselineAverage:
-          a.baselineAverage === null || (Number.isFinite(a.baselineAverage) && a.baselineAverage > 0)
+          a.baselineAverage === null ||
+          (Number.isFinite(a.baselineAverage) && a.baselineAverage > 0)
             ? a.baselineAverage
             : undefined,
         baselinePb:

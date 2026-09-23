@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Trophy } from "lucide-react";
-import { speedAverage } from "@/lib/speed-course";
+import { fromMph, speedAverage, speedHistoryBaseline, type SpeedUnit } from "@/lib/speed-course";
 import { fetchFriendSnapshot, listFriendships, pushPlayerSnapshot } from "@/lib/friends-cloud";
 import type { CourseRound } from "@/lib/speed-course";
 type Row = ReturnType<typeof speedAverage> & { id: string; name: string };
@@ -9,10 +9,14 @@ export function SpeedLeaderboard({
   userId,
   history,
   playerName,
+  ballSpeed = false,
+  unit = "mph",
 }: {
   userId: string | null;
   history: CourseRound[];
   playerName: string;
+  ballSpeed?: boolean;
+  unit?: SpeedUnit;
 }) {
   const [rows, setRows] = useState<Row[]>([]);
   const [status, setStatus] = useState("");
@@ -37,8 +41,8 @@ export function SpeedLeaderboard({
             return {
               id: f.other.id,
               name: f.other.displayName,
-              count: value("speed-round-count"),
-              points: value("speed-round-points"),
+              count: ballSpeed && !value("speed-round-best-mph") ? 0 : value("speed-round-count"),
+              points: value(ballSpeed ? "speed-round-best-mph" : "speed-round-points"),
               stars: value("speed-round-stars"),
             };
           }),
@@ -54,12 +58,18 @@ export function SpeedLeaderboard({
     return () => {
       alive = false;
     };
-  }, [userId, history, retry]);
+  }, [userId, history, retry, ballSpeed]);
   const all = [
     {
       id: userId ?? "guest",
       name: playerName === "Du" ? "Du" : `${playerName} · Du`,
       ...speedAverage(history),
+      ...(ballSpeed
+        ? {
+            count: speedHistoryBaseline(history).count,
+            points: speedHistoryBaseline(history).pb ?? 0,
+          }
+        : {}),
     },
     ...rows,
   ].sort(
@@ -76,11 +86,15 @@ export function SpeedLeaderboard({
           <Trophy className="h-5 w-5" />
           Topplista Vänner
         </h2>
-        <p className="mt-1 text-sm text-blue-100">Snitt av senaste 5 hela rundorna</p>
+        <p className="mt-1 text-sm text-blue-100">
+          {ballSpeed
+            ? "Vem har högst bollhastighet? Personbästa i testet."
+            : "Snitt av senaste 5 hela rundorna"}
+        </p>
       </div>
       <div className="flex justify-between px-4 pt-3 text-xs font-bold uppercase text-slate-400">
         <span>Spelare</span>
-        <span>Speedpoäng</span>
+        <span>{ballSpeed ? "Bollhastighet" : "Speedpoäng"}</span>
       </div>
       <ol className="p-2">
         {all.map((r) => {
@@ -101,13 +115,21 @@ export function SpeedLeaderboard({
                 <p className="truncate font-bold text-slate-900">{r.name}</p>
                 <p className="text-xs text-slate-500">
                   {r.count
-                    ? `${r.count}/5 rundor${r.count < 5 ? " · preliminärt" : ""}`
-                    : "Inga synkade rundor"}
+                    ? ballSpeed
+                      ? "Personbästa"
+                      : `${r.count}/5 rundor${r.count < 5 ? " · preliminärt" : ""}`
+                    : ballSpeed
+                      ? "Inget synkat speedtest"
+                      : "Inga synkade rundor"}
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-xl font-black text-blue-700">{r.count ? fmt(r.points) : "–"}</p>
-                <p className="text-xs text-slate-500">{r.count ? `av 100 p` : ""}</p>
+                <p className="text-xl font-black text-blue-700">
+                  {r.count ? fmt(ballSpeed ? fromMph(r.points, unit) : r.points) : "–"}
+                </p>
+                <p className="text-xs text-slate-500">
+                  {r.count ? (ballSpeed ? unit : `av 100 p`) : ""}
+                </p>
               </div>
             </li>
           );
@@ -129,8 +151,9 @@ export function SpeedLeaderboard({
         </Link>
       )}
       <p className="px-4 pb-4 text-xs text-slate-500">
-        Bara hela rundor med samma poängsystem räknas. Vännernas snitt uppdateras när deras app
-        synkar.
+        {ballSpeed
+          ? "Bara slutförda tester med tre slag räknas. Vännernas personbästa visas när deras app har synkat den nya mätningen."
+          : "Bara hela rundor med samma poängsystem räknas. Vännernas snitt uppdateras när deras app synkar."}
       </p>
     </section>
   );

@@ -22,7 +22,7 @@ const round = (id = "r", reference = 150, speed = 150, finishedAt = 1): CourseRo
   startedAt: 0,
   finishedAt,
   status: "full",
-  holes: Array.from({ length: 6 }, () => [{ ballSpeed: speed }]),
+  holes: Array.from({ length: 3 }, () => [{ ballSpeed: speed }]),
 });
 const calibrated = () =>
   [140, 150, 160].reduce(
@@ -32,12 +32,12 @@ const calibrated = () =>
 describe("speed round", () => {
   it("calibrates three valid measurements and freezes the reference", () => {
     let s = emptyCourse();
-    expect(reduceCourse(s, { type: "start", id: "x", at: 1 })).toBe(s);
+    expect(reduceCourse(s, { type: "start", id: "x", at: 1 }).active).not.toBeNull();
     for (const length of [0, -1, NaN, Infinity, 251])
       expect(reduceCourse(s, { type: "calibrate", length })).toBe(s);
     s = calibrated();
     expect(referenceSpeed(s)).toBe(150);
-    s = reduceCourse(s, { type: "start", id: "x", at: 1 });
+    s = reduceCourse(s, { type: "start", id: "x", at: 1, baselineAverage: 150 });
     expect(s.active?.reference).toBe(150);
     expect(reduceCourse(s, { type: "calibrate", length: 170 })).toBe(s);
   });
@@ -70,16 +70,16 @@ describe("speed round", () => {
   it("objective score and speed HCP do not depend on the personal reference", () => {
     const a = round("a", 100, 100),
       b = round("b", 170, 170);
-    expect(roundStars(a)).toBe(18);
-    expect(roundStars(b)).toBe(18);
+    expect(roundStars(a)).toBe(9);
+    expect(roundStars(b)).toBe(9);
     expect(roundPoints(b)).toBeGreaterThan(roundPoints(a));
     const changedReference = { ...a, reference: 200 };
     expect(roundPoints(changedReference)).toBe(roundPoints(a));
     expect(courseHandicap(changedReference)).toBe(courseHandicap(a));
   });
-  it("records exactly six shots with halfway, undo and reload; excludes incomplete rounds from rankings", () => {
-    let s = reduceCourse(calibrated(), { type: "start", id: "six", at: 1 });
-    for (let i = 0; i < 6; i++) {
+  it("records exactly three shots with undo and reload; excludes incomplete rounds from rankings", () => {
+    let s = reduceCourse(calibrated(), { type: "start", id: "three", at: 1, baselineAverage: 150 });
+    for (let i = 0; i < 3; i++) {
       s = reduceCourse(s, { type: "score", shot: { ballSpeed: 147 } });
       expect(reduceCourse(s, { type: "score", shot: { ballSpeed: 200 } })).toBe(s);
       if (i === 0) {
@@ -90,14 +90,9 @@ describe("speed round", () => {
       s = parseCourse(JSON.stringify(s));
       expect(s.active?.reference).toBe(150);
       s = reduceCourse(s, { type: "next", at: 10 + i });
-      if (i === 2) {
-        expect(s.active?.phase).toBe("halfway");
-        expect(speedAverage(reduceCourse(s, { type: "finish", at: 20 }).history).count).toBe(0);
-        s = reduceCourse(s, { type: "continue" });
-      }
     }
     expect(s.active).toBeNull();
-    expect(roundStars(s.history[0])).toBe(15);
+    expect(roundStars(s.history[0])).toBe(7.5);
     expect(referenceSpeed(s)).toBe(147);
     expect(s.history[0].reference).toBe(150);
   });

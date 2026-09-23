@@ -9,7 +9,12 @@ import {
   type CourseRound,
 } from "./speed-course";
 
-const round = (id: string, finishedAt: number, speeds: number[], status: CourseRound["status"] = "full"): CourseRound => ({
+const round = (
+  id: string,
+  finishedAt: number,
+  speeds: number[],
+  status: CourseRound["status"] = "full",
+): CourseRound => ({
   id,
   model: 1,
   reference: 140,
@@ -46,14 +51,24 @@ describe("Ball Speed Challenge", () => {
 
   it("freezes the baseline and saves one result after exactly three shots", () => {
     let state = emptyCourse();
-    state = reduceCourse(state, { type: "start", id: "test", at: 1, baselineAverage: 145, baselinePb: 160 });
+    state = reduceCourse(state, {
+      type: "start",
+      id: "test",
+      at: 1,
+      baselineAverage: 145,
+      baselinePb: 160,
+    });
     for (let index = 0; index < 3; index += 1) {
       state = reduceCourse(state, { type: "score", shot: { ballSpeed: 150 + index } });
       state = reduceCourse(state, { type: "next", at: 10 + index });
     }
     expect(state.active).toBeNull();
     expect(state.history).toHaveLength(1);
-    expect(state.history[0]).toMatchObject({ baselineAverage: 145, baselinePb: 160, status: "full" });
+    expect(state.history[0]).toMatchObject({
+      baselineAverage: 145,
+      baselinePb: 160,
+      status: "full",
+    });
     expect(reduceCourse(state, { type: "next", at: 99 })).toBe(state);
   });
 });
