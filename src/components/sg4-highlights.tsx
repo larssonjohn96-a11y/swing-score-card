@@ -92,6 +92,14 @@ export function SG4Highlights() {
   const opener = useRef<HTMLButtonElement | null>(null);
   const group = position ? SG4_HIGHLIGHTS[position.group] : null;
   const story = group && position ? group.stories[position.slide] : null;
+  const lastSlide = !!position && !!group && position.slide === group.stories.length - 1;
+  const nextGroup = position ? SG4_HIGHLIGHTS[position.group + 1] : undefined;
+  const nextLabel = lastSlide
+    ? nextGroup
+      ? `Nästa kategori: ${nextGroup.label}`
+      : "Avsluta stories"
+    : "Nästa story";
+  const categoryTones = ["bg-blue-600", "bg-violet-600", "bg-emerald-700", "bg-amber-700"];
   const markSeen = () => {
     if (position) setSeen((v) => (v.includes(position.group) ? v : [...v, position.group]));
   };
@@ -198,7 +206,9 @@ export function SG4Highlights() {
                   ))}
                 </div>
                 <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-bold">SG4 · {group.label}</p>
+                  <p className="text-xs font-semibold text-white/80">
+                    SG4 · När ska jag använda appen?
+                  </p>
                   <Dialog.Close
                     aria-label="Stäng stories"
                     className="flex h-11 w-11 items-center justify-center rounded-full bg-black/25"
@@ -206,6 +216,20 @@ export function SG4Highlights() {
                     <X className="h-6 w-6" />
                   </Dialog.Close>
                 </div>
+              </div>
+              <style>{`@keyframes sg4CategoryEnter{from{opacity:.3;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}.sg4-category-enter{animation:sg4CategoryEnter .28s ease-out}@media(prefers-reduced-motion:reduce){.sg4-category-enter{animation:none}}`}</style>
+              <div
+                key={position.group}
+                aria-live="polite"
+                aria-atomic="true"
+                className={`sg4-category-enter relative z-10 mx-4 mt-2 rounded-2xl px-4 py-3 shadow-lg ${categoryTones[position.group]}`}
+              >
+                <p className="text-[11px] font-semibold text-white/80">
+                  Kategori {position.group + 1} av {SG4_HIGHLIGHTS.length}
+                </p>
+                <p className="mt-1 font-sans text-2xl font-extrabold leading-tight tracking-normal">
+                  {group.label}
+                </p>
               </div>
               <div className="relative flex min-h-20 flex-1" aria-label="Bläddra mellan stories">
                 <button
@@ -215,7 +239,7 @@ export function SG4Highlights() {
                   onClick={() => move(-1)}
                 />
                 <button
-                  aria-label="Nästa story"
+                  aria-label={nextLabel}
                   className="flex-1 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white"
                   onClick={() => move(1)}
                 />
@@ -244,20 +268,28 @@ export function SG4Highlights() {
                   >
                     <ChevronLeft className="h-5 w-5" />
                   </button>
-                  <span className="text-xs text-white/65">
-                    {position.slide + 1} / {group.stories.length} · Bläddra i din takt
-                  </span>
-                  <button
-                    onClick={() => move(1)}
-                    aria-label={
-                      position.group === 3 && position.slide === group.stories.length - 1
-                        ? "Avsluta stories"
-                        : "Nästa story"
-                    }
-                    className="flex h-11 w-11 items-center justify-center rounded-full"
-                  >
-                    <ChevronRight className="h-5 w-5" />
-                  </button>
+                  {lastSlide ? (
+                    <button
+                      onClick={() => move(1)}
+                      className="flex min-h-12 max-w-[80%] items-center justify-end gap-2 rounded-xl bg-white/15 px-3 py-2 text-left text-sm font-bold"
+                    >
+                      <span>{nextLabel}</span>
+                      <ChevronRight className="h-5 w-5 shrink-0" />
+                    </button>
+                  ) : (
+                    <>
+                      <span className="text-xs text-white/65">
+                        {position.slide + 1} / {group.stories.length} i denna kategori
+                      </span>
+                      <button
+                        onClick={() => move(1)}
+                        aria-label={nextLabel}
+                        className="flex h-11 w-11 items-center justify-center rounded-full"
+                      >
+                        <ChevronRight className="h-5 w-5" />
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             </Dialog.Content>
