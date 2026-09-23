@@ -1,4 +1,4 @@
-import { selectNextEngineDistance } from "@/lib/sg4-engine";
+import { generateGameDistances } from "./game-distances";
 
 /**
  * Gemensam regelkälla för SG4:s Chip Match.
@@ -15,14 +15,14 @@ export const CHIP_MATCH_FORMATS = [
 ] as const;
 
 export const CHIP_DISTANCE_BANDS = [
-  { id: "short", label: "Kort chip", range: "8–14 m", min: 8, max: 14 },
-  { id: "medium", label: "Medel chip", range: "15–22 m", min: 15, max: 22 },
-  { id: "long", label: "Lång chip", range: "23–30 m", min: 23, max: 30 },
+  { id: "short", label: "Kort chip", range: "8–10 m", min: 8, max: 10 },
+  { id: "medium", label: "Medel chip", range: "11–14 m", min: 11, max: 14 },
+  { id: "long", label: "Lång chip", range: "15–18 m", min: 15, max: 18 },
 ] as const;
 
 export const CHIP_MATCH_RULES = [
-  "Korta 8–14 m · Medel 15–22 m · Långa 23–30 m.",
-  "Matchen växlar mellan tydligt olika avstånd. Nästa hål försöker skilja minst 6 meter.",
+  "Korta 8–10 m · Medel 11–14 m · Långa 15–18 m.",
+  "Matchen växlar mellan tydligt olika avstånd. Samma zon kommer inte två gånger i rad.",
   "Båda spelarna chippar från exakt samma avstånd på varje hål.",
   "Ett slag per spelare. Välj bara hur nära hålet bollen stannade.",
   "Bäst avståndszon vinner hålet, samma zon delar hålet.",
@@ -42,54 +42,11 @@ export function getChipPointZone(points: number | null | undefined) {
 }
 
 export function getChipDistanceBand(distance: number) {
-  if (distance <= 14) return CHIP_DISTANCE_BANDS[0];
-  if (distance <= 22) return CHIP_DISTANCE_BANDS[1];
+  if (distance <= 10) return CHIP_DISTANCE_BANDS[0];
+  if (distance <= 14) return CHIP_DISTANCE_BANDS[1];
   return CHIP_DISTANCE_BANDS[2];
 }
 
-/**
- * Variation prioriteras före finjustering. Matchen växlar mellan korta,
- * medellånga och långa chips så två hål i rad inte känns likadana.
- * SG4-motorn väljer fortfarande exakt meter inom respektive band. När möjligt
- * skiljer nästa hål minst 6 meter och exakt avstånd återanvänds inte.
- */
-export function generateChipMatchDistances(length: ChipMatchLength): number[] {
-  const bandOrder = length === 3
-    ? [0, 1, 2]
-    : length === 5
-      ? [0, 1, 2, 0, 2]
-      : [0, 1, 2, 1, 0, 1, 2];
-
-  const orderedBandIndexes = Math.random() < 0.5
-    ? bandOrder
-    : bandOrder.map((index) => 2 - index);
-
-  const distances: number[] = [];
-  const minGap = 6;
-
-  for (const bandIndex of orderedBandIndexes) {
-    const band = CHIP_DISTANCE_BANDS[bandIndex];
-    const previous = distances.at(-1);
-    const all = Array.from({ length: band.max - band.min + 1 }, (_, index) => band.min + index);
-    const unused = all.filter((distance) => !distances.includes(distance));
-    const pool = unused.length ? unused : all;
-    const varied = previous === undefined
-      ? pool
-      : pool.filter((distance) => Math.abs(distance - previous) >= minGap);
-    const allowedDistances = varied.length ? varied : pool;
-
-    distances.push(
-      selectNextEngineDistance({
-        skill: "chip",
-        objective: "balanced",
-        context: "game",
-        min: band.min,
-        max: band.max,
-        previousDistance: previous,
-        allowedDistances,
-      }),
-    );
-  }
-
-  return distances;
+export function generateChipMatchDistances(length: ChipMatchLength, previous: readonly number[] = []): number[] {
+  return generateGameDistances("chip", length, previous);
 }

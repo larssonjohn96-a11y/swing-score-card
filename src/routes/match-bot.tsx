@@ -13,8 +13,8 @@ import {
   formatPuttingDistance,
   generatePuttingMatchDistances,
 } from "@/lib/putting-match";
-import { CHIP_POINT_ZONES, generateChipMatchDistances, getChipDistanceBand } from "@/lib/chip-match";
-import { chipPerformanceFromPoints, puttingPerformanceFromStrokes, recordEngineOutcome, selectNextEngineDistance, type EngineSkill } from "@/lib/sg4-engine";
+import { CHIP_POINT_ZONES, generateChipMatchDistances } from "@/lib/chip-match";
+import { chipPerformanceFromPoints, puttingPerformanceFromStrokes, recordEngineOutcome, type EngineSkill } from "@/lib/sg4-engine";
 import { getPlayRecommendations } from "@/lib/sg4-surface-recommendations";
 import { recordRecommendationCompletion, recordRecommendationImpressions, recordRecommendationOpen, recordRecommendationSignal } from "@/lib/sg4-recommender";
 import { simulateChipBotResult, simulateDriveBotResult, simulatePuttingBotStrokes, type BotCategoryHandicaps } from "@/lib/bot-skill-model";
@@ -331,8 +331,8 @@ function BotMatchPage() {
 
   function buildHoles() {
     if (!category || bot.locked) return;
-    const puttingDistances = category === "putting" ? generatePuttingMatchDistances(length) : [];
-    const chipDistances = category === "around-the-green" ? generateChipMatchDistances(length) : [];
+    const puttingDistances = category === "putting" ? generatePuttingMatchDistances(length, holes.flatMap(h => h.distance === undefined ? [] : [h.distance])) : [];
+    const chipDistances = category === "around-the-green" ? generateChipMatchDistances(length, holes.flatMap(h => h.distance === undefined ? [] : [h.distance])) : [];
     const approachDistances = category === "approach" ? generateApproachMatchDistances(length) : [];
     const next: Hole[] = Array.from({ length }, (_unused, holeNr) => {
       if (category === "putting") {
@@ -429,7 +429,6 @@ function BotMatchPage() {
       : category === "around-the-green" || category === "bunker"
         ? chipPerformanceFromPoints(lockedYourValue)
         : null;
-    let adaptiveNextDistance: number | null = null;
     if (engineSkill && enginePerformance !== null) {
       recordEngineOutcome({
         skill: engineSkill,
@@ -438,26 +437,9 @@ function BotMatchPage() {
         context: "game",
         activityId: engineSkill === "putting" ? "putting-match" : "chip-match",
       });
-      if (holeIndex < holes.length - 1 && typeof current.distance === "number") {
-        adaptiveNextDistance = selectNextEngineDistance({
-          skill: engineSkill,
-          objective: "balanced",
-          min: engineSkill === "putting" ? 1 : 8,
-          max: engineSkill === "putting" ? 22 : 30,
-          previousDistance: current.distance,
-          previousPerformance: enginePerformance,
-        });
-      }
     }
     setHoles((prev) => prev.map((h, i) => {
       if (i === holeIndex) return { ...h, yourValue: lockedYourValue, yourHit: lockedDriveHit, yourApproach: lockedApproach };
-      if (i === holeIndex + 1 && adaptiveNextDistance !== null) {
-        if (engineSkill === "putting") {
-          return { ...h, title: formatPuttingDistance(adaptiveNextDistance), distance: adaptiveNextDistance, detail: "Samma position för båda · färre puttar vinner hålet" };
-        }
-        const band = getChipDistanceBand(adaptiveNextDistance);
-        return { ...h, title: `${adaptiveNextDistance} m`, distance: adaptiveNextDistance, detail: "Närmast flaggan vinner." };
-      }
       return h;
     }));
 
@@ -649,7 +631,7 @@ function BotMatchPage() {
       {step === "setup" ? (
         <>
           <section className="mt-5"><p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">{category === "bunker" ? "Bunker" : "Chippning"}</p><h1 className="mt-1 font-display text-4xl">{category === "bunker" ? "Bunker" : "Chipping"}</h1><p className="mt-2 text-sm text-slate-600">Du spelar först. Därefter slår {bot.name} från exakt samma avstånd.</p></section>
-          <div className={`mt-5 rounded-3xl border p-5 ${glass}`}><Target className="h-5 w-5 text-red-600" /><p className="mt-3 font-display text-2xl">10–30 meter</p><p className="mt-1 text-xs text-slate-500">Varierade närspelsavstånd.</p></div>
+          <div className={`mt-5 rounded-3xl border p-5 ${glass}`}><Target className="h-5 w-5 text-red-600" /><p className="mt-3 font-display text-2xl">{category === "bunker" ? "10–30 meter" : "8–18 meter"}</p><p className="mt-1 text-xs text-slate-500">Varierade närspelsavstånd.</p></div>
           <button onClick={() => goToStep("length")} className={`sg4-ryder-next mt-6 ${ryderNext}`}>Nästa <ChevronRight className="h-5 w-5" /></button>
         </>
       ) : null}

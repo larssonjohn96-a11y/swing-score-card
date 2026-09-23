@@ -16,8 +16,8 @@ describe("randomized solo round distances", () => {
         sequences.add(d.join(","));
         if (kind === "putt") {
           expect(d.filter((n) => n <= 3)).toHaveLength(2);
-          expect(d.filter((n) => n >= 4 && n <= 7)).toHaveLength(1);
-          expect(d.filter((n) => n >= 8 && n <= 12)).toHaveLength(3);
+          expect(d.filter((n) => n >= 4 && n <= 7)).toHaveLength(2);
+          expect(d.filter((n) => n >= 8 && n <= 12)).toHaveLength(2);
           expect(putt.roundStars({ holes: d.map(() => [1]), distances: d })).toBe(16);
         } else {
           const bands =

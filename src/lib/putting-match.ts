@@ -1,4 +1,4 @@
-import { selectNextEngineDistance } from "@/lib/sg4-engine";
+import { generateGameDistances } from "./game-distances";
 
 /**
  * Gemensam regelkälla för SG4:s Putting Match.
@@ -30,59 +30,10 @@ export const PUTTING_MATCH_RULES = [
   "Vid lika blir det sudden death från 11 m: ett slag var, närmast flaggan vinner. Lika eller båda sänkta innebär en ny omgång.",
 ];
 
-const PUTTING_DISTANCE_BANDS = [
-  { min: 1, max: 7 },
-  { min: 8, max: 14 },
-  { min: 15, max: 22 },
-] as const;
-
-/**
- * Variation prioriteras före finjustering. Matchen växlar mellan tydligt olika
- * korta, medellånga och långa puttar, medan SG4-motorn fortfarande får välja
- * exakt avstånd inom varje band. När möjligt skiljer nästa hål minst 5 meter
- * och ett exakt avstånd återanvänds inte inom samma match.
- */
-export function generatePuttingMatchDistances(length: PuttingMatchLength): number[] {
-  const bandOrder = length === 3
-    ? [0, 1, 2]
-    : length === 5
-      ? [0, 1, 2, 0, 2]
-      : [0, 1, 2, 1, 0, 1, 2];
-
-  const orderedBandIndexes = Math.random() < 0.5
-    ? bandOrder
-    : bandOrder.map((index) => 2 - index);
-
-  const distances: number[] = [];
-  const minGap = 5;
-
-  for (const bandIndex of orderedBandIndexes) {
-    const band = PUTTING_DISTANCE_BANDS[bandIndex];
-    const previous = distances.at(-1);
-    const all = Array.from({ length: band.max - band.min + 1 }, (_, index) => band.min + index);
-    const unused = all.filter((distance) => !distances.includes(distance));
-    const pool = unused.length ? unused : all;
-    const varied = previous === undefined
-      ? pool
-      : pool.filter((distance) => Math.abs(distance - previous) >= minGap);
-    const allowedDistances = varied.length ? varied : pool;
-
-    distances.push(
-      selectNextEngineDistance({
-        skill: "putting",
-        objective: "balanced",
-        context: "game",
-        min: band.min,
-        max: band.max,
-        previousDistance: previous,
-        allowedDistances,
-      }),
-    );
-  }
-
-  return distances;
+export function generatePuttingMatchDistances(length: PuttingMatchLength, previous: readonly number[] = []): number[] {
+  return generateGameDistances("putt", length, previous);
 }
 
 export function formatPuttingDistance(distance: number) {
-  return `${Math.round(distance)} m`;
+  return `${String(distance).replace(".", ",")} m`;
 }
