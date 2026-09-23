@@ -158,7 +158,7 @@ export function BottomNav() {
             <span className="absolute inset-x-0 top-0 h-[125px] bg-gradient-to-t from-white via-white/10 to-transparent" />
             <span className="absolute inset-x-0 bottom-0 p-4"><span className="block font-display text-[25px] leading-none">Spela själv</span><span className="mt-1.5 block text-xs text-muted-foreground">Välj kategori och spela.</span><ChevronRight className="absolute bottom-5 right-4 h-4 w-4 text-emerald-700" /></span>
           </Link>
-          <Link to="/korthalsbana" onClick={() => setPlayOpen(false)} className="flex min-h-20 items-center justify-between gap-4 rounded-[24px] border border-blue-200 bg-blue-50 p-4 text-blue-950"><span><span className="block font-display text-2xl">Spela på bana</span><span className="mt-1 block text-sm text-blue-700">Mot vän eller bot · valfria golfhål</span></span><ChevronRight className="h-5 w-5 shrink-0" /></Link>
+          <Link to="/korthalsbana" onClick={() => setPlayOpen(false)} className="flex min-h-20 items-center justify-between gap-4 rounded-[24px] border border-blue-200 bg-blue-50 p-4 text-blue-950"><span><span className="block font-display text-2xl">Spela på bana</span><span className="mt-1 block text-sm text-blue-700">1 mot 1 · flera spelare · turnering</span></span><ChevronRight className="h-5 w-5 shrink-0" /></Link>
         </div>
       </SheetContent>
     </Sheet>

@@ -1,3 +1,4 @@
+import { CourseCompetition } from "@/components/course-competition";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, Flag, Trophy, Bot, Users } from "lucide-react";
@@ -26,7 +27,7 @@ import {
 
 export const Route = createFileRoute("/korthalsbana")({
   head: () => ({ meta: [{ title: "Spela på bana | SG4" }] }),
-  component: CourseGamePage,
+  component: CourseHub,
 });
 const primary =
   "flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 py-3 text-base font-bold leading-snug text-white disabled:opacity-40";
@@ -95,8 +96,90 @@ function ScoreInput({
     </div>
   );
 }
-function CourseGamePage() {
+function CourseHub() {
   useHideBottomNav(true);
+  const [mode, setMode] = useState<"duel" | "group" | "tournament" | null>(null);
+  const { user, loading } = useAuth();
+  const [pending, setPending] = useState<string[]>([]);
+  useEffect(() => {
+    if (loading || mode) return;
+    const suffix = user?.id ?? "guest";
+    try {
+      setPending([
+        ...(localStorage.getItem(`sg4.course-game.v1:${suffix}`) ? ["duel"] : []),
+        ...(localStorage.getItem(`sg4.course-competition.v1:${suffix}:group`) ? ["group"] : []),
+        ...(localStorage.getItem(`sg4.course-competition.v1:${suffix}:tournament`)
+          ? ["tournament"]
+          : []),
+      ]);
+    } catch {
+      setPending([]);
+    }
+  }, [loading, user?.id, mode]);
+  if (mode === "duel") return <CourseGamePage onBack={() => setMode(null)} />;
+  if (mode) return <CourseCompetition kind={mode} onBack={() => setMode(null)} />;
+  return (
+    <div className="min-h-dvh bg-[#fcfdf9] pb-10 text-slate-950">
+      <header className="sticky top-0 z-20 border-b border-slate-200 bg-white px-4 py-3">
+        <div className="mx-auto grid max-w-lg grid-cols-[44px_1fr_44px] items-center gap-2">
+          <Link
+            to="/"
+            aria-label="Till startsidan"
+            className="flex h-11 w-11 items-center justify-center rounded-full border"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+          <p className="text-center font-semibold">Spela på bana</p>
+          <span />
+        </div>
+      </header>
+      <main className="mx-auto max-w-lg space-y-5 px-4 pt-6">
+        <section className="rounded-3xl bg-blue-600 p-6 text-white">
+          <Flag className="mb-4 h-8 w-8" />
+          <h1 className="font-display text-4xl leading-tight">Spela på bana</h1>
+          <p className="mt-3 text-lg">Tävla på valfria golfhål.</p>
+          <p className="mt-2 text-blue-100">
+            Korthålsbana eller fulla hål. Välj hur ni vill tävla – inget par eller banregister
+            behövs.
+          </p>
+        </section>
+        {(
+          [
+            ["duel", "1 mot 1", "Utmana en vän eller bot. Matchspel eller slagspel."],
+            ["group", "Flera spelare", "2–6 spelare. Lägst antal slag vinner."],
+            [
+              "tournament",
+              "Turnering",
+              "3–16 spelare. Utslagsbracket eller alla möter alla följt av slutspel.",
+            ],
+          ] as const
+        ).map(([id, title, description]) => (
+          <button
+            key={id}
+            onClick={() => setMode(id)}
+            className={`${card} flex w-full items-center gap-4 text-left`}
+          >
+            <span className="min-w-0 flex-1">
+              <span className="block font-display text-3xl">{title}</span>
+              <span className="mt-2 block text-sm text-slate-600">{description}</span>
+              {pending.includes(id) && (
+                <span className="mt-2 block text-sm font-bold text-blue-700">
+                  Pågående spel · fortsätt
+                </span>
+              )}
+            </span>
+            <ArrowRight className="h-5 w-5 shrink-0 text-blue-600" />
+          </button>
+        ))}
+        <p className="text-center text-sm text-slate-500">
+          Välj samma spelläge för att återuppta ett pågående spel. Resultaten sparas bara medan ni
+          spelar.
+        </p>
+      </main>
+    </div>
+  );
+}
+function CourseGamePage({ onBack }: { onBack: () => void }) {
   const { user, displayName, loading } = useAuth();
   const storageKey = `sg4.course-game.v1:${user?.id ?? "guest"}`;
   const [ready, setReady] = useState(false);
@@ -236,13 +319,13 @@ function CourseGamePage() {
       <header className="sticky top-0 z-20 border-b border-slate-200 bg-white px-4 py-3">
         <div className="mx-auto grid max-w-lg grid-cols-[44px_1fr_44px] items-center gap-2">
           {screen === "home" ? (
-            <Link
-              to="/"
-              aria-label="Till startsidan"
+            <button
+              onClick={onBack}
+              aria-label="Till spellägen"
               className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200"
             >
               <ArrowLeft className="h-5 w-5" />
-            </Link>
+            </button>
           ) : (
             <button
               aria-label="Tillbaka"

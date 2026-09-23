@@ -741,6 +741,10 @@ function Home() {
             <h2 className="text-[24px] font-black leading-none text-foreground">Spel & utmaningar</h2>
             <p className="mt-1.5 text-sm text-muted-foreground">Välj en utmaning. Slå ditt rekord.</p>
           </div>
+          <Link to="/korthalsbana" className="mt-4 flex min-h-32 items-center gap-4 rounded-[26px] border border-blue-200 bg-blue-50 p-5 text-blue-950 shadow-sm">
+            <span className="min-w-0 flex-1"><span className="block font-display text-[30px] leading-tight">Spela på bana</span><span className="mt-2 block text-sm text-blue-800">1 mot 1, flera spelare eller turnering. Tävla på valfria golfhål.</span></span>
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white"><ChevronRight className="h-5 w-5" /></span>
+          </Link>
           <Link to="/spela-runda" className="group relative mt-4 block min-h-[220px] overflow-hidden rounded-[26px] border border-border bg-card shadow-sm transition-transform active:scale-[.99]">
             <img src="/Off_the_tee.png" alt="" className="absolute inset-0 h-full w-full object-cover object-[18%_50%]" />
             <span className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-black/5" />
