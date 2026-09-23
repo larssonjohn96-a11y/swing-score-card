@@ -1,3 +1,5 @@
+import { speedStories } from "@/lib/speed-story";
+import { SpeedTourStory, SpeedPerspectiveStory } from "./speed-reference-stories";
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Lock, X } from "lucide-react";
 import { Link } from "@tanstack/react-router";
@@ -83,6 +85,9 @@ export function SpeedChallengeAnalysis({
   const hcp = handicapFromBallSpeed(result.avgBallSpeed);
   const distribution = age ? ballSpeedDistributionForAge(age) : undefined;
   const potential = driverDistancePotential(result.topBallSpeed);
+  const stories = speedStories(result.avgBallSpeed, age);
+  const currentStory = stories[story];
+  const lastStory = stories.length - 1;
   useEffect(() => {
     if (!open || !canViewDetailedBreakdowns) return;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -94,8 +99,8 @@ export function SpeedChallengeAnalysis({
       setRevealed(true);
       return;
     }
-    if (story === 3) return;
-    else setStory((s) => Math.min(3, s + 1));
+    if (story === lastStory) return;
+    else setStory((s) => Math.min(lastStory, s + 1));
   }
   return (
     <Dialog
@@ -130,7 +135,7 @@ export function SpeedChallengeAnalysis({
         </div>
         <DialogTitle className="sr-only">Dagens Speed-HCP-analys</DialogTitle>
         <DialogDescription className="sr-only">
-          Ditt Speed-HCP, din åldersgrupp, alla golfare och din potentiella driverlängd.
+          Ditt Speed-HCP, jämförelser, din bollhastighet och din potentiella driverlängd.
         </DialogDescription>
         {canViewDetailedBreakdowns ? (
           <div
@@ -165,7 +170,7 @@ export function SpeedChallengeAnalysis({
                 }
               }}
             >
-              {story === 0 && (
+              {currentStory === "hcp" && (
                 <section className="text-center" aria-live="polite">
                   <h2 className="mt-4 text-3xl font-black">Ditt Speed-HCP</h2>
                   <div
@@ -204,7 +209,7 @@ export function SpeedChallengeAnalysis({
                   </div>
                 </section>
               )}
-              {story === 1 && (
+              {currentStory === "age" && (
                 <section className="space-y-4">
                   {age && distribution ? (
                     <SpeedComparisonPyramid
@@ -225,7 +230,7 @@ export function SpeedChallengeAnalysis({
                   )}
                 </section>
               )}
-              {story === 2 && (
+              {currentStory === "all" && (
                 <section className="space-y-4">
                   <SpeedComparisonPyramid
                     title="Bland alla golfare"
@@ -235,7 +240,13 @@ export function SpeedChallengeAnalysis({
                   />
                 </section>
               )}
-              {story === 3 && (
+              {currentStory === "tour" && (
+                <SpeedTourStory speed={result.topBallSpeed} unit={unit} />
+              )}
+              {currentStory === "perspective" && (
+                <SpeedPerspectiveStory speed={result.topBallSpeed} />
+              )}
+              {currentStory === "distance" && (
                 <section className="text-center">
                   <p className="text-sm font-bold uppercase tracking-widest text-blue-100">
                     Din speed. Din potential.
@@ -271,7 +282,7 @@ export function SpeedChallengeAnalysis({
                 </section>
               )}
             </div>
-            {story === 3 ? (
+            {currentStory === "distance" ? (
               <div className="mt-5 shrink-0 space-y-3 text-center">
                 <h3 className="text-xl font-bold">Kan du slå ditt resultat?</h3>
                 <p className="text-sm text-blue-100">Gör testet igen – tre nya slag.</p>
@@ -315,7 +326,7 @@ export function SpeedChallengeAnalysis({
                   className="min-h-14 flex-1 rounded-full bg-white text-base font-bold text-blue-700 hover:bg-blue-50"
                 >
                   {!revealed ? "Visa mitt resultat" : "Nästa"}
-                  {story < 3 && <ArrowRight className="ml-2 h-4 w-4" />}
+                  {story < lastStory && <ArrowRight className="ml-2 h-4 w-4" />}
                 </Button>
               </nav>
             )}
