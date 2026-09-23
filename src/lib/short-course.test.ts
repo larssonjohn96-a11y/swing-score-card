@@ -1,3 +1,4 @@
+import { courseWinner } from "./short-course";
 import { describe, expect, it } from "vitest";
 import {
   botScore,
@@ -87,5 +88,37 @@ describe("course game", () => {
     expect(botScore(300, 1, 0.5)).toBe(4);
     expect(botScore(500, 1, 0.5)).toBe(5);
     expect(botScore(100, 0, 0.5)).toBeGreaterThan(botScore(100, 2, 0.5));
+  });
+  it("keeps draws unresolved and awards sudden death without extras", () => {
+    const g = game({
+      holes: 1,
+      allowance: 1,
+      rolls: [0.5],
+      scores: [{ you: 3, other: 4, length: 100 }],
+    });
+    expect(courseWinner(g)).toBe(-1);
+    g.suddenDeath = {
+      round: 1,
+      roll: 0.5,
+      draft: { you: 3, other: 3, length: 100 },
+      result: { you: 3, other: 4, length: 100 },
+    };
+    expect(courseWinner(g)).toBe(0);
+    expect(parseGame(JSON.stringify(g))).toEqual(g);
+    g.suddenDeath.result = { you: 3, other: 3, length: 100 };
+    expect(courseWinner(g)).toBe(-1);
+    g.suddenDeath.result = { you: 4, other: 3, length: 100 };
+    expect(courseWinner(g)).toBe(1);
+  });
+  it("recognizes a net stroke-play draw and rejects damaged sudden death", () => {
+    const g = game({
+      holes: 1,
+      format: "stroke",
+      allowance: 2,
+      rolls: [0.5],
+      scores: [{ you: 3, other: 5, length: 100 }],
+    });
+    expect(courseWinner(g)).toBe(-1);
+    expect(() => parseGame(JSON.stringify({ ...g, suddenDeath: { round: 0 } }))).toThrow();
   });
 });

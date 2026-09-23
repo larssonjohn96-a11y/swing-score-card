@@ -101,7 +101,7 @@ export function CourseCompactStyles() {
 .course-compact .course-match-top{min-height:52px}
 .course-compact .course-match-top > div{padding-top:6px;padding-bottom:6px}
 .course-compact .course-match-progress{padding-top:5px;padding-bottom:5px}
-.course-compact .course-input-heading{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+.course-compact .course-input-heading{font-size:32px;line-height:1.1;margin-top:10px;margin-bottom:10px}
 .course-compact .course-input-hint{display:none}
 .course-compact .course-extra{padding:6px 10px;font-size:12px}
 .course-compact .course-bot-length{font-size:12px}

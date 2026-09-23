@@ -6,6 +6,7 @@ export type CourseGame = {
   names: [string, string];
   opponentId?: string;
   awaitingNext?: boolean;
+  suddenDeath?: { round: number; roll: number; draft: HoleScore; result?: HoleScore };
   holes: number;
   allowance: number;
   recipient: Side;
@@ -95,9 +96,28 @@ export function parseGame(raw: string | null): CourseGame | null {
     !Array.isArray(g.scores) ||
     g.scores.length > g.holes ||
     !g.scores.every(score) ||
-    !score(g.draft)
+    !score(g.draft) ||
+    (g.suddenDeath !== undefined &&
+      (!g.suddenDeath ||
+        !integer(g.suddenDeath.round, 1, 9999) ||
+        typeof g.suddenDeath.roll !== "number" ||
+        g.suddenDeath.roll < 0 ||
+        g.suddenDeath.roll >= 1 ||
+        !score(g.suddenDeath.draft) ||
+        (g.suddenDeath.result !== undefined && !score(g.suddenDeath.result))))
   ) {
     throw new Error("Invalid active game");
   }
   return g;
+}
+
+export function courseWinner(game: CourseGame): -1 | 0 | 1 {
+  const sudden = game.suddenDeath?.result;
+  if (sudden && sudden.you !== sudden.other) return sudden.you < sudden.other ? 0 : 1;
+  if (game.format === "match") {
+    const diff = matchStatus(game).diff;
+    return diff > 0 ? 0 : diff < 0 ? 1 : -1;
+  }
+  const [a, b] = totals(game, true);
+  return a < b ? 0 : a > b ? 1 : -1;
 }

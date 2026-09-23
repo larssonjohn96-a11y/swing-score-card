@@ -89,6 +89,7 @@ export function CourseCompetition({
   );
   const [give, setGive] = useState(false);
   const [abandon, setAbandon] = useState(false);
+  const [chosenIds, setChosenIds] = useState<number[]>([]);
   const [editing, setEditing] = useState(false);
   useEffect(() => {
     if (loading) return;
@@ -172,12 +173,19 @@ export function CourseCompetition({
   const ids =
     game?.kind === "group" ? game.players.map((_, i) => i) : current ? [current.a, current.b!] : [];
   const extra = game && current ? fixtureAllowance(game, current) : null;
+  const canRegister = ids.length > 0 && ids.every((id) => chosenIds.includes(id));
+  useEffect(
+    () => setChosenIds([]),
+    [game?.activeId, scoreCount, editing, storageKey, game?.awaitingNext],
+  );
   const rank = game ? groupRanking(game) : [];
   function draft(id: number, n: number) {
-    if (game) save({ ...game, draft: game.draft.map((v, i) => (i === id ? n : v)) });
+    if (game && save({ ...game, draft: game.draft.map((v, i) => (i === id ? n : v)) }))
+      setChosenIds((v) => (v.includes(id) ? v : [...v, id]));
   }
   function register() {
-    if (!game || (!editing && (scoreCount >= game.holes || game.awaitingNext))) return;
+    if (!game || !canRegister || (!editing && (scoreCount >= game.holes || game.awaitingNext)))
+      return;
     if (game.kind === "group") {
       const scores = [...game.groupScores];
       if (editing) scores[scores.length - 1] = [...game.draft];
@@ -617,7 +625,7 @@ export function CourseCompetition({
                       {editing
                         ? `Redigera hål ${scoreIndex + 1}`
                         : current
-                          ? "Antal slag"
+                          ? `Hål ${scoreIndex + 1}`
                           : `Hål ${scoreIndex + 1} av ${game.holes}`}
                     </h2>
                     {ids.map((id, i) => (
@@ -643,44 +651,20 @@ export function CourseCompetition({
                       Registrera verkligt antal slag. Appen räknar av extraslagen.
                     </p>
                     <button
-                      className="flex min-h-12 w-full items-center justify-center rounded-2xl bg-slate-950 px-4 py-3 font-display text-xl uppercase text-white"
+                      className="flex min-h-12 w-full items-center justify-center rounded-2xl bg-slate-950 px-4 py-3 font-display text-xl uppercase text-white disabled:bg-slate-300 disabled:text-slate-500"
+                      disabled={!canRegister}
                       onClick={register}
                     >
                       {editing ? "Spara ändring" : `Registrera hål ${scoreIndex + 1}`}
                     </button>
                   </>
                 )}
-                {current && current.scores.length > 0 && (
-                  <details className={card}>
-                    <summary className="min-h-11 cursor-pointer font-bold">
-                      Scorekort för matchen
-                    </summary>
-                    <table className="mt-3 w-full table-fixed text-center text-sm">
-                      <thead>
-                        <tr>
-                          <th className="w-12">Hål</th>
-                          <th className="break-words px-2">{game.players[current.a].name}</th>
-                          <th className="break-words px-2">{game.players[current.b!].name}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {current.scores.map((row, i) => (
-                          <tr key={i} className="border-t">
-                            <td className="py-3">{i + 1}</td>
-                            <td>{row[0]}</td>
-                            <td>{row[1]}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </details>
-                )}
                 {scoreCount > 0 && !editing && (
                   <button
-                    className="min-h-11 w-full text-sm text-slate-600 underline"
+                    className="min-h-11 w-full text-xs text-slate-400 underline underline-offset-4"
                     onClick={editLast}
                   >
-                    Redigera senaste hålet
+                    Redigera föregående hål
                   </button>
                 )}
                 {scoreCount === game.holes &&

@@ -158,7 +158,6 @@ export function CourseMatchBar({
 export function CourseHoleResult({
   names,
   hole,
-  scores,
   net,
   onNext,
   nextLabel,
@@ -182,17 +181,6 @@ export function CourseHoleResult({
         <h2 className="mt-4 break-words font-display text-4xl uppercase leading-tight">
           {winner === null ? "Hålet delas" : `${names[winner]} vinner hål ${hole}`}
         </h2>
-        <div className="mt-6 grid w-full grid-cols-2 gap-4">
-          {names.map((name, i) => (
-            <div key={i}>
-              <p className="break-words text-sm font-bold">{name}</p>
-              <p className="mt-1 text-3xl font-black">
-                {scores[i]} <span className="text-sm font-normal">slag</span>
-              </p>
-              {net[i] !== scores[i] && <p className="mt-1 text-sm">{net[i]} efter extraslag</p>}
-            </div>
-          ))}
-        </div>
       </section>
       <button
         onClick={onNext}
