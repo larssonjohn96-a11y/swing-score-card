@@ -161,7 +161,7 @@ function SelectedCheck({ className = "absolute right-3 top-3" }: { className?: s
 }
 
 function MatchPlayPage() {
-  const [courseSelected, setCourseSelected] = useState(false);
+  const [courseSelected, setCourseSelected] = useState(() => typeof window !== "undefined" && new URLSearchParams(window.location.search).get("category") === "course");
   useHideBottomNav(true);
   const { user, loading, displayName: authName } = useAuth();
   const [entryFlow] = useState<"friend" | "team">(() => {
@@ -181,7 +181,11 @@ function MatchPlayPage() {
   useEffect(() => { if (authName?.trim()) setSelfName(authName.trim()); }, [authName]);
   const [selfAvatar, setSelfAvatar] = useState<string | null>(() => loadCardProfile().photo ?? null);
   const [blueMateId, setBlueMateId] = useState<string | null>(null);
-  const [category, setCategory] = useState<MatchCategory | null>(null);
+  const [category, setCategory] = useState<MatchCategory | null>(() => {
+    if (typeof window === "undefined") return null;
+    const requested = new URLSearchParams(window.location.search).get("category");
+    return requested === "putting" || requested === "around-the-green" ? requested : null;
+  });
   const [matchType, setMatchType] = useState<string | null>(null);
   const [scoringMode, setScoringMode] = useState<ScoringMode>("match");
   const [matchLength, setMatchLength] = useState<MatchLength>(5);

@@ -1,3 +1,4 @@
+import { SG4Highlights } from "@/components/sg4-highlights";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { Bell, ChevronRight, User, UserPlus } from "lucide-react";
@@ -674,6 +675,8 @@ function Home() {
         </section>
 
 
+
+        <SG4Highlights />
 
         <section className="mt-4">
           <Link
