@@ -1,7 +1,8 @@
+import { speedRankingAverage } from "@/lib/speed-challenge-feedback";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Trophy } from "lucide-react";
-import { fromMph, speedAverage, speedHistoryBaseline, type SpeedUnit } from "@/lib/speed-course";
+import { fromMph, speedAverage, type SpeedUnit } from "@/lib/speed-course";
 import { fetchFriendSnapshot, listFriendships, pushPlayerSnapshot } from "@/lib/friends-cloud";
 import type { CourseRound } from "@/lib/speed-course";
 type Row = ReturnType<typeof speedAverage> & { id: string; name: string };
@@ -41,8 +42,11 @@ export function SpeedLeaderboard({
             return {
               id: f.other.id,
               name: f.other.displayName,
-              count: ballSpeed && !value("speed-round-best-mph") ? 0 : value("speed-round-count"),
-              points: value(ballSpeed ? "speed-round-best-mph" : "speed-round-points"),
+              count:
+                ballSpeed && !value("speed-round-all-shots-average-mph")
+                  ? 0
+                  : value("speed-round-count"),
+              points: value(ballSpeed ? "speed-round-all-shots-average-mph" : "speed-round-points"),
               stars: value("speed-round-stars"),
             };
           }),
@@ -66,8 +70,8 @@ export function SpeedLeaderboard({
       ...speedAverage(history),
       ...(ballSpeed
         ? {
-            count: speedHistoryBaseline(history).count,
-            points: speedHistoryBaseline(history).pb ?? 0,
+            count: speedRankingAverage(history).count,
+            points: speedRankingAverage(history).average ?? 0,
           }
         : {}),
     },
@@ -81,20 +85,18 @@ export function SpeedLeaderboard({
   const fmt = (n: number) => n.toFixed(1).replace(".", ",");
   return (
     <section className="mt-5 overflow-hidden rounded-3xl border border-blue-100 bg-white">
-      <div className="bg-blue-600 p-4 text-white">
+      <div className="border-b border-blue-100 bg-white p-5 text-slate-950">
         <h2 className="flex items-center gap-2 text-lg font-black">
           <Trophy className="h-5 w-5" />
-          Topplista Vänner
+          Snabbast bland vänner
         </h2>
-        <p className="mt-1 text-sm text-blue-100">
-          {ballSpeed
-            ? "Vem har högst bollhastighet? Personbästa i testet."
-            : "Snitt av senaste 5 hela rundorna"}
+        <p className="mt-1 text-sm text-slate-500">
+          {ballSpeed ? "Snittbollhastighet · senaste 5 tester" : "Snitt av senaste 5 hela rundorna"}
         </p>
       </div>
       <div className="flex justify-between px-4 pt-3 text-xs font-bold uppercase text-slate-400">
         <span>Spelare</span>
-        <span>{ballSpeed ? "Bollhastighet" : "Speedpoäng"}</span>
+        <span>{ballSpeed ? "Snitt" : "Speedpoäng"}</span>
       </div>
       <ol className="p-2">
         {all.map((r) => {
@@ -104,7 +106,7 @@ export function SpeedLeaderboard({
           return (
             <li
               key={r.id}
-              className={`my-1 flex items-center gap-3 rounded-2xl p-3 ${r.id === (userId ?? "guest") ? "bg-blue-50" : "bg-slate-50"}`}
+              className={`my-1 flex items-center gap-3 rounded-2xl p-3 ${r.id === (userId ?? "guest") ? "bg-blue-50" : "bg-white"}`}
             >
               <span
                 className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-black ${rank === 1 ? "bg-amber-100 text-amber-700" : "bg-white text-slate-500"}`}
@@ -116,7 +118,7 @@ export function SpeedLeaderboard({
                 <p className="text-xs text-slate-500">
                   {r.count
                     ? ballSpeed
-                      ? "Personbästa"
+                      ? `${r.count}/5 tester${r.count < 5 ? " · preliminärt" : ""}`
                       : `${r.count}/5 rundor${r.count < 5 ? " · preliminärt" : ""}`
                     : ballSpeed
                       ? "Inget synkat speedtest"
@@ -152,7 +154,7 @@ export function SpeedLeaderboard({
       )}
       <p className="px-4 pb-4 text-xs text-slate-500">
         {ballSpeed
-          ? "Bara slutförda tester med tre slag räknas. Vännernas personbästa visas när deras app har synkat den nya mätningen."
+          ? "Bara slutförda tester med tre slag räknas. Alla tre slag räknas i snittet. Vännernas snitt visas när deras app har synkat."
           : "Bara hela rundor med samma poängsystem räknas. Vännernas snitt uppdateras när deras app synkar."}
       </p>
     </section>

@@ -1,3 +1,4 @@
+import { speedRankingAverage } from "./speed-challenge-feedback";
 import { syncSpeedRounds } from "./speed-cloud";
 import {
   speedAverage,
@@ -362,6 +363,9 @@ export async function pushPlayerSnapshot(expectedUserId?: string): Promise<boole
   const speedBaseline = speedHistoryBaseline(
     parseSpeedCourse(localStorage.getItem(speedStorageKey(userData.user.id))).history,
   );
+  const rankingSpeed = speedRankingAverage(
+    parseSpeedCourse(localStorage.getItem(speedStorageKey(userData.user.id))).history,
+  );
   const previousSpeed = parseComparisonProfile(previousChip?.comparison_profile).training.filter(
     (m) => m.key.startsWith("speed-round-"),
   );
@@ -406,6 +410,15 @@ export async function pushPlayerSnapshot(expectedUserId?: string): Promise<boole
         higherIsBetter: true,
       },
     );
+  if (rankingSpeed.count)
+    comparisonProfile.training.push({
+      key: "speed-round-all-shots-average-mph",
+      label: "Ball Speed Challenge · snittbollhastighet",
+      value: rankingSpeed.average!,
+      unit: "mph",
+      decimals: 1,
+      higherIsBetter: true,
+    });
   const { error } = await (supabase.from("player_snapshots") as any).upsert({
     user_id: userData.user.id,
     rating: card.rating,
