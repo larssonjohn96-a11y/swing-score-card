@@ -415,7 +415,7 @@ export function SpeedRoundGame({
             </div>
           </section>
           {shotIndex === 2 && active.phase === "play" && (
-            <p className="rounded-2xl bg-blue-50 px-4 py-3 text-center text-base font-bold text-blue-700">
+            <p className="rounded-2xl bg-yellow-100 px-4 py-3 text-center text-base font-bold text-yellow-950">
               Sista slaget – en chans till att slå ditt rekord!
             </p>
           )}
