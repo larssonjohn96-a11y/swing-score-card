@@ -506,9 +506,23 @@ export function SpeedRoundGame({
           <LoaderCircle className="mb-8 h-12 w-12 motion-safe:animate-spin" />
           <h1 className="text-3xl font-black">Sammanställer testet…</h1>
           <div className="mt-6 min-h-36 w-full max-w-xs space-y-4 text-left text-base text-blue-100">
-            {["Sammanställer dina tre slag", "Beräknar din potentiella längd", "Förbereder din HCP-analys"].map((label, index) => (
-              <p key={label} className={`flex items-center gap-3 transition-opacity duration-500 motion-reduce:transition-none ${index <= compileStep ? "opacity-100" : "invisible opacity-0"}`}>
-                {index < compileStep ? <Check aria-hidden="true" className="h-5 w-5 shrink-0" /> : <LoaderCircle aria-hidden="true" className="h-5 w-5 shrink-0 motion-safe:animate-spin" />}
+            {[
+              "Sammanställer dina tre slag",
+              "Beräknar din potentiella längd",
+              "Förbereder din HCP-analys",
+            ].map((label, index) => (
+              <p
+                key={label}
+                className={`flex items-center gap-3 transition-opacity duration-500 motion-reduce:transition-none ${index <= compileStep ? "opacity-100" : "invisible opacity-0"}`}
+              >
+                {index < compileStep ? (
+                  <Check aria-hidden="true" className="h-5 w-5 shrink-0" />
+                ) : (
+                  <LoaderCircle
+                    aria-hidden="true"
+                    className="h-5 w-5 shrink-0 motion-safe:animate-spin"
+                  />
+                )}
                 {label}
               </p>
             ))}
@@ -533,23 +547,12 @@ export function SpeedRoundGame({
               {unitLabel(resultData.topBallSpeed, unit)}
             </p>
             <p className="mt-1 text-sm text-slate-500">Bästa bollhastighet</p>
-            {resultAverage !== null && (
-              <div className="mt-5 rounded-2xl bg-blue-50 p-4">
-                <p className="font-bold text-blue-700">
-                  {aboveAverage
-                    ? `Du slog ditt snitt med ${unitLabel(resultData.topBallSpeed - resultAverage, unit)}!`
-                    : resultData.topBallSpeed === resultAverage
-                      ? "Du matchade ditt snitt"
-                      : "Ditt snitt att utmana"}
-                </p>
-                <p className="mt-1 text-sm text-slate-600">
-                  Ditt snitt: {unitLabel(resultAverage, unit)}
-                </p>
-                <p className="mt-1 text-xs text-slate-500">
-                  Bästa slaget per test · upp till 5 tidigare tester
-                </p>
-              </div>
-            )}
+            <div className="mt-5 rounded-2xl bg-blue-50 p-5">
+              <p className="text-sm font-semibold text-blue-700">Snitt i testet</p>
+              <p className="mt-2 text-3xl font-black tabular-nums text-blue-700">
+                {unitLabel(resultData.avgBallSpeed, unit)}
+              </p>
+            </div>
           </section>
           <SpeedChallengeAnalysis round={currentRound} unit={unit} />
           <Button

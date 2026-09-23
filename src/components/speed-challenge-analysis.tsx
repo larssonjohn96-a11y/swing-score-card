@@ -131,34 +131,57 @@ export function SpeedChallengeAnalysis({
                     Dagens speednivå
                   </p>
                   <h2 className="mt-4 text-3xl font-black">Ditt Speed-HCP</h2>
-                  <div className="my-8 flex h-36 items-center justify-center text-[clamp(80px,25vw,120px)] font-black tabular-nums">
-                    {revealed ? (
-                      handicapLabel(hcp)
-                    ) : (
-                      <>
-                        <span className="sr-only">Beräknar ditt Speed-HCP</span>
-                        <span aria-hidden className="block h-24 overflow-hidden">
-                          <span className="block speed-hcp-dial">
-                            40
-                            <br />
-                            32
-                            <br />
-                            24
-                            <br />
-                            16
-                            <br />8<br />0<br />
-                            +6
-                          </span>
+                  <div
+                    className="relative my-6 h-36 text-[clamp(80px,25vw,120px)] font-black tabular-nums"
+                    aria-live="polite"
+                  >
+                    <span className="sr-only">
+                      {revealed
+                        ? `Ditt Speed-HCP: ${handicapLabel(hcp)}`
+                        : "Beräknar ditt Speed-HCP"}
+                    </span>
+                    <div
+                      aria-hidden="true"
+                      className={`absolute inset-0 flex items-center justify-center transition-all duration-1000 ease-out motion-reduce:transition-none ${revealed ? "scale-105 opacity-0 blur-sm" : "scale-100 opacity-100 blur-0"}`}
+                    >
+                      <span className="block h-24 overflow-hidden">
+                        <span className="block speed-hcp-dial">
+                          40
+                          <br />
+                          32
+                          <br />
+                          24
+                          <br />
+                          16
+                          <br />8<br />0<br />
+                          +6
                         </span>
-                      </>
-                    )}
+                      </span>
+                    </div>
+                    <div
+                      aria-hidden="true"
+                      className={`absolute inset-0 flex items-center justify-center transition-all duration-[1400ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${revealed ? "translate-y-0 scale-100 opacity-100 blur-0" : "translate-y-3 scale-95 opacity-0 blur-md"}`}
+                    >
+                      {handicapLabel(hcp)}
+                    </div>
                   </div>
                   <p className="text-xl font-bold">
                     {revealed ? speedLevelLabel(result.score) : "Ditt resultat är på väg…"}
                   </p>
-                  <p className="mx-auto mt-4 max-w-xs text-sm text-blue-100">
-                    Din nivå utifrån bollhastigheten i dagens test, inte ditt golfhandicap.
-                  </p>
+                  <div
+                    className={`mt-6 transition-opacity duration-1000 motion-reduce:transition-none ${revealed ? "opacity-100" : "opacity-0"}`}
+                  >
+                    <p className="text-sm text-blue-100">Bästa bollhastighet</p>
+                    <p className="mt-1 text-3xl font-black tabular-nums">
+                      {fromMph(result.topBallSpeed, unit).toFixed(1).replace(".", ",")} {unit}
+                    </p>
+                    <div className="mt-4 rounded-2xl bg-blue-700/60 p-4">
+                      <p className="text-sm text-blue-100">Snitt i testet</p>
+                      <p className="mt-1 text-2xl font-black tabular-nums">
+                        {fromMph(result.avgBallSpeed, unit).toFixed(1).replace(".", ",")} {unit}
+                      </p>
+                    </div>
+                  </div>
                 </section>
               )}
               {story === 1 && (
@@ -180,9 +203,6 @@ export function SpeedChallengeAnalysis({
                       />
                     </div>
                   )}
-                  <p className="text-center text-xs text-blue-100">
-                    Uppskattad nivå enligt SG4:s referensmodell.
-                  </p>
                 </section>
               )}
               {story === 2 && (
@@ -193,9 +213,6 @@ export function SpeedChallengeAnalysis({
                     mean={ALL_GOLFERS_BALL_SPEED.mean}
                     sd={ALL_GOLFERS_BALL_SPEED.sd}
                   />
-                  <p className="text-center text-xs text-blue-100">
-                    Uppskattad nivå enligt SG4:s referensmodell.
-                  </p>
                 </section>
               )}
               {story === 3 && (

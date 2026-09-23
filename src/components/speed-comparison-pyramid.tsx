@@ -1,3 +1,4 @@
+import { Users, Globe2 } from "lucide-react";
 import { ballSpeedPercentile } from "@/lib/speed";
 
 export function speedPyramidTier(percentile: number) {
@@ -12,7 +13,7 @@ export function speedPyramidTier(percentile: number) {
           : 4;
 }
 
-const labels = ["Topp 1 %", "Topp 10 %", "Topp 25 %", "Övre halvan", "Din startnivå"];
+const labels = ["Topp 1 %", "Topp 10 %", "Topp 25 %", "Övre halvan", "Nedre halvan"];
 
 export function SpeedComparisonPyramid({
   title,
@@ -34,11 +35,20 @@ export function SpeedComparisonPyramid({
     `Riktigt stark fart – du tillhör toppskiktet ${group}.`,
     `Stark bollhastighet – du ligger i den övre fjärdedelen ${group}.`,
     `Du ligger i den övre halvan ${group}.`,
-    "Din startnivå är satt. Nu har du ett eget resultat att utmana!",
+    "Här finns mer fart att upptäcka – utmana ditt eget resultat!",
   ][tier];
   return (
-    <section className="rounded-2xl border border-blue-100 bg-white p-4">
-      <h3 className="text-lg font-black text-slate-950">{title}</h3>
+    <section
+      className={`rounded-3xl border p-5 ${ageGroup ? "border-sky-200 bg-sky-50" : "border-violet-200 bg-violet-50"}`}
+    >
+      <div className="mb-4 flex items-center gap-3">
+        <span
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${ageGroup ? "bg-sky-100 text-sky-700" : "bg-violet-100 text-violet-700"}`}
+        >
+          {ageGroup ? <Users className="h-6 w-6" /> : <Globe2 className="h-6 w-6" />}
+        </span>
+        <h3 className="text-xl font-black text-slate-950">{title}</h3>
+      </div>
       <svg
         viewBox="0 0 320 208"
         className="mx-auto mt-3 w-full max-w-xs"
