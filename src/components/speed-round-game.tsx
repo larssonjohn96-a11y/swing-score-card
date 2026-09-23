@@ -239,9 +239,9 @@ export function SpeedRoundGame({
   useEffect(() => {
     if (view !== "compiling") return;
     setCompileStep(0);
-    const a = window.setTimeout(() => setCompileStep(1), 900);
-    const b = window.setTimeout(() => setCompileStep(2), 1800);
-    const c = window.setTimeout(() => setView("result"), 2800);
+    const a = window.setTimeout(() => setCompileStep(1), 1500);
+    const b = window.setTimeout(() => setCompileStep(2), 3000);
+    const c = window.setTimeout(() => setView("result"), 5500);
     return () => {
       clearTimeout(a);
       clearTimeout(b);
@@ -504,16 +504,15 @@ export function SpeedRoundGame({
           aria-live="polite"
         >
           <LoaderCircle className="mb-8 h-12 w-12 motion-safe:animate-spin" />
-          <h1 className="text-3xl font-black">
-            {
-              [
-                "Sammanställer testet…",
-                "Beräknar din potentiella längd…",
-                "Ditt resultat är snart klart",
-              ][compileStep]
-            }
-          </h1>
-          <p className="mt-4 text-base text-blue-100">Tre slag. Din speed. Ditt resultat.</p>
+          <h1 className="text-3xl font-black">Sammanställer testet…</h1>
+          <div className="mt-6 min-h-36 w-full max-w-xs space-y-4 text-left text-base text-blue-100">
+            {["Sammanställer dina tre slag", "Beräknar din potentiella längd", "Förbereder din HCP-analys"].map((label, index) => (
+              <p key={label} className={`flex items-center gap-3 transition-opacity duration-500 motion-reduce:transition-none ${index <= compileStep ? "opacity-100" : "invisible opacity-0"}`}>
+                {index < compileStep ? <Check aria-hidden="true" className="h-5 w-5 shrink-0" /> : <LoaderCircle aria-hidden="true" className="h-5 w-5 shrink-0 motion-safe:animate-spin" />}
+                {label}
+              </p>
+            ))}
+          </div>
         </div>
       ) : currentRound && resultData ? (
         <div className="space-y-4">
