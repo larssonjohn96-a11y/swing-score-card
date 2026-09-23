@@ -1,3 +1,4 @@
+import { generateApproachMatchDistances } from "@/lib/approach-match";
 import { ActivityReview } from "@/components/activity-review";
 import { PuttingMatchReview } from "@/components/putting-match-review";
 import { rawActivityOutcomes, shortGameReviewInput } from "@/lib/activity-review";
@@ -28,7 +29,7 @@ export const Route = createFileRoute("/match")({
   component: MatchPlayPage,
 });
 
-type Step = "players" | "teams" | "scoring" | "category" | "type" | "setup" | "approach-setup" | "length" | "play" | "sudden-death" | "result";
+type Step = "players" | "teams" | "scoring" | "category" | "type" | "setup" | "length" | "play" | "sudden-death" | "result";
 type MatchCategory = "off-the-tee" | "approach" | "around-the-green" | "bunker" | "putting" | "speed";
 type HoleWinner = "blue" | "red" | "tie" | null;
 type MatchMode = "singles" | "fourball" | "foursomes";
@@ -39,7 +40,6 @@ type Challenge = { eyebrow: string; title: string; detail: string };
 type ApproachResult = { longitudinalDirection: "short" | "long"; longitudinal: number; lateralDirection: "left" | "right"; lateral: number; proximity: number };
 type Hole = { challenge: Challenge; winner: HoleWinner; blueStrokes?: number; redStrokes?: number; bluePoints?: number; redPoints?: number; blueApproach?: ApproachResult; redApproach?: ApproachResult; blueSpeed?: number; redSpeed?: number };
 type ShortGameLie = "fairway" | "rough";
-type ApproachRangeId = "50-100" | "100-150" | "150-200" | "custom";
 
 const LOCAL_MATCH_KEY = "sg4.active-match.v1";
 
@@ -104,26 +104,6 @@ function engineSkillForMatchCategory(category: MatchCategory | null): EngineSkil
   if (category === "off-the-tee") return "driver";
   return null;
 }
-function approachRangeBounds(id: ApproachRangeId, customMin: number, customMax: number): [number, number] {
-  if (id === "50-100") return [50, 100];
-  if (id === "100-150") return [100, 150];
-  if (id === "150-200") return [150, 200];
-  return [Math.min(customMin, customMax), Math.max(customMin, customMax)];
-}
-function generateApproachDistances(length: MatchLength, selected: ApproachRangeId[], customMin: number, customMax: number) {
-  const ranges = selected.length ? selected : (["100-150"] as ApproachRangeId[]);
-  const order = [...ranges].sort(() => Math.random() - 0.5);
-  const out: number[] = [];
-  for (let i = 0; i < length; i++) {
-    const id = order[i % order.length];
-    const [min, max] = approachRangeBounds(id, customMin, customMax);
-    let value = rand(min, max);
-    let tries = 0;
-    while (i > 0 && Math.abs(value - out[i - 1]) < 8 && tries < 12) { value = rand(min, max); tries++; }
-    out.push(value);
-  }
-  return out;
-}
 function generateShortGameLieSequence(length: MatchLength, selected: ShortGameLie[]) {
   const lies: ShortGameLie[] = selected.length ? selected : ["fairway"];
   return Array.from({ length }, () => pick(lies));
@@ -144,7 +124,7 @@ function generateChallenge(category: MatchCategory, typeId: string, mode: MatchM
     return { eyebrow: band.label, title: `${distance} m`, detail: `${distance} m från flaggan · närmast flaggan vinner${suffix}` };
   }
   if (category === "approach") {
-    const d = approachDistance ?? rand(100, 150);
+    const d = approachDistance ?? rand(115, 135);
     return { eyebrow: "Inspel", title: `${d} m`, detail: `Samma mål för båda · närmast flaggan vinner${suffix}` };
   }
   if (category === "speed") {
@@ -230,9 +210,6 @@ function MatchPlayPage() {
   const [redSpeedSelected, setRedSpeedSelected] = useState(false);
   const [speedBaseline, setSpeedBaseline] = useState(0);
   const [shortGameLies, setShortGameLies] = useState<ShortGameLie[]>([]);
-  const [approachRanges, setApproachRanges] = useState<ApproachRangeId[]>([]);
-  const [approachCustomMin, setApproachCustomMin] = useState(30);
-  const [approachCustomMax, setApproachCustomMax] = useState(200);
   const [approachTurn, setApproachTurn] = useState<"blue" | "red">("blue");
   const [approachLongDirection, setApproachLongDirection] = useState<"short" | "long">("short");
   const [approachLong, setApproachLong] = useState(0);
@@ -384,9 +361,6 @@ function MatchPlayPage() {
       setBlueSpeedSelected(Boolean(saved.blueSpeedSelected));
       setRedSpeedSelected(Boolean(saved.redSpeedSelected));
       setShortGameLies(Array.isArray(saved.shortGameLies) ? saved.shortGameLies : []);
-      setApproachRanges(Array.isArray(saved.approachRanges) ? saved.approachRanges : []);
-      setApproachCustomMin(saved.approachCustomMin ?? 30);
-      setApproachCustomMax(saved.approachCustomMax ?? 200);
       setApproachTurn(saved.approachTurn === "red" ? "red" : "blue");
       setApproachLong(saved.approachLong ?? 0);
       setApproachLateralDirection(saved.approachLateralDirection === "right" ? "right" : "left");
@@ -470,7 +444,6 @@ function MatchPlayPage() {
   const isScoredHole = isPutting || isShortGameScoring;
   const unitLabel = isPutting || isShortGameScoring || isApproach ? "Hål" : "Omgång";
   const setupValid = shortGameLies.length > 0;
-  const approachSetupValid = approachRanges.length > 0 && (!approachRanges.includes("custom") || (approachCustomMin >= 30 && approachCustomMax <= 250 && approachCustomMin < approachCustomMax));
   const approachTargetDistance = Number.parseInt(current?.challenge.title ?? "0", 10) || 0;
   const approachLongitudinalPreview = Math.abs(approachLong - approachTargetDistance);
   const approachProximityPreview = Math.sqrt(approachLongitudinalPreview * approachLongitudinalPreview + approachLateral * approachLateral);
@@ -560,13 +533,13 @@ function MatchPlayPage() {
       version: 1, savedAt: Date.now(), step, mode, category, matchType, scoringMode, matchLength, holes, holeIndex, finalText,
       suddenDeathRound, sdMessage, blueStrokes, redStrokes, blueStrokesSelected, redStrokesSelected, bluePoints, redPoints,
       blueSpeed, redSpeed, blueSpeedSelected, redSpeedSelected, speedBaseline,
-      shortGameLies, approachRanges, approachCustomMin, approachCustomMax, approachTurn, approachLong, approachLateralDirection, approachLateral,
+      shortGameLies, approachTurn, approachLong, approachLateralDirection, approachLateral,
       selectedFriendIds, guests, blueMateId, selfName, matchRunId,
       blueTeam: blueTeam.map(({ id, name, avatarUrl }) => ({ id, name, avatarUrl })),
       redTeam: redTeam.map(({ id, name, avatarUrl }) => ({ id, name, avatarUrl })),
     };
     try { window.localStorage.setItem(LOCAL_MATCH_KEY, JSON.stringify(payload)); } catch { /* storage may be unavailable */ }
-  }, [localMatchReady, matchSessionId, step, mode, category, matchType, scoringMode, matchLength, holes, holeIndex, finalText, suddenDeathRound, sdMessage, blueStrokes, redStrokes, blueStrokesSelected, redStrokesSelected, bluePoints, redPoints, blueSpeed, redSpeed, blueSpeedSelected, redSpeedSelected, speedBaseline, shortGameLies, approachRanges, approachCustomMin, approachCustomMax, approachTurn, approachLong, approachLateralDirection, approachLateral, selectedFriendIds, guests, blueMateId, selfName, matchRunId, blueLabel, redLabel]);
+  }, [localMatchReady, matchSessionId, step, mode, category, matchType, scoringMode, matchLength, holes, holeIndex, finalText, suddenDeathRound, sdMessage, blueStrokes, redStrokes, blueStrokesSelected, redStrokesSelected, bluePoints, redPoints, blueSpeed, redSpeed, blueSpeedSelected, redSpeedSelected, speedBaseline, shortGameLies, approachTurn, approachLong, approachLateralDirection, approachLateral, selectedFriendIds, guests, blueMateId, selfName, matchRunId, blueLabel, redLabel]);
 
   function chooseMode(next: MatchMode) { setMode(next); setSelectedFriendIds([]); setGuests([]); setGuestName(""); setBlueMateId(null); }
   function toggleFriend(id: string) {
@@ -580,13 +553,6 @@ function MatchPlayPage() {
     });
   }
   function toggleShortGameLie(id: ShortGameLie) { setShortGameLies((items) => items.includes(id) ? items.filter((x) => x !== id) : [...items, id]); }
-  function toggleApproachRange(id: ApproachRangeId) {
-    setApproachRanges((items) => {
-      if (id === "custom") return items.includes("custom") ? [] : ["custom"];
-      const base = items.includes("custom") ? [] : items;
-      return base.includes(id) ? base.filter((x) => x !== id) : [...base, id];
-    });
-  }
   function resetApproachInput(carry = 0) { setApproachLongDirection("short"); setApproachLong(carry); setApproachLateralDirection("left"); setApproachLateral(0); }
   function addGuest() {
     const name = guestName.trim();
@@ -609,7 +575,7 @@ function MatchPlayPage() {
       : isShortGame
       ? generateChipMatchDistances(matchLength).map((distance) => ({ challenge: generateChallenge(category, matchType, mode, shortGameLies, distance), winner: null as HoleWinner }))
       : isApproach
-        ? generateApproachDistances(matchLength, approachRanges, approachCustomMin, approachCustomMax).map((distance) => ({ challenge: generateChallenge(category, matchType, mode, shortGameLies, distance), winner: null as HoleWinner }))
+        ? generateApproachMatchDistances(matchLength).map((distance) => ({ challenge: generateChallenge(category, matchType, mode, shortGameLies, distance), winner: null as HoleWinner }))
         : Array.from({ length: matchLength }, () => ({ challenge: generateChallenge(category, matchType, mode, shortGameLies), winner: null as HoleWinner }));
     setHoles(nextHoles);
     setHoleIndex(0); setBlueStrokes(1); setRedStrokes(1); setBlueStrokesSelected(false); setRedStrokesSelected(false); setBluePoints(null); setRedPoints(null); setSpeedBaseline(initialSpeedBaseline); setBlueSpeed(initialSpeedBaseline); setRedSpeed(initialSpeedBaseline); setBlueSpeedSelected(false); setRedSpeedSelected(false); setApproachTurn("blue"); resetApproachInput(isApproach ? (Number.parseInt(nextHoles[0]?.challenge.title ?? "0", 10) || 0) : 0); setFinalText(""); setSuddenDeathRound(1); setSdBlue(null); setSdRed(null); setSdBlueSunk(false); setSdRedSunk(false); setSdMessage(""); setIsSubmitting(false); setTransitionMessage(null); setEditingHoleIndex(null); setReturnHoleIndex(null); setStep("play");
@@ -848,19 +814,19 @@ function MatchPlayPage() {
     try { window.localStorage.removeItem(LOCAL_MATCH_KEY); } catch {}
     setCategory(null); setMatchType(null); setHoles([]); setHoleIndex(0); setFinalText("");
     setBlueStrokes(1); setRedStrokes(1); setBlueStrokesSelected(false); setRedStrokesSelected(false); setBluePoints(null); setRedPoints(null);
-    setShortGameLies([]); setApproachRanges([]); setApproachTurn("blue"); resetApproachInput();
+    setShortGameLies([]); setApproachTurn("blue"); resetApproachInput();
     setIsSubmitting(false); setTransitionMessage(null); setEditingHoleIndex(null); setReturnHoleIndex(null); setMatchSessionId(null); setMatchSessionHostId(null); setSessionBlueTeam(null); setSessionRedTeam(null); window.history.replaceState(window.history.state, "", `/match?flow=${entryFlow}`); setStep("category");
   }
   function reset() {
     try { window.localStorage.removeItem(LOCAL_MATCH_KEY); } catch {}
     setMode(entryFlow === "friend" ? "singles" : null); setSelectedFriendIds([]); setGuests([]); setGuestName(""); setBlueMateId(null); setCategory(null); setMatchType(null);
-    setScoringMode("match"); setMatchLength(5); setHoles([]); setHoleIndex(0); setFinalText(""); setBlueStrokes(1); setRedStrokes(1); setBlueStrokesSelected(false); setRedStrokesSelected(false); setBluePoints(null); setRedPoints(null); setShortGameLies([]); setApproachRanges([]); setApproachCustomMin(30); setApproachCustomMax(200); setApproachTurn("blue"); resetApproachInput(); setIsSubmitting(false); setTransitionMessage(null); setEditingHoleIndex(null); setReturnHoleIndex(null); setMatchSessionId(null); setMatchSessionHostId(null); setSessionBlueTeam(null); setSessionRedTeam(null); window.history.replaceState(window.history.state, "", `/match?flow=${entryFlow}`); setStep("players");
+    setScoringMode("match"); setMatchLength(5); setHoles([]); setHoleIndex(0); setFinalText(""); setBlueStrokes(1); setRedStrokes(1); setBlueStrokesSelected(false); setRedStrokesSelected(false); setBluePoints(null); setRedPoints(null); setShortGameLies([]); setApproachTurn("blue"); resetApproachInput(); setIsSubmitting(false); setTransitionMessage(null); setEditingHoleIndex(null); setReturnHoleIndex(null); setMatchSessionId(null); setMatchSessionHostId(null); setSessionBlueTeam(null); setSessionRedTeam(null); window.history.replaceState(window.history.state, "", `/match?flow=${entryFlow}`); setStep("players");
   }
   function back() {
     if (step === "players") return;
     if (step === "teams") { goToStep("players"); return; }
     if (step === "category") { goToStep(entryFlow === "friend" ? "players" : "teams"); return; }
-    if (step === "type" || step === "setup" || step === "approach-setup" || step === "scoring" || step === "length") { goToStep("category"); return; }
+    if (step === "type" || step === "setup" || step === "scoring" || step === "length") { goToStep("category"); return; }
   }
 
   function abortMatch() {
@@ -868,7 +834,7 @@ function MatchPlayPage() {
     reset();
   }
 
-  const stepLabel = step === "players" ? (entryFlow === "friend" ? "Välj kompis" : "Lagspel · Format & spelare") : step === "teams" ? "2 · Lag" : step === "scoring" ? "Spelsätt" : step === "category" ? "Kategori" : step === "type" ? "Spel" : step === "setup" ? "Chippning" : step === "approach-setup" ? "Inspel · Avstånd" : "Matchlängd";
+  const stepLabel = step === "players" ? (entryFlow === "friend" ? "Välj kompis" : "Lagspel · Format & spelare") : step === "teams" ? "2 · Lag" : step === "scoring" ? "Spelsätt" : step === "category" ? "Kategori" : step === "type" ? "Spel" : step === "setup" ? "Chippning" : "Matchlängd";
 
   return <main style={LIGHT_SURFACE} className={`mx-auto min-h-screen w-full max-w-md bg-background px-5 text-foreground ${step === "play" ? "pb-4 pt-2" : "pb-16 pt-6"}`}>
     {(step === "play" || step === "sudden-death") ? <button type="button" onClick={() => setAbortConfirmOpen(true)} aria-label="Avbryt spel" title="Avbryt spel" className="fixed right-4 top-[max(10px,env(safe-area-inset-top))] z-[45] inline-flex h-10 w-10 items-center justify-center rounded-full border border-red-200/90 bg-red-50/90 text-red-600 shadow-sm backdrop-blur-xl transition active:scale-95"><X className="h-[18px] w-[18px]" /></button> : null}
@@ -912,7 +878,7 @@ function MatchPlayPage() {
         setScoringMode("match");
         if (category === "putting") { setMatchType("standard"); setMatchLength(5); goToStep("length"); return; }
         if (category === "around-the-green" || category === "bunker") { setMatchType("closest"); setMatchLength(5); goToStep("length"); return; }
-        if (category === "approach") { setMatchType("closest"); setApproachRanges([]); goToStep("approach-setup"); return; }
+        if (category === "approach") { setMatchType("closest"); setMatchLength(5); goToStep("length"); return; }
         if (category === "speed") { setMatchType(null); setMatchLength(5); goToStep("type"); return; }
         setMatchType("fairway"); goToStep("length");
       }} className={`sg4-ryder-next mt-6 ${ryderNext}`}>Nästa <ChevronRight className="h-5 w-5" /></button>
@@ -922,7 +888,6 @@ function MatchPlayPage() {
 
     {step === "setup" && isShortGame ? <><section className="mt-5"><p className="text-[10px] font-bold uppercase text-slate-500">Chipp</p><h1 className="mt-1 font-display text-4xl">Setup</h1><p className="mt-2 text-sm text-slate-600">Välj vilka lies som ska ingå.</p></section><div className={`relative mt-5 rounded-3xl border p-5 text-center ${selectedRing}`}><SelectedCheck /><p className="text-[9px] font-bold uppercase tracking-[0.16em] text-slate-500">Spelform</p><p className="mt-1 font-display text-2xl text-slate-900">Closest to the Pin</p><p className="mt-1 text-xs text-slate-600">Ett slag per spelare · närmast flaggan vinner hålet.</p></div><div className="mt-6 flex items-center justify-between"><h2 className="font-display text-2xl">Välj lies</h2><span className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">Välj minst en</span></div><div className="mt-3 grid grid-cols-3 gap-2">{SHORT_GAME_LIES.map((item) => { const active = shortGameLies.includes(item.id); return <button key={item.id} onClick={() => toggleShortGameLie(item.id)} className={`relative flex min-h-20 items-center justify-center gap-2 rounded-2xl border px-3 py-4 text-center ${active ? selectedRing : glass}`}><span className="text-sm font-bold">{item.title}</span>{active ? <SelectedCheck className="absolute right-1.5 top-1.5" /> : null}</button>; })}</div>{!setupValid ? <p className="mt-2 text-center text-[10px] font-bold text-amber-700">Välj minst ett lie.</p> : null}<button disabled={!setupValid} onClick={() => goToStep("length")} className={`sg4-ryder-next mt-5 ${ryderNext}`}>Nästa <ChevronRight className="h-5 w-5" /></button></> : null}
 
-    {step === "approach-setup" && isApproach ? <><section className="mt-5"><p className="text-[10px] font-bold uppercase text-slate-500">Inspel · Järn & wedge</p><h1 className="mt-1 font-display text-4xl">Välj avstånd</h1><p className="mt-2 text-sm text-slate-600">Välj ett eller flera fasta intervall, eller skapa ett eget.</p></section>{!approachRanges.includes("custom") ? <><div className="mt-5"><div className="flex items-baseline justify-between gap-3"><p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">Fasta intervall</p><p className="text-[10px] font-semibold text-slate-400">Välj ett eller flera avstånd</p></div><div className="mt-2 grid grid-cols-3 gap-2.5">{([[["50-100","50–100"],["100-150","100–150"],["150-200","150–200"]]] as const)[0].map(([id,label]) => { const active = approachRanges.includes(id); return <button key={id} onClick={() => toggleApproachRange(id)} className={`relative min-h-[74px] rounded-2xl border px-2 py-5 text-center transition-all ${active ? selectedRing + " text-blue-700" : "border-slate-300/80 bg-white/60 text-slate-700 opacity-60"}`}>{active ? <SelectedCheck className="absolute right-1.5 top-1.5" /> : null}<span className="block font-display text-xl leading-none">{label}</span><span className={`mt-1 block text-[9px] font-bold uppercase ${active ? "text-blue-500" : "text-slate-500"}`}>meter</span></button>; })}</div></div><div className="my-4 flex items-center gap-3"><span className="h-px flex-1 bg-slate-300/80" /><span className="text-[9px] font-bold uppercase tracking-[0.16em] text-slate-400">eller</span><span className="h-px flex-1 bg-slate-300/80" /></div></> : null}<button onClick={() => toggleApproachRange("custom")} className={`w-full rounded-2xl border px-4 py-4 text-left ${approachRanges.includes("custom") ? "mt-5 " + selectedRing : glass}`}><span className="flex items-center justify-between"><span><span className="block font-display text-xl">Eget intervall</span><span className="mt-1 block text-[10px] font-semibold text-slate-500">30–250 meter</span></span>{approachRanges.includes("custom") ? <SelectedCheck className="" /> : <ChevronRight className="h-5 w-5 text-slate-400" />}</span></button>{approachRanges.includes("custom") ? <div className={`mt-4 rounded-3xl border p-5 ${glass}`}><div className="flex items-start justify-between gap-3"><div><p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">Eget intervall</p><p className="mt-1 text-xs text-slate-500">Dra lägsta och högsta avståndet.</p></div><button type="button" onClick={() => setApproachRanges([])} className="shrink-0 rounded-full border border-slate-300 bg-white/80 px-3 py-1.5 text-[9px] font-bold text-slate-600">← Fasta intervall</button></div><p className="mt-4 text-center font-display text-3xl text-slate-900">{approachCustomMin}–{approachCustomMax} m</p><div className="relative mt-5 h-8"><div className="absolute left-0 right-0 top-3 h-2 rounded-full bg-blue-100" /><div className="absolute top-3 h-2 rounded-full bg-blue-400" style={{ left: `${((approachCustomMin - 30) / 220) * 100}%`, right: `${100 - ((approachCustomMax - 30) / 220) * 100}%` }} /><input aria-label="Lägsta avstånd" type="range" min={30} max={249} step={1} value={approachCustomMin} onChange={(e) => setApproachCustomMin(Math.min(Number(e.target.value), approachCustomMax - 1))} className="pointer-events-none absolute inset-x-0 top-0 h-8 w-full appearance-none bg-transparent [&::-webkit-slider-runnable-track]:bg-transparent [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-[3px] [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:shadow-md" /><input aria-label="Högsta avstånd" type="range" min={31} max={250} step={1} value={approachCustomMax} onChange={(e) => setApproachCustomMax(Math.max(Number(e.target.value), approachCustomMin + 1))} className="pointer-events-none absolute inset-x-0 top-0 h-8 w-full appearance-none bg-transparent [&::-webkit-slider-runnable-track]:bg-transparent [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-[3px] [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:shadow-md" /></div><div className="mt-1 flex justify-between text-[10px] font-bold text-slate-500"><span>30 m</span><span>250 m</span></div></div> : null}<button disabled={!approachSetupValid} onClick={() => goToStep("length")} className={`sg4-ryder-next mt-5 ${ryderNext}`}>Nästa <ChevronRight className="h-5 w-5" /></button></> : null}
 
     {step === "length" && selectedType ? <>{isPutting ? <>
       <section className="mt-5"><p className="text-[10px] font-bold uppercase text-slate-500">Putting Match</p><h1 className="mt-1 font-display text-4xl">Välj format</h1></section>

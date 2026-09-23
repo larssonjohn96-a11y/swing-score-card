@@ -367,22 +367,3 @@ a[href="/kategori/around-the-green"] > div > span {
   left: 1rem !important;
   top: 1rem !important;
 }
-
-/* Match category picker: Puttning is the first of the six competition cards. */
-div.mt-6.grid.grid-cols-2.gap-3:has(> button:nth-child(6)):not(:has(> button:nth-child(7))) > button:first-child {
-  overflow: hidden;
-  background-color: #3f4b32 !important;
-  background-image:
-    linear-gradient(to bottom, rgba(9, 12, 8, 0.08) 0%, rgba(9, 12, 8, 0.02) 50%, rgba(7, 10, 7, 0.36) 100%),
-    url('/putting-heritage-card.jpg') !important;
-  background-size: cover !important;
-  background-position: 50% 46% !important;
-  background-repeat: no-repeat !important;
-}
-
-div.mt-6.grid.grid-cols-2.gap-3:has(> button:nth-child(6)):not(:has(> button:nth-child(7))) > button:first-child > span.font-display {
-  position: relative;
-  z-index: 1;
-  color: #fff !important;
-  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.5);
-}

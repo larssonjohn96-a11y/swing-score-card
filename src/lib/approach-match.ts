@@ -29,17 +29,27 @@ export function formatApproachResult(result: ApproachResult) {
   return `${result.actualDistance} m · ${Math.abs(result.lateral)} m ${result.side === "left" ? "vänster" : "höger"}`;
 }
 
+// Every match has a majority in the core zone, plus varied shorter/longer shots.
+export const APPROACH_MATCH_ZONES = [
+  { min: 50, max: 85 },
+  { min: 86, max: 114 },
+  { min: 115, max: 135 },
+  { min: 136, max: 150 },
+] as const;
+
 export function generateApproachMatchDistances(length: ApproachMatchLength): number[] {
-  const bands = [
-    [55, 85],
-    [86, 120],
-    [121, 155],
-    [156, 180],
-  ] as const;
+  const coreCount = Math.floor(length / 2) + 1;
+  const otherZones = [0, 1, 3];
+  for (let i = otherZones.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [otherZones[i], otherZones[j]] = [otherZones[j], otherZones[i]];
+  }
   const out: number[] = [];
   for (let i = 0; i < length; i++) {
-    const band = bands[i % bands.length];
-    out.push(Math.floor(Math.random() * (band[1] - band[0] + 1)) + band[0]);
+    const zone = APPROACH_MATCH_ZONES[i < coreCount ? 2 : otherZones[i - coreCount]];
+    const candidates = Array.from({ length: zone.max - zone.min + 1 }, (_, n) => zone.min + n)
+      .filter((distance) => !out.includes(distance));
+    out.push(candidates[Math.floor(Math.random() * candidates.length)]);
   }
   for (let i = out.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
