@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+import { ChipCelebration } from "@/components/chip-celebration";
 import { Users, Globe2 } from "lucide-react";
 import { ballSpeedPercentile } from "@/lib/speed";
 
@@ -37,10 +39,35 @@ export function SpeedComparisonPyramid({
     `Du ligger i den övre halvan ${group}.`,
     "Här finns mer fart att upptäcka – utmana ditt eget resultat!",
   ][tier];
+  const [visibleCharacters, setVisibleCharacters] = useState(0);
+  useEffect(() => {
+    const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let frame = 0;
+    const start = performance.now();
+    setVisibleCharacters(motion.matches ? comment.length : 0);
+    const tick = (now: number) => {
+      const count = Math.min(comment.length, Math.max(0, Math.floor((now - start - 200) / 28)));
+      setVisibleCharacters(count);
+      if (count < comment.length) frame = requestAnimationFrame(tick);
+    };
+    if (!motion.matches) frame = requestAnimationFrame(tick);
+    const stopAnimation = () => {
+      if (motion.matches) {
+        cancelAnimationFrame(frame);
+        setVisibleCharacters(comment.length);
+      }
+    };
+    motion.addEventListener("change", stopAnimation);
+    return () => {
+      cancelAnimationFrame(frame);
+      motion.removeEventListener("change", stopAnimation);
+    };
+  }, [comment]);
   return (
     <section
       className={`rounded-3xl border p-5 ${ageGroup ? "border-sky-200 bg-sky-50" : "border-violet-200 bg-violet-50"}`}
     >
+      {tier <= 1 && <ChipCelebration key={`${ageGroup}-${tier}`} grand />}
       <div className="mb-4 flex items-center gap-3">
         <span
           className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${ageGroup ? "bg-sky-100 text-sky-700" : "bg-violet-100 text-violet-700"}`}
@@ -82,7 +109,15 @@ export function SpeedComparisonPyramid({
           );
         })}
       </svg>
-      <p className="mt-1 text-base font-bold leading-relaxed text-blue-700">{comment}</p>
+      <p className="relative mt-1 text-base font-bold leading-relaxed text-blue-700">
+        <span className="sr-only">{comment}</span>
+        <span aria-hidden="true" className="invisible block">
+          {comment}
+        </span>
+        <span aria-hidden="true" className="absolute inset-0">
+          {comment.slice(0, visibleCharacters)}
+        </span>
+      </p>
     </section>
   );
 }
