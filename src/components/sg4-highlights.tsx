@@ -115,7 +115,7 @@ export function SG4Highlights() {
       <h2 id="sg4-highlights-title" className="mb-3 text-base font-bold tracking-normal">
         När ska jag använda SG4?
       </h2>
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid w-full max-w-[312px] grid-cols-4 gap-1">
         {SG4_HIGHLIGHTS.map((item, i) => (
           <button
             key={item.label}
