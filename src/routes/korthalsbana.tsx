@@ -1,3 +1,4 @@
+import { CoursePlayerPicker } from "@/components/course-player-picker";
 import { CourseCompetition } from "@/components/course-competition";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -191,6 +192,7 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
   const [mode, setMode] = useState<CourseGame["mode"]>("friend");
   const [format, setFormat] = useState<CourseGame["format"]>("match");
   const [friend, setFriend] = useState("");
+  const [friendId, setFriendId] = useState<string | undefined>();
   const [bot, setBot] = useState(1);
   const [holes, setHoles] = useState(6);
   const [allowance, setAllowance] = useState(0);
@@ -242,6 +244,7 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
       mode,
       format,
       names,
+      opponentId: mode === "friend" ? friendId : undefined,
       holes,
       allowance: extra,
       recipient,
@@ -417,16 +420,15 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
                   </Choice>
                 </div>
                 {mode === "friend" ? (
-                  <label className="block space-y-2 font-semibold">
-                    <span>Vännens namn</span>
-                    <input
-                      className={field}
-                      value={friend}
-                      maxLength={40}
-                      placeholder="Namn"
-                      onChange={(e) => setFriend(e.target.value)}
-                    />
-                  </label>
+                  <CoursePlayerPicker
+                    label="Välj vän"
+                    name={friend}
+                    userId={friendId}
+                    onChange={(p) => {
+                      setFriend(p.name);
+                      setFriendId(p.userId);
+                    }}
+                  />
                 ) : (
                   <div className="grid grid-cols-3 gap-2">
                     {bots.map((b, i) => (

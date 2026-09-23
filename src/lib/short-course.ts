@@ -4,6 +4,7 @@ export type CourseGame = {
   mode: "friend" | "bot";
   format: "match" | "stroke";
   names: [string, string];
+  opponentId?: string;
   holes: number;
   allowance: number;
   recipient: Side;

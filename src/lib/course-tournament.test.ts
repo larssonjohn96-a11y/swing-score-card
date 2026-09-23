@@ -130,6 +130,7 @@ describe("course competitions", () => {
   it("restores the exact draw, results and an in-progress edit", () => {
     let c = winAll(create(7));
     c = advanceBracket(c);
+    c.players[1].userId = "saved-friend-id";
     c.editing = true;
     c.activeId = c.rounds.at(-1)![0].id;
     c.draft[0] = 7;

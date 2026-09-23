@@ -1,3 +1,4 @@
+import { CoursePlayerPicker } from "@/components/course-player-picker";
 import { useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, Trophy } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
@@ -162,7 +163,11 @@ export function CourseCompetition({
         system,
         format,
         holes,
-        chosen.map((p) => ({ name: p.name.trim(), strokes: give ? p.strokes : 0 })),
+        chosen.map((p) => ({
+          name: p.name.trim(),
+          userId: p.userId,
+          strokes: give ? p.strokes : 0,
+        })),
       ),
     );
   }
@@ -339,22 +344,42 @@ export function CourseCompetition({
                   </select>
                 </label>
                 <div className="space-y-3">
-                  {chosen.map((p, i) => (
-                    <label key={i} className="block space-y-1 text-sm font-semibold">
-                      <span>Spelare {i + 1}</span>
-                      <input
-                        className={field}
-                        maxLength={40}
-                        placeholder="Namn"
-                        value={p.name}
-                        onChange={(e) =>
+                  {chosen.map((p, i) =>
+                    i === 0 ? (
+                      <label key={i} className="block space-y-1 text-sm font-semibold">
+                        <span>Ditt namn</span>
+                        <input
+                          className={field}
+                          maxLength={40}
+                          value={p.name}
+                          onChange={(e) =>
+                            setPlayers(
+                              players.map((v, j) =>
+                                j === i ? { ...v, name: e.target.value, userId: user?.id } : v,
+                              ),
+                            )
+                          }
+                        />
+                      </label>
+                    ) : (
+                      <CoursePlayerPicker
+                        key={i}
+                        label={`Spelare ${i + 1}`}
+                        name={p.name}
+                        userId={p.userId}
+                        excludedIds={chosen
+                          .filter((_, j) => j !== i)
+                          .flatMap((v) => (v.userId ? [v.userId] : []))}
+                        onChange={(selected) =>
                           setPlayers(
-                            players.map((v, j) => (j === i ? { ...v, name: e.target.value } : v)),
+                            players.map((v, j) =>
+                              j === i ? { ...v, name: selected.name, userId: selected.userId } : v,
+                            ),
                           )
                         }
                       />
-                    </label>
-                  ))}
+                    ),
+                  )}
                 </div>
                 <p className="text-sm text-slate-500">
                   Ange olika namn. Ni registrerar resultaten på samma telefon.
