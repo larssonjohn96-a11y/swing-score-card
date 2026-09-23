@@ -736,20 +736,35 @@ function Home() {
 
         <ActiveMultiplayerBanner inline />
 
-        <section className="mt-7" aria-label="Spel & utmaningar">
+        <section className="mt-7" aria-labelledby="course-play-heading">
           <div className="px-0.5">
-            <h2 className="text-[24px] font-black leading-none text-foreground">Spel & utmaningar</h2>
-            <p className="mt-1.5 text-sm text-muted-foreground">Välj en utmaning. Slå ditt rekord.</p>
+            <h2 id="course-play-heading" className="text-[24px] font-black leading-none text-foreground">Spel på bana</h2>
+            <p className="mt-1.5 text-sm text-muted-foreground">Korthålsbana eller vanliga golfhål.</p>
           </div>
-          <Link to="/korthalsbana" className="mt-4 flex min-h-32 items-center gap-4 rounded-[26px] border border-blue-200 bg-blue-50 p-5 text-blue-950 shadow-sm">
-            <span className="min-w-0 flex-1"><span className="block font-display text-[30px] leading-tight">Spela på bana</span><span className="mt-2 block text-sm text-blue-800">1 mot 1, flera spelare eller turnering. Tävla på valfria golfhål.</span></span>
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white"><ChevronRight className="h-5 w-5" /></span>
+          <Link to="/korthalsbana" className="relative mt-4 flex min-h-[252px] items-end overflow-hidden rounded-[28px] border border-slate-900/10 bg-slate-900">
+            <img src="/Approach_shot.png" alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover object-[50%_40%]" />
+            <span className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent" />
+            <div className="relative z-10 flex w-full flex-wrap items-end gap-3 px-5 pb-[22px] pt-20 text-white">
+              <div className="min-w-0 flex-1 basis-40">
+                <p className="text-[10px] font-black uppercase tracking-[.18em] text-white/90">På banan</p>
+                <h3 className="mt-1 text-[1.55rem] font-black leading-tight">Spela på bana</h3>
+                <p className="mt-1 text-sm text-white/90">1 mot 1, flera spelare eller turnering.</p>
+              </div>
+              <span className="inline-flex min-h-[38px] shrink-0 items-center justify-center rounded-full bg-white px-4 text-xs font-black uppercase tracking-wide text-[#071b14] shadow-lg">Spela nu →</span>
+            </div>
           </Link>
+        </section>
+
+        <section className="mt-7" aria-labelledby="game-challenges-heading">
+          <div className="px-0.5">
+            <h2 id="game-challenges-heading" className="text-[24px] font-black leading-none text-foreground">Spel &amp; utmaningar</h2>
+            <p className="mt-1.5 text-sm text-muted-foreground">Ett moment i taget – från puttning till driver.</p>
+          </div>
           <Link to="/spela-runda" className="group relative mt-4 block min-h-[220px] overflow-hidden rounded-[26px] border border-border bg-card shadow-sm transition-transform active:scale-[.99]">
-            <img src="/Off_the_tee.png" alt="" className="absolute inset-0 h-full w-full object-cover object-[18%_50%]" />
+            <img src="/Off_the_tee.png" alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover object-[18%_50%]" />
             <span className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-black/5" />
             <span className="absolute inset-x-0 bottom-0 flex items-end gap-4 p-5 text-white">
-              <span className="min-w-0 flex-1"><span className="block font-display text-[30px] leading-none">Spela</span><span className="mt-2 block text-sm text-white/80">Välj kategori och utmana dig själv.</span></span>
+              <span className="min-w-0 flex-1"><span className="block font-display text-[30px] leading-tight">Utmana dig själv</span><span className="mt-2 block text-sm text-white/80">Välj ett moment. Slå ditt rekord.</span></span>
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/18 backdrop-blur-md"><ChevronRight className="h-5 w-5" /></span>
             </span>
           </Link>
