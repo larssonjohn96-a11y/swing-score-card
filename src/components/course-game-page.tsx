@@ -1,3 +1,5 @@
+import { Link } from "@tanstack/react-router";
+import { CourseScorecard } from "./course-scorecard";
 import { CourseSuddenDeath } from "@/components/course-sudden-death";
 import { CourseFinalResult } from "@/components/course-final-result";
 import {
@@ -80,11 +82,19 @@ export type CourseOpponent = {
 export function CourseGamePage({
   onBack,
   initialOpponent,
+  playerName,
 }: {
   onBack: () => void;
   initialOpponent?: CourseOpponent;
+  playerName?: string;
 }) {
   const { user, displayName, loading } = useAuth();
+  const [enteredName, setEnteredName] = useState("");
+  const actualName =
+    [playerName, displayName, enteredName]
+      .find((n) => n?.trim() && !/^(du|you)$/i.test(n.trim()))
+      ?.trim() || "";
+  const [tieClosed, setTieClosed] = useState(false);
   const storageKey = `sg4.course-game.v1:${user?.id ?? "guest"}`;
   const [ready, setReady] = useState(false);
   const [error, setError] = useState("");
@@ -123,6 +133,7 @@ export function CourseGamePage({
     try {
       const restored = parseGame(localStorage.getItem(storageKey));
       setActive(restored);
+      if (restored && !/^(du|you)$/i.test(restored.names[0])) setEnteredName(restored.names[0]);
       if (restored && !hasInitialOpponent) {
         setMode(restored.mode);
         setFriend(restored.mode === "friend" ? restored.names[1] : "");
@@ -144,6 +155,32 @@ export function CourseGamePage({
       setError("Det gick inte att läsa ditt pågående spel. Ladda om och försök igen.");
     }
   }, [storageKey, loading, hasInitialOpponent]);
+  useEffect(() => {
+    if (!actualName) return;
+    if (active && /^(du|you)$/i.test(active.names[0]))
+      save({ ...active, names: [actualName, active.names[1]] });
+    if (result && /^(du|you)$/i.test(result.names[0]))
+      setResult({ ...result, names: [actualName, result.names[1]] });
+  }, [actualName, active, result]);
+  function rematch() {
+    if (!game) return;
+    const next = {
+      ...game,
+      names: [actualName || game.names[0], game.names[1]] as [string, string],
+      scores: [],
+      rolls: Array.from({ length: game.holes }, () => Math.random()),
+      draft: { you: 3, other: 3, length: game.draft.length },
+      awaitingNext: false,
+      suddenDeath: undefined,
+    };
+    if (save(next)) {
+      setResult(null);
+      setEdit(null);
+      setCelebrating(false);
+      setTieClosed(false);
+      setScreen("play");
+    }
+  }
   function save(game: CourseGame | null) {
     try {
       if (game) localStorage.setItem(storageKey, JSON.stringify(game));
@@ -157,7 +194,7 @@ export function CourseGamePage({
     }
   }
   const names: [string, string] = [
-    displayName?.trim() || "Du",
+    actualName,
     mode === "bot" ? botName || bots[bot].name : friend.trim() || "Vän",
   ];
   const extra = giveStrokes ? normalizeAllowance(allowance, holes) : 0;
@@ -168,7 +205,7 @@ export function CourseGamePage({
     setScreen("setup");
   }
   function start() {
-    if (settingsStage < 3) return;
+    if (settingsStage < 3 || !actualName) return;
     const game: CourseGame = {
       mode,
       format,
@@ -257,6 +294,34 @@ export function CourseGamePage({
       setResult(null);
     }
   }
+  if (!loading && !actualName && (!active || /^(du|you)$/i.test(active.names[0])))
+    return (
+      <main className="mx-auto max-w-lg space-y-4 px-5 py-8">
+        <button onClick={onBack} className="min-h-11 text-sm text-slate-500">
+          ← Tillbaka
+        </button>
+        <h1 className="text-2xl font-bold">Vad heter du?</h1>
+        <p className="text-sm text-slate-600">Namnet visas i matchen och resultatet.</p>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            const name = String(new FormData(e.currentTarget).get("name") || "").trim();
+            if (name && !/^(du|you)$/i.test(name)) setEnteredName(name);
+          }}
+          className="space-y-4"
+        >
+          <input
+            name="name"
+            aria-label="Ditt namn"
+            autoComplete="given-name"
+            required
+            maxLength={40}
+            className={field}
+          />
+          <button className={primary}>Nästa</button>
+        </form>
+      </main>
+    );
   return (
     <div
       className={`course-readable ${screen === "play" ? "course-compact" : ""} min-h-dvh bg-[#fcfdf9] pb-10 text-slate-950`}
@@ -549,7 +614,7 @@ export function CourseGamePage({
                       )!}
                     />
                   )}
-                <div className="py-2 text-center">
+                <div className="course-hole-heading text-center">
                   <h1 className="course-input-heading text-3xl font-bold leading-tight">
                     {edit !== null ? `Redigera hål ${edit + 1}` : `Hål ${holeIndex + 1}`}
                   </h1>
@@ -669,35 +734,8 @@ export function CourseGamePage({
                 Redigera föregående hål
               </button>
             )}
-            {screen === "result" && (
-              <details className={card}>
-                <summary className="cursor-pointer text-sm font-bold text-slate-500">
-                  Visa scorekort
-                </summary>
-                <table className="mt-3 w-full table-fixed text-center text-sm">
-                  <thead>
-                    <tr>
-                      <th className="w-12">Hål</th>
-                      {game.names.map((n, i) => (
-                        <th key={i} className="break-words p-2">
-                          {n}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {game.scores.map((s, i) => (
-                      <tr key={i} className="border-t">
-                        <td className="py-3">{i + 1}</td>
-                        <td>{s.you}</td>
-                        <td>{s.other}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </details>
-            )}
-            {screen === "result" && winner < 0 && (
+            {screen === "result" && <CourseScorecard game={game} />}
+            {screen === "result" && winner < 0 && !tieClosed && (
               <>
                 <button className={courseSetupAction} onClick={startSuddenDeath}>
                   Spela sudden death
@@ -706,8 +744,7 @@ export function CourseGamePage({
                   className="min-h-12 w-full rounded-2xl border border-slate-300 font-bold text-slate-600"
                   onClick={() => {
                     if (save(null)) {
-                      setResult(null);
-                      setScreen("home");
+                      setTieClosed(true);
                     }
                   }}
                 >
@@ -715,22 +752,24 @@ export function CourseGamePage({
                 </button>
               </>
             )}
-            {screen === "result" && winner >= 0 && (
-              <>
-                <button className={primary} onClick={beginSetup}>
-                  Spela igen
-                  <ArrowRight className="h-5 w-5" />
+            {screen === "result" && (winner >= 0 || tieClosed) && (
+              <div className="space-y-3">
+                <button className={courseSetupAction} onClick={rematch}>
+                  Rematch <ArrowRight className="h-5 w-5" />
                 </button>
                 <button
-                  className="min-h-12 w-full font-semibold"
-                  onClick={() => {
-                    setResult(null);
-                    setScreen("home");
-                  }}
+                  className="min-h-12 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 font-bold"
+                  onClick={onBack}
                 >
-                  Avsluta
+                  Match i annan kategori
                 </button>
-              </>
+                <Link
+                  to="/"
+                  className="flex min-h-12 items-center justify-center text-sm font-semibold text-slate-500"
+                >
+                  Hem
+                </Link>
+              </div>
             )}
           </>
         )}

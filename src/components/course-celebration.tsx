@@ -1,3 +1,4 @@
+import { ChipCelebration } from "./chip-celebration";
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Trophy } from "lucide-react";
@@ -35,26 +36,13 @@ export function CourseCelebration({
       }}
       className={`fixed inset-0 z-[200] overflow-y-auto text-white ${tone === "blue" ? "bg-gradient-to-br from-blue-500 via-blue-700 to-blue-950" : "bg-gradient-to-br from-red-500 via-red-700 to-red-950"}`}
     >
-      <style>{`@keyframes courseConfetti{0%{transform:translateY(-10vh) rotate(0deg);opacity:1}100%{transform:translateY(110dvh) rotate(700deg);opacity:0}}@media(prefers-reduced-motion:reduce){.course-confetti{display:none}}`}</style>
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
-        {Array.from({ length: 64 }, (_, i) => (
-          <span
-            key={i}
-            className="course-confetti absolute top-0 h-3 w-2 rounded-sm"
-            style={{
-              left: `${(i * 37) % 100}%`,
-              background: ["#fff", "#fde047", "#a5f3fc", "#fbcfe8"][i % 4],
-              animation: `courseConfetti ${2.8 + (i % 7) * 0.2}s ease-in ${(i % 11) * 0.08}s both`,
-            }}
-          />
-        ))}
-      </div>
-      <div className="relative mx-auto flex min-h-dvh max-w-lg flex-col items-center justify-center gap-6 px-6 py-12 text-center">
-        <Trophy className="h-20 w-20 text-yellow-300" />
+      <ChipCelebration />
+      <div className="relative mx-auto flex min-h-dvh max-w-lg flex-col items-center justify-center gap-5 px-6 py-12 text-center">
+        <Trophy className="h-20 w-20 text-yellow-300 drop-shadow-lg" />
         <p className="text-sm font-black uppercase tracking-[.25em]">Seger!</p>
         <h1
           id="course-victory-title"
-          className="break-words font-display text-6xl uppercase leading-tight"
+          className="break-words font-sans text-5xl font-extrabold leading-tight"
         >
           {name} vinner!
         </h1>
@@ -105,7 +93,9 @@ export function CourseCompactStyles() {
 .course-compact .course-match-top{min-height:52px}
 .course-compact .course-match-top > div{padding-top:6px;padding-bottom:6px}
 .course-compact .course-match-progress{padding-top:5px;padding-bottom:5px}
-.course-compact .course-input-heading{font-size:32px;line-height:1.1;margin-top:10px;margin-bottom:10px}
+.course-compact .course-input-heading{font-size:30px;line-height:1.15;margin:0}
+.course-compact .course-hole-heading{padding:0;margin-top:6px!important;margin-bottom:0!important}
+.course-compact .course-hole-heading p{margin-top:4px}
 .course-compact .course-input-hint{display:none}
 .course-compact .course-extra{padding:6px 10px;font-size:12px}
 .course-compact .course-bot-length{font-size:12px}

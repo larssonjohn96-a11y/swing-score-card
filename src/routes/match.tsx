@@ -163,7 +163,7 @@ function SelectedCheck({ className = "absolute right-3 top-3" }: { className?: s
 function MatchPlayPage() {
   const [courseSelected, setCourseSelected] = useState(false);
   useHideBottomNav(true);
-  const { user, loading } = useAuth();
+  const { user, loading, displayName: authName } = useAuth();
   const [entryFlow] = useState<"friend" | "team">(() => {
     if (typeof window === "undefined") return "friend";
     return new URLSearchParams(window.location.search).get("flow") === "team" ? "team" : "friend";
@@ -177,7 +177,8 @@ function MatchPlayPage() {
   const [selectedFriendIds, setSelectedFriendIds] = useState<string[]>([]);
   const [guests, setGuests] = useState<Player[]>([]);
   const [guestName, setGuestName] = useState("");
-  const [selfName, setSelfName] = useState("Du");
+  const [selfName, setSelfName] = useState(authName || "");
+  useEffect(() => { if (authName?.trim()) setSelfName(authName.trim()); }, [authName]);
   const [selfAvatar, setSelfAvatar] = useState<string | null>(() => loadCardProfile().photo ?? null);
   const [blueMateId, setBlueMateId] = useState<string | null>(null);
   const [category, setCategory] = useState<MatchCategory | null>(null);
@@ -369,7 +370,7 @@ function MatchPlayPage() {
       setSelectedFriendIds(Array.isArray(saved.selectedFriendIds) ? saved.selectedFriendIds : []);
       setGuests(Array.isArray(saved.guests) ? saved.guests : []);
       setBlueMateId(saved.blueMateId ?? null);
-      if (saved.selfName) setSelfName(saved.selfName);
+      if (saved.selfName && !/^(du|you)$/i.test(saved.selfName)) setSelfName(saved.selfName);
       if (saved.matchRunId) setMatchRunId(saved.matchRunId);
       setSessionBlueTeam(Array.isArray(saved.blueTeam) ? saved.blueTeam : null);
       setSessionRedTeam(Array.isArray(saved.redTeam) ? saved.redTeam : null);
@@ -386,7 +387,7 @@ function MatchPlayPage() {
   const selectedOthers = [...selectedFriends, ...guests];
   const selectedPlayers = [selfPlayer, ...selectedOthers];
   const neededOthers = mode === "singles" ? 1 : 3;
-  const canContinuePlayers = mode !== null && selectedOthers.length === neededOthers;
+  const canContinuePlayers = !!selfName.trim() && mode !== null && selectedOthers.length === neededOthers;
   const blueMate = selectedPlayers.find((p) => p.id === blueMateId) ?? null;
   const blueTeam = sessionBlueTeam ?? (mode === "singles" ? [selfPlayer] : [selfPlayer, ...(blueMate ? [blueMate] : [])]);
   const redTeam = sessionRedTeam ?? selectedPlayers.filter((p) => !blueTeam.some((b) => b.id === p.id));
@@ -809,6 +810,7 @@ function MatchPlayPage() {
   const stepLabel = step === "players" ? (entryFlow === "friend" ? "Välj kompis" : "Lagspel · Format & spelare") : step === "teams" ? "2 · Lag" : step === "scoring" ? "Spelsätt" : step === "category" ? "Kategori" : step === "type" ? "Spel" : step === "setup" ? "Chippning" : "Matchlängd";
 
   if (step === "course" && selectedOthers[0]) return <CourseGamePage
+    playerName={selfName}
     initialOpponent={{ mode: "friend", name: selectedOthers[0].name, userId: selectedOthers[0].isGuest ? undefined : selectedOthers[0].id }}
     onBack={() => goToStep("category")} />;
 
@@ -824,6 +826,8 @@ function MatchPlayPage() {
     {step !== "play" && step !== "sudden-death" && step !== "result" ? <header className="flex items-center justify-between">{step === "players" ? <Link to="/spela" aria-label="Tillbaka till Spela" className={`inline-flex h-10 w-10 items-center justify-center rounded-full border text-2xl leading-none ${glass}`}>‹</Link> : <button onClick={back} aria-label="Föregående steg" className={`inline-flex h-10 w-10 items-center justify-center rounded-full border text-2xl leading-none ${glass}`}>‹</button>}<div className="text-center"><p className="text-[9px] font-bold uppercase tracking-[0.22em] text-slate-500">SG4 Match</p><p className="text-[11px] font-semibold text-slate-700">{stepLabel}</p></div><span aria-hidden="true" className="h-10 w-10" /></header> : null}
 
     {step === "players" ? <>
+      {!loading && !selfName && <form className="mt-4 space-y-2 rounded-2xl border bg-white p-4" onSubmit={(e) => { e.preventDefault(); const name = String(new FormData(e.currentTarget).get("playerName") || "").trim(); if (name && !/^(du|you)$/i.test(name)) setSelfName(name); }}><label className="block text-sm font-bold">Ditt namn<input name="playerName" required maxLength={40} autoComplete="given-name" className="mt-2 block min-h-12 w-full rounded-xl border px-3" /></label><button className="min-h-11 w-full rounded-xl bg-blue-600 font-bold text-white">Spara namn</button></form>}
+
       {entryFlow === "friend" ? <>
         <section className="mt-5"><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">1 mot 1</p><h1 className="mt-1 font-display text-4xl leading-none">Välj kompis</h1><p className="mt-2 text-sm text-slate-600">Välj vem du vill möta. Singles är redan valt.</p></section>
         <section className="mt-5 grid grid-cols-[1fr_auto_1fr] items-center gap-2"><div className={`flex min-h-44 flex-col items-center justify-center rounded-[28px] border p-4 text-center ${blueGlass}`}><PlayerAvatar player={selfPlayer} tone="blue" large /><p className="mt-3 max-w-full truncate text-sm font-bold">{selfName}</p><p className="mt-1 text-[10px] font-bold uppercase tracking-[0.14em] text-blue-600">Du · Blue</p></div><span className="rounded-xl bg-slate-950 px-2.5 py-2 font-display text-xl text-white">VS</span>{selectedOthers[0] ? <button onClick={() => setPickerOpen(true)} className={`relative flex min-h-44 flex-col items-center justify-center rounded-[28px] border p-4 text-center ${redGlass}`}><PlayerAvatar player={selectedOthers[0]} tone="red" large /><p className="mt-3 max-w-full truncate text-sm font-bold">{selectedOthers[0].name}</p><p className="mt-1 text-[10px] font-bold uppercase tracking-[0.14em] text-red-600">Red · tryck för att ändra</p>{selectedOthers[0].isGuest ? <span onClick={(e) => { e.stopPropagation(); removeGuest(selectedOthers[0].id); }} className="absolute right-3 top-3 rounded-full bg-white/75 p-1.5 text-slate-500"><X className="h-3.5 w-3.5" /></span> : null}</button> : <button onClick={() => setPickerOpen(true)} className={`flex min-h-44 flex-col items-center justify-center rounded-[28px] border p-4 text-center ${redGlass}`}><span className="flex h-16 w-16 items-center justify-center rounded-full border-[3px] border-dashed border-red-400 text-red-500"><Plus className="h-6 w-6" /></span><p className="mt-3 font-display text-xl">Välj kompis</p><p className="mt-1 text-[10px] text-slate-500">Vän eller gäst</p></button>}</section>
@@ -845,12 +849,13 @@ function MatchPlayPage() {
         <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Match</p>
         <h1 className="mt-1 font-display text-4xl">Vad ska ni tävla i?</h1>
       </section>
-      {entryFlow === "friend" && <MatchCourseChoice selected={courseSelected} onSelect={() => setCourseSelected(true)} />}
-      <h2 className="mt-6 text-sm font-bold text-slate-600">Ett moment</h2>
+      <h2 className="mt-6 text-sm font-bold text-slate-600">Tävla i ett golfmoment</h2>
       <div className="mt-2 grid grid-cols-2 gap-3">{CATEGORIES.map((i) => { const active = !courseSelected && category === i.id; return <button key={i.id} onClick={() => { setCourseSelected(false); setCategory(i.id); setScoringMode("match"); }} className={`relative flex min-h-32 w-full items-center rounded-[26px] border p-4 text-left transition active:scale-[.985] ${glass} ${active ? "ring-2 ring-blue-500/45 border-blue-400/80" : ""}`}>
         {active ? <SelectedCheck /> : null}
         <span className="font-display text-[27px] leading-[.95] text-slate-950">{i.title}</span>
       </button>; })}</div>
+      {entryFlow === "friend" && <MatchCourseChoice selected={courseSelected} onSelect={() => setCourseSelected(true)} />}
+
       <button disabled={!category && !courseSelected} onClick={() => {
         if (courseSelected && entryFlow === "friend") { goToStep("course"); return; }
         if (!category) return;
