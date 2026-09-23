@@ -24,10 +24,10 @@ export function CourseStrokeInput({
   const suggested = "border-slate-400 bg-slate-50 text-slate-700 ring-1 ring-slate-400/50";
   return (
     <section
-      className={`rounded-[26px] border p-4 shadow-sm ${red ? "border-red-200 bg-gradient-to-br from-red-50 to-white" : "border-blue-200 bg-gradient-to-br from-blue-50 to-white"}`}
+      className={`course-stroke rounded-[26px] border p-4 shadow-sm ${red ? "border-red-200 bg-gradient-to-br from-red-50 to-white" : "border-blue-200 bg-gradient-to-br from-blue-50 to-white"}`}
     >
       <div
-        className={`mb-4 flex items-start justify-between gap-3 ${red ? "text-red-700" : "text-blue-700"}`}
+        className={`course-stroke-header mb-4 flex items-start justify-between gap-3 ${red ? "text-red-700" : "text-blue-700"}`}
       >
         <h2 className="min-w-0 break-words font-display text-3xl uppercase leading-tight">
           {name}
@@ -39,7 +39,7 @@ export function CourseStrokeInput({
           {value} slag
         </p>
       </div>
-      <div className="grid grid-cols-4 gap-2">
+      <div className="course-stroke-grid grid grid-cols-4 gap-2">
         {[1, 2, 3, 4, 5, 6, 7].map((n) => (
           <button
             key={n}
@@ -47,14 +47,14 @@ export function CourseStrokeInput({
             aria-label={`${name}: ${n} slag`}
             aria-pressed={selected === n && value === n}
             onClick={() => choose(n)}
-            className={`flex min-h-14 flex-col items-center justify-center rounded-xl border px-1 py-2 shadow-sm ${value === n ? (selected === n ? active : suggested) : idle}`}
+            className={`course-stroke-choice flex min-h-14 flex-col items-center justify-center rounded-xl border px-1 py-2 shadow-sm ${value === n ? (selected === n ? active : suggested) : idle}`}
           >
             <span className="font-display text-2xl leading-tight">{n}</span>
             <span className="text-[9px] font-semibold uppercase">slag</span>
           </button>
         ))}
         <label
-          className={`relative flex min-h-14 flex-col items-center justify-center rounded-xl border px-1 py-2 shadow-sm ${value >= 8 ? (selected === value ? active : suggested) : idle}`}
+          className={`course-stroke-choice relative flex min-h-14 flex-col items-center justify-center rounded-xl border px-1 py-2 shadow-sm ${value >= 8 ? (selected === value ? active : suggested) : idle}`}
         >
           <span className="font-display text-2xl leading-tight">{value >= 8 ? value : "8+"}</span>
           <span className="text-[9px] font-semibold uppercase">slag</span>
@@ -99,7 +99,7 @@ export function CourseMatchBar({
       aria-label="Matchställning"
       className="overflow-hidden rounded-[22px] border border-slate-300 bg-white shadow-sm"
     >
-      <div className="grid min-h-[70px] grid-cols-[1fr_88px_1fr] items-stretch">
+      <div className="course-match-top grid min-h-[70px] grid-cols-[1fr_88px_1fr] items-stretch">
         <div
           style={
             leader === 0 ? { clipPath: "polygon(0 0,88% 0,100% 50%,88% 100%,0 100%)" } : undefined
@@ -139,7 +139,7 @@ export function CourseMatchBar({
           )}
         </div>
       </div>
-      <div className="flex flex-wrap justify-center gap-1 border-t border-slate-200 px-2 py-2">
+      <div className="course-match-progress flex flex-wrap justify-center gap-1 border-t border-slate-200 px-2 py-2">
         {Array.from({ length: holes }, (_, i) => (
           <span
             key={i}

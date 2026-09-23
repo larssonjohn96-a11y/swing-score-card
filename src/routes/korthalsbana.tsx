@@ -1,3 +1,9 @@
+import {
+  CourseCelebration,
+  CoursePressure,
+  CourseCompactStyles,
+} from "@/components/course-celebration";
+import { coursePressure } from "@/lib/course-pressure";
 import { CourseHoleResult, CourseMatchBar, CourseStrokeInput } from "@/components/course-match-ui";
 import { allowanceOptions, allowanceLabel, normalizeAllowance } from "@/lib/course-allowance";
 import { CoursePlayerPicker } from "@/components/course-player-picker";
@@ -151,6 +157,7 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState("");
   const [active, setActive] = useState<CourseGame | null>(null);
+  const [celebrating, setCelebrating] = useState(false);
   const [result, setResult] = useState<CourseGame | null>(null);
   const [screen, setScreen] = useState<"home" | "setup" | "play" | "result">("home");
   const [step, setStep] = useState(0);
@@ -255,6 +262,7 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
     if (save(null)) {
       setResult(game);
       setScreen("result");
+      setCelebrating(true);
     }
   }
   const game = screen === "result" ? result : active;
@@ -285,7 +293,17 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
     step
   ];
   return (
-    <div className="min-h-dvh bg-[#fcfdf9] pb-10 text-slate-950">
+    <div
+      className={`${screen === "play" ? "course-compact" : ""} min-h-dvh bg-[#fcfdf9] pb-10 text-slate-950`}
+    >
+      <CourseCompactStyles />
+      {celebrating && screen === "result" && game && winner >= 0 && (
+        <CourseCelebration
+          name={game.names[winner === 0 ? 0 : 1]}
+          tone={winner === 0 ? "blue" : "red"}
+          onClose={() => setCelebrating(false)}
+        />
+      )}
       <header className="sticky top-0 z-20 border-b border-slate-200 bg-white px-4 py-3">
         <div className="mx-auto grid max-w-lg grid-cols-[44px_1fr_44px] items-center gap-2">
           {screen === "home" ? (
@@ -587,6 +605,25 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
             )}
             {screen === "play" && active && (
               <>
+                {!active.awaitingNext &&
+                  edit === null &&
+                  coursePressure(
+                    active.names,
+                    active.format,
+                    status.diff,
+                    active.scores.length,
+                    active.holes,
+                  ) && (
+                    <CoursePressure
+                      text={coursePressure(
+                        active.names,
+                        active.format,
+                        status.diff,
+                        active.scores.length,
+                        active.holes,
+                      )!}
+                    />
+                  )}
                 {active.awaitingNext && last && edit === null && (
                   <CourseHoleResult
                     names={active.names}
@@ -602,17 +639,17 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
                 )}
                 {((!complete && !active.awaitingNext) || edit !== null) && draft && (
                   <>
-                    <h1 className="text-center font-display text-3xl uppercase leading-tight">
+                    <h1 className="course-input-heading text-center font-display text-3xl uppercase leading-tight">
                       {edit !== null ? `Redigera hål ${edit + 1}` : "Antal slag"}
                     </h1>
                     {active.format === "match" && holeExtra > 0 && (
-                      <p className="rounded-2xl bg-blue-50 p-3 text-center font-semibold text-blue-800">
+                      <p className="course-extra rounded-2xl bg-blue-50 p-3 text-center font-semibold text-blue-800">
                         {active.names[active.recipient === "you" ? 0 : 1]} har {holeExtra} extraslag
                         här.
                       </p>
                     )}
                     {active.mode === "bot" && (
-                      <label className="block space-y-2 font-semibold">
+                      <label className="course-bot-length block space-y-2 font-semibold">
                         <span>Ungefärlig hållängd</span>
                         <select
                           disabled={edit !== null}
@@ -651,7 +688,7 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
                         </p>
                       )
                     )}
-                    <p className="text-center text-sm text-slate-500">
+                    <p className="course-input-hint text-center text-sm text-slate-500">
                       Ange verkligt antal slag. Appen räknar av extraslagen.
                     </p>
                     <button
@@ -688,7 +725,9 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
               </>
             )}
             {screen === "result" && (
-              <section className="rounded-3xl bg-blue-600 p-6 text-center text-white">
+              <section
+                className={`rounded-3xl p-6 text-center text-white ${winner === 1 ? "bg-red-600" : winner === 0 ? "bg-blue-600" : "bg-slate-600"}`}
+              >
                 <Trophy className="mx-auto mb-3 h-9 w-9" />
                 <h1 className="font-display text-4xl leading-tight">
                   {winner < 0 ? "Oavgjort!" : `${game.names[winner === 0 ? 0 : 1]} vinner!`}
@@ -704,7 +743,7 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
             )}
             {game.scores.length > 0 && (
               <details
-                className={`${card} overflow-x-auto`}
+                className={`course-scorecard ${card} overflow-x-auto`}
                 open={screen === "result" ? true : undefined}
               >
                 <summary className="min-h-11 cursor-pointer text-base font-bold">

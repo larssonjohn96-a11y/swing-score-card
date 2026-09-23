@@ -1,3 +1,9 @@
+import {
+  CourseCelebration,
+  CoursePressure,
+  CourseCompactStyles,
+} from "@/components/course-celebration";
+import { coursePressure } from "@/lib/course-pressure";
 import { CourseHoleResult, CourseMatchBar, CourseStrokeInput } from "@/components/course-match-ui";
 import { allowanceOptions, allowanceLabel, normalizeAllowance } from "@/lib/course-allowance";
 import { CoursePlayerPicker } from "@/components/course-player-picker";
@@ -60,6 +66,9 @@ export function CourseCompetition({
 }) {
   const { user, displayName, loading } = useAuth();
   const storageKey = `sg4.course-competition.v1:${user?.id ?? "guest"}:${kind}`;
+  const [celebration, setCelebration] = useState<{ name: string; tone: "blue" | "red" } | null>(
+    null,
+  );
   const [game, setGame] = useState<Competition | null>(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState("");
@@ -108,6 +117,14 @@ export function CourseCompetition({
     try {
       localStorage.removeItem(storageKey);
       setGame(result ?? null);
+      if (result?.finished && result.kind === "group") {
+        const ranking = groupRanking(result);
+        if (ranking.filter((r) => r.net === ranking[0].net).length === 1)
+          setCelebration({
+            name: result.players[ranking[0].id].name,
+            tone: ranking[0].id === 0 ? "blue" : "red",
+          });
+      }
       setError("");
       setEditing(false);
       setStep(0);
@@ -188,7 +205,15 @@ export function CourseCompetition({
   }
   function finishMatch(winner?: number) {
     if (game && current) {
-      save(completeFixture(game, current.id, winner));
+      const next = completeFixture(game, current.id, winner);
+      if (save(next)) {
+        const completed = [...next.league, ...next.rounds.flat()].find((f) => f.id === current.id)!;
+        if (completed.winner !== null)
+          setCelebration({
+            name: game.players[completed.winner].name,
+            tone: completed.winner === current.a ? "blue" : "red",
+          });
+      }
       setEditing(false);
     }
   }
@@ -239,7 +264,11 @@ export function CourseCompetition({
     );
   }
   return (
-    <div className="min-h-dvh bg-[#fcfdf9] pb-10 text-slate-950">
+    <div
+      className={`${playing ? "course-compact" : ""} min-h-dvh bg-[#fcfdf9] pb-10 text-slate-950`}
+    >
+      <CourseCompactStyles />
+      {celebration && <CourseCelebration {...celebration} onClose={() => setCelebration(null)} />}
       <header className="sticky top-0 z-20 border-b border-slate-200 bg-white px-4 py-3">
         <div className="mx-auto grid max-w-lg grid-cols-[44px_1fr_44px] items-center gap-2">
           <button
@@ -503,6 +532,26 @@ export function CourseCompetition({
                     )}
                   />
                 )}
+                {current &&
+                  !game.awaitingNext &&
+                  !editing &&
+                  coursePressure(
+                    [game.players[current.a].name, game.players[current.b!].name],
+                    game.format,
+                    fixtureMargin(game, current),
+                    scoreCount,
+                    game.holes,
+                  ) && (
+                    <CoursePressure
+                      text={coursePressure(
+                        [game.players[current.a].name, game.players[current.b!].name],
+                        game.format,
+                        fixtureMargin(game, current),
+                        scoreCount,
+                        game.holes,
+                      )!}
+                    />
+                  )}
                 {current && game.awaitingNext && !editing && scoreCount > 0 && (
                   <CourseHoleResult
                     names={[game.players[current.a].name, game.players[current.b!].name]}
@@ -518,7 +567,9 @@ export function CourseCompetition({
                 )}
                 {((scoreCount < game.holes && !game.awaitingNext) || editing) && (
                   <>
-                    <h2 className="text-center font-display text-4xl leading-tight">
+                    <h2
+                      className={`${current ? "course-input-heading" : ""} text-center font-display text-4xl leading-tight`}
+                    >
                       {editing
                         ? `Redigera hål ${scoreIndex + 1}`
                         : current
@@ -530,7 +581,7 @@ export function CourseCompetition({
                         {extra &&
                           game.format === "match" &&
                           (i === 0 ? extra.a : extra.b)[scoreIndex] > 0 && (
-                            <p className="rounded-2xl bg-blue-50 p-3 text-center text-sm font-semibold text-blue-800">
+                            <p className="course-extra rounded-2xl bg-blue-50 p-3 text-center text-sm font-semibold text-blue-800">
                               {game.players[id].name} har{" "}
                               {(i === 0 ? extra.a : extra.b)[scoreIndex]} extraslag här.
                             </p>
@@ -544,7 +595,7 @@ export function CourseCompetition({
                         />
                       </div>
                     ))}
-                    <p className="text-center text-sm text-slate-500">
+                    <p className="course-input-hint text-center text-sm text-slate-500">
                       Registrera verkligt antal slag. Appen räknar av extraslagen.
                     </p>
                     <button
