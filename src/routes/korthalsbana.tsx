@@ -1,4 +1,9 @@
-import { CourseSetupHeader, CourseSetupBlock, CourseHoleChoices } from "@/components/course-setup";
+import {
+  CourseSetupHeader,
+  CourseSetupBlock,
+  CourseHoleChoices,
+  courseSetupAction,
+} from "@/components/course-setup";
 import {
   CourseCelebration,
   CoursePressure,
@@ -7,7 +12,7 @@ import {
 import { coursePressure } from "@/lib/course-pressure";
 import { CourseHoleResult, CourseMatchBar, CourseStrokeInput } from "@/components/course-match-ui";
 import { allowanceOptions, allowanceLabel, normalizeAllowance } from "@/lib/course-allowance";
-import { CoursePlayerPicker } from "@/components/course-player-picker";
+import { CourseOpponentCards } from "@/components/course-opponent-cards";
 import { CourseCompetition } from "@/components/course-competition";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -162,6 +167,7 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
   const [result, setResult] = useState<CourseGame | null>(null);
   const [screen, setScreen] = useState<"home" | "setup" | "play" | "result">("home");
   const [step, setStep] = useState(0);
+  const [settingsStage, setSettingsStage] = useState(0);
   const [mode, setMode] = useState<CourseGame["mode"]>("friend");
   const [format, setFormat] = useState<CourseGame["format"]>("match");
   const [friend, setFriend] = useState("");
@@ -185,6 +191,7 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
       const restored = parseGame(localStorage.getItem(storageKey));
       setActive(restored);
       setStep(0);
+      setSettingsStage(0);
       setScreen(restored ? "home" : "setup");
       setReady(true);
       setError("");
@@ -212,10 +219,12 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
   const allocation = distributeStrokes(holes, extra);
   function beginSetup() {
     setStep(0);
+    setSettingsStage(0);
     setResult(null);
     setScreen("setup");
   }
   function start() {
+    if (settingsStage < 3) return;
     const game: CourseGame = {
       mode,
       format,
@@ -374,7 +383,12 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
         )}
         {screen === "setup" && (
           <>
-            <CourseSetupHeader step={step} title={step === 0 ? "Vem möter du?" : "Gör er redo"} />
+            <CourseSetupHeader
+              step={step}
+              title={
+                step === 0 ? (mode === "friend" ? "Välj kompis" : "Välj bot") : "Matchinställningar"
+              }
+            />
             {step === 1 && (
               <div className="grid grid-cols-[1fr_40px_1fr] items-center overflow-hidden rounded-2xl border border-slate-200 text-center">
                 <p className="break-words bg-blue-50 p-3 font-bold text-blue-700">{names[0]}</p>
@@ -394,36 +408,41 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
                     Mot bot
                   </Choice>
                 </div>
-                {mode === "friend" ? (
-                  <CoursePlayerPicker
-                    label="Välj vän"
-                    name={friend}
-                    userId={friendId}
-                    onChange={(p) => {
-                      setFriend(p.name);
-                      setFriendId(p.userId);
-                    }}
-                  />
-                ) : (
-                  <div className="grid grid-cols-3 gap-2">
-                    {bots.map((b, i) => (
-                      <Choice key={b.name} selected={bot === i} onClick={() => setBot(i)}>
-                        {b.name}
-                        <span className="block text-sm font-normal">{b.level}</span>
-                      </Choice>
-                    ))}
-                  </div>
-                )}
+                <CourseOpponentCards
+                  self={names[0]}
+                  mode={mode}
+                  friend={friend}
+                  friendId={friendId}
+                  onFriend={(p) => {
+                    setFriend(p.name);
+                    setFriendId(p.userId);
+                  }}
+                  bots={bots}
+                  bot={bot}
+                  onBot={setBot}
+                />
               </>
             )}
             {step === 1 && (
-              <CourseSetupBlock title="Spelform">
+              <CourseSetupBlock title="1. Välj spelform">
                 <div className="grid grid-cols-2 gap-2">
-                  <Choice selected={format === "match"} onClick={() => setFormat("match")}>
+                  <Choice
+                    selected={settingsStage > 0 && format === "match"}
+                    onClick={() => {
+                      setFormat("match");
+                      setSettingsStage(1);
+                    }}
+                  >
                     Matchspel
                     <span className="mt-1 block text-sm font-normal">Vinn flest hål.</span>
                   </Choice>
-                  <Choice selected={format === "stroke"} onClick={() => setFormat("stroke")}>
+                  <Choice
+                    selected={settingsStage > 0 && format === "stroke"}
+                    onClick={() => {
+                      setFormat("stroke");
+                      setSettingsStage(1);
+                    }}
+                  >
                     Slagspel
                     <span className="mt-1 block text-sm font-normal">Lägst total vinner.</span>
                   </Choice>
@@ -431,27 +450,41 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
               </CourseSetupBlock>
             )}
             {step === 1 && (
-              <CourseSetupBlock title="Antal hål">
-                <CourseHoleChoices value={holes} onChange={setHoles} />
+              <CourseSetupBlock title="2. Välj antal hål" disabled={settingsStage < 1}>
+                <CourseHoleChoices
+                  value={holes}
+                  confirmed={settingsStage >= 2}
+                  onChange={(n) => {
+                    setHoles(n);
+                    setSettingsStage(2);
+                  }}
+                />
               </CourseSetupBlock>
             )}
             {step === 1 && (
-              <CourseSetupBlock title="Extraslag">
+              <CourseSetupBlock title="3. Välj extraslag" disabled={settingsStage < 2}>
                 <div className="grid grid-cols-2 gap-3">
-                  <Choice selected={!giveStrokes} onClick={() => setGiveStrokes(false)}>
+                  <Choice
+                    selected={settingsStage >= 3 && !giveStrokes}
+                    onClick={() => {
+                      setGiveStrokes(false);
+                      setSettingsStage(3);
+                    }}
+                  >
                     Scratch<span className="block text-sm font-normal">Inga extraslag</span>
                   </Choice>
                   <Choice
-                    selected={giveStrokes}
+                    selected={settingsStage >= 3 && giveStrokes}
                     onClick={() => {
                       setGiveStrokes(true);
+                      setSettingsStage(3);
                       if (!allowance) setAllowance(1);
                     }}
                   >
                     Ge extraslag<span className="block text-sm font-normal">Totalt för spelet</span>
                   </Choice>
                 </div>
-                {giveStrokes && (
+                {giveStrokes && settingsStage >= 3 && (
                   <section className={`${card} space-y-4`}>
                     <label className="block space-y-2 font-semibold">
                       <span>Vem får extraslagen?</span>
@@ -480,7 +513,7 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
                     </label>
                   </section>
                 )}
-                {giveStrokes && (
+                {giveStrokes && settingsStage >= 3 && (
                   <section className="rounded-2xl bg-blue-50 p-3 text-blue-950">
                     <p className="font-bold">
                       {holes} hål · {format === "match" ? "Matchspel" : "Slagspel"}
@@ -508,8 +541,13 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
               </CourseSetupBlock>
             )}
             <button
-              className={primary}
-              disabled={!ready || !!active || (mode === "friend" && !friend.trim())}
+              className={courseSetupAction}
+              disabled={
+                !ready ||
+                !!active ||
+                (mode === "friend" && !friend.trim()) ||
+                (step === 1 && settingsStage < 3)
+              }
               onClick={() => {
                 if (step === 0) {
                   setStep(1);
@@ -517,7 +555,7 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
                 } else start();
               }}
             >
-              {step === 1 ? "Starta matchen" : "Välj upplägg"}
+              {step === 1 ? "Starta matchen" : "Nästa"}
               <ArrowRight className="h-5 w-5" />
             </button>
           </>

@@ -1,4 +1,9 @@
-import { CourseSetupHeader, CourseSetupBlock, CourseHoleChoices } from "@/components/course-setup";
+import {
+  CourseSetupHeader,
+  CourseSetupBlock,
+  CourseHoleChoices,
+  courseSetupAction,
+} from "@/components/course-setup";
 import {
   CourseCelebration,
   CoursePressure,
@@ -74,6 +79,7 @@ export function CourseCompetition({
   const [ready, setReady] = useState(false);
   const [error, setError] = useState("");
   const [step, setStep] = useState(0);
+  const [settingsStage, setSettingsStage] = useState(0);
   const [system, setSystem] = useState<Competition["system"]>("bracket");
   const [format, setFormat] = useState<Competition["format"]>("match");
   const [holes, setHoles] = useState(6);
@@ -87,6 +93,7 @@ export function CourseCompetition({
   useEffect(() => {
     if (loading) return;
     setReady(false);
+    setSettingsStage(0);
     setGame(null);
     setEditing(false);
     try {
@@ -129,6 +136,7 @@ export function CourseCompetition({
       setError("");
       setEditing(false);
       setStep(0);
+      setSettingsStage(0);
       return true;
     } catch {
       setError("Spelet kunde inte avslutas. Försök igen.");
@@ -140,6 +148,7 @@ export function CourseCompetition({
     chosen.every((p) => p.name.trim()) &&
     new Set(chosen.map((p) => p.name.trim().toLocaleLowerCase())).size === count;
   function start() {
+    if (settingsStage < 3 || !validNames) return;
     save(
       createCompetition(
         kind,
@@ -298,7 +307,10 @@ export function CourseCompetition({
         {!ready && !error && <p>Laddar…</p>}
         {ready && !game && (
           <>
-            <CourseSetupHeader step={step} title={step === 0 ? "Vilka är med?" : "Gör er redo"} />
+            <CourseSetupHeader
+              step={step}
+              title={step === 0 ? "Vilka är med?" : "Matchinställningar"}
+            />
             {step === 0 && (
               <>
                 {kind === "tournament" && (
@@ -380,26 +392,57 @@ export function CourseCompetition({
             )}
             {step === 1 && (
               <>
-                {kind === "tournament" ? (
-                  <div className="grid grid-cols-2 gap-3">
-                    <Option selected={format === "match"} onClick={() => setFormat("match")}>
-                      <strong>Matchspel</strong>
-                      <span className="block text-sm">Flest vunna hål.</span>
-                    </Option>
-                    <Option selected={format === "stroke"} onClick={() => setFormat("stroke")}>
+                <CourseSetupBlock title="1. Välj spelform">
+                  {kind === "tournament" ? (
+                    <div className="grid grid-cols-2 gap-3">
+                      <Option
+                        selected={settingsStage > 0 && format === "match"}
+                        onClick={() => {
+                          setFormat("match");
+                          setSettingsStage(1);
+                        }}
+                      >
+                        <strong>Matchspel</strong>
+                        <span className="block text-sm">Flest vunna hål.</span>
+                      </Option>
+                      <Option
+                        selected={settingsStage > 0 && format === "stroke"}
+                        onClick={() => {
+                          setFormat("stroke");
+                          setSettingsStage(1);
+                        }}
+                      >
+                        <strong>Slagspel</strong>
+                        <span className="block text-sm">Lägst antal slag.</span>
+                      </Option>
+                    </div>
+                  ) : (
+                    <Option
+                      selected={settingsStage > 0}
+                      onClick={() => {
+                        setFormat("stroke");
+                        setSettingsStage(1);
+                      }}
+                    >
                       <strong>Slagspel</strong>
-                      <span className="block text-sm">Lägst antal slag.</span>
+                      <span className="block text-sm">Lägst total vinner.</span>
                     </Option>
-                  </div>
-                ) : (
-                  <p className={card}>
-                    Slagspel – lägst totalt antal slag efter eventuellt slagavdrag vinner.
-                  </p>
-                )}
+                  )}
+                </CourseSetupBlock>
                 <CourseSetupBlock
-                  title={kind === "tournament" ? "Antal hål per match" : "Antal hål"}
+                  title={
+                    kind === "tournament" ? "2. Välj antal hål per match" : "2. Välj antal hål"
+                  }
+                  disabled={settingsStage < 1}
                 >
-                  <CourseHoleChoices value={holes} onChange={setHoles} />
+                  <CourseHoleChoices
+                    value={holes}
+                    confirmed={settingsStage >= 2}
+                    onChange={(n) => {
+                      setHoles(n);
+                      setSettingsStage(2);
+                    }}
+                  />
                 </CourseSetupBlock>
                 {kind === "tournament" && (
                   <div className="rounded-2xl bg-blue-50 p-4 text-blue-950">
@@ -423,16 +466,28 @@ export function CourseCompetition({
               </>
             )}
             {step === 1 && (
-              <CourseSetupBlock title="Extraslag">
+              <CourseSetupBlock title="3. Välj extraslag" disabled={settingsStage < 2}>
                 <div className="grid grid-cols-2 gap-3">
-                  <Option selected={!give} onClick={() => setGive(false)}>
+                  <Option
+                    selected={settingsStage >= 3 && !give}
+                    onClick={() => {
+                      setGive(false);
+                      setSettingsStage(3);
+                    }}
+                  >
                     Scratch · inga extraslag
                   </Option>
-                  <Option selected={give} onClick={() => setGive(true)}>
+                  <Option
+                    selected={settingsStage >= 3 && give}
+                    onClick={() => {
+                      setGive(true);
+                      setSettingsStage(3);
+                    }}
+                  >
                     Ge extraslag
                   </Option>
                 </div>
-                {give && (
+                {give && settingsStage >= 3 && (
                   <>
                     <p className="text-sm text-slate-600">
                       Ange extraslag totalt{kind === "tournament" ? " per match" : " för spelet"}.{" "}
@@ -472,8 +527,8 @@ export function CourseCompetition({
               </CourseSetupBlock>
             )}
             <button
-              className={primary}
-              disabled={!validNames}
+              className={courseSetupAction}
+              disabled={!validNames || (step === 1 && settingsStage < 3)}
               onClick={() => {
                 if (step === 0) {
                   setStep(1);
@@ -481,11 +536,7 @@ export function CourseCompetition({
                 } else start();
               }}
             >
-              {step === 0
-                ? "Välj upplägg"
-                : kind === "tournament"
-                  ? "Lotta och starta"
-                  : "Starta spelet"}
+              {step === 0 ? "Nästa" : kind === "tournament" ? "Lotta och starta" : "Starta spelet"}
               <ArrowRight className="h-5 w-5" />
             </button>
           </>
