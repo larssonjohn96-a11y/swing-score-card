@@ -283,7 +283,7 @@ export function CourseCompetition({
   }
   return (
     <div
-      className={`${playing ? "course-compact" : ""} min-h-dvh bg-[#fcfdf9] pb-10 text-slate-950`}
+      className={`course-readable ${playing ? "course-compact" : ""} min-h-dvh bg-[#fcfdf9] pb-10 text-slate-950`}
     >
       <CourseCompactStyles />
       {celebration && <CourseCelebration {...celebration} onClose={() => setCelebration(null)} />}
@@ -475,26 +475,21 @@ export function CourseCompetition({
             )}
             {step === 1 && (
               <CourseSetupBlock title="3. Välj extraslag" disabled={settingsStage < 2}>
-                <div className="grid grid-cols-2 gap-3">
-                  <Option
-                    selected={settingsStage >= 3 && !give}
-                    onClick={() => {
-                      setGive(false);
-                      setSettingsStage(3);
-                    }}
-                  >
-                    Scratch · inga extraslag
-                  </Option>
-                  <Option
-                    selected={settingsStage >= 3 && give}
-                    onClick={() => {
-                      setGive(true);
-                      setSettingsStage(3);
-                    }}
-                  >
-                    Ge extraslag
-                  </Option>
-                </div>
+                <select
+                  aria-label="Välj extraslag"
+                  className={field}
+                  value={settingsStage >= 3 ? (give ? "extra" : "scratch") : ""}
+                  onChange={(e) => {
+                    setGive(e.target.value === "extra");
+                    setSettingsStage(3);
+                  }}
+                >
+                  <option value="" disabled>
+                    Välj slagfördelning
+                  </option>
+                  <option value="scratch">Scratch – inga extraslag</option>
+                  <option value="extra">Ge extraslag</option>
+                </select>
                 {give && settingsStage >= 3 && (
                   <>
                     <p className="text-sm text-slate-600">
@@ -528,10 +523,6 @@ export function CourseCompetition({
                     ))}
                   </>
                 )}
-                <p className="rounded-2xl bg-blue-50 p-4 font-semibold text-blue-950">
-                  {count} spelare · {holes} hål{kind === "tournament" ? " per match" : ""} ·{" "}
-                  {kind === "group" || format === "stroke" ? "Slagspel" : "Matchspel"}
-                </p>
               </CourseSetupBlock>
             )}
             <button
@@ -585,25 +576,42 @@ export function CourseCompetition({
                   />
                 )}
                 {current &&
-                  !game.awaitingNext &&
                   !editing &&
                   coursePressure(
                     [game.players[current.a].name, game.players[current.b!].name],
                     game.format,
-                    fixtureMargin(game, current),
-                    scoreCount,
+                    fixtureMargin(game, {
+                      ...current,
+                      scores: current.scores.slice(0, scoreIndex),
+                    }),
+                    scoreIndex,
                     game.holes,
                   ) && (
                     <CoursePressure
                       text={coursePressure(
                         [game.players[current.a].name, game.players[current.b!].name],
                         game.format,
-                        fixtureMargin(game, current),
-                        scoreCount,
+                        fixtureMargin(game, {
+                          ...current,
+                          scores: current.scores.slice(0, scoreIndex),
+                        }),
+                        scoreIndex,
                         game.holes,
                       )!}
                     />
                   )}
+                {(scoreCount < game.holes || game.awaitingNext || editing) && (
+                  <div className="py-2 text-center">
+                    <h2 className="course-input-heading text-3xl font-bold leading-tight">
+                      {editing ? `Redigera hål ${scoreIndex + 1}` : `Hål ${scoreIndex + 1}`}
+                    </h2>
+                    <p
+                      className={`mt-1 text-sm text-slate-600 ${game.awaitingNext && !editing ? "invisible" : ""}`}
+                    >
+                      Hur många slag blev det?
+                    </p>
+                  </div>
+                )}
                 {current && game.awaitingNext && !editing && scoreCount > 0 && (
                   <CourseHoleResult
                     names={[game.players[current.a].name, game.players[current.b!].name]}
@@ -619,15 +627,6 @@ export function CourseCompetition({
                 )}
                 {((scoreCount < game.holes && !game.awaitingNext) || editing) && (
                   <>
-                    <h2
-                      className={`${current ? "course-input-heading" : ""} text-center font-display text-4xl leading-tight`}
-                    >
-                      {editing
-                        ? `Redigera hål ${scoreIndex + 1}`
-                        : current
-                          ? `Hål ${scoreIndex + 1}`
-                          : `Hål ${scoreIndex + 1} av ${game.holes}`}
-                    </h2>
                     {ids.map((id, i) => (
                       <div key={id} className="space-y-2">
                         {extra &&
@@ -668,7 +667,6 @@ export function CourseCompetition({
                   </button>
                 )}
                 {scoreCount === game.holes &&
-                  !game.awaitingNext &&
                   !editing &&
                   (current ? (
                     current.id.startsWith("bracket") && fixtureMargin(game, current) === 0 ? (

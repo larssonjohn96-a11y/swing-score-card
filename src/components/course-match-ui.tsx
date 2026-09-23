@@ -32,10 +32,7 @@ export function CourseStrokeInput({
         <h2 className="min-w-0 break-words font-display text-3xl uppercase leading-tight">
           {name}
         </h2>
-        <p
-          aria-live="polite"
-          className="shrink-0 pt-1 font-display text-xl uppercase leading-tight"
-        >
+        <p aria-live="polite" className="shrink-0 pt-1 font-sans text-2xl font-bold leading-tight">
           {value} slag
         </p>
       </div>

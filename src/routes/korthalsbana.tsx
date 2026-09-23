@@ -71,7 +71,7 @@ function Choice({
       type="button"
       aria-pressed={selected}
       onClick={onClick}
-      className={`min-h-16 rounded-2xl border-2 px-3 py-3 font-display text-xl leading-tight ${selected ? "border-blue-600 bg-blue-50 text-blue-700" : "border-slate-200 bg-white text-slate-700"}`}
+      className={`min-h-16 rounded-2xl border-2 px-3 py-3 font-sans text-base font-bold tracking-normal leading-snug ${selected ? "border-blue-600 bg-blue-50 text-blue-700" : "border-slate-200 bg-white text-slate-700"}`}
     >
       {children}
     </button>
@@ -261,7 +261,6 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
     mode === "bot" ? bots[bot].name : friend.trim() || "Vän",
   ];
   const extra = giveStrokes ? normalizeAllowance(allowance, holes) : 0;
-  const allocation = distributeStrokes(holes, extra);
   function beginSetup() {
     setStep(0);
     setSettingsStage(0);
@@ -360,7 +359,7 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
   }
   return (
     <div
-      className={`${screen === "play" ? "course-compact" : ""} min-h-dvh bg-[#fcfdf9] pb-10 text-slate-950`}
+      className={`course-readable ${screen === "play" ? "course-compact" : ""} min-h-dvh bg-[#fcfdf9] pb-10 text-slate-950`}
     >
       <CourseCompactStyles />
       {celebrating && screen === "result" && game && winner >= 0 && (
@@ -519,29 +518,24 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
             )}
             {step === 1 && (
               <CourseSetupBlock title="3. Välj extraslag" disabled={settingsStage < 2}>
-                <div className="grid grid-cols-2 gap-3">
-                  <Choice
-                    selected={settingsStage >= 3 && !giveStrokes}
-                    onClick={() => {
-                      setGiveStrokes(false);
-                      setSettingsStage(3);
-                    }}
-                  >
-                    Scratch<span className="block text-sm font-normal">Inga extraslag</span>
-                  </Choice>
-                  <Choice
-                    selected={settingsStage >= 3 && giveStrokes}
-                    onClick={() => {
-                      setGiveStrokes(true);
-                      setSettingsStage(3);
-                      if (!allowance) setAllowance(1);
-                    }}
-                  >
-                    Ge extraslag<span className="block text-sm font-normal">Totalt för spelet</span>
-                  </Choice>
-                </div>
+                <select
+                  aria-label="Välj extraslag"
+                  className={field}
+                  value={settingsStage >= 3 ? (giveStrokes ? "extra" : "scratch") : ""}
+                  onChange={(e) => {
+                    setGiveStrokes(e.target.value === "extra");
+                    setSettingsStage(3);
+                    if (!allowance) setAllowance(1);
+                  }}
+                >
+                  <option value="" disabled>
+                    Välj slagfördelning
+                  </option>
+                  <option value="scratch">Scratch – inga extraslag</option>
+                  <option value="extra">Ge extraslag</option>
+                </select>
                 {giveStrokes && settingsStage >= 3 && (
-                  <section className={`${card} space-y-4`}>
+                  <section className="space-y-3 border-t border-slate-200 pt-4">
                     <label className="block space-y-2 font-semibold">
                       <span>Vem får extraslagen?</span>
                       <select
@@ -567,31 +561,6 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
                         ))}
                       </select>
                     </label>
-                  </section>
-                )}
-                {giveStrokes && settingsStage >= 3 && (
-                  <section className="rounded-2xl bg-blue-50 p-3 text-blue-950">
-                    <p className="font-bold">
-                      {holes} hål · {format === "match" ? "Matchspel" : "Slagspel"}
-                    </p>
-                    <p className="mt-2">
-                      {!extra
-                        ? "Scratch – ni spelar utan extraslag."
-                        : `${names[recipient === "you" ? 0 : 1]} får totalt ${extra} extraslag.`}
-                    </p>
-                    {extra > 0 && (
-                      <details className="mt-2 text-sm">
-                        <summary className="cursor-pointer font-semibold">
-                          Visa slagfördelning
-                        </summary>
-                        {format === "stroke"
-                          ? `${extra} slag dras av från slutresultatet.`
-                          : allocation
-                              .map((n, i) => (n ? `Hål ${i + 1}: ${n} extraslag` : null))
-                              .filter(Boolean)
-                              .join(" · ")}
-                      </details>
-                    )}
                   </section>
                 )}
               </CourseSetupBlock>
@@ -641,25 +610,34 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
             {screen === "result" && <CourseFinalResult game={game} />}
             {screen === "play" && active && (
               <>
-                {!active.awaitingNext &&
-                  edit === null &&
+                {edit === null &&
                   coursePressure(
                     active.names,
                     active.format,
-                    status.diff,
-                    active.scores.length,
+                    matchStatus({ ...active, scores: active.scores.slice(0, holeIndex) }).diff,
+                    holeIndex,
                     active.holes,
                   ) && (
                     <CoursePressure
                       text={coursePressure(
                         active.names,
                         active.format,
-                        status.diff,
-                        active.scores.length,
+                        matchStatus({ ...active, scores: active.scores.slice(0, holeIndex) }).diff,
+                        holeIndex,
                         active.holes,
                       )!}
                     />
                   )}
+                <div className="py-2 text-center">
+                  <h1 className="course-input-heading text-3xl font-bold leading-tight">
+                    {edit !== null ? `Redigera hål ${edit + 1}` : `Hål ${holeIndex + 1}`}
+                  </h1>
+                  <p
+                    className={`mt-1 text-sm text-slate-600 ${active.awaitingNext && edit === null ? "invisible" : ""}`}
+                  >
+                    Hur många slag blev det?
+                  </p>
+                </div>
                 {active.awaitingNext && last && edit === null && (
                   <CourseHoleResult
                     names={active.names}
@@ -675,9 +653,6 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
                 )}
                 {((!complete && !active.awaitingNext) || edit !== null) && draft && (
                   <>
-                    <h1 className="course-input-heading text-center font-display text-3xl uppercase leading-tight">
-                      {edit !== null ? `Redigera hål ${edit + 1}` : `Hål ${holeIndex + 1}`}
-                    </h1>
                     {active.format === "match" && holeExtra > 0 && (
                       <p className="course-extra rounded-2xl bg-blue-50 p-3 text-center font-semibold text-blue-800">
                         {active.names[active.recipient === "you" ? 0 : 1]} har {holeExtra} extraslag

@@ -84,6 +84,10 @@ export function CoursePressure({ text }: { text: string }) {
 export function CourseCompactStyles() {
   return (
     <style>{`
+.course-readable,.course-readable *{letter-spacing:normal}
+.course-readable .font-display{font-family:var(--font-sans);font-weight:700;text-transform:none}
+.course-readable .uppercase{text-transform:none}
+.course-readable .course-stroke-header h2{font-size:24px}
 @keyframes coursePressurePulse{0%,100%{box-shadow:0 0 0 0 #fbbf2400}50%{box-shadow:0 0 0 3px #fbbf2430}}
 .course-pressure{animation:coursePressurePulse 1.8s ease-in-out 2}
 @media(prefers-reduced-motion:reduce){.course-pressure{animation:none}}
@@ -93,7 +97,7 @@ export function CourseCompactStyles() {
 .course-compact .course-stroke{padding:10px 12px;border-radius:22px}
 .course-compact .course-stroke-header{margin-bottom:6px}
 .course-compact .course-stroke-header h2{font-size:24px;line-height:1.1}
-.course-compact .course-stroke-header p{padding-top:0;font-size:18px}
+.course-compact .course-stroke-header p{padding-top:0;font-size:24px;line-height:1.2}
 .course-compact .course-stroke-grid{gap:5px}
 .course-compact .course-stroke-choice{min-height:42px;padding:2px}
 .course-compact .course-stroke-choice > span:first-child{font-size:23px;line-height:1.1}

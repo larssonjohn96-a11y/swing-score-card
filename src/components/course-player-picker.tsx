@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { listFriendships } from "@/lib/friends-cloud";
@@ -6,12 +6,14 @@ const field =
   "min-h-12 w-full rounded-xl border border-slate-300 bg-white px-3 text-base text-slate-950";
 export function CoursePlayerPicker({
   label,
+  children,
   name,
   userId,
   excludedIds = [],
   onChange,
 }: {
   label: string;
+  children?: ReactNode;
   name: string;
   userId?: string;
   excludedIds?: string[];
@@ -31,10 +33,11 @@ export function CoursePlayerPicker({
     .filter((p) => p.id === userId || !excludedIds.includes(p.id));
   return (
     <div className="space-y-2">
-      <label className="block space-y-2 font-semibold">
-        <span>{label}</span>
+      <label className={children ? "relative block" : "block space-y-2 font-semibold"}>
+        {children || <span>{label}</span>}
         <select
-          className={field}
+          aria-label={label}
+          className={children ? "absolute inset-0 h-full w-full cursor-pointer opacity-0" : field}
           value={userId || (guest ? "guest" : "")}
           onChange={(e) => {
             if (e.target.value === "guest") {
