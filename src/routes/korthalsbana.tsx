@@ -114,47 +114,88 @@ function CourseHub() {
           <span />
         </div>
       </header>
-      <main className="mx-auto max-w-lg space-y-5 px-4 pt-6">
-        <section className="rounded-3xl bg-blue-600 p-6 text-white">
-          <Flag className="mb-4 h-8 w-8" />
+      <main className="mx-auto max-w-lg px-4 pt-5">
+        <section className="relative isolate overflow-hidden rounded-3xl bg-slate-900 px-5 pb-5 pt-8 text-white">
+          <img
+            src="/Approach_shot.png"
+            alt=""
+            className="absolute inset-0 -z-20 h-full w-full object-cover object-center"
+          />
+          <div className="absolute inset-0 -z-10 bg-gradient-to-r from-slate-950/90 via-slate-950/70 to-slate-950/20" />
+          <p className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-white/80">
+            <Flag aria-hidden="true" className="h-4 w-4" /> Er bana. Er match.
+          </p>
           <h1 className="font-display text-4xl leading-tight">Spela på bana</h1>
-          <p className="mt-3 text-lg">Tävla på valfria golfhål.</p>
-          <p className="mt-2 text-blue-100">
-            Korthålsbana eller fulla hål. Välj hur ni vill tävla – inget par eller banregister
-            behövs.
+          <p className="mt-2 max-w-[28ch] text-sm leading-relaxed text-white/90">
+            Korthål eller vanliga golfhål. Tävla mot varandra – ni väljer hålen.
           </p>
         </section>
-        {(
-          [
-            ["duel", "1 mot 1", "Utmana en vän eller bot. Matchspel eller slagspel."],
-            ["group", "Flera spelare", "2–6 spelare. Lägst antal slag vinner."],
-            [
-              "tournament",
-              "Turnering",
-              "3–16 spelare. Utslagsbracket eller alla möter alla följt av slutspel.",
-            ],
-          ] as const
-        ).map(([id, title, description]) => (
-          <button
-            key={id}
-            onClick={() => setMode(id)}
-            className={`${card} flex w-full items-center gap-4 text-left`}
-          >
-            <span className="min-w-0 flex-1">
-              <span className="block font-display text-3xl">{title}</span>
-              <span className="mt-2 block text-sm text-slate-600">{description}</span>
-              {pending.includes(id) && (
-                <span className="mt-2 block text-sm font-bold text-blue-700">
-                  Pågående spel · fortsätt
+
+        <section aria-labelledby="course-mode-title" className="mt-6">
+          <h2 id="course-mode-title" className="mb-3 text-center font-display text-2xl">
+            Hur vill ni spela?
+          </h2>
+          <div className="space-y-3">
+            {(
+              [
+                ["duel", "1 mot 1", "Vän eller bot", "Matchspel eller slagspel."],
+                ["group", "Flera spelare", "2–6 spelare", "Samla gänget. Lägst antal slag vinner."],
+                [
+                  "tournament",
+                  "Turnering",
+                  "3–16 spelare",
+                  "Utslagning eller alla möter alla + slutspel.",
+                ],
+              ] as const
+            ).map(([id, title, detail, description]) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setMode(id)}
+                className="group flex w-full items-center gap-3 rounded-3xl border border-slate-200 bg-white p-4 text-left shadow-sm transition-colors hover:border-blue-400 hover:bg-blue-50/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 sm:gap-4"
+              >
+                <span
+                  aria-hidden="true"
+                  className={`relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl ${id === "duel" ? "bg-blue-600 text-white" : id === "group" ? "bg-blue-50 text-blue-600" : "bg-amber-50 text-amber-600"}`}
+                >
+                  {id === "duel" ? (
+                    <>
+                      <span className="absolute inset-y-0 right-0 w-1/2 bg-red-600" />
+                      <span className="relative font-display text-2xl italic">VS</span>
+                    </>
+                  ) : id === "group" ? (
+                    <Users className="h-7 w-7" />
+                  ) : (
+                    <Trophy className="h-7 w-7" />
+                  )}
                 </span>
-              )}
-            </span>
-            <ArrowRight className="h-5 w-5 shrink-0 text-blue-600" />
-          </button>
-        ))}
-        <p className="text-center text-sm text-slate-500">
-          Välj samma spelläge för att återuppta ett pågående spel. Resultaten sparas bara medan ni
-          spelar.
+                <span className="min-w-0 flex-1">
+                  <span className="block font-display text-2xl leading-tight">{title}</span>
+                  <span className="mt-1 block text-xs font-semibold text-slate-700">{detail}</span>
+                  <span className="mt-1 block text-xs leading-relaxed text-slate-500">
+                    {description}
+                  </span>
+                  {pending.includes(id) && (
+                    <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2 py-1 text-xs font-bold text-blue-700">
+                      <span className="h-1.5 w-1.5 rounded-full bg-blue-600" /> Fortsätt pågående
+                      spel
+                    </span>
+                  )}
+                </span>
+                <span
+                  aria-hidden="true"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-50 text-blue-600 group-hover:bg-blue-100"
+                >
+                  <ArrowRight className="h-4 w-4" />
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
+        <p className="mx-auto mt-5 max-w-[34ch] text-center text-xs leading-relaxed text-slate-500">
+          Välj hål, spela och registrera slagen här.
+          <br />
+          Ingen bana att lägga in. Bara spelet här och nu.
         </p>
       </main>
     </div>
