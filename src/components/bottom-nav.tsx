@@ -144,7 +144,7 @@ export function BottomNav() {
     </nav>
 
     <Sheet open={playOpen} onOpenChange={setPlayOpen}>
-      <SheetContent side="bottom" className="rounded-t-[34px] border-white/80 bg-background/96 px-5 pb-[calc(88px+env(safe-area-inset-bottom))] pt-5 backdrop-blur-[30px]">
+      <SheetContent side="bottom" className="max-h-[90dvh] overflow-y-auto rounded-t-[34px] border-white/80 bg-background/96 px-5 pb-[calc(88px+env(safe-area-inset-bottom))] pt-5 backdrop-blur-[30px]">
         <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-slate-400/55" aria-hidden="true" />
         <SheetHeader className="pr-10"><SheetTitle className="text-left font-display text-[34px] leading-none">Spela</SheetTitle><p className="text-left text-sm text-muted-foreground">Hur vill du spela?</p></SheetHeader>
         <div className="mt-5 space-y-3">
@@ -158,6 +158,7 @@ export function BottomNav() {
             <span className="absolute inset-x-0 top-0 h-[125px] bg-gradient-to-t from-white via-white/10 to-transparent" />
             <span className="absolute inset-x-0 bottom-0 p-4"><span className="block font-display text-[25px] leading-none">Spela själv</span><span className="mt-1.5 block text-xs text-muted-foreground">Välj kategori och spela.</span><ChevronRight className="absolute bottom-5 right-4 h-4 w-4 text-emerald-700" /></span>
           </Link>
+          <Link to="/korthalsbana" onClick={() => setPlayOpen(false)} className="flex min-h-20 items-center justify-between gap-4 rounded-[24px] border border-blue-200 bg-blue-50 p-4 text-blue-950"><span><span className="block font-display text-2xl">Spela korthålsbana</span><span className="mt-1 block text-sm text-blue-700">Själv, mot vän eller bot · spara ditt banrekord</span></span><ChevronRight className="h-5 w-5 shrink-0" /></Link>
         </div>
       </SheetContent>
     </Sheet>
