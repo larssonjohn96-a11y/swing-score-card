@@ -64,7 +64,7 @@ export function CourseStrokeInput({
             <option value="" disabled>
               Välj antal slag
             </option>
-            {Array.from({ length: 23 }, (_, i) => i + 8).map((n) => (
+            {Array.from({ length: 5 }, (_, i) => i + 8).map((n) => (
               <option key={n} value={n}>
                 {n} slag
               </option>
@@ -82,6 +82,8 @@ export function CourseMatchBar({
   results,
   margin,
   format,
+  strokeTotals,
+  netTotals = false,
 }: {
   names: [string, string];
   holes: number;
@@ -89,6 +91,8 @@ export function CourseMatchBar({
   results: number[];
   margin: number;
   format: "match" | "stroke";
+  strokeTotals?: [number, number];
+  netTotals?: boolean;
 }) {
   const leader = margin > 0 ? 0 : margin < 0 ? 1 : null;
   return (
@@ -104,6 +108,14 @@ export function CourseMatchBar({
           className={`flex min-w-0 flex-col justify-center py-3 pl-3 pr-5 ${leader === 0 ? "bg-blue-600 text-white" : "bg-blue-50 text-blue-800"}`}
         >
           <p className="break-words text-xs font-black uppercase leading-tight">{names[0]}</p>
+          {format === "stroke" && strokeTotals && (
+            <p className="mt-1 text-sm font-bold">
+              {strokeTotals[0]}{" "}
+              <span className="text-[10px] font-semibold">
+                {netTotals ? "slag netto" : "slag totalt"}
+              </span>
+            </p>
+          )}
           {leader === 0 && (
             <p className="mt-1 text-[9px] font-bold uppercase tracking-wider">Leder</p>
           )}
@@ -131,6 +143,14 @@ export function CourseMatchBar({
           className={`flex min-w-0 flex-col justify-center py-3 pl-5 pr-3 text-right ${leader === 1 ? "bg-red-600 text-white" : "bg-red-50 text-red-800"}`}
         >
           <p className="break-words text-xs font-black uppercase leading-tight">{names[1]}</p>
+          {format === "stroke" && strokeTotals && (
+            <p className="mt-1 text-sm font-bold">
+              {strokeTotals[1]}{" "}
+              <span className="text-[10px] font-semibold">
+                {netTotals ? "slag netto" : "slag totalt"}
+              </span>
+            </p>
+          )}
           {leader === 1 && (
             <p className="mt-1 text-[9px] font-bold uppercase tracking-wider">Leder</p>
           )}

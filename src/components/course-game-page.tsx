@@ -18,7 +18,7 @@ import { CourseHoleResult, CourseMatchBar, CourseStrokeInput } from "@/component
 import { allowanceOptions, allowanceLabel, normalizeAllowance } from "@/lib/course-allowance";
 import { CourseOpponentCards } from "@/components/course-opponent-cards";
 import { useEffect, useState } from "react";
-import { ArrowLeft, ArrowRight, Flag, Trophy, Bot, Users } from "lucide-react";
+import { ArrowLeft, ArrowRight, Flag, Trophy, Bot, Users, RotateCcw, Home } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 import {
@@ -47,7 +47,7 @@ const primary =
   "flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 py-3 text-base font-bold leading-snug text-white disabled:opacity-40";
 const card = "rounded-3xl border border-slate-200 bg-white p-5 shadow-sm";
 const field =
-  "min-h-12 w-full rounded-xl border border-slate-300 bg-white px-3 text-base text-slate-950";
+  "course-native-select min-h-14 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-950";
 const bots = [
   { name: "Emma", level: "Lätt" },
   { name: "Alex", level: "Medel" },
@@ -131,7 +131,8 @@ export function CourseGamePage({
     setActive(null);
     setEdit(null);
     try {
-      const restored = parseGame(localStorage.getItem(storageKey));
+      if (hasInitialOpponent) localStorage.removeItem(storageKey);
+      const restored = hasInitialOpponent ? null : parseGame(localStorage.getItem(storageKey));
       setActive(restored);
       if (restored && !/^(du|you)$/i.test(restored.names[0])) setEnteredName(restored.names[0]);
       if (restored && !hasInitialOpponent) {
@@ -406,9 +407,6 @@ export function CourseGamePage({
           <>
             {initialOpponent ? (
               <div className="text-center">
-                <p className="text-sm text-slate-500">
-                  {names[0]} mot {names[1]}
-                </p>
                 <h1 className="mt-2 text-2xl font-bold">Spela på bana</h1>
                 <p className="mt-1 text-sm text-slate-600">
                   Korthål eller vanliga hål – ni väljer var.
@@ -579,6 +577,8 @@ export function CourseGamePage({
             {screen === "play" && (
               <>
                 <CourseMatchBar
+                  strokeTotals={game.scores.length ? totals(game, true) : [0, 0]}
+                  netTotals={game.allowance > 0}
                   names={game.names}
                   holes={game.holes}
                   current={edit ?? game.scores.length - (game.awaitingNext ? 1 : 0)}
@@ -605,6 +605,7 @@ export function CourseGamePage({
                     active.holes,
                   ) && (
                     <CoursePressure
+                      hidden={!!active.awaitingNext}
                       text={coursePressure(
                         active.names,
                         active.format,
@@ -754,20 +755,23 @@ export function CourseGamePage({
             )}
             {screen === "result" && (winner >= 0 || tieClosed) && (
               <div className="space-y-3">
-                <button className={courseSetupAction} onClick={rematch}>
-                  Rematch <ArrowRight className="h-5 w-5" />
+                <button
+                  className="flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 text-lg font-bold text-white"
+                  onClick={rematch}
+                >
+                  <RotateCcw className="h-5 w-5" /> Rematch
                 </button>
                 <button
-                  className="min-h-12 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 font-bold"
+                  className="flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-4 text-lg font-bold"
                   onClick={onBack}
                 >
-                  Match i annan kategori
+                  <Trophy className="h-5 w-5" /> Match i annan kategori
                 </button>
                 <Link
                   to="/"
-                  className="flex min-h-12 items-center justify-center text-sm font-semibold text-slate-500"
+                  className="flex min-h-14 items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white py-4 text-lg font-bold text-slate-900"
                 >
-                  Hem
+                  <Home className="h-5 w-5" /> Hem
                 </Link>
               </div>
             )}

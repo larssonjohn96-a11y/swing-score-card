@@ -41,7 +41,7 @@ import {
 } from "@/components/ui/alert-dialog";
 const card = "rounded-3xl border border-slate-200 bg-white p-5 shadow-sm";
 const field =
-  "min-h-12 w-full rounded-xl border border-slate-300 bg-white px-3 text-base text-slate-950";
+  "course-native-select min-h-14 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-950";
 const primary =
   "flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 py-3 font-bold text-white disabled:opacity-40";
 function Option({
@@ -565,6 +565,19 @@ export function CourseCompetition({
                 </p>
                 {current && (
                   <CourseMatchBar
+                    strokeTotals={
+                      scoreCount
+                        ? [
+                            current.scores.reduce((sum, s) => sum + s[0], 0) -
+                              game.players[current.a].strokes,
+                            current.scores.reduce((sum, s) => sum + s[1], 0) -
+                              game.players[current.b!].strokes,
+                          ]
+                        : [0, 0]
+                    }
+                    netTotals={
+                      game.players[current.a].strokes > 0 || game.players[current.b!].strokes > 0
+                    }
                     names={[game.players[current.a].name, game.players[current.b!].name]}
                     holes={game.holes}
                     current={scoreIndex}
@@ -588,6 +601,7 @@ export function CourseCompetition({
                     game.holes,
                   ) && (
                     <CoursePressure
+                      hidden={!!game.awaitingNext}
                       text={coursePressure(
                         [game.players[current.a].name, game.players[current.b!].name],
                         game.format,

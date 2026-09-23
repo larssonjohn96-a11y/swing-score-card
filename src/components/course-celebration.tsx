@@ -58,10 +58,12 @@ export function CourseCelebration({
     document.body,
   );
 }
-export function CoursePressure({ text }: { text: string }) {
+export function CoursePressure({ text, hidden = false }: { text: string; hidden?: boolean }) {
   return (
     <aside
-      role="status"
+      role={hidden ? undefined : "status"}
+      aria-hidden={hidden || undefined}
+      style={hidden ? { visibility: "hidden" } : undefined}
       className="course-pressure rounded-2xl border border-yellow-400 bg-gradient-to-r from-yellow-300 to-amber-300 px-3 py-2 text-center text-slate-950"
     >
       <p className="text-[10px] font-black uppercase tracking-[.16em]">Pressläge · Nu gäller det</p>
@@ -73,6 +75,7 @@ export function CourseCompactStyles() {
   return (
     <style>{`
 .course-readable,.course-readable *{letter-spacing:normal}
+.course-readable select.course-native-select{appearance:none;-webkit-appearance:none;display:block;height:56px!important;min-height:56px!important;border-radius:12px!important;padding:12px 40px 12px 16px!important;font-size:16px!important;line-height:24px!important;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2364758b' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
 .course-readable .font-display{font-family:var(--font-sans);font-weight:700;text-transform:none}
 .course-readable .uppercase{text-transform:none}
 .course-readable .course-stroke-header h2{font-size:24px}

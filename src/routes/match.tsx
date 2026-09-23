@@ -218,7 +218,6 @@ function MatchPlayPage() {
   const [approachLateralDirection, setApproachLateralDirection] = useState<"left" | "right">("left");
   const [approachLateral, setApproachLateral] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [localMatchReady, setLocalMatchReady] = useState(false);
 
   const liveStepRef = useRef<Step>(step);
   useEffect(() => { liveStepRef.current = step; }, [step]);
@@ -321,66 +320,8 @@ function MatchPlayPage() {
     return () => { cancelled = true; unsubscribe(); };
   }, [user]);
 
-  // Restore an interrupted local match after an app reload / iOS process restart.
-  useEffect(() => {
-    const hasCloudSession = new URLSearchParams(window.location.search).has("session");
-    if (hasCloudSession) { setLocalMatchReady(true); return; }
-    try {
-      const raw = window.localStorage.getItem(LOCAL_MATCH_KEY);
-      if (!raw) { setLocalMatchReady(true); return; }
-      const saved = JSON.parse(raw) as any;
-      if (!saved || saved.version !== 1 || (saved.step !== "play" && saved.step !== "sudden-death")) {
-        window.localStorage.removeItem(LOCAL_MATCH_KEY);
-        setLocalMatchReady(true);
-        return;
-      }
-      setMode(saved.mode ?? "singles");
-      setCategory(saved.category ?? null);
-      setMatchType(saved.matchType ?? null);
-      setScoringMode(saved.scoringMode ?? "match");
-      setMatchLength(saved.matchLength ?? 5);
-      const restoredHoles = Array.isArray(saved.holes) ? saved.holes.slice(0, saved.matchLength ?? 5) : [];
-      if (!restoredHoles.length || !restoredHoles.every((hole: any) => hole && hole.challenge && typeof hole.challenge.title === "string")) {
-        window.localStorage.removeItem(LOCAL_MATCH_KEY);
-        setLocalMatchReady(true);
-        return;
-      }
-      setHoles(restoredHoles);
-      setHoleIndex(Math.min(Math.max(0, Number.isFinite(saved.holeIndex) ? saved.holeIndex : 0), restoredHoles.length - 1));
-      setFinalText(saved.finalText ?? "");
-      setSuddenDeathRound(saved.suddenDeathRound ?? 1);
-      setSdMessage(saved.sdMessage ?? "");
-      setBlueStrokes(saved.blueStrokes ?? 1);
-      setRedStrokes(saved.redStrokes ?? 1);
-      setBlueStrokesSelected(Boolean(saved.blueStrokesSelected));
-      setRedStrokesSelected(Boolean(saved.redStrokesSelected));
-      setBluePoints(saved.bluePoints ?? null);
-      setRedPoints(saved.redPoints ?? null);
-      const restoredSpeedBaseline = saved.speedBaseline ?? (saved.matchType === "driver" ? 140 : 110);
-      setSpeedBaseline(restoredSpeedBaseline);
-      setBlueSpeed(saved.blueSpeed ?? restoredSpeedBaseline);
-      setRedSpeed(saved.redSpeed ?? restoredSpeedBaseline);
-      setBlueSpeedSelected(Boolean(saved.blueSpeedSelected));
-      setRedSpeedSelected(Boolean(saved.redSpeedSelected));
-      setShortGameLies(Array.isArray(saved.shortGameLies) ? saved.shortGameLies : []);
-      setApproachTurn(saved.approachTurn === "red" ? "red" : "blue");
-      setApproachLong(saved.approachLong ?? 0);
-      setApproachLateralDirection(saved.approachLateralDirection === "right" ? "right" : "left");
-      setApproachLateral(saved.approachLateral ?? 0);
-      setSelectedFriendIds(Array.isArray(saved.selectedFriendIds) ? saved.selectedFriendIds : []);
-      setGuests(Array.isArray(saved.guests) ? saved.guests : []);
-      setBlueMateId(saved.blueMateId ?? null);
-      if (saved.selfName && !/^(du|you)$/i.test(saved.selfName)) setSelfName(saved.selfName);
-      if (saved.matchRunId) setMatchRunId(saved.matchRunId);
-      setSessionBlueTeam(Array.isArray(saved.blueTeam) ? saved.blueTeam : null);
-      setSessionRedTeam(Array.isArray(saved.redTeam) ? saved.redTeam : null);
-      setStep(saved.step);
-    } catch {
-      window.localStorage.removeItem(LOCAL_MATCH_KEY);
-    } finally {
-      setLocalMatchReady(true);
-    }
-  }, []);
+  // A new visit always starts in setup. Cloud invitations remain explicit.
+  useEffect(() => { try { window.localStorage.removeItem(LOCAL_MATCH_KEY); } catch {} }, []);
 
   const selfPlayer: Player = { id: user?.id ?? "self", name: selfName, avatarUrl: selfAvatar, isSelf: true };
   const selectedFriends: Player[] = friends.filter((f) => selectedFriendIds.includes(f.other.id)).map((f) => ({ id: f.other.id, name: f.other.displayName, avatarUrl: f.other.avatarUrl }));
@@ -523,25 +464,6 @@ function MatchPlayPage() {
     return () => window.clearTimeout(timer);
   }, [matchSessionId, matchSessionHostId, user?.id, step, holes, holeIndex, finalText, suddenDeathRound, sdBlue, sdRed, sdBlueSunk, sdRedSunk, sdMessage, mode, category, matchType, scoringMode, matchLength, blueLabel, redLabel, score.played]);
 
-  // Persist every meaningful in-progress change so leaving the app never resets the match.
-  useEffect(() => {
-    if (!localMatchReady) return;
-    if (step === "result") {
-      window.localStorage.removeItem(LOCAL_MATCH_KEY);
-      return;
-    }
-    if (step !== "play" && step !== "sudden-death") return;
-    const payload = {
-      version: 1, savedAt: Date.now(), step, mode, category, matchType, scoringMode, matchLength, holes, holeIndex, finalText,
-      suddenDeathRound, sdMessage, blueStrokes, redStrokes, blueStrokesSelected, redStrokesSelected, bluePoints, redPoints,
-      blueSpeed, redSpeed, blueSpeedSelected, redSpeedSelected, speedBaseline,
-      shortGameLies, approachTurn, approachLong, approachLateralDirection, approachLateral,
-      selectedFriendIds, guests, blueMateId, selfName, matchRunId,
-      blueTeam: blueTeam.map(({ id, name, avatarUrl }) => ({ id, name, avatarUrl })),
-      redTeam: redTeam.map(({ id, name, avatarUrl }) => ({ id, name, avatarUrl })),
-    };
-    try { window.localStorage.setItem(LOCAL_MATCH_KEY, JSON.stringify(payload)); } catch { /* storage may be unavailable */ }
-  }, [localMatchReady, matchSessionId, step, mode, category, matchType, scoringMode, matchLength, holes, holeIndex, finalText, suddenDeathRound, sdMessage, blueStrokes, redStrokes, blueStrokesSelected, redStrokesSelected, bluePoints, redPoints, blueSpeed, redSpeed, blueSpeedSelected, redSpeedSelected, speedBaseline, shortGameLies, approachTurn, approachLong, approachLateralDirection, approachLateral, selectedFriendIds, guests, blueMateId, selfName, matchRunId, blueLabel, redLabel]);
 
   function chooseMode(next: MatchMode) { setMode(next); setSelectedFriendIds([]); setGuests([]); setGuestName(""); setBlueMateId(null); }
   function toggleFriend(id: string) {
@@ -850,7 +772,7 @@ function MatchPlayPage() {
         <h1 className="mt-1 font-display text-4xl">Vad ska ni tävla i?</h1>
       </section>
       <h2 className="mt-6 text-sm font-bold text-slate-600">Tävla i ett golfmoment</h2>
-      <div className="mt-2 grid grid-cols-2 gap-3">{CATEGORIES.map((i) => { const active = !courseSelected && category === i.id; return <button key={i.id} onClick={() => { setCourseSelected(false); setCategory(i.id); setScoringMode("match"); }} className={`relative flex min-h-32 w-full items-center rounded-[26px] border p-4 text-left transition active:scale-[.985] ${glass} ${active ? "ring-2 ring-blue-500/45 border-blue-400/80" : ""}`}>
+      <div className="mt-2 grid grid-cols-2 gap-3">{CATEGORIES.map((i) => { const active = !courseSelected && category === i.id; return <button key={i.id} onClick={() => { setCourseSelected(false); setCategory(i.id); setScoringMode("match"); }} className={`relative flex min-h-[108px] w-full items-center rounded-[26px] border p-4 text-left transition active:scale-[.985] ${glass} ${active ? "ring-2 ring-blue-500/45 border-blue-400/80" : ""}`}>
         {active ? <SelectedCheck /> : null}
         <span className="font-display text-[27px] leading-[.95] text-slate-950">{i.title}</span>
       </button>; })}</div>
