@@ -1,3 +1,4 @@
+import { CourseSetupHeader, CourseSetupBlock, CourseHoleChoices } from "@/components/course-setup";
 import {
   CourseCelebration,
   CoursePressure,
@@ -62,7 +63,7 @@ function Choice({
       type="button"
       aria-pressed={selected}
       onClick={onClick}
-      className={`min-h-14 rounded-2xl border-2 px-3 py-3 font-semibold ${selected ? "border-blue-600 bg-blue-50 text-blue-700" : "border-slate-200 bg-white text-slate-700"}`}
+      className={`min-h-16 rounded-2xl border-2 px-3 py-3 font-display text-xl leading-tight ${selected ? "border-blue-600 bg-blue-50 text-blue-700" : "border-slate-200 bg-white text-slate-700"}`}
     >
       {children}
     </button>
@@ -181,7 +182,10 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
     setActive(null);
     setEdit(null);
     try {
-      setActive(parseGame(localStorage.getItem(storageKey)));
+      const restored = parseGame(localStorage.getItem(storageKey));
+      setActive(restored);
+      setStep(0);
+      setScreen(restored ? "home" : "setup");
       setReady(true);
       setError("");
     } catch {
@@ -289,9 +293,6 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
             ? 1
             : -1
       : -1;
-  const title = ["Vem spelar du mot?", "Hur vill ni tävla?", "Hur många hål?", "Slagfördelning"][
-    step
-  ];
   return (
     <div
       className={`${screen === "play" ? "course-compact" : ""} min-h-dvh bg-[#fcfdf9] pb-10 text-slate-950`}
@@ -319,6 +320,7 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
               aria-label="Tillbaka"
               onClick={() => {
                 if (screen === "setup" && step > 0) setStep(step - 1);
+                else if (screen === "setup") onBack();
                 else {
                   setEdit(null);
                   setScreen("home");
@@ -340,28 +342,12 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
             {error}
           </p>
         )}
-        {screen === "home" && (
+        {screen === "home" && ready && (
           <>
-            <section className="rounded-3xl bg-blue-600 p-6 text-white">
-              <Flag className="mb-4 h-8 w-8" />
-              <h1 className="font-display text-4xl leading-tight">Spela på bana</h1>
-              <p className="mt-3 text-lg">Utmana en vän eller bot på valfria golfhål.</p>
-              <p className="mt-3 text-blue-100">
-                Korthålsbana eller fulla hål – ni väljer var. Räkna slagen och tävla mot varandra.
-              </p>
-            </section>
-            <section className={card}>
-              <h2 className="text-lg font-bold">Så fungerar det</h2>
-              <ol className="mt-3 list-decimal space-y-2 pl-5 text-slate-600">
-                <li>Välj motståndare, spelform och antal hål.</li>
-                <li>Spela scratch eller ge någon extraslag.</li>
-                <li>Registrera era slag efter varje hål. Appen räknar ut vem som vinner.</li>
-              </ol>
-              <p className="mt-4 text-sm text-slate-500">
-                Inget par eller banregister. Bara ert spel här och nu. Mot en vän använder ni samma
-                telefon. Mot bot väljer du ungefärlig hållängd.
-              </p>
-            </section>
+            <CourseSetupHeader step={0} title={active ? "Fortsätt matchen" : "Spela igen"} />
+            <p className="text-slate-600">
+              {active ? `${active.names[0]} mot ${active.names[1]}` : "Redo för nästa match?"}
+            </p>
             {active ? (
               <>
                 <button className={primary} onClick={() => setScreen("play")}>
@@ -388,10 +374,14 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
         )}
         {screen === "setup" && (
           <>
-            <p className="text-sm font-bold uppercase tracking-widest text-slate-500">
-              Steg {step + 1} av 4
-            </p>
-            <h1 className="font-display text-4xl leading-tight">{title}</h1>
+            <CourseSetupHeader step={step} title={step === 0 ? "Vem möter du?" : "Gör er redo"} />
+            {step === 1 && (
+              <div className="grid grid-cols-[1fr_40px_1fr] items-center overflow-hidden rounded-2xl border border-slate-200 text-center">
+                <p className="break-words bg-blue-50 p-3 font-bold text-blue-700">{names[0]}</p>
+                <span className="text-xs font-black text-slate-400">VS</span>
+                <p className="break-words bg-red-50 p-3 font-bold text-red-700">{names[1]}</p>
+              </div>
+            )}
             {step === 0 && (
               <>
                 <div className="grid grid-cols-2 gap-3">
@@ -427,48 +417,26 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
               </>
             )}
             {step === 1 && (
-              <div className="grid gap-3">
-                <Choice selected={format === "match"} onClick={() => setFormat("match")}>
-                  Matchspel
-                  <span className="mt-1 block text-sm font-normal">
-                    Lägst antal slag vinner hålet. Flest vunna hål vinner.
-                  </span>
-                </Choice>
-                <Choice selected={format === "stroke"} onClick={() => setFormat("stroke")}>
-                  Slagspel
-                  <span className="mt-1 block text-sm font-normal">
-                    Spela alla hål. Lägst totalt antal slag vinner.
-                  </span>
-                </Choice>
-              </div>
-            )}
-            {step === 2 && (
-              <>
-                <div className="grid grid-cols-3 gap-3">
-                  {[3, 6, 9].map((n) => (
-                    <Choice key={n} selected={holes === n} onClick={() => setHoles(n)}>
-                      {n} hål
-                    </Choice>
-                  ))}
+              <CourseSetupBlock title="Spelform">
+                <div className="grid grid-cols-2 gap-2">
+                  <Choice selected={format === "match"} onClick={() => setFormat("match")}>
+                    Matchspel
+                    <span className="mt-1 block text-sm font-normal">Vinn flest hål.</span>
+                  </Choice>
+                  <Choice selected={format === "stroke"} onClick={() => setFormat("stroke")}>
+                    Slagspel
+                    <span className="mt-1 block text-sm font-normal">Lägst total vinner.</span>
+                  </Choice>
                 </div>
-                <label className="block space-y-2 font-semibold">
-                  <span>Valfritt antal</span>
-                  <select
-                    className={field}
-                    value={holes}
-                    onChange={(e) => setHoles(Number(e.target.value))}
-                  >
-                    {Array.from({ length: 18 }, (_, i) => (
-                      <option key={i} value={i + 1}>
-                        {i + 1} hål
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </>
+              </CourseSetupBlock>
             )}
-            {step === 3 && (
-              <>
+            {step === 1 && (
+              <CourseSetupBlock title="Antal hål">
+                <CourseHoleChoices value={holes} onChange={setHoles} />
+              </CourseSetupBlock>
+            )}
+            {step === 1 && (
+              <CourseSetupBlock title="Extraslag">
                 <div className="grid grid-cols-2 gap-3">
                   <Choice selected={!giveStrokes} onClick={() => setGiveStrokes(false)}>
                     Scratch<span className="block text-sm font-normal">Inga extraslag</span>
@@ -512,34 +480,44 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
                     </label>
                   </section>
                 )}
-                <section className="rounded-2xl bg-blue-50 p-4 text-blue-950">
-                  <p className="font-bold">
-                    {holes} hål · {format === "match" ? "Matchspel" : "Slagspel"}
-                  </p>
-                  <p className="mt-2">
-                    {!extra
-                      ? "Scratch – ni spelar utan extraslag."
-                      : `${names[recipient === "you" ? 0 : 1]} får totalt ${extra} extraslag.`}
-                  </p>
-                  {extra > 0 && (
-                    <p className="mt-2 text-sm">
-                      {format === "stroke"
-                        ? `${extra} slag dras av från slutresultatet.`
-                        : allocation
-                            .map((n, i) => (n ? `Hål ${i + 1}: ${n} extraslag` : null))
-                            .filter(Boolean)
-                            .join(" · ")}
+                {giveStrokes && (
+                  <section className="rounded-2xl bg-blue-50 p-3 text-blue-950">
+                    <p className="font-bold">
+                      {holes} hål · {format === "match" ? "Matchspel" : "Slagspel"}
                     </p>
-                  )}
-                </section>
-              </>
+                    <p className="mt-2">
+                      {!extra
+                        ? "Scratch – ni spelar utan extraslag."
+                        : `${names[recipient === "you" ? 0 : 1]} får totalt ${extra} extraslag.`}
+                    </p>
+                    {extra > 0 && (
+                      <details className="mt-2 text-sm">
+                        <summary className="cursor-pointer font-semibold">
+                          Visa slagfördelning
+                        </summary>
+                        {format === "stroke"
+                          ? `${extra} slag dras av från slutresultatet.`
+                          : allocation
+                              .map((n, i) => (n ? `Hål ${i + 1}: ${n} extraslag` : null))
+                              .filter(Boolean)
+                              .join(" · ")}
+                      </details>
+                    )}
+                  </section>
+                )}
+              </CourseSetupBlock>
             )}
             <button
               className={primary}
-              disabled={mode === "friend" && !friend.trim()}
-              onClick={() => (step < 3 ? setStep(step + 1) : start())}
+              disabled={!ready || !!active || (mode === "friend" && !friend.trim())}
+              onClick={() => {
+                if (step === 0) {
+                  setStep(1);
+                  window.scrollTo({ top: 0 });
+                } else start();
+              }}
             >
-              {step === 3 ? "Starta spelet" : "Nästa"}
+              {step === 1 ? "Starta matchen" : "Välj upplägg"}
               <ArrowRight className="h-5 w-5" />
             </button>
           </>

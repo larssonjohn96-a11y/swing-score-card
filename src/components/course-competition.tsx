@@ -1,3 +1,4 @@
+import { CourseSetupHeader, CourseSetupBlock, CourseHoleChoices } from "@/components/course-setup";
 import {
   CourseCelebration,
   CoursePressure,
@@ -51,7 +52,7 @@ function Option({
     <button
       aria-pressed={selected}
       onClick={onClick}
-      className={`min-h-14 rounded-2xl border-2 p-3 text-left ${selected ? "border-blue-600 bg-blue-50 text-blue-800" : "border-slate-200 bg-white"}`}
+      className={`min-h-16 rounded-2xl border-2 p-3 text-center ${selected ? "border-blue-600 bg-blue-50 text-blue-800" : "border-slate-200 bg-white"}`}
     >
       {children}
     </button>
@@ -297,18 +298,7 @@ export function CourseCompetition({
         {!ready && !error && <p>Laddar…</p>}
         {ready && !game && (
           <>
-            <p className="text-sm font-bold uppercase tracking-widest text-slate-500">
-              Steg {step + 1} av 3
-            </p>
-            <h1 className="font-display text-4xl leading-tight">
-              {step === 0
-                ? kind === "group"
-                  ? "Vilka är med?"
-                  : "Skapa turnering"
-                : step === 1
-                  ? "Välj spelupplägg"
-                  : "Slagfördelning"}
-            </h1>
+            <CourseSetupHeader step={step} title={step === 0 ? "Vilka är med?" : "Gör er redo"} />
             {step === 0 && (
               <>
                 {kind === "tournament" && (
@@ -406,20 +396,11 @@ export function CourseCompetition({
                     Slagspel – lägst totalt antal slag efter eventuellt slagavdrag vinner.
                   </p>
                 )}
-                <label className="block space-y-2 font-semibold">
-                  <span>Antal hål{kind === "tournament" ? " per match" : ""}</span>
-                  <select
-                    className={field}
-                    value={holes}
-                    onChange={(e) => setHoles(Number(e.target.value))}
-                  >
-                    {Array.from({ length: 18 }, (_, i) => i + 1).map((n) => (
-                      <option key={n} value={n}>
-                        {n} hål
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                <CourseSetupBlock
+                  title={kind === "tournament" ? "Antal hål per match" : "Antal hål"}
+                >
+                  <CourseHoleChoices value={holes} onChange={setHoles} />
+                </CourseSetupBlock>
                 {kind === "tournament" && (
                   <div className="rounded-2xl bg-blue-50 p-4 text-blue-950">
                     <p className="font-bold">
@@ -428,18 +409,21 @@ export function CourseCompetition({
                         : count - 1}{" "}
                       matcher totalt · {holes} hål per match
                     </p>
-                    <p className="mt-2 text-sm">
+                    <details className="mt-2 text-sm">
+                      <summary className="cursor-pointer font-semibold">
+                        Så avgörs turneringen
+                      </summary>
                       {system === "league"
                         ? `${count - 1} matcher per person före slutspel. Vinst ger 2 poäng, oavgjort 1. Därefter resultatdifferens och lottad placering vid lika.`
                         : "Alla lottas in i bracketen. Vid ojämnt antal platser får några frirond."}{" "}
                       Lika i en utslagsmatch avgörs genom särspel.
-                    </p>
+                    </details>
                   </div>
                 )}
               </>
             )}
-            {step === 2 && (
-              <>
+            {step === 1 && (
+              <CourseSetupBlock title="Extraslag">
                 <div className="grid grid-cols-2 gap-3">
                   <Option selected={!give} onClick={() => setGive(false)}>
                     Scratch · inga extraslag
@@ -485,14 +469,23 @@ export function CourseCompetition({
                   {count} spelare · {holes} hål{kind === "tournament" ? " per match" : ""} ·{" "}
                   {kind === "group" || format === "stroke" ? "Slagspel" : "Matchspel"}
                 </p>
-              </>
+              </CourseSetupBlock>
             )}
             <button
               className={primary}
               disabled={!validNames}
-              onClick={() => (step < 2 ? setStep(step + 1) : start())}
+              onClick={() => {
+                if (step === 0) {
+                  setStep(1);
+                  window.scrollTo({ top: 0 });
+                } else start();
+              }}
             >
-              {step < 2 ? "Nästa" : kind === "tournament" ? "Lotta och starta" : "Starta spelet"}
+              {step === 0
+                ? "Välj upplägg"
+                : kind === "tournament"
+                  ? "Lotta och starta"
+                  : "Starta spelet"}
               <ArrowRight className="h-5 w-5" />
             </button>
           </>
