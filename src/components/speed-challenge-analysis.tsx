@@ -64,9 +64,13 @@ function AnimatedDistance({ value, delay = 0 }: { value: number; delay?: number 
 export function SpeedChallengeAnalysis({
   round,
   unit = "mph",
+  onRestart,
+  onBackToStart,
 }: {
   round: CourseRound;
   unit?: SpeedUnit;
+  onRestart: () => void;
+  onBackToStart: () => void;
 }) {
   const { canViewDetailedBreakdowns } = useSubscription();
   const [open, setOpen] = useState(false);
@@ -90,7 +94,7 @@ export function SpeedChallengeAnalysis({
       setRevealed(true);
       return;
     }
-    if (story === 3) setOpen(false);
+    if (story === 3) return;
     else setStory((s) => Math.min(3, s + 1));
   }
   return (
@@ -267,30 +271,54 @@ export function SpeedChallengeAnalysis({
                 </section>
               )}
             </div>
-            <nav aria-label="Analysens stories" className="mt-4 flex shrink-0 items-center gap-3">
-              {story > 0 && (
+            {story === 3 ? (
+              <div className="mt-5 shrink-0 space-y-3 text-center">
+                <h3 className="text-xl font-bold">Kan du slå ditt resultat?</h3>
+                <p className="text-sm text-blue-100">Gör testet igen – tre nya slag.</p>
                 <Button
                   data-local-navigation
-                  aria-label="Föregående story"
-                  onClick={() => setStory((s) => Math.max(0, s - 1))}
-                  className="h-14 w-14 shrink-0 rounded-full border border-white/30 bg-transparent text-white hover:bg-white/10"
+                  onClick={() => {
+                    setOpen(false);
+                    onRestart();
+                  }}
+                  className="min-h-14 w-full rounded-full bg-white text-base font-bold text-blue-700 hover:bg-blue-50"
                 >
-                  <ArrowLeft />
+                  Nytt test
                 </Button>
-              )}
-              <Button
-                data-local-navigation
-                onClick={next}
-                className="min-h-14 flex-1 rounded-full bg-white text-base font-bold text-blue-700 hover:bg-blue-50"
-              >
-                {!revealed
-                  ? "Visa mitt resultat"
-                  : story === 3
-                    ? "Tillbaka till resultatet"
-                    : "Nästa"}
-                {story < 3 && <ArrowRight className="ml-2 h-4 w-4" />}
-              </Button>
-            </nav>
+                <Button
+                  data-local-navigation
+                  onClick={() => {
+                    setOpen(false);
+                    onBackToStart();
+                  }}
+                  variant="ghost"
+                  className="min-h-12 w-full rounded-full text-base font-semibold text-white hover:bg-white/10 hover:text-white"
+                >
+                  Tillbaka till speed
+                </Button>
+              </div>
+            ) : (
+              <nav aria-label="Analysens stories" className="mt-4 flex shrink-0 items-center gap-3">
+                {story > 0 && (
+                  <Button
+                    data-local-navigation
+                    aria-label="Föregående story"
+                    onClick={() => setStory((s) => Math.max(0, s - 1))}
+                    className="h-14 w-14 shrink-0 rounded-full border border-white/30 bg-transparent text-white hover:bg-white/10"
+                  >
+                    <ArrowLeft />
+                  </Button>
+                )}
+                <Button
+                  data-local-navigation
+                  onClick={next}
+                  className="min-h-14 flex-1 rounded-full bg-white text-base font-bold text-blue-700 hover:bg-blue-50"
+                >
+                  {!revealed ? "Visa mitt resultat" : "Nästa"}
+                  {story < 3 && <ArrowRight className="ml-2 h-4 w-4" />}
+                </Button>
+              </nav>
+            )}
           </div>
         ) : (
           <div className="mx-auto flex h-full max-w-md flex-col justify-center p-6 text-center">

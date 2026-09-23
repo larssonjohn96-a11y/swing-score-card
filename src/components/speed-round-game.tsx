@@ -554,7 +554,19 @@ export function SpeedRoundGame({
               </p>
             </div>
           </section>
-          <SpeedChallengeAnalysis round={currentRound} unit={unit} />
+          <SpeedChallengeAnalysis
+            round={currentRound}
+            unit={unit}
+            onRestart={() => {
+              start();
+              window.scrollTo(0, 0);
+            }}
+            onBackToStart={() => {
+              setView("intro");
+              setResultId(null);
+              window.scrollTo(0, 0);
+            }}
+          />
           <Button
             onClick={start}
             className="min-h-14 w-full rounded-2xl bg-slate-950 text-base font-black text-white hover:bg-slate-800"
