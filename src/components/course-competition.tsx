@@ -1,3 +1,4 @@
+import { CourseMatchBar, CourseStrokeInput } from "@/components/course-match-ui";
 import { allowanceOptions, allowanceLabel, normalizeAllowance } from "@/lib/course-allowance";
 import { CoursePlayerPicker } from "@/components/course-player-picker";
 import { useEffect, useState } from "react";
@@ -48,43 +49,6 @@ function Option({
     >
       {children}
     </button>
-  );
-}
-function Counter({
-  name,
-  value,
-  onChange,
-}: {
-  name: string;
-  value: number;
-  onChange: (n: number) => void;
-}) {
-  return (
-    <div className={card}>
-      <p className="break-words text-lg font-bold">{name}</p>
-      <div className="mt-3 grid grid-cols-[48px_1fr_48px] items-center gap-4">
-        <button
-          aria-label={`Färre slag för ${name}`}
-          className="h-12 rounded-xl bg-slate-100 text-2xl disabled:opacity-30"
-          disabled={value <= 1}
-          onClick={() => onChange(value - 1)}
-        >
-          −
-        </button>
-        <span className="text-center text-3xl font-bold">
-          {value}
-          <span className="ml-2 text-sm font-normal">slag</span>
-        </span>
-        <button
-          aria-label={`Fler slag för ${name}`}
-          className="h-12 rounded-xl bg-slate-100 text-2xl disabled:opacity-30"
-          disabled={value >= 30}
-          onClick={() => onChange(value + 1)}
-        >
-          +
-        </button>
-      </div>
-    </div>
   );
 }
 export function CourseCompetition({
@@ -520,29 +484,25 @@ export function CourseCompetition({
                   hål registrerade
                 </p>
                 {current && (
-                  <section className={card}>
-                    <p className="break-words text-center text-lg font-bold">
-                      {game.players[current.a].name} mot {game.players[current.b!].name}
-                    </p>
-                    {scoreCount > 0 && (
-                      <p className="mt-2 text-center">
-                        {game.format === "match"
-                          ? fixtureMargin(game, current) === 0
-                            ? "Lika"
-                            : `${game.players[fixtureMargin(game, current) > 0 ? current.a : current.b!].name} ${Math.abs(fixtureMargin(game, current))} upp`
-                          : `Registrerade slag: ${current.scores.reduce((s, r) => s + r[0], 0)}–${current.scores.reduce((s, r) => s + r[1], 0)}`}
-                      </p>
+                  <CourseMatchBar
+                    names={[game.players[current.a].name, game.players[current.b!].name]}
+                    holes={game.holes}
+                    current={editing ? scoreCount - 1 : scoreCount}
+                    format={game.format}
+                    margin={scoreCount ? fixtureMargin(game, current) : 0}
+                    results={current.scores.map((s, i) =>
+                      Math.sign(s[1] - extra!.b[i] - (s[0] - extra!.a[i])),
                     )}
-                    <p className="mt-2 text-center text-sm text-slate-500">
-                      Extraslag totalt: {game.players[current.a].strokes} /{" "}
-                      {game.players[current.b!].strokes}
-                    </p>
-                  </section>
+                  />
                 )}
                 {(scoreCount < game.holes || editing) && (
                   <>
                     <h2 className="text-center font-display text-4xl leading-tight">
-                      {editing ? "Redigera hål" : "Hål"} {scoreIndex + 1}
+                      {editing
+                        ? `Redigera hål ${scoreIndex + 1}`
+                        : current
+                          ? "Antal slag"
+                          : `Hål ${scoreIndex + 1} av ${game.holes}`}
                     </h2>
                     {ids.map((id, i) => (
                       <div key={id} className="space-y-2">
@@ -554,8 +514,9 @@ export function CourseCompetition({
                               {(i === 0 ? extra.a : extra.b)[scoreIndex]} extraslag här.
                             </p>
                           )}
-                        <Counter
+                        <CourseStrokeInput
                           name={game.players[id].name}
+                          tone={i % 2 === 0 ? "blue" : "red"}
                           value={game.draft[id]}
                           onChange={(n) => draft(id, n)}
                         />
@@ -564,14 +525,19 @@ export function CourseCompetition({
                     <p className="text-center text-sm text-slate-500">
                       Registrera verkligt antal slag. Appen räknar av extraslagen.
                     </p>
-                    <button className={primary} onClick={register}>
+                    <button
+                      className="flex min-h-12 w-full items-center justify-center rounded-2xl bg-slate-950 px-4 py-3 font-display text-xl uppercase text-white"
+                      onClick={register}
+                    >
                       {editing ? "Spara ändring" : `Registrera hål ${scoreIndex + 1}`}
                     </button>
                   </>
                 )}
                 {current && current.scores.length > 0 && (
-                  <section className={card}>
-                    <h2 className="font-bold">Scorekort för matchen</h2>
+                  <details className={card}>
+                    <summary className="min-h-11 cursor-pointer font-bold">
+                      Scorekort för matchen
+                    </summary>
                     <table className="mt-3 w-full table-fixed text-center text-sm">
                       <thead>
                         <tr>
@@ -590,7 +556,7 @@ export function CourseCompetition({
                         ))}
                       </tbody>
                     </table>
-                  </section>
+                  </details>
                 )}
                 {scoreCount > 0 && !editing && (
                   <button

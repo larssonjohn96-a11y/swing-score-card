@@ -1,0 +1,148 @@
+export function CourseStrokeInput({
+  name,
+  value,
+  onChange,
+  tone = "blue",
+}: {
+  name: string;
+  value: number;
+  onChange: (value: number) => void;
+  tone?: "blue" | "red";
+}) {
+  const red = tone === "red";
+  const active = red
+    ? "border-red-600 bg-red-600 text-white"
+    : "border-blue-600 bg-blue-600 text-white";
+  const idle = "border-slate-300 bg-slate-50 text-slate-700";
+  return (
+    <section
+      className={`rounded-[26px] border p-4 shadow-sm ${red ? "border-red-200 bg-gradient-to-br from-red-50 to-white" : "border-blue-200 bg-gradient-to-br from-blue-50 to-white"}`}
+    >
+      <div
+        className={`mb-4 flex items-start justify-between gap-3 ${red ? "text-red-700" : "text-blue-700"}`}
+      >
+        <h2 className="min-w-0 break-words font-display text-3xl uppercase leading-tight">
+          {name}
+        </h2>
+        <p
+          aria-live="polite"
+          className="shrink-0 pt-1 font-display text-xl uppercase leading-tight"
+        >
+          {value} slag
+        </p>
+      </div>
+      <div className="grid grid-cols-4 gap-2">
+        {[1, 2, 3, 4, 5, 6, 7].map((n) => (
+          <button
+            key={n}
+            type="button"
+            aria-label={`${name}: ${n} slag`}
+            aria-pressed={value === n}
+            onClick={() => onChange(n)}
+            className={`flex min-h-14 flex-col items-center justify-center rounded-xl border px-1 py-2 shadow-sm ${value === n ? active : idle}`}
+          >
+            <span className="font-display text-2xl leading-tight">{n}</span>
+            <span className="text-[9px] font-semibold uppercase">slag</span>
+          </button>
+        ))}
+        <label
+          className={`relative flex min-h-14 flex-col items-center justify-center rounded-xl border px-1 py-2 shadow-sm ${value >= 8 ? active : idle}`}
+        >
+          <span className="font-display text-2xl leading-tight">{value >= 8 ? value : "8+"}</span>
+          <span className="text-[9px] font-semibold uppercase">slag</span>
+          <select
+            aria-label={`${name}: 8 eller fler slag`}
+            value={value >= 8 ? value : ""}
+            onChange={(e) => onChange(Number(e.target.value))}
+            className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+          >
+            <option value="" disabled>
+              Välj antal slag
+            </option>
+            {Array.from({ length: 23 }, (_, i) => i + 8).map((n) => (
+              <option key={n} value={n}>
+                {n} slag
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+    </section>
+  );
+}
+export function CourseMatchBar({
+  names,
+  holes,
+  current,
+  results,
+  margin,
+  format,
+}: {
+  names: [string, string];
+  holes: number;
+  current: number;
+  results: number[];
+  margin: number;
+  format: "match" | "stroke";
+}) {
+  const leader = margin > 0 ? 0 : margin < 0 ? 1 : null;
+  return (
+    <section
+      aria-label="Matchställning"
+      className="overflow-hidden rounded-[22px] border border-slate-300 bg-white shadow-sm"
+    >
+      <div className="grid min-h-[70px] grid-cols-[1fr_88px_1fr] items-stretch">
+        <div
+          style={
+            leader === 0 ? { clipPath: "polygon(0 0,88% 0,100% 50%,88% 100%,0 100%)" } : undefined
+          }
+          className={`flex min-w-0 flex-col justify-center py-3 pl-3 pr-5 ${leader === 0 ? "bg-blue-600 text-white" : "bg-blue-50 text-blue-800"}`}
+        >
+          <p className="break-words text-xs font-black uppercase leading-tight">{names[0]}</p>
+          {leader === 0 && (
+            <p className="mt-1 text-[9px] font-bold uppercase tracking-wider">Leder</p>
+          )}
+        </div>
+        <div className="flex flex-col items-center justify-center px-1 text-center">
+          <p className="text-[9px] font-bold uppercase tracking-wide text-slate-500">
+            {current >= holes ? `${holes}/${holes} spelade` : `Hål ${current + 1} av ${holes}`}
+          </p>
+          <p
+            className={`mt-1 font-display text-2xl leading-tight ${leader === 0 ? "text-blue-600" : leader === 1 ? "text-red-600" : "text-slate-950"}`}
+          >
+            {margin === 0
+              ? format === "match"
+                ? "AS"
+                : "LIKA"
+              : `${Math.abs(margin)} ${format === "match" ? "UP" : "SLAG"}`}
+          </p>
+        </div>
+        <div
+          style={
+            leader === 1
+              ? { clipPath: "polygon(12% 0,100% 0,100% 100%,12% 100%,0 50%)" }
+              : undefined
+          }
+          className={`flex min-w-0 flex-col justify-center py-3 pl-5 pr-3 text-right ${leader === 1 ? "bg-red-600 text-white" : "bg-red-50 text-red-800"}`}
+        >
+          <p className="break-words text-xs font-black uppercase leading-tight">{names[1]}</p>
+          {leader === 1 && (
+            <p className="mt-1 text-[9px] font-bold uppercase tracking-wider">Leder</p>
+          )}
+        </div>
+      </div>
+      <div className="flex flex-wrap justify-center gap-1 border-t border-slate-200 px-2 py-2">
+        {Array.from({ length: holes }, (_, i) => (
+          <span
+            key={i}
+            aria-current={i === current ? "step" : undefined}
+            aria-label={`Hål ${i + 1}: ${i < results.length ? (results[i] > 0 ? names[0] + " vann" : results[i] < 0 ? names[1] + " vann" : "lika") : i === current ? "aktuellt" : "återstår"}`}
+            className={`flex shrink-0 items-center justify-center rounded-full text-[9px] font-bold ${holes > 12 ? "h-4 w-4" : "h-6 w-6"} ${i === current ? "ring-1 ring-slate-600 ring-offset-1" : ""} ${i < results.length ? (results[i] > 0 ? "bg-blue-600 text-white" : results[i] < 0 ? "bg-red-600 text-white" : "bg-slate-300 text-slate-700") : "bg-slate-100 text-slate-500"}`}
+          >
+            {i + 1}
+          </span>
+        ))}
+      </div>
+    </section>
+  );
+}

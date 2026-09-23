@@ -1,3 +1,4 @@
+import { CourseMatchBar, CourseStrokeInput } from "@/components/course-match-ui";
 import { allowanceOptions, allowanceLabel, normalizeAllowance } from "@/lib/course-allowance";
 import { CoursePlayerPicker } from "@/components/course-player-picker";
 import { CourseCompetition } from "@/components/course-competition";
@@ -59,43 +60,6 @@ function Choice({
     >
       {children}
     </button>
-  );
-}
-function ScoreInput({
-  name,
-  value,
-  set,
-}: {
-  name: string;
-  value: number;
-  set: (v: number) => void;
-}) {
-  return (
-    <div className={card}>
-      <p className="break-words text-center text-lg font-bold">{name}</p>
-      <div className="mt-3 grid grid-cols-[48px_1fr_48px] items-center gap-3">
-        <button
-          aria-label={`Färre slag för ${name}`}
-          disabled={value <= 1}
-          onClick={() => set(value - 1)}
-          className="h-12 rounded-xl bg-slate-100 text-2xl disabled:opacity-30"
-        >
-          −
-        </button>
-        <p className="text-center text-4xl font-black tabular-nums">
-          {value}
-          <span className="block text-sm font-normal text-slate-500">slag</span>
-        </p>
-        <button
-          aria-label={`Fler slag för ${name}`}
-          disabled={value >= 30}
-          onClick={() => set(value + 1)}
-          className="h-12 rounded-xl bg-slate-100 text-2xl disabled:opacity-30"
-        >
-          +
-        </button>
-      </div>
-    </div>
   );
 }
 function CourseHub() {
@@ -562,57 +526,75 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
         )}
         {(screen === "play" || screen === "result") && game && status && (
           <>
-            <section className={card}>
-              <p className="text-center text-sm font-semibold uppercase tracking-widest text-slate-500">
-                {game.format === "match" ? "Matchspel" : "Slagspel"} · {game.scores.length}/
-                {game.holes} hål
-              </p>
-              <div className="mt-4 grid grid-cols-2 gap-4 text-center">
-                {game.names.map((name, i) => (
-                  <div key={i}>
-                    <p
-                      className={`break-words text-lg font-bold ${i === 0 ? "text-blue-700" : "text-red-700"}`}
-                    >
-                      {name}
-                    </p>
-                    <p className="mt-1 text-3xl font-bold tabular-nums">
-                      {gross[i]}
-                      <span className="ml-1 text-sm font-normal text-slate-500">slag</span>
-                    </p>
-                  </div>
-                ))}
-              </div>
-              {game.format === "match" && (
-                <p className="mt-4 text-center font-bold">
-                  {status.diff === 0
-                    ? "Lika"
-                    : `${game.names[status.diff > 0 ? 0 : 1]} ${Math.abs(status.diff)} upp`}
-                  {status.decided ? " · Matchen är avgjord" : ""}
+            {screen === "play" && (
+              <>
+                <p className="text-center text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
+                  {game.format === "match" ? "Matchspel" : "Slagspel"} · Spela på bana
                 </p>
-              )}
-              {game.allowance > 0 && (
-                <p className="mt-3 text-center text-sm text-slate-600">
-                  {game.names[game.recipient === "you" ? 0 : 1]} har {game.allowance} extraslag
-                  totalt{game.format === "stroke" ? " · dras av vid slutresultatet" : ""}
+                <CourseMatchBar
+                  names={game.names}
+                  holes={game.holes}
+                  current={edit ?? game.scores.length}
+                  format={game.format}
+                  margin={
+                    game.format === "match" ? status.diff : game.scores.length ? net[1] - net[0] : 0
+                  }
+                  results={game.scores.map((s, i) => {
+                    const n = netHole(game, s, i);
+                    return Math.sign(n.other - n.you);
+                  })}
+                />
+              </>
+            )}
+            {screen === "result" && (
+              <section className={card}>
+                <p className="text-center text-sm font-semibold uppercase tracking-widest text-slate-500">
+                  {game.format === "match" ? "Matchspel" : "Slagspel"} · {game.scores.length}/
+                  {game.holes} hål
                 </p>
-              )}
-            </section>
+                <div className="mt-4 grid grid-cols-2 gap-4 text-center">
+                  {game.names.map((name, i) => (
+                    <div key={i}>
+                      <p
+                        className={`break-words text-lg font-bold ${i === 0 ? "text-blue-700" : "text-red-700"}`}
+                      >
+                        {name}
+                      </p>
+                      <p className="mt-1 text-3xl font-bold tabular-nums">
+                        {gross[i]}
+                        <span className="ml-1 text-sm font-normal text-slate-500">slag</span>
+                      </p>
+                    </div>
+                  ))}
+                </div>
+                {game.format === "match" && (
+                  <p className="mt-4 text-center font-bold">
+                    {status.diff === 0
+                      ? "Lika"
+                      : `${game.names[status.diff > 0 ? 0 : 1]} ${Math.abs(status.diff)} upp`}
+                    {status.decided ? " · Matchen är avgjord" : ""}
+                  </p>
+                )}
+                {game.allowance > 0 && (
+                  <p className="mt-3 text-center text-sm text-slate-600">
+                    {game.names[game.recipient === "you" ? 0 : 1]} har {game.allowance} extraslag
+                    totalt{game.format === "stroke" ? " · dras av vid slutresultatet" : ""}
+                  </p>
+                )}
+              </section>
+            )}
             {screen === "play" && active && (
               <>
                 {last && edit === null && (
-                  <p
-                    role="status"
-                    className="rounded-2xl bg-emerald-50 p-4 text-center text-emerald-900"
-                  >
+                  <p role="status" className="text-center text-xs font-medium text-emerald-700">
                     Hål {active.scores.length} registrerat · {active.names[0]} {last.you},{" "}
                     {active.names[1]} {last.other} slag
                   </p>
                 )}
                 {(!complete || edit !== null) && draft && (
                   <>
-                    <h1 className="text-center font-display text-4xl leading-tight">
-                      {edit !== null ? "Redigera hål" : "Hål"} {holeIndex + 1}
-                      {edit === null ? ` av ${active.holes}` : ""}
+                    <h1 className="text-center font-display text-3xl uppercase leading-tight">
+                      {edit !== null ? `Redigera hål ${edit + 1}` : "Antal slag"}
                     </h1>
                     {active.format === "match" && holeExtra > 0 && (
                       <p className="rounded-2xl bg-blue-50 p-3 text-center font-semibold text-blue-800">
@@ -639,16 +621,17 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
                         </span>
                       </label>
                     )}
-                    <ScoreInput
+                    <CourseStrokeInput
                       name={active.names[0]}
                       value={draft.you}
-                      set={(v) => updateDraft("you", v)}
+                      onChange={(v) => updateDraft("you", v)}
                     />
                     {active.mode === "friend" ? (
-                      <ScoreInput
+                      <CourseStrokeInput
                         name={active.names[1]}
+                        tone="red"
                         value={draft.other}
-                        set={(v) => updateDraft("other", v)}
+                        onChange={(v) => updateDraft("other", v)}
                       />
                     ) : (
                       edit !== null && (
@@ -660,7 +643,10 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
                     <p className="text-center text-sm text-slate-500">
                       Ange verkligt antal slag. Appen räknar av extraslagen.
                     </p>
-                    <button className={primary} onClick={register}>
+                    <button
+                      className="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 py-3 font-display text-xl uppercase leading-tight text-white"
+                      onClick={register}
+                    >
                       {edit !== null ? "Spara ändring" : `Registrera hål ${holeIndex + 1}`}
                       <ArrowRight className="h-5 w-5" />
                     </button>
@@ -706,8 +692,13 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
               </section>
             )}
             {game.scores.length > 0 && (
-              <section className={`${card} overflow-x-auto`}>
-                <h2 className="mb-3 text-lg font-bold">Scorekort</h2>
+              <details
+                className={`${card} overflow-x-auto`}
+                open={screen === "result" ? true : undefined}
+              >
+                <summary className="min-h-11 cursor-pointer text-base font-bold">
+                  Scorekort · redigera hål
+                </summary>
                 <table className="w-full table-fixed text-center text-sm">
                   <thead>
                     <tr className="border-b">
@@ -759,7 +750,7 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
                     })}
                   </tbody>
                 </table>
-              </section>
+              </details>
             )}
             {screen === "result" && (
               <>
