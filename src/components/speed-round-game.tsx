@@ -6,7 +6,6 @@ import { ChipCelebration } from "@/components/chip-celebration";
 import { SpeedLeaderboard } from "@/components/speed-course-leaderboard";
 import { Button } from "@/components/ui/button";
 import { SpeedChallengeAnalysis } from "@/components/speed-challenge-analysis";
-import { driverDistancePotential } from "@/lib/driver-distance-potential";
 import {
   courseStorageKey,
   emptyCourse,
@@ -224,7 +223,6 @@ export function SpeedRoundGame({
   const aboveAverage =
     !!resultData && resultAverage !== null && resultData.topBallSpeed > resultAverage;
   const firstResult = !!resultData && resultPb === null && resultAverage === null;
-  const potential = resultData ? driverDistancePotential(resultData.topBallSpeed) : null;
   useEffect(() => {
     if (!celebrationId) return;
     const timer = window.setTimeout(() => setCelebrationId(null), 4000);
@@ -554,35 +552,7 @@ export function SpeedRoundGame({
               </div>
             )}
           </section>
-          {potential && (
-            <section className="rounded-3xl border border-blue-100 bg-white p-5">
-              <h2 className="text-lg font-black text-slate-950">Din potentiella driverlängd</h2>
-              <div className="mt-4 grid grid-cols-2 gap-4">
-                <div className="rounded-2xl bg-blue-50 p-4">
-                  <p className="text-sm font-semibold text-blue-700">Carry</p>
-                  <p className="mt-2 text-3xl font-black text-blue-700">
-                    ≈ {potential.carry} <span className="text-base">m</span>
-                  </p>
-                  <p className="mt-1 text-xs text-slate-500">Längd i luften</p>
-                </div>
-                <div className="rounded-2xl bg-slate-50 p-4">
-                  <p className="text-sm font-semibold text-slate-600">Totalt</p>
-                  <p className="mt-2 text-3xl font-black">
-                    ≈ {potential.total} <span className="text-base">m</span>
-                  </p>
-                  <p className="mt-1 text-xs text-slate-500">Inklusive rull</p>
-                </div>
-              </div>
-              <p className="mt-3 text-xs leading-relaxed text-slate-500">
-                Uppskattad potential vid bra launch och spinn. Total längd påverkas också av
-                underlag och rull.
-                {potential.extrapolated
-                  ? " Din speed ligger utanför referenstabellen; uppskattningen är extra osäker."
-                  : ""}
-              </p>
-            </section>
-          )}
-          <SpeedChallengeAnalysis round={currentRound} history={state.history} unit={unit} />
+          <SpeedChallengeAnalysis round={currentRound} unit={unit} />
           <SpeedLeaderboard
             userId={userId}
             history={state.history}
