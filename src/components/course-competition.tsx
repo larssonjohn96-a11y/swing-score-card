@@ -1,3 +1,4 @@
+import { allowanceOptions, allowanceLabel, normalizeAllowance } from "@/lib/course-allowance";
 import { CoursePlayerPicker } from "@/components/course-player-picker";
 import { useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, Trophy } from "lucide-react";
@@ -166,7 +167,7 @@ export function CourseCompetition({
         chosen.map((p) => ({
           name: p.name.trim(),
           userId: p.userId,
-          strokes: give ? p.strokes : 0,
+          strokes: give ? normalizeAllowance(p.strokes, holes) : 0,
         })),
       ),
     );
@@ -455,12 +456,12 @@ export function CourseCompetition({
                         : "Slagen dras av från respektive spelares slutresultat."}
                     </p>
                     {chosen.map((p, i) => (
-                      <label key={i} className="grid grid-cols-[1fr_90px] items-center gap-3">
+                      <label key={i} className="block space-y-2">
                         <span className="break-words font-semibold">{p.name}</span>
                         <select
                           aria-label={`Extraslag för ${p.name}`}
                           className={field}
-                          value={p.strokes}
+                          value={normalizeAllowance(p.strokes, holes)}
                           onChange={(e) =>
                             setPlayers(
                               players.map((v, j) =>
@@ -469,9 +470,9 @@ export function CourseCompetition({
                             )
                           }
                         >
-                          {Array.from({ length: 37 }, (_, n) => (
+                          {[0, ...allowanceOptions(holes)].map((n) => (
                             <option key={n} value={n}>
-                              {n}
+                              {allowanceLabel(n, holes)}
                             </option>
                           ))}
                         </select>

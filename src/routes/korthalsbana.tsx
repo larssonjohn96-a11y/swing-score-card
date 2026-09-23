@@ -1,3 +1,4 @@
+import { allowanceOptions, allowanceLabel, normalizeAllowance } from "@/lib/course-allowance";
 import { CoursePlayerPicker } from "@/components/course-player-picker";
 import { CourseCompetition } from "@/components/course-competition";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -232,7 +233,7 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
     displayName?.trim() || "Du",
     mode === "bot" ? bots[bot].name : friend.trim() || "Vän",
   ];
-  const extra = giveStrokes ? allowance : 0;
+  const extra = giveStrokes ? normalizeAllowance(allowance, holes) : 0;
   const allocation = distributeStrokes(holes, extra);
   function beginSetup() {
     setStep(0);
@@ -515,12 +516,12 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
                       <span>Antal extraslag totalt</span>
                       <select
                         className={field}
-                        value={allowance}
+                        value={normalizeAllowance(allowance, holes)}
                         onChange={(e) => setAllowance(Number(e.target.value))}
                       >
-                        {Array.from({ length: 36 }, (_, i) => (
-                          <option key={i} value={i + 1}>
-                            {i + 1}
+                        {allowanceOptions(holes).map((n) => (
+                          <option key={n} value={n}>
+                            {allowanceLabel(n, holes)}
                           </option>
                         ))}
                       </select>

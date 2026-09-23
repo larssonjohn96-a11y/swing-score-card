@@ -85,7 +85,7 @@ export function parseGame(raw: string | null): CourseGame | null {
     g.names.length !== 2 ||
     !g.names.every((n: unknown) => typeof n === "string" && n.trim()) ||
     !integer(g.holes, 1, 18) ||
-    !integer(g.allowance, 0, 36) ||
+    !integer(g.allowance, 0, 54) ||
     !["you", "other"].includes(g.recipient) ||
     !integer(g.botLevel, 0, 2) ||
     !Array.isArray(g.rolls) ||

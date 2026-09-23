@@ -3,7 +3,7 @@ import { distributeStrokes } from "./short-course";
 const playerSchema = z.object({
   name: z.string().trim().min(1).max(40),
   userId: z.string().optional(),
-  strokes: z.number().int().min(0).max(36),
+  strokes: z.number().int().min(0).max(54),
 });
 const fixtureSchema = z.object({
   id: z.string(),
