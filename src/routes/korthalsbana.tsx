@@ -622,12 +622,14 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
                       </label>
                     )}
                     <CourseStrokeInput
+                      key={`you-${holeIndex}-${edit !== null ? "edit" : "play"}`}
                       name={active.names[0]}
                       value={draft.you}
                       onChange={(v) => updateDraft("you", v)}
                     />
                     {active.mode === "friend" ? (
                       <CourseStrokeInput
+                        key={`other-${holeIndex}-${edit !== null ? "edit" : "play"}`}
                         name={active.names[1]}
                         tone="red"
                         value={draft.other}

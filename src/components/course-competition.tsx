@@ -515,6 +515,7 @@ export function CourseCompetition({
                             </p>
                           )}
                         <CourseStrokeInput
+                          key={`${current?.id ?? "group"}-${id}-${scoreIndex}-${editing ? "edit" : "play"}`}
                           name={game.players[id].name}
                           tone={i % 2 === 0 ? "blue" : "red"}
                           value={game.draft[id]}

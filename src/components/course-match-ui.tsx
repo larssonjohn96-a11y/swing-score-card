@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 export function CourseStrokeInput({
   name,
   value,
@@ -9,11 +11,17 @@ export function CourseStrokeInput({
   onChange: (value: number) => void;
   tone?: "blue" | "red";
 }) {
+  const [selected, setSelected] = useState<number | null>(null);
+  const choose = (n: number) => {
+    setSelected(n);
+    onChange(n);
+  };
   const red = tone === "red";
   const active = red
     ? "border-red-600 bg-red-600 text-white"
     : "border-blue-600 bg-blue-600 text-white";
   const idle = "border-slate-300 bg-slate-50 text-slate-700";
+  const suggested = "border-slate-400 bg-slate-50 text-slate-700 ring-1 ring-slate-400/50";
   return (
     <section
       className={`rounded-[26px] border p-4 shadow-sm ${red ? "border-red-200 bg-gradient-to-br from-red-50 to-white" : "border-blue-200 bg-gradient-to-br from-blue-50 to-white"}`}
@@ -37,23 +45,23 @@ export function CourseStrokeInput({
             key={n}
             type="button"
             aria-label={`${name}: ${n} slag`}
-            aria-pressed={value === n}
-            onClick={() => onChange(n)}
-            className={`flex min-h-14 flex-col items-center justify-center rounded-xl border px-1 py-2 shadow-sm ${value === n ? active : idle}`}
+            aria-pressed={selected === n && value === n}
+            onClick={() => choose(n)}
+            className={`flex min-h-14 flex-col items-center justify-center rounded-xl border px-1 py-2 shadow-sm ${value === n ? (selected === n ? active : suggested) : idle}`}
           >
             <span className="font-display text-2xl leading-tight">{n}</span>
             <span className="text-[9px] font-semibold uppercase">slag</span>
           </button>
         ))}
         <label
-          className={`relative flex min-h-14 flex-col items-center justify-center rounded-xl border px-1 py-2 shadow-sm ${value >= 8 ? active : idle}`}
+          className={`relative flex min-h-14 flex-col items-center justify-center rounded-xl border px-1 py-2 shadow-sm ${value >= 8 ? (selected === value ? active : suggested) : idle}`}
         >
           <span className="font-display text-2xl leading-tight">{value >= 8 ? value : "8+"}</span>
           <span className="text-[9px] font-semibold uppercase">slag</span>
           <select
             aria-label={`${name}: 8 eller fler slag`}
             value={value >= 8 ? value : ""}
-            onChange={(e) => onChange(Number(e.target.value))}
+            onChange={(e) => choose(Number(e.target.value))}
             className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
           >
             <option value="" disabled>
