@@ -19,11 +19,47 @@ import {
   ballSpeedDistributionForAge,
   handicapFromBallSpeed,
   handicapLabel,
-  speedLevelLabel,
 } from "@/lib/speed";
-import { fromMph, objectiveResult, type SpeedUnit, type CourseRound } from "@/lib/speed-course";
+import { objectiveResult, type SpeedUnit, type CourseRound } from "@/lib/speed-course";
 import { driverDistancePotential } from "@/lib/driver-distance-potential";
 import { useChipScreenColor } from "@/lib/use-chip-screen-color";
+
+function AnimatedDistance({ value, delay = 0 }: { value: number; delay?: number }) {
+  const [display, setDisplay] = useState(0);
+  useEffect(() => {
+    const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let frame = 0;
+    const start = performance.now();
+    if (motion.matches) {
+      setDisplay(value);
+      return;
+    }
+    setDisplay(0);
+    const tick = (now: number) => {
+      const progress = Math.min(1, Math.max(0, (now - start - delay) / 1600));
+      setDisplay(Math.round(value * (1 - Math.pow(1 - progress, 3))));
+      if (progress < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    const stop = () => {
+      if (motion.matches) {
+        cancelAnimationFrame(frame);
+        setDisplay(value);
+      }
+    };
+    motion.addEventListener("change", stop);
+    return () => {
+      cancelAnimationFrame(frame);
+      motion.removeEventListener("change", stop);
+    };
+  }, [value, delay]);
+  return (
+    <>
+      <span className="sr-only">Cirka {value} meter</span>
+      <span aria-hidden="true">≈ {display}</span>
+    </>
+  );
+}
 
 export function SpeedChallengeAnalysis({
   round,
@@ -127,9 +163,6 @@ export function SpeedChallengeAnalysis({
             >
               {story === 0 && (
                 <section className="text-center" aria-live="polite">
-                  <p className="text-sm font-bold uppercase tracking-widest text-blue-100">
-                    Dagens speednivå
-                  </p>
                   <h2 className="mt-4 text-3xl font-black">Ditt Speed-HCP</h2>
                   <div
                     className="relative my-6 h-36 text-[clamp(80px,25vw,120px)] font-black tabular-nums"
@@ -163,23 +196,6 @@ export function SpeedChallengeAnalysis({
                       className={`absolute inset-0 flex items-center justify-center transition-all duration-[1400ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${revealed ? "translate-y-0 scale-100 opacity-100 blur-0" : "translate-y-3 scale-95 opacity-0 blur-md"}`}
                     >
                       {handicapLabel(hcp)}
-                    </div>
-                  </div>
-                  <p className="text-xl font-bold">
-                    {revealed ? speedLevelLabel(result.score) : "Ditt resultat är på väg…"}
-                  </p>
-                  <div
-                    className={`mt-6 transition-opacity duration-1000 motion-reduce:transition-none ${revealed ? "opacity-100" : "opacity-0"}`}
-                  >
-                    <p className="text-sm text-blue-100">Bästa bollhastighet</p>
-                    <p className="mt-1 text-3xl font-black tabular-nums">
-                      {fromMph(result.topBallSpeed, unit).toFixed(1).replace(".", ",")} {unit}
-                    </p>
-                    <div className="mt-4 rounded-2xl bg-blue-700/60 p-4">
-                      <p className="text-sm text-blue-100">Snitt i testet</p>
-                      <p className="mt-1 text-2xl font-black tabular-nums">
-                        {fromMph(result.avgBallSpeed, unit).toFixed(1).replace(".", ",")} {unit}
-                      </p>
                     </div>
                   </div>
                 </section>
@@ -227,14 +243,14 @@ export function SpeedChallengeAnalysis({
                         <div className="rounded-3xl bg-white px-3 py-6 text-blue-700">
                           <p className="font-semibold">Carry</p>
                           <p className="mt-3 text-4xl font-black tabular-nums">
-                            ≈ {potential.carry}
+                            <AnimatedDistance value={potential.carry} />
                           </p>
                           <p className="mt-2 text-sm">meter i luften</p>
                         </div>
                         <div className="rounded-3xl border border-white/30 bg-white/10 px-3 py-6">
                           <p className="font-semibold">Totalt</p>
                           <p className="mt-3 text-4xl font-black tabular-nums">
-                            ≈ {potential.total}
+                            <AnimatedDistance value={potential.total} delay={250} />
                           </p>
                           <p className="mt-2 text-sm text-blue-100">meter med rull</p>
                         </div>
