@@ -704,7 +704,7 @@ function Home() {
                   Match
                 </p>
                 <h2 className="mt-1 text-xl font-black text-foreground">Match</h2>
-                <p className="mt-1 text-sm text-muted-foreground">Utmana en vän eller spela mot en bot.</p>
+                <p className="mt-1 text-sm text-muted-foreground">Mot vän eller bot – på banan eller i ett moment.</p>
                 <div className="mt-3 flex items-center gap-2">
                   <div className="flex -space-x-2">
                     {previewFriends.length ? (
@@ -735,25 +735,6 @@ function Home() {
         </section>
 
         <ActiveMultiplayerBanner inline />
-
-        <section className="mt-7" aria-labelledby="course-play-heading">
-          <div className="px-0.5">
-            <h2 id="course-play-heading" className="text-[24px] font-black leading-none text-foreground">Spel på bana</h2>
-            <p className="mt-1.5 text-sm text-muted-foreground">Korthålsbana eller vanliga golfhål.</p>
-          </div>
-          <Link to="/korthalsbana" className="relative mt-4 flex min-h-[252px] items-end overflow-hidden rounded-[28px] border border-slate-900/10 bg-slate-900">
-            <img src="/Approach_shot.png" alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover object-[50%_40%]" />
-            <span className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent" />
-            <div className="relative z-10 flex w-full flex-wrap items-end gap-3 px-5 pb-[22px] pt-20 text-white">
-              <div className="min-w-0 flex-1 basis-40">
-                <p className="text-[10px] font-black uppercase tracking-[.18em] text-white/90">På banan</p>
-                <h3 className="mt-1 text-[1.55rem] font-black leading-tight">Spela på bana</h3>
-                <p className="mt-1 text-sm text-white/90">1 mot 1, flera spelare eller turnering.</p>
-              </div>
-              <span className="inline-flex min-h-[38px] shrink-0 items-center justify-center rounded-full bg-white px-4 text-xs font-black uppercase tracking-wide text-[#071b14] shadow-lg">Spela nu →</span>
-            </div>
-          </Link>
-        </section>
 
         <section className="mt-7" aria-labelledby="game-challenges-heading">
           <div className="px-0.5">

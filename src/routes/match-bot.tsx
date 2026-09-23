@@ -1,3 +1,5 @@
+import { CourseGamePage } from "@/components/course-game-page";
+import { MatchCourseChoice } from "@/components/match-course-choice";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Check, ChevronRight, Flag, Lock, RotateCcw, Target, Trophy } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -40,7 +42,7 @@ export const Route = createFileRoute("/match-bot")({
   component: BotMatchPage,
 });
 
-type Step = "bot" | "category" | "setup" | "length" | "play" | "sudden-death" | "result";
+type Step = "course" | "bot" | "category" | "setup" | "length" | "play" | "sudden-death" | "result";
 type Category = "off-the-tee" | "approach" | "around-the-green" | "bunker" | "putting";
 type Winner = "you" | "bot" | "tie";
 type MatchLength = 3 | 5 | 7;
@@ -197,6 +199,7 @@ function drivingBotScore(bot: BotProfile, lateMatch = false) {
 }
 
 function BotMatchPage() {
+  const [courseSelected, setCourseSelected] = useState(false);
   useHideBottomNav(true);
   const { displayName } = useAuth();
   const [cupContext] = useState(() => getActiveCupMatch());
@@ -545,6 +548,10 @@ function BotMatchPage() {
 
   const approachPlay = step === "play" && category === "approach";
 
+  if (step === "course") return <CourseGamePage
+    initialOpponent={{ mode: "bot", name: bot.name, botLevel: bot.hcp >= 25 ? 0 : bot.hcp >= 10 ? 1 : 2 }}
+    onBack={() => goToStep("category")} />;
+
   return (
     <main style={LIGHT_SURFACE} className={`mx-auto min-h-screen w-full max-w-md bg-background px-5 ${approachPlay ? "pt-4 pb-8" : step === "bot" ? "pt-6 pb-56" : "pt-6 pb-16"} text-foreground`}>
 
@@ -623,8 +630,10 @@ function BotMatchPage() {
       {step === "category" ? (
         <>
           <section className="mt-5"><div className="flex items-center gap-3"><span className="text-4xl">{bot.avatar}</span><div><p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">{bot.name} · HCP {formatHcp(bot.hcp)}</p><h1 className="mt-1 font-display text-4xl">Vad vill du spela?</h1></div></div></section>
-          <div className="mt-5 grid grid-cols-2 gap-3">{CATEGORIES.map((item) => <button key={item.id} onClick={() => setCategory(item.id)} className={`relative min-h-32 rounded-[26px] border p-4 text-left ${category === item.id ? selected : glass}`}><span className="text-[9px] font-black uppercase tracking-[0.14em] text-slate-500">{item.sub}</span><span className="mt-2 block font-display text-2xl">{item.title}</span>{category === item.id ? <Check className="absolute right-3 top-3 h-5 w-5 text-blue-600" /> : null}</button>)}</div>
-          <button disabled={!category} onClick={() => goToStep(category === "around-the-green" || category === "bunker" ? "setup" : "length")} className={`sg4-ryder-next mt-6 ${ryderNext}`}>Nästa <ChevronRight className="h-5 w-5" /></button>
+          <MatchCourseChoice selected={courseSelected} onSelect={() => setCourseSelected(true)} />
+          <h2 className="mt-6 text-sm font-bold text-slate-600">Ett moment</h2>
+          <div className="mt-2 grid grid-cols-2 gap-3">{CATEGORIES.map((item) => <button key={item.id} onClick={() => { setCourseSelected(false); setCategory(item.id); }} className={`relative min-h-32 rounded-[26px] border p-4 text-left ${!courseSelected && category === item.id ? selected : glass}`}><span className="text-[9px] font-black uppercase tracking-[0.14em] text-slate-500">{item.sub}</span><span className="mt-2 block font-display text-2xl">{item.title}</span>{!courseSelected && category === item.id ? <Check className="absolute right-3 top-3 h-5 w-5 text-blue-600" /> : null}</button>)}</div>
+          <button disabled={!category && !courseSelected} onClick={() => goToStep(courseSelected ? "course" : category === "around-the-green" || category === "bunker" ? "setup" : "length")} className={`sg4-ryder-next mt-6 ${ryderNext}`}>Nästa <ChevronRight className="h-5 w-5" /></button>
         </>
       ) : null}
 

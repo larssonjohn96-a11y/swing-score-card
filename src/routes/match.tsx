@@ -1,3 +1,5 @@
+import { CourseGamePage } from "@/components/course-game-page";
+import { MatchCourseChoice } from "@/components/match-course-choice";
 import { MatchAnalysis } from "@/components/match-analysis";
 import { generateApproachMatchDistances } from "@/lib/approach-match";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -27,7 +29,7 @@ export const Route = createFileRoute("/match")({
   component: MatchPlayPage,
 });
 
-type Step = "players" | "teams" | "scoring" | "category" | "type" | "setup" | "length" | "play" | "sudden-death" | "result";
+type Step = "course" | "players" | "teams" | "scoring" | "category" | "type" | "setup" | "length" | "play" | "sudden-death" | "result";
 type MatchCategory = "off-the-tee" | "approach" | "around-the-green" | "bunker" | "putting" | "speed";
 type HoleWinner = "blue" | "red" | "tie" | null;
 type MatchMode = "singles" | "fourball" | "foursomes";
@@ -159,6 +161,7 @@ function SelectedCheck({ className = "absolute right-3 top-3" }: { className?: s
 }
 
 function MatchPlayPage() {
+  const [courseSelected, setCourseSelected] = useState(false);
   useHideBottomNav(true);
   const { user, loading } = useAuth();
   const [entryFlow] = useState<"friend" | "team">(() => {
@@ -805,6 +808,10 @@ function MatchPlayPage() {
 
   const stepLabel = step === "players" ? (entryFlow === "friend" ? "Välj kompis" : "Lagspel · Format & spelare") : step === "teams" ? "2 · Lag" : step === "scoring" ? "Spelsätt" : step === "category" ? "Kategori" : step === "type" ? "Spel" : step === "setup" ? "Chippning" : "Matchlängd";
 
+  if (step === "course" && selectedOthers[0]) return <CourseGamePage
+    initialOpponent={{ mode: "friend", name: selectedOthers[0].name, userId: selectedOthers[0].isGuest ? undefined : selectedOthers[0].id }}
+    onBack={() => goToStep("category")} />;
+
   return <main data-match-playing={step === "play"} style={LIGHT_SURFACE} className={`mx-auto min-h-screen w-full max-w-md bg-background px-5 text-foreground ${step === "play" ? "pb-4 pt-2" : "pb-16 pt-6"}`}>
     {(step === "play" || step === "sudden-death") ? <header className="mb-3 grid min-h-12 grid-cols-[44px_minmax(0,1fr)_44px] items-center gap-2 pt-[env(safe-area-inset-top)]"><span aria-hidden="true" /><p className="text-center text-[10px] font-bold uppercase leading-relaxed tracking-[0.14em] text-slate-500">{scoringMode === "match" ? "Match Play" : "Slagspel"} · {selectedCategory?.title}</p><button type="button" onClick={() => setAbortConfirmOpen(true)} aria-label="Avbryt spel" title="Avbryt spel" className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-red-200 bg-red-50 text-red-600"><X className="h-5 w-5" /></button></header> : null}
 
@@ -838,11 +845,14 @@ function MatchPlayPage() {
         <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Match</p>
         <h1 className="mt-1 font-display text-4xl">Vad ska ni tävla i?</h1>
       </section>
-      <div className="mt-6 grid grid-cols-2 gap-3">{CATEGORIES.map((i) => { const active = category === i.id; return <button key={i.id} onClick={() => { setCategory(i.id); setScoringMode("match"); }} className={`relative flex min-h-32 w-full items-center rounded-[26px] border p-4 text-left transition active:scale-[.985] ${glass} ${active ? "ring-2 ring-blue-500/45 border-blue-400/80" : ""}`}>
+      {entryFlow === "friend" && <MatchCourseChoice selected={courseSelected} onSelect={() => setCourseSelected(true)} />}
+      <h2 className="mt-6 text-sm font-bold text-slate-600">Ett moment</h2>
+      <div className="mt-2 grid grid-cols-2 gap-3">{CATEGORIES.map((i) => { const active = !courseSelected && category === i.id; return <button key={i.id} onClick={() => { setCourseSelected(false); setCategory(i.id); setScoringMode("match"); }} className={`relative flex min-h-32 w-full items-center rounded-[26px] border p-4 text-left transition active:scale-[.985] ${glass} ${active ? "ring-2 ring-blue-500/45 border-blue-400/80" : ""}`}>
         {active ? <SelectedCheck /> : null}
         <span className="font-display text-[27px] leading-[.95] text-slate-950">{i.title}</span>
       </button>; })}</div>
-      <button disabled={!category} onClick={() => {
+      <button disabled={!category && !courseSelected} onClick={() => {
+        if (courseSelected && entryFlow === "friend") { goToStep("course"); return; }
         if (!category) return;
         setScoringMode("match");
         if (category === "putting") { setMatchType("standard"); setMatchLength(5); goToStep("length"); return; }

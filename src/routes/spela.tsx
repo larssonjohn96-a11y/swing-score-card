@@ -1,6 +1,11 @@
+import { CourseCompetition } from "@/components/course-competition";
+import { CourseGamePage } from "@/components/course-game-page";
+import { useAuth } from "@/hooks/use-auth";
+import { parseGame } from "@/lib/short-course";
+import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 import { createFileRoute } from "@tanstack/react-router";
 import { ChevronRight } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { recordRecommendationImpressions, recordRecommendationOpen } from "@/lib/sg4-recommender";
 
 export const Route = createFileRoute("/spela")({
@@ -41,6 +46,19 @@ function PlayCard({ href, title, recommendationId }: PlayCardProps) {
 }
 
 function PlayPage() {
+  const [courseMode, setCourseMode] = useState<"duel" | "group" | "tournament" | null>(null);
+  const [resumeNames, setResumeNames] = useState("");
+  const { user, loading } = useAuth();
+  useHideBottomNav(courseMode !== null);
+  useEffect(() => {
+    if (loading || courseMode) return;
+    try {
+      const game = parseGame(localStorage.getItem(`sg4.course-game.v1:${user?.id ?? "guest"}`));
+      setResumeNames(game ? game.names.join(" mot ") : "");
+    } catch {
+      setResumeNames("");
+    }
+  }, [user?.id, loading, courseMode]);
   useEffect(() => {
     recordRecommendationImpressions(["play-bot", "play-friend", "play-team"]);
 
@@ -63,6 +81,18 @@ function PlayPage() {
     };
   }, []);
 
+  if (courseMode)
+    return (
+      <>
+        <style>{`[data-activity-sticky-header]{display:none}`}</style>
+        {courseMode === "duel" ? (
+          <CourseGamePage onBack={() => setCourseMode(null)} />
+        ) : (
+          <CourseCompetition kind={courseMode} onBack={() => setCourseMode(null)} />
+        )}
+      </>
+    );
+
   return (
     <main className="relative mx-auto min-h-screen w-full max-w-md overflow-hidden bg-[#fcfcfa] pb-28 pt-4 text-[#061126]">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -73,8 +103,6 @@ function PlayPage() {
         <div className="absolute -left-20 bottom-[-120px] h-[360px] w-[360px] rounded-full bg-[#79a9ff]/12 blur-[110px]" />
         <div className="absolute -right-20 bottom-[-100px] h-[360px] w-[360px] rounded-full bg-[#ff9da3]/12 blur-[110px]" />
       </div>
-
-
 
       <section className="relative z-10 px-2">
         <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[30px] border border-white/75 bg-gradient-to-br from-[#dfe9ff] via-[#f4f6fb] to-[#ffe5e8] shadow-[0_22px_48px_-30px_rgba(15,23,42,.34),inset_0_1px_0_rgba(255,255,255,.5)] backdrop-blur-[6px]">
@@ -97,16 +125,49 @@ function PlayPage() {
               Välj din match
             </h1>
             <p className="mt-2 max-w-[27ch] text-[13px] font-medium leading-snug text-white/84">
-              Spela head-to-head, mot bot eller tillsammans i lag.
+              Tävla i ett moment eller spela hela hål på banan.
             </p>
           </div>
         </div>
       </section>
 
       <section className="relative z-10 mt-5 space-y-3.5 px-5">
+        {resumeNames && (
+          <button
+            onClick={() => setCourseMode("duel")}
+            className="w-full rounded-2xl border border-blue-200 bg-blue-50 p-4 text-left text-blue-800"
+          >
+            <span className="block font-bold">Fortsätt match på bana →</span>
+            <span className="mt-1 block text-sm">{resumeNames}</span>
+          </button>
+        )}
         <PlayCard href="/match?flow=friend" title="Spela mot vän" recommendationId="play-friend" />
         <PlayCard href="/match-bot" title="Spela mot bot" recommendationId="play-bot" />
         <PlayCard href="/match?flow=team" title="Spela i lag" recommendationId="play-team" />
+      </section>
+      <section className="relative z-10 mt-7 space-y-3 px-5">
+        <div>
+          <h2 className="text-xl font-bold">Fler sätt att tävla</h2>
+          <p className="mt-1 text-sm text-slate-600">Spela hela hål på valfri bana.</p>
+        </div>
+        {(
+          [
+            ["group", "Flera spelare", "2–6 spelare · lägst antal slag vinner"],
+            ["tournament", "Turnering", "3–16 spelare · utslagning eller gruppspel + slutspel"],
+          ] as const
+        ).map(([id, title, detail]) => (
+          <button
+            key={id}
+            onClick={() => setCourseMode(id)}
+            className="flex min-h-24 w-full items-center gap-4 rounded-[26px] border border-slate-200 bg-white/80 p-5 text-left shadow-sm"
+          >
+            <span className="min-w-0 flex-1">
+              <span className="block text-xl font-bold">{title}</span>
+              <span className="mt-1 block text-sm text-slate-500">{detail}</span>
+            </span>
+            <ChevronRight className="h-5 w-5 shrink-0 text-blue-600" />
+          </button>
+        ))}
       </section>
     </main>
   );
