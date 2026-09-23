@@ -239,15 +239,8 @@ export function SpeedChallengeAnalysis({
                           <p className="mt-2 text-sm text-blue-100">meter med rull</p>
                         </div>
                       </div>
-                      <p className="mt-6 text-base font-semibold">
-                        Utifrån ditt bästa slag:{" "}
-                        {fromMph(result.topBallSpeed, unit).toFixed(1).replace(".", ",")} {unit}.
-                      </p>
-                      <p className="mt-3 text-sm leading-relaxed text-blue-100">
-                        Uppskattad potential vid bra launch och spinn. Underlag påverkar rullen.
-                        {potential.extrapolated
-                          ? " Utanför referenstabellen är uppskattningen extra osäker."
-                          : ""}
+                      <p className="mt-6 text-base text-blue-100">
+                        Baserat på ditt bästa slag och optimala förhållanden.
                       </p>
                     </>
                   ) : (
