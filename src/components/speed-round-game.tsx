@@ -553,13 +553,6 @@ export function SpeedRoundGame({
             )}
           </section>
           <SpeedChallengeAnalysis round={currentRound} unit={unit} />
-          <SpeedLeaderboard
-            userId={userId}
-            history={state.history}
-            playerName={playerName}
-            ballSpeed
-            unit={unit}
-          />
           <Button
             onClick={start}
             className="min-h-14 w-full rounded-2xl bg-slate-950 text-base font-black text-white hover:bg-slate-800"
