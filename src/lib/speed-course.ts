@@ -10,6 +10,8 @@ export type CourseRound = {
   finishedAt: number;
   holes: CourseShot[][];
   status: "full" | "front" | "partial";
+  baselineAverage?: number | null;
+  baselinePb?: number | null;
 };
 export type CourseSession = Omit<CourseRound, "finishedAt" | "status"> & {
   phase: "play" | "result" | "halfway";
@@ -21,7 +23,7 @@ export type CourseState = {
   active: CourseSession | null;
 };
 export type CourseAction =
-  | { type: "start"; id: string; at: number }
+  | { type: "start"; id: string; at: number; baselineAverage?: number | null; baselinePb?: number | null }
   | { type: "calibrate"; length: number }
   | { type: "score"; shot: CourseShot }
   | { type: "undo" }
@@ -101,6 +103,23 @@ export function speedAverage(history: CourseRound[]) {
     points: count ? rounds.reduce((s, r) => s + roundPoints(r), 0) / count : 0,
   };
 }
+
+/** Comparable history is completed three-drive tests only. Each test contributes its best drive. */
+export function speedHistoryBaseline(history: CourseRound[]) {
+  const completed = history
+    .filter((round) => round.status === "full" && round.holes.flat().length === 3)
+    .slice()
+    .sort((a, b) => b.finishedAt - a.finishedAt || b.id.localeCompare(a.id));
+  const bestSpeeds = completed
+    .map((round) => objectiveResult(round).topBallSpeed)
+    .filter((value) => Number.isFinite(value) && value > 0);
+  const recent = bestSpeeds.slice(0, 5);
+  return {
+    count: recent.length,
+    average: recent.length ? recent.reduce((sum, value) => sum + value, 0) / recent.length : null,
+    pb: bestSpeeds.length ? Math.max(...bestSpeeds) : null,
+  };
+}
 export function reduceCourse(state: CourseState, action: CourseAction): CourseState {
   const a = state.active;
   if (action.type === "calibrate") {
@@ -114,19 +133,20 @@ export function reduceCourse(state: CourseState, action: CourseAction): CourseSt
       return state;
     return { ...state, calibration: [...state.calibration, action.length] };
   }
-  const reference = referenceSpeed(state);
   if (action.type === "start")
-    return a || reference === null || !action.id || state.history.some((r) => r.id === action.id)
+    return a || !action.id || state.history.some((r) => r.id === action.id)
       ? state
       : {
           ...state,
           active: {
             id: action.id,
             model: 1,
-            reference: reference!,
+            reference: action.baselineAverage ?? action.baselinePb ?? 140,
             startedAt: action.at,
             holes: [[]],
             phase: "play",
+            baselineAverage: action.baselineAverage ?? null,
+            baselinePb: action.baselinePb ?? null,
           },
         };
   if (!a) return state;
@@ -163,6 +183,8 @@ export function reduceCourse(state: CourseState, action: CourseAction): CourseSt
       finishedAt: action.at,
       holes,
       status: holes.length === 3 ? "full" : "partial",
+      baselineAverage: a.baselineAverage ?? null,
+      baselinePb: a.baselinePb ?? null,
     };
     return { ...state, active: null, history: [...state.history, round] };
   }
@@ -208,6 +230,14 @@ export function parseCourse(raw: string | null): CourseState {
       s.history.push({
         ...r,
         status: r.holes.length === 3 ? "full" : "partial",
+        baselineAverage:
+          r.baselineAverage === null || (Number.isFinite(r.baselineAverage) && r.baselineAverage > 0)
+            ? r.baselineAverage
+            : undefined,
+        baselinePb:
+          r.baselinePb === null || (Number.isFinite(r.baselinePb) && r.baselinePb > 0)
+            ? r.baselinePb
+            : undefined,
       });
     }
     const a = d.active;
@@ -234,6 +264,14 @@ export function parseCourse(raw: string | null): CourseState {
             ? "halfway"
             : "result"
           : "play",
+        baselineAverage:
+          a.baselineAverage === null || (Number.isFinite(a.baselineAverage) && a.baselineAverage > 0)
+            ? a.baselineAverage
+            : undefined,
+        baselinePb:
+          a.baselinePb === null || (Number.isFinite(a.baselinePb) && a.baselinePb > 0)
+            ? a.baselinePb
+            : undefined,
       };
     return s;
   } catch {
