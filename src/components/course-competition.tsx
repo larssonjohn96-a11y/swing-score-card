@@ -1,4 +1,4 @@
-import { CourseMatchBar, CourseStrokeInput } from "@/components/course-match-ui";
+import { CourseHoleResult, CourseMatchBar, CourseStrokeInput } from "@/components/course-match-ui";
 import { allowanceOptions, allowanceLabel, normalizeAllowance } from "@/lib/course-allowance";
 import { CoursePlayerPicker } from "@/components/course-player-picker";
 import { useEffect, useState } from "react";
@@ -140,7 +140,7 @@ export function CourseCompetition({
   const current = all.find((f) => f.id === game?.activeId);
   const scoreCount =
     game?.kind === "group" ? game.groupScores.length : (current?.scores.length ?? 0);
-  const scoreIndex = editing ? scoreCount - 1 : scoreCount;
+  const scoreIndex = editing || (current && game?.awaitingNext) ? scoreCount - 1 : scoreCount;
   const playing = !!game && (game.kind === "group" || !!current) && !game.finished;
   const ids =
     game?.kind === "group" ? game.players.map((_, i) => i) : current ? [current.a, current.b!] : [];
@@ -150,7 +150,7 @@ export function CourseCompetition({
     if (game) save({ ...game, draft: game.draft.map((v, i) => (i === id ? n : v)) });
   }
   function register() {
-    if (!game || (!editing && scoreCount >= game.holes)) return;
+    if (!game || (!editing && (scoreCount >= game.holes || game.awaitingNext))) return;
     if (game.kind === "group") {
       const scores = [...game.groupScores];
       if (editing) scores[scores.length - 1] = [...game.draft];
@@ -167,6 +167,7 @@ export function CourseCompetition({
         save({
           ...game,
           editing: false,
+          awaitingNext: true,
           league: game.league.map(update),
           rounds: game.rounds.map((r) => r.map(update)),
           draft: game.players.map(() => 3),
@@ -192,7 +193,14 @@ export function CourseCompetition({
     }
   }
   function openMatch(f: Fixture) {
-    if (game) save({ ...game, activeId: f.id, editing: false, draft: game.players.map(() => 3) });
+    if (game)
+      save({
+        ...game,
+        activeId: f.id,
+        editing: false,
+        awaitingNext: false,
+        draft: game.players.map(() => 3),
+      });
   }
   const lastRound = game?.rounds.at(-1);
   const champion = game?.finished && game.kind === "tournament" ? lastRound?.[0]?.winner : null;
@@ -239,7 +247,7 @@ export function CourseCompetition({
             className="flex h-11 w-11 items-center justify-center rounded-full border"
             onClick={() => {
               if (game?.activeId) {
-                save({ ...game, activeId: null, editing: false });
+                save({ ...game, activeId: null, editing: false, awaitingNext: false });
                 setEditing(false);
               } else if (!game && step > 0) setStep(step - 1);
               else onBack();
@@ -487,7 +495,7 @@ export function CourseCompetition({
                   <CourseMatchBar
                     names={[game.players[current.a].name, game.players[current.b!].name]}
                     holes={game.holes}
-                    current={editing ? scoreCount - 1 : scoreCount}
+                    current={scoreIndex}
                     format={game.format}
                     margin={scoreCount ? fixtureMargin(game, current) : 0}
                     results={current.scores.map((s, i) =>
@@ -495,7 +503,20 @@ export function CourseCompetition({
                     )}
                   />
                 )}
-                {(scoreCount < game.holes || editing) && (
+                {current && game.awaitingNext && !editing && scoreCount > 0 && (
+                  <CourseHoleResult
+                    names={[game.players[current.a].name, game.players[current.b!].name]}
+                    hole={scoreCount}
+                    scores={current.scores[scoreCount - 1]}
+                    net={[
+                      current.scores[scoreCount - 1][0] - extra!.a[scoreCount - 1],
+                      current.scores[scoreCount - 1][1] - extra!.b[scoreCount - 1],
+                    ]}
+                    nextLabel={scoreCount === game.holes ? "Till matchresultatet" : "Nästa hål"}
+                    onNext={() => save({ ...game, awaitingNext: false })}
+                  />
+                )}
+                {((scoreCount < game.holes && !game.awaitingNext) || editing) && (
                   <>
                     <h2 className="text-center font-display text-4xl leading-tight">
                       {editing
@@ -568,6 +589,7 @@ export function CourseCompetition({
                   </button>
                 )}
                 {scoreCount === game.holes &&
+                  !game.awaitingNext &&
                   !editing &&
                   (current ? (
                     current.id.startsWith("bracket") && fixtureMargin(game, current) === 0 ? (

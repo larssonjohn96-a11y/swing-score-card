@@ -1,4 +1,4 @@
-import { CourseMatchBar, CourseStrokeInput } from "@/components/course-match-ui";
+import { CourseHoleResult, CourseMatchBar, CourseStrokeInput } from "@/components/course-match-ui";
 import { allowanceOptions, allowanceLabel, normalizeAllowance } from "@/lib/course-allowance";
 import { CoursePlayerPicker } from "@/components/course-player-picker";
 import { CourseCompetition } from "@/components/course-competition";
@@ -238,13 +238,14 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
       }
       return;
     }
-    if (active.scores.length >= active.holes) return;
+    if (active.awaitingNext || active.scores.length >= active.holes) return;
     const score = { ...active.draft };
     if (active.mode === "bot")
       score.other = botScore(score.length, active.botLevel, active.rolls[active.scores.length]);
     save({
       ...active,
       scores: [...active.scores, score],
+      awaitingNext: true,
       draft: { you: 3, other: 3, length: score.length },
     });
   }
@@ -261,7 +262,8 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
   const gross = game ? totals(game) : [0, 0];
   const net = game ? totals(game, true) : [0, 0];
   const draft = edit !== null && editScore ? editScore : active?.draft;
-  const holeIndex = edit ?? active?.scores.length ?? 0;
+  const holeIndex =
+    edit ?? Math.max(0, (active?.scores.length ?? 0) - (active?.awaitingNext ? 1 : 0));
   const holeExtra = active ? distributeStrokes(active.holes, active.allowance)[holeIndex] : 0;
   const complete = !!active && active.scores.length === active.holes;
   const last = active?.scores.at(-1);
@@ -534,7 +536,7 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
                 <CourseMatchBar
                   names={game.names}
                   holes={game.holes}
-                  current={edit ?? game.scores.length}
+                  current={edit ?? game.scores.length - (game.awaitingNext ? 1 : 0)}
                   format={game.format}
                   margin={
                     game.format === "match" ? status.diff : game.scores.length ? net[1] - net[0] : 0
@@ -585,13 +587,20 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
             )}
             {screen === "play" && active && (
               <>
-                {last && edit === null && (
-                  <p role="status" className="text-center text-xs font-medium text-emerald-700">
-                    Hål {active.scores.length} registrerat · {active.names[0]} {last.you},{" "}
-                    {active.names[1]} {last.other} slag
-                  </p>
+                {active.awaitingNext && last && edit === null && (
+                  <CourseHoleResult
+                    names={active.names}
+                    hole={active.scores.length}
+                    scores={[last.you, last.other]}
+                    net={[
+                      netHole(active, last, active.scores.length - 1).you,
+                      netHole(active, last, active.scores.length - 1).other,
+                    ]}
+                    nextLabel={complete ? "Visa slutresultat" : "Nästa hål"}
+                    onNext={() => (complete ? finish() : save({ ...active, awaitingNext: false }))}
+                  />
                 )}
-                {(!complete || edit !== null) && draft && (
+                {((!complete && !active.awaitingNext) || edit !== null) && draft && (
                   <>
                     <h1 className="text-center font-display text-3xl uppercase leading-tight">
                       {edit !== null ? `Redigera hål ${edit + 1}` : "Antal slag"}
@@ -665,7 +674,7 @@ function CourseGamePage({ onBack }: { onBack: () => void }) {
                     )}
                   </>
                 )}
-                {complete && edit === null && (
+                {complete && !active.awaitingNext && edit === null && (
                   <button className={primary} onClick={finish}>
                     Visa slutresultat
                     <Trophy className="h-5 w-5" />

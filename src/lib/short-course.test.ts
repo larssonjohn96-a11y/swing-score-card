@@ -65,6 +65,7 @@ describe("course game", () => {
   it("restores draft, scores and fixed bot rolls after interruption", () => {
     const g = game({
       mode: "bot",
+      awaitingNext: true,
       scores: [{ you: 5, other: 3, length: 100 }],
       draft: { you: 6, other: 3, length: 500 },
     });

@@ -154,3 +154,52 @@ export function CourseMatchBar({
     </section>
   );
 }
+
+export function CourseHoleResult({
+  names,
+  hole,
+  scores,
+  net,
+  onNext,
+  nextLabel,
+}: {
+  names: [string, string];
+  hole: number;
+  scores: [number, number];
+  net: [number, number];
+  onNext: () => void;
+  nextLabel: string;
+}) {
+  const winner = net[0] < net[1] ? 0 : net[0] > net[1] ? 1 : null;
+  return (
+    <div className="space-y-4">
+      <section
+        role="status"
+        aria-live="polite"
+        className={`flex min-h-[280px] flex-col items-center justify-center rounded-[28px] px-6 py-8 text-center shadow-sm ${winner === 0 ? "bg-blue-600 text-white" : winner === 1 ? "bg-red-600 text-white" : "bg-slate-200 text-slate-800"}`}
+      >
+        <p className="text-xs font-bold uppercase tracking-[.2em]">Hål {hole} klart</p>
+        <h2 className="mt-4 break-words font-display text-4xl uppercase leading-tight">
+          {winner === null ? "Hålet delas" : `${names[winner]} vinner hål ${hole}`}
+        </h2>
+        <div className="mt-6 grid w-full grid-cols-2 gap-4">
+          {names.map((name, i) => (
+            <div key={i}>
+              <p className="break-words text-sm font-bold">{name}</p>
+              <p className="mt-1 text-3xl font-black">
+                {scores[i]} <span className="text-sm font-normal">slag</span>
+              </p>
+              {net[i] !== scores[i] && <p className="mt-1 text-sm">{net[i]} efter extraslag</p>}
+            </div>
+          ))}
+        </div>
+      </section>
+      <button
+        onClick={onNext}
+        className="flex min-h-12 w-full items-center justify-center rounded-2xl bg-slate-950 px-4 py-3 font-display text-xl uppercase text-white"
+      >
+        {nextLabel} →
+      </button>
+    </div>
+  );
+}

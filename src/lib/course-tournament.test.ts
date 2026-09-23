@@ -138,4 +138,14 @@ describe("course competitions", () => {
     expect(parseCompetition(null)).toBeNull();
     expect(() => parseCompetition(JSON.stringify({ ...c, seed: [0, 0] }))).toThrow();
   });
+  it("restores a pending hole result without adding another score", () => {
+    const c = create(4);
+    c.activeId = c.rounds[0][0].id;
+    c.rounds[0][0].scores = [[3, 4]];
+    c.awaitingNext = true;
+    const restored = parseCompetition(JSON.stringify(c))!;
+    expect(restored.awaitingNext).toBe(true);
+    expect(restored.rounds[0][0].scores).toEqual([[3, 4]]);
+  });
+
 });

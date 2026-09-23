@@ -28,6 +28,7 @@ const competitionSchema = z.object({
   activeId: z.string().nullable(),
   finished: z.boolean(),
   editing: z.boolean().default(false),
+  awaitingNext: z.boolean().default(false),
 });
 export type Player = z.infer<typeof playerSchema>;
 export type Fixture = z.infer<typeof fixtureSchema>;
@@ -139,6 +140,7 @@ export function createCompetition(
     activeId: null,
     finished: false,
     editing: false,
+    awaitingNext: false,
   };
 }
 export function fixtureAllowance(c: Competition, f: Fixture) {

@@ -5,6 +5,7 @@ export type CourseGame = {
   format: "match" | "stroke";
   names: [string, string];
   opponentId?: string;
+  awaitingNext?: boolean;
   holes: number;
   allowance: number;
   recipient: Side;
