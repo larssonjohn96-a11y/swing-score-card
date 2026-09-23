@@ -9,22 +9,22 @@ export const SG4_HIGHLIGHTS: { label: string; image: string; stories: Story[] }[
     image: "/Putting_1.png",
     stories: [
       {
-        title: "Starttid 14.10. Klockan är 14.00.",
-        text: "Ni står redan på puttinggreen. I stället för några lösa puttar: spela tre hål mot varandra. Plötsligt har sista putten en vinnare.",
+        title: "En snabb puttmatch",
+        text: "Tio minuter över? Utmana en kompis på tre hål.",
         action: "Starta puttmatch",
         href: "/match?flow=friend&category=putting",
         image: "/Putting_1.png",
       },
       {
-        title: "”Jag är bättre än du på att chippa.”",
-        text: "Kompisen är säker. Ni har några minuter och en chippinggreen. Ett slag var från samma avstånd – låt en kort match avgöra vem som kommer närmast.",
-        action: "Avgör med en chippmatch",
+        title: "Vem chippar närmast?",
+        text: "Gör uppvärmningen till en kort match mot en vän.",
+        action: "Starta chippmatch",
         href: "/match?flow=friend&category=around-the-green",
         image: "/Approach_shot.png",
       },
       {
-        title: "Kompisen blir tio minuter sen.",
-        text: "Du har redan plockat fram puttern. Spela en kort puttutmaning och försök slå ditt rekord medan du väntar. Nu finns ett mål med varje putt.",
+        title: "Slå ditt puttrekord",
+        text: "Spela själv och försök förbättra ditt personbästa.",
         action: "Spela puttutmaningen",
         href: "/puttrundan",
         image: "/Putting_1.png",
@@ -36,29 +36,29 @@ export const SG4_HIGHLIGHTS: { label: string; image: string; stories: Story[] }[
     image: "/Off_the_tee.png",
     stories: [
       {
-        title: "HCP 24. Men hur bra är puttningen?",
-        text: "Ditt handicap beskriver hela rundan. Ett test i SG4 ger ett uppskattat HCP för ett enskilt moment. Upptäck om puttningen är en styrka eller något att lägga mer träning på. Inte ett officiellt handicap.",
-        action: "Testa ett golfmoment",
+        title: "HCP för varje moment",
+        text: "Testa dina styrkor med uppskattat HCP per moment – inte officiellt handicap.",
+        action: "Välj HCP-test",
         href: "/standardiserade-tester",
         image: "/Approach_shot.png",
       },
       {
-        title: "Den kändes snabbare. Var den det?",
-        text: "Du har tränat på att få mer fart i svingen. Med en hastighetsmätare och SG4:s speedtest kan du jämföra bollhastigheten över tid. Se siffran bakom känslan.",
-        action: "Mät din bollhastighet",
+        title: "Hur snabb är du?",
+        text: "Mät bollhastigheten med en hastighetsmätare och följ din speed.",
+        action: "Testa din speed",
         href: "/speed-test",
         image: "/Off_the_tee.png",
       },
       {
-        title: "Tre veckors träning. Någon skillnad?",
-        text: "Du har lagt tid på närspelet, men en enda bra runda säger inte allt. Gör om samma test och jämför med tidigare resultat. Se hur just det momentet utvecklas.",
+        title: "Se dina framsteg",
+        text: "Jämför med tidigare tester och se hur ditt spel utvecklas.",
         action: "Se min utveckling",
         href: "/framsteg",
         image: "/Approach_shot.png",
       },
       {
-        title: "Samma handicap. Helt olika styrkor?",
-        text: "Kompisen slår längre, men vem är bäst runt greenen? Jämför era registrerade resultat i SG4 och se hur ni står er i olika delar av spelet. Välj vad nästa duell ska handla om.",
+        title: "Jämför med kompisar",
+        text: "Se era styrkor och vem som ligger före i olika golfmoment.",
         action: "Jämför med en kompis",
         href: "/jamfor",
         image: "/Red_vs_blue_1.png",
@@ -70,22 +70,22 @@ export const SG4_HIGHLIGHTS: { label: string; image: string; stories: Story[] }[
     image: "/Red_vs_blue_1.png",
     stories: [
       {
-        title: "Ingen kompis kan spela i dag.",
-        text: "Du går till övningsområdet ändå. Välj en bot och spela en match. Du slår på riktigt, boten får ett simulerat resultat – och nästa slag kan vända matchen.",
-        action: "Välj en bot att möta",
+        title: "Spela mot en bot",
+        text: "Tränar du ensam? Få en motståndare att tävla mot.",
+        action: "Välj en bot",
         href: "/match-bot",
         image: "/Red_vs_blue_1.png",
       },
       {
-        title: "Du har slagit 20 bollar. Vad är målet?",
-        text: "Gör nästa omgång till en utmaning med poäng och personbästa. Då vet du vad du försöker slå – och när det är dags för ett nytt försök.",
-        action: "Utmana mitt personbästa",
+        title: "Träna med ett mål",
+        text: "Samla poäng och försök slå ditt personbästa.",
+        action: "Välj utmaning",
         href: "/spela-runda",
         image: "/Putting_1.png",
       },
       {
-        title: "På greenen. Vad ska du träna?",
-        text: "Du har tid, men ingen plan. Välj ett moment i den guidade träningen och få uppgifter och återkoppling under passet. Du slipper hitta på hela upplägget själv.",
+        title: "Få hjälp med träningen",
+        text: "Välj ett moment och få uppgifter och återkoppling under passet.",
         action: "Starta guidad träning",
         href: "/coach",
         image: "/Putting_1.png",
@@ -97,22 +97,22 @@ export const SG4_HIGHLIGHTS: { label: string; image: string; stories: Story[] }[
     image: "/Approach_shot.png",
     stories: [
       {
-        title: "”Vi hinner sex hål på kortbanan.”",
-        text: "Välj kompisen och sex hål. Ingen bana, tee eller par behöver läggas in. Registrera slagen och låt appen hålla reda på vem som leder.",
-        action: "Starta en banmatch",
+        title: "Match på korthålsbanan",
+        text: "Välj kompis och antal hål. Ingen bana behöver läggas in.",
+        action: "Spela på bana",
         href: "/match?flow=friend&category=course",
         image: "/Approach_shot.png",
       },
       {
-        title: "Rundan gick sådär. Tre hål kvar.",
-        text: "Börja en ny match från noll på de sista tre hålen. Det som hände tidigare avgör inte den här duellen. Nu spelar ni om avslutningen.",
-        action: "Spela om sista hålen",
+        title: "Tävla på valfria hål",
+        text: "Spela en egen match på hela rundan eller bara några hål.",
+        action: "Starta en banmatch",
         href: "/match?flow=friend&category=course",
         image: "/Off_the_tee.png",
       },
       {
-        title: "Kompisen vinner nästan varje gång.",
-        text: "”Okej, jag får två extraslag på sex hål.” Välj vem som får slagen så fördelar SG4 dem jämnt. Ni bestämmer förutsättningarna och spelar matchen.",
+        title: "Olika bra? Ge extraslag",
+        text: "Bestäm vem som får extraslag. SG4 fördelar dem över hålen.",
         action: "Spela med extraslag",
         href: "/match?flow=friend&category=course",
         image: "/Red_vs_blue_1.png",
@@ -212,16 +212,9 @@ export function SG4Highlights() {
                   move(-1);
                 }
               }}
-              className="fixed inset-0 z-[250] mx-auto flex h-dvh w-full max-w-lg flex-col overflow-y-auto bg-slate-950 text-white outline-none sm:inset-y-4 sm:h-[calc(100dvh-2rem)] sm:rounded-3xl"
+              className="fixed inset-0 z-[250] mx-auto flex h-dvh w-full max-w-lg flex-col overflow-y-auto bg-white text-slate-950 outline-none sm:inset-y-4 sm:h-[calc(100dvh-2rem)] sm:rounded-3xl"
             >
-              <img
-                key={story.image}
-                src={story.image}
-                alt=""
-                className="pointer-events-none absolute inset-0 h-full w-full object-cover"
-              />
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/55 via-black/25 to-slate-950" />
-              <div className="relative z-10 px-4 pt-[max(12px,env(safe-area-inset-top))]">
+              <div className="relative z-10 shrink-0 bg-slate-950 px-4 pb-2 pt-[max(12px,env(safe-area-inset-top))] text-white">
                 <div
                   className="flex gap-1.5"
                   aria-label={`Story ${position.slide + 1} av ${group.stories.length}`}
@@ -257,7 +250,7 @@ export function SG4Highlights() {
                 key={position.group}
                 aria-live="polite"
                 aria-atomic="true"
-                className={`sg4-category-enter relative z-10 mx-4 mt-2 rounded-2xl px-4 py-3 shadow-lg ${categoryTones[position.group]}`}
+                className={`sg4-category-enter relative z-10 mx-4 mt-2 rounded-2xl px-4 py-3 text-white ${categoryTones[position.group]}`}
               >
                 <p className="text-[11px] font-semibold text-white/80">
                   Kategori {position.group + 1} av {SG4_HIGHLIGHTS.length}
@@ -266,30 +259,39 @@ export function SG4Highlights() {
                   {group.label}
                 </p>
               </div>
-              <div className="relative flex min-h-20 flex-1" aria-label="Bläddra mellan stories">
+              <div
+                className="relative mx-4 mt-3 flex min-h-[120px] flex-1 overflow-hidden rounded-2xl bg-slate-100"
+                aria-label="Bläddra mellan stories"
+              >
+                <img
+                  key={story.image}
+                  src={story.image}
+                  alt=""
+                  className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+                />
                 <button
                   aria-label="Föregående story"
                   disabled={position.group === 0 && position.slide === 0}
-                  className="w-2/5 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white"
+                  className="relative z-10 w-2/5 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white"
                   onClick={() => move(-1)}
                 />
                 <button
                   aria-label={nextLabel}
-                  className="flex-1 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white"
+                  className="relative z-10 flex-1 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white"
                   onClick={() => move(1)}
                 />
               </div>
-              <div className="relative z-10 bg-gradient-to-t from-slate-950 via-slate-950/90 to-transparent px-6 pb-[max(20px,env(safe-area-inset-bottom))] pt-12">
-                <Dialog.Title className="max-w-[16ch] font-sans text-3xl font-extrabold leading-tight tracking-normal">
+              <div className="relative z-10 shrink-0 bg-white px-6 pb-[max(16px,env(safe-area-inset-bottom))] pt-5 text-slate-950">
+                <Dialog.Title className="font-sans text-3xl font-extrabold leading-tight tracking-normal">
                   {story.title}
                 </Dialog.Title>
-                <Dialog.Description className="mt-4 text-base leading-relaxed text-white/85">
+                <Dialog.Description className="mt-3 text-lg leading-relaxed text-slate-600">
                   {story.text}
                 </Dialog.Description>
                 <a
                   href={story.href}
                   onClick={markSeen}
-                  className="mt-6 flex min-h-14 items-center justify-center gap-3 rounded-2xl bg-white px-4 py-3 text-base font-bold text-slate-950"
+                  className="mt-5 flex min-h-14 items-center justify-center gap-3 rounded-2xl bg-blue-600 px-4 py-3 text-base font-bold text-white"
                 >
                   {story.action}
                   <ArrowRight className="h-5 w-5" />
@@ -306,14 +308,14 @@ export function SG4Highlights() {
                   {lastSlide ? (
                     <button
                       onClick={() => move(1)}
-                      className="flex min-h-12 max-w-[80%] items-center justify-end gap-2 rounded-xl bg-white/15 px-3 py-2 text-left text-sm font-bold"
+                      className="flex min-h-12 max-w-[80%] items-center justify-end gap-2 rounded-xl bg-slate-100 px-3 py-2 text-left text-sm font-bold"
                     >
                       <span>{nextLabel}</span>
                       <ChevronRight className="h-5 w-5 shrink-0" />
                     </button>
                   ) : (
                     <>
-                      <span className="text-xs text-white/65">
+                      <span className="text-xs text-slate-500">
                         {position.slide + 1} / {group.stories.length} i denna kategori
                       </span>
                       <button
