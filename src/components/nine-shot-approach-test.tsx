@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Check, LoaderCircle, RotateCcw, Trophy, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
-import { EXTENDED_PRECISION_TARGETS, emptyPrecisionShots, precisionResult, proximity, summarize, type PrecisionShot } from "@/lib/precision";
+import { EXTENDED_PRECISION_TARGETS, emptyPrecisionShots, precisionResult, summarize, type PrecisionShot } from "@/lib/precision";
 import { loadPrecisionSessions, savePrecisionSession } from "@/lib/precision-store";
 import { handicapLabel } from "@/lib/shortgame";
 import { useChipScreenColor } from "@/lib/use-chip-screen-color";
