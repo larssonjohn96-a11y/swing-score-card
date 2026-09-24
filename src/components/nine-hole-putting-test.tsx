@@ -4,7 +4,7 @@ import { ArrowLeft,Check,LoaderCircle,RotateCcw,Star,Undo2 } from "lucide-react"
 import { Button } from "@/components/ui/button";
 import { Dialog,DialogContent,DialogDescription,DialogTitle } from "@/components/ui/dialog";
 import { buildPuttingMatchReview } from "@/lib/putting-match-review";
-import { handicapLabel } from "@/lib/offtee";
+import { handicapLabel } from "@/lib/shortgame";
 import { useChipScreenColor } from "@/lib/use-chip-screen-color";
 const DIST=[1.5,2.5,4,8,10,12,1.5,2.5,4],KEY="sg4-putting-nine-hole-v1",fmt=(n:number)=>n.toFixed(1).replace(".",",");
 type Saved={id:string;at:number;putts:number[]};function load():Saved[]{try{const v=JSON.parse(localStorage.getItem(KEY)??"[]");return Array.isArray(v)?v:[]}catch{return[]}}function save(x:Saved){localStorage.setItem(KEY,JSON.stringify([...load(),x].slice(-30)))}
