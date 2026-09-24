@@ -1,0 +1,17 @@
+import { useEffect,useState,type ReactNode } from "react";
+import { ArrowLeft,ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ChipCelebration } from "@/components/chip-celebration";
+import { handicapLabel } from "@/lib/shortgame";
+export type HcpAnalysisSlide={key:string;content:ReactNode};
+export function StandardHcpAnalysis({title,hcp,slides,onClose}:{title:string;hcp:number;slides:HcpAnalysisSlide[];onClose:()=>void}){
+ const [page,setPage]=useState(0),[display,setDisplay]=useState(40),[ready,setReady]=useState(false);
+ useEffect(()=>{setPage(0);setDisplay(40);setReady(false);const reduced=window.matchMedia("(prefers-reduced-motion: reduce)").matches;if(reduced){setDisplay(hcp);setReady(true);return}const start=performance.now(),duration=2600;let raf=0;const tick=(now:number)=>{const p=Math.min(1,(now-start)/duration),e=1-Math.pow(1-p,4);setDisplay(40+(hcp-40)*e);if(p<1)raf=requestAnimationFrame(tick);else setReady(true)};raf=requestAnimationFrame(tick);return()=>cancelAnimationFrame(raf)},[hcp]);
+ const all=[{key:"hcp",content:<section className="text-center">{ready&&<ChipCelebration confettiOnly/>}<p className="text-sm font-bold uppercase tracking-widest text-blue-100">{title}</p><h2 className="mt-4 text-3xl font-black">Ditt estimerade HCP</h2><div className="my-8 text-[clamp(88px,27vw,132px)] font-black tabular-nums">{handicapLabel(Math.round(display*10)/10)}</div></section>},...slides];
+ const last=page===all.length-1;
+ return <div className="mx-auto flex h-full min-h-0 w-full max-w-md flex-col px-5 pb-[max(20px,env(safe-area-inset-bottom))] pt-[max(70px,calc(env(safe-area-inset-top)+60px))]"><div className="flex min-h-0 flex-1 flex-col justify-center overflow-y-auto py-4">{all[page].content}</div><nav className="mt-4 flex shrink-0 gap-3">{page>0&&<Button onClick={()=>setPage(p=>p-1)} className="h-14 w-14 rounded-full border border-white/30 bg-transparent text-white hover:bg-white/10"><ArrowLeft/></Button>}<Button disabled={page===0&&!ready} onClick={()=>last?onClose():setPage(p=>p+1)} className="min-h-14 flex-1 rounded-full bg-white font-bold text-blue-700 hover:bg-white">{last?"Till resultatet":<>Nästa <ArrowRight className="ml-2 h-4 w-4"/></>}</Button></nav></div>
+}
+export function ShotAnalysisList({title,rows}:{title:string;rows:{label:string;value:string;grade:"exceptionell"|"briljant"|"bra"|"ok"|"svag"}[]}){
+ const cls=(g:string)=>g==="exceptionell"||g==="briljant"?"text-emerald-300":g==="svag"?"text-rose-200":"text-white";
+ return <section><p className="text-sm font-bold uppercase tracking-widest text-blue-100">Slag för slag</p><h2 className="mt-3 text-3xl font-black">{title}</h2><div className="mt-5 space-y-2">{rows.map((r,i)=><div key={i} className="flex items-center justify-between rounded-2xl bg-white/10 px-4 py-3 text-left"><div><p className="font-bold">{r.label}</p><p className="text-sm text-blue-100">{r.value}</p></div><strong className={`capitalize ${cls(r.grade)}`}>{r.grade}</strong></div>)}</div></section>
+}
