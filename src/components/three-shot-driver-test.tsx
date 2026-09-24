@@ -6,7 +6,10 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 import { offTeeResult, type TeeShot } from "@/lib/offtee";
 import { handicapLabel } from "@/lib/shortgame";
 import { loadLongDriveSessions, saveLongDriveSession, sessionBest, todayISO } from "@/lib/longdrive";
-import { useChipScreenColor } from "@/lib/use-chip-screen-color";\nimport { ChipCelebration } from "@/components/chip-celebration";\nimport { DrivingHcpBellCurve } from "@/components/offtee-bellcurve";\nimport { ShotAnalysisList } from "@/components/standard-hcp-analysis";
+import { useChipScreenColor } from "@/lib/use-chip-screen-color";
+import { ChipCelebration } from "@/components/chip-celebration";
+import { DrivingHcpBellCurve } from "@/components/offtee-bellcurve";
+import { ShotAnalysisList } from "@/components/standard-hcp-analysis";
 type Mode="longdrive"|"offtee"; type Shot={distance:number;lateral:number;side:"left"|"right"|"center"}; type Saved={id:string;at:number;shots:Shot[]};
 const KEY="sg4-offtee-three-shot-v1",fmt=(n:number)=>n.toFixed(1).replace(".",",");
 const tee=(a:Shot[]):TeeShot[]=>a.map((s,i)=>({index:i+1,filled:true,total:s.distance,sidled:s.lateral,direction:s.side==="left"?"left":"right"}));
@@ -18,7 +21,8 @@ export function ThreeShotDriverTest({mode,onExit}:{mode:Mode;onExit:()=>void}){
  const [view,setView]=useState<"intro"|"countdown"|"test"|"compiling"|"result">("intro"),[countdown,setCountdown]=useState(3),[shots,setShots]=useState<Shot[]>([]);
  const [distance,setDistance]=useState(long?"250":"220"),[lateral,setLateral]=useState("0"),[side,setSide]=useState<"left"|"right">("right"),[compile,setCompile]=useState(0);
  const [confirmExit,setConfirmExit]=useState(false),[analysis,setAnalysis]=useState(false),[hcpReady,setHcpReady]=useState(false),[analysisPage,setAnalysisPage]=useState(0),[rollingHcp,setRollingHcp]=useState(40); const timers=useRef<number[]>([]);
- useChipScreenColor(view==="countdown"||view==="compiling"||analysis);\n useEffect(()=>{const handler=()=>setConfirmExit(true);window.addEventListener("sg4-test-abort",handler);return()=>window.removeEventListener("sg4-test-abort",handler)},[]);
+ useChipScreenColor(view==="countdown"||view==="compiling"||analysis);
+ useEffect(()=>{const handler=()=>setConfirmExit(true);window.addEventListener("sg4-test-abort",handler);return()=>window.removeEventListener("sg4-test-abort",handler)},[]);
  const result=useMemo(()=>shots.length===3?offTeeResult(tee(shots)):null,[shots]),best=Math.max(0,...shots.map(s=>s.distance)),avg=shots.length?shots.reduce((a,s)=>a+s.distance,0)/shots.length:0;
  const longSessions=typeof window==="undefined"?[]:loadLongDriveSessions(); const pb=long?Math.max(0,...longSessions.map(sessionBest)):typeof window==="undefined"?0:Math.max(0,...loadOfftee().flatMap(t=>t.shots.map(s=>s.distance)));
  const clear=()=>{timers.current.forEach(window.clearTimeout);timers.current=[]}; useEffect(()=>clear,[]);
