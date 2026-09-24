@@ -6,11 +6,13 @@ import { Dialog,DialogContent,DialogDescription,DialogTitle } from "@/components
 import { CHIP_ZONES,type ChipPoints } from "@/lib/chip-stations";
 import { courseHandicap,holeStars,roundStars,type CourseRound } from "@/lib/chip-course";
 import { handicapLabel } from "@/lib/shortgame";
-import { useChipScreenColor } from "@/lib/use-chip-screen-color";\nimport { StandardHcpAnalysis,ShotAnalysisList } from "@/components/standard-hcp-analysis";
+import { useChipScreenColor } from "@/lib/use-chip-screen-color";
+import { StandardHcpAnalysis,ShotAnalysisList } from "@/components/standard-hcp-analysis";
 const DIST=[8,12,18],fmt=(n:number)=>n.toFixed(1).replace(".",",");
 export function NineShotChipTest({onExit}:{onExit:()=>void}){
  const [view,setView]=useState<"intro"|"countdown"|"test"|"compiling"|"result">("intro"),[countdown,setCountdown]=useState(3),[station,setStation]=useState(0),[balls,setBalls]=useState<ChipPoints[][]>([[],[],[]]),[compile,setCompile]=useState(0),[confirmExit,setConfirmExit]=useState(false),[analysis,setAnalysis]=useState(false),[hcpReady,setHcpReady]=useState(false);const timers=useRef<number[]>([]);
- useChipScreenColor(view==="countdown"||view==="compiling"||analysis);\n useEffect(()=>{const handler=()=>setConfirmExit(true);window.addEventListener("sg4-test-abort",handler);return()=>window.removeEventListener("sg4-test-abort",handler)},[]);const done=balls.reduce((a,b)=>a+b.length,0),current=balls[station],stars=balls.reduce((sum,b,i)=>sum+holeStars(b,i,"Fairway",4),0);
+ useChipScreenColor(view==="countdown"||view==="compiling"||analysis);
+ useEffect(()=>{const handler=()=>setConfirmExit(true);window.addEventListener("sg4-test-abort",handler);return()=>window.removeEventListener("sg4-test-abort",handler)},[]);const done=balls.reduce((a,b)=>a+b.length,0),current=balls[station],stars=balls.reduce((sum,b,i)=>sum+holeStars(b,i,"Fairway",4),0);
  const round=useMemo<CourseRound|null>(()=>done===9?{id:"chip-3x3",model:4,lie:"Fairway",startedAt:0,finishedAt:Date.now(),holes:balls,status:"front",distances:DIST}:null,[done,balls]);const hcp=round?courseHandicap(round):null;
  const clear=()=>{timers.current.forEach(window.clearTimeout);timers.current=[]};useEffect(()=>clear,[]);
  useEffect(()=>{if(view!=="countdown")return;setCountdown(3);const start=performance.now(),duration=2400,id=window.setInterval(()=>{const left=Math.max(0,duration-(performance.now()-start));setCountdown(left/800);if(left<=0){window.clearInterval(id);setView("test")}},40);return()=>window.clearInterval(id)},[view]);
