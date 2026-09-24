@@ -1,6 +1,6 @@
 import { ChipCelebration } from "@/components/chip-celebration";
 import { speedStories } from "@/lib/speed-story";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Lock, X } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { AgeInlinePrompt } from "@/components/age-inline-prompt";
@@ -64,23 +64,30 @@ function AnimatedDistance({ value, delay = 0 }: { value: number; delay?: number 
   );
 }
 
-export function SpeedChallengeAnalysis({
-  round,
-  unit = "mph",
-  onRestart,
-  onBackToStart,
-}: {
+type SpeedChallengeAnalysisProps = {
   round: CourseRound;
   unit?: SpeedUnit;
   onRestart: () => void;
   onBackToStart: () => void;
-}) {
+};
+
+export function SpeedChallengeAnalysis(props: SpeedChallengeAnalysisProps) {
+  return <SpeedChallengeAnalysisContent key={props.round.id} {...props} />;
+}
+
+function SpeedChallengeAnalysisContent({
+  round,
+  unit = "mph",
+  onRestart,
+  onBackToStart,
+}: SpeedChallengeAnalysisProps) {
   const { canViewDetailedBreakdowns } = useSubscription();
   const [open, setOpen] = useState(false);
   const [story, setStory] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [revealComplete, setRevealComplete] = useState(false);
   const [levelComplete, setLevelComplete] = useState(false);
+  const onLevelComplete = useCallback(() => setLevelComplete(true), []);
   const [age, setAge] = useState<number | undefined>(() => loadCardProfile().age);
   const touch = useRef<{ x: number; y: number } | null>(null);
   useChipScreenColor(open && canViewDetailedBreakdowns);
@@ -101,11 +108,19 @@ export function SpeedChallengeAnalysis({
       window.clearTimeout(completion);
     };
   }, [open, round.id, canViewDetailedBreakdowns]);
+  const nextBlocked = (currentStory === "hcp" && !revealComplete) ||
+    (currentStory === "level" && !levelComplete);
+  function showStory(index: number) {
+    const target = Math.max(0, Math.min(lastStory, index));
+    if (target === story) return;
+    // All entry paths (button, keyboard, swipe, backward) reset the reveal gate.
+    setLevelComplete(false);
+    touch.current = null;
+    setStory(target);
+  }
+  function previous() { showStory(story - 1); }
   function next() {
-    if (currentStory === "hcp" && !revealComplete) return;
-    if (currentStory === "level" && !levelComplete) return;
-    if (story === lastStory) return;
-    else setStory((s) => Math.min(lastStory, s + 1));
+    if (!nextBlocked) showStory(story + 1);
   }
   return (
     <Dialog
@@ -148,21 +163,23 @@ export function SpeedChallengeAnalysis({
           <div
             className="mx-auto flex h-full min-h-0 w-full max-w-md flex-col px-5 pb-[max(20px,env(safe-area-inset-bottom))] pt-[max(80px,calc(env(safe-area-inset-top)+72px))]"
             onKeyDown={(event) => {
-              if ((event.target as HTMLElement).closest("input,select,textarea")) return;
+              if ((event.target as HTMLElement).closest("input,select,textarea,summary,a")) return;
               if (event.key === "ArrowRight") {
                 event.preventDefault();
                 next();
               }
               if (event.key === "ArrowLeft") {
                 event.preventDefault();
-                setStory((s) => Math.max(0, s - 1));
+                previous();
               }
             }}
           >
             <div
-              className="flex min-h-0 flex-1 flex-col justify-center overflow-y-auto py-4"
+              className={`flex min-h-0 flex-1 flex-col overflow-y-auto py-4 ${currentStory === "level" ? "justify-start" : "justify-center"}`}
+              onTouchCancel={() => { touch.current = null; }}
               onTouchStart={(event) => {
-                if ((event.target as HTMLElement).closest("button,input,select,a")) return;
+                touch.current = null;
+                if ((event.target as HTMLElement).closest("button,input,select,a,summary")) return;
                 touch.current = { x: event.touches[0].clientX, y: event.touches[0].clientY };
               }}
               onTouchEnd={(event) => {
@@ -173,7 +190,7 @@ export function SpeedChallengeAnalysis({
                   dy = event.changedTouches[0].clientY - start.y;
                 if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
                   if (dx < 0) next();
-                  else setStory((s) => Math.max(0, s - 1));
+                  else previous();
                 }
               }}
             >
@@ -222,7 +239,7 @@ export function SpeedChallengeAnalysis({
                   speedMph={result.topBallSpeed}
                   unit={unit}
                   active={open}
-                  onComplete={() => setLevelComplete(true)}
+                  onComplete={onLevelComplete}
                 />
               )}
               {currentStory === "age" && (
@@ -322,17 +339,13 @@ export function SpeedChallengeAnalysis({
             ) : (
               <nav
                 aria-label="Analysens stories"
-                aria-hidden={
-                  (currentStory === "hcp" && !revealComplete) ||
-                  (currentStory === "level" && !levelComplete)
-                }
-                className={`mt-4 flex shrink-0 items-center gap-3 transition-opacity duration-500 motion-reduce:transition-none ${(currentStory === "hcp" && !revealComplete) || (currentStory === "level" && !levelComplete) ? "invisible opacity-0" : "visible opacity-100"}`}
+                className="mt-4 flex shrink-0 items-center gap-3"
               >
                 {story > 0 && (
                   <Button
                     data-local-navigation
                     aria-label="Föregående story"
-                    onClick={() => setStory((s) => Math.max(0, s - 1))}
+                    onClick={previous}
                     className="h-14 w-14 shrink-0 rounded-full border border-white/30 bg-transparent text-white hover:bg-white/10"
                   >
                     <ArrowLeft />
@@ -341,11 +354,10 @@ export function SpeedChallengeAnalysis({
                 <Button
                   data-local-navigation
                   onClick={next}
-                  disabled={
-                    (currentStory === "hcp" && !revealComplete) ||
-                    (currentStory === "level" && !levelComplete)
-                  }
-                  className="min-h-14 flex-1 rounded-full bg-white text-base font-bold text-blue-700 hover:bg-blue-50"
+                  disabled={nextBlocked}
+                  aria-hidden={nextBlocked}
+                  tabIndex={nextBlocked ? -1 : 0}
+                  className={`min-h-14 flex-1 rounded-full bg-white text-base font-bold text-blue-700 transition-opacity duration-300 hover:bg-blue-50 motion-reduce:transition-none ${nextBlocked ? "invisible opacity-0" : "visible opacity-100"}`}
                 >
                   {currentStory === "age" && !age ? "Hoppa över" : "Nästa"}
                   {story < lastStory && <ArrowRight className="ml-2 h-4 w-4" />}
