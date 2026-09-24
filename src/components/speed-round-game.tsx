@@ -57,6 +57,8 @@ export function SpeedRoundGame({
   const stateRef = useRef(state);
   const key = courseStorageKey(userId);
 
+  useEffect(() => { const handler = () => setConfirmExit(true); window.addEventListener("sg4-test-abort", handler); return () => window.removeEventListener("sg4-test-abort", handler); }, []);
+
   useEffect(() => {
     if (authLoading) return;
     try {
