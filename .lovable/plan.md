@@ -1,24 +1,19 @@
-# Ball Speed Challenge redesign
+# Progressiv nivåmätare för Ball Speed Challenge
 
-## Goal
-Replace the existing course-like Speedrundan presentation with one focused three-drive Ball Speed Challenge, while preserving compatible history, account sync, and all unrelated tests.
+## Mål
+Lägg till en ny blå fullscreen-story direkt efter Speed-HCP som visar spelarens snabbaste slag mot en enda progressiv nivåskala, utan att ändra testets tre slag, beräkningar, historik eller övriga stories.
 
-## Implementation
-- Rework the existing `/speedrundan` experience into a single intro → three-shot test → direct result flow with one sticky back header.
-- Add a vertical high-striker speed meter with fixed pre-test personal-best and last-five-test average markers, unit switching, stable numeric entry, per-shot feedback, and reduced-motion-safe record/average celebrations.
-- Define historical comparison helpers around completed three-shot ball-speed tests only: average each test’s best shot across the latest five, all-time best for PB, frozen snapshots at each new attempt, and no invented baseline for first-time users.
-- Keep the existing account-scoped local/cloud storage format and deterministic sync IDs where compatible; save exactly one completed result after the third accepted shot and ignore incomplete attempts in comparisons.
-- Replace the result with best speed, all three values, approximate driver carry interval, honest record/average feedback, and retry.
-- Refactor the existing blue expandable Speed analysis so Speed-HCP, age comparison, level explanation, and historical progression appear only inside it, using the established putting reveal behavior.
-- Route the existing Ball Speed Challenge entry points to this redesigned flow and remove duplicate/course-specific UI only from this challenge.
+## Genomförande
+- Definiera en strikt stigande, testbar nivåmodell i mph med SG4-appnivåer, Trackmans verifierade LPGA- och PGA-snitt från 2023 samt ärligt namngivna 180/190/200-milstolpar.
+- Lägg till hjälpfunktioner för uppnådd nivå, nästa mål, exakt gap, enhetsvisning och near-miss-regeln inom 6 mph. Ogiltiga värden hanteras utan felaktiga passager eller negativa avstånd.
+- Infoga storyn `level` i ordningen HCP → nivå → ålder → eventuell alla-golfare → längd. HCP/ålder/alla fortsätter använda snittfart; nivåstoryn använder bästa slaget.
+- Bygg en luftig mobilmätare med cirka 3,6 sekunders monotont förlopp, tick/glow när verkligt passerade nivåer nås och en liten slutstuds utan numerisk överskjutning. Visa endast aktuell nivå och nästa mål tydligt.
+- Visa firande först efter korrekt stopp, med större kort firande endast för höga milstolpar. Behåll HCP-storyns befintliga lilla konfetti separat.
+- Lås Nästa, högerpil och framåtswipe under nivåanimationen. Stäng/bakåt fungerar alltid. Avbryt animation och timers vid stängning eller storybyte; reduced motion visar slutläget direkt utan konfetti och reagerar även om inställningen ändras under körning.
+- Lägg en liten källnotis under “Om nivåerna” som skiljer SG4-riktmärken från Trackman Tour Averages 2023 och länkar till den angivna officiella källan.
 
-## Validation
-- Add focused tests for unit conversion and validation, completed-history baseline/PB rules, first-test behavior, PB precedence, and reducer/save idempotency.
-- Run relevant tests and the project typecheck/build checks.
-- Exercise the complete three-shot and retry flows in the mobile preview, checking overflow, header/back behavior, fixed markers, direct result content, and analysis separation.
-
-## Assumptions and limits
-- Existing compatible `speed-course-round` records remain the canonical synced history; older standalone Speed Test records are retained but not mixed unless they can be safely identified as completed three-ball ball-speed tests.
-- Driver carry uses the project’s documented TrackMan-derived carry model and is presented as an approximate interval, never total roll.
-- Friend ranking/next-target UI appears only when the existing data source provides real comparable data; otherwise it is omitted.
-- No backend migration, dependency change, or production publish is planned.
+## Verifiering
+- Enhetstesta varje gräns strax under, exakt och över; mph/km/h; decimal-near-miss; högsta nivå; ogiltiga värden; storyordning och villkorad all-story.
+- Kör berörda Vitest-test, projektets typkontroll och byggkontroll.
+- Kontrollera dialogen i webbläsare på 375×667 och 390×844, inklusive spärrad navigation, avslutad reveal, reduced motion, stängning och safe-area/overflow.
+- Granska diffen och skapa en vanlig commit utan publicering.
