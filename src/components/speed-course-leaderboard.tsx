@@ -98,7 +98,7 @@ export function SpeedLeaderboard({
         <span>Spelare</span>
         <span>{ballSpeed ? "Snitt" : "Speedpoäng"}</span>
       </div>
-      <ol className="p-2">
+      <ol className="px-4">
         {all.map((r) => {
           const rank = r.count
             ? all.filter((x) => x.count > 0 && x.points > r.points).length + 1
@@ -106,10 +106,10 @@ export function SpeedLeaderboard({
           return (
             <li
               key={r.id}
-              className={`my-1 flex items-center gap-3 rounded-2xl p-3 ${r.id === (userId ?? "guest") ? "bg-blue-50" : "bg-white"}`}
+              className={`flex items-center gap-3 border-b border-slate-100 py-3 last:border-b-0 ${r.id === (userId ?? "guest") ? "font-semibold" : ""}`}
             >
               <span
-                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-black ${rank === 1 ? "bg-amber-100 text-amber-700" : "bg-white text-slate-500"}`}
+                className={`w-7 shrink-0 text-center text-sm font-black tabular-nums ${rank === 1 ? "text-amber-600" : "text-slate-400"}`}
               >
                 {rank ?? "–"}
               </span>
@@ -126,7 +126,7 @@ export function SpeedLeaderboard({
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-xl font-black text-blue-700">
+                <p className="text-base font-black tabular-nums text-slate-900">
                   {r.count ? fmt(ballSpeed ? fromMph(r.points, unit) : r.points) : "–"}
                 </p>
                 <p className="text-xs text-slate-500">
