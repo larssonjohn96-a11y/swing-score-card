@@ -65,7 +65,7 @@ const PUTTING_FILTERS: Array<{ id: PuttingFilter; label: string }> = [
 const TESTS: Record<Category, TestItem[]> = {
   "off-the-tee": [
     { to: "/speed", title: "Speed Test", description: "Mät ball speed och club head speed och följ hur din fart utvecklas över tid. Speed visas i din SG4-profil och spindel, men räknas inte in i Total HCP.", meta: "Ball speed · Club speed · PB", skill: "Power", featured: true },
-    { to: "/longdrive", title: "Longest Drive", description: "Sex försök med driver. Jaga personbästa i carry och följ både längsta slag och snitt över tid.", meta: "6 drives · längsta carry · PB", skill: "Distance", featured: true },
+    { to: "/longdrive", title: "Longest Drive", description: "Tre försök med driver. Jaga personbästa i total längd och följ både längsta slag och snitt över tid.", meta: "3 drives · total längd · PB", skill: "Distance", featured: true },
     { to: "/fairway-streak", title: "Fairway Streak", description: "Träffa en 30 m bred fairway och fortsätt så länge du lyckas. Första missen avslutar testet.", meta: "1 liv · fairways i rad · PB", skill: "Challenge", featured: true },
     { to: "/driver-konsekvens", title: "Driver med konsekvens", description: "16 drives mot en 30 m fairway där kostnaden för vänster- och högermiss varierar hål för hål.", meta: "16 drives · 30 m fairway", skill: "Precision & konsekvens" },
   ],
