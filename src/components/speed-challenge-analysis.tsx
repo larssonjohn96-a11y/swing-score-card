@@ -310,7 +310,7 @@ function SpeedChallengeAnalysisContent({
                 </section>
               )}
             </div>
-            {currentStory === "distance" ? (
+            {currentStory === "level" ? (
               <div className="mt-5 shrink-0 space-y-3 text-center">
                 <h3 className="text-xl font-bold">Kan du slå ditt resultat?</h3>
                 <p className="text-sm text-blue-100">Gör testet igen – tre nya slag.</p>
