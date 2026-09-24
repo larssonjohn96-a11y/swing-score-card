@@ -155,7 +155,7 @@ export function SpeedRoundGame({
     setFeedback(null);
     setCelebrationId(null);
     setResultId(null);
-    setCountdown(5);
+    setCountdown(3);
     setView("countdown");
   }
 
@@ -183,9 +183,9 @@ export function SpeedRoundGame({
 
   useEffect(() => {
     if (view !== "countdown") return;
-    setCountdown(5);
+    setCountdown(3);
     const startedAt = performance.now();
-    const duration = 5000;
+    const duration = 3000;
     const timer = window.setInterval(() => {
       const remaining = Math.max(0, duration - (performance.now() - startedAt));
       setCountdown(remaining / 1000);
@@ -288,10 +288,10 @@ export function SpeedRoundGame({
   return (
     <main className="mx-auto min-h-[calc(100dvh-58px)] max-w-md overflow-x-hidden bg-slate-50 px-4 pb-[max(24px,env(safe-area-inset-bottom))] pt-4 text-slate-950">
       <style>{`
-        @keyframes speedSheen{0%{transform:translateX(-140%)}100%{transform:translateX(240%)}}
+        @keyframes speedSheen{0%{transform:translateX(-140%);opacity:0}12%{opacity:1}88%{opacity:1}100%{transform:translateX(240%);opacity:0}}
         @keyframes pressurePulse{0%,100%{box-shadow:0 0 0 rgba(124,58,237,0)}50%{box-shadow:0 0 24px rgba(124,58,237,.20)}}
         @keyframes countdownRing{from{stroke-dashoffset:0}to{stroke-dashoffset:251.2}}
-        .speed-sheen{animation:speedSheen 1.15s cubic-bezier(.2,.7,.2,1) .2s both}
+        .speed-sheen{opacity:0;animation:speedSheen 1.15s cubic-bezier(.2,.7,.2,1) .2s 1}
         .speed-sheen-delay{animation:speedSheen 1.15s cubic-bezier(.2,.7,.2,1) 1.05s both}
         .speed-pressure{animation:pressurePulse 1.8s ease-in-out infinite}
         @media(prefers-reduced-motion:reduce){.speed-sheen,.speed-sheen-delay,.speed-pressure{animation:none!important}}
@@ -441,18 +441,18 @@ export function SpeedRoundGame({
           />
         </div>
       ) : view === "countdown" ? (
-        <div className="flex min-h-[calc(100dvh-100px)] flex-col items-center justify-center text-center">
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-600">Ball Speed Challenge · 3 slag</p>
+        <div className="fixed inset-0 z-[90] flex min-h-[100dvh] flex-col items-center justify-center bg-blue-600 px-6 text-center text-white">
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-100">Ball Speed Challenge · 3 slag</p>
           <h1 className="mt-3 text-3xl font-black">Gör dig redo</h1>
-          <p className="mt-2 text-sm font-semibold text-slate-500">Startar om {Math.max(1, Math.ceil(countdown))}</p>
+          <p className="mt-2 text-sm font-semibold text-blue-100">Startar om {Math.max(1, Math.ceil(countdown))}</p>
           <div className="relative mt-8 h-40 w-40">
             <svg className="-rotate-90 h-full w-full" viewBox="0 0 100 100" aria-hidden="true">
-              <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="5" className="text-blue-100" />
+              <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="5" className="text-white/20" />
               <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="5" strokeLinecap="round"
-                strokeDasharray="251.2" strokeDashoffset={251.2 * (1 - Math.max(0, countdown) / 5)}
-                className="text-blue-600" />
+                strokeDasharray="251.2" strokeDashoffset={251.2 * (1 - Math.max(0, countdown) / 3)}
+                className="text-white" />
             </svg>
-            <span className="absolute inset-0 flex items-center justify-center text-6xl font-black tabular-nums text-blue-700">{Math.max(1, Math.ceil(countdown))}</span>
+            <span className="absolute inset-0 flex items-center justify-center text-6xl font-black tabular-nums text-white">{Math.max(1, Math.ceil(countdown))}</span>
           </div>
         </div>
       ) : view === "test" && active ? (
