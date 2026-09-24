@@ -8,7 +8,7 @@ export type LongDriveSession = {
   id: string;
   /** ISO-datum, YYYY-MM-DD */
   date: string;
-  /** carry per försök, 3 st */
+  /** total längd per försök (carry + rull), 3 st */
   carries: number[];
   unit: LongDriveUnit;
   note?: string;
