@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { EXTENDED_PRECISION_TARGETS, emptyPrecisionShots, precisionResult, proximity, summarize, type PrecisionShot } from "@/lib/precision";
 import { loadPrecisionSessions, savePrecisionSession } from "@/lib/precision-store";
-import { handicapLabel } from "@/lib/offtee";
+import { handicapLabel } from "@/lib/shortgame";
 import { useChipScreenColor } from "@/lib/use-chip-screen-color";
 const TARGETS=[...EXTENDED_PRECISION_TARGETS] as number[],fmt=(n:number)=>n.toFixed(1).replace(".",",");
 export function NineShotApproachTest({onExit}:{onExit:()=>void}){
