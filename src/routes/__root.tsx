@@ -219,6 +219,12 @@ function RootComponent() {
       const target = event.target as HTMLElement | null;
       const control = target?.closest<HTMLElement>("a,button");
       if (!control || control.hasAttribute("data-local-navigation")) return;
+      if (control.hasAttribute("data-test-abort")) {
+        event.preventDefault();
+        event.stopPropagation();
+        window.dispatchEvent(new CustomEvent("sg4-test-abort"));
+        return;
+      }
       const label = control.getAttribute("aria-label")?.trim().toLowerCase() ?? "";
       const text = control.textContent?.trim().toLowerCase() ?? "";
       const hasArrowLeft = Boolean(control.querySelector(".lucide-arrow-left"));
