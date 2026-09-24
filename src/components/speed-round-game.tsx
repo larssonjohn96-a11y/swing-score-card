@@ -507,15 +507,15 @@ export function SpeedRoundGame({
         <div className="space-y-3">
           <section>
             <div className="flex items-center justify-between gap-2">
-              <p className="text-xs font-semibold text-blue-600">Ball Speed Challenge · 3 slag</p>
-              <div className="flex rounded-xl bg-blue-50 p-1">
+              <p className="text-xs font-semibold text-slate-500">Ball Speed Challenge · 3 slag</p>
+              <div className="flex rounded-xl bg-slate-100 p-1">
               {(["mph", "km/h"] as const).map((item) => (
                 <Button
                   key={item}
                   variant="ghost"
                   onClick={() => changeUnit(item)}
                   aria-pressed={unit === item}
-                  className={`h-9 rounded-lg px-3 ${unit === item ? "bg-blue-600 text-white hover:bg-blue-600 hover:text-white" : "text-blue-700"}`}
+                  className={`h-9 rounded-lg px-3 ${unit === item ? "bg-slate-500 text-white hover:bg-slate-500 hover:text-white" : "text-slate-400"}`}
                 >
                   {item}
                 </Button>
