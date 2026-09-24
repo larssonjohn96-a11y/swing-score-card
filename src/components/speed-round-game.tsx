@@ -38,7 +38,7 @@ export function SpeedRoundGame({
 }) {
   const [state, setState] = useState(emptyCourse);
   const [ready, setReady] = useState(false);
-  const [view, setView] = useState<"intro" | "test" | "compiling" | "result">("intro");
+  const [view, setView] = useState<"intro" | "countdown" | "test" | "compiling" | "result">("intro");
   useChipScreenColor(view === "compiling");
   const [resultId, setResultId] = useState<string | null>(null);
   const [unit, setUnit] = useState<SpeedUnit>("mph");
@@ -51,6 +51,7 @@ export function SpeedRoundGame({
   const [celebrationId, setCelebrationId] = useState<string | null>(null);
   const [confirmSpeed, setConfirmSpeed] = useState<number | null>(null);
   const [compileStep, setCompileStep] = useState(0);
+  const [countdown, setCountdown] = useState(5);
   const stateRef = useRef(state);
   const key = courseStorageKey(userId);
 
@@ -150,6 +151,19 @@ export function SpeedRoundGame({
   }
 
   function start() {
+    if (stateRef.current.active) return;
+    setFeedback(null);
+    setCelebrationId(null);
+    setResultId(null);
+    setCountdown(5);
+    setView("countdown");
+  }
+
+  function beginTest() {
+    if (stateRef.current.active) {
+      setView("test");
+      return;
+    }
     const snapshot = speedHistoryBaseline(stateRef.current.history);
     if (
       !commit({
@@ -166,6 +180,22 @@ export function SpeedRoundGame({
     setResultId(null);
     setView("test");
   }
+
+  useEffect(() => {
+    if (view !== "countdown") return;
+    setCountdown(5);
+    let current = 5;
+    const timer = window.setInterval(() => {
+      current -= 1;
+      if (current <= 0) {
+        window.clearInterval(timer);
+        beginTest();
+        return;
+      }
+      setCountdown(current);
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [view]);
 
   function register(confirmed?: number) {
     if (!valid || saving || !active || active.phase !== "play") return;
@@ -242,19 +272,30 @@ export function SpeedRoundGame({
   useEffect(() => {
     if (view !== "compiling") return;
     setCompileStep(0);
-    const a = window.setTimeout(() => setCompileStep(1), 1500);
-    const b = window.setTimeout(() => setCompileStep(2), 3000);
-    const c = window.setTimeout(() => setView("result"), 5500);
+    const a = window.setTimeout(() => setCompileStep(1), 450);
+    const b = window.setTimeout(() => setCompileStep(2), 950);
+    const c = window.setTimeout(() => setCompileStep(3), 1350);
+    const d = window.setTimeout(() => setView("result"), 1800);
     return () => {
       clearTimeout(a);
       clearTimeout(b);
       clearTimeout(c);
+      clearTimeout(d);
     };
   }, [view]);
 
   if (!ready) return <main className="p-8 text-center">Laddar Ball Speed Challenge…</main>;
   return (
     <main className="mx-auto min-h-[calc(100dvh-58px)] max-w-md overflow-x-hidden bg-slate-50 px-4 pb-[max(24px,env(safe-area-inset-bottom))] pt-4 text-slate-950">
+      <style>{`
+        @keyframes speedSheen{0%{transform:translateX(-140%)}100%{transform:translateX(240%)}}
+        @keyframes pressurePulse{0%,100%{box-shadow:0 0 0 rgba(124,58,237,0)}50%{box-shadow:0 0 24px rgba(124,58,237,.20)}}
+        @keyframes countdownRing{from{stroke-dashoffset:0}to{stroke-dashoffset:251.2}}
+        .speed-sheen{animation:speedSheen 1.15s cubic-bezier(.2,.7,.2,1) .2s both}
+        .speed-sheen-delay{animation:speedSheen 1.15s cubic-bezier(.2,.7,.2,1) 1.05s both}
+        .speed-pressure{animation:pressurePulse 1.8s ease-in-out infinite}
+        @media(prefers-reduced-motion:reduce){.speed-sheen,.speed-sheen-delay,.speed-pressure{animation:none!important}}
+      `}</style>
       {celebrationId && (
         <Dialog
           open
@@ -358,6 +399,19 @@ export function SpeedRoundGame({
               className="mb-4 h-52 w-full rounded-2xl object-cover object-[center_55%]"
               fetchPriority="high"
             />
+            <div className="mb-1 grid grid-cols-3 divide-x divide-slate-100 rounded-2xl bg-slate-50 px-1 py-3 text-center">
+              {[
+                ["Speed-HCP", "Din fartnivå"],
+                ["Längd", "Din potential"],
+                ["Jämför", "Ålder & tour"],
+              ].map(([title, detail]) => (
+                <div key={title} className="px-2">
+                  <Check className="mx-auto mb-1 h-4 w-4 text-blue-600" />
+                  <p className="text-xs font-black text-slate-800">{title}</p>
+                  <p className="mt-0.5 text-[10px] text-slate-500">{detail}</p>
+                </div>
+              ))}
+            </div>
             <Button
               onClick={start}
               disabled={historyLoading}
@@ -369,16 +423,6 @@ export function SpeedRoundGame({
               3 slag · Driver · Kräver hastighetsmätare
             </p>
           </section>
-          <ul className="flex flex-wrap justify-center gap-x-4 gap-y-2 px-2 text-sm text-slate-600">
-            {["Jämför med din åldersgrupp", "Se din potentiella längd", "Få ditt Speed-HCP"].map(
-              (label) => (
-                <li key={label} className="flex items-center gap-1.5">
-                  <Check className="h-4 w-4 text-blue-600" />
-                  {label}
-                </li>
-              ),
-            )}
-          </ul>
           {baseline.pb !== null && (
             <div className="flex items-center justify-between px-2 py-2">
               <span className="flex items-center gap-2 text-sm font-semibold text-slate-600">
@@ -396,14 +440,27 @@ export function SpeedRoundGame({
             unit={unit}
           />
         </div>
+      ) : view === "countdown" ? (
+        <div className="flex min-h-[calc(100dvh-100px)] flex-col items-center justify-center text-center">
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-600">Ball Speed Challenge · 3 slag</p>
+          <h1 className="mt-3 text-3xl font-black">Gör dig redo</h1>
+          <p className="mt-2 text-sm font-semibold text-slate-500">Startar om {countdown}</p>
+          <div className="relative mt-8 h-40 w-40">
+            <svg className="-rotate-90 h-full w-full" viewBox="0 0 100 100" aria-hidden="true">
+              <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="5" className="text-blue-100" />
+              <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="5" strokeLinecap="round"
+                strokeDasharray="251.2" strokeDashoffset={251.2 * (1 - countdown / 5)}
+                className="text-blue-600 transition-[stroke-dashoffset] duration-700 ease-out motion-reduce:transition-none" />
+            </svg>
+            <span className="absolute inset-0 flex items-center justify-center text-6xl font-black tabular-nums text-blue-700">{countdown}</span>
+          </div>
+        </div>
       ) : view === "test" && active ? (
         <div className="space-y-3">
-          <section className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold text-blue-600">Ball Speed Challenge · 3 slag</p>
-              <h1 className="mt-1 text-4xl font-black">Slag {shotIndex + 1}</h1>
-            </div>
-            <div className="flex rounded-xl bg-blue-50 p-1">
+          <section>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs font-semibold text-blue-600">Ball Speed Challenge · 3 slag</p>
+              <div className="flex rounded-xl bg-blue-50 p-1">
               {(["mph", "km/h"] as const).map((item) => (
                 <Button
                   key={item}
@@ -415,10 +472,12 @@ export function SpeedRoundGame({
                   {item}
                 </Button>
               ))}
+              </div>
             </div>
+            <h1 className="mt-2 text-center text-4xl font-black">Slag {shotIndex + 1}</h1>
           </section>
           {shotIndex === 2 && active.phase === "play" && (
-            <p className="rounded-2xl bg-yellow-100 px-4 py-3 text-center text-base font-bold text-yellow-950">
+            <p className="speed-pressure rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3 text-center text-base font-bold text-violet-900 motion-reduce:animate-none">
               Sista slaget – en chans till att slå ditt rekord!
             </p>
           )}
@@ -507,8 +566,10 @@ export function SpeedRoundGame({
             role="status"
             aria-live="polite"
           >
-            <LoaderCircle className="mb-8 h-12 w-12 motion-safe:animate-spin" />
-            <h1 className="text-3xl font-black">Sammanställer testet…</h1>
+            <span className="mb-7 flex h-16 w-16 items-center justify-center rounded-full bg-white text-blue-600 shadow-lg">
+              {compileStep >= 3 ? <Check className="h-9 w-9" /> : <LoaderCircle className="h-9 w-9 motion-safe:animate-spin" />}
+            </span>
+            <h1 className="text-3xl font-black">{compileStep >= 3 ? "Resultatet klart" : "Sammanställer testet…"}</h1>
             <div className="mt-6 min-h-36 w-full max-w-xs space-y-4 text-left text-base text-blue-100">
               {[
                 "Sammanställer dina tre slag",
@@ -519,7 +580,7 @@ export function SpeedRoundGame({
                   key={label}
                   className={`flex items-center gap-3 transition-opacity duration-500 motion-reduce:transition-none ${index <= compileStep ? "opacity-100" : "invisible opacity-0"}`}
                 >
-                  {index < compileStep ? (
+                  {index < compileStep || compileStep >= 3 ? (
                     <Check aria-hidden="true" className="h-5 w-5 shrink-0" />
                   ) : (
                     <LoaderCircle
@@ -549,17 +610,20 @@ export function SpeedRoundGame({
                     ? "Din startnivå är satt"
                     : "Ball Speed Challenge klar"}
             </h1>
-            <p className="mt-4 text-[clamp(32px,9vw,52px)] font-black tabular-nums text-blue-700">
-              {unitLabel(resultData.topBallSpeed, unit)}
-            </p>
+            <div className="relative mt-4 overflow-hidden rounded-2xl py-2">
+              <span aria-hidden="true" className="speed-sheen pointer-events-none absolute inset-y-0 w-16 -skew-x-12 bg-gradient-to-r from-transparent via-blue-200/70 to-transparent motion-reduce:hidden" />
+              <p className="text-[clamp(32px,9vw,52px)] font-black tabular-nums text-blue-700">{unitLabel(resultData.topBallSpeed, unit)}</p>
+            </div>
             <p className="mt-1 text-sm text-slate-500">Bästa bollhastighet</p>
-            <div className="mt-5 rounded-2xl bg-blue-50 p-5">
-              <p className="text-sm font-semibold text-blue-700">Snitt i testet</p>
-              <p className="mt-2 text-3xl font-black tabular-nums text-blue-700">
+            <div className="mt-5 rounded-2xl bg-slate-50 p-5">
+              <p className="text-sm font-semibold text-slate-500">Snitt i testet</p>
+              <p className="mt-2 text-3xl font-bold tabular-nums text-slate-600">
                 {unitLabel(resultData.avgBallSpeed, unit)}
               </p>
             </div>
           </section>
+          <div className="relative overflow-hidden rounded-2xl">
+            <span aria-hidden="true" className="speed-sheen-delay pointer-events-none absolute inset-y-0 z-10 w-16 -skew-x-12 bg-gradient-to-r from-transparent via-white/70 to-transparent motion-reduce:hidden" />
           <SpeedChallengeAnalysis
             round={currentRound}
             unit={unit}
@@ -573,6 +637,7 @@ export function SpeedRoundGame({
               window.scrollTo(0, 0);
             }}
           />
+          </div>
           <Button
             onClick={start}
             className="min-h-14 w-full rounded-2xl bg-slate-950 text-base font-black text-white hover:bg-slate-800"
