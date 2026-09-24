@@ -49,7 +49,7 @@ export function SpeedRoundGame({
   const [cloudError, setCloudError] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(!!userId);
   const [celebrationId, setCelebrationId] = useState<string | null>(null);
-  const [confirmSpeed, setConfirmSpeed] = useState<number | null>(null);
+  const [confirmSpeed, setConfirmSpeed] = useState<number | null>(null);\n  const [confirmExit, setConfirmExit] = useState(false);
   const [compileStep, setCompileStep] = useState(0);
   const [countdown, setCountdown] = useState(5);
   const stateRef = useRef(state);
@@ -150,6 +150,29 @@ export function SpeedRoundGame({
     return true;
   }
 
+  function requestExit() {
+    if (view === "intro" || view === "result") {
+      onExit();
+      return;
+    }
+    setConfirmExit(true);
+  }
+
+  function abortTest() {
+    const current = stateRef.current;
+    const next = current.active ? { ...current, active: null } : current;
+    stateRef.current = next;
+    setState(next);
+    try {
+      localStorage.setItem(key, JSON.stringify(next));
+      setStorageError(false);
+    } catch {
+      setStorageError(true);
+    }
+    setConfirmExit(false);
+    onExit();
+  }
+
   function start() {
     if (stateRef.current.active) return;
     setFeedback(null);
@@ -185,7 +208,7 @@ export function SpeedRoundGame({
     if (view !== "countdown") return;
     setCountdown(3);
     const startedAt = performance.now();
-    const duration = 3000;
+    const duration = 2400;
     const timer = window.setInterval(() => {
       const remaining = Math.max(0, duration - (performance.now() - startedAt));
       setCountdown(remaining / 1000);
@@ -296,6 +319,17 @@ export function SpeedRoundGame({
         .speed-pressure{animation:pressurePulse 1.8s ease-in-out infinite}
         @media(prefers-reduced-motion:reduce){.speed-sheen,.speed-sheen-delay,.speed-pressure{animation:none!important}}
       `}</style>
+      {view !== "intro" && (
+        <Button
+          type="button"
+          variant="ghost"
+          aria-label="Avbryt test"
+          onClick={requestExit}
+          className="fixed left-3 top-[max(10px,env(safe-area-inset-top))] z-[130] h-11 w-11 rounded-full bg-transparent p-0 text-current hover:bg-black/5"
+        >
+          <span aria-hidden="true" className="text-2xl leading-none">‹</span>
+        </Button>
+      )}
       {celebrationId && (
         <Dialog
           open
@@ -322,6 +356,20 @@ export function SpeedRoundGame({
           </DialogContent>
         </Dialog>
       )}
+      <Dialog open={confirmExit} onOpenChange={setConfirmExit}>
+        <DialogContent className="!z-[120] w-[calc(100%-32px)] max-w-sm rounded-3xl bg-white p-6 text-slate-950">
+          <DialogTitle className="text-2xl font-black">Avbryta testet?</DialogTitle>
+          <DialogDescription className="text-base text-slate-600">
+            Dina registrerade slag i det här testet sparas inte.
+          </DialogDescription>
+          <Button onClick={abortTest} className="mt-2 min-h-12 rounded-xl bg-slate-950 font-bold text-white hover:bg-slate-800">
+            Avbryt test
+          </Button>
+          <Button variant="outline" onClick={() => setConfirmExit(false)} className="min-h-12 rounded-xl">
+            Fortsätt testet
+          </Button>
+        </DialogContent>
+      </Dialog>
       <Dialog
         open={confirmSpeed !== null}
         onOpenChange={(open) => {
