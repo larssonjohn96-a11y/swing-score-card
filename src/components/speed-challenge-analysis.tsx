@@ -1,3 +1,4 @@
+import { ChipCelebration } from "@/components/chip-celebration";
 import { speedStories } from "@/lib/speed-story";
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Lock, X } from "lucide-react";
@@ -77,6 +78,7 @@ export function SpeedChallengeAnalysis({
   const [open, setOpen] = useState(false);
   const [story, setStory] = useState(0);
   const [revealed, setRevealed] = useState(false);
+  const [revealComplete, setRevealComplete] = useState(false);
   const [age, setAge] = useState<number | undefined>(() => loadCardProfile().age);
   const touch = useRef<{ x: number; y: number } | null>(null);
   useChipScreenColor(open && canViewDetailedBreakdowns);
@@ -91,13 +93,14 @@ export function SpeedChallengeAnalysis({
     if (!open || !canViewDetailedBreakdowns) return;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const timer = window.setTimeout(() => setRevealed(true), reduced ? 0 : 1600);
-    return () => window.clearTimeout(timer);
+    const completion = window.setTimeout(() => setRevealComplete(true), reduced ? 0 : 3000);
+    return () => {
+      window.clearTimeout(timer);
+      window.clearTimeout(completion);
+    };
   }, [open, round.id, canViewDetailedBreakdowns]);
   function next() {
-    if (!revealed) {
-      setRevealed(true);
-      return;
-    }
+    if (currentStory === "hcp" && !revealComplete) return;
     if (story === lastStory) return;
     else setStory((s) => Math.min(lastStory, s + 1));
   }
@@ -109,6 +112,7 @@ export function SpeedChallengeAnalysis({
         if (value) {
           setStory(0);
           setRevealed(false);
+          setRevealComplete(false);
           touch.current = null;
         }
       }}
@@ -171,6 +175,7 @@ export function SpeedChallengeAnalysis({
             >
               {currentStory === "hcp" && (
                 <section className="text-center" aria-live="polite">
+                  {revealComplete && <ChipCelebration confettiOnly />}
                   <h2 className="mt-4 text-3xl font-black">Ditt Speed-HCP</h2>
                   <div
                     className="relative my-6 h-36 text-[clamp(80px,25vw,120px)] font-black tabular-nums"
@@ -219,8 +224,9 @@ export function SpeedChallengeAnalysis({
                       sd={distribution.sd}
                     />
                   ) : (
-                    <div className="rounded-3xl bg-white p-5 text-slate-950">
+                    <div>
                       <AgeInlinePrompt
+                        variant="reveal"
                         title="Din åldersgrupp"
                         description="Ange din ålder för att se din nivå"
                         onSaved={setAge}
@@ -302,7 +308,11 @@ export function SpeedChallengeAnalysis({
                 </Button>
               </div>
             ) : (
-              <nav aria-label="Analysens stories" className="mt-4 flex shrink-0 items-center gap-3">
+              <nav
+                aria-label="Analysens stories"
+                aria-hidden={currentStory === "hcp" && !revealComplete}
+                className={`mt-4 flex shrink-0 items-center gap-3 transition-opacity duration-500 motion-reduce:transition-none ${currentStory === "hcp" && !revealComplete ? "invisible opacity-0" : "visible opacity-100"}`}
+              >
                 {story > 0 && (
                   <Button
                     data-local-navigation
@@ -316,9 +326,10 @@ export function SpeedChallengeAnalysis({
                 <Button
                   data-local-navigation
                   onClick={next}
+                  disabled={currentStory === "hcp" && !revealComplete}
                   className="min-h-14 flex-1 rounded-full bg-white text-base font-bold text-blue-700 hover:bg-blue-50"
                 >
-                  {!revealed ? "Visa mitt resultat" : "Nästa"}
+                  {currentStory === "age" && !age ? "Hoppa över" : "Nästa"}
                   {story < lastStory && <ArrowRight className="ml-2 h-4 w-4" />}
                 </Button>
               </nav>

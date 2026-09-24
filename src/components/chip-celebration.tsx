@@ -1,7 +1,15 @@
 import { useEffect, useRef } from "react";
 
 /** A short, finite canvas celebration shared by holed chips and personal bests. */
-export function ChipCelebration({ grand = false, subtle = false }: { grand?: boolean; subtle?: boolean }) {
+export function ChipCelebration({
+  grand = false,
+  subtle = false,
+  confettiOnly = false,
+}: {
+  grand?: boolean;
+  subtle?: boolean;
+  confettiOnly?: boolean;
+}) {
   const canvas = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -19,19 +27,22 @@ export function ChipCelebration({ grand = false, subtle = false }: { grand?: boo
       const n = Math.sin(i * 127.1 + 73.7) * 43758.5453;
       return n - Math.floor(n);
     };
-    const paper = Array.from({ length: subtle ? 0 : grand ? 240 : 90 }, (_, i) => ({
-      x: random(i + 1) * width,
-      y: -20 - random(i + 101) * height * 0.6,
-      vx: (random(i + 201) - 0.5) * 80,
-      vy: 75 + random(i + 301) * 95,
-      angle: random(i + 401) * Math.PI,
-      spin: (random(i + 501) - 0.5) * 8,
-      size: 4 + random(i + 601) * 4,
-      color: colors[i % colors.length],
-    }));
+    const paper = Array.from(
+      { length: confettiOnly ? 36 : subtle ? 0 : grand ? 240 : 90 },
+      (_, i) => ({
+        x: random(i + 1) * width,
+        y: -20 - random(i + 101) * height * 0.6,
+        vx: (random(i + 201) - 0.5) * 80,
+        vy: 75 + random(i + 301) * 95,
+        angle: random(i + 401) * Math.PI,
+        spin: (random(i + 501) - 0.5) * 8,
+        size: 4 + random(i + 601) * 4,
+        color: colors[i % colors.length],
+      }),
+    );
     const sparkCount = subtle ? 18 : grand ? 48 : 24;
     const duration = subtle ? 1.5 : grand ? 4 : 2.7;
-    const sparks = (subtle ? [2] : [0, 1, 2]).flatMap((b) =>
+    const sparks = (confettiOnly ? [] : subtle ? [2] : [0, 1, 2]).flatMap((b) =>
       Array.from({ length: sparkCount }, (_, i) => ({
         x: width * [0.22, 0.78, 0.5][b],
         y: height * [0.25, 0.32, 0.2][b],
@@ -82,7 +93,7 @@ export function ChipCelebration({ grand = false, subtle = false }: { grand?: boo
       cancelAnimationFrame(frame);
       ctx.clearRect(0, 0, width, height);
     };
-  }, [grand, subtle]);
+  }, [grand, subtle, confettiOnly]);
   return (
     <canvas
       ref={canvas}
