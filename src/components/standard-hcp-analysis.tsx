@@ -3,7 +3,8 @@ import { ArrowLeft,ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ChipCelebration } from "@/components/chip-celebration";
 import { handicapLabel } from "@/lib/shortgame";
-export type HcpAnalysisSlide={key:string;content:ReactNode};\nexport const performanceGrade=(value:number,thresholds={exceptionell:0,briljant:5,bra:12,forvantat:22,svag:32})=>value<=thresholds.exceptionell?"exceptionell":value<=thresholds.briljant?"briljant":value<=thresholds.bra?"bra":value<=thresholds.forvantat?"förväntat":value<=thresholds.svag?"svag":"stort tapp";
+export type HcpAnalysisSlide={key:string;content:ReactNode};
+export const performanceGrade=(value:number,thresholds={exceptionell:0,briljant:5,bra:12,forvantat:22,svag:32})=>value<=thresholds.exceptionell?"exceptionell":value<=thresholds.briljant?"briljant":value<=thresholds.bra?"bra":value<=thresholds.forvantat?"förväntat":value<=thresholds.svag?"svag":"stort tapp";
 export function StandardHcpAnalysis({title,hcp,slides,onClose}:{title:string;hcp:number;slides:HcpAnalysisSlide[];onClose:()=>void}){
  const [page,setPage]=useState(0),[display,setDisplay]=useState(40),[ready,setReady]=useState(false);
  useEffect(()=>{setPage(0);setDisplay(40);setReady(false);const reduced=window.matchMedia("(prefers-reduced-motion: reduce)").matches;if(reduced){setDisplay(hcp);setReady(true);return}const start=performance.now(),duration=2600;let raf=0;const tick=(now:number)=>{const p=Math.min(1,(now-start)/duration),e=1-Math.pow(1-p,4);setDisplay(40+(hcp-40)*e);if(p<1)raf=requestAnimationFrame(tick);else setReady(true)};raf=requestAnimationFrame(tick);return()=>cancelAnimationFrame(raf)},[hcp]);
