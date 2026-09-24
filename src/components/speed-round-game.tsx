@@ -30,6 +30,7 @@ export function SpeedRoundGame({
   userId,
   authLoading,
   playerName,
+  onExit,
 }: {
   userId: string | null;
   authLoading: boolean;
