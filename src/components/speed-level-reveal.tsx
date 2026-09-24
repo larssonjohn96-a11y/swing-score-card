@@ -69,8 +69,17 @@ export function SpeedLevelReveal({ speedMph, unit, active, onComplete }: {
   const current = complete ? progress.achieved : visibleProgress?.achieved;
   const currentIndex = SPEED_LEVELS.findIndex((level) => level.id === current?.id);
   const finalIndex = SPEED_LEVELS.findIndex((level) => level.id === progress.achieved?.id);
-  const scaleEnd = Math.max(validSpeed, progress.next?.mph ?? SPEED_LEVELS[SPEED_LEVELS.length - 1].mph) * 1.07;
-  const position = (value: number) => Math.max(0, Math.min(100, value / scaleEnd * 100));
+  const achievedIndex = Math.max(0, SPEED_LEVELS.findIndex((level) => level.id === progress.achieved?.id));
+  const firstVisibleIndex = Math.max(0, achievedIndex - 3);
+  const lastVisibleIndex = Math.min(SPEED_LEVELS.length - 1, Math.max(achievedIndex + 1, firstVisibleIndex + 4));
+  const visibleLevels = SPEED_LEVELS.slice(firstVisibleIndex, lastVisibleIndex + 1);
+  const lowerAnchor = firstVisibleIndex === 0 ? 0 : Math.max(0, visibleLevels[0].mph - 10);
+  const upperAnchor = Math.max(validSpeed, visibleLevels.at(-1)?.mph ?? validSpeed) + 8;
+  const position = (value: number) =>
+    Math.max(0, Math.min(100, ((value - lowerAnchor) / Math.max(1, upperAnchor - lowerAnchor)) * 100));
+  const achievedCount = SPEED_LEVELS.filter((level) => validSpeed >= level.mph).length;
+  const previousLevel = progress.achieved;
+  const nextLevel = progress.next;
   const flapper = !complete && !reduced && currentIndex >= Math.max(0, finalIndex - 2);
   const nextMessage = nextLevelMessage(validSpeed, unit);
 
@@ -96,27 +105,54 @@ export function SpeedLevelReveal({ speedMph, unit, active, onComplete }: {
         {complete ? `${formatSpeedValue(validSpeed, unit)} ${unit}. ${current?.label ?? "Din startpunkt"}. ${nextMessage}` : "Jämför din bollhastighet…"}
       </span>
 
-      <div className="relative mx-auto my-4 h-[clamp(170px,28dvh,230px)] w-56" aria-hidden="true">
-        <div className="absolute left-1/2 top-0 h-full w-2 -translate-x-1/2 rounded-full bg-white/20" />
-        <div className="absolute bottom-0 left-1/2 w-2 -translate-x-1/2 rounded-full bg-white" style={{ height: `${position(displayMph)}%` }} />
-        {SPEED_LEVELS.filter((level) => level.mph <= (progress.next?.mph ?? scaleEnd)).map((level) => {
-          const passed = displayMph >= level.mph;
-          return <span key={`${level.id}-${passed}`} className={`absolute left-1/2 flex -translate-x-1/2 items-center gap-2 whitespace-nowrap ${passed ? "text-white" : "text-white/35"} ${passed && !complete && !reduced ? "speed-level-tick" : ""}`} style={{ bottom: `${position(level.mph)}%` }}>
-            <span className={`h-1 rounded-full ${passed ? "w-9 bg-white" : "w-6 bg-white/30"}`} />
-            <span className="text-[10px] font-bold">{level.label}</span>
-          </span>;
-        })}
-        <span className="absolute left-1/2 z-10" style={{ bottom: `${position(displayMph)}%`, transform: "translate(-50%, 50%)" }}>
-          <span key={currentIndex} className={`block h-3 w-8 rounded-full border-2 border-blue-600 bg-white shadow-lg ${flapper ? "speed-level-flap" : ""}`} />
-        </span>
+      <div className="mx-auto my-4 grid h-[clamp(190px,30dvh,250px)] w-full max-w-xs grid-cols-[1fr_54px] gap-4" aria-hidden="true">
+        <div className="relative">
+          {visibleLevels.map((level) => {
+            const passed = displayMph >= level.mph;
+            const finalPassed = validSpeed >= level.mph;
+            return (
+              <div
+                key={level.id}
+                className="absolute right-0 flex -translate-y-1/2 items-center justify-end gap-2"
+                style={{ bottom: `calc(${position(level.mph)}% - 10px)` }}
+              >
+                <span className={`max-w-[180px] text-right text-[11px] font-bold leading-tight ${passed ? "text-white" : "text-white/45"}`}>
+                  {level.label}
+                </span>
+                <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[11px] font-black ${passed ? "border-white bg-white text-blue-600" : "border-white/35 text-transparent"}`}>
+                  {passed && finalPassed ? "✓" : ""}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+        <div className="relative mx-auto h-full w-8 overflow-hidden rounded-full border-2 border-white/55 bg-white/10 shadow-inner">
+          <div
+            className="absolute inset-x-0 bottom-0 rounded-b-full bg-white transition-[height] duration-75 motion-reduce:transition-none"
+            style={{ height: `${position(displayMph)}%` }}
+          />
+          <span
+            className="absolute left-1/2 z-10 h-3 w-10 -translate-x-1/2 rounded-full border-2 border-blue-600 bg-white shadow-lg"
+            style={{ bottom: `calc(${position(displayMph)}% - 6px)` }}
+          />
+        </div>
       </div>
 
-      <div className="min-h-24">
-        <p className="text-xs font-bold uppercase tracking-widest text-blue-100">{complete ? "Uppnådd nivå" : "Du passerar"}</p>
-        <p className="mt-1 text-2xl font-black" data-current-level>{current?.label ?? (complete ? "Din startpunkt" : "På väg…")}</p>
-        <p className={`mt-2 min-h-10 text-sm font-semibold text-white/90 ${complete ? "visible" : "invisible"}`} aria-hidden={!complete}>
-          {complete ? nextMessage : "Nästa mål"}
+      <div className="min-h-24 text-center">
+        <p className="text-xs font-bold uppercase tracking-widest text-blue-100">
+          {complete ? "Din nivå" : "Du passerar"}
         </p>
+        <p className="mt-1 text-2xl font-black" data-current-level>
+          {current?.label ?? (complete ? "Din startpunkt" : "På väg…")}
+        </p>
+        {complete && (
+          <p className="mx-auto mt-2 max-w-xs text-sm font-semibold leading-relaxed text-white/90">
+            {previousLevel
+              ? `Du är förbi ${achievedCount} ${achievedCount === 1 ? "nivå" : "nivåer"} – senast ${previousLevel.label}.`
+              : "Du är på väg mot din första nivå."}
+            {nextLevel ? ` Nästa är ${nextLevel.label} · ${nextLevelMessage(validSpeed, unit)?.replace(/^Bara /, "").replace(/^Nästa mål · /, "")}.` : " Du har passerat alla nivåer."}
+          </p>
+        )}
       </div>
     </section>
   );
