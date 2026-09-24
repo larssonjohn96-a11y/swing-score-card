@@ -50,7 +50,8 @@ export function SpeedRoundGame({
   const [cloudError, setCloudError] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(!!userId);
   const [celebrationId, setCelebrationId] = useState<string | null>(null);
-  const [confirmSpeed, setConfirmSpeed] = useState<number | null>(null);\n  const [confirmExit, setConfirmExit] = useState(false);
+  const [confirmSpeed, setConfirmSpeed] = useState<number | null>(null);
+  const [confirmExit, setConfirmExit] = useState(false);
   const [compileStep, setCompileStep] = useState(0);
   const [countdown, setCountdown] = useState(5);
   const stateRef = useRef(state);
