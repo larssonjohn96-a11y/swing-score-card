@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight, Lock, X } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { AgeInlinePrompt } from "@/components/age-inline-prompt";
 import { SpeedComparisonPyramid } from "@/components/speed-comparison-pyramid";
+import { SpeedLevelReveal } from "@/components/speed-level-reveal";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -79,6 +80,7 @@ export function SpeedChallengeAnalysis({
   const [story, setStory] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [revealComplete, setRevealComplete] = useState(false);
+  const [levelComplete, setLevelComplete] = useState(false);
   const [age, setAge] = useState<number | undefined>(() => loadCardProfile().age);
   const touch = useRef<{ x: number; y: number } | null>(null);
   useChipScreenColor(open && canViewDetailedBreakdowns);
@@ -101,6 +103,7 @@ export function SpeedChallengeAnalysis({
   }, [open, round.id, canViewDetailedBreakdowns]);
   function next() {
     if (currentStory === "hcp" && !revealComplete) return;
+    if (currentStory === "level" && !levelComplete) return;
     if (story === lastStory) return;
     else setStory((s) => Math.min(lastStory, s + 1));
   }
@@ -113,6 +116,7 @@ export function SpeedChallengeAnalysis({
           setStory(0);
           setRevealed(false);
           setRevealComplete(false);
+          setLevelComplete(false);
           touch.current = null;
         }
       }}
@@ -213,6 +217,14 @@ export function SpeedChallengeAnalysis({
                   </div>
                 </section>
               )}
+              {currentStory === "level" && (
+                <SpeedLevelReveal
+                  speedMph={result.topBallSpeed}
+                  unit={unit}
+                  active={open}
+                  onComplete={() => setLevelComplete(true)}
+                />
+              )}
               {currentStory === "age" && (
                 <section className="space-y-4">
                   {age && distribution ? (
@@ -310,8 +322,11 @@ export function SpeedChallengeAnalysis({
             ) : (
               <nav
                 aria-label="Analysens stories"
-                aria-hidden={currentStory === "hcp" && !revealComplete}
-                className={`mt-4 flex shrink-0 items-center gap-3 transition-opacity duration-500 motion-reduce:transition-none ${currentStory === "hcp" && !revealComplete ? "invisible opacity-0" : "visible opacity-100"}`}
+                aria-hidden={
+                  (currentStory === "hcp" && !revealComplete) ||
+                  (currentStory === "level" && !levelComplete)
+                }
+                className={`mt-4 flex shrink-0 items-center gap-3 transition-opacity duration-500 motion-reduce:transition-none ${(currentStory === "hcp" && !revealComplete) || (currentStory === "level" && !levelComplete) ? "invisible opacity-0" : "visible opacity-100"}`}
               >
                 {story > 0 && (
                   <Button
@@ -326,7 +341,10 @@ export function SpeedChallengeAnalysis({
                 <Button
                   data-local-navigation
                   onClick={next}
-                  disabled={currentStory === "hcp" && !revealComplete}
+                  disabled={
+                    (currentStory === "hcp" && !revealComplete) ||
+                    (currentStory === "level" && !levelComplete)
+                  }
                   className="min-h-14 flex-1 rounded-full bg-white text-base font-bold text-blue-700 hover:bg-blue-50"
                 >
                   {currentStory === "age" && !age ? "Hoppa över" : "Nästa"}
