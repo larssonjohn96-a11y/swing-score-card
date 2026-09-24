@@ -72,7 +72,7 @@ export function SpeedLevelReveal({ speedMph, unit, active, onComplete }: {
   const achievedIndex = Math.max(0, SPEED_LEVELS.findIndex((level) => level.id === progress.achieved?.id));
   const firstVisibleIndex = Math.max(0, achievedIndex - 3);
   const lastVisibleIndex = Math.min(SPEED_LEVELS.length - 1, Math.max(achievedIndex + 1, firstVisibleIndex + 4));
-  const visibleLevels = SPEED_LEVELS.slice(firstVisibleIndex, lastVisibleIndex + 1);
+  const visibleLevels = SPEED_LEVELS.slice(firstVisibleIndex, lastVisibleIndex + 1).filter((level) => level.id !== "lpga-average");
   const lowerAnchor = firstVisibleIndex === 0 ? 0 : Math.max(0, visibleLevels[0].mph - 10);
   const upperAnchor = Math.max(validSpeed, visibleLevels.at(-1)?.mph ?? validSpeed) + 8;
   const position = (value: number) =>
@@ -105,7 +105,7 @@ export function SpeedLevelReveal({ speedMph, unit, active, onComplete }: {
         {complete ? `${formatSpeedValue(validSpeed, unit)} ${unit}. ${current?.label ?? "Din startpunkt"}. ${nextMessage}` : "Jämför din bollhastighet…"}
       </span>
 
-      <div className="mx-auto my-4 grid h-[clamp(190px,30dvh,250px)] w-full max-w-xs grid-cols-[1fr_54px] gap-4" aria-hidden="true">
+      <div className="mx-auto my-4 grid h-[clamp(190px,30dvh,250px)] w-full max-w-xs grid-cols-[1fr_44px_1fr] gap-3" aria-hidden="true">
         <div className="relative">
           {visibleLevels.map((level) => {
             const passed = displayMph >= level.mph;
@@ -117,9 +117,9 @@ export function SpeedLevelReveal({ speedMph, unit, active, onComplete }: {
                 style={{ bottom: `calc(${position(level.mph)}% - 10px)` }}
               >
                 <span className={`max-w-[180px] text-right text-[11px] font-bold leading-tight ${passed ? "text-white" : "text-white/45"}`}>
-                  {level.label}
+                  {level.id === "pga-average" ? "PGA-snitt" : level.label}
                 </span>
-                <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[11px] font-black ${passed ? "border-white bg-white text-blue-600" : "border-white/35 text-transparent"}`}>
+                <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[11px] font-black ${passed ? "border-emerald-400 bg-emerald-400 text-white" : "border-white/35 text-transparent"}`}>
                   {passed && finalPassed ? "✓" : ""}
                 </span>
               </div>
@@ -136,6 +136,7 @@ export function SpeedLevelReveal({ speedMph, unit, active, onComplete }: {
             style={{ bottom: `calc(${position(displayMph)}% - 6px)` }}
           />
         </div>
+        <div aria-hidden="true" />
       </div>
 
       <div className="min-h-24 text-center">
@@ -143,14 +144,14 @@ export function SpeedLevelReveal({ speedMph, unit, active, onComplete }: {
           {complete ? "Din nivå" : "Du passerar"}
         </p>
         <p className="mt-1 text-2xl font-black" data-current-level>
-          {current?.label ?? (complete ? "Din startpunkt" : "På väg…")}
+          {current?.id === "pga-average" ? "PGA-snitt" : current?.label ?? (complete ? "Din startpunkt" : "På väg…")}
         </p>
         {complete && (
           <p className="mx-auto mt-2 max-w-xs text-sm font-semibold leading-relaxed text-white/90">
             {previousLevel
-              ? `Du är förbi ${achievedCount} ${achievedCount === 1 ? "nivå" : "nivåer"} – senast ${previousLevel.label}.`
+              ? `Du är förbi ${achievedCount} ${achievedCount === 1 ? "nivå" : "nivåer"} – senast ${previousLevel.id === "pga-average" ? "PGA-snitt" : previousLevel.label}.`
               : "Du är på väg mot din första nivå."}
-            {nextLevel ? ` Nästa är ${nextLevel.label} · ${nextLevelMessage(validSpeed, unit)?.replace(/^Bara /, "").replace(/^Nästa mål · /, "")}.` : " Du har passerat alla nivåer."}
+            {nextLevel ? ` Nästa är ${nextLevel.id === "pga-average" ? "PGA-snitt" : nextLevel.label} · ${nextLevelMessage(validSpeed, unit)?.replace(/^Bara /, "").replace(/^Nästa mål · /, "")}.` : " Du har passerat alla nivåer."}
           </p>
         )}
       </div>
