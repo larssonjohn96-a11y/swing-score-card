@@ -184,16 +184,16 @@ export function SpeedRoundGame({
   useEffect(() => {
     if (view !== "countdown") return;
     setCountdown(5);
-    let current = 5;
+    const startedAt = performance.now();
+    const duration = 5000;
     const timer = window.setInterval(() => {
-      current -= 1;
-      if (current <= 0) {
+      const remaining = Math.max(0, duration - (performance.now() - startedAt));
+      setCountdown(remaining / 1000);
+      if (remaining <= 0) {
         window.clearInterval(timer);
         beginTest();
-        return;
       }
-      setCountdown(current);
-    }, 1000);
+    }, 50);
     return () => window.clearInterval(timer);
   }, [view]);
 
@@ -272,10 +272,10 @@ export function SpeedRoundGame({
   useEffect(() => {
     if (view !== "compiling") return;
     setCompileStep(0);
-    const a = window.setTimeout(() => setCompileStep(1), 450);
-    const b = window.setTimeout(() => setCompileStep(2), 950);
-    const c = window.setTimeout(() => setCompileStep(3), 1350);
-    const d = window.setTimeout(() => setView("result"), 1800);
+    const a = window.setTimeout(() => setCompileStep(1), 850);
+    const b = window.setTimeout(() => setCompileStep(2), 1750);
+    const c = window.setTimeout(() => setCompileStep(3), 2650);
+    const d = window.setTimeout(() => setView("result"), 3400);
     return () => {
       clearTimeout(a);
       clearTimeout(b);
@@ -444,15 +444,15 @@ export function SpeedRoundGame({
         <div className="flex min-h-[calc(100dvh-100px)] flex-col items-center justify-center text-center">
           <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-600">Ball Speed Challenge · 3 slag</p>
           <h1 className="mt-3 text-3xl font-black">Gör dig redo</h1>
-          <p className="mt-2 text-sm font-semibold text-slate-500">Startar om {countdown}</p>
+          <p className="mt-2 text-sm font-semibold text-slate-500">Startar om {Math.max(1, Math.ceil(countdown))}</p>
           <div className="relative mt-8 h-40 w-40">
             <svg className="-rotate-90 h-full w-full" viewBox="0 0 100 100" aria-hidden="true">
               <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="5" className="text-blue-100" />
               <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="5" strokeLinecap="round"
-                strokeDasharray="251.2" strokeDashoffset={251.2 * (1 - countdown / 5)}
-                className="text-blue-600 transition-[stroke-dashoffset] duration-700 ease-out motion-reduce:transition-none" />
+                strokeDasharray="251.2" strokeDashoffset={251.2 * (1 - Math.max(0, countdown) / 5)}
+                className="text-blue-600" />
             </svg>
-            <span className="absolute inset-0 flex items-center justify-center text-6xl font-black tabular-nums text-blue-700">{countdown}</span>
+            <span className="absolute inset-0 flex items-center justify-center text-6xl font-black tabular-nums text-blue-700">{Math.max(1, Math.ceil(countdown))}</span>
           </div>
         </div>
       ) : view === "test" && active ? (
@@ -562,11 +562,11 @@ export function SpeedRoundGame({
       ) : view === "compiling" ? (
         createPortal(
           <div
-            className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-blue-600 p-6 text-center text-white"
+            className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-gradient-to-b from-blue-600 to-blue-700 p-6 text-center text-white"
             role="status"
             aria-live="polite"
           >
-            <span className="mb-7 flex h-16 w-16 items-center justify-center rounded-full bg-white text-blue-600 shadow-lg">
+            <span className="mb-7 flex h-16 w-16 items-center justify-center rounded-full bg-white/95 text-blue-600 shadow-[0_0_32px_rgba(255,255,255,.18)] transition-all duration-700 motion-reduce:transition-none">
               {compileStep >= 3 ? <Check className="h-9 w-9" /> : <LoaderCircle className="h-9 w-9 motion-safe:animate-spin" />}
             </span>
             <h1 className="text-3xl font-black">{compileStep >= 3 ? "Resultatet klart" : "Sammanställer testet…"}</h1>
@@ -598,9 +598,9 @@ export function SpeedRoundGame({
       ) : currentRound && resultData ? (
         <div className="space-y-4">
           <section
-            className={`rounded-3xl border bg-white p-5 text-center shadow-sm ${newPb ? "border-blue-400 shadow-blue-200" : "border-blue-100"}`}
+            className={`relative overflow-hidden rounded-3xl border bg-white p-5 text-center shadow-sm ${newPb ? "border-blue-400 shadow-blue-200" : "border-blue-100"}`}
           >
-            <p className="text-xs font-black uppercase text-blue-600">Ditt resultat</p>
+            <span aria-hidden="true" className="speed-sheen pointer-events-none absolute inset-y-0 z-0 w-20 -skew-x-12 bg-gradient-to-r from-transparent via-blue-100/80 to-transparent motion-reduce:hidden" /><div className="relative z-[1]"><p className="text-xs font-black uppercase text-blue-600">Ditt resultat</p>
             <h1 className="mt-1 text-2xl font-black">
               {newPb
                 ? "Nytt personbästa!"
@@ -621,9 +621,8 @@ export function SpeedRoundGame({
                 {unitLabel(resultData.avgBallSpeed, unit)}
               </p>
             </div>
+            </div>
           </section>
-          <div className="relative overflow-hidden rounded-2xl">
-            <span aria-hidden="true" className="speed-sheen-delay pointer-events-none absolute inset-y-0 z-10 w-16 -skew-x-12 bg-gradient-to-r from-transparent via-white/70 to-transparent motion-reduce:hidden" />
           <SpeedChallengeAnalysis
             round={currentRound}
             unit={unit}
@@ -637,7 +636,6 @@ export function SpeedRoundGame({
               window.scrollTo(0, 0);
             }}
           />
-          </div>
           <Button
             onClick={start}
             className="min-h-14 w-full rounded-2xl bg-slate-950 text-base font-black text-white hover:bg-slate-800"
