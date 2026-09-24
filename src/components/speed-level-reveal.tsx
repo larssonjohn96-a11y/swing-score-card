@@ -96,12 +96,15 @@ export function SpeedLevelReveal({ speedMph, unit, active, onComplete }: {
         {complete ? `${formatSpeedValue(validSpeed, unit)} ${unit}. ${current?.label ?? "Din startpunkt"}. ${nextMessage}` : "Jämför din bollhastighet…"}
       </span>
 
-      <div className="relative mx-auto my-4 h-[clamp(128px,22dvh,188px)] w-28" aria-hidden="true">
+      <div className="relative mx-auto my-4 h-[clamp(170px,28dvh,230px)] w-56" aria-hidden="true">
         <div className="absolute left-1/2 top-0 h-full w-2 -translate-x-1/2 rounded-full bg-white/20" />
         <div className="absolute bottom-0 left-1/2 w-2 -translate-x-1/2 rounded-full bg-white" style={{ height: `${position(displayMph)}%` }} />
         {SPEED_LEVELS.filter((level) => level.mph <= (progress.next?.mph ?? scaleEnd)).map((level) => {
           const passed = displayMph >= level.mph;
-          return <span key={`${level.id}-${passed}`} className={`absolute left-1/2 h-1 -translate-x-1/2 rounded-full ${passed ? "w-9 bg-white/80" : "w-6 bg-white/30"} ${passed && !complete && !reduced ? "speed-level-tick" : ""}`} style={{ bottom: `${position(level.mph)}%` }} />;
+          return <span key={`${level.id}-${passed}`} className={`absolute left-1/2 flex -translate-x-1/2 items-center gap-2 whitespace-nowrap ${passed ? "text-white" : "text-white/35"} ${passed && !complete && !reduced ? "speed-level-tick" : ""}`} style={{ bottom: `${position(level.mph)}%` }}>
+            <span className={`h-1 rounded-full ${passed ? "w-9 bg-white" : "w-6 bg-white/30"}`} />
+            <span className="text-[10px] font-bold">{level.label}</span>
+          </span>;
         })}
         <span className="absolute left-1/2 z-10" style={{ bottom: `${position(displayMph)}%`, transform: "translate(-50%, 50%)" }}>
           <span key={currentIndex} className={`block h-3 w-8 rounded-full border-2 border-blue-600 bg-white shadow-lg ${flapper ? "speed-level-flap" : ""}`} />
@@ -115,13 +118,6 @@ export function SpeedLevelReveal({ speedMph, unit, active, onComplete }: {
           {complete ? nextMessage : "Nästa mål"}
         </p>
       </div>
-      <details className="mx-auto mt-1 max-w-xs text-left text-xs text-blue-100">
-        <summary className="cursor-pointer py-2 text-center font-semibold underline underline-offset-4">Om nivåerna</summary>
-        <p className="leading-relaxed">Grundnivå, Klubbgolf, Låg-HCP-fart, Scratch-fart och hastighetsklubbarna är SG4-riktmärken, inte ditt golfhandicap.</p>
-        <p className="mt-2 leading-relaxed">Long drive-fart vid 220 mph är ett SG4-inspirationsmål, inte ett officiellt kvalkrav eller en spelarbedömning.</p>
-        <p className="mt-2 leading-relaxed">LPGA 143 mph och PGA 171 mph jämför ditt bästa slag med genomsnittlig driverbollhastighet på respektive tour 2023.</p>
-        <a href={TRACKMAN_TOUR_AVERAGES_URL} target="_blank" rel="noreferrer" className="mt-2 inline-block font-semibold text-white underline underline-offset-4">Källa: Trackman Tour Averages · 2 maj 2024</a>
-      </details>
     </section>
   );
 }
