@@ -88,10 +88,10 @@ export function SpeedLeaderboard({
       <div className="border-b border-blue-100 bg-white p-5 text-slate-950">
         <h2 className="flex items-center gap-2 text-lg font-black">
           <Trophy className="h-5 w-5" />
-          Snabbast bland vänner
+          Topplista
         </h2>
         <p className="mt-1 text-sm text-slate-500">
-          {ballSpeed ? "Snittbollhastighet · senaste 5 tester" : "Snitt av senaste 5 hela rundorna"}
+          {ballSpeed ? "Baserat på snitthastighet" : "Baserat på snittpoäng"}
         </p>
       </div>
       <div className="flex justify-between px-4 pt-3 text-xs font-bold uppercase text-slate-400">
@@ -152,11 +152,6 @@ export function SpeedLeaderboard({
           Hitta och lägg till vänner →
         </Link>
       )}
-      <p className="px-4 pb-4 text-xs text-slate-500">
-        {ballSpeed
-          ? "Bara slutförda tester med tre slag räknas. Alla tre slag räknas i snittet. Vännernas snitt visas när deras app har synkat."
-          : "Bara hela rundor med samma poängsystem räknas. Vännernas snitt uppdateras när deras app synkar."}
-      </p>
     </section>
   );
 }
