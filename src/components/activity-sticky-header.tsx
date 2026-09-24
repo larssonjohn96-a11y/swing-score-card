@@ -38,7 +38,9 @@ const ACTIVITY_HEADER_TITLES: Record<string, string> = {
 const BACK_BUTTON_CLASS =
   "flex h-10 w-10 items-center justify-center rounded-full text-slate-800 transition active:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2";
 
-const TEST_ABORT_PATHS = new Set(["/longdrive","/driverrundan","/inspelsrundan","/chipprundan","/puttrundan"]);\n\nexport function ActivityStickyHeader({ pathname }: { pathname: string }) {
+const TEST_ABORT_PATHS = new Set(["/longdrive","/driverrundan","/inspelsrundan","/chipprundan","/puttrundan"]);
+
+export function ActivityStickyHeader({ pathname }: { pathname: string }) {
   const normalizedPath = normalizeHeaderPath(pathname);
   const hub = getHubHeader(normalizedPath);
   const title = hub?.title ?? ACTIVITY_HEADER_TITLES[normalizedPath];
