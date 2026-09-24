@@ -38,7 +38,7 @@ const ACTIVITY_HEADER_TITLES: Record<string, string> = {
 const BACK_BUTTON_CLASS =
   "flex h-10 w-10 items-center justify-center rounded-full text-slate-800 transition active:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2";
 
-export function ActivityStickyHeader({ pathname }: { pathname: string }) {
+const TEST_ABORT_PATHS = new Set(["/longdrive","/driverrundan","/inspelsrundan","/chipprundan","/puttrundan"]);\n\nexport function ActivityStickyHeader({ pathname }: { pathname: string }) {
   const normalizedPath = normalizeHeaderPath(pathname);
   const hub = getHubHeader(normalizedPath);
   const title = hub?.title ?? ACTIVITY_HEADER_TITLES[normalizedPath];
@@ -60,12 +60,7 @@ export function ActivityStickyHeader({ pathname }: { pathname: string }) {
             <ArrowLeft className="h-5 w-5" aria-hidden="true" />
           </Link>
         ) : (
-          <button
-            type="button"
-            data-dynamic-back
-            aria-label="Tillbaka"
-            className={BACK_BUTTON_CLASS}
-          >
+          <button\n            type="button"\n            {...(TEST_ABORT_PATHS.has(normalizedPath) ? { "data-test-abort": "" } : { "data-dynamic-back": "" })}\n            aria-label={TEST_ABORT_PATHS.has(normalizedPath) ? "Avbryt test" : "Tillbaka"}\n            className={BACK_BUTTON_CLASS}\n          >
             <ArrowLeft className="h-5 w-5" aria-hidden="true" />
           </button>
         )}
