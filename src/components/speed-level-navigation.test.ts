@@ -21,7 +21,7 @@ const makeHandlers = new Function(
 ) as (...args: unknown[]) => { next: () => void; previous: () => void };
 
 function navigation(index: number, hcpComplete: boolean, levelComplete: boolean) {
-  const stories = ["hcp", "level", "age", "all", "distance"];
+  const stories = ["hcp", "age", "all", "distance", "level"];
   const state = { index, levelComplete, touch: { current: { x: 1, y: 1 } as { x: number; y: number } | null } };
   function render() {
     return makeHandlers(state.index, stories[state.index], stories.length - 1, hcpComplete, state.levelComplete,
