@@ -1,3 +1,5 @@
+import { createPortal } from "react-dom";
+import { useChipScreenColor } from "@/lib/use-chip-screen-color";
 import { unusualSpeed } from "@/lib/speed-challenge-feedback";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useEffect, useRef, useState } from "react";
@@ -37,6 +39,7 @@ export function SpeedRoundGame({
   const [state, setState] = useState(emptyCourse);
   const [ready, setReady] = useState(false);
   const [view, setView] = useState<"intro" | "test" | "compiling" | "result">("intro");
+  useChipScreenColor(view === "compiling");
   const [resultId, setResultId] = useState<string | null>(null);
   const [unit, setUnit] = useState<SpeedUnit>("mph");
   const [value, setValue] = useState("100");
@@ -498,36 +501,39 @@ export function SpeedRoundGame({
           </section>
         </div>
       ) : view === "compiling" ? (
-        <div
-          className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-blue-600 p-6 text-center text-white"
-          role="status"
-          aria-live="polite"
-        >
-          <LoaderCircle className="mb-8 h-12 w-12 motion-safe:animate-spin" />
-          <h1 className="text-3xl font-black">Sammanställer testet…</h1>
-          <div className="mt-6 min-h-36 w-full max-w-xs space-y-4 text-left text-base text-blue-100">
-            {[
-              "Sammanställer dina tre slag",
-              "Beräknar din potentiella längd",
-              "Förbereder din HCP-analys",
-            ].map((label, index) => (
-              <p
-                key={label}
-                className={`flex items-center gap-3 transition-opacity duration-500 motion-reduce:transition-none ${index <= compileStep ? "opacity-100" : "invisible opacity-0"}`}
-              >
-                {index < compileStep ? (
-                  <Check aria-hidden="true" className="h-5 w-5 shrink-0" />
-                ) : (
-                  <LoaderCircle
-                    aria-hidden="true"
-                    className="h-5 w-5 shrink-0 motion-safe:animate-spin"
-                  />
-                )}
-                {label}
-              </p>
-            ))}
-          </div>
-        </div>
+        createPortal(
+          <div
+            className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-blue-600 p-6 text-center text-white"
+            role="status"
+            aria-live="polite"
+          >
+            <LoaderCircle className="mb-8 h-12 w-12 motion-safe:animate-spin" />
+            <h1 className="text-3xl font-black">Sammanställer testet…</h1>
+            <div className="mt-6 min-h-36 w-full max-w-xs space-y-4 text-left text-base text-blue-100">
+              {[
+                "Sammanställer dina tre slag",
+                "Beräknar din potentiella längd",
+                "Förbereder din HCP-analys",
+              ].map((label, index) => (
+                <p
+                  key={label}
+                  className={`flex items-center gap-3 transition-opacity duration-500 motion-reduce:transition-none ${index <= compileStep ? "opacity-100" : "invisible opacity-0"}`}
+                >
+                  {index < compileStep ? (
+                    <Check aria-hidden="true" className="h-5 w-5 shrink-0" />
+                  ) : (
+                    <LoaderCircle
+                      aria-hidden="true"
+                      className="h-5 w-5 shrink-0 motion-safe:animate-spin"
+                    />
+                  )}
+                  {label}
+                </p>
+              ))}
+            </div>
+          </div>,
+          document.body,
+        )
       ) : currentRound && resultData ? (
         <div className="space-y-4">
           <section

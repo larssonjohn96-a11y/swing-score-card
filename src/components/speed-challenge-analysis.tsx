@@ -1,5 +1,4 @@
 import { speedStories } from "@/lib/speed-story";
-import { SpeedTourStory, SpeedPerspectiveStory } from "./speed-reference-stories";
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Lock, X } from "lucide-react";
 import { Link } from "@tanstack/react-router";
@@ -239,12 +238,6 @@ export function SpeedChallengeAnalysis({
                     sd={ALL_GOLFERS_BALL_SPEED.sd}
                   />
                 </section>
-              )}
-              {currentStory === "tour" && (
-                <SpeedTourStory speed={result.topBallSpeed} unit={unit} />
-              )}
-              {currentStory === "perspective" && (
-                <SpeedPerspectiveStory speed={result.topBallSpeed} />
               )}
               {currentStory === "distance" && (
                 <section className="text-center">
