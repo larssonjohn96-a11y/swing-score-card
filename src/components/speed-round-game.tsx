@@ -417,19 +417,19 @@ export function SpeedRoundGame({
               disabled={historyLoading}
               className="mt-4 min-h-14 w-full rounded-2xl bg-blue-600 text-base font-black text-white hover:bg-blue-700"
             >
-              Testa min speed
+              Starta Speed-Test
             </Button>
             <p className="mt-3 text-center text-xs font-semibold text-slate-500">
               3 slag · Driver · Kräver hastighetsmätare
             </p>
           </section>
           {baseline.pb !== null && (
-            <div className="flex items-center justify-between px-2 py-2">
-              <span className="flex items-center gap-2 text-sm font-semibold text-slate-600">
-                <Trophy className="h-4 w-4 text-blue-600" />
+            <div className="mb-1 mt-4 flex items-center justify-between px-2 py-2 text-slate-900">
+              <span className="flex items-center gap-2 text-sm font-semibold">
+                <Trophy className="h-4 w-4" />
                 Ditt personbästa
               </span>
-              <strong className="text-lg text-blue-700">{unitLabel(baseline.pb, unit)}</strong>
+              <strong className="text-base">{unitLabel(baseline.pb, unit)}</strong>
             </div>
           )}
           <SpeedLeaderboard
