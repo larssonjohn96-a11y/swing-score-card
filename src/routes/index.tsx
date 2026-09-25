@@ -612,7 +612,7 @@ function Home() {
               to="/spela-runda"
               className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black"
             >
-              Spel & utmaningar
+              Test & utmaningar
             </Link>
                         
             <Link
@@ -738,7 +738,7 @@ function Home() {
 
         <section className="mt-7" aria-labelledby="game-challenges-heading">
           <div className="px-0.5">
-            <h2 id="game-challenges-heading" className="text-[24px] font-black leading-none text-foreground">Spel &amp; utmaningar</h2>
+            <h2 id="game-challenges-heading" className="text-[24px] font-black leading-none text-foreground">Test &amp; utmaningar</h2>
             <p className="mt-1.5 text-sm text-muted-foreground">Få HCP på varje del av ditt golfspel. Slå dina resultat.</p>
           </div>
           <Link to="/spela-runda" className="group relative mt-4 block h-[252px] overflow-hidden rounded-[26px] border border-border bg-card shadow-sm transition-transform active:scale-[.99]">
