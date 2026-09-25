@@ -40,7 +40,7 @@ export function SpeedRoundGame({
   const [state, setState] = useState(emptyCourse);
   const [ready, setReady] = useState(false);
   const [view, setView] = useState<"intro" | "countdown" | "test" | "compiling" | "result">("intro");
-  useChipScreenColor(view === "compiling");
+  useChipScreenColor(view === "countdown" || view === "compiling");
   const [resultId, setResultId] = useState<string | null>(null);
   const [unit, setUnit] = useState<SpeedUnit>("mph");
   const [value, setValue] = useState("100");
@@ -53,7 +53,7 @@ export function SpeedRoundGame({
   const [confirmSpeed, setConfirmSpeed] = useState<number | null>(null);
   const [confirmExit, setConfirmExit] = useState(false);
   const [compileStep, setCompileStep] = useState(0);
-  const [countdown, setCountdown] = useState(5);
+  const [countdown, setCountdown] = useState(3);
   const stateRef = useRef(state);
   const key = courseStorageKey(userId);
 
@@ -78,7 +78,7 @@ export function SpeedRoundGame({
         restored.history.at(-1)?.holes.flat().at(-1)?.ballSpeed ??
         100;
       setValue(String(Number(fromMph(lastSpeed, restoredUnit).toFixed(1))));
-      if (restored.active) setView("test");
+      if (restored.active) { restored.active=null; stateRef.current=restored; setState(restored); try{localStorage.setItem(key,JSON.stringify(restored))}catch{} }
     } catch {
       setStorageError(true);
     } finally {
@@ -212,7 +212,7 @@ export function SpeedRoundGame({
     if (view !== "countdown") return;
     setCountdown(3);
     const startedAt = performance.now();
-    const duration = 2400;
+    const duration = 1920;
     const timer = window.setInterval(() => {
       const remaining = Math.max(0, duration - (performance.now() - startedAt));
       setCountdown(remaining / 1000);
@@ -493,7 +493,7 @@ export function SpeedRoundGame({
           />
         </div>
       ) : view === "countdown" ? (
-        <div className="fixed inset-0 z-[90] flex min-h-[100dvh] flex-col items-center justify-center bg-blue-600 px-6 text-center text-white">
+        <div className="fixed inset-0 z-[200] flex min-h-[100dvh] flex-col items-center justify-center bg-blue-600 px-6 text-center text-white">
           <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-100">Ball Speed Challenge · 3 slag</p>
           <h1 className="mt-3 text-3xl font-black">Gör dig redo</h1>
           <p className="mt-2 text-sm font-semibold text-blue-100">Startar om {Math.max(1, Math.ceil(countdown))}</p>
