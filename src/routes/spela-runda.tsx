@@ -1,9 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Star } from "lucide-react";
 import { useEffect, useState } from "react";
-import { loadSpeedSessions } from "@/lib/speed";
-import { loadOffTeeSessions } from "@/lib/offtee-store";
-import { loadPrecisionSessions } from "@/lib/precision-store";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 
 export const Route = createFileRoute("/spela-runda")({
@@ -13,7 +10,6 @@ export const Route = createFileRoute("/spela-runda")({
 const FAVORITES_KEY = "sg4-game-favorites-v1";
 const GAMES = [
   { to:"/speedrundan", title:"Ball Speed", subtitle:"Hur bra är din speed egentligen? Se din HCP-nivå.", image:"/Off_the_tee.png", hcp:true },
-  { to:"/longdrive", title:"Long Drive", subtitle:"Hur långt kan du slå?", image:"/Off_the_tee.png", hcp:false },
   { to:"/driverrundan", title:"Driver", subtitle:"Hur bra är dina driverutslag egentligen? Se din HCP-nivå.", image:"/Off_the_tee.png", hcp:true },
   { to:"/inspelsrundan", title:"Inspel", subtitle:"Hur bra är dina inspel egentligen? Se din HCP-nivå.", image:"/Approach_shot.png", hcp:true },
   { to:"/puttrundan", title:"Putting", subtitle:"Hur bra är din putting egentligen? Se din HCP-nivå.", image:"/Putting_1.png", hcp:true },
@@ -23,7 +19,6 @@ const GAMES = [
 function RoundGamesPage() {
   useHideBottomNav(true);
   const [favorites,setFavorites]=useState<string[]>([]);
-  const testedCount=GAMES.filter(g=>(testCounts[g.to]??0)>0).length;
   useEffect(()=>{try{const v=JSON.parse(localStorage.getItem(FAVORITES_KEY)??"[]");if(Array.isArray(v))setFavorites(v)}catch{}},[]);
   const toggle=(to:string)=>setFavorites(cur=>{const next=cur.includes(to)?cur.filter(x=>x!==to):[...cur,to];try{localStorage.setItem(FAVORITES_KEY,JSON.stringify(next))}catch{}return next});
   const favoriteGames=GAMES.filter(g=>favorites.includes(g.to));
