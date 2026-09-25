@@ -232,16 +232,22 @@ function MinBagPage() {
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-28 pt-6">
-      <header className="flex items-center justify-between gap-3">
-        <Link to="/tester" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card"><ArrowLeft className="h-4 w-4" /></Link>
-        <div className="flex items-center gap-2">
-          {latest ? <button type="button" onClick={() => goToMapping()} className="rounded-full border border-border bg-card px-3 py-2 text-xs font-semibold">Mappa om</button> : null}
-          {latest ? <button type="button" onClick={openBagEditor} className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-card px-3 text-[11px] font-semibold"><SlidersHorizontal className="h-3.5 w-3.5" /> Ändra bag</button> : null}
+      <section className="sticky top-[58px] z-30 -mx-5 border-b border-slate-200/70 bg-background/96 px-4 pb-3 pt-2 backdrop-blur-2xl">
+        <div className="grid grid-cols-[40px_1fr_auto] items-center gap-2">
+          <Link to="/tester" className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card"><ArrowLeft className="h-4 w-4"/></Link>
+          <div className="text-center"><p className="text-[9px] font-bold uppercase tracking-[.18em] text-muted-foreground">My Bag</p><h1 className="text-2xl font-black leading-none">Min Bag</h1></div>
+          <div className="flex gap-1.5 text-center">
+            <div className="min-w-[48px] rounded-xl bg-muted/70 px-2 py-1.5"><strong className="block text-sm">{latest?latest.clubs.length:0}</strong><span className="text-[8px] uppercase text-muted-foreground">Klubbor</span></div>
+            <div className="min-w-[48px] rounded-xl bg-muted/70 px-2 py-1.5"><strong className="block text-sm">{currentBagHcp==null?"–":currentBagHcp.toFixed(1).replace(".",",")}</strong><span className="text-[8px] uppercase text-muted-foreground">Bag HCP</span></div>
+            <div className="min-w-[48px] rounded-xl bg-muted/70 px-2 py-1.5"><strong className="block text-sm">{gapProblems===0?"0":gapProblems}</strong><span className="text-[8px] uppercase text-muted-foreground">Gap</span></div>
+          </div>
         </div>
-      </header>
-
-      <section className="sticky top-[58px] z-30 -mx-5 border-b border-slate-200/70 bg-background/94 px-5 pb-3 pt-3 backdrop-blur-2xl"><div className="flex items-end justify-between"><div><p className="text-[10px] font-bold uppercase tracking-[.18em] text-muted-foreground">My Bag</p><h1 className="text-3xl font-black leading-none">Min Bag</h1></div><span className="text-xs font-semibold text-muted-foreground">{latest?latest.clubs.length:0} klubbor</span></div>{latest?<div className="mt-3 grid grid-cols-3 gap-x-3 gap-y-2"><div><p className="text-[9px] uppercase text-muted-foreground">Freshness</p><strong className="text-xs">{freshness?.status}</strong></div><div><p className="text-[9px] uppercase text-muted-foreground">Total HCP</p><strong className="text-xs">{currentBagHcp==null?"–":currentBagHcp.toFixed(1).replace(".",",")}</strong></div><div><p className="text-[9px] uppercase text-muted-foreground">Gap-problem</p><strong className="text-xs">{gapProblems===0?"Inga":`${gapProblems} st`}</strong></div><div><p className="text-[9px] uppercase text-muted-foreground">Carry HCP</p><strong className="text-xs">{carryHcp==null?"–":carryHcp.toFixed(1).replace(".",",")}</strong></div><div><p className="text-[9px] uppercase text-muted-foreground">Spridning HCP</p><strong className="text-xs">{dispersionHcp==null?"–":dispersionHcp.toFixed(1).replace(".",",")}</strong></div><div><p className="text-[9px] uppercase text-muted-foreground">Mapped</p><strong className="text-xs">{mappedCount} / {Math.max(1,latest.clubs.filter(c=>!isPutterLabel(c.label)).length)}</strong></div></div>:null}</section>
-      {latest ? <div className="mt-4 grid grid-cols-2 gap-2"><button className="flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-border bg-card font-semibold text-foreground shadow-sm"><Share2 className="h-4 w-4"/>Share My Bag</button><button className="flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-border bg-card font-semibold text-foreground shadow-sm"><Swords className="h-4 w-4"/>Compare Bags</button></div> : null}
+        {latest?<div className="mt-2 grid grid-cols-3 gap-1.5">
+          <button type="button" onClick={openBagEditor} className="flex min-h-9 items-center justify-center gap-1 rounded-xl border border-border bg-card px-2 text-[10px] font-semibold"><SlidersHorizontal className="h-3 w-3"/>Ändra bag</button>
+          <button className="flex min-h-9 items-center justify-center gap-1 rounded-xl border border-border bg-card px-2 text-[10px] font-semibold"><Share2 className="h-3 w-3"/>Share My Bag</button>
+          <button className="flex min-h-9 items-center justify-center gap-1 rounded-xl border border-border bg-card px-2 text-[10px] font-semibold"><Swords className="h-3 w-3"/>Compare Bag</button>
+        </div>:null}
+      </section>
 
       {!latest ? (
         <section className="mt-6 rounded-2xl border border-border bg-card p-5 text-center">
