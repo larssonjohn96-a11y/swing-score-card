@@ -101,7 +101,7 @@ export function computeLocalComparisonProfile(): SocialComparisonProfile {
   }
 
   const approach = collectApproachShots();
-  if (approach.length) performance.push({ key:"approach-proximity", label:"Snitt närhet inspel", value:avg(approach.map(shot => Math.hypot(shot.lengthError, shot.lateralError))), unit:"m", decimals:1, higherIsBetter:false, category:"approach" });
+  if (approach.length) performance.push({ key:"approach-proximity", label:"Snitt närhet inspel", value:avg(approach.map(shot => Math.hypot(shot.actual - shot.target, shot.lateral))), unit:"m", decimals:1, higherIsBetter:false, category:"approach" });
 
   const speedShots = loadSpeedSessions().flatMap(session => session.shots.map(shot => shot.ballSpeed).filter(value => Number.isFinite(value) && value > 0));
   if (speedShots.length) performance.push({ key:"avg-ball-speed", label:"Snitt ball speed", value:avg(speedShots), unit:"mph", decimals:1, higherIsBetter:true, category:"driving" });

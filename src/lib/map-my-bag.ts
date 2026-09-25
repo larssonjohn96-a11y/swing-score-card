@@ -2,6 +2,7 @@ export type BagShot = {
   carry: number;
   accepted: boolean;
   createdAt: string;
+  offline?: number;
 };
 
 export type BagClub = {
@@ -9,6 +10,9 @@ export type BagClub = {
   label: string;
   order: number;
   shots: BagShot[];
+  brand?: string;
+  model?: string;
+  loft?: string;
 };
 
 export type BagMapStatus = "draft" | "completed";
