@@ -28,7 +28,7 @@ function RoundGamesPage() {
     <button type="button" aria-label={favorites.includes(game.to)?"Ta bort favorit":"Lägg till favorit"} onClick={(e)=>{e.preventDefault();e.stopPropagation();toggle(game.to)}} className="absolute right-0 top-0 z-20 flex h-[72px] w-[72px] items-start justify-end p-3"><span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-sm"><Star className={`h-4 w-4 ${favorites.includes(game.to)?"fill-amber-400 text-amber-400":"text-slate-500"}`}/></span></button>
   </div>;
   return (
-    <main className="mx-auto min-h-screen max-w-md bg-slate-50 px-5 pb-8 pt-[max(16px,env(safe-area-inset-top))] text-slate-950">
+    <main className="mx-auto min-h-screen max-w-md bg-slate-50 px-5 pb-28 pt-[max(16px,env(safe-area-inset-top))] text-slate-950">
       <section className="mt-6 px-1">
         <p className="text-[10px] font-black uppercase tracking-[.2em] text-slate-400">Spel & utmaningar</p>
         <h1 className="mt-1 text-[42px] font-black leading-[.98] tracking-[-.02em]">Hur bra är du egentligen?</h1>
