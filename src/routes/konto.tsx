@@ -12,6 +12,7 @@ async function syncLocalSessions(userId: string) {
 }
 import { RatingCardSection } from "@/components/player-card-v2";
 import { DeveloperPreviewPanel } from "@/components/dev-plan-switcher";
+import { UnitSystemSettings } from "@/components/unit-system-settings";
 
 export const Route = createFileRoute("/konto")({
   head: () => ({
@@ -198,6 +199,7 @@ function AccountPage() {
         </>
       )}
 
+      <UnitSystemSettings />
       <DeveloperPreviewPanel />
     </main>
   );
