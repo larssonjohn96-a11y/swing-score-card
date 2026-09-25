@@ -323,17 +323,6 @@ export function SpeedRoundGame({
         .speed-pressure{animation:pressurePulse 1.8s ease-in-out infinite}
         @media(prefers-reduced-motion:reduce){.speed-sheen,.speed-sheen-delay,.speed-pressure{animation:none!important}}
       `}</style>
-      {view !== "intro" && (
-        <Button
-          type="button"
-          variant="ghost"
-          aria-label="Avbryt test"
-          onClick={requestExit}
-          className="fixed left-3 top-[max(10px,env(safe-area-inset-top))] z-[130] h-11 w-11 rounded-full bg-transparent p-0 text-current hover:bg-black/5"
-        >
-          <span aria-hidden="true" className="text-2xl leading-none">‹</span>
-        </Button>
-      )}
       {celebrationId && (
         <Dialog
           open
