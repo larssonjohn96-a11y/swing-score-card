@@ -43,7 +43,7 @@ function RoundGamesPage() {
       </section>
       <section className="mt-8">
         <h2 className="px-0.5 font-display text-[28px] leading-none text-slate-950">Speed</h2>
-        <div className="-mx-5 mt-3 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{GAMES.filter(g=>g.to==="/speedrundan"||g.to==="/longdrive").map(game=><Card key={game.to} game={game} small />)}</div>
+        <div className="-mx-5 mt-3 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{GAMES.filter(g=>g.to==="/speedrundan").map(game=><Card key={game.to} game={game} full />)}</div>
       </section>
       <section className="mt-8">
         <h2 className="px-0.5 font-display text-[28px] leading-none text-slate-950">Off the Tee</h2>
