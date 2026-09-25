@@ -742,13 +742,13 @@ function Home() {
         <section className="mt-7" aria-labelledby="game-challenges-heading">
           <div className="px-0.5">
             <h2 id="game-challenges-heading" className="text-[24px] font-black leading-none text-foreground">Spel &amp; utmaningar</h2>
-            <p className="mt-1.5 text-sm text-muted-foreground">Ett moment i taget – från puttning till driver.</p>
+            <p className="mt-1.5 text-sm text-muted-foreground">Få HCP på varje del av ditt golfspel. Slå dina resultat.</p>
           </div>
           <Link to="/spela-runda" className="group relative mt-4 block min-h-[220px] overflow-hidden rounded-[26px] border border-border bg-card shadow-sm transition-transform active:scale-[.99]">
             <img src="/Off_the_tee.png" alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover object-[18%_50%]" />
             <span className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-black/5" />
             <span className="absolute inset-x-0 bottom-0 flex items-end gap-4 p-5 text-white">
-              <span className="min-w-0 flex-1"><span className="block font-display text-[30px] leading-tight">Utmana dig själv</span><span className="mt-2 block text-sm text-white/80">Välj ett moment. Slå ditt rekord.</span></span>
+              <span className="min-w-0 flex-1"><span className="block text-[30px] font-black leading-tight">Hur bra är du egentligen?</span><span className="mt-2 block text-sm font-semibold text-white/90">Testa ditt spel →</span></span>
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/18 backdrop-blur-md"><ChevronRight className="h-5 w-5" /></span>
             </span>
           </Link>
