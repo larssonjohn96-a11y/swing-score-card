@@ -44,7 +44,7 @@ export function ActivityStickyHeader({ pathname }: { pathname: string }) {
   const normalizedPath = normalizeHeaderPath(pathname);
   const hub = getHubHeader(normalizedPath);
   const title = hub?.title ?? ACTIVITY_HEADER_TITLES[normalizedPath];
-  if (!title) return null;
+  if (!title) return null;\n  if (typeof document !== "undefined" && document.documentElement.dataset.chipScreenColor === "blue") return null;
 
   return (
     <header
