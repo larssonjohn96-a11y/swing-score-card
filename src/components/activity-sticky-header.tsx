@@ -3,7 +3,7 @@ import { ArrowLeft, X } from "lucide-react";
 import { getHubHeader, normalizeHeaderPath } from "@/lib/hub-header";
 
 const ACTIVITY_HEADER_TITLES: Record<string, string> = {
-  "/spela-runda": "Spel & utmaningar",
+  "/spela-runda": "Test & utmaningar",
   "/speedrundan": "Ball Speed Challenge",
   "/driverrundan": "Utslag",
   "/chipprundan": "Närspel",
@@ -55,7 +55,7 @@ export function ActivityStickyHeader({ pathname }: { pathname: string }) {
     >
       <div className="mx-auto grid h-[58px] w-full max-w-md grid-cols-[44px_minmax(0,1fr)_44px] items-center px-3">
         {activeTest ? <span aria-hidden="true" /> : hub ? (
-          <Link to={hub.to} data-local-navigation aria-label="Tillbaka till Spel & utmaningar" className={BACK_BUTTON_CLASS}><ArrowLeft className="h-5 w-5" aria-hidden="true" /></Link>
+          <Link to={hub.to} data-local-navigation aria-label="Tillbaka till Test & utmaningar" className={BACK_BUTTON_CLASS}><ArrowLeft className="h-5 w-5" aria-hidden="true" /></Link>
         ) : (
           <button type="button" data-dynamic-back aria-label="Tillbaka" className={BACK_BUTTON_CLASS}><ArrowLeft className="h-5 w-5" aria-hidden="true" /></button>
         )}
