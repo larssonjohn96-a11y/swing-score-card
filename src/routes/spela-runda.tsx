@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Star } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { loadSpeedSessions } from "@/lib/speed";
 import { loadOffTeeSessions } from "@/lib/offtee-store";
 import { loadPrecisionSessions } from "@/lib/precision-store";
@@ -23,7 +23,6 @@ const GAMES = [
 function RoundGamesPage() {
   useHideBottomNav(true);
   const [favorites,setFavorites]=useState<string[]>([]);
-  const testCounts=useMemo(()=>{if(typeof window==="undefined")return {} as Record<string,number>;const safe=(key:string)=>{try{const v=JSON.parse(localStorage.getItem(key)??"[]");return Array.isArray(v)?v.length:0}catch{return 0}};return {"/speedrundan":loadSpeedSessions().length,"/driverrundan":loadOffTeeSessions().length,"/inspelsrundan":loadPrecisionSessions().length,"/chipprundan":safe("sg4-chip-nine-shot-v1"),"/puttrundan":safe("sg4-putting-nine-hole-v1"),"/bunkerrundan":safe("sg4-bunker-round-history-v1")}} ,[]);
   const testedCount=GAMES.filter(g=>(testCounts[g.to]??0)>0).length;
   useEffect(()=>{try{const v=JSON.parse(localStorage.getItem(FAVORITES_KEY)??"[]");if(Array.isArray(v))setFavorites(v)}catch{}},[]);
   const toggle=(to:string)=>setFavorites(cur=>{const next=cur.includes(to)?cur.filter(x=>x!==to):[...cur,to];try{localStorage.setItem(FAVORITES_KEY,JSON.stringify(next))}catch{}return next});
@@ -39,7 +38,6 @@ function RoundGamesPage() {
         <p className="text-[10px] font-black uppercase tracking-[.2em] text-blue-600">Spel & utmaningar</p>
         <h1 className="mt-1 text-[42px] font-black leading-[.98] tracking-[-.02em]">Hur bra är du egentligen?</h1>
         <p className="mt-4 max-w-sm text-[17px] font-medium leading-[1.5] text-slate-600">Testa ditt golfspel. Få HCP på varje del. Jämför med kompisar. Slå ditt resultat.</p>
-        <div className="mt-5"><p className="text-[10px] font-black uppercase tracking-[.18em] text-slate-400">Dina tester</p><div className="mt-2 flex flex-wrap gap-2">{GAMES.map(g=>{const count=testCounts[g.to]??0;return <Link key={g.to} to={g.to} className={`rounded-full border px-3 py-2 text-[11px] font-bold ${count>0?"border-blue-100 bg-blue-50 text-blue-700":"border-slate-200 bg-white text-slate-500"}`}>{g.title} · {count} {count===1?"test":"tester"}</Link>})}</div></div>
       </section>
       <section className="mt-7">
         <h2 className="px-0.5 font-display text-[26px] leading-none">Mina favoriter</h2>
