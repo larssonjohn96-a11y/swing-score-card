@@ -23,7 +23,7 @@ const trackman = {
   url: TRACKMAN_TOUR_AVERAGES_URL,
 } as const;
 
-/** App benchmarks are not handicap estimates or tour qualification standards. */
+/** App benchmarks (incl. the 220 mph long-drive-inspired SG4 benchmark) are not official limits, player identities, handicap estimates or tour qualification standards. */
 export const SPEED_LEVELS: readonly SpeedLevel[] = [
   { id: "foundation", mph: 90, label: "Grundnivå", shortLabel: "grundnivån", source: sg4, celebration: "normal" },
   { id: "club", mph: 126, label: "Klubbgolf", shortLabel: "klubbgolfnivån", source: sg4, celebration: "normal" },
@@ -34,7 +34,7 @@ export const SPEED_LEVELS: readonly SpeedLevel[] = [
   { id: "club-180", mph: 180, label: "180 mph-klubben", shortLabel: "180 mph-klubben", source: sg4, celebration: "high" },
   { id: "club-190", mph: 190, label: "190 mph-klubben", shortLabel: "190 mph-klubben", source: sg4, celebration: "high" },
   { id: "club-200", mph: 200, label: "200 mph-klubben", shortLabel: "200 mph-klubben", source: sg4, celebration: "high" },
-  { id: "long-drive", mph: 220, label: "Long drive-fart", shortLabel: "Long drive-fart", source: sg4, celebration: "high" },
+  { id: "long-drive", mph: 220, label: "SG4 long drive-riktmärke", shortLabel: "SG4:s long drive-riktmärke", source: sg4, celebration: "high" },
 ];
 
 export type SpeedLevelProgress = {

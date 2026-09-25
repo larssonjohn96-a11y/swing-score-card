@@ -15,7 +15,12 @@ import {
   isPutterLabel,
   latestCompletedBagMap,
   MAX_BAG_CLUBS,
-  medianCarry,\n  acceptedShots,\n  bagHcp,\n  bagMappedCount,\n  clubConfidence,\n  clubDispersion,
+  medianCarry,
+  acceptedShots,
+  bagHcp,
+  bagMappedCount,
+  clubConfidence,
+  clubDispersion,
   type BagMap,
   type GapStatus,
 } from "@/lib/map-my-bag";
@@ -178,7 +183,9 @@ function MinBagPage() {
   const normalizedSelection = normalizeBagSelection(bagSelection);
   const selectedNonPutterCount = normalizedSelection.filter((label) => !isPutterLabel(label)).length;
   const displayedSelectionCount = selectedNonPutterCount + 1;
-  const freshness = latest ? bagFreshness(latest) : null;\n  const mappedCount=latest?bagMappedCount(latest):0;\n  const currentBagHcp=latest?bagHcp(latest):null;
+  const freshness = latest ? bagFreshness(latest) : null;
+  const mappedCount=latest?bagMappedCount(latest):0;
+  const currentBagHcp=latest?bagHcp(latest):null;
 
   function resetConditions() {
     setTemperature(INDOOR_REFERENCE_TEMPERATURE_C);
