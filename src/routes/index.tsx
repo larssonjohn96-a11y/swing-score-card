@@ -703,9 +703,6 @@ function Home() {
             </div>
             <div className="flex items-center gap-3 px-5 py-4">
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] font-black uppercase tracking-[.18em] text-blue-600">
-                  Match
-                </p>
                 <h2 className="mt-1 text-xl font-black text-foreground">Match</h2>
                 <p className="mt-1 text-sm text-muted-foreground">Mot vän eller bot – på banan eller i ett moment.</p>
                 <div className="mt-3 flex items-center gap-2">
@@ -748,7 +745,7 @@ function Home() {
             <img src="/Off_the_tee.png" alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover object-[18%_50%]" />
             <span className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/18 to-black/5" />
             <span className="absolute inset-x-0 bottom-0 flex items-end gap-4 p-5 text-white">
-              <span className="min-w-0 flex-1"><span className="block text-[10px] font-black uppercase tracking-[.16em] text-white/90">SPEL & UTMANINGAR</span><span className="mt-1 block text-[24px] font-black leading-none">Hur bra är du egentligen?</span><span className="mt-2 block max-w-[230px] text-[14px] font-medium leading-snug text-white/90">Få HCP på varje del av ditt golfspel.</span></span>
+              <span className="min-w-0 flex-1"><span className="mt-1 block text-[24px] font-black leading-none">Hur bra är du egentligen?</span><span className="mt-2 block max-w-[230px] text-[14px] font-medium leading-snug text-white/90">Få HCP på varje del av ditt golfspel.</span></span>
               <span className="mb-1 inline-flex min-h-11 shrink-0 items-center justify-center rounded-full bg-white px-5 text-[12px] font-black text-slate-950 shadow-sm">SPELA NU →</span>
             </span>
           </Link>
