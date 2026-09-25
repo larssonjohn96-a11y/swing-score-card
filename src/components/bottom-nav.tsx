@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { Bot, BriefcaseBusiness, ChevronRight, GitCompareArrows, GraduationCap, Home, Menu, Plus, Target, Trophy, UserRound, Users } from "lucide-react";
+import { Bot, BriefcaseBusiness, ChevronRight, GitCompareArrows, GraduationCap, Home, Menu, Plus, Swords, Target, Trophy, UserRound, Users } from "lucide-react";
 import { useBottomNavVisibility } from "@/lib/bottom-nav-visibility";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { computeAchievements, computeMilestones, countUncollected } from "@/lib/trophy-room";
@@ -144,21 +144,14 @@ export function BottomNav() {
     </nav>
 
     <Sheet open={playOpen} onOpenChange={setPlayOpen}>
-      <SheetContent side="bottom" className="max-h-[90dvh] overflow-y-auto rounded-t-[34px] border-white/80 bg-background/96 px-5 pb-[calc(88px+env(safe-area-inset-bottom))] pt-5 backdrop-blur-[30px]">
+      <SheetContent side="bottom" className="rounded-t-[32px] border-white/80 bg-background/96 px-5 pb-[calc(84px+env(safe-area-inset-bottom))] pt-5 backdrop-blur-[30px]">
         <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-slate-400/55" aria-hidden="true" />
-        <SheetHeader className="pr-10"><SheetTitle className="text-left font-display text-[34px] leading-none">Spela</SheetTitle><p className="text-left text-sm text-muted-foreground">Hur vill du spela?</p></SheetHeader>
-        <div className="mt-5 space-y-3">
-          <button type="button" onClick={() => { setPlayOpen(false); navigate({ to: "/match", search: { flow: "friend" } as any }); }} className="relative block min-h-[205px] w-full overflow-hidden rounded-[28px] border border-blue-200 bg-white text-left shadow-sm active:scale-[.985]">
-            <img src="/Red_vs_blue_1.png" alt="" className="absolute inset-x-0 top-0 h-[125px] w-full object-cover" />
-            <span className="absolute inset-x-0 top-0 h-[125px] bg-gradient-to-t from-white via-white/10 to-transparent" />
-            <span className="absolute inset-x-0 bottom-0 p-4"><span className="block font-display text-[25px] leading-none">Match</span><span className="mt-1.5 block text-xs text-muted-foreground">Spela mot vän eller bot.</span><ChevronRight className="absolute bottom-5 right-4 h-4 w-4 text-blue-600" /></span>
-          </button>
-          <Link to="/spela-runda" onClick={() => setPlayOpen(false)} className="relative block min-h-[205px] w-full overflow-hidden rounded-[28px] border border-emerald-200 bg-white text-left shadow-sm active:scale-[.985]">
-            <img src="/Red_vs_blue_1.png" alt="" className="absolute inset-x-0 top-0 h-[125px] w-full object-cover" />
-            <span className="absolute inset-x-0 top-0 h-[125px] bg-gradient-to-t from-white via-white/10 to-transparent" />
-            <span className="absolute inset-x-0 bottom-0 p-4"><span className="block font-display text-[25px] leading-none">Spela själv</span><span className="mt-1.5 block text-xs text-muted-foreground">Välj kategori och spela.</span><ChevronRight className="absolute bottom-5 right-4 h-4 w-4 text-emerald-700" /></span>
-          </Link>
-          <Link to="/korthalsbana" onClick={() => setPlayOpen(false)} className="flex min-h-20 items-center justify-between gap-4 rounded-[24px] border border-blue-200 bg-blue-50 p-4 text-blue-950"><span><span className="block font-display text-2xl">Spela på bana</span><span className="mt-1 block text-sm text-blue-700">1 mot 1 · flera spelare · turnering</span></span><ChevronRight className="h-5 w-5 shrink-0" /></Link>
+        <SheetHeader className="pr-10"><SheetTitle className="text-left font-display text-[30px] leading-none">Spela</SheetTitle><p className="text-left text-sm text-muted-foreground">Vad vill du göra?</p></SheetHeader>
+        <div className="mt-4 space-y-2">
+          <Link to="/spela-runda" onClick={()=>setPlayOpen(false)} className="flex min-h-[78px] items-center gap-3 rounded-[22px] border border-blue-200 bg-white px-4 py-3 shadow-sm"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-600"><Target className="h-5 w-5"/></span><span className="min-w-0 flex-1"><strong className="block text-[17px]">Spel</strong><span className="mt-0.5 block text-xs text-muted-foreground">Slå ditt PB & få HCP-nivå.</span></span><ChevronRight className="h-4 w-4 text-blue-500"/></Link>
+          <button type="button" onClick={()=>{setPlayOpen(false);navigate({to:"/match",search:{flow:"friend"} as any})}} className="flex min-h-[78px] w-full items-center gap-3 rounded-[22px] border border-red-200 bg-white px-4 py-3 text-left shadow-sm"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-red-50 text-red-600"><Swords className="h-5 w-5"/></span><span className="min-w-0 flex-1"><strong className="block text-[17px]">Match</strong><span className="mt-0.5 block text-xs text-muted-foreground">Utmana vänner i alla delar av golfen.</span></span><ChevronRight className="h-4 w-4 text-red-500"/></button>
+          <Link to="/min-bag" onClick={()=>setPlayOpen(false)} className="flex min-h-[78px] items-center gap-3 rounded-[22px] border border-slate-200 bg-white px-4 py-3 shadow-sm"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-800"><BriefcaseBusiness className="h-5 w-5"/></span><span className="min-w-0 flex-1"><strong className="block text-[17px]">My Bag</strong><span className="mt-0.5 block text-xs text-muted-foreground">Bag HCP · klubbor · gapping · dispersion.</span></span><ChevronRight className="h-4 w-4 text-slate-400"/></Link>
+          <Link to="/utveckling" onClick={()=>setPlayOpen(false)} className="flex min-h-[78px] items-center gap-3 rounded-[22px] border border-violet-200 bg-white px-4 py-3 shadow-sm"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-violet-50 text-violet-600"><GitCompareArrows className="h-5 w-5"/></span><span className="min-w-0 flex-1"><strong className="block text-[17px]">Jämför</strong><span className="mt-0.5 block text-xs text-muted-foreground">Jämför HCP, vänner, nivåer & proffs.</span></span><ChevronRight className="h-4 w-4 text-violet-500"/></Link>
         </div>
       </SheetContent>
     </Sheet>
