@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, X } from "lucide-react";
 import { getHubHeader, normalizeHeaderPath } from "@/lib/hub-header";
 
 const ACTIVITY_HEADER_TITLES: Record<string, string> = {
@@ -43,7 +43,7 @@ const TEST_ABORT_PATHS = new Set(["/speedrundan","/longdrive","/driverrundan","/
 export function ActivityStickyHeader({ pathname }: { pathname: string }) {
   const normalizedPath = normalizeHeaderPath(pathname);
   const hub = getHubHeader(normalizedPath);
-  const title = hub?.title ?? ACTIVITY_HEADER_TITLES[normalizedPath];
+  const title = hub?.title ?? ACTIVITY_HEADER_TITLES[normalizedPath];\n  const activeTest = typeof document !== "undefined" && document.documentElement.dataset.sg4TestActive === "true";
   if (!title) return null;\n  if (typeof document !== "undefined" && document.documentElement.dataset.chipScreenColor === "blue") return null;
 
   return (
@@ -52,7 +52,7 @@ export function ActivityStickyHeader({ pathname }: { pathname: string }) {
       className="sticky top-0 z-[60] border-b border-slate-200/70 bg-white/88 pt-[env(safe-area-inset-top)] backdrop-blur-2xl"
     >
       <div className="mx-auto grid h-[58px] w-full max-w-md grid-cols-[44px_minmax(0,1fr)_44px] items-center px-3">
-        {hub ? (
+        {activeTest ? (\n          <button type="button" data-test-abort aria-label="Avbryt test" className={BACK_BUTTON_CLASS}><X className="h-5 w-5" aria-hidden="true" /></button>\n        ) : hub ? (
           <Link to={hub.to} data-local-navigation aria-label="Tillbaka till startsidan" className={BACK_BUTTON_CLASS}>
             <ArrowLeft className="h-5 w-5" aria-hidden="true" />
           </Link>
