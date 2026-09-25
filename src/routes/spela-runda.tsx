@@ -39,7 +39,7 @@ function RoundGamesPage() {
         <p className="text-[10px] font-black uppercase tracking-[.2em] text-blue-600">Spel & utmaningar</p>
         <h1 className="mt-1 text-[42px] font-black leading-[.98] tracking-[-.02em]">Hur bra är du egentligen?</h1>
         <p className="mt-4 max-w-sm text-[17px] font-medium leading-[1.5] text-slate-600">Testa ditt golfspel. Få HCP på varje del. Jämför med kompisar. Slå ditt resultat.</p>
-        {testedCount<6?<div className="mt-5 rounded-2xl border border-slate-200 bg-white p-3.5"><div className="flex items-center justify-between"><span className="text-xs font-bold">Bygg din HCP-profil</span><span className="text-xs font-black text-blue-600">{testedCount}/6 testade</span></div><div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-blue-600 transition-all" style={{width:`${testedCount/6*100}%`}}/></div></div>:<div className="mt-5 flex flex-wrap gap-2">{GAMES.map(g=><span key={g.to} className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-bold">{g.title} · {testCounts[g.to]??0} test</span>)}</div>}
+        <div className="mt-5"><p className="text-[10px] font-black uppercase tracking-[.18em] text-slate-400">Dina tester</p><div className="mt-2 flex flex-wrap gap-2">{GAMES.map(g=>{const count=testCounts[g.to]??0;return <Link key={g.to} to={g.to} className={`rounded-full border px-3 py-2 text-[11px] font-bold ${count>0?"border-blue-100 bg-blue-50 text-blue-700":"border-slate-200 bg-white text-slate-500"}`}>{g.title} · {count} {count===1?"test":"tester"}</Link>})}</div></div>}
       </section>
       <section className="mt-7">
         <h2 className="px-0.5 font-display text-[26px] leading-none">Mina favoriter</h2>
