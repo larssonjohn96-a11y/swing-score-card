@@ -9,13 +9,13 @@ export const Route = createFileRoute("/spela-runda")({
 });
 const FAVORITES_KEY = "sg4-game-favorites-v1";
 const GAMES = [
-  { to:"/speedrundan", title:"Speed", subtitle:"Hur hårt kan du slå?", image:"/Off_the_tee.png", hcp:true },
+  { to:"/speedrundan", title:"Ball Speed", subtitle:"Hur bra är din speed egentligen? Se din HCP-nivå.", image:"/Off_the_tee.png", hcp:true },
   { to:"/longdrive", title:"Long Drive", subtitle:"Hur långt kan du slå?", image:"/Off_the_tee.png", hcp:false },
-  { to:"/driverrundan", title:"Utslag", subtitle:"Mäter längd och precision", image:"/Off_the_tee.png", hcp:true },
-  { to:"/inspelsrundan", title:"Inspel", subtitle:"Hur nära kan du slå?", image:"/Approach_shot.png", hcp:true },
-  { to:"/puttrundan", title:"Puttning", subtitle:"Hur bra puttar du?", image:"/Putting_1.png", hcp:true },
-  { to:"/chipprundan", title:"Chip", subtitle:"Hur nära flaggan kan du komma?", image:"/0d286fd4-99fa-47eb-b39c-a7ff718ebdd6.png", hcp:true },
-  { to:"/bunkerrundan", title:"Bunker", subtitle:"Hur bra är du från sanden?", image:"/bunker-round.svg", hcp:true },
+  { to:"/driverrundan", title:"Driver", subtitle:"Hur bra är dina driverutslag egentligen? Se din HCP-nivå.", image:"/Off_the_tee.png", hcp:true },
+  { to:"/inspelsrundan", title:"Inspel", subtitle:"Hur bra är dina inspel egentligen? Se din HCP-nivå.", image:"/Approach_shot.png", hcp:true },
+  { to:"/puttrundan", title:"Putting", subtitle:"Hur bra är din putting egentligen? Se din HCP-nivå.", image:"/Putting_1.png", hcp:true },
+  { to:"/chipprundan", title:"Chipping", subtitle:"Hur bra är din chipping egentligen? Se din HCP-nivå.", image:"/0d286fd4-99fa-47eb-b39c-a7ff718ebdd6.png", hcp:true },
+  { to:"/bunkerrundan", title:"Bunker", subtitle:"Hur bra är ditt bunkerspel egentligen? Se din HCP-nivå.", image:"/bunker-round.svg", hcp:true },
 ] as const;
 function RoundGamesPage() {
   useHideBottomNav(true);
@@ -42,11 +42,11 @@ function RoundGamesPage() {
         </div>
       </section>
       <section className="mt-8">
-        <h2 className="px-0.5 font-display text-[28px] leading-none text-slate-950">Speed</h2>
+        <h2 className="px-0.5 font-display text-[28px] leading-none text-slate-950">Ball Speed</h2>
         <div className="-mx-5 mt-3 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{GAMES.filter(g=>g.to==="/speedrundan").map(game=><Card key={game.to} game={game} full />)}</div>
       </section>
       <section className="mt-8">
-        <h2 className="px-0.5 font-display text-[28px] leading-none text-slate-950">Off the Tee</h2>
+        <h2 className="px-0.5 font-display text-[28px] leading-none text-slate-950">Driver</h2>
         <div className="mt-3">{GAMES.filter(g=>g.to==="/driverrundan").map(game=><Card key={game.to} game={game} full />)}</div>
       </section>
       <section className="mt-8">
@@ -54,11 +54,11 @@ function RoundGamesPage() {
         <div className="mt-3">{GAMES.filter(g=>g.to==="/inspelsrundan").map(game=><Card key={game.to} game={game} full />)}</div>
       </section>
       <section className="mt-8">
-        <h2 className="px-0.5 font-display text-[28px] leading-none text-slate-950">Puttning</h2>
+        <h2 className="px-0.5 font-display text-[28px] leading-none text-slate-950">Putting</h2>
         <div className="mt-3">{GAMES.filter(g=>g.to==="/puttrundan").map(game=><Card key={game.to} game={game} full />)}</div>
       </section>
       <section className="mt-8">
-        <h2 className="px-0.5 font-display text-[28px] leading-none text-slate-950">Närspel</h2>
+        <h2 className="px-0.5 font-display text-[28px] leading-none text-slate-950">Chipping & Bunker</h2>
         <div className="mt-3 flex w-full gap-2">{GAMES.filter(g=>g.to==="/chipprundan"||g.to==="/bunkerrundan").map(game=><Card key={game.to} game={game} small />)}</div>
       </section>
     </main>
