@@ -232,22 +232,20 @@ function MinBagPage() {
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-28 pt-6">
-      <section className="sticky top-[58px] z-30 -mx-5 border-b border-slate-200/70 bg-background/96 px-4 pb-3 pt-2 backdrop-blur-2xl">
-        <div className="grid grid-cols-[40px_1fr_auto] items-center gap-2">
-          <Link to="/tester" className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card"><ArrowLeft className="h-4 w-4"/></Link>
-          <div className="text-center"><p className="text-[9px] font-bold uppercase tracking-[.18em] text-muted-foreground">My Bag</p><h1 className="text-2xl font-black leading-none">Min Bag</h1></div>
-          <div className="flex gap-1.5 text-center">
-            <div className="min-w-[48px] rounded-xl bg-muted/70 px-2 py-1.5"><strong className="block text-sm">{latest?latest.clubs.length:0}</strong><span className="text-[8px] uppercase text-muted-foreground">Klubbor</span></div>
-            <div className="min-w-[48px] rounded-xl bg-muted/70 px-2 py-1.5"><strong className="block text-sm">{currentBagHcp==null?"–":currentBagHcp.toFixed(1).replace(".",",")}</strong><span className="text-[8px] uppercase text-muted-foreground">Bag HCP</span></div>
-            <div className="min-w-[48px] rounded-xl bg-muted/70 px-2 py-1.5"><strong className="block text-sm">{gapProblems===0?"0":gapProblems}</strong><span className="text-[8px] uppercase text-muted-foreground">Gap</span></div>
-          </div>
+      <header className="sticky top-0 z-40 -mx-5 border-b border-border/70 bg-background/88 px-5 pt-[max(12px,env(safe-area-inset-top))] backdrop-blur-2xl">
+        <div className="flex items-center justify-between pb-3">
+          <Link to="/tester" className="flex min-w-0 items-center gap-3">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border bg-card/80"><ArrowLeft className="h-5 w-5"/></span>
+            <span className="min-w-0"><span className="block text-[19px] font-black leading-none text-foreground">Min Bag</span><span className="mt-1 block text-xs font-semibold text-muted-foreground">{latest?latest.clubs.length:0} klubbor · Bag HCP {currentBagHcp==null?"–":currentBagHcp.toFixed(1).replace(".",",")}</span></span>
+          </Link>
+          <div className="flex items-center gap-2"><span className="rounded-full border border-border bg-card/80 px-3 py-2 text-xs font-bold">{gapProblems===0?"Inga gap":"Gap "+gapProblems}</span></div>
         </div>
-        {latest?<div className="mt-2 grid grid-cols-3 gap-1.5">
-          <button type="button" onClick={openBagEditor} className="flex min-h-9 items-center justify-center gap-1 rounded-xl border border-border bg-card px-2 text-[10px] font-semibold"><SlidersHorizontal className="h-3 w-3"/>Ändra bag</button>
-          <button className="flex min-h-9 items-center justify-center gap-1 rounded-xl border border-border bg-card px-2 text-[10px] font-semibold"><Share2 className="h-3 w-3"/>Share My Bag</button>
-          <button className="flex min-h-9 items-center justify-center gap-1 rounded-xl border border-border bg-card px-2 text-[10px] font-semibold"><Swords className="h-3 w-3"/>Compare Bag</button>
-        </div>:null}
-      </section>
+        {latest?<div className="pb-3"><nav className="-mx-1 flex gap-2 overflow-x-auto px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="My Bag navigation">
+          <button type="button" onClick={openBagEditor} className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black">Ändra bag</button>
+          <button className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black">Share My Bag</button>
+          <button className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black">Compare Bag</button>
+        </nav></div>:null}
+      </header>
 
       {!latest ? (
         <section className="mt-6 rounded-2xl border border-border bg-card p-5 text-center">
