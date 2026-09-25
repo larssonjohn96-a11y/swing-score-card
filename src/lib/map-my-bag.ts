@@ -225,7 +225,7 @@ export function acceptedShots(club: BagClub) {
 
 export function clubComplete(club: BagClub) {
   if (isPutterLabel(club.label)) return true;
-  return acceptedShots(club).length >= 3;
+  return acceptedShots(club).length >= 5;
 }
 
 export function clubLastUpdatedAt(club: BagClub): string | null {
@@ -248,7 +248,7 @@ export function medianCarry(club: BagClub): number | null {
   const latestSession = acceptedShots(club)
     .filter((shot) => Number.isFinite(shot.carry))
     .sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt))
-    .slice(-3)
+    .slice(-10)
     .map((shot) => shot.carry)
     .sort((a, b) => a - b);
   if (!latestSession.length) return null;
@@ -279,3 +279,21 @@ export function completedClubCount(map: BagMap) {
 export function latestCompletedBagMap() {
   return loadBagHistory()[0] ?? null;
 }
+
+export const POPULAR_CLUB_BRANDS=["Titleist","TaylorMade","Callaway","PING","Mizuno","Cobra","Srixon","Cleveland","Wilson","PXG"] as const;
+export const POPULAR_MODELS:Record<string,string[]>={
+ Titleist:["GT2","GT3","GT4","TSR2","TSR3","T100","T150","T200","T250","Vokey SM10","Vokey SM11"],
+ TaylorMade:["Qi4D","Qi35","Stealth 2","P790","P770","P7CB"],
+ Callaway:["Quantum","Elyte","Paradym Ai Smoke","Apex","Apex Pro"],
+ PING:["G440","G430","i240","i230","Blueprint S","Blueprint T"],
+ Mizuno:["ST-MAX","JPX 925","Mizuno Pro 241","Mizuno Pro 243"],
+ Cobra:["DS-ADAPT","DARKSPEED","KING Tour"],
+ Srixon:["ZXi","ZXi5","ZXi7"],
+ Cleveland:["RTZ","RTX 6 ZipCore"],
+ Wilson:["Dynapower","Staff Model"],
+ PXG:["Black Ops","0311"]
+};
+export function clubConfidence(club:BagClub){const n=acceptedShots(club).length;return {shots:n,pct:Math.min(100,Math.round(n/10*100)),label:n>=10?"High confidence":n>=5?"Mapped":"Unmapped"}}
+export function clubDispersion(club:BagClub){const rows=acceptedShots(club).filter(s=>Number.isFinite(s.offline));if(!rows.length)return null;return rows.reduce((a,s)=>a+Math.abs(s.offline??0),0)/rows.length}
+export function bagMappedCount(bag:BagMap){return bag.clubs.filter(c=>!isPutterLabel(c.label)&&clubComplete(c)).length}
+export function bagHcp(bag:BagMap){const clubs=bag.clubs.filter(c=>!isPutterLabel(c.label)&&clubComplete(c));if(clubs.length<5)return null;const gaps=clubs.map(medianCarry).filter((x):x is number=>x!=null).sort((a,b)=>b-a).slice(0,-1).map((x,i,a)=>Math.abs((x-a[i+1])-12));const gapPenalty=gaps.length?gaps.reduce((a,b)=>a+b,0)/gaps.length:6;const dispersions=clubs.map(clubDispersion).filter((x):x is number=>x!=null);const disp=dispersions.length?dispersions.reduce((a,b)=>a+b,0)/dispersions.length:8;return Math.max(-5,Math.min(36,Math.round((gapPenalty*.9+disp*1.1)*10)/10))}
