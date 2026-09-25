@@ -1,6 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Star } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { loadSpeedSessions } from "@/lib/speed";
+import { loadOffTeeSessions } from "@/lib/offtee-store";
+import { loadPrecisionSessions } from "@/lib/precision-store";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 
 export const Route = createFileRoute("/spela-runda")({
@@ -20,6 +23,8 @@ const GAMES = [
 function RoundGamesPage() {
   useHideBottomNav(true);
   const [favorites,setFavorites]=useState<string[]>([]);
+  const testCounts=useMemo(()=>{if(typeof window==="undefined")return {} as Record<string,number>;const safe=(key:string)=>{try{const v=JSON.parse(localStorage.getItem(key)??"[]");return Array.isArray(v)?v.length:0}catch{return 0}};return {"/speedrundan":loadSpeedSessions().length,"/driverrundan":loadOffTeeSessions().length,"/inspelsrundan":loadPrecisionSessions().length,"/chipprundan":safe("sg4-chip-nine-shot-v1"),"/puttrundan":safe("sg4-putting-nine-hole-v1"),"/bunkerrundan":safe("sg4-bunker-round-history-v1")}} ,[]);
+  const testedCount=GAMES.filter(g=>(testCounts[g.to]??0)>0).length;
   useEffect(()=>{try{const v=JSON.parse(localStorage.getItem(FAVORITES_KEY)??"[]");if(Array.isArray(v))setFavorites(v)}catch{}},[]);
   const toggle=(to:string)=>setFavorites(cur=>{const next=cur.includes(to)?cur.filter(x=>x!==to):[...cur,to];try{localStorage.setItem(FAVORITES_KEY,JSON.stringify(next))}catch{}return next});
   const favoriteGames=GAMES.filter(g=>favorites.includes(g.to));
@@ -34,6 +39,7 @@ function RoundGamesPage() {
         <p className="text-[10px] font-black uppercase tracking-[.2em] text-blue-600">Spel & utmaningar</p>
         <h1 className="mt-1 text-[42px] font-black leading-[.98] tracking-[-.02em]">Hur bra är du egentligen?</h1>
         <p className="mt-4 max-w-sm text-[17px] font-medium leading-[1.5] text-slate-600">Testa ditt golfspel. Få HCP på varje del. Jämför med kompisar. Slå ditt resultat.</p>
+        {testedCount<6?<div className="mt-5 rounded-2xl border border-slate-200 bg-white p-3.5"><div className="flex items-center justify-between"><span className="text-xs font-bold">Bygg din HCP-profil</span><span className="text-xs font-black text-blue-600">{testedCount}/6 testade</span></div><div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-blue-600 transition-all" style={{width:`${testedCount/6*100}%`}}/></div></div>:<div className="mt-5 flex flex-wrap gap-2">{GAMES.map(g=><span key={g.to} className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-bold">{g.title} · {testCounts[g.to]??0} test</span>)}</div>}
       </section>
       <section className="mt-7">
         <h2 className="px-0.5 font-display text-[26px] leading-none">Mina favoriter</h2>
