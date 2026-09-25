@@ -77,7 +77,7 @@ export function SpeedRoundGame({
         restored.active?.holes.flat().at(-1)?.ballSpeed ??
         restored.history.at(-1)?.holes.flat().at(-1)?.ballSpeed ??
         100;
-      setValue(String(Number(fromMph(lastSpeed, restoredUnit).toFixed(1))));
+      setValue(String(Math.round(fromMph(lastSpeed, restoredUnit))));
       if (restored.active) { restored.active=null; stateRef.current=restored; setState(restored); try{localStorage.setItem(key,JSON.stringify(restored))}catch{} }
     } catch {
       setStorageError(true);
@@ -267,7 +267,7 @@ export function SpeedRoundGame({
 
   function changeUnit(next: SpeedUnit) {
     if (value.trim() && Number.isFinite(numeric))
-      setValue(String(Number(fromMph(toMph(numeric, unit), next).toFixed(1))));
+      setValue(String(Math.round(fromMph(toMph(numeric, unit), next))));
     setUnit(next);
     try {
       localStorage.setItem("sg4-speed-round-unit", next);
@@ -543,7 +543,7 @@ export function SpeedRoundGame({
                     aria-live="polite"
                     className="block text-6xl font-black tabular-nums text-blue-700"
                   >
-                    {fmt(numeric).replace(/,0$/, "")}
+                    {Math.round(numeric)}
                   </output>
                   <span className="mt-2 block text-lg font-semibold text-slate-500">{unit}</span>
                 </div>
@@ -601,7 +601,7 @@ export function SpeedRoundGame({
                   onClick={() => {
                     commit({ type: "undo" });
                     setFeedback(null);
-                    setValue(String(Number(fromMph(displayedSpeed ?? 0, unit).toFixed(1))));
+                    setValue(String(Math.round(fromMph(displayedSpeed ?? 0, unit))));
                   }}
                   className="mt-1 min-h-11 text-slate-500"
                 >
