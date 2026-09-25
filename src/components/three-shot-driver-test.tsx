@@ -25,6 +25,7 @@ export function ThreeShotDriverTest({mode,onExit}:{mode:Mode;onExit:()=>void}){
  const [distance,setDistance]=useState(long?"250":"220"),[lateral,setLateral]=useState("0"),[side,setSide]=useState<"left"|"right">("right"),[compile,setCompile]=useState(0);
  const [confirmExit,setConfirmExit]=useState(false),[analysis,setAnalysis]=useState(false),[hcpReady,setHcpReady]=useState(false),[analysisPage,setAnalysisPage]=useState(0),[rollingHcp,setRollingHcp]=useState(40); const age=typeof window==="undefined"?undefined:loadCardProfile().age; const timers=useRef<number[]>([]);
  useChipScreenColor(view==="countdown"||view==="compiling"||analysis);
+ useEffect(()=>{document.documentElement.dataset.sg4TestActive=view==="intro"?"false":"true";return()=>{delete document.documentElement.dataset.sg4TestActive}},[view]);
  useEffect(()=>{const handler=()=>setConfirmExit(true);window.addEventListener("sg4-test-abort",handler);return()=>window.removeEventListener("sg4-test-abort",handler)},[]);
  const result=useMemo(()=>shots.length===3?offTeeResult(tee(shots)):null,[shots]),best=Math.max(0,...shots.map(s=>s.distance)),avg=shots.length?shots.reduce((a,s)=>a+s.distance,0)/shots.length:0;
  const longSessions=typeof window==="undefined"?[]:loadLongDriveSessions(); const pb=long?Math.max(0,...longSessions.map(sessionBest)):typeof window==="undefined"?0:Math.max(0,...loadOfftee().flatMap(t=>t.shots.map(s=>s.distance)));
