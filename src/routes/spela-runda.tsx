@@ -32,7 +32,7 @@ function RoundGamesPage() {
     <main className="mx-auto min-h-screen max-w-md bg-slate-50 px-5 pb-8 pt-[max(16px,env(safe-area-inset-top))] text-slate-950">
       <section className="mt-6 px-1">
         <p className="text-[10px] font-black uppercase tracking-[.2em] text-blue-600">Spel & utmaningar</p>
-        <h1 className="mt-1 font-display text-[42px] leading-[.98] tracking-[-.02em]">Hur bra är du egentligen?</h1>
+        <h1 className="mt-1 text-[42px] font-black leading-[.98] tracking-[-.02em]">Hur bra är du egentligen?</h1>
         <p className="mt-4 max-w-sm text-[16px] font-medium leading-[1.5] text-slate-600">Testa ditt golfspel. Få HCP på varje del. Jämför med andra. Slå ditt resultat.</p>
       </section>
       <section className="mt-7">
