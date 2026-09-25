@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { AlertTriangle, ArrowLeft, CircleMinus, MapPinned, RotateCcw, SlidersHorizontal, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CircleMinus, Info, MapPinned, RotateCcw, Share2, SlidersHorizontal, Swords, X } from "lucide-react";
 import { useState } from "react";
 import { WheelPicker } from "@/components/wheel-picker";
 import { CLUB_GROUPS, ELEVATION_VALUES, TEMPERATURE_VALUES } from "@/lib/club-groups";
@@ -15,7 +15,7 @@ import {
   isPutterLabel,
   latestCompletedBagMap,
   MAX_BAG_CLUBS,
-  medianCarry,
+  medianCarry,\n  acceptedShots,\n  bagHcp,\n  bagMappedCount,\n  clubConfidence,\n  clubDispersion,
   type BagMap,
   type GapStatus,
 } from "@/lib/map-my-bag";
@@ -178,7 +178,7 @@ function MinBagPage() {
   const normalizedSelection = normalizeBagSelection(bagSelection);
   const selectedNonPutterCount = normalizedSelection.filter((label) => !isPutterLabel(label)).length;
   const displayedSelectionCount = selectedNonPutterCount + 1;
-  const freshness = latest ? bagFreshness(latest) : null;
+  const freshness = latest ? bagFreshness(latest) : null;\n  const mappedCount=latest?bagMappedCount(latest):0;\n  const currentBagHcp=latest?bagHcp(latest):null;
 
   function resetConditions() {
     setTemperature(INDOOR_REFERENCE_TEMPERATURE_C);
@@ -230,6 +230,7 @@ function MinBagPage() {
 
       <p className="mt-6 text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">Snabbvy på banan</p>
       <h1 className="mt-1 text-4xl leading-none">Min Bag</h1>
+      {latest ? <section className="mt-4 overflow-hidden rounded-3xl bg-slate-950 p-5 text-white"><div className="flex items-start justify-between"><div><p className="text-[10px] font-bold uppercase tracking-[.2em] text-slate-400">My Bag · SG4</p><p className="mt-2 text-4xl font-black">{currentBagHcp==null?"Preliminär":`Bag HCP ${currentBagHcp.toFixed(1).replace(".",",")}`}</p><p className="mt-2 text-sm text-slate-300">{mappedCount} klubbor mappade · {latest.clubs.reduce((a,c)=>a+acceptedShots(c).length,0)} slag</p></div><div className="text-right"><p className="text-xs text-slate-400">Freshness</p><strong>{freshness?.status}</strong></div></div><div className="mt-4 h-2 overflow-hidden rounded-full bg-white/15"><div className="h-full bg-white" style={{width:`${Math.min(100,mappedCount/10*100)}%`}}/></div><p className="mt-2 text-xs text-slate-400">{mappedCount>=10?"Full Bag-profil upplåst":`${10-mappedCount} klubbor kvar till full Bag-profil`}</p><div className="mt-5 grid grid-cols-2 gap-2"><button className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-white font-bold text-slate-950"><Share2 className="h-4 w-4"/>Share My Bag</button><button className="flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-white/25 font-bold"><Swords className="h-4 w-4"/>Compare Bags</button></div></section> : null}
 
       {!latest ? (
         <section className="mt-6 rounded-2xl border border-border bg-card p-5 text-center">
@@ -303,13 +304,13 @@ function MinBagPage() {
                 <div key={club.id} className="border-b border-border px-5 py-4 last:border-b-0">
                   <div className="flex items-center justify-between gap-4">
                     <button type="button" onClick={() => !isPutterLabel(club.label) && goToMapping(club.label)} className="min-w-0 flex-1 text-left">
-                      <span className="text-lg font-semibold">{club.label}</span>
+                      <span className="text-lg font-semibold">{club.label}</span>{club.brand||club.model?<span className="ml-2 text-xs text-muted-foreground">{[club.brand,club.model,club.loft].filter(Boolean).join(" · ")}</span>:null}
                     </button>
                     <div className="relative shrink-0 text-right">
                       <div>
                         {adjusted && stock != null ? <span className="mr-2 text-xs text-muted-foreground line-through">{Math.round(stock)}</span> : null}
                         <span className="font-display text-3xl tabular-nums">{shown != null ? Math.round(shown) : "–"}</span>
-                        <span className="ml-1 text-xs text-muted-foreground">{shown != null ? "m" : ""}</span>
+                        <span className="ml-1 text-xs text-muted-foreground">{shown != null ? "m" : ""}</span>{!isPutterLabel(club.label)&&<div className="mt-1 flex items-center justify-end gap-1 text-[10px] text-muted-foreground"><span>{clubConfidence(club).label} · {clubConfidence(club).shots} slag</span><Info className="h-3 w-3"/></div>}{clubDispersion(club)!=null?<div className="text-[10px] text-muted-foreground">Dispersion {clubDispersion(club)!.toFixed(1).replace(".",",")} m</div>:null}
                       </div>
 
                       {gapAnalysis?.flagged && nextClub ? (
