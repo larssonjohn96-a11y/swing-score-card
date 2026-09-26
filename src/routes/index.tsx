@@ -689,6 +689,22 @@ function Home() {
           </Link>
         </section>
 
+        <section className="mt-7" aria-labelledby="lower-hcp-heading">
+          <div className="px-0.5">
+            <h2 id="lower-hcp-heading" className="text-[24px] font-black leading-none text-foreground">Sänk mitt HCP</h2>
+            <p className="mt-1.5 text-sm text-muted-foreground">Sluta gissa. Upptäck dina styrkor, hitta dina svagheter och se vad du ska förbättra först.</p>
+          </div>
+          <Link to="/utveckling" className="group relative mt-4 block min-h-[252px] overflow-hidden rounded-[26px] border border-border bg-card shadow-sm transition-transform active:scale-[.99]">
+            <img src="/Approach_shot.png" alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover object-[12%_48%]" />
+            <span className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/5" />
+            <span className="relative flex min-h-[252px] flex-col justify-end p-5 text-white">
+              <span className="block text-[24px] font-black leading-none">Sänk mitt HCP</span>
+              <span className="mt-2 block max-w-[290px] text-[14px] font-medium leading-snug text-white/90">Sluta gissa. Upptäck dina styrkor, hitta dina svagheter och se vad du ska förbättra först.</span>
+              <span className="mt-4 inline-flex min-h-11 items-center justify-center self-start rounded-full bg-white px-5 text-[12px] font-black text-slate-950 shadow-sm">SE MIN ANALYS →</span>
+            </span>
+          </Link>
+        </section>
+
         <section className="mt-7" aria-labelledby="match-heading">
           <div className="px-0.5">
             <h2 id="match-heading" className="text-[24px] font-black leading-none text-foreground">Match</h2>
