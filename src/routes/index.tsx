@@ -612,7 +612,7 @@ function Home() {
               to="/spela-runda"
               className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black"
             >
-              Test & utmaningar
+              HCP-tester
             </Link>
                         
             <Link
@@ -738,15 +738,15 @@ function Home() {
 
         <section className="mt-7" aria-labelledby="game-challenges-heading">
           <div className="px-0.5">
-            <h2 id="game-challenges-heading" className="text-[24px] font-black leading-none text-foreground">Test &amp; utmaningar</h2>
-            <p className="mt-1.5 text-sm text-muted-foreground">Få HCP på varje del av ditt golfspel. Slå dina resultat.</p>
+            <h2 id="game-challenges-heading" className="text-[24px] font-black leading-none text-foreground">HCP-tester</h2>
+            <p className="mt-1.5 text-sm text-muted-foreground">Testa ditt golfspel och se din HCP-nivå i varje kategori.</p>
           </div>
           <Link to="/spela-runda" className="group relative mt-4 block h-[252px] overflow-hidden rounded-[26px] border border-border bg-card shadow-sm transition-transform active:scale-[.99]">
             <img src="/Off_the_tee.png" alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover object-[18%_50%]" />
             <span className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/18 to-black/5" />
             <span className="absolute inset-x-0 bottom-0 flex items-end gap-4 p-5 text-white">
-              <span className="min-w-0 flex-1"><span className="mt-1 block text-[24px] font-black leading-none">Hur bra är du egentligen?</span><span className="mt-2 block max-w-[230px] text-[14px] font-medium leading-snug text-white/90">Få HCP på varje del av ditt golfspel.</span></span>
-              <span className="mb-1 inline-flex min-h-11 shrink-0 items-center justify-center rounded-full bg-white px-5 text-[12px] font-black text-slate-950 shadow-sm">SPELA NU →</span>
+              <span className="min-w-0 flex-1"><span className="mt-1 block text-[24px] font-black leading-none">HCP-tester</span><span className="mt-2 block max-w-[230px] text-[14px] font-medium leading-snug text-white/90">Testa ditt golfspel och se din HCP-nivå i varje kategori.</span></span>
+              <span className="mb-1 inline-flex min-h-11 shrink-0 items-center justify-center rounded-full bg-white px-5 text-[12px] font-black text-slate-950 shadow-sm">VÄLJ TEST →</span>
             </span>
           </Link>
         </section>

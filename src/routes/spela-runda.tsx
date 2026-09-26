@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 
 export const Route = createFileRoute("/spela-runda")({
-  head: () => ({ meta: [{ title: "Test & utmaningar – SG4" }] }),
+  head: () => ({ meta: [{ title: "HCP-tester – SG4" }] }),
   component: RoundGamesPage,
 });
 const FAVORITES_KEY = "sg4-game-favorites-v1";
@@ -30,14 +30,13 @@ function RoundGamesPage() {
   return (
     <main className="mx-auto min-h-screen max-w-md bg-slate-50 px-5 pb-28 pt-[max(16px,env(safe-area-inset-top))] text-slate-950">
       <section className="mt-6 px-1">
-        <p className="text-[10px] font-black uppercase tracking-[.2em] text-slate-400">Test & utmaningar</p>
-        <h1 className="mt-1 text-[42px] font-black leading-[.98] tracking-[-.02em]">Hur bra är du egentligen?</h1>
-        <p className="mt-4 max-w-sm text-[17px] font-medium leading-[1.5] text-slate-600">Testa ditt golfspel. Få HCP på varje del. Jämför med kompisar. Slå ditt resultat.</p>
+        <h1 className="mt-1 text-[42px] font-black leading-[.98] tracking-[-.02em]">HCP-tester</h1>
+        <p className="mt-4 max-w-sm text-[17px] font-medium leading-[1.5] text-slate-600">Testa ditt golfspel och se din HCP-nivå i varje kategori.</p>
       </section>
       <section className="mt-7">
         <h2 className="px-0.5 font-display text-[26px] leading-none">Mina favoriter</h2>
         <div className="-mx-5 mt-3 flex min-h-[190px] gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {favoriteGames.length ? favoriteGames.map(game=><Card key={game.to} game={game} small favorite />) : <div className="flex h-[190px] w-[164px] shrink-0 flex-col items-center justify-center rounded-[24px] border border-dashed border-slate-200 bg-white px-4 text-center"><Star className="h-6 w-6 text-slate-300"/><p className="mt-3 text-xs font-medium leading-snug text-slate-500">Tryck på ★ uppe till höger på ett spel för att lägga till det här.</p></div>}
+          {favoriteGames.length ? favoriteGames.map(game=><Card key={game.to} game={game} small favorite />) : <div className="flex h-[190px] w-[164px] shrink-0 flex-col items-center justify-center rounded-[24px] border border-dashed border-slate-200 bg-white px-4 text-center"><Star className="h-6 w-6 text-slate-300"/><p className="mt-3 text-xs font-medium leading-snug text-slate-500">Tryck på ★ uppe till höger på ett test för att lägga till det här.</p></div>}
         </div>
       </section>
       <section className="mt-8">
