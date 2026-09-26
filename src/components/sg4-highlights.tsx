@@ -114,14 +114,24 @@ export const SG4_HIGHLIGHTS: { label: string; image: string; stories: Story[] }[
   },
 ];
 
-export function SG4Highlights() {
+export function SG4Highlights({
+  groups = SG4_HIGHLIGHTS,
+  title = "När ska jag använda SG4?",
+  subtitle,
+  id = "sg4-highlights-title",
+}: {
+  groups?: typeof SG4_HIGHLIGHTS;
+  title?: string;
+  subtitle?: string;
+  id?: string;
+} = {}) {
   const [position, setPosition] = useState<{ group: number; slide: number } | null>(null);
   const [seen, setSeen] = useState<number[]>([]);
   const opener = useRef<HTMLButtonElement | null>(null);
-  const group = position ? SG4_HIGHLIGHTS[position.group] : null;
+  const group = position ? groups[position.group] : null;
   const story = group && position ? group.stories[position.slide] : null;
   const lastSlide = !!position && !!group && position.slide === group.stories.length - 1;
-  const nextGroup = position ? SG4_HIGHLIGHTS[position.group + 1] : undefined;
+  const nextGroup = position ? groups[position.group + 1] : undefined;
   const nextLabel = lastSlide
     ? nextGroup
       ? `Nästa kategori: ${nextGroup.label}`
@@ -138,21 +148,22 @@ export function SG4Highlights() {
     else if (direction > 0) {
       markSeen();
       setPosition(
-        position.group + 1 < SG4_HIGHLIGHTS.length ? { group: position.group + 1, slide: 0 } : null,
+        position.group + 1 < groups.length ? { group: position.group + 1, slide: 0 } : null,
       );
     } else if (position.group > 0)
       setPosition({
         group: position.group - 1,
-        slide: SG4_HIGHLIGHTS[position.group - 1].stories.length - 1,
+        slide: groups[position.group - 1].stories.length - 1,
       });
   }
   return (
-    <section aria-labelledby="sg4-highlights-title" className="mt-5 mb-5">
-      <h2 id="sg4-highlights-title" className="mb-3 text-base font-bold tracking-normal">
-        När ska jag använda SG4?
+    <section aria-labelledby={id} className="mt-5 mb-5">
+      <h2 id={id} className="mb-3 text-base font-bold tracking-normal">
+        {title}
       </h2>
+      {subtitle && <p className="mb-4 text-sm leading-relaxed text-slate-600">{subtitle}</p>}
       <div className="grid w-full max-w-[312px] grid-cols-4 gap-1">
-        {SG4_HIGHLIGHTS.map((item, i) => (
+        {groups.map((item, i) => (
           <button
             key={item.label}
             type="button"
@@ -228,7 +239,7 @@ export function SG4Highlights() {
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-xs font-semibold text-white/80">
-                    SG4 · När ska jag använda appen?
+                    SG4 · {title}
                   </p>
                   <Dialog.Close
                     aria-label="Stäng stories"
@@ -246,7 +257,7 @@ export function SG4Highlights() {
                 className={`sg4-category-enter relative z-10 mx-4 mt-2 rounded-2xl px-4 py-3 text-white ${categoryTones[position.group]}`}
               >
                 <p className="text-[11px] font-semibold text-white/80">
-                  Kategori {position.group + 1} av {SG4_HIGHLIGHTS.length}
+                  {groups.length === 1 ? `Steg ${position.slide + 1} av ${group.stories.length}` : `Kategori ${position.group + 1} av ${groups.length}`}
                 </p>
                 <p className="mt-1 font-sans text-2xl font-extrabold leading-tight tracking-normal">
                   {group.label}
