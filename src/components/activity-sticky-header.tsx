@@ -1,3 +1,4 @@
+import { useSyncExternalStore } from "react";
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft, X } from "lucide-react";
 import { getHubHeader, normalizeHeaderPath } from "@/lib/hub-header";
@@ -38,13 +39,26 @@ const ACTIVITY_HEADER_TITLES: Record<string, string> = {
 const BACK_BUTTON_CLASS =
   "flex h-10 w-10 items-center justify-center rounded-full text-slate-800 transition active:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2";
 
-const TEST_ABORT_PATHS = new Set(["/speedrundan","/longdrive","/driverrundan","/inspelsrundan","/chipprundan","/puttrundan"]);
+// Test views change without navigating, so subscribe to their DOM state instead
+// of reading it only when the router happens to render the header.
+function subscribeToTestState(onChange: () => void) {
+  const observer = new MutationObserver(onChange);
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["data-sg4-test-active"],
+  });
+  return () => observer.disconnect();
+}
+
+function getTestActive() {
+  return document.documentElement.dataset.sg4TestActive === "true";
+}
 
 export function ActivityStickyHeader({ pathname }: { pathname: string }) {
   const normalizedPath = normalizeHeaderPath(pathname);
   const hub = getHubHeader(normalizedPath);
-  const title = hub?.title ?? ACTIVITY_HEADER_TITLES[normalizedPath];\n  const activeTest = typeof document !== "undefined" && document.documentElement.dataset.sg4TestActive === "true";
-  const activeTest = typeof document !== "undefined" && document.documentElement.dataset.sg4TestActive === "true";
+  const title = hub?.title ?? ACTIVITY_HEADER_TITLES[normalizedPath];
+  const activeTest = useSyncExternalStore(subscribeToTestState, getTestActive, () => false);
   if (!title) return null;
   if (typeof document !== "undefined" && document.documentElement.dataset.chipScreenColor === "blue") return null;
 
@@ -55,7 +69,7 @@ export function ActivityStickyHeader({ pathname }: { pathname: string }) {
     >
       <div className="mx-auto grid h-[58px] w-full max-w-md grid-cols-[44px_minmax(0,1fr)_44px] items-center px-3">
         {activeTest ? <span aria-hidden="true" /> : hub ? (
-          <Link to={hub.to} data-local-navigation aria-label="Tillbaka till Test & utmaningar" className={BACK_BUTTON_CLASS}><ArrowLeft className="h-5 w-5" aria-hidden="true" /></Link>
+          <Link to={hub.to} data-local-navigation aria-label="Tillbaka till startsidan" className={BACK_BUTTON_CLASS}><ArrowLeft className="h-5 w-5" aria-hidden="true" /></Link>
         ) : (
           <button type="button" data-dynamic-back aria-label="Tillbaka" className={BACK_BUTTON_CLASS}><ArrowLeft className="h-5 w-5" aria-hidden="true" /></button>
         )}

@@ -232,6 +232,8 @@ function RootComponent() {
       const explicitlyDynamicCancel = control.hasAttribute("data-dynamic-cancel");
       const isBackControl = explicitlyDynamicBack || hasArrowLeft || label === "tillbaka" || text === "tillbaka" || text.startsWith("tillbaka till ");
       const isCancelNavigation = explicitlyDynamicCancel || text.startsWith("avbryt test") || (control instanceof HTMLAnchorElement && text === "avbryt");
+      // Let confirmation dialogs run their own cleanup and exit handlers.
+      if (control.closest('[role="dialog"], [role="alertdialog"]')) return;
       if (!isBackControl && !isCancelNavigation) return;
       event.preventDefault();
       event.stopPropagation();
