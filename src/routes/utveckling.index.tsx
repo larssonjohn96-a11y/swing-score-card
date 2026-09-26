@@ -1,3 +1,4 @@
+import { HandicapProcessStory } from "@/components/handicap-process-story";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ChevronRight, User } from "lucide-react";
@@ -33,12 +34,14 @@ function UtvecklingPage() {
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-28 pt-4">
+      <HandicapProcessStory />
       <div className="pt-3"><p className="text-[10px] font-black uppercase tracking-[.2em] text-blue-600">Jämför</p><h1 className="mt-1 font-display text-[38px] leading-none">Hur står du dig?</h1><p className="mt-3 text-sm text-muted-foreground">Jämför din nivå med olika handicapnivåer eller en vän.</p></div>
 
       {!data ? null : !hasData ? (
-        <p className="mt-10 rounded-3xl border border-dashed border-border bg-card/50 p-6 text-center text-sm text-muted-foreground">
-          Spela en runda först för att få en nivå att jämföra.
-        </p>
+        <div className="mt-6 rounded-3xl border border-dashed border-blue-200 bg-blue-50/50 p-6 text-center">
+          <p className="text-sm text-slate-600">Börja med ett HCP-test för att få en nivå att analysera och jämföra.</p>
+          <Link to="/spela-runda" className="mt-4 inline-flex min-h-12 items-center justify-center rounded-xl bg-blue-600 px-5 font-bold text-white hover:bg-blue-700">Gör mitt första HCP-test →</Link>
+        </div>
       ) : (
         <div className="mt-6">
           <AnalysisRadarSwitcher cats={data.cats} totalHandicap={data.totalHandicap} />
