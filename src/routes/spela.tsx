@@ -60,7 +60,7 @@ function PlayPage() {
     }
   }, [user?.id, loading, courseMode]);
   useEffect(() => {
-    recordRecommendationImpressions(["play-bot", "play-friend", "play-team"]);
+    recordRecommendationImpressions(["play-friend", "play-team"]);
 
     const root = document.documentElement;
     const body = document.body;
@@ -142,7 +142,6 @@ function PlayPage() {
           </button>
         )}
         <PlayCard href="/match?flow=friend" title="Spela mot vän" recommendationId="play-friend" />
-        <PlayCard href="/match-bot" title="Spela mot bot" recommendationId="play-bot" />
         <PlayCard href="/match?flow=team" title="Spela i lag" recommendationId="play-team" />
       </section>
       <section className="relative z-10 mt-7 space-y-3 px-5">

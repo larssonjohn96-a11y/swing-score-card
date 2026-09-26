@@ -1,5 +1,5 @@
-import { Link, createFileRoute } from "@tanstack/react-router";
-import { CalendarDays, ChevronRight, Lock, Trophy, Users } from "lucide-react";
+import { createFileRoute } from "@tanstack/react-router";
+import { CalendarDays, Lock, Users } from "lucide-react";
 
 export const Route = createFileRoute("/turneringar")({
   head: () => ({ meta: [{ title: "Turneringar – SG4" }] }),
@@ -15,12 +15,6 @@ function TournamentsPage() {
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">Spela matcher som betyder något. Cuper, events och senare hela tävlingsstegar.</p>
       </header>
 
-      <Link to="/cup" className="mt-6 block overflow-hidden rounded-[30px] border border-amber-500/30 bg-gradient-to-br from-amber-500/[.14] via-card to-card p-5 shadow-[var(--shadow-glow)] active:scale-[.99]">
-        <div className="flex items-start justify-between gap-4"><span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-600"><Trophy className="h-6 w-6" /></span><span className="rounded-full bg-foreground px-3 py-1 text-[9px] font-black uppercase tracking-[.14em] text-background">Spela nu</span></div>
-        <h2 className="mt-5 font-display text-3xl">Putting Club Cup · HCP 20</h2>
-        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">8 spelare. Kvartsfinal, semifinal och final. Förlust och du är ute.</p>
-        <div className="mt-5 flex items-center justify-between"><span className="text-xs font-black uppercase tracking-[.12em] text-amber-700">Knockout bracket</span><span className="flex items-center gap-1 text-sm font-black">Öppna cup <ChevronRight className="h-4 w-4" /></span></div>
-      </Link>
 
       <section className="mt-3 overflow-hidden rounded-[30px] border border-border bg-card p-5 opacity-75">
         <div className="flex items-start justify-between gap-4"><span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary"><CalendarDays className="h-6 w-6" /></span><span className="rounded-full border border-border bg-card px-3 py-1 text-[9px] font-black uppercase tracking-[.14em] text-muted-foreground">Kommer senare</span></div>

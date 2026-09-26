@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { Bot, BriefcaseBusiness, ChevronRight, GitCompareArrows, GraduationCap, Home, Menu, Plus, Swords, Target, Trophy, UserRound, Users } from "lucide-react";
+import { BriefcaseBusiness, ChevronRight, GitCompareArrows, GraduationCap, Home, Menu, Plus, Swords, Target, Trophy, UserRound, Users } from "lucide-react";
 import { useBottomNavVisibility } from "@/lib/bottom-nav-visibility";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { computeAchievements, computeMilestones, countUncollected } from "@/lib/trophy-room";
@@ -18,7 +18,6 @@ const RIGHT_TABS = [
 
 const PLAY_LINKS = [
   { to: "/match?flow=friend", label: "Spela mot vän", description: "Utmana en vän i en head-to-head match.", icon: UserRound, tone: "friend" },
-  { to: "/match-bot", label: "Spela mot bot", description: "Välj rival och spela direkt.", icon: Bot, tone: "bot" },
   { to: "/match?flow=team", label: "Spela i lag", description: "Spela tillsammans med vänner.", icon: Users, tone: "team" },
 ] as const;
 
@@ -91,11 +90,6 @@ function playToneClasses(tone: string) {
     card: "border-blue-300/60 bg-gradient-to-r from-blue-500/[.09] via-card to-red-500/[.035]",
     icon: "border border-blue-300/70 bg-blue-50 text-blue-600",
     arrow: "text-blue-500",
-  };
-  if (tone === "bot") return {
-    card: "border-red-300/55 bg-gradient-to-r from-red-500/[.035] via-card to-red-500/[.09]",
-    icon: "border border-red-300/70 bg-red-50 text-red-600",
-    arrow: "text-red-500",
   };
   return {
     card: "border-amber-300/55 bg-gradient-to-r from-amber-500/[.06] via-card to-amber-500/[.035]",

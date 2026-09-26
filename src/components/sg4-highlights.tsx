@@ -70,13 +70,6 @@ export const SG4_HIGHLIGHTS: { label: string; image: string; stories: Story[] }[
     image: "/Red_vs_blue_1.png",
     stories: [
       {
-        title: "Spela mot en bot",
-        text: "Tränar du ensam? Få en motståndare att tävla mot.",
-        action: "Välj en bot",
-        href: "/match-bot",
-        image: "/Red_vs_blue_1.png",
-      },
-      {
         title: "Träna med ett mål",
         text: "Samla poäng och försök slå ditt personbästa.",
         action: "Välj utmaning",

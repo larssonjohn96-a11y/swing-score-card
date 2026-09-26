@@ -446,8 +446,6 @@ function Home() {
   useEffect(() => {
     recordRecommendationImpressions([
       "play-friend",
-      "play-bot",
-      "play-cup",
       "hcp-test",
     ]);
   }, []);
@@ -532,8 +530,6 @@ function Home() {
       };
     const playScore = Math.max(
       getBehaviorRecommendationScore("play-friend").score,
-      getBehaviorRecommendationScore("play-bot").score,
-      getBehaviorRecommendationScore("play-cup").score,
     );
     const testScore = getBehaviorRecommendationScore("hcp-test").score;
     if (testScore > playScore)
@@ -719,7 +715,7 @@ function Home() {
             <div className="flex items-center gap-3 px-5 py-4">
               <div className="min-w-0 flex-1">
                 <h2 className="mt-1 text-xl font-black text-foreground">Match</h2>
-                <p className="mt-1 text-sm text-muted-foreground">Mot vän eller bot – på banan eller i ett moment.</p>
+                <p className="mt-1 text-sm text-muted-foreground">Utmana en vän – på banan eller i ett moment.</p>
                 <div className="mt-3 flex items-center gap-2">
                   <div className="flex -space-x-2">
                     {previewFriends.length ? (
