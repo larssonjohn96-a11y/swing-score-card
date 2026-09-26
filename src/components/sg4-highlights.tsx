@@ -220,7 +220,11 @@ function HighlightViewer({ groups, position, title, move, select, close, restore
           if (shouldDismissStory(current.start, end, current.height)) close();
         }}
         onPointerCancel={cancelGesture}
-        onLostPointerCapture={cancelGesture}
+        onLostPointerCapture={event => {
+          // Touch capture moves from the tapped child to this panel during a drag.
+          // Ignore the child's bubbling loss; only a loss on the panel cancels it.
+          if (event.target === event.currentTarget) cancelGesture(event);
+        }}
         onClickCapture={event => {
           // A drag must not also advance the story or activate an underlying CTA.
           if (suppressClick.current && event.detail !== 0) {
