@@ -4,9 +4,18 @@ import { SpeedComparisonPyramid, speedPyramidTier } from "./speed-comparison-pyr
 
 describe("speed comparison pyramid", () => {
   it("assigns boundary results to exactly one tier", () => {
-    expect([99, 98, 90, 89, 75, 74, 50, 49, 25, 24, 10, 9, 1].map(speedPyramidTier)).toEqual([
-      0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6,
+    expect([99, 98, 97, 96.99, 95, 94.99, 90, 89, 75, 74, 50, 49, 25, 24, 10, 9, 1].map(speedPyramidTier)).toEqual([
+      0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8,
     ]);
+  });
+  it.each([[117, "Topp 5 %"], [120, "Topp 3 %"]])("highlights the intermediate tier at %s mph", (ballSpeed, label) => {
+    const html = renderToStaticMarkup(
+      <SpeedComparisonPyramid title="Alla golfare" ballSpeed={Number(ballSpeed)} mean={100} sd={10} />,
+    );
+    expect(html).toContain(`${label} · Du`);
+    expect(html.match(/data-active="true"/g)).toHaveLength(1);
+    expect(html.match(/<polygon/g)).toHaveLength(9);
+    expect(html).toContain('viewBox="0 0 340 336"');
   });
   it("highlights only the top for an exceptional age-group result", () => {
     const html = renderToStaticMarkup(
@@ -19,7 +28,7 @@ describe("speed comparison pyramid", () => {
       />,
     );
     expect(html.match(/data-active="true"/g)).toHaveLength(1);
-    expect(html.match(/data-active="false"/g)).toHaveLength(6);
+    expect(html.match(/data-active="false"/g)).toHaveLength(8);
     expect(html).toContain("Topp 1 % · Du");
     expect(html).toContain("absoluta toppen i din åldersgrupp");
     expect(html).not.toContain("bättre än");
