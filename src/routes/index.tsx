@@ -683,7 +683,7 @@ function Home() {
             <img src="/Off_the_tee.png" alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover object-[18%_50%]" />
             <span className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/18 to-black/5" />
             <span className="absolute inset-x-0 bottom-0 flex items-end gap-4 p-5 text-white">
-              <span className="min-w-0 flex-1"><span className="mt-1 block text-[24px] font-black leading-none">HCP-tester</span><span className="mt-2 block max-w-[230px] text-[14px] font-medium leading-snug text-white/90">Testa ditt golfspel och se din HCP-nivå i varje kategori.</span></span>
+              <span className="min-w-0 flex-1"><span className="mt-1 block text-[24px] font-black leading-none">HCP-tester</span></span>
               <span className="mb-1 inline-flex min-h-11 shrink-0 items-center justify-center rounded-full bg-white px-5 text-[12px] font-black text-slate-950 shadow-sm">VÄLJ TEST →</span>
             </span>
           </Link>
@@ -699,7 +699,6 @@ function Home() {
             <span className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/5" />
             <span className="relative flex min-h-[252px] flex-col justify-end p-5 text-white">
               <span className="block text-[24px] font-black leading-none">Sänk mitt HCP</span>
-              <span className="mt-2 block max-w-[290px] text-[14px] font-medium leading-snug text-white/90">Sluta gissa. Upptäck dina styrkor, hitta dina svagheter och se vad du ska förbättra först.</span>
               <span className="mt-4 inline-flex min-h-11 items-center justify-center self-start rounded-full bg-white px-5 text-[12px] font-black text-slate-950 shadow-sm">SE MIN ANALYS →</span>
             </span>
           </Link>
@@ -736,7 +735,6 @@ function Home() {
             <div className="flex items-center gap-3 px-5 py-4">
               <div className="min-w-0 flex-1">
                 <h2 className="mt-1 text-xl font-black text-foreground">Match</h2>
-                <p className="mt-1 text-sm text-muted-foreground">Utmana en vän – på banan eller i ett moment.</p>
                 <div className="mt-3 flex items-center gap-2">
                   <div className="flex -space-x-2">
                     {previewFriends.length ? (
