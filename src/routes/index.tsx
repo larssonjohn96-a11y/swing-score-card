@@ -689,11 +689,15 @@ function Home() {
           </Link>
         </section>
 
-        <section className="mt-4">
+        <section className="mt-7" aria-labelledby="match-heading">
+          <div className="px-0.5">
+            <h2 id="match-heading" className="text-[24px] font-black leading-none text-foreground">Match</h2>
+            <p className="mt-1.5 text-sm text-muted-foreground">Utmana en vän och se vem som får lägst HCP.</p>
+          </div>
           <Link
             to="/spela"
             onClick={() => recordRecommendationOpen("play-friend")}
-            className="block overflow-hidden rounded-[26px] border border-border bg-card"
+            className="mt-4 block overflow-hidden rounded-[26px] border border-border bg-card"
           >
             <div className="grid grid-cols-[1fr_62px_1fr] border-b border-border">
               <div className="flex h-[72px] items-center gap-2 bg-blue-50 px-4 text-blue-600">
