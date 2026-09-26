@@ -697,6 +697,7 @@ function Home() {
           <Link
             to="/spela"
             onClick={() => recordRecommendationOpen("play-friend")}
+            data-home-match-card
             className="mt-4 block overflow-hidden rounded-[26px] border border-border bg-card"
           >
             <div className="grid grid-cols-[1fr_62px_1fr] border-b border-border">

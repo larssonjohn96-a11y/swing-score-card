@@ -128,8 +128,8 @@ main div[class*="h-[220px]"][class*="w-[164px]"] > span[class*="tracking-[.16em]
   z-index: 5 !important;
 }
 
-/* Friend challenge hero card only. The :has(h2) scope prevents the dynamic quick-start card from inheriting this artwork when it links to /spela. */
-main section.mt-4 > a[href="/spela"]:has(h2) {
+/* Home match card artwork: use a stable marker independent of section spacing and headings. */
+a[data-home-match-card] {
   position: relative !important;
   min-height: 252px !important;
   display: flex !important;
@@ -145,11 +145,11 @@ main section.mt-4 > a[href="/spela"]:has(h2) {
   background-repeat: no-repeat !important;
 }
 
-main section.mt-4 > a[href="/spela"]:has(h2) > div:first-child {
+a[data-home-match-card] > div:first-child {
   display: none !important;
 }
 
-main section.mt-4 > a[href="/spela"]:has(h2) > div:last-child {
+a[data-home-match-card] > div:last-child {
   position: relative !important;
   z-index: 2 !important;
   width: 100% !important;
@@ -158,30 +158,30 @@ main section.mt-4 > a[href="/spela"]:has(h2) > div:last-child {
   color: #fff !important;
 }
 
-main section.mt-4 > a[href="/spela"]:has(h2) > div:last-child p,
-main section.mt-4 > a[href="/spela"]:has(h2) > div:last-child h2,
-main section.mt-4 > a[href="/spela"]:has(h2) > div:last-child span,
-main section.mt-4 > a[href="/spela"]:has(h2) > div:last-child svg {
+a[data-home-match-card] > div:last-child p,
+a[data-home-match-card] > div:last-child h2,
+a[data-home-match-card] > div:last-child span,
+a[data-home-match-card] > div:last-child svg {
   color: #fff !important;
   text-shadow: 0 1px 12px rgba(0, 0, 0, 0.48);
 }
 
-main section.mt-4 > a[href="/spela"]:has(h2) > div:last-child h2 {
+a[data-home-match-card] > div:last-child h2 {
   font-size: 1.55rem !important;
   line-height: 1.02 !important;
 }
 
 /* Remove the friend-count row from the hero card. */
-main section.mt-4 > a[href="/spela"]:has(h2) > div:last-child > div:first-child > div.mt-3 {
+a[data-home-match-card] > div:last-child > div:first-child > div.mt-3 {
   display: none !important;
 }
 
 /* Replace the old chevron with a stronger action. */
-main section.mt-4 > a[href="/spela"]:has(h2) > div:last-child > svg {
+a[data-home-match-card] > div:last-child > svg {
   display: none !important;
 }
 
-main section.mt-4 > a[href="/spela"]:has(h2) > div:last-child::after {
+a[data-home-match-card] > div:last-child::after {
   content: "Spela nu →";
   display: inline-flex;
   align-items: center;
