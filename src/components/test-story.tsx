@@ -57,7 +57,7 @@ export function TestHowItWorksLink({ config }: { config: TestStoryConfig }) {
       <button
         type="button"
         onClick={handleOpen}
-        className="mt-4 flex w-full items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 text-left transition-colors hover:border-primary"
+        className="mt-4 flex w-full items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 text-left transition-colors hover:border-blue-400"
       >
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
           <Info className="h-4 w-4 text-primary" />
