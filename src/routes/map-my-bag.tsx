@@ -80,16 +80,20 @@ function MapMyBagPage() {
   }
 
   function registerAccepted() {
-    const value = Number(carry.replace(",", "."));
+    const value = Number(carry);
     if (!Number.isFinite(value) || value <= 0 || !selected) return;
     updateClub((club) => ({ ...club, shots: [...club.shots, { carry: value, accepted: true, createdAt: new Date().toISOString() }] }));
-    setCarry("");
+    setCarry(150);
   }
 
   function registerMiss() {
     if (!selected) return;
     updateClub((club) => ({ ...club, shots: [...club.shots, { carry: 0, accepted: false, createdAt: new Date().toISOString() }] }));
-    setCarry("");
+    setCarry(150);
+  }
+
+  function editClubMeta(clubId: string, meta: { brand?: string; model?: string; loft?: string }) {
+    setMap((current) => ({ ...current, clubs: current.clubs.map((club) => club.id === clubId ? { ...club, ...meta } : club) }));
   }
 
   function addClub(label: string) {
