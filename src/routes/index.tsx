@@ -682,9 +682,9 @@ function Home() {
           <Link to="/spela-runda" className="group relative mt-4 block h-[252px] overflow-hidden rounded-[26px] border border-border bg-card shadow-sm transition-transform active:scale-[.99]">
             <img src="/Off_the_tee.png" alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover object-[18%_50%]" />
             <span className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/18 to-black/5" />
-            <span className="absolute inset-x-0 bottom-0 flex items-end gap-4 p-5 text-white">
-              <span className="min-w-0 flex-1"><span className="mt-1 block text-[24px] font-black leading-none">HCP-tester</span></span>
-              <span className="mb-1 inline-flex min-h-11 shrink-0 items-center justify-center rounded-full bg-white px-5 text-[12px] font-black text-slate-950 shadow-sm">VÄLJ TEST →</span>
+            <span className="absolute inset-x-0 bottom-0 flex items-center gap-4 p-5 text-white">
+              <span className="min-w-0 flex-1"><span className="block text-[24px] font-black leading-none">HCP-tester</span></span>
+              <span className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-full bg-white px-5 text-[12px] font-black text-slate-950 shadow-sm">VÄLJ TEST →</span>
             </span>
           </Link>
         </section>
@@ -697,9 +697,11 @@ function Home() {
           <Link to="/utveckling" className="group relative mt-4 block min-h-[252px] overflow-hidden rounded-[26px] border border-border bg-card shadow-sm transition-transform active:scale-[.99]">
             <img src="/Approach_shot.png" alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover object-[12%_48%]" />
             <span className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/5" />
-            <span className="relative flex min-h-[252px] flex-col justify-end p-5 text-white">
-              <span className="block text-[24px] font-black leading-none">Sänk mitt HCP</span>
-              <span className="mt-4 inline-flex min-h-11 items-center justify-center self-start rounded-full bg-white px-5 text-[12px] font-black text-slate-950 shadow-sm">SE MIN ANALYS →</span>
+            <span className="relative flex min-h-[252px] items-end p-5 text-white">
+              <span className="flex w-full items-center gap-4">
+                <span className="min-w-0 flex-1 text-[24px] font-black leading-none">Sänk mitt HCP</span>
+                <span className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-full bg-white px-5 text-[12px] font-black text-slate-950 shadow-sm">SE MIN ANALYS →</span>
+              </span>
             </span>
           </Link>
         </section>
