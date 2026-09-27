@@ -602,7 +602,7 @@ function Home() {
               to="/spela-runda"
               className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black"
             >
-              HCP-tester
+              HCP-Tester
             </Link>
             <Link
               to="/spela"
@@ -676,14 +676,14 @@ function Home() {
 
         <section className="mt-7" aria-labelledby="game-challenges-heading">
           <div className="px-0.5">
-            <h2 id="game-challenges-heading" className="text-[24px] font-black leading-none text-foreground">HCP-tester</h2>
+            <h2 id="game-challenges-heading" className="text-[24px] font-black leading-none text-foreground">HCP-Tester</h2>
             <p className="mt-1.5 text-sm text-muted-foreground">Testa ditt golfspel och se din HCP-nivå i varje kategori.</p>
           </div>
-          <Link to="/spela-runda" className="group relative mt-4 block h-[252px] overflow-hidden rounded-[26px] border border-border bg-card shadow-sm transition-transform active:scale-[.99]">
+          <Link to="/spela-runda" className="group relative mt-4 block h-[252px] overflow-hidden rounded-[26px] border border-border bg-card shadow-sm">
             <img src="/HCP-test.png" alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover object-center" />
             <span className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/10 to-transparent" />
             <span className="absolute bottom-0 left-0 flex flex-col items-start p-5 text-white">
-              <span className="block text-[24px] font-black leading-none">HCP-tester</span>
+              <span className="block text-[24px] font-black leading-none">HCP-Tester</span>
               <span className="mt-3 inline-flex min-h-11 min-w-[154px] items-center justify-center rounded-full bg-white px-7 text-[12px] font-black text-slate-950 shadow-sm">VÄLJ TEST →</span>
             </span>
           </Link>
