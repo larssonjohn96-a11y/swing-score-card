@@ -680,7 +680,7 @@ function Home() {
             <p className="mt-1.5 text-sm text-muted-foreground">Testa ditt golfspel och se din HCP-nivå i varje kategori.</p>
           </div>
           <Link to="/spela-runda" className="group relative mt-4 block h-[252px] overflow-hidden rounded-[26px] border border-border bg-card shadow-sm transition-transform active:scale-[.99]">
-            <img src="/Off_the_tee.png" alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover object-[18%_50%]" />
+            <img src="/HCP-test.png" alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover object-center" />
             <span className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/18 to-black/5" />
             <span className="absolute inset-x-0 bottom-0 flex items-center gap-4 p-5 text-white">
               <span className="min-w-0 flex-1"><span className="block text-[24px] font-black leading-none">HCP-tester</span></span>
