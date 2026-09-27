@@ -5,6 +5,7 @@ import { ChevronRight, User } from "lucide-react";
 import { computeEstimatedHandicap, loadRealHandicap, type CategoryHandicap } from "@/lib/sg-handicap";
 import { computeStableCategoryHandicaps } from "@/lib/category-index";
 import { AnalysisRadarSwitcher } from "@/components/analysis-radar-switcher";
+import { LowerHcpAssessment } from "@/components/lower-hcp-assessment";
 
 export const Route = createFileRoute("/utveckling/")({ component: UtvecklingPage });
 
@@ -45,6 +46,7 @@ function UtvecklingPage() {
       ) : (
         <div className="mt-6">
           <AnalysisRadarSwitcher cats={data.cats} totalHandicap={data.totalHandicap} />
+          <LowerHcpAssessment cats={data.cats} totalHandicap={data.totalHandicap} />
           <Link to="/jamfor" className="mt-7 block overflow-hidden rounded-3xl border border-blue-500/30 bg-gradient-to-r from-blue-500/[.08] via-card to-red-500/[.08] shadow-sm active:scale-[.99]">
             <div className="grid grid-cols-[1fr_56px_1fr] items-center">
               <div className="flex h-[68px] items-center gap-2 bg-blue-500/10 px-4 text-blue-600"><span className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-blue-500"><User className="h-4 w-4"/></span><strong className="text-xs uppercase tracking-wide">Du</strong></div>
