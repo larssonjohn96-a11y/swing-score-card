@@ -682,9 +682,9 @@ function Home() {
           <Link to="/spela-runda" className="group relative mt-4 block h-[252px] overflow-hidden rounded-[26px] border border-border bg-card shadow-sm transition-transform active:scale-[.99]">
             <img src="/HCP-test.png" alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover object-center" />
             <span className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/18 to-black/5" />
-            <span className="absolute inset-x-0 bottom-0 flex items-center gap-4 p-5 text-white">
-              <span className="min-w-0 flex-1"><span className="block text-[24px] font-black leading-none">HCP-tester</span></span>
-              <span className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-full bg-white px-5 text-[12px] font-black text-slate-950 shadow-sm">VÄLJ TEST →</span>
+            <span className="absolute bottom-0 left-0 flex flex-col items-start p-5 text-white">
+              <span className="block text-[24px] font-black leading-none">HCP-tester</span>
+              <span className="mt-3 inline-flex min-h-11 min-w-[154px] items-center justify-center rounded-full bg-white px-7 text-[12px] font-black text-slate-950 shadow-sm">VÄLJ TEST →</span>
             </span>
           </Link>
         </section>
