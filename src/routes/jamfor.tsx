@@ -19,8 +19,10 @@ export const Route = createFileRoute("/jamfor")({
 function initials(name:string){return name.split(/\s+/).filter(Boolean).slice(0,2).map((part)=>part[0]?.toUpperCase()).join("")}
 function formatHcp(value:number|undefined|null){if(value===undefined||value===null||!Number.isFinite(value))return "–";const abs=Math.abs(value).toFixed(1).replace(".0","").replace(".",",");return value<0?`+${abs}`:abs}
 
-function ComparePickerPage(){
-  useHideBottomNav(true);
+function ComparePickerPage(){return <ComparePicker/>}
+
+export function ComparePicker({embedded=false}:{embedded?:boolean}){
+  useHideBottomNav(!embedded);
   const {user,loading}=useAuth();
   const [friends,setFriends]=useState<Friendship[]>([]);
   const [friendsLoading,setFriendsLoading]=useState(true);
@@ -74,14 +76,14 @@ function ComparePickerPage(){
     return <CompareFriendContent userId={activeFriendId} onBack={()=>setActiveFriendId(null)}/>;
   }
 
-  return <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-10 pt-7">
-    <header className="flex items-center justify-between">
+  return <main className={embedded?"w-full pb-6":"mx-auto min-h-screen w-full max-w-md px-5 pb-10 pt-7"}>
+    {!embedded&&<header className="flex items-center justify-between">
       <Link to="/utveckling" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card" aria-label="Tillbaka"><ArrowLeft className="h-4 w-4"/></Link>
       <div className="text-center"><p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">SG4 Social</p><h1 className="font-display text-3xl">Jämför</h1></div>
       <span className="h-10 w-10"/>
-    </header>
+    </header>}
 
-    <section className="mt-8 text-center">
+    <section className={embedded?"mt-2 text-center":"mt-8 text-center"}>
       <span className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-foreground text-background"><Users className="h-9 w-9"/></span>
       <h2 className="mt-4 font-display text-4xl">Head-to-head</h2>
       <p className="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-muted-foreground">Jämför spelnivå, speldata, tränings-PB och personliga rekord med en vän.</p>
