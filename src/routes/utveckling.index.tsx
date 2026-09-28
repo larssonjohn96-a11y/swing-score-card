@@ -56,6 +56,7 @@ function UtvecklingPage() {
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-28 pt-3">
+      <h1 className="sr-only">Analys & utveckling</h1>
       <div role="tablist" aria-label="Analys" className="sticky top-[calc(58px+env(safe-area-inset-top))] z-40 -mx-5 bg-background/95 px-5 py-2 backdrop-blur">
         <div className="grid grid-cols-3 gap-1 rounded-2xl border border-border bg-muted/50 p-1">
           {TABS.map((t) => {

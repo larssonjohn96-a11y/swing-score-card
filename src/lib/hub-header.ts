@@ -2,7 +2,7 @@ export type HubHeader = { title: string; to: "/" };
 
 const HUB_HEADERS: Readonly<Record<string, HubHeader>> = {
   "/spela-runda": { title: "HCP-tester", to: "/" },
-  "/utveckling": { title: "Analys", to: "/" },
+  "/utveckling": { title: "Analys & utveckling", to: "/" },
   "/spela": { title: "Match", to: "/" },
 };
 
