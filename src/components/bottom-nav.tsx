@@ -22,6 +22,7 @@ const PLAY_LINKS = [
 ] as const;
 
 const MORE_LINKS = [
+  { to: "/traning", label: "Träning", description: "Utmaningar byggda för att sänka din score och ditt handicap.", icon: GraduationCap, tone: "learn" },
   { to: "/vanner", label: "Vänner", description: "Hitta spelare och bygg ditt nätverk.", icon: Users, tone: "neutral" },
   { to: "/trophy", label: "Trophy Room", description: "PB, milestones och achievements.", icon: Trophy, tone: "gold" },
   { to: "/min-bag", label: "My Bag", description: "Klubbor, carry-längder och gapping.", icon: BriefcaseBusiness, tone: "neutral" },
