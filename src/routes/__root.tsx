@@ -150,7 +150,6 @@ function RootComponent() {
   const { show, dismiss } = useSplash();
   const location = useLocation();
   const router = useRouter();
-  const trainingHome = location.pathname === "/traning" && !new URLSearchParams(location.searchStr ?? "").has("category");
   const routeTransitionKey = `${location.pathname}${location.searchStr ?? ""}`;
 
   useEffect(() => startSessionSync(), []);
@@ -250,7 +249,6 @@ function RootComponent() {
         <BottomNavVisibilityProvider>
           <div className="relative min-h-screen pb-20">
             <ActivityStickyHeader pathname={location.pathname} />
-            {trainingHome ? <div className="mx-auto w-full max-w-md px-5 pt-6"><Link to="/" data-dynamic-back aria-label="Tillbaka till Hem" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-300/80 bg-white/70 text-xl leading-none text-slate-800 shadow-sm backdrop-blur-xl">‹</Link></div> : null}
             <div key={routeTransitionKey} className="sg4-route-transition"><Outlet /></div>
             <ActiveMultiplayerBanner />
             <ShotSyncStatus />
