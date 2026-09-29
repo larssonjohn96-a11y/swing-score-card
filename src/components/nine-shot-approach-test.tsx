@@ -14,7 +14,7 @@ const HCP_UNLOCK_KEY="sg4-approach-hcp-unlocked-v1";
 const loadUnlocked=()=>{if(typeof window==="undefined")return [] as string[];try{const value=JSON.parse(window.localStorage.getItem(HCP_UNLOCK_KEY)??"[]");return Array.isArray(value)?value.filter((id):id is string=>typeof id==="string"):[]}catch{return []}};
 const fmtDate=(iso:string)=>new Date(iso).toLocaleDateString("sv-SE",{day:"numeric",month:"short"});
 const fmtScore=(n:number)=>Number.isInteger(Math.round(n*10)/10)?String(Math.round(n)):n.toFixed(1).replace(".",",");
-const precisionTone=(score:number)=>score>=8.5?"text-emerald-600":score>=7?"text-emerald-500":score>=5.5?"text-amber-500":"text-slate-400";
+const precisionTone=(score:number)=>score>=8.5?"text-emerald-700":score>=7?"text-emerald-600":score>=5.5?"text-emerald-500":"text-emerald-400";
 const hcpTone=(hcp:number)=>hcp<0?"text-emerald-700":hcp<10?"text-emerald-600":hcp<20?"text-emerald-500":hcp<30?"text-amber-500":"text-slate-400";
 function BestShotHcpReveal({hcp,target,proximity}:{hcp:number;target:number;proximity:number}){
  const phrase="Ditt bästa slag";
