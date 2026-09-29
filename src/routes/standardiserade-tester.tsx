@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Star } from "lucide-react";
-import { CATEGORIES } from "@/lib/categories";
 
 export const Route = createFileRoute("/standardiserade-tester")({
   head: () => ({
@@ -40,6 +39,8 @@ const EXISTING_SECTIONS: TestSection[] = [
       { to: "/green-reading", title: "Green Reading", label: "Läsning", description: "Testa beslut och greenläsning.", tone: "bg-[#426b5d]" },
       { to: "/klock-putt", title: "Klockputt", label: "Kortputt", description: "Standardiserad kontroll runt hålet.", tone: "bg-[#9a5d78]" },
       { to: "/50-bollar", title: "25-bollsövningen", label: "Kortputt", description: "Fem bollar från 1–5 meter. Håla ut varje boll och räkna alla slag.", tone: "bg-[#3c8068]", search: { from: "tester" } },
+      { to: "/putting-streak", title: "Putting Streak", label: "Challenge", description: "En putt per nivå från 1 till 10 meter. Första missen avslutar testet.", tone: "bg-[#2f6f63]" },
+      { to: "/lagputt-ladder", title: "Lag Putt Ladder", label: "Challenge", description: "Börja på 8 meter och klättra upp genom längre lagputtar.", tone: "bg-[#5e6f8a]" },
     ],
   },
   {
@@ -48,6 +49,7 @@ const EXISTING_SECTIONS: TestSection[] = [
     tests: [
       { to: "/8-bollar", title: "8 Bollar", label: "Precision", description: "Ett snabbt standardtest för närspelsprecision.", tone: "bg-[#6757c7]", imageSrc: "/b01e80c1-ac1d-4d11-81f0-5b9f362d0777.png" },
       { to: "/upp-och-in", title: "Upp & In", label: "Scoring", description: "Mät förmågan att rädda slag runt green.", tone: "bg-[#247760]" },
+      { to: "/bunker-traning", title: "Bunkerträning", label: "Bunkerprecision", description: "Träna olika lies och avstånd i bunker och följ var bollen stannar.", tone: "bg-[#8a6b46]" },
     ],
   },
   {
@@ -69,30 +71,14 @@ const EXISTING_SECTIONS: TestSection[] = [
       { to: "/driver-konsekvens", title: "Driver Consistency", label: "Konsekvens", description: "Mät spridning och stabilitet med driver.", tone: "bg-[#a76632]" },
       { to: "/fairway-streak", title: "Fairway Accuracy", label: "Precision", description: "Mät hur ofta du hittar din valda korridor.", tone: "bg-[#3f6f58]" },
       { to: "/longdrive", title: "Long Drive", label: "Längd", description: "Benchmark för maxlängd och bollhastighet.", tone: "bg-[#485368]" },
+      { to: "/speed", title: "Speed Test", label: "Power", description: "Mät ball speed och club head speed och följ din fart över tid.", tone: "bg-[#7a4f32]" },
     ],
   },
 ];
 
-// The former HCP tests now live alongside the other tests for each skill.
-// Read the existing registry so each original protocol remains accessible.
-const CATEGORY_SECTION: Record<string, string> = {
-  puttning: "Puttning", "around-the-green": "Närspel", approach: "Inspel", driving: "Off the Tee",
-};
-const TEST_SECTIONS_UNSORTED: TestSection[] = EXISTING_SECTIONS.map(section => {
-  const additions = CATEGORIES.filter(category => CATEGORY_SECTION[category.slug] === section.title)
-    .flatMap(category => category.tests.map(test => ({
-      to: test.to, title: test.title, label: "Nivåtest", description: test.subtitle,
-      tone: section.tests[0]?.tone ?? "bg-[#334155]",
-    })));
-  const tests = [...additions, ...section.tests];
-  return { ...section, tests: tests.filter((test, i) => tests.findIndex(t => t.to === test.to) === i) };
-});
-TEST_SECTIONS_UNSORTED.push({ title: "Speed", subtitle: "Bollhastighet och längdpotential", tests: [
-  { to: "/speed-test", title: "Ball Speed Test", label: "Bollhastighet", description: "Mät din bollhastighet och få analys av din nivå och driverpotential.", tone: "bg-[#7a4f32]" },
-] });
-const TEST_ORDER = ["Speed", "Off the Tee", "Inspel", "Puttning", "Närspel"] as const;
+const TEST_ORDER = ["Off the Tee", "Inspel", "Puttning", "Närspel"] as const;
 const TEST_SECTIONS = TEST_ORDER
-  .map(title => TEST_SECTIONS_UNSORTED.find(section => section.title === title))
+  .map(title => EXISTING_SECTIONS.find(section => section.title === title))
   .filter((section): section is TestSection => Boolean(section));
 
 const FAVORITES_KEY = "sg4-test-favorites-v1";
