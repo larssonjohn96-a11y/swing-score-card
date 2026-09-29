@@ -113,8 +113,12 @@ function StandardizedTestsPage() {
   }, []);
   const allTests = useMemo(() => TEST_SECTIONS.flatMap(section => section.tests), []);
   const favoriteTests = favorites.map(to => allTests.find(test => test.to === to)).filter((test): test is TestCard => Boolean(test));
-  const popularPaths = ["/speed-test", "/longdrive", "/par-3-challenge", "/pga-tour-18-puttar", "/8-bollar"];
-  const popularTests = popularPaths.map(to => allTests.find(test => test.to === to)).filter((test): test is TestCard => Boolean(test));
+  const streakChallenges: TestCard[] = [
+    { to: "/fairway-streak", title: "Fairways i rad", label: "Utslag", description: "Hur många fairways kan du träffa i rad innan första missen?", tone: "bg-[#3f6f58]" },
+    { to: "/streak-challenge", title: "Inspel i rad", label: "Inspel", description: "Träffa din valda målzon. Hur många klarar du i rad?", tone: "bg-[#255f9c]", search: { type: "approach" } },
+    { to: "/putting-streak", title: "Putts i rad", label: "Puttning", description: "Sätt putten och fortsätt. Första missen avslutar streaken.", tone: "bg-[#4955a7]" },
+    { to: "/streak-challenge", title: "Bunkerslag i rad", label: "Närspel", description: "Träffa din valda målzon från bunker. Hur många klarar du i rad?", tone: "bg-[#8a6b46]", search: { type: "bunker" } },
+  ];
   const favoriteCategory = (test: TestCard) => {
     const section = TEST_SECTIONS.find(section => section.tests.some(item => item.to === test.to))?.title;
     if (section === "Puttning") return "puttning";
@@ -159,11 +163,11 @@ function StandardizedTestsPage() {
         </section>
         <section>
           <div className="px-0.5">
-            <h2 className="text-[24px] font-black leading-none text-foreground">Populärt just nu</h2>
-            <p className="mt-1.5 text-[10px] font-black uppercase tracking-[.16em] text-muted-foreground">Ett kul test från varje del av spelet</p>
+            <h2 className="text-[24px] font-black leading-none text-foreground">Streak Challenge</h2>
+            <p className="mt-1.5 text-[10px] font-black uppercase tracking-[.16em] text-muted-foreground">Hur många klarar du i rad?</p>
           </div>
           <div className="-mx-5 mt-3.5 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {popularTests.map(test => <TestCardView key={`popular-${test.to}`} test={test} favorite={favorites.includes(test.to)} onToggleFavorite={() => toggleFavorite(test.to)} />)}
+            {streakChallenges.map((test, index) => <TestCardView key={`streak-${test.title}-${index}`} test={test} favorite={favorites.includes(test.to)} onToggleFavorite={() => toggleFavorite(test.to)} />)}
           </div>
         </section>
         {TEST_SECTIONS.map(section => <section key={section.title}>
