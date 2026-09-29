@@ -5,8 +5,8 @@ import { Star } from "lucide-react";
 export const Route = createFileRoute("/standardiserade-tester")({
   head: () => ({
     meta: [
-      { title: "Testa & utveckla ditt spel – SG4" },
-      { name: "description", content: "Bibliotek med standardiserade golftester för specifika delar av spelet." },
+      { title: "Avancerade tester – SG4" },
+      { name: "description", content: "Avancerade tester för erfarna golfare som vill utveckla specifika delar av sitt spel." },
     ],
   }),
   component: StandardizedTestsPage,
@@ -150,9 +150,11 @@ function StandardizedTestsPage() {
   return (
     <main className="mx-auto min-h-screen w-full max-w-md bg-background pb-28">
       <div className="px-5 pt-6">
-        <p className="text-[10px] font-black uppercase tracking-[.2em] text-blue-600">Tester</p>
-        <h1 className="mt-1 font-display text-[38px] leading-none text-foreground">Testa ditt spel</h1>
-        <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground">Hur bra är du på olika delar av spelet?</p>
+        <p className="text-[10px] font-black uppercase tracking-[.2em] text-blue-600">Testa & utveckla</p>
+        <h1 className="mt-1 text-[42px] font-black leading-[.98] tracking-[-.02em] text-foreground">Avancerade tester</h1>
+        <p className="mt-4 max-w-sm text-[17px] font-medium leading-[1.5] text-muted-foreground">
+          Avancerade tester för erfarna golfare som vill ta sitt spel till nästa nivå. Testa och utveckla specifika delar av spelet, slå PB och utmana din precision, kontroll och stabilitet.
+        </p>
       </div>
       <div className="space-y-8 px-5 pt-8">
         <section>
