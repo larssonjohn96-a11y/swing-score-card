@@ -31,10 +31,9 @@ function ApproachCategorization({shots}:{shots:PrecisionShot[]}){
  return <section className="w-full rounded-[28px] bg-white p-5 text-slate-950 shadow-sm"><h2 className="text-3xl font-black">Kategorisering</h2><div className="mt-5 grid grid-cols-[1fr_56px] px-4 text-sm font-black"><span>Slag</span><span className="text-center">Antal</span></div><div className="mt-3 space-y-2.5">{counts.map(item=><div key={item.grade} className={`grid min-h-14 grid-cols-[1fr_56px] items-center rounded-2xl px-4 ${item.row}`}><span className={`text-[16px] font-medium ${item.text}`}>{item.label}</span><strong className={`text-center text-xl font-black ${item.text}`}>{item.count}</strong></div>)}</div></section>
 }
 function erfApprox(x:number){const sign=x<0?-1:1,ax=Math.abs(x),a1=.254829592,a2=-.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=.3275911,t=1/(1+p*ax),y=1-(((((a5*t+a4)*t+a3)*t+a2)*t+a1)*t*Math.exp(-ax*ax));return sign*y}
-const topShare=(hcp:number)=>{const worse=1-.5*(1+erfApprox((hcp-17)/(8*Math.SQRT2)));return Math.max(1,Math.min(99,Math.round((1-worse)*100)))};
+const topShare=(hcp:number)=>{const worse=1-.5*(1+erfApprox((hcp-17)/(8*Math.SQRT2)));const betterThan=Math.max(1,Math.min(99,Math.round(worse*100)));return Math.max(1,100-betterThan)};
 function ApproachPyramid({hcp}:{hcp:number}){
- const percentile=topShare(hcp);
- const topPct=Math.max(1,100-percentile);
+ const topPct=topShare(hcp);
  const active=topPct<=1?1:topPct<=3?3:topPct<=5?5:topPct<=10?10:topPct<=25?25:topPct<=50?50:100;
  const levels=[{pct:1,label:"Top 1%",w:"w-[32%]"},{pct:3,label:"Top 3%",w:"w-[44%]"},{pct:5,label:"Top 5%",w:"w-[54%]"},{pct:10,label:"Top 10%",w:"w-[66%]"},{pct:25,label:"Top 25%",w:"w-[80%]"},{pct:50,label:"Top 50%",w:"w-[92%]"},{pct:100,label:"Alla golfare",w:"w-full"}];
  return <section className="w-full text-center"><p className="text-sm font-bold uppercase tracking-widest text-blue-100">Var du ligger</p><h2 className="mt-3 text-3xl font-black">Din nivå bland golfare</h2><div className="mx-auto mt-6 flex max-w-sm flex-col items-center gap-1.5">{levels.map(level=>{const selected=level.pct===active;return <div key={level.pct} className={`${level.w} flex min-h-10 items-center justify-center rounded-xl border font-black transition-all ${selected?"scale-[1.03] border-white bg-white text-blue-700 shadow-lg":"border-white/15 bg-white/10 text-white/75"}`}>{level.label}{selected?<span className="ml-2 text-xs font-bold">← Du</span>:null}</div>})}</div></section>
@@ -110,6 +109,6 @@ export function NineShotApproachTest({
  {key:"categories",content:<ApproachCategorization shots={analysisFilled}/>},
  {key:"pyramid",content:<ApproachPyramid hcp={analysisResult.handicap}/>},
  {key:"best",content:(()=>{const best=[...analysisFilled].sort((a,b)=>Math.hypot(a.carry-a.target,a.offline)-Math.hypot(b.carry-b.target,b.offline))[0];const proximity=best?Math.hypot(best.carry-best.target,best.offline):0;const bestHcp=best?Math.max(-6,Math.min(36,((proximity/best.target*100)-6.7)*2.2)):0;return <BestShotHcpReveal hcp={bestHcp} target={best?.target??0} proximity={proximity}/>})()}
-]}]} />:null}</DialogContent></Dialog>
+]} />:null}</DialogContent></Dialog>
  </main>
 }
