@@ -22,8 +22,6 @@ const PLAY_LINKS = [
 ] as const;
 
 const MORE_LINKS = [
-  { to: "/traning-scroll", label: "Träning", description: "Alla träningsområden på en sida med snabb scroll mellan kategorier.", icon: GraduationCap, tone: "learn" },
-  { to: "/traning", label: "Träning gammal", description: "Den tidigare träningsdesignen med kategori- och flerstegsval.", icon: GraduationCap, tone: "neutral" },
   { to: "/standardiserade-tester", label: "Avancerade tester", description: "Testa och utveckla specifika delar av spelet med avancerade challenges och benchmarks.", icon: Target, tone: "neutral" },
   { to: "/vanner", label: "Vänner", description: "Hitta spelare och bygg ditt nätverk.", icon: Users, tone: "neutral" },
   { to: "/trophy", label: "Trophy Room", description: "PB, milestones och achievements.", icon: Trophy, tone: "gold" },
