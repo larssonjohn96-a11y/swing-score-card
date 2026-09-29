@@ -44,6 +44,13 @@ const EXISTING_SECTIONS: TestSection[] = [
     ],
   },
   {
+    title: "Bollkontroll",
+    subtitle: "Form, höjd och bollflykt",
+    tests: [
+      { to: "/shot-shaping", title: "Shot Shaping", label: "Bollkontroll", description: "Testa kontroll över höjd, draw och fade.", tone: "bg-[#59618a]" },
+    ],
+  },
+  {
     title: "Närspel",
     subtitle: "Chip, pitch och upp & in",
     tests: [
@@ -60,7 +67,6 @@ const EXISTING_SECTIONS: TestSection[] = [
       { to: "/approach-pei-valj", title: "PEI Approach", label: "Precision", description: "Mät inspelsprecision över flera avstånd.", tone: "bg-[#217d8c]" },
       { to: "/approach-pei-wedge", title: "PEI Wedge", label: "Wedge", description: "Precision med wedges från kontrollerade avstånd.", tone: "bg-[#3a8790]" },
       { to: "/approach-pei-iron", title: "PEI Iron", label: "Järn", description: "Benchmark för järnslag och proximity.", tone: "bg-[#3475a8]" },
-      { to: "/shot-shaping", title: "Shot Shaping", label: "Bollkontroll", description: "Testa kontroll över olika bollflykter.", tone: "bg-[#59618a]" },
       { to: "/wedge-stege", title: "Wedge Stege", label: "Distance control", description: "Mät avståndskontroll genom flera wedgezoner.", tone: "bg-[#7b6b47]" },
     ],
   },
@@ -76,7 +82,7 @@ const EXISTING_SECTIONS: TestSection[] = [
   },
 ];
 
-const TEST_ORDER = ["Off the Tee", "Inspel", "Puttning", "Närspel"] as const;
+const TEST_ORDER = ["Off the Tee", "Inspel", "Närspel", "Puttning", "Bollkontroll"] as const;
 const TEST_SECTIONS = TEST_ORDER
   .map(title => EXISTING_SECTIONS.find(section => section.title === title))
   .filter((section): section is TestSection => Boolean(section));
@@ -161,6 +167,11 @@ function StandardizedTestsPage() {
             {visibleFavoriteTests.length ? visibleFavoriteTests.map(test => <TestCardView key={`favorite-${test.to}`} test={test} favorite onToggleFavorite={() => toggleFavorite(test.to)} />) : <div className="flex h-[220px] w-[164px] shrink-0 flex-col items-center justify-center rounded-[24px] border border-dashed border-slate-200 bg-slate-50/60 px-4 text-center"><Star className="h-6 w-6 text-slate-300" /><p className="mt-3 text-sm font-bold text-slate-500">Ingen favorit sparad</p><p className="mt-1 text-[11px] leading-snug text-slate-400">Stjärnmarkera ett test för att lägga det här.</p></div>}
           </div>
         </section>
+        {TEST_SECTIONS.map(section => <section key={section.title}>
+          <div className="px-0.5"><h2 className="text-[24px] font-black leading-none text-foreground">{section.title}</h2><p className="mt-1.5 text-[10px] font-black uppercase tracking-[.16em] text-muted-foreground">{section.subtitle}</p>
+          {section.title === "Puttning" ? <div className="mt-3 flex gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{([["all","Alla"],["startlinje","Startlinje"],["green-reading","Green reading"],["kortputt","Kortputtar"],["langdkontroll","Längdkontroll"]] as const).map(([id,label]) => <button key={id} type="button" onClick={() => setPuttingFilter(id)} className={`shrink-0 rounded-full border px-3 py-1.5 text-[10px] font-bold transition ${puttingFilter === id ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-transparent text-muted-foreground"}`}>{label}</button>)}</div> : null}</div>
+          <div className="-mx-5 mt-3.5 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{(section.title === "Puttning" ? filteredPuttingTests(section.tests) : section.tests).map(test => <TestCardView key={`${section.title}-${test.title}`} test={test} favorite={favorites.includes(test.to)} onToggleFavorite={() => toggleFavorite(test.to)} />)}</div>
+        </section>)}
         <section>
           <div className="px-0.5">
             <h2 className="text-[24px] font-black leading-none text-foreground">Streak Challenge</h2>
@@ -170,11 +181,6 @@ function StandardizedTestsPage() {
             {streakChallenges.map((test, index) => <TestCardView key={`streak-${test.title}-${index}`} test={test} favorite={favorites.includes(test.to)} onToggleFavorite={() => toggleFavorite(test.to)} />)}
           </div>
         </section>
-        {TEST_SECTIONS.map(section => <section key={section.title}>
-          <div className="px-0.5"><h2 className="text-[24px] font-black leading-none text-foreground">{section.title}</h2><p className="mt-1.5 text-[10px] font-black uppercase tracking-[.16em] text-muted-foreground">{section.subtitle}</p>
-          {section.title === "Puttning" ? <div className="mt-3 flex gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{([["all","Alla"],["startlinje","Startlinje"],["green-reading","Green reading"],["kortputt","Kortputtar"],["langdkontroll","Längdkontroll"]] as const).map(([id,label]) => <button key={id} type="button" onClick={() => setPuttingFilter(id)} className={`shrink-0 rounded-full border px-3 py-1.5 text-[10px] font-bold transition ${puttingFilter === id ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-transparent text-muted-foreground"}`}>{label}</button>)}</div> : null}</div>
-          <div className="-mx-5 mt-3.5 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{(section.title === "Puttning" ? filteredPuttingTests(section.tests) : section.tests).map(test => <TestCardView key={`${section.title}-${test.title}`} test={test} favorite={favorites.includes(test.to)} onToggleFavorite={() => toggleFavorite(test.to)} />)}</div>
-        </section>)}
       </div>
     </main>
   );
