@@ -17,7 +17,7 @@ const GAMES = [
 ] as const;
 
 const APPROACH_GAMES = [
-  { to:"/inspelsrundan", search:{mode:"total"}, title:"Inspel totalt", subtitle:"55–165 m", image:"/Approach_shot.png", hcp:true },
+  { to:"/inspelsrundan", search:{mode:"total"}, title:"Inspel totalt", subtitle:"50–150 m", image:"/Approach_shot.png", hcp:true },
   { to:"/inspelsrundan", search:{mode:"short"}, title:"Korta inspel", subtitle:"50–100 m", image:"/Approach_shot.png", hcp:true },
   { to:"/inspelsrundan", search:{mode:"medium"}, title:"Medellånga inspel", subtitle:"100–140 m", image:"/Approach_shot.png", hcp:true },
   { to:"/inspelsrundan", search:{mode:"long"}, title:"Långa inspel", subtitle:"140–190 m", image:"/Approach_shot.png", hcp:true },
