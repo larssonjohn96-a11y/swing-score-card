@@ -90,17 +90,15 @@ const FAVORITES_KEY = "sg4-test-favorites-v1";
 function TestCardView({ test, favorite, onToggleFavorite }: { test: TestCard; favorite: boolean; onToggleFavorite: () => void }) {
   return (
     <div className={`relative h-[248px] w-[188px] shrink-0 overflow-hidden rounded-[26px] border border-black/[.04] text-white shadow-sm ${test.tone}`}>
-      <div className="absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-2 p-3">
-        <span className="max-w-[105px] truncate rounded-full border border-white/20 bg-black/10 px-2.5 py-1 text-[9px] font-black uppercase tracking-[.13em] text-white/85 backdrop-blur-sm">
-          {test.label}
-        </span>
-        <button type="button" aria-label={favorite ? `Ta bort ${test.title} från favoriter` : `Lägg till ${test.title} i favoriter`} aria-pressed={favorite} onClick={onToggleFavorite} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black/15 text-white backdrop-blur-md transition active:scale-95">
-          <Star className={`h-4.5 w-4.5 ${favorite ? "fill-amber-300 text-amber-300" : "text-white"}`} />
-        </button>
-      </div>
+      <button type="button" aria-label={favorite ? `Ta bort ${test.title} från favoriter` : `Lägg till ${test.title} i favoriter`} aria-pressed={favorite} onClick={onToggleFavorite} className="absolute right-3 top-3 z-20 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black/15 text-white backdrop-blur-md transition active:scale-95">
+        <Star className={`h-4.5 w-4.5 ${favorite ? "fill-amber-300 text-amber-300" : "text-white"}`} />
+      </button>
       <Link to={test.to as any} search={(test.search ?? {}) as any} className="absolute inset-0 flex flex-col justify-end px-4.5 pb-4.5 pt-16">
         <h3 className="font-display text-[30px] leading-[.95] tracking-[-.01em]">{test.title}</h3>
         <p className="mt-3 line-clamp-4 text-[13px] font-medium leading-[1.4] text-white/80">{test.description}</p>
+        <span className="mt-4 w-fit max-w-full truncate rounded-full border border-white/20 bg-black/10 px-2.5 py-1 text-[9px] font-black uppercase tracking-[.13em] text-white/85 backdrop-blur-sm">
+          {test.label}
+        </span>
       </Link>
     </div>
   );
