@@ -67,7 +67,7 @@ function ApproachRoundPage(){
       modeKey={selected.mode}
       testTitle={selected.title}
       targets={selected.targets}
-      onExit={()=>void navigate({to:"/inspelsrundan",search:{mode:undefined}})}
+      onExit={()=>void navigate({to:"/spela-runda"})}
     />;
   }
 
