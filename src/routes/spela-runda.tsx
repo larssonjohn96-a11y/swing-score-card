@@ -17,10 +17,10 @@ const GAMES = [
 ] as const;
 
 const APPROACH_GAMES = [
-  { to:"/inspelsrundan", search:{mode:"total"}, title:"Inspel totalt", subtitle:"Hela ditt inspelsspel · 55–165 m.", image:"/Approach_shot.png", hcp:true },
-  { to:"/inspelsrundan", search:{mode:"short"}, title:"Korta inspel", subtitle:"Scoring-avstånd · 50–100 m.", image:"/Approach_shot.png", hcp:true },
-  { to:"/inspelsrundan", search:{mode:"medium"}, title:"Medellånga inspel", subtitle:"Precision · 100–140 m.", image:"/Approach_shot.png", hcp:true },
-  { to:"/inspelsrundan", search:{mode:"long"}, title:"Långa inspel", subtitle:"Långa inspel · 140–190 m.", image:"/Approach_shot.png", hcp:true },
+  { to:"/inspelsrundan", search:{mode:"total"}, title:"Inspel totalt", subtitle:"55–165 m", image:"/Approach_shot.png", hcp:true },
+  { to:"/inspelsrundan", search:{mode:"short"}, title:"Korta inspel", subtitle:"50–100 m", image:"/Approach_shot.png", hcp:true },
+  { to:"/inspelsrundan", search:{mode:"medium"}, title:"Medellånga inspel", subtitle:"100–140 m", image:"/Approach_shot.png", hcp:true },
+  { to:"/inspelsrundan", search:{mode:"long"}, title:"Långa inspel", subtitle:"140–190 m", image:"/Approach_shot.png", hcp:true },
 ] as const;
 function RoundGamesPage() {
   useHideBottomNav(true);
@@ -28,7 +28,7 @@ function RoundGamesPage() {
   useEffect(()=>{try{const v=JSON.parse(localStorage.getItem(FAVORITES_KEY)??"[]");if(Array.isArray(v))setFavorites(v)}catch{}},[]);
   const toggle=(to:string)=>setFavorites(cur=>{const next=cur.includes(to)?cur.filter(x=>x!==to):[...cur,to];try{localStorage.setItem(FAVORITES_KEY,JSON.stringify(next))}catch{}return next});
   const favoriteGames=GAMES.filter(g=>favorites.includes(g.to));
-  const Card=({game,small=false,full=false,favorite=false}:{game:(typeof GAMES)[number] | (typeof APPROACH_GAMES)[number];small?:boolean;full?:boolean;favorite?:boolean})=><div className={`relative overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm ${full?"h-[190px] w-full":small?"h-[190px] w-[calc((100%-8px)/2)] shrink-0":"h-[220px] w-full"}`}>
+  const Card=({game,small=false,wide=false,full=false,favorite=false}:{game:(typeof GAMES)[number] | (typeof APPROACH_GAMES)[number];small?:boolean;wide?:boolean;full?:boolean;favorite?:boolean})=><div className={`relative overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm ${full?"h-[190px] w-full":wide?"h-[164px] w-[270px] shrink-0":small?"h-[190px] w-[calc((100%-8px)/2)] shrink-0":"h-[220px] w-full"}`}>
     <Link to={game.to} search={"search" in game ? game.search : undefined} className="absolute inset-0"><img src={game.image} alt="" className="h-full w-full object-cover object-[18%_50%]"/><span className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/12 to-black/5"/><span className="absolute inset-x-0 bottom-0 p-4 text-white"><strong className="font-display text-[28px] leading-none">{game.title}</strong>{!favorite?<span className="mt-2 block text-[13px] font-medium leading-snug text-white/90">{game.subtitle}</span>:null}</span></Link>
     {game.hcp?<span className="absolute left-3 top-3 z-10 rounded-full border border-white/25 bg-blue-500/75 px-2.5 py-1 text-[9px] font-black uppercase tracking-wide text-white backdrop-blur-sm">HCP-analys</span>:null}
     <button type="button" aria-label={favorites.includes(game.to)?"Ta bort favorit":"Lägg till favorit"} onClick={(e)=>{e.preventDefault();e.stopPropagation();toggle(game.to)}} className="absolute right-0 top-0 z-20 flex h-[72px] w-[72px] items-start justify-end p-3"><span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-sm"><Star className={`h-4 w-4 ${favorites.includes(game.to)?"fill-amber-400 text-amber-400":"text-slate-500"}`}/></span></button>
@@ -56,7 +56,7 @@ function RoundGamesPage() {
       <section className="mt-8">
         <h2 className="px-0.5 font-display text-[30px] leading-none text-slate-950">Inspel</h2>
         <div className="-mx-5 mt-3 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {APPROACH_GAMES.map(game=><Card key={game.search.mode} game={game} small />)}
+          {APPROACH_GAMES.map(game=><Card key={game.search.mode} game={game} wide />)}
         </div>
       </section>
       <section className="mt-8">
