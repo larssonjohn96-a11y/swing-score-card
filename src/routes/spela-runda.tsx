@@ -11,7 +11,7 @@ const FAVORITES_KEY = "sg4-game-favorites-v1";
 const GAMES = [
   { to:"/speedrundan", title:"Ball Speed", subtitle:"Hur bra är din speed egentligen? Se din HCP-nivå.", image:"/Off_the_tee.png", hcp:true },
   { to:"/driverrundan", title:"Driver", subtitle:"Hur bra är dina driverutslag egentligen? Se din HCP-nivå.", image:"/Off_the_tee.png", hcp:true },
-  { to:"/inspelsrundan", title:"Inspel", subtitle:"Hur bra är dina inspel egentligen? Se din HCP-nivå.", image:"/Approach_shot.png", hcp:true },
+  { to:"/inspelsrundan", title:"Inspel", subtitle:"Totalt, korta, medellånga eller långa inspel. Se din HCP-nivå.", image:"/Approach_shot.png", hcp:true },
   { to:"/puttrundan", title:"Putting", subtitle:"Hur bra är din putting egentligen? Se din HCP-nivå.", image:"/Putting_1.png", hcp:true },
   { to:"/chipprundan", title:"Chipping", subtitle:"Hur bra är din chipping egentligen? Se din HCP-nivå.", image:"/0d286fd4-99fa-47eb-b39c-a7ff718ebdd6.png", hcp:true },
   { to:"/bunkerrundan", title:"Bunker", subtitle:"Hur bra är ditt bunkerspel egentligen? Se din HCP-nivå.", image:"/bunker-round.svg", hcp:true },
