@@ -94,8 +94,8 @@ function TestCardView({ test, favorite, onToggleFavorite }: { test: TestCard; fa
       </button>
       <Link to={test.to as any} search={(test.search ?? {}) as any} className="absolute inset-0 flex flex-col px-4.5 pb-4.5 pt-[58px]">
         <div className="min-h-0">
-          <h3 className="min-h-[58px] font-display text-[30px] leading-[.95] tracking-[-.01em]">{test.title}</h3>
-          <p className="mt-2.5 line-clamp-4 text-[13px] font-medium leading-[1.4] text-white/80">{test.description}</p>
+          <h3 className="font-display text-[30px] leading-[.95] tracking-[-.01em]">{test.title}</h3>
+          <p className="mt-1.5 line-clamp-4 text-[13px] font-medium leading-[1.4] text-white/80">{test.description}</p>
         </div>
         <span className="mt-auto w-fit max-w-full truncate rounded-full border border-white/20 bg-black/10 px-2.5 py-1 text-[9px] font-black uppercase tracking-[.13em] text-white/85 backdrop-blur-sm">
           {test.label}
