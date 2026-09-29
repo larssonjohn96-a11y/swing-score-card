@@ -75,8 +75,7 @@ const EXISTING_SECTIONS: TestSection[] = [
     tests: [
       { to: "/driver-konsekvens", title: "Driver Consistency", label: "Konsekvens", description: "Mät spridning och stabilitet med driver.", tone: "bg-[#7A5638]" },
       { to: "/fairway-streak", title: "Fairway Accuracy", label: "Precision", description: "Mät hur ofta du hittar din valda korridor.", tone: "bg-[#7A5638]" },
-      { to: "/longdrive", title: "Long Drive", label: "Längd", description: "Benchmark för maxlängd och bollhastighet.", tone: "bg-[#7A5638]" },
-      { to: "/speed", title: "Speed Test", label: "Power", description: "Mät ball speed och club head speed och följ din fart över tid.", tone: "bg-[#7A5638]" },
+
     ],
   },
 ];
