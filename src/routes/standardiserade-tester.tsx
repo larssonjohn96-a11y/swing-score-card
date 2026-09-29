@@ -18,7 +18,6 @@ type TestCard = {
   label: string;
   description: string;
   tone: string;
-  imageSrc?: string;
   search?: Record<string, string>;
 };
 
@@ -33,51 +32,51 @@ const EXISTING_SECTIONS: TestSection[] = [
     title: "Puttning",
     subtitle: "Startlinje, kortputt och längdkontroll",
     tests: [
-      { to: "/tutor-test", title: "Tutor Test", label: "Startlinje", description: "Mät hur konsekvent du startar bollen på rätt linje.", tone: "bg-[#4955a7]", imageSrc: "/b01e80c1-ac1d-4d11-81f0-5b9f362d0777.png" },
-      { to: "/pga-tour-18-puttar", title: "18 Puttar", label: "Scoring", description: "Benchmark över flera puttlängder.", tone: "bg-[#a94c57]", imageSrc: "/b01e80c1-ac1d-4d11-81f0-5b9f362d0777.png" },
-      { to: "/lagputt", title: "Lag Putt", label: "Längdkontroll", description: "Mät fart och proximity på längre puttar.", tone: "bg-[#7b6a9c]" },
-      { to: "/green-reading", title: "Green Reading", label: "Läsning", description: "Testa beslut och greenläsning.", tone: "bg-[#426b5d]" },
-      { to: "/klock-putt", title: "Klockputt", label: "Kortputt", description: "Standardiserad kontroll runt hålet.", tone: "bg-[#9a5d78]" },
-      { to: "/50-bollar", title: "25-bollsövningen", label: "Kortputt", description: "Fem bollar från 1–5 meter. Håla ut varje boll och räkna alla slag.", tone: "bg-[#3c8068]", search: { from: "tester" } },
-      { to: "/putting-streak", title: "Putting Streak", label: "Challenge", description: "En putt per nivå från 1 till 10 meter. Första missen avslutar testet.", tone: "bg-[#2f6f63]" },
-      { to: "/lagputt-ladder", title: "Lag Putt Ladder", label: "Challenge", description: "Börja på 8 meter och klättra upp genom längre lagputtar.", tone: "bg-[#5e6f8a]" },
+      { to: "/tutor-test", title: "Tutor Test", label: "Startlinje", description: "Mät hur konsekvent du startar bollen på rätt linje.", tone: "bg-[#5B4B9A]" },
+      { to: "/pga-tour-18-puttar", title: "18 Puttar", label: "Scoring", description: "Benchmark över flera puttlängder.", tone: "bg-[#5B4B9A]" },
+      { to: "/lagputt", title: "Lag Putt", label: "Längdkontroll", description: "Mät fart och proximity på längre puttar.", tone: "bg-[#5B4B9A]" },
+      { to: "/green-reading", title: "Green Reading", label: "Läsning", description: "Testa beslut och greenläsning.", tone: "bg-[#5B4B9A]" },
+      { to: "/klock-putt", title: "Klockputt", label: "Kortputt", description: "Standardiserad kontroll runt hålet.", tone: "bg-[#5B4B9A]" },
+      { to: "/50-bollar", title: "25-bollsövningen", label: "Kortputt", description: "Fem bollar från 1–5 meter. Håla ut varje boll och räkna alla slag.", tone: "bg-[#5B4B9A]", search: { from: "tester" } },
+      { to: "/putting-streak", title: "Putting Streak", label: "Challenge", description: "En putt per nivå från 1 till 10 meter. Första missen avslutar testet.", tone: "bg-[#5B4B9A]" },
+      { to: "/lagputt-ladder", title: "Lag Putt Ladder", label: "Challenge", description: "Börja på 8 meter och klättra upp genom längre lagputtar.", tone: "bg-[#5B4B9A]" },
     ],
   },
   {
     title: "Bollkontroll",
     subtitle: "Form, höjd och bollflykt",
     tests: [
-      { to: "/shot-shaping", title: "Shot Shaping", label: "Bollkontroll", description: "Testa kontroll över höjd, draw och fade.", tone: "bg-[#59618a]" },
+      { to: "/shot-shaping", title: "Shot Shaping", label: "Bollkontroll", description: "Testa kontroll över höjd, draw och fade.", tone: "bg-[#394B6A]" },
     ],
   },
   {
     title: "Närspel",
     subtitle: "Chip, pitch och upp & in",
     tests: [
-      { to: "/8-bollar", title: "8 Bollar", label: "Precision", description: "Ett snabbt standardtest för närspelsprecision.", tone: "bg-[#6757c7]", imageSrc: "/b01e80c1-ac1d-4d11-81f0-5b9f362d0777.png" },
-      { to: "/upp-och-in", title: "Upp & In", label: "Scoring", description: "Mät förmågan att rädda slag runt green.", tone: "bg-[#247760]" },
-      { to: "/bunker-traning", title: "Bunkerträning", label: "Bunkerprecision", description: "Träna olika lies och avstånd i bunker och följ var bollen stannar.", tone: "bg-[#8a6b46]" },
+      { to: "/8-bollar", title: "8 Bollar", label: "Precision", description: "Ett snabbt standardtest för närspelsprecision.", tone: "bg-[#28705C]" },
+      { to: "/upp-och-in", title: "Upp & In", label: "Scoring", description: "Mät förmågan att rädda slag runt green.", tone: "bg-[#28705C]" },
+      { to: "/bunker-traning", title: "Bunkerträning", label: "Bunkerprecision", description: "Träna olika lies och avstånd i bunker och följ var bollen stannar.", tone: "bg-[#28705C]" },
     ],
   },
   {
     title: "Inspel",
     subtitle: "Precision, wedges och bollkontroll",
     tests: [
-      { to: "/par-3-challenge", title: "Par 3 Challenge", label: "6 slag", description: "6 par 3-slag från korta, medium och långa distanser.", tone: "bg-[#255f9c]" },
-      { to: "/approach-pei-valj", title: "PEI Approach", label: "Precision", description: "Mät inspelsprecision över flera avstånd.", tone: "bg-[#217d8c]" },
-      { to: "/approach-pei-wedge", title: "PEI Wedge", label: "Wedge", description: "Precision med wedges från kontrollerade avstånd.", tone: "bg-[#3a8790]" },
-      { to: "/approach-pei-iron", title: "PEI Iron", label: "Järn", description: "Benchmark för järnslag och proximity.", tone: "bg-[#3475a8]" },
-      { to: "/wedge-stege", title: "Wedge Stege", label: "Distance control", description: "Mät avståndskontroll genom flera wedgezoner.", tone: "bg-[#7b6b47]" },
+      { to: "/par-3-challenge", title: "Par 3 Challenge", label: "6 slag", description: "6 par 3-slag från korta, medium och långa distanser.", tone: "bg-[#2D6396]" },
+      { to: "/approach-pei-valj", title: "PEI Approach", label: "Precision", description: "Mät inspelsprecision över flera avstånd.", tone: "bg-[#2D6396]" },
+      { to: "/approach-pei-wedge", title: "PEI Wedge", label: "Wedge", description: "Precision med wedges från kontrollerade avstånd.", tone: "bg-[#2D6396]" },
+      { to: "/approach-pei-iron", title: "PEI Iron", label: "Järn", description: "Benchmark för järnslag och proximity.", tone: "bg-[#2D6396]" },
+      { to: "/wedge-stege", title: "Wedge Stege", label: "Distance control", description: "Mät avståndskontroll genom flera wedgezoner.", tone: "bg-[#2D6396]" },
     ],
   },
   {
     title: "Off the Tee",
     subtitle: "Precision, konsekvens och längd",
     tests: [
-      { to: "/driver-konsekvens", title: "Driver Consistency", label: "Konsekvens", description: "Mät spridning och stabilitet med driver.", tone: "bg-[#a76632]" },
-      { to: "/fairway-streak", title: "Fairway Accuracy", label: "Precision", description: "Mät hur ofta du hittar din valda korridor.", tone: "bg-[#3f6f58]" },
-      { to: "/longdrive", title: "Long Drive", label: "Längd", description: "Benchmark för maxlängd och bollhastighet.", tone: "bg-[#485368]" },
-      { to: "/speed", title: "Speed Test", label: "Power", description: "Mät ball speed och club head speed och följ din fart över tid.", tone: "bg-[#7a4f32]" },
+      { to: "/driver-konsekvens", title: "Driver Consistency", label: "Konsekvens", description: "Mät spridning och stabilitet med driver.", tone: "bg-[#7A5638]" },
+      { to: "/fairway-streak", title: "Fairway Accuracy", label: "Precision", description: "Mät hur ofta du hittar din valda korridor.", tone: "bg-[#7A5638]" },
+      { to: "/longdrive", title: "Long Drive", label: "Längd", description: "Benchmark för maxlängd och bollhastighet.", tone: "bg-[#7A5638]" },
+      { to: "/speed", title: "Speed Test", label: "Power", description: "Mät ball speed och club head speed och följ din fart över tid.", tone: "bg-[#7A5638]" },
     ],
   },
 ];
@@ -90,21 +89,18 @@ const TEST_SECTIONS = TEST_ORDER
 const FAVORITES_KEY = "sg4-test-favorites-v1";
 function TestCardView({ test, favorite, onToggleFavorite }: { test: TestCard; favorite: boolean; onToggleFavorite: () => void }) {
   return (
-    <div className={`relative h-[220px] w-[164px] shrink-0 overflow-hidden rounded-[24px] border border-black/[.04] text-white ${test.tone}`}>
-      {test.imageSrc && (
-        <>
-          <img src={test.imageSrc} alt="" className="absolute inset-0 h-full w-full object-cover" />
-          <span className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/18 to-black/5" />
-        </>
-      )}
-      <div className="absolute inset-x-0 top-0 z-20 flex h-[34%] items-start justify-end p-3">
-        <button type="button" aria-label={favorite ? `Ta bort ${test.title} från favoriter` : `Lägg till ${test.title} i favoriter`} aria-pressed={favorite} onClick={onToggleFavorite} className="flex h-10 w-10 items-center justify-center rounded-full bg-black/20 text-white backdrop-blur-md transition active:scale-95">
-          <Star className={`h-5 w-5 ${favorite ? "fill-amber-300 text-amber-300" : "text-white"}`} />
+    <div className={`relative h-[220px] w-[164px] shrink-0 overflow-hidden rounded-[24px] border border-black/[.04] text-white shadow-sm ${test.tone}`}>
+      <div className="absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-2 p-3">
+        <span className="max-w-[105px] truncate rounded-full border border-white/20 bg-black/10 px-2.5 py-1 text-[9px] font-black uppercase tracking-[.13em] text-white/85 backdrop-blur-sm">
+          {test.label}
+        </span>
+        <button type="button" aria-label={favorite ? `Ta bort ${test.title} från favoriter` : `Lägg till ${test.title} i favoriter`} aria-pressed={favorite} onClick={onToggleFavorite} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black/15 text-white backdrop-blur-md transition active:scale-95">
+          <Star className={`h-4.5 w-4.5 ${favorite ? "fill-amber-300 text-amber-300" : "text-white"}`} />
         </button>
       </div>
-      <Link to={test.to as any} search={(test.search ?? {}) as any} className="absolute inset-x-0 bottom-0 z-10 flex h-[66%] flex-col justify-end px-4 pb-4 pt-3">
-        <h3 className="font-display text-[25px] leading-[.95]">{test.title}</h3>
-        <p className="mt-2 line-clamp-2 text-[11px] leading-snug text-white/72">{test.description}</p>
+      <Link to={test.to as any} search={(test.search ?? {}) as any} className="absolute inset-0 flex flex-col justify-end px-4 pb-4 pt-16">
+        <h3 className="font-display text-[27px] leading-[.94] tracking-[-.01em]">{test.title}</h3>
+        <p className="mt-2.5 line-clamp-3 text-[12px] font-medium leading-[1.35] text-white/78">{test.description}</p>
       </Link>
     </div>
   );
@@ -120,10 +116,10 @@ function StandardizedTestsPage() {
   const allTests = useMemo(() => TEST_SECTIONS.flatMap(section => section.tests), []);
   const favoriteTests = favorites.map(to => allTests.find(test => test.to === to)).filter((test): test is TestCard => Boolean(test));
   const streakChallenges: TestCard[] = [
-    { to: "/fairway-streak", title: "Fairways i rad", label: "Utslag", description: "Hur många fairways kan du träffa i rad innan första missen?", tone: "bg-[#3f6f58]" },
-    { to: "/streak-challenge", title: "Inspel i rad", label: "Inspel", description: "Träffa din valda målzon. Hur många klarar du i rad?", tone: "bg-[#255f9c]", search: { type: "approach" } },
-    { to: "/putting-streak", title: "Putts i rad", label: "Puttning", description: "Sätt putten och fortsätt. Första missen avslutar streaken.", tone: "bg-[#4955a7]" },
-    { to: "/streak-challenge", title: "Bunkerslag i rad", label: "Närspel", description: "Träffa din valda målzon från bunker. Hur många klarar du i rad?", tone: "bg-[#8a6b46]", search: { type: "bunker" } },
+    { to: "/fairway-streak", title: "Fairways i rad", label: "Utslag", description: "Hur många fairways kan du träffa i rad innan första missen?", tone: "bg-[#9A4E34]" },
+    { to: "/streak-challenge", title: "Inspel i rad", label: "Inspel", description: "Träffa din valda målzon. Hur många klarar du i rad?", tone: "bg-[#9A4E34]", search: { type: "approach" } },
+    { to: "/putting-streak", title: "Putts i rad", label: "Puttning", description: "Sätt putten och fortsätt. Första missen avslutar streaken.", tone: "bg-[#9A4E34]" },
+    { to: "/streak-challenge", title: "Bunkerslag i rad", label: "Närspel", description: "Träffa din valda målzon från bunker. Hur många klarar du i rad?", tone: "bg-[#9A4E34]", search: { type: "bunker" } },
   ];
   const favoriteCategory = (test: TestCard) => {
     const section = TEST_SECTIONS.find(section => section.tests.some(item => item.to === test.to))?.title;
