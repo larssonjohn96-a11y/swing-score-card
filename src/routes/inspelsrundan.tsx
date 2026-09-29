@@ -15,10 +15,10 @@ const TESTS: Array<{
   {
     mode: "total",
     title: "Inspel totalt",
-    range: "55–165 m",
+    range: "50–150 m",
     description: "Hela ditt inspelsspel i ett snabbt test över flera avstånd.",
-    shots: 9,
-    targets: [55,64,73,82,91,110,128,146,165],
+    shots: 6,
+    targets: [50,70,90,110,130,150],
   },
   {
     mode: "short",
