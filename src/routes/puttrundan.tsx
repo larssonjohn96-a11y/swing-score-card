@@ -24,23 +24,23 @@ const TESTS: Array<{
   {
     mode: "short",
     title: "Korta puttar",
-    range: "1–3 m",
-    description: "Mät hur ofta du konverterar puttarna som ska sitta.",
-    targets: [1,2,3,1,2,3,1,2,3],
+    range: "1–2 m",
+    description: "Mät hur ofta du sätter de korta puttarna som ska gå i.",
+    targets: [1,1.5,2,1,1.5,2,1,1.5,2],
   },
   {
     mode: "medium",
     title: "Medellånga puttar",
-    range: "3–8 m",
+    range: "3–7 m",
     description: "Testa scoring och längdkontroll från mellanavstånden.",
-    targets: [4,6,8,4,6,8,4,6,8],
+    targets: [3,5,7,3,5,7,3,5,7],
   },
   {
     mode: "long",
     title: "Långa puttar",
     range: "8–20 m",
     description: "Mät längdkontroll och hur väl du undviker treputtar.",
-    targets: [10,15,20,10,15,20,10,15,20],
+    targets: [8,14,20,8,14,20,8,14,20],
   },
 ];
 
