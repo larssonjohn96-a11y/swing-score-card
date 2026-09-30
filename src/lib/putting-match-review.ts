@@ -110,7 +110,7 @@ export function buildPuttingMatchReview(holes: readonly ReviewHole[]) {
     bands: [
       { label: "Korta", range: "1–2 m", min: 0, max: 2 },
       { label: "Medel", range: "3–7 m", min: 2, max: 7 },
-      { label: "Långa", range: "8–20 m", min: 7, max: 20 },
+      { label: "Långa", range: "8–18 m", min: 7, max: 18 },
     ].map((band) => {
       const selected = rows.filter((row) => row.distance > band.min && row.distance <= band.max);
       return {
