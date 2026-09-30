@@ -313,7 +313,7 @@ export function CompareFriendContent({ userId, onBack }: { userId:string; onBack
       </button>
     </div>
 
-    {compareMode === "game" ? <div className="relative mt-5">
+    {compareMode === "game" ? <><div className="relative mt-5">
       <span className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Jämför kategori</span>
       <button type="button" onClick={() => setFocusOpen((value) => !value)} className={`flex h-12 w-full items-center justify-between rounded-2xl px-4 text-sm font-semibold ${glassCard}`} aria-haspopup="listbox" aria-expanded={focusOpen}>
         <span>{focusLabel}</span>
@@ -347,7 +347,7 @@ export function CompareFriendContent({ userId, onBack }: { userId:string; onBack
 
 
     <p className="mt-7 text-center text-[11px] leading-relaxed text-muted-foreground">Jämförelsen bygger på aggregerade snitt och handicapnivåer – inte enskilda rekordslag.</p>
-    </div> : (
+    </> : (
       <div className="mt-7">
         <SectionTitle>Jämför bag</SectionTitle>
         <BagComparison
