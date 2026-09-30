@@ -109,6 +109,8 @@ function BagComparison({
   leftName: string;
   rightName: string;
 }) {
+  const [bagView, setBagView] = useState<"carry" | "witb">("carry");
+
   if (!left && !right) {
     return <Empty text="Ingen av spelarna har en färdig My Bag att jämföra ännu." />;
   }
@@ -144,6 +146,23 @@ function BagComparison({
       </div>
     </section>
 
+    <div className={`grid grid-cols-2 gap-1 rounded-2xl p-1 ${glassCard}`}>
+      <button
+        type="button"
+        onClick={() => setBagView("carry")}
+        className={`min-h-11 rounded-xl text-sm font-bold transition ${bagView === "carry" ? "bg-foreground text-background shadow-sm" : "text-muted-foreground"}`}
+      >
+        Carry
+      </button>
+      <button
+        type="button"
+        onClick={() => setBagView("witb")}
+        className={`min-h-11 rounded-xl text-sm font-bold transition ${bagView === "witb" ? "bg-foreground text-background shadow-sm" : "text-muted-foreground"}`}
+      >
+        WITB
+      </button>
+    </div>
+
     <section className={`overflow-hidden rounded-[1.75rem] ${glassCard}`}>
       <div className="grid grid-cols-[1fr_72px_1fr] border-b border-white/60 px-3 py-2.5 text-[9px] font-black uppercase tracking-[.1em] text-muted-foreground dark:border-white/10">
         <span className="text-left">{leftName}</span>
@@ -152,15 +171,27 @@ function BagComparison({
       </div>
       {rows.map((row, index) => (
         <div key={`${row.label}-${index}`} className={`grid min-h-16 grid-cols-[1fr_72px_1fr] items-center gap-2 px-3 py-3 ${index ? "border-t border-white/60 dark:border-white/10" : ""}`}>
-          <div className="min-w-0 text-left">
-            <p className="text-lg font-black tabular-nums text-blue-600 dark:text-blue-400">{row.left?.carry === undefined ? "–" : `${Math.round(row.left.carry)} m`}</p>
-            {modelText(row.left) ? <p className="mt-0.5 truncate text-[10px] text-muted-foreground">{modelText(row.left)}</p> : null}
-          </div>
-          <div className="text-center text-xs font-black">{row.label}</div>
-          <div className="min-w-0 text-right">
-            <p className="text-lg font-black tabular-nums text-red-600 dark:text-red-400">{row.right?.carry === undefined ? "–" : `${Math.round(row.right.carry)} m`}</p>
-            {modelText(row.right) ? <p className="mt-0.5 truncate text-[10px] text-muted-foreground">{modelText(row.right)}</p> : null}
-          </div>
+          {bagView === "carry" ? (
+            <>
+              <div className="min-w-0 text-left">
+                <p className="text-lg font-black tabular-nums text-blue-600 dark:text-blue-400">{row.left?.carry === undefined ? "–" : `${Math.round(row.left.carry)} m`}</p>
+              </div>
+              <div className="text-center text-xs font-black">{row.label}</div>
+              <div className="min-w-0 text-right">
+                <p className="text-lg font-black tabular-nums text-red-600 dark:text-red-400">{row.right?.carry === undefined ? "–" : `${Math.round(row.right.carry)} m`}</p>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="min-w-0 text-left">
+                <p className="truncate text-[12px] font-bold text-blue-600 dark:text-blue-400">{modelText(row.left) || (row.left ? "Ej angivet" : "–")}</p>
+              </div>
+              <div className="text-center text-xs font-black">{row.label}</div>
+              <div className="min-w-0 text-right">
+                <p className="truncate text-[12px] font-bold text-red-600 dark:text-red-400">{modelText(row.right) || (row.right ? "Ej angivet" : "–")}</p>
+              </div>
+            </>
+          )}
         </div>
       ))}
     </section>
