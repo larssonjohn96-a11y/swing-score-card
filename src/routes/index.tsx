@@ -618,6 +618,12 @@ function Home() {
               Jämför
             </Link>
             <Link
+              to="/min-bag"
+              className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black"
+            >
+              My Bag
+            </Link>
+            <Link
               to="/vanner"
               className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black"
             >
