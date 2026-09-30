@@ -23,10 +23,10 @@ const APPROACH_GAMES = [
 ] as const;
 
 const PUTTING_GAMES = [
-  { to:"/puttrundan", search:{mode:"total"}, title:"Putting totalt", subtitle:"18 hål · 0,6–16 m", image:"/Putting_1.png", hcp:true },
+  { to:"/puttrundan", search:{mode:"total"}, title:"Putting totalt", subtitle:"9 hål · 4 kort · 3 medel · 2 lång", image:"/Putting_1.png", hcp:true },
   { to:"/puttrundan", search:{mode:"short"}, title:"Korta puttar", subtitle:"1–2 m", image:"/Putting_1.png", hcp:true },
   { to:"/puttrundan", search:{mode:"medium"}, title:"Medellånga puttar", subtitle:"3–7 m", image:"/Putting_1.png", hcp:true },
-  { to:"/puttrundan", search:{mode:"long"}, title:"Långa puttar", subtitle:"8–20 m", image:"/Putting_1.png", hcp:true },
+  { to:"/puttrundan", search:{mode:"long"}, title:"Långa puttar", subtitle:"8–18 m", image:"/Putting_1.png", hcp:true },
 ] as const;
 
 type GameCard = (typeof GAMES)[number] | (typeof APPROACH_GAMES)[number] | (typeof PUTTING_GAMES)[number];
