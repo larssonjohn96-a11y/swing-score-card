@@ -125,6 +125,58 @@ function benchmarkBag(target: Exclude<BagCompareTarget, "friend">, labels: strin
   return { mappedCount: clubs.filter((club) => club.carry !== undefined).length, clubCount: clubs.length, clubs };
 }
 
+type CarryRatingScope = "age" | "all";
+type CarryTopLevel = 50 | 25 | 10 | 5 | 3 | 1;
+
+const CARRY_TOP_LEVELS: CarryTopLevel[] = [50,25,10,5,3,1];
+
+function ageBand(age?: number) {
+  if (age === undefined || !Number.isFinite(age)) return null;
+  if (age < 18) return { label: "Under 18", factor: .9 };
+  if (age < 30) return { label: "18–29 år", factor: 1.06 };
+  if (age < 40) return { label: "30–39 år", factor: 1.03 };
+  if (age < 50) return { label: "40–49 år", factor: 1 };
+  if (age < 60) return { label: "50–59 år", factor: .94 };
+  if (age < 70) return { label: "60–69 år", factor: .86 };
+  return { label: "70+ år", factor: .78 };
+}
+
+function carryThresholds(label: string, scope: CarryRatingScope, age?: number) {
+  const base = {
+    50: BENCHMARK_CARRY.hcp30[label],
+    25: BENCHMARK_CARRY.hcp20[label],
+    10: BENCHMARK_CARRY.hcp10[label],
+    5: BENCHMARK_CARRY.scratch[label],
+    3: BENCHMARK_CARRY.tour[label],
+    1: BENCHMARK_CARRY["tour-long"][label],
+  } as Record<CarryTopLevel, number | undefined>;
+  const band = scope === "age" ? ageBand(age) : null;
+  const factor = band?.factor ?? 1;
+  return Object.fromEntries(
+    CARRY_TOP_LEVELS.map((level) => [level, base[level] === undefined ? undefined : base[level]! * factor]),
+  ) as Record<CarryTopLevel, number | undefined>;
+}
+
+function carryTopLevel(label: string, carry: number | undefined, scope: CarryRatingScope, age?: number): CarryTopLevel | null {
+  if (carry === undefined || !Number.isFinite(carry)) return null;
+  const thresholds = carryThresholds(label, scope, age);
+  let result: CarryTopLevel | null = null;
+  for (const level of CARRY_TOP_LEVELS) {
+    const threshold = thresholds[level];
+    if (threshold !== undefined && carry >= threshold) result = level;
+  }
+  return result ?? 50;
+}
+
+function bagCarryTopLevel(bag: ComparisonBagProfile, scope: CarryRatingScope, age?: number): CarryTopLevel | null {
+  const levels = bag.clubs
+    .map((club) => carryTopLevel(club.label, club.carry, scope, age))
+    .filter((value): value is CarryTopLevel => value !== null)
+    .sort((a,b)=>a-b);
+  if (!levels.length) return null;
+  return levels[Math.floor(levels.length / 2)];
+}
+
 export function BagComparison({
   left,
   friendBag,
@@ -142,8 +194,11 @@ export function BagComparison({
   friendAvatar?: string | null;
   initialTarget?: BagCompareTarget;
 }) {
+  const cardProfile = loadCardProfile();
+  const playerAge = cardProfile.age;
   const [bagView, setBagView] = useState<"carry" | "witb">("carry");
   const [target, setTarget] = useState<BagCompareTarget>(initialTarget);
+  const [ratingScope,setRatingScope] = useState<CarryRatingScope>(playerAge ? "age" : "all");
 
   if (!left) {
     return <Empty text="Färdigställ My Bag först för att kunna jämföra din bag." />;
@@ -155,6 +210,8 @@ export function BagComparison({
   const rightName = target === "friend" ? friendName : targetConfig.label;
   const rightAvatar = target === "friend" ? friendAvatar : null;
   const canShowWitb = target === "friend";
+  const ratingLevel = bagCarryTopLevel(left, ratingScope, playerAge);
+  const playerAgeBand = ageBand(playerAge);
 
   const normalize = (label: string) => label.trim().toLowerCase();
   const rightByLabel = new Map((benchmark?.clubs ?? []).map((club) => [normalize(club.label), club]));
@@ -195,6 +252,43 @@ export function BagComparison({
           {target === "friend" ? (benchmark ? `${benchmark.mappedCount} mappade` : "Ingen bag ännu") : "Carry benchmark"}
         </p>
       </div>
+    </section>
+
+    <section className={`overflow-hidden rounded-[1.8rem] ${glassCard}`}>
+      <div className="flex items-start justify-between gap-4 px-5 pt-5">
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-[.18em] text-muted-foreground">Carry Rating</p>
+          <div className="mt-2 flex items-end gap-2">
+            <span className="font-display text-5xl leading-none text-foreground">{ratingLevel ? `Top ${ratingLevel}%` : "–"}</span>
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            {ratingScope === "age" && playerAgeBand ? `Bland golfare ${playerAgeBand.label}` : "Bland alla golfare"}
+          </p>
+        </div>
+        <div className="rounded-2xl bg-background/70 p-2 text-right">
+          <p className="text-[9px] font-bold uppercase tracking-[.12em] text-muted-foreground">Profil</p>
+          <p className="mt-1 text-sm font-black">{left.mappedCount}/{left.clubCount}</p>
+          <p className="text-[9px] text-muted-foreground">mappade</p>
+        </div>
+      </div>
+      <div className="mt-4 grid grid-cols-2 border-t border-white/60 p-1 dark:border-white/10">
+        <button
+          type="button"
+          disabled={!playerAge}
+          onClick={() => playerAge && setRatingScope("age")}
+          className={`min-h-11 rounded-xl text-xs font-bold transition ${ratingScope === "age" ? "bg-foreground text-background shadow-sm" : "text-muted-foreground"} disabled:opacity-35`}
+        >
+          Din ålder
+        </button>
+        <button
+          type="button"
+          onClick={() => setRatingScope("all")}
+          className={`min-h-11 rounded-xl text-xs font-bold transition ${ratingScope === "all" ? "bg-foreground text-background shadow-sm" : "text-muted-foreground"}`}
+        >
+          Alla golfare
+        </button>
+      </div>
+      {!playerAge ? <Link to="/konto" className="block border-t border-white/60 px-5 py-3 text-center text-[11px] font-semibold text-primary dark:border-white/10">Lägg till ålder i din profil →</Link> : null}
     </section>
 
     <section>
@@ -243,6 +337,7 @@ export function BagComparison({
             <>
               <div className="text-center">
                 <p className="text-xl font-black tabular-nums text-blue-600 dark:text-blue-400">{row.left?.carry === undefined ? "–" : `${Math.round(row.left.carry)} m`}</p>
+                {row.left?.carry !== undefined ? <p className="mt-0.5 text-[9px] font-black uppercase tracking-[.08em] text-blue-500/75">{`Top ${carryTopLevel(row.label,row.left.carry,ratingScope,playerAge) ?? 50}%`}</p> : null}
               </div>
               <div className="text-center">
                 <p className="text-xl font-black tabular-nums text-red-600 dark:text-red-400">{row.right?.carry === undefined ? "–" : `${Math.round(row.right.carry)} m`}</p>
