@@ -127,6 +127,17 @@ function BagComparison({
 
   const modelText = (club: ComparisonBagProfile["clubs"][number] | undefined) =>
     club ? [club.brand, club.model].filter(Boolean).join(" ") : "";
+  const specText = (club: ComparisonBagProfile["clubs"][number] | undefined) =>
+    club
+      ? [
+          club.loft ? `Loft ${club.loft}` : null,
+          club.shaft,
+          club.flex ? `Flex ${club.flex}` : null,
+          club.length ? `Längd ${club.length}` : null,
+          club.lie ? `Lie ${club.lie}` : null,
+          club.grip,
+        ].filter(Boolean).join(" · ")
+      : "";
 
   return <div className="space-y-5">
     <section className={`overflow-hidden rounded-[1.75rem] ${glassCard}`}>
@@ -185,10 +196,12 @@ function BagComparison({
             <>
               <div className="min-w-0 text-left">
                 <p className="truncate text-[12px] font-bold text-blue-600 dark:text-blue-400">{modelText(row.left) || (row.left ? "Ej angivet" : "–")}</p>
+                {specText(row.left) ? <p className="mt-0.5 truncate text-[9px] text-muted-foreground">{specText(row.left)}</p> : null}
               </div>
               <div className="text-center text-xs font-black">{row.label}</div>
               <div className="min-w-0 text-right">
                 <p className="truncate text-[12px] font-bold text-red-600 dark:text-red-400">{modelText(row.right) || (row.right ? "Ej angivet" : "–")}</p>
+                {specText(row.right) ? <p className="mt-0.5 truncate text-[9px] text-muted-foreground">{specText(row.right)}</p> : null}
               </div>
             </>
           )}
