@@ -32,6 +32,12 @@ export type ComparisonBagClub = {
   label: string;
   brand?: string;
   model?: string;
+  loft?: string;
+  shaft?: string;
+  flex?: string;
+  length?: string;
+  lie?: string;
+  grip?: string;
   carry?: number;
   dispersion?: number;
 };
@@ -224,6 +230,12 @@ export function computeLocalComparisonProfile(): SocialComparisonProfile {
               label: club.label,
               ...(club.brand ? { brand: club.brand } : {}),
               ...(club.model ? { model: club.model } : {}),
+              ...(club.loft ? { loft: club.loft } : {}),
+              ...(club.shaft ? { shaft: club.shaft } : {}),
+              ...(club.flex ? { flex: club.flex } : {}),
+              ...(club.length ? { length: club.length } : {}),
+              ...(club.lie ? { lie: club.lie } : {}),
+              ...(club.grip ? { grip: club.grip } : {}),
               ...(carry != null ? { carry: Math.round(carry * 10) / 10 } : {}),
               ...(dispersion != null ? { dispersion: Math.round(dispersion * 10) / 10 } : {}),
             };
@@ -297,6 +309,12 @@ export function parseComparisonProfile(value: unknown): SocialComparisonProfile 
                 label: club.label,
                 ...(typeof club.brand === "string" && club.brand ? { brand: club.brand } : {}),
                 ...(typeof club.model === "string" && club.model ? { model: club.model } : {}),
+                ...(typeof club.loft === "string" && club.loft ? { loft: club.loft } : {}),
+                ...(typeof club.shaft === "string" && club.shaft ? { shaft: club.shaft } : {}),
+                ...(typeof club.flex === "string" && club.flex ? { flex: club.flex } : {}),
+                ...(typeof club.length === "string" && club.length ? { length: club.length } : {}),
+                ...(typeof club.lie === "string" && club.lie ? { lie: club.lie } : {}),
+                ...(typeof club.grip === "string" && club.grip ? { grip: club.grip } : {}),
                 ...(typeof club.carry === "number" && Number.isFinite(club.carry) ? { carry: club.carry } : {}),
                 ...(typeof club.dispersion === "number" && Number.isFinite(club.dispersion) ? { dispersion: club.dispersion } : {}),
               }];
