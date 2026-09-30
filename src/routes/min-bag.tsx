@@ -39,6 +39,7 @@ const BAG_EDITOR_GROUPS = CLUB_GROUPS;
 
 type Season = "vinter" | "vår" | "sommar" | "höst";
 type FreshnessStatus = "Bra" | "Bör uppdateras" | "Gammal data";
+type WitbFieldKey = "brand" | "model" | "loft" | "shaft" | "flex" | "length" | "lie" | "grip";
 type OpenGap = {
   clubLabel: string;
   nextLabel: string;
@@ -450,7 +451,7 @@ function MinBagPage() {
       {editingWitbClubId && latest ? (() => {
         const club = latest.clubs.find((item) => item.id === editingWitbClubId);
         if (!club) return null;
-        const fields: Array<{ key: keyof BagClub; label: string; placeholder: string }> = [
+        const fields: Array<{ key: WitbFieldKey; label: string; placeholder: string }> = [
           { key: "brand", label: "Märke", placeholder: "Titleist" },
           { key: "model", label: "Modell", placeholder: "GT3 / T150 / SM10" },
           { key: "loft", label: "Loft", placeholder: "9° / 34°" },
