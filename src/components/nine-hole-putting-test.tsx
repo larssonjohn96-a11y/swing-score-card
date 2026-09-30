@@ -9,7 +9,7 @@ import { StandardHcpAnalysis, ShotAnalysisList, BenchmarkStory } from "@/compone
 
 const DEFAULT_DIST = [1.5, 2.5, 4, 6, 8, 10, 12, 15, 18];
 const SPECIALIST_BASE_KEY = "sg4-putting-nine-hole-v1";
-const TOTAL_18_KEY = "sg4-putting-total-18-v1";
+const TOTAL_KEY = "sg4-putting-total-nine-v2";
 const fmt = (n: number) => n.toFixed(1).replace(".", ",");
 
 type Saved = {
@@ -28,7 +28,7 @@ type Feedback = {
 };
 
 const historyKey = (modeKey: string) =>
-  modeKey === "total" ? TOTAL_18_KEY : `${SPECIALIST_BASE_KEY}-${modeKey}`;
+  modeKey === "total" ? TOTAL_KEY : `${SPECIALIST_BASE_KEY}-${modeKey}`;
 
 function load(key: string): Saved[] {
   try {
@@ -50,6 +50,62 @@ function shuffle(values: readonly number[]) {
     [next[i], next[j]] = [next[j], next[i]];
   }
   return next;
+}
+
+function smartOrder(modeKey: string, values: readonly number[], enabled: boolean) {
+  if (!enabled) return [...values];
+
+  if (modeKey === "short") return shuffle(values);
+
+  if (modeKey === "medium") {
+    const pool = [...values];
+    const openingIndexes = pool
+      .map((value, index) => ({ value, index }))
+      .filter(({ value }) => value <= 4);
+    const pick = openingIndexes[Math.floor(Math.random() * openingIndexes.length)];
+    if (!pick) return shuffle(pool);
+    const [first] = pool.splice(pick.index, 1);
+    return [first, ...shuffle(pool)];
+  }
+
+  if (modeKey === "long") {
+    const warm = shuffle(values.filter((value) => value <= 12));
+    const hard = values.filter((value) => value > 12);
+    const hardest = Math.max(...hard);
+    const beforeHardest = shuffle(hard.filter((value) => value !== hardest));
+    const order = [
+      warm[0],
+      warm[1],
+      beforeHardest[0],
+      warm[2],
+      beforeHardest[1],
+      hardest,
+    ].filter((value): value is number => typeof value === "number");
+    return order.length === values.length ? order : shuffle(values);
+  }
+
+  if (modeKey === "total") {
+    const short = shuffle(values.filter((value) => value <= 2));
+    const medium = shuffle(values.filter((value) => value > 2 && value <= 7));
+    const long = shuffle(values.filter((value) => value > 7));
+    const pattern: Array<"short" | "medium" | "long"> = [
+      "short",
+      "medium",
+      "short",
+      "long",
+      "short",
+      "medium",
+      "short",
+      "long",
+      "medium",
+    ];
+    const groups = { short, medium, long };
+    return pattern
+      .map((group) => groups[group].shift())
+      .filter((value): value is number => typeof value === "number");
+  }
+
+  return shuffle(values);
 }
 
 function starsFor(distance: number, putts: number) {
@@ -89,7 +145,7 @@ export function NineHolePuttingTest({
   distances?: readonly number[];
   shuffleDistances?: boolean;
 }) {
-  const initialDistances = () => (shuffleDistances ? shuffle(distances) : [...distances]);
+  const initialDistances = () => smartOrder(modeKey, distances, shuffleDistances);
   const [view, setView] = useState<"intro" | "countdown" | "test" | "compiling" | "result">("intro");
   const [countdown, setCountdown] = useState(3);
   const [putts, setPutts] = useState<number[]>([]);
@@ -192,7 +248,7 @@ export function NineHolePuttingTest({
   function start() {
     clear();
     setFeedback(null);
-    setSessionDist(shuffleDistances ? shuffle(distances) : [...distances]);
+    setSessionDist(smartOrder(modeKey, distances, shuffleDistances));
     setPutts([]);
     setView("countdown");
   }
