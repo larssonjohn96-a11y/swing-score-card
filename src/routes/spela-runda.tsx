@@ -11,7 +11,6 @@ const FAVORITES_KEY = "sg4-game-favorites-v1";
 const GAMES = [
   { to:"/speedrundan", title:"Ball Speed", subtitle:"Hur bra är din speed egentligen? Se din HCP-nivå.", image:"/Off_the_tee.png", hcp:true },
   { to:"/driverrundan", title:"Driver", subtitle:"Hur bra är dina driverutslag egentligen? Se din HCP-nivå.", image:"/Off_the_tee.png", hcp:true },
-  { to:"/puttrundan", title:"Putting", subtitle:"Hur bra är din putting egentligen? Se din HCP-nivå.", image:"/Putting_1.png", hcp:true },
   { to:"/chipprundan", title:"Chipping", subtitle:"Hur bra är din chipping egentligen? Se din HCP-nivå.", image:"/0d286fd4-99fa-47eb-b39c-a7ff718ebdd6.png", hcp:true },
   { to:"/bunkerrundan", title:"Bunker", subtitle:"Hur bra är ditt bunkerspel egentligen? Se din HCP-nivå.", image:"/bunker-round.svg", hcp:true },
 ] as const;
@@ -23,15 +22,22 @@ const APPROACH_GAMES = [
   { to:"/inspelsrundan", search:{mode:"long"}, title:"Långa inspel", subtitle:"140–190 m", image:"/Approach_shot.png", hcp:true },
 ] as const;
 
-type GameCard = (typeof GAMES)[number] | (typeof APPROACH_GAMES)[number];
-const ALL_GAMES: readonly GameCard[] = [...GAMES, ...APPROACH_GAMES];
+const PUTTING_GAMES = [
+  { to:"/puttrundan", search:{mode:"total"}, title:"Putting totalt", subtitle:"1,5–18 m", image:"/Putting_1.png", hcp:true },
+  { to:"/puttrundan", search:{mode:"short"}, title:"Korta puttar", subtitle:"1–3 m", image:"/Putting_1.png", hcp:true },
+  { to:"/puttrundan", search:{mode:"medium"}, title:"Medellånga puttar", subtitle:"3–8 m", image:"/Putting_1.png", hcp:true },
+  { to:"/puttrundan", search:{mode:"long"}, title:"Långa puttar", subtitle:"8–20 m", image:"/Putting_1.png", hcp:true },
+] as const;
+
+type GameCard = (typeof GAMES)[number] | (typeof APPROACH_GAMES)[number] | (typeof PUTTING_GAMES)[number];
+const ALL_GAMES: readonly GameCard[] = [...GAMES, ...APPROACH_GAMES, ...PUTTING_GAMES];
 const favoriteId = (game: GameCard) =>
   "search" in game ? `${game.to}?mode=${game.search.mode}` : game.to;
 
 function RoundGamesPage() {
   useHideBottomNav(true);
   const [favorites,setFavorites]=useState<string[]>([]);
-  useEffect(()=>{try{const v=JSON.parse(localStorage.getItem(FAVORITES_KEY)??"[]");if(Array.isArray(v)){const normalized=[...new Set(v.filter((x):x is string=>typeof x==="string").map(x=>x==="/inspelsrundan"?"/inspelsrundan?mode=total":x))];setFavorites(normalized);localStorage.setItem(FAVORITES_KEY,JSON.stringify(normalized))}}catch{}},[]);
+  useEffect(()=>{try{const v=JSON.parse(localStorage.getItem(FAVORITES_KEY)??"[]");if(Array.isArray(v)){const normalized=[...new Set(v.filter((x):x is string=>typeof x==="string").map(x=>x==="/inspelsrundan"?"/inspelsrundan?mode=total":x==="/puttrundan"?"/puttrundan?mode=total":x))];setFavorites(normalized);localStorage.setItem(FAVORITES_KEY,JSON.stringify(normalized))}}catch{}},[]);
   const toggle=(id:string)=>setFavorites(cur=>{const next=cur.includes(id)?cur.filter(x=>x!==id):[...cur,id];try{localStorage.setItem(FAVORITES_KEY,JSON.stringify(next))}catch{}return next});
   const favoriteGames=ALL_GAMES.filter(game=>favorites.includes(favoriteId(game)));
   const Card=({game,small=false,portrait=false,full=false,favorite=false}:{game:GameCard;small?:boolean;portrait?:boolean;full?:boolean;favorite?:boolean})=><div className={`relative overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm ${full?"h-[190px] w-full":portrait?"h-[236px] w-[180px] shrink-0":small?"h-[190px] w-[calc((100%-8px)/2)] shrink-0":"h-[220px] w-full"}`}>
@@ -67,7 +73,9 @@ function RoundGamesPage() {
       </section>
       <section className="mt-8">
         <h2 className="px-0.5 font-display text-[30px] leading-none text-slate-950">Putting</h2>
-        <div className="mt-3">{GAMES.filter(g=>g.to==="/puttrundan").map(game=><Card key={game.to} game={game} full />)}</div>
+        <div className="-mx-5 mt-3 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {PUTTING_GAMES.map(game=><Card key={game.search.mode} game={game} portrait />)}
+        </div>
       </section>
       <section className="mt-8">
         <h2 className="px-0.5 font-display text-[30px] leading-none text-slate-950">Chipping & Bunker</h2>
