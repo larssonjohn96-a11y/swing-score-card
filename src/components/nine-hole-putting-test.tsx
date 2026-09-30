@@ -454,16 +454,15 @@ export function NineHolePuttingTest({
       ) : view === "test" ? (
         <div className="space-y-4">
           <section className="rounded-3xl border border-slate-200 bg-white p-3 shadow-sm">
-            <div className="grid grid-cols-3 divide-x text-center">
+            <div className="grid grid-cols-2 divide-x text-center">
               <div><strong className="text-xl">{total}</strong><p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Puttar</p></div>
               <div><strong className="text-xl text-amber-500">{starTotal} ★</strong><p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">av {maxStars}</p></div>
-              <div><strong className="text-xl">{putts.length}/{shotCount}</strong><p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Hål</p></div>
             </div>
             {best !== null && <p className="mt-2 text-center text-[10px] font-semibold text-slate-400">PB · {best} puttar</p>}
           </section>
 
           <section className="text-center">
-            <p className="text-xs font-semibold text-slate-500">Hål {index + 1} av {shotCount}</p>
+            <p className="text-[18px] font-black text-slate-700">Hål {index + 1} av {shotCount}</p>
             <h1 className="mt-2 text-5xl font-black text-blue-700">{fmt(currentDistance)} m</h1>
             <div className="mt-4 flex min-h-12 justify-center gap-2">
               {[0, 1, 2].map((star) => {
