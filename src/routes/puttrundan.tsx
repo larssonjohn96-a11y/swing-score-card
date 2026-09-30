@@ -11,13 +11,15 @@ const TESTS: Array<{
   range: string;
   description: string;
   targets: readonly number[];
+  shuffle?: boolean;
 }> = [
   {
     mode: "total",
     title: "Putting totalt",
-    range: "1,5–18 m",
-    description: "Hela din putting i ett test över korta, medellånga och långa avstånd.",
-    targets: [1.5,2.5,4,6,8,10,12,15,18],
+    range: "0,6–16 m",
+    description: "18 hål över hela spannet. Håla varje boll och bygg din Putting-score.",
+    targets: [1.5,12,0.6,4,1.2,16,8,3,6,9,0.9,7,2.1,3.5,10,1.8,5,2.4],
+    shuffle: false,
   },
   {
     mode: "short",
@@ -63,6 +65,7 @@ function PuttRoundPage(){
       testTitle={selected.title}
       rangeLabel={selected.range}
       distances={selected.targets}
+      shuffleDistances={selected.shuffle ?? true}
       onExit={()=>void navigate({to:"/spela-runda"})}
     />;
   }
@@ -81,7 +84,7 @@ function PuttRoundPage(){
     <section className="px-5 pt-7">
       <p className="text-[10px] font-black uppercase tracking-[.2em] text-blue-600">Putting HCP</p>
       <h1 className="mt-1 text-[42px] font-black leading-[.98] tracking-[-.02em]">Välj ditt puttingtest</h1>
-      <p className="mt-4 max-w-sm text-[16px] font-medium leading-[1.5] text-slate-600">Alla tester innehåller 9 puttar med slumpad ordning på avstånden.</p>
+      <p className="mt-4 max-w-sm text-[16px] font-medium leading-[1.5] text-slate-600">Putting totalt testar hela spannet över 18 hål. Kort, medel och lång är snabbare 9-hålstester.</p>
     </section>
 
     <section className="mt-7 space-y-3 px-5">
@@ -92,7 +95,7 @@ function PuttRoundPage(){
         className={`flex min-h-[138px] items-center gap-4 rounded-[26px] border p-4 shadow-sm ${index===0?"border-blue-200 bg-blue-600 text-white":"border-slate-200 bg-white"}`}
       >
         <div className="min-w-0 flex-1">
-          <p className={`text-[10px] font-black uppercase tracking-[.16em] ${index===0?"text-blue-100":"text-blue-600"}`}>{test.range} · 9 puttar</p>
+          <p className={`text-[10px] font-black uppercase tracking-[.16em] ${index===0?"text-blue-100":"text-blue-600"}`}>{test.range} · {test.targets.length} hål</p>
           <h2 className="mt-1 text-[25px] font-black leading-none">{test.title}</h2>
           <p className={`mt-2 text-[12px] font-medium leading-snug ${index===0?"text-blue-50/85":"text-slate-500"}`}>{test.description}</p>
         </div>
