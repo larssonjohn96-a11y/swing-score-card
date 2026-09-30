@@ -155,6 +155,7 @@ export function NineHolePuttingTest({
   const [analysis, setAnalysis] = useState(false);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [selectedPutts, setSelectedPutts] = useState<number | null>(null);
+  const [nextEnabled, setNextEnabled] = useState(false);
   const timers = useRef<number[]>([]);
 
   useChipScreenColor(view === "countdown" || view === "compiling" || analysis);
@@ -252,6 +253,7 @@ export function NineHolePuttingTest({
     clear();
     setFeedback(null);
     setSelectedPutts(null);
+    setNextEnabled(false);
     setSessionDist(smartOrder(modeKey, distances, shuffleDistances));
     setPutts([]);
     setView("countdown");
@@ -274,10 +276,13 @@ export function NineHolePuttingTest({
       label: feedbackLabel(earned),
     });
     setSelectedPutts(null);
+    setNextEnabled(false);
+    const armId = window.setTimeout(() => setNextEnabled(true), 350);
+    timers.current.push(armId);
   }
 
   function nextHole() {
-    if (!feedback) return;
+    if (!feedback || !nextEnabled) return;
     if (putts.length === shotCount) {
       const finalStars = putts.reduce(
         (sum, puttCount, shotIndex) => sum + starsFor(sessionDist[shotIndex], puttCount),
@@ -291,11 +296,13 @@ export function NineHolePuttingTest({
         stars: finalStars,
       });
       setFeedback(null);
+      setNextEnabled(false);
       setView("compiling");
       return;
     }
     setFeedback(null);
     setSelectedPutts(null);
+    setNextEnabled(false);
   }
 
   function editRegisteredHole() {
@@ -303,6 +310,7 @@ export function NineHolePuttingTest({
     setSelectedPutts(feedback.putts);
     setPutts((current) => current.slice(0, -1));
     setFeedback(null);
+    setNextEnabled(false);
   }
 
   function undo() {
@@ -462,8 +470,9 @@ export function NineHolePuttingTest({
                 {feedback.putts === 1 ? "1 putt" : feedback.putts >= 4 ? "4+ puttar" : `${feedback.putts} puttar`} · +{feedback.stars} ★
               </p>
               <Button
+                disabled={!nextEnabled}
                 onClick={nextHole}
-                className="mt-5 min-h-14 w-full rounded-2xl bg-blue-600 text-base font-black text-white"
+                className="mt-5 min-h-14 w-full rounded-2xl bg-blue-600 text-base font-black text-white disabled:bg-blue-300"
               >
                 {putts.length === shotCount ? "Visa resultat" : "Nästa hål"}
               </Button>
