@@ -6,7 +6,7 @@ import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 import { supabase } from "@/integrations/supabase/client";
 import { computeStableCategoryHandicaps } from "@/lib/category-index";
 import { fetchFriendSnapshot, listFriendships, pushPlayerSnapshot, type PlayerSnapshot, type Profile } from "@/lib/friends-cloud";
-import { computeLocalComparisonProfile, type ComparisonCategory, type ComparisonMetric, type SocialComparisonProfile } from "@/lib/social-comparison-profile";
+import { computeLocalComparisonProfile, type ComparisonBagProfile, type ComparisonCategory, type ComparisonMetric, type SocialComparisonProfile } from "@/lib/social-comparison-profile";
 import { computeEstimatedHandicap, loadRealHandicap, type CategorySlug } from "@/lib/sg-handicap";
 import { loadCardProfile } from "@/lib/rating-card";
 
@@ -98,6 +98,81 @@ function matchRows(left: ComparisonMetric[], right: ComparisonMetric[], focus: F
   });
 }
 
+function BagComparison({
+  left,
+  right,
+  leftName,
+  rightName,
+}: {
+  left?: ComparisonBagProfile;
+  right?: ComparisonBagProfile;
+  leftName: string;
+  rightName: string;
+}) {
+  if (!left && !right) {
+    return <Empty text="Ingen av spelarna har en färdig My Bag att jämföra ännu." />;
+  }
+
+  const normalize = (label: string) => label.trim().toLowerCase();
+  const rightByLabel = new Map((right?.clubs ?? []).map((club) => [normalize(club.label), club]));
+  const leftLabels = (left?.clubs ?? []).map((club) => normalize(club.label));
+  const rows = [
+    ...(left?.clubs ?? []).map((club) => ({ label: club.label, left: club, right: rightByLabel.get(normalize(club.label)) })),
+    ...(right?.clubs ?? [])
+      .filter((club) => !leftLabels.includes(normalize(club.label)))
+      .map((club) => ({ label: club.label, left: undefined, right: club })),
+  ].reverse();
+
+  const modelText = (club: ComparisonBagProfile["clubs"][number] | undefined) =>
+    club ? [club.brand, club.model].filter(Boolean).join(" ") : "";
+
+  return <div className="space-y-5">
+    <section className={`overflow-hidden rounded-[1.75rem] ${glassCard}`}>
+      <div className="grid grid-cols-2 divide-x divide-white/60 dark:divide-white/10">
+        <div className="p-4 text-center">
+          <p className="truncate text-xs font-semibold text-blue-600 dark:text-blue-400">{leftName}</p>
+          <p className="mt-2 text-3xl font-black text-blue-600 dark:text-blue-400">{left?.bagHcp === undefined ? "–" : formatHcp(left.bagHcp)}</p>
+          <p className="mt-1 text-[10px] font-bold uppercase tracking-[.12em] text-muted-foreground">Bag HCP</p>
+          <p className="mt-3 text-xs text-muted-foreground">{left ? `${left.mappedCount} mappade · ${left.clubCount} klubbor` : "Ingen bag"}</p>
+        </div>
+        <div className="p-4 text-center">
+          <p className="truncate text-xs font-semibold text-red-600 dark:text-red-400">{rightName}</p>
+          <p className="mt-2 text-3xl font-black text-red-600 dark:text-red-400">{right?.bagHcp === undefined ? "–" : formatHcp(right.bagHcp)}</p>
+          <p className="mt-1 text-[10px] font-bold uppercase tracking-[.12em] text-muted-foreground">Bag HCP</p>
+          <p className="mt-3 text-xs text-muted-foreground">{right ? `${right.mappedCount} mappade · ${right.clubCount} klubbor` : "Ingen bag"}</p>
+        </div>
+      </div>
+    </section>
+
+    <section className={`overflow-hidden rounded-[1.75rem] ${glassCard}`}>
+      <div className="grid grid-cols-[1fr_72px_1fr] border-b border-white/60 px-3 py-2.5 text-[9px] font-black uppercase tracking-[.1em] text-muted-foreground dark:border-white/10">
+        <span className="text-left">{leftName}</span>
+        <span className="text-center">Klubb</span>
+        <span className="text-right">{rightName}</span>
+      </div>
+      {rows.map((row, index) => (
+        <div key={`${row.label}-${index}`} className={`grid min-h-16 grid-cols-[1fr_72px_1fr] items-center gap-2 px-3 py-3 ${index ? "border-t border-white/60 dark:border-white/10" : ""}`}>
+          <div className="min-w-0 text-left">
+            <p className="text-lg font-black tabular-nums text-blue-600 dark:text-blue-400">{row.left?.carry === undefined ? "–" : `${Math.round(row.left.carry)} m`}</p>
+            {modelText(row.left) ? <p className="mt-0.5 truncate text-[10px] text-muted-foreground">{modelText(row.left)}</p> : null}
+          </div>
+          <div className="text-center text-xs font-black">{row.label}</div>
+          <div className="min-w-0 text-right">
+            <p className="text-lg font-black tabular-nums text-red-600 dark:text-red-400">{row.right?.carry === undefined ? "–" : `${Math.round(row.right.carry)} m`}</p>
+            {modelText(row.right) ? <p className="mt-0.5 truncate text-[10px] text-muted-foreground">{modelText(row.right)}</p> : null}
+          </div>
+        </div>
+      ))}
+    </section>
+
+    {(!left || !right) ? (
+      <p className="text-center text-xs leading-relaxed text-muted-foreground">
+        Den spelare som saknar bag behöver färdigställa My Bag och synka sin SG4-profil innan den kan jämföras.
+      </p>
+    ) : null}
+  </div>;
+}
+
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return <div className="mb-3 text-center"><h2 className="font-display text-2xl">{children}</h2></div>;
 }
@@ -137,6 +212,7 @@ export function CompareFriendContent({ userId, onBack }: { userId:string; onBack
   const { user, loading } = useAuth();
   const [focus,setFocus] = useState<Focus>("all");
   const [focusOpen,setFocusOpen] = useState(false);
+  const [compareMode,setCompareMode] = useState<"game"|"bag">("game");
   const [friend,setFriend] = useState<Profile|null>(null);
   const [friendSnapshot,setFriendSnapshot] = useState<PlayerSnapshot|null>(null);
   const [selfName,setSelfName] = useState("Du");
@@ -220,7 +296,24 @@ export function CompareFriendContent({ userId, onBack }: { userId:string; onBack
       <div className="flex min-w-0 flex-col items-center text-center"><Avatar name={friend?.displayName ?? "Vän"} url={friend?.avatarUrl} side="right"/><p className="mt-2 max-w-[8rem] truncate text-sm font-bold">{friend?.displayName ?? "Vän"}</p><p className="mt-0.5 text-xs font-semibold text-red-600 dark:text-red-400">HCP {formatHcp(friendSnapshot?.estHcp ?? undefined)}</p></div>
     </section>
 
-    <div className="relative mt-5">
+    <div className={`mt-5 grid grid-cols-2 gap-1 rounded-2xl p-1 ${glassCard}`}>
+      <button
+        type="button"
+        onClick={() => setCompareMode("game")}
+        className={`min-h-11 rounded-xl text-sm font-bold transition ${compareMode === "game" ? "bg-foreground text-background shadow-sm" : "text-muted-foreground"}`}
+      >
+        Spel
+      </button>
+      <button
+        type="button"
+        onClick={() => setCompareMode("bag")}
+        className={`min-h-11 rounded-xl text-sm font-bold transition ${compareMode === "bag" ? "bg-foreground text-background shadow-sm" : "text-muted-foreground"}`}
+      >
+        Jämför bag
+      </button>
+    </div>
+
+    {compareMode === "game" ? <div className="relative mt-5">
       <span className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Jämför kategori</span>
       <button type="button" onClick={() => setFocusOpen((value) => !value)} className={`flex h-12 w-full items-center justify-between rounded-2xl px-4 text-sm font-semibold ${glassCard}`} aria-haspopup="listbox" aria-expanded={focusOpen}>
         <span>{focusLabel}</span>
@@ -254,7 +347,18 @@ export function CompareFriendContent({ userId, onBack }: { userId:string; onBack
 
 
     <p className="mt-7 text-center text-[11px] leading-relaxed text-muted-foreground">Jämförelsen bygger på aggregerade snitt och handicapnivåer – inte enskilda rekordslag.</p>
+    </div> : (
+      <div className="mt-7">
+        <SectionTitle>Jämför bag</SectionTitle>
+        <BagComparison
+          left={local?.comparison.bag}
+          right={friendSnapshot?.comparisonProfile.bag}
+          leftName={selfName}
+          rightName={friend?.displayName ?? "Vän"}
+        />
+      </div>
+    )}
   </main>;
 }
 
-function Empty(){return <div className="rounded-3xl border border-dashed border-white/70 bg-muted/45 p-6 text-center text-sm text-muted-foreground shadow-sm backdrop-blur-2xl dark:border-white/10 dark:bg-white/5">Ingen gemensam jämförbar data ännu för det valda området.</div>}
+function Empty({ text = "Ingen gemensam jämförbar data ännu för det valda området." }: { text?: string }){return <div className="rounded-3xl border border-dashed border-white/70 bg-muted/45 p-6 text-center text-sm text-muted-foreground shadow-sm backdrop-blur-2xl dark:border-white/10 dark:bg-white/5">{text}</div>}
