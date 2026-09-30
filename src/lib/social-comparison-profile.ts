@@ -6,6 +6,7 @@ import { PROGRESS_TESTS, summarize } from "@/lib/progress";
 import { topScores } from "@/lib/highlights";
 import { LEGACY_KEYS } from "@/lib/sessions/keys";
 import { loadSpeedSessions } from "@/lib/speed";
+import { bagHcp, clubDispersion, isPutterLabel, latestCompletedBagMap, medianCarry } from "@/lib/map-my-bag";
 
 export type ComparisonCategory = "driving" | "approach" | "around-the-green" | "puttning";
 
@@ -27,6 +28,21 @@ export type ComparisonActivity = {
   shots: number;
 };
 
+export type ComparisonBagClub = {
+  label: string;
+  brand?: string;
+  model?: string;
+  carry?: number;
+  dispersion?: number;
+};
+
+export type ComparisonBagProfile = {
+  bagHcp?: number;
+  mappedCount: number;
+  clubCount: number;
+  clubs: ComparisonBagClub[];
+};
+
 export type SocialComparisonProfile = {
   activity: ComparisonActivity & {
     byCategory: Record<ComparisonCategory, ComparisonActivity>;
@@ -34,6 +50,7 @@ export type SocialComparisonProfile = {
   performance: ComparisonMetric[];
   training: ComparisonTrainingResult[];
   records: ComparisonMetric[];
+  bag?: ComparisonBagProfile;
 };
 
 type EightBallSession = { score?: number; scores?: number[] };
@@ -192,7 +209,29 @@ export function computeLocalComparisonProfile(): SocialComparisonProfile {
   byCategory["around-the-green"].shots = aroundShots + eightBallShots;
   byCategory.puttning.shots = puttShots + lagShots;
 
-  return { activity: { tests, shots, byCategory }, performance, training, records };
+  const latestBag = latestCompletedBagMap();
+  const bag: ComparisonBagProfile | undefined = latestBag
+    ? {
+        bagHcp: bagHcp(latestBag) ?? undefined,
+        mappedCount: latestBag.clubs.filter((club) => !isPutterLabel(club.label) && medianCarry(club) != null).length,
+        clubCount: latestBag.clubs.length,
+        clubs: [...latestBag.clubs]
+          .sort((a, b) => a.order - b.order)
+          .map((club) => {
+            const carry = medianCarry(club);
+            const dispersion = clubDispersion(club);
+            return {
+              label: club.label,
+              ...(club.brand ? { brand: club.brand } : {}),
+              ...(club.model ? { model: club.model } : {}),
+              ...(carry != null ? { carry: Math.round(carry * 10) / 10 } : {}),
+              ...(dispersion != null ? { dispersion: Math.round(dispersion * 10) / 10 } : {}),
+            };
+          }),
+      }
+    : undefined;
+
+  return { activity: { tests, shots, byCategory }, performance, training, records, ...(bag ? { bag } : {}) };
 }
 
 export function parseComparisonProfile(value: unknown): SocialComparisonProfile {
@@ -241,10 +280,36 @@ export function parseComparisonProfile(value: unknown): SocialComparisonProfile 
     };
   }
 
+  const bagRaw = raw.bag && typeof raw.bag === "object" && !Array.isArray(raw.bag)
+    ? raw.bag as Record<string, unknown>
+    : null;
+  const bag: ComparisonBagProfile | undefined = bagRaw
+    ? {
+        bagHcp: typeof bagRaw.bagHcp === "number" && Number.isFinite(bagRaw.bagHcp) ? bagRaw.bagHcp : undefined,
+        mappedCount: typeof bagRaw.mappedCount === "number" && Number.isFinite(bagRaw.mappedCount) ? Math.max(0, Math.round(bagRaw.mappedCount)) : 0,
+        clubCount: typeof bagRaw.clubCount === "number" && Number.isFinite(bagRaw.clubCount) ? Math.max(0, Math.round(bagRaw.clubCount)) : 0,
+        clubs: Array.isArray(bagRaw.clubs)
+          ? bagRaw.clubs.flatMap((row) => {
+              if (!row || typeof row !== "object" || Array.isArray(row)) return [];
+              const club = row as Record<string, unknown>;
+              if (typeof club.label !== "string" || !club.label.trim()) return [];
+              return [{
+                label: club.label,
+                ...(typeof club.brand === "string" && club.brand ? { brand: club.brand } : {}),
+                ...(typeof club.model === "string" && club.model ? { model: club.model } : {}),
+                ...(typeof club.carry === "number" && Number.isFinite(club.carry) ? { carry: club.carry } : {}),
+                ...(typeof club.dispersion === "number" && Number.isFinite(club.dispersion) ? { dispersion: club.dispersion } : {}),
+              }];
+            })
+          : [],
+      }
+    : undefined;
+
   return {
     activity: { tests, shots, byCategory },
     performance: parseRows(raw.performance),
     training: parseRows(raw.training),
     records: parseRows(raw.records),
+    ...(bag ? { bag } : {}),
   };
 }
