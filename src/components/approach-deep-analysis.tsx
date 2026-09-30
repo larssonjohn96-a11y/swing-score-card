@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { AlertCircle, Target, TrendingUp } from "lucide-react";
 import { loadPrecisionSessions } from "@/lib/precision-store";
 import {
@@ -75,6 +76,40 @@ function bestWorst(stats: ReturnType<typeof aggregateByTarget>) {
  * absolut senaste. Fokus på avstånd i meter och faktiska mönster,
  * INTE på score 0–100 – score visas inte alls här.
  */
+type TestRange="total"|"short"|"medium"|"long";
+const TEST_RANGES:{key:TestRange;label:string;range:string}[]=[
+  {key:"total",label:"Totalt",range:"50–150 m"},
+  {key:"short",label:"Kort",range:"50–100 m"},
+  {key:"medium",label:"Medel",range:"100–140 m"},
+  {key:"long",label:"Lång",range:"140–190 m"},
+];
+
+function ApproachTestTrend(){
+  const [range,setRange]=useState<TestRange>("total");
+  const sessions=useMemo(()=>loadPrecisionSessions(),[]);
+  const rows=useMemo(()=>sessions.filter(s=>range==="total"?(!s.note||s.note==="hcp:total"):s.note===`hcp:${range}`).map((s,i)=>({
+    order:i+1,
+    date:new Date(s.date).toLocaleDateString("sv-SE",{day:"numeric",month:"short"}),
+    proximity:Math.round(s.avgProximity*10)/10,
+  })),[sessions,range]);
+  const recentFive=rows.slice(-5);
+  const recentFiveAvg=recentFive.length?recentFive.reduce((sum,row)=>sum+row.proximity,0)/recentFive.length:null;
+  const latest=rows.at(-1)?.proximity??null;
+  const visible=rows.slice(-30);
+  const values=visible.map(row=>row.proximity);
+  const domain:[number,number]=values.length?[Math.max(0,Math.floor(Math.min(...values)-2)),Math.ceil(Math.max(...values)+2)]:[0,20];
+  return <section className="mt-6 rounded-3xl border border-border bg-card p-5">
+    <p className="text-[10px] font-black uppercase tracking-[.2em] text-primary">Inspelstest över tid</p>
+    <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{TEST_RANGES.map(item=><button key={item.key} type="button" onClick={()=>setRange(item.key)} className={`shrink-0 rounded-full border px-3 py-2 text-xs font-bold ${range===item.key?"border-primary bg-primary text-primary-foreground":"border-border text-muted-foreground"}`}>{item.label} · {item.range}</button>)}</div>
+    <div className="mt-4 grid grid-cols-2 gap-2 text-center">
+      <div className="rounded-2xl bg-muted/60 p-3"><p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Senaste 5</p><p className="mt-1 font-display text-3xl">{recentFiveAvg!==null?`${recentFiveAvg.toFixed(1).replace(".",",")} m`:"–"}</p></div>
+      <div className="rounded-2xl bg-muted/60 p-3"><p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Senaste test</p><p className="mt-1 font-display text-3xl">{latest!==null?`${latest.toFixed(1).replace(".",",")} m`:"–"}</p></div>
+    </div>
+    {visible.length<2?<p className="py-8 text-center text-sm text-muted-foreground">Gör minst två tester i spannet för att se utvecklingen.</p>:<div className="mt-4 h-56 w-full"><ResponsiveContainer width="100%" height="100%"><LineChart data={visible} margin={{top:8,right:8,bottom:0,left:-18}}><CartesianGrid strokeDasharray="3 3" stroke="var(--border)"/><XAxis dataKey="date" tick={{fontSize:10}} stroke="var(--muted-foreground)"/><YAxis domain={domain} tick={{fontSize:10}} stroke="var(--muted-foreground)" unit=" m"/><Tooltip formatter={(v:number)=>[`${v.toFixed(1).replace(".",",")} m`,"Snitt från flaggan"]}/><Line type="monotone" dataKey="proximity" stroke="var(--primary)" strokeWidth={3} dot={{r:3}}/></LineChart></ResponsiveContainer></div>}
+    <p className="mt-2 text-center text-[11px] text-muted-foreground">Lägre är bättre · senaste 30 tester visas</p>
+  </section>;
+}
+
 export function ApproachDeepAnalysis() {
   const [period, setPeriod] = useState<Period>(10);
   const [selectedTarget, setSelectedTarget] = useState<number | null>(null);
@@ -111,6 +146,8 @@ export function ApproachDeepAnalysis() {
   if (!shots.length) return null;
 
   return (
+    <>
+    <ApproachTestTrend />
     <section className="mt-6">
       <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
         Djupanalys per avstånd
@@ -263,6 +300,7 @@ export function ApproachDeepAnalysis() {
         worstLabel={worstBucket?.label}
       />
     </section>
+    </>
   );
 }
 
