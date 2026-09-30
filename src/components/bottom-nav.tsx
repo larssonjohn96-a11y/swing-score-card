@@ -26,7 +26,6 @@ const MORE_LINKS = [
   { to: "/standardiserade-tester", label: "Avancerade tester", description: "Testa och utveckla specifika delar av spelet med avancerade challenges och benchmarks.", icon: Target, tone: "neutral" },
   { to: "/vanner", label: "Vänner", description: "Hitta spelare och bygg ditt nätverk.", icon: Users, tone: "neutral" },
   { to: "/trophy", label: "Trophy Room", description: "PB, milestones och achievements.", icon: Trophy, tone: "gold" },
-  { to: "/min-bag", label: "My Bag", description: "Klubbor, carry-längder och gapping.", icon: BriefcaseBusiness, tone: "neutral" },
 ] as const;
 
 const TRAINING_FLOW_PATHS = new Set([
