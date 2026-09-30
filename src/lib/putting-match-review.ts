@@ -108,9 +108,9 @@ export function buildPuttingMatchReview(holes: readonly ReviewHole[]) {
       count: rows.filter((row) => row.category.id === category.id).length,
     })),
     bands: [
-      { label: "Korta", range: "≤ 3 m", min: 0, max: 3 },
-      { label: "Medel", range: "> 3–8 m", min: 3, max: 8 },
-      { label: "Långa", range: "> 8 m", min: 8, max: 25 },
+      { label: "Korta", range: "1–2 m", min: 0, max: 2 },
+      { label: "Medel", range: "3–7 m", min: 2, max: 7 },
+      { label: "Långa", range: "8–20 m", min: 7, max: 20 },
     ].map((band) => {
       const selected = rows.filter((row) => row.distance > band.min && row.distance <= band.max);
       return {
