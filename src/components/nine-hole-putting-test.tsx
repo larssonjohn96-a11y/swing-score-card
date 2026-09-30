@@ -1,6 +1,6 @@
 import { createPortal } from "react-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, LoaderCircle, RotateCcw, Star, Trophy, Undo2 } from "lucide-react";
+import { ArrowLeft, Check, LoaderCircle, RotateCcw, Star, Trophy, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { buildPuttingMatchReview } from "@/lib/putting-match-review";
@@ -115,11 +115,18 @@ function starsFor(distance: number, putts: number) {
   return 0;
 }
 
-function feedbackLabel(stars: number) {
-  if (stars === 3) return "Briljant";
-  if (stars === 2) return "Bra";
-  if (stars === 1) return "Godkänt";
-  return "Tapp";
+function feedbackLabel(distance: number, putts: number) {
+  if (putts >= 4) return "Stort tapp";
+  if (putts === 3) return distance >= 12 ? "Miss" : "Stort tapp";
+  if (putts === 2) {
+    if (distance <= 2) return "Miss";
+    if (distance <= 4) return "Godkänt";
+    if (distance <= 7) return "Bra";
+    return "Mycket bra";
+  }
+  if (distance <= 1.2) return "Bra";
+  if (distance <= 2) return "Mycket bra";
+  return "Briljant";
 }
 
 function gradeFor(distance: number, putts: number) {
@@ -161,7 +168,7 @@ export function NineHolePuttingTest({
   useChipScreenColor(view === "countdown" || view === "compiling" || analysis);
 
   useEffect(() => {
-    document.documentElement.dataset.sg4TestActive = view === "intro" ? "false" : "true";
+    document.documentElement.dataset.sg4TestActive = view === "intro" || view === "result" ? "false" : "true";
     return () => {
       delete document.documentElement.dataset.sg4TestActive;
     };
@@ -195,6 +202,26 @@ export function NineHolePuttingTest({
   const best = puttingHistory
     .map((entry) => entry.putts.reduce((sum, value) => sum + value, 0))
     .reduce<number | null>((current, value) => (current === null ? value : Math.min(current, value)), null);
+
+  const recentFive = puttingHistory.slice(-5);
+  const entryStars = (entry: Saved) => {
+    if (typeof entry.stars === "number") return entry.stars;
+    const entryDistances = entry.distances?.length === entry.putts.length ? entry.distances : distances;
+    return entry.putts.reduce(
+      (sum, puttCount, shotIndex) => sum + starsFor(entryDistances[shotIndex] ?? 0, puttCount),
+      0,
+    );
+  };
+  const avgPutts = recentFive.length
+    ? recentFive.reduce((sum, entry) => sum + entry.putts.reduce((a, b) => a + b, 0), 0) / recentFive.length
+    : null;
+  const avgStars = recentFive.length
+    ? recentFive.reduce((sum, entry) => sum + entryStars(entry), 0) / recentFive.length
+    : null;
+  const recentThreePutts = recentFive.reduce(
+    (sum, entry) => sum + entry.putts.filter((value) => value >= 3).length,
+    0,
+  );
 
   const clear = () => {
     timers.current.forEach(window.clearTimeout);
@@ -238,12 +265,6 @@ export function NineHolePuttingTest({
     0,
   );
 
-  let streak = 0;
-  for (let index = putts.length - 1; index >= 0; index--) {
-    if (starsFor(sessionDist[index], putts[index]) >= 2) streak += 1;
-    else break;
-  }
-
   const index = feedback
     ? Math.max(0, putts.length - 1)
     : Math.min(Math.max(0, shotCount - 1), putts.length);
@@ -273,7 +294,7 @@ export function NineHolePuttingTest({
       distance: currentDistance,
       putts: selectedPutts,
       stars: earned,
-      label: feedbackLabel(earned),
+      label: feedbackLabel(currentDistance, selectedPutts),
     });
     setSelectedPutts(null);
     setNextEnabled(false);
@@ -329,6 +350,7 @@ export function NineHolePuttingTest({
 
   return (
     <main className="mx-auto min-h-[calc(100dvh-58px)] max-w-md bg-slate-50 px-4 pb-[max(24px,env(safe-area-inset-bottom))] pt-4 text-slate-950">
+      <style>{`@keyframes puttStarReveal{0%{opacity:0;transform:scale(.35) rotate(-12deg)}68%{opacity:1;transform:scale(1.18) rotate(3deg)}100%{opacity:1;transform:scale(1) rotate(0)}}@keyframes puttLabelReveal{0%{opacity:0;transform:translateY(6px)}100%{opacity:1;transform:translateY(0)}}.putt-star-reveal{animation:puttStarReveal .58s cubic-bezier(.2,.8,.3,1.2) both}.putt-label-reveal{animation:puttLabelReveal .32s ease-out both}@media(prefers-reduced-motion:reduce){.putt-star-reveal,.putt-label-reveal{animation:none!important}}`}</style>
       <Dialog open={confirmExit} onOpenChange={setConfirmExit}>
         <DialogContent className="!z-[140] w-[calc(100%-32px)] max-w-sm rounded-3xl bg-white p-6">
           <DialogTitle className="text-2xl font-black">Avbryta testet?</DialogTitle>
@@ -375,32 +397,31 @@ export function NineHolePuttingTest({
             </p>
           )}
 
-          <section className="overflow-hidden rounded-3xl border border-blue-100 bg-white">
-            <div className="border-b border-blue-100 p-4">
-              <h2 className="font-black">Topplista</h2>
-              <p className="text-xs text-slate-500">Dina senaste {testTitle.toLowerCase()}-test</p>
+          <section className="overflow-hidden rounded-3xl border border-blue-100 bg-white shadow-sm">
+            <div className="bg-blue-600 p-4 text-white">
+              <h2 className="flex items-center gap-2 text-lg font-black">
+                <Trophy className="h-5 w-5" />
+                Topplista
+              </h2>
+              <p className="mt-1 text-xs text-blue-100">Snitt av dina senaste {Math.min(5, recentFive.length) || 5} test</p>
             </div>
-            {puttingHistory.length ? (
-              <div>
-                {[...puttingHistory]
-                  .sort(
-                    (a, b) =>
-                      a.putts.reduce((x, y) => x + y, 0) -
-                      b.putts.reduce((x, y) => x + y, 0),
-                  )
-                  .slice(0, 5)
-                  .map((entry, rank) => (
-                    <div key={entry.id} className="flex items-center justify-between border-b border-slate-100 px-4 py-3 last:border-0">
-                      <span className="text-sm font-semibold">#{rank + 1} Test</span>
-                      <div className="text-right">
-                        <strong>{entry.putts.reduce((a, b) => a + b, 0)} puttar</strong>
-                        {typeof entry.stars === "number" && <p className="text-[10px] font-bold text-amber-500">{entry.stars} ★</p>}
-                      </div>
-                    </div>
-                  ))}
-              </div>
+            {recentFive.length ? (
+              <>
+                <div className={`grid ${modeKey === "short" ? "grid-cols-[1fr_86px_86px]" : "grid-cols-[1fr_76px_76px_54px]"} gap-1 border-b border-slate-100 px-4 py-2.5 text-[9px] font-black uppercase tracking-[.08em] text-slate-400`}>
+                  <span>Spelare</span>
+                  <span className="text-center">Snitt puttar</span>
+                  <span className="text-center">Snitt ★</span>
+                  {modeKey !== "short" && <span className="text-center">3+</span>}
+                </div>
+                <div className={`grid ${modeKey === "short" ? "grid-cols-[1fr_86px_86px]" : "grid-cols-[1fr_76px_76px_54px]"} items-center gap-1 px-4 py-4`}>
+                  <strong className="text-[15px]">Du</strong>
+                  <strong className="text-center text-[17px]">{avgPutts === null ? "–" : fmt(avgPutts)}</strong>
+                  <strong className="text-center text-[17px] text-amber-600">{avgStars === null ? "–" : fmt(avgStars)} ★</strong>
+                  {modeKey !== "short" && <strong className="text-center text-[17px]">{recentThreePutts}</strong>}
+                </div>
+              </>
             ) : (
-              <p className="p-4 text-sm text-slate-500">Gör ditt första test för att sätta high score.</p>
+              <p className="p-4 text-sm text-slate-500">Gör ditt första test för att sätta ditt snitt.</p>
             )}
           </section>
         </div>
@@ -436,7 +457,7 @@ export function NineHolePuttingTest({
             <div className="grid grid-cols-3 divide-x text-center">
               <div><strong className="text-xl">{total}</strong><p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Puttar</p></div>
               <div><strong className="text-xl text-amber-500">{starTotal} ★</strong><p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">av {maxStars}</p></div>
-              <div><strong className="text-xl">{streak}</strong><p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Streak</p></div>
+              <div><strong className="text-xl">{putts.length}/{shotCount}</strong><p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Hål</p></div>
             </div>
             {best !== null && <p className="mt-2 text-center text-[10px] font-semibold text-slate-400">PB · {best} puttar</p>}
           </section>
@@ -444,35 +465,34 @@ export function NineHolePuttingTest({
           <section className="text-center">
             <p className="text-xs font-semibold text-slate-500">Hål {index + 1} av {shotCount}</p>
             <h1 className="mt-2 text-5xl font-black text-blue-700">{fmt(currentDistance)} m</h1>
-            <div className="mt-3 flex justify-center gap-1">
-              {[0, 1, 2].map((star) => (
-                <Star
-                  key={star}
-                  className={`h-7 w-7 ${feedback && star < feedback.stars ? "fill-amber-400 text-amber-400" : "text-slate-200"}`}
-                />
-              ))}
+            <div className="mt-4 flex min-h-12 justify-center gap-2">
+              {[0, 1, 2].map((star) => {
+                const earned = Boolean(feedback && star < feedback.stars);
+                return (
+                  <Star
+                    key={star}
+                    className={`h-11 w-11 ${earned ? "putt-star-reveal fill-amber-400 text-amber-500" : "fill-white text-slate-200"}`}
+                    style={earned ? { animationDelay: `${star * 180}ms` } : undefined}
+                  />
+                );
+              })}
             </div>
+            {feedback && (
+              <h2
+                className="putt-label-reveal mt-2 text-2xl font-black"
+                style={{ animationDelay: `${Math.max(1, feedback.stars) * 180 + 120}ms` }}
+              >
+                {feedback.label}
+              </h2>
+            )}
           </section>
 
           {feedback ? (
-            <section className="rounded-3xl border border-amber-200 bg-amber-50 p-5 text-center shadow-sm">
-              <p className="text-xs font-black uppercase tracking-[.16em] text-amber-700">Hål {index + 1} registrerat</p>
-              <div className="mt-3 flex justify-center gap-1">
-                {[0, 1, 2].map((star) => (
-                  <Star
-                    key={star}
-                    className={`h-10 w-10 ${star < feedback.stars ? "fill-amber-400 text-amber-400" : "text-amber-200"}`}
-                  />
-                ))}
-              </div>
-              <h2 className="mt-3 text-3xl font-black">{feedback.label}</h2>
-              <p className="mt-1 text-sm font-semibold text-slate-600">
-                {feedback.putts === 1 ? "1 putt" : feedback.putts >= 4 ? "4+ puttar" : `${feedback.putts} puttar`} · +{feedback.stars} ★
-              </p>
+            <section className="rounded-3xl border border-blue-100 bg-white p-4 shadow-sm">
               <Button
                 disabled={!nextEnabled}
                 onClick={nextHole}
-                className="mt-5 min-h-14 w-full rounded-2xl bg-blue-600 text-base font-black text-white disabled:bg-blue-300"
+                className="min-h-14 w-full rounded-2xl bg-blue-600 text-base font-black text-white disabled:bg-blue-300"
               >
                 {putts.length === shotCount ? "Visa resultat" : "Nästa hål"}
               </Button>
@@ -572,11 +592,15 @@ export function NineHolePuttingTest({
           </section>
 
           <Button onClick={() => setAnalysis(true)} className="min-h-14 w-full rounded-2xl bg-blue-600 font-black text-white">
-            Visa mitt Putting-HCP
+            Visa min HCP-analys
           </Button>
           <Button onClick={start} className="min-h-14 w-full rounded-2xl bg-slate-950 text-white">
             <RotateCcw />
             Testa igen · {shotCount} hål
+          </Button>
+          <Button variant="outline" onClick={onExit} className="min-h-14 w-full rounded-2xl border-slate-200 bg-white text-slate-900">
+            <ArrowLeft />
+            Tillbaka till HCP-tester
           </Button>
         </div>
       ) : null}
