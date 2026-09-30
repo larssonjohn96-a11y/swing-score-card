@@ -257,22 +257,6 @@ function ProfileEditor({ profile, onSave }: { profile: CardProfile; onSave: (pro
       <div className="mt-4 grid grid-cols-2 gap-3">
         <Field label="Klubb" value={draft.club ?? ""} onChange={(value) => setDraft((p) => ({ ...p, club: value }))} placeholder="Jönköpings GK" />
         <Field label="Land" value={draft.country ?? ""} onChange={(value) => setDraft((p) => ({ ...p, country: value }))} placeholder="Sweden" />
-        <label className="block">
-          <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Ålder</span>
-          <input
-            type="number"
-            min={10}
-            max={100}
-            inputMode="numeric"
-            value={draft.age ?? ""}
-            onChange={(e) => {
-              const value = e.target.value ? Number(e.target.value) : undefined;
-              setDraft((p) => ({ ...p, age: value && Number.isFinite(value) ? Math.max(10, Math.min(100, Math.round(value))) : undefined }));
-            }}
-            placeholder="35"
-            className="mt-1.5 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-primary"
-          />
-        </label>
       </div>
 
       <label className="mt-3 block rounded-2xl border border-dashed border-border px-4 py-3 text-sm">
