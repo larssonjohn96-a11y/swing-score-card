@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { AlertTriangle, ArrowLeft, CircleMinus, Info, MapPinned, RotateCcw, Share2, SlidersHorizontal, Swords, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CircleMinus, Info, MapPinned, Pencil, RotateCcw, X } from "lucide-react";
 import { useState } from "react";
 import { WheelPicker } from "@/components/wheel-picker";
 import { CLUB_GROUPS, ELEVATION_VALUES, TEMPERATURE_VALUES } from "@/lib/club-groups";
@@ -21,6 +21,8 @@ import {
   bagMappedCount,
   clubConfidence,
   clubDispersion,
+  saveCompletedBagMap,
+  type BagClub,
   type BagMap,
   type GapStatus,
 } from "@/lib/map-my-bag";
@@ -179,6 +181,8 @@ function MinBagPage() {
   const [showBagEditor, setShowBagEditor] = useState(false);
   const [bagSelection, setBagSelection] = useState<string[]>([]);
   const [unmappedAfterSave, setUnmappedAfterSave] = useState<string[]>([]);
+  const [editingWitbClubId, setEditingWitbClubId] = useState<string | null>(null);
+  const [witbDraft, setWitbDraft] = useState<Partial<BagClub>>({});
 
   const normalizedSelection = normalizeBagSelection(bagSelection);
   const selectedNonPutterCount = normalizedSelection.filter((label) => !isPutterLabel(label)).length;
@@ -226,6 +230,46 @@ function MinBagPage() {
     setUnmappedAfterSave(unmapped);
   }
 
+  function openWitbEditor(club: BagClub) {
+    setEditingWitbClubId(club.id);
+    setWitbDraft({
+      brand: club.brand ?? "",
+      model: club.model ?? "",
+      loft: club.loft ?? "",
+      shaft: club.shaft ?? "",
+      flex: club.flex ?? "",
+      length: club.length ?? "",
+      lie: club.lie ?? "",
+      grip: club.grip ?? "",
+    });
+  }
+
+  function saveWitbClub() {
+    if (!latest || !editingWitbClubId) return;
+    const cleaned = (value: unknown) => typeof value === "string" && value.trim() ? value.trim() : undefined;
+    const updated: BagMap = {
+      ...latest,
+      clubs: latest.clubs.map((club) =>
+        club.id === editingWitbClubId
+          ? {
+              ...club,
+              brand: cleaned(witbDraft.brand),
+              model: cleaned(witbDraft.model),
+              loft: cleaned(witbDraft.loft),
+              shaft: cleaned(witbDraft.shaft),
+              flex: cleaned(witbDraft.flex),
+              length: cleaned(witbDraft.length),
+              lie: cleaned(witbDraft.lie),
+              grip: cleaned(witbDraft.grip),
+            }
+          : club,
+      ),
+    };
+    setLatest(saveCompletedBagMap(updated));
+    setEditingWitbClubId(null);
+    setWitbDraft({});
+  }
+
   const currentLabelsNotInPicker = latest
     ? latest.clubs.map((club) => club.label).filter((label) => !BAG_EDITOR_GROUPS.some((group) => group.clubs.some((item) => item === label)))
     : [];
@@ -240,11 +284,6 @@ function MinBagPage() {
           </Link>
           <div className="flex items-center gap-2"><span className="rounded-full border border-border bg-card/80 px-3 py-2 text-xs font-bold">{gapProblems===0?"Inga gap":"Gap "+gapProblems}</span></div>
         </div>
-        {latest?<div className="pb-3"><nav className="-mx-1 flex gap-2 overflow-x-auto px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="My Bag navigation">
-          <button type="button" onClick={openBagEditor} className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black">Ändra bag</button>
-          <button className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black">Share My Bag</button>
-          <button className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black">Compare Bag</button>
-        </nav></div>:null}
       </header>
 
       {!latest ? (
@@ -319,7 +358,7 @@ function MinBagPage() {
                 <div key={club.id} className="border-b border-border px-5 py-4 last:border-b-0">
                   <div className="flex items-center justify-between gap-4">
                     <button type="button" onClick={() => !isPutterLabel(club.label) && goToMapping(club.label)} className="min-w-0 flex-1 text-left">
-                      <span className="text-lg font-semibold">{club.label}</span>{club.brand||club.model?<span className="ml-2 text-xs text-muted-foreground">{[club.brand,club.model,club.loft].filter(Boolean).join(" · ")}</span>:null}
+                      <span className="text-lg font-semibold">{club.label}</span>
                     </button>
                     <div className="relative shrink-0 text-right">
                       <div>
@@ -373,10 +412,77 @@ function MinBagPage() {
             })}
           </section>
 
-          <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">Tryck på en klubb för att mappa om den. Din carry uppdateras när tre nya godkända slag finns.</p>
+          <section className="mt-5 overflow-hidden rounded-2xl border border-border bg-card">
+            <div className="flex items-center justify-between border-b border-border px-4 py-4">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">WITB</p>
+                <h2 className="mt-1 text-xl font-black">What's in the bag</h2>
+                <p className="mt-1 text-xs text-muted-foreground">Märke, modell och specs för varje klubb.</p>
+              </div>
+              <button type="button" onClick={openBagEditor} className="rounded-full border border-border bg-background px-3 py-2 text-xs font-semibold">Ändra bag</button>
+            </div>
+            {[...latest.clubs].reverse().map((club) => {
+              const main = [club.brand, club.model].filter(Boolean).join(" ");
+              const specs = [
+                club.loft ? `Loft ${club.loft}` : null,
+                club.shaft ? `Skaft ${club.shaft}` : null,
+                club.flex ? `Flex ${club.flex}` : null,
+                club.length ? `Längd ${club.length}` : null,
+                club.lie ? `Lie ${club.lie}` : null,
+                club.grip ? `Grepp ${club.grip}` : null,
+              ].filter(Boolean);
+              return <button key={club.id} type="button" onClick={() => openWitbEditor(club)} className="flex w-full items-center gap-3 border-b border-border px-4 py-4 text-left last:border-b-0">
+                <span className="flex h-10 w-12 shrink-0 items-center justify-center rounded-xl bg-muted text-xs font-black">{club.label}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-bold">{main || "Lägg till utrustning"}</span>
+                  <span className="mt-1 block truncate text-[11px] text-muted-foreground">{specs.length ? specs.join(" · ") : "Märke · modell · skaft · flex · längd · lie · grepp"}</span>
+                </span>
+                <Pencil className="h-4 w-4 shrink-0 text-muted-foreground" />
+              </button>;
+            })}
+          </section>
+
+          <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">Tryck på en klubb i carry-listan för att mappa om den. WITB ändrar bara utrustningsspecifikationerna.</p>
           <Link to="/map-my-bag" className="mt-4 flex w-full items-center justify-center rounded-2xl border border-border bg-card py-4 font-semibold">Historik</Link>
         </>
       )}
+
+      {editingWitbClubId && latest ? (() => {
+        const club = latest.clubs.find((item) => item.id === editingWitbClubId);
+        if (!club) return null;
+        const fields: Array<{ key: keyof BagClub; label: string; placeholder: string }> = [
+          { key: "brand", label: "Märke", placeholder: "Titleist" },
+          { key: "model", label: "Modell", placeholder: "GT3 / T150 / SM10" },
+          { key: "loft", label: "Loft", placeholder: "9° / 34°" },
+          { key: "shaft", label: "Skaft", placeholder: "Ventus Black 6X" },
+          { key: "flex", label: "Flex", placeholder: "X / S / R" },
+          { key: "length", label: "Längd", placeholder: "44,5″ / -0,5″" },
+          { key: "lie", label: "Lie", placeholder: "Standard / 1° flat" },
+          { key: "grip", label: "Grepp", placeholder: "Golf Pride MCC" },
+        ];
+        return <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/40 p-3 sm:items-center" role="dialog" aria-modal="true" aria-label={`Redigera WITB ${club.label}`}>
+          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl bg-background p-5 shadow-xl">
+            <div className="flex items-start justify-between gap-4">
+              <div><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">WITB</p><h2 className="mt-1 text-3xl font-black">{club.label}</h2><p className="mt-1 text-xs text-muted-foreground">Utrustningsspecs påverkar inte dina carry-värden.</p></div>
+              <button type="button" onClick={() => { setEditingWitbClubId(null); setWitbDraft({}); }} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border"><X className="h-4 w-4"/></button>
+            </div>
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              {fields.map((field) => (
+                <label key={String(field.key)} className={field.key === "model" || field.key === "shaft" || field.key === "grip" ? "col-span-2" : ""}>
+                  <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-[.12em] text-muted-foreground">{field.label}</span>
+                  <input
+                    value={String(witbDraft[field.key] ?? "")}
+                    onChange={(event) => setWitbDraft((current) => ({ ...current, [field.key]: event.target.value }))}
+                    placeholder={field.placeholder}
+                    className="min-h-12 w-full rounded-xl border border-border bg-card px-3 text-sm outline-none focus:border-primary"
+                  />
+                </label>
+              ))}
+            </div>
+            <button type="button" onClick={saveWitbClub} className="mt-5 min-h-14 w-full rounded-2xl bg-primary text-sm font-bold text-primary-foreground">Spara {club.label}</button>
+          </div>
+        </div>;
+      })() : null}
 
       {showBagEditor && latest ? (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-3 sm:items-center" role="dialog" aria-modal="true" aria-label="Ändra bag">
