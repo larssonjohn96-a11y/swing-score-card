@@ -13,6 +13,11 @@ export type BagClub = {
   brand?: string;
   model?: string;
   loft?: string;
+  shaft?: string;
+  flex?: string;
+  length?: string;
+  lie?: string;
+  grip?: string;
 };
 
 export type BagMapStatus = "draft" | "completed";
@@ -180,6 +185,20 @@ export function loadBagHistory(): BagMap[] {
     const rows = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]") as BagMap[];
     return rows.sort((a, b) => Date.parse(b.completedAt || b.updatedAt) - Date.parse(a.completedAt || a.updatedAt));
   } catch { return []; }
+}
+
+export function saveCompletedBagMap(map: BagMap): BagMap {
+  const updated: BagMap = {
+    ...normalizeBagOrder(map),
+    status: "completed",
+    updatedAt: new Date().toISOString(),
+    completedAt: map.completedAt ?? new Date().toISOString(),
+  };
+  if (typeof window !== "undefined") {
+    const history = loadBagHistory().filter((row) => row.id !== updated.id);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify([updated, ...history]));
+  }
+  return updated;
 }
 
 function restoreHistoricalClubData(clubs: BagClub[], history: BagMap[]) {
