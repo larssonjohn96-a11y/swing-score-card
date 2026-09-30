@@ -154,6 +154,7 @@ export function NineHolePuttingTest({
   const [confirmExit, setConfirmExit] = useState(false);
   const [analysis, setAnalysis] = useState(false);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
+  const [selectedPutts, setSelectedPutts] = useState<number | null>(null);
   const timers = useRef<number[]>([]);
 
   useChipScreenColor(view === "countdown" || view === "compiling" || analysis);
@@ -242,52 +243,71 @@ export function NineHolePuttingTest({
     else break;
   }
 
-  const index = Math.min(Math.max(0, shotCount - 1), putts.length);
+  const index = feedback
+    ? Math.max(0, putts.length - 1)
+    : Math.min(Math.max(0, shotCount - 1), putts.length);
   const currentDistance = sessionDist[index] ?? sessionDist.at(-1) ?? 0;
 
   function start() {
     clear();
     setFeedback(null);
+    setSelectedPutts(null);
     setSessionDist(smartOrder(modeKey, distances, shuffleDistances));
     setPutts([]);
     setView("countdown");
   }
 
-  function score(value: number) {
+  function selectScore(value: number) {
     if (feedback || putts.length >= shotCount) return;
-    const earned = starsFor(currentDistance, value);
-    const next = [...putts, value];
-    const nextStars = next.reduce(
-      (sum, puttCount, shotIndex) => sum + starsFor(sessionDist[shotIndex], puttCount),
-      0,
-    );
+    setSelectedPutts(value);
+  }
 
+  function registerScore() {
+    if (feedback || selectedPutts === null || putts.length >= shotCount) return;
+    const earned = starsFor(currentDistance, selectedPutts);
+    const next = [...putts, selectedPutts];
+    setPutts(next);
     setFeedback({
       distance: currentDistance,
-      putts: value,
+      putts: selectedPutts,
       stars: earned,
       label: feedbackLabel(earned),
     });
+    setSelectedPutts(null);
+  }
 
-    const id = window.setTimeout(() => {
-      setPutts(next);
+  function nextHole() {
+    if (!feedback) return;
+    if (putts.length === shotCount) {
+      const finalStars = putts.reduce(
+        (sum, puttCount, shotIndex) => sum + starsFor(sessionDist[shotIndex], puttCount),
+        0,
+      );
+      save(key, {
+        id: crypto.randomUUID(),
+        at: Date.now(),
+        putts,
+        distances: sessionDist,
+        stars: finalStars,
+      });
       setFeedback(null);
-      if (next.length === shotCount) {
-        save(key, {
-          id: crypto.randomUUID(),
-          at: Date.now(),
-          putts: next,
-          distances: sessionDist,
-          stars: nextStars,
-        });
-        setView("compiling");
-      }
-    }, 650);
-    timers.current.push(id);
+      setView("compiling");
+      return;
+    }
+    setFeedback(null);
+    setSelectedPutts(null);
+  }
+
+  function editRegisteredHole() {
+    if (!feedback || !putts.length) return;
+    setSelectedPutts(feedback.putts);
+    setPutts((current) => current.slice(0, -1));
+    setFeedback(null);
   }
 
   function undo() {
     if (feedback) return;
+    setSelectedPutts(null);
     setPutts((current) => current.slice(0, -1));
   }
 
@@ -426,48 +446,81 @@ export function NineHolePuttingTest({
             </div>
           </section>
 
-          {feedback && (
+          {feedback ? (
             <section className="rounded-3xl border border-amber-200 bg-amber-50 p-5 text-center shadow-sm">
-              <p className="text-xs font-black uppercase tracking-[.16em] text-amber-700">Hål {index + 1}</p>
-              <h2 className="mt-1 text-3xl font-black">{feedback.label}</h2>
+              <p className="text-xs font-black uppercase tracking-[.16em] text-amber-700">Hål {index + 1} registrerat</p>
+              <div className="mt-3 flex justify-center gap-1">
+                {[0, 1, 2].map((star) => (
+                  <Star
+                    key={star}
+                    className={`h-10 w-10 ${star < feedback.stars ? "fill-amber-400 text-amber-400" : "text-amber-200"}`}
+                  />
+                ))}
+              </div>
+              <h2 className="mt-3 text-3xl font-black">{feedback.label}</h2>
               <p className="mt-1 text-sm font-semibold text-slate-600">
                 {feedback.putts === 1 ? "1 putt" : feedback.putts >= 4 ? "4+ puttar" : `${feedback.putts} puttar`} · +{feedback.stars} ★
               </p>
-            </section>
-          )}
-
-          {index === shotCount - 1 && !feedback && (
-            <p className="rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3 text-center font-bold text-violet-900">
-              Sista hålet – en chans till att slå ditt rekord!
-            </p>
-          )}
-
-          <section className={`rounded-3xl border border-blue-100 bg-white p-4 transition ${feedback ? "pointer-events-none opacity-40" : ""}`}>
-            <p className="mb-3 text-center text-sm font-semibold text-slate-500">Hur många puttar för att håla ut?</p>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                [1, "1 putt"],
-                [2, "2 puttar"],
-                [3, "3 puttar"],
-                [4, "4+ puttar"],
-              ].map(([value, label]) => (
-                <Button
-                  key={value}
-                  variant="outline"
-                  onClick={() => score(Number(value))}
-                  className="min-h-16 rounded-2xl text-base font-black"
-                >
-                  {label}
-                </Button>
-              ))}
-            </div>
-            {putts.length > 0 && (
-              <Button variant="ghost" onClick={undo} className="mt-2 w-full text-slate-500">
-                <Undo2 />
-                Ändra förra hålet
+              <Button
+                onClick={nextHole}
+                className="mt-5 min-h-14 w-full rounded-2xl bg-blue-600 text-base font-black text-white"
+              >
+                {putts.length === shotCount ? "Visa resultat" : "Nästa hål"}
               </Button>
-            )}
-          </section>
+              <Button variant="ghost" onClick={editRegisteredHole} className="mt-1 w-full text-slate-500">
+                <Undo2 />
+                Ändra registrering
+              </Button>
+            </section>
+          ) : (
+            <>
+              {index === shotCount - 1 && (
+                <p className="rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3 text-center font-bold text-violet-900">
+                  Sista hålet – en chans till att slå ditt rekord!
+                </p>
+              )}
+
+              <section className="rounded-3xl border border-blue-100 bg-white p-4">
+                <p className="mb-3 text-center text-sm font-semibold text-slate-500">Hur många puttar för att håla ut?</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    [1, "1 putt"],
+                    [2, "2 puttar"],
+                    [3, "3 puttar"],
+                    [4, "4+ puttar"],
+                  ].map(([value, label]) => {
+                    const selected = selectedPutts === Number(value);
+                    return (
+                      <Button
+                        key={value}
+                        variant="outline"
+                        aria-pressed={selected}
+                        onClick={() => selectScore(Number(value))}
+                        className={`min-h-16 rounded-2xl text-base font-black ${selected ? "border-blue-600 bg-blue-50 text-blue-700 ring-2 ring-blue-100" : ""}`}
+                      >
+                        {label}
+                      </Button>
+                    );
+                  })}
+                </div>
+                <Button
+                  disabled={selectedPutts === null}
+                  onClick={registerScore}
+                  className="mt-3 min-h-14 w-full rounded-2xl bg-blue-600 text-base font-black text-white disabled:bg-slate-200 disabled:text-slate-400"
+                >
+                  {selectedPutts === null
+                    ? "Välj antal puttar"
+                    : `Registrera ${selectedPutts === 1 ? "1 putt" : selectedPutts >= 4 ? "4+ puttar" : `${selectedPutts} puttar`}`}
+                </Button>
+                {putts.length > 0 && (
+                  <Button variant="ghost" onClick={undo} className="mt-2 w-full text-slate-500">
+                    <Undo2 />
+                    Ändra förra hålet
+                  </Button>
+                )}
+              </section>
+            </>
+          )}
         </div>
       ) : view === "compiling" ? (
         createPortal(
