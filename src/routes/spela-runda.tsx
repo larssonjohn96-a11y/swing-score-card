@@ -23,7 +23,7 @@ const APPROACH_GAMES = [
 ] as const;
 
 const PUTTING_GAMES = [
-  { to:"/puttrundan", search:{mode:"total"}, title:"Putting totalt", subtitle:"1,5–18 m", image:"/Putting_1.png", hcp:true },
+  { to:"/puttrundan", search:{mode:"total"}, title:"Putting totalt", subtitle:"18 hål · 0,6–16 m", image:"/Putting_1.png", hcp:true },
   { to:"/puttrundan", search:{mode:"short"}, title:"Korta puttar", subtitle:"1–3 m", image:"/Putting_1.png", hcp:true },
   { to:"/puttrundan", search:{mode:"medium"}, title:"Medellånga puttar", subtitle:"3–8 m", image:"/Putting_1.png", hcp:true },
   { to:"/puttrundan", search:{mode:"long"}, title:"Långa puttar", subtitle:"8–20 m", image:"/Putting_1.png", hcp:true },
