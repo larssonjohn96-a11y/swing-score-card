@@ -16,31 +16,30 @@ const TESTS: Array<{
   {
     mode: "total",
     title: "Putting totalt",
-    range: "0,6–16 m",
-    description: "18 hål över hela spannet. Håla varje boll och bygg din Putting-score.",
-    targets: [1.5,12,0.6,4,1.2,16,8,3,6,9,0.9,7,2.1,3.5,10,1.8,5,2.4],
-    shuffle: false,
+    range: "1–18 m",
+    description: "9 hål över hela spannet: 4 korta, 3 medel och 2 långa puttar.",
+    targets: [1,1.5,2,1.5,3,5,7,10,18],
   },
   {
     mode: "short",
     title: "Korta puttar",
     range: "1–2 m",
     description: "Mät hur ofta du sätter de korta puttarna som ska gå i.",
-    targets: [1,1.5,2,1,1.5,2,1,1.5,2],
+    targets: [1,1.5,2,1,1.5,2],
   },
   {
     mode: "medium",
     title: "Medellånga puttar",
     range: "3–7 m",
     description: "Testa scoring och längdkontroll från mellanavstånden.",
-    targets: [3,5,7,3,5,7,3,5,7],
+    targets: [3,5,7,4,6,3],
   },
   {
     mode: "long",
     title: "Långa puttar",
-    range: "8–20 m",
+    range: "8–18 m",
     description: "Mät längdkontroll och hur väl du undviker treputtar.",
-    targets: [8,14,20,8,14,20,8,14,20],
+    targets: [8,12,16,10,16,18],
   },
 ];
 
@@ -84,7 +83,7 @@ function PuttRoundPage(){
     <section className="px-5 pt-7">
       <p className="text-[10px] font-black uppercase tracking-[.2em] text-blue-600">Putting HCP</p>
       <h1 className="mt-1 text-[42px] font-black leading-[.98] tracking-[-.02em]">Välj ditt puttingtest</h1>
-      <p className="mt-4 max-w-sm text-[16px] font-medium leading-[1.5] text-slate-600">Putting totalt testar hela spannet över 18 hål. Kort, medel och lång är snabbare 9-hålstester.</p>
+      <p className="mt-4 max-w-sm text-[16px] font-medium leading-[1.5] text-slate-600">Putting totalt är 9 hål. Kort, medel och lång är snabba 6-hålstester med smart varierad ordning.</p>
     </section>
 
     <section className="mt-7 space-y-3 px-5">
