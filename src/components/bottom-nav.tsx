@@ -14,6 +14,7 @@ const LEFT_TABS = [
 
 const RIGHT_TABS = [
   { to: "/utveckling", label: "Jämför", icon: GitCompareArrows, exact: false },
+  { to: "/min-bag", label: "My Bag", icon: BriefcaseBusiness, exact: false },
 ] as const;
 
 const PLAY_LINKS = [
@@ -123,7 +124,7 @@ export function BottomNav() {
 
   return <>
     <nav className="fixed left-1/2 z-40 w-[calc(100%-24px)] max-w-md -translate-x-1/2 overflow-visible rounded-[30px] border border-white/75 bg-card/66 shadow-[0_18px_48px_-20px_rgba(15,23,42,.52),inset_0_1px_0_rgba(255,255,255,.95)] backdrop-blur-[28px] supports-[backdrop-filter]:bg-card/56" style={{ bottom: "max(10px, env(safe-area-inset-bottom))" }}>
-      <div className="mx-auto grid h-[68px] w-full grid-cols-[1fr_1fr_62px_1fr_1fr] items-center gap-0.5 px-2.5 py-1.5">
+      <div className="mx-auto grid h-[68px] w-full grid-cols-[1fr_1fr_58px_1fr_1fr_1fr] items-center gap-0 px-2 py-1.5">
         {LEFT_TABS.map((tab) => <NavLink key={tab.to} tab={tab} active={tab.exact ? pathname === tab.to : pathname.startsWith(tab.to)} />)}
 
         <button type="button" onClick={() => setPlayOpen(true)} aria-label="Spel" className="relative -mt-3 flex h-[54px] w-[54px] items-center justify-center justify-self-center rounded-full bg-emerald-600 text-white shadow-[0_9px_20px_-8px_rgba(5,150,105,.5)] transition duration-150 active:scale-[.94]">
