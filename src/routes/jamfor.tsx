@@ -9,7 +9,8 @@ import { computeEstimatedHandicap, loadRealHandicap } from "@/lib/sg-handicap";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
-import { CompareFriendContent } from "./jamfor.$userId";
+import { BagComparison, CompareFriendContent } from "./jamfor.$userId";
+import { computeLocalComparisonProfile } from "@/lib/social-comparison-profile";
 
 export const Route = createFileRoute("/jamfor")({
   head: () => ({ meta: [{ title: "Jämför med vänner | SG4" }] }),
@@ -24,6 +25,7 @@ function ComparePickerPage(){return <ComparePicker/>}
 export function ComparePicker({embedded=false}:{embedded?:boolean}){
   useHideBottomNav(!embedded);
   const {user,loading}=useAuth();
+  const bagEntry = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("view") === "bag";
   const [friends,setFriends]=useState<Friendship[]>([]);
   const [friendsLoading,setFriendsLoading]=useState(true);
   const [selfName,setSelfName]=useState("Du");
@@ -33,6 +35,7 @@ export function ComparePicker({embedded=false}:{embedded?:boolean}){
   const [selectedFriend,setSelectedFriend]=useState<Friendship|null>(null);
   const [friendHcp,setFriendHcp]=useState<number|undefined>();
   const [activeFriendId,setActiveFriendId]=useState<string|null>(null);
+  const [localBag] = useState(() => computeLocalComparisonProfile().bag);
 
   useEffect(()=>{
     const real=loadRealHandicap();
@@ -71,6 +74,28 @@ export function ComparePicker({embedded=false}:{embedded?:boolean}){
   }
 
   const loadingSocial=loading||friendsLoading;
+
+  if (bagEntry) {
+    return <main className={embedded?"w-full pb-6":"mx-auto min-h-screen w-full max-w-md px-5 pb-10 pt-7"}>
+      {!embedded&&<header className="flex items-center justify-between">
+        <Link to="/min-bag" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card" aria-label="Tillbaka"><ArrowLeft className="h-4 w-4"/></Link>
+        <div className="text-center"><p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">My Bag</p><h1 className="font-display text-3xl">Jämför Bag</h1></div>
+        <span className="h-10 w-10"/>
+      </header>}
+      <div className={embedded?"mt-2":"mt-6"}>
+        <BagComparison
+          left={localBag}
+          leftName={selfName}
+          leftAvatar={selfAvatar}
+          friendName="Kompis"
+          initialTarget="scratch"
+        />
+      </div>
+      <a href="/jamfor" className="mt-5 flex min-h-12 w-full items-center justify-center rounded-2xl border border-border bg-card text-sm font-semibold">
+        Välj en kompis att jämföra med
+      </a>
+    </main>;
+  }
 
   if(activeFriendId){
     return <CompareFriendContent userId={activeFriendId} onBack={()=>setActiveFriendId(null)}/>;
