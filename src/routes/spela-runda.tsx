@@ -78,8 +78,12 @@ function RoundGamesPage() {
         </div>
       </section>
       <section className="mt-8">
-        <h2 className="px-0.5 font-display text-[30px] leading-none text-slate-950">Chipping & Bunker</h2>
-        <div className="mt-3 flex w-full gap-2">{GAMES.filter(g=>g.to==="/chipprundan"||g.to==="/bunkerrundan").map(game=><Card key={game.to} game={game} small />)}</div>
+        <h2 className="px-0.5 font-display text-[30px] leading-none text-slate-950">Chipping</h2>
+        <div className="mt-3">{GAMES.filter(g=>g.to==="/chipprundan").map(game=><Card key={game.to} game={game} full />)}</div>
+      </section>
+      <section className="mt-8">
+        <h2 className="px-0.5 font-display text-[30px] leading-none text-slate-950">Bunker</h2>
+        <div className="mt-3">{GAMES.filter(g=>g.to==="/bunkerrundan").map(game=><Card key={game.to} game={game} full />)}</div>
       </section>
     </main>
   );
