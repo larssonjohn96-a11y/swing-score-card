@@ -125,13 +125,14 @@ function benchmarkBag(target: Exclude<BagCompareTarget, "friend">, labels: strin
   return { mappedCount: clubs.filter((club) => club.carry !== undefined).length, clubCount: clubs.length, clubs };
 }
 
-function BagComparison({
+export function BagComparison({
   left,
   friendBag,
   leftName,
   friendName,
   leftAvatar,
   friendAvatar,
+  initialTarget = "friend",
 }: {
   left?: ComparisonBagProfile;
   friendBag?: ComparisonBagProfile;
@@ -139,9 +140,10 @@ function BagComparison({
   friendName: string;
   leftAvatar?: string | null;
   friendAvatar?: string | null;
+  initialTarget?: BagCompareTarget;
 }) {
   const [bagView, setBagView] = useState<"carry" | "witb">("carry");
-  const [target, setTarget] = useState<BagCompareTarget>("friend");
+  const [target, setTarget] = useState<BagCompareTarget>(initialTarget);
 
   if (!left) {
     return <Empty text="Färdigställ My Bag först för att kunna jämföra din bag." />;
