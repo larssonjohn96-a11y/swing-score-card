@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { AlertTriangle, ArrowLeft, CircleMinus, Info, MapPinned, Pencil, RotateCcw, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CircleMinus, GitCompareArrows, Info, MapPinned, Pencil, RotateCcw, X } from "lucide-react";
 import { useState } from "react";
 import { WheelPicker } from "@/components/wheel-picker";
 import { CLUB_GROUPS, ELEVATION_VALUES, TEMPERATURE_VALUES } from "@/lib/club-groups";
@@ -412,6 +412,18 @@ function MinBagPage() {
               );
             })}
           </section>
+
+          <a href="/jamfor?view=bag" className="group relative mt-5 flex min-h-[104px] items-center overflow-hidden rounded-[26px] border border-blue-200/70 bg-gradient-to-r from-blue-500/[.08] via-card to-red-500/[.07] px-5 py-4 shadow-sm">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-blue-200 bg-blue-50 text-blue-600">
+              <GitCompareArrows className="h-6 w-6"/>
+            </span>
+            <span className="ml-4 min-w-0 flex-1">
+              <span className="block text-[10px] font-black uppercase tracking-[.16em] text-muted-foreground">Head-to-head</span>
+              <span className="mt-1 block text-xl font-black">Jämför min bag</span>
+              <span className="mt-1 block text-xs text-muted-foreground">Kompisar · HCP-nivåer · Tour</span>
+            </span>
+            <span className="ml-3 text-xl font-black text-red-500 transition-transform group-active:translate-x-0.5">→</span>
+          </a>
 
           <section className="mt-5 overflow-hidden rounded-2xl border border-border bg-card">
             <div className="flex items-center justify-between border-b border-border px-4 py-4">
