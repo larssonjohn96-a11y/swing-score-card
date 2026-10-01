@@ -210,22 +210,6 @@ export function SpeedRoundGame({
     setView("test");
   }
 
-  useEffect(() => {
-    if (view !== "countdown") return;
-    setCountdown(3);
-    const startedAt = performance.now();
-    const duration = 1920;
-    const timer = window.setInterval(() => {
-      const remaining = Math.max(0, duration - (performance.now() - startedAt));
-      setCountdown(remaining / 1000);
-      if (remaining <= 0) {
-        window.clearInterval(timer);
-        beginTest();
-      }
-    }, 50);
-    return () => window.clearInterval(timer);
-  }, [view]);
-
   function register(confirmed?: number) {
     if (!valid || saving || !active || active.phase !== "play") return;
     setSaving(true);
@@ -484,7 +468,7 @@ export function SpeedRoundGame({
           />
         </div>
       ) : view === "countdown" ? (
-        <HcpCountdownScreen label="Ball Speed Challenge · 3 slag" onComplete={() => setView("test")} />
+        <HcpCountdownScreen label="Ball Speed Challenge · 3 slag" onComplete={beginTest} />
       ) : view === "test" && active ? (
         <div className="space-y-3">
           <section>
