@@ -1,5 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, ChevronRight } from "lucide-react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { NineHolePuttingTest } from "@/components/nine-hole-putting-test";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 
@@ -55,51 +54,17 @@ function PuttRoundPage(){
   const navigate=useNavigate();
   const {mode}=Route.useSearch();
   useHideBottomNav(true);
-  const selected=TESTS.find(test=>test.mode===mode);
+  const selected=TESTS.find(test=>test.mode===mode) ?? TESTS[0];
 
-  if(selected){
-    return <NineHolePuttingTest
+  return <NineHolePuttingTest
       key={selected.mode}
       modeKey={selected.mode}
       testTitle={selected.title}
       rangeLabel={selected.range}
       distances={selected.targets}
       shuffleDistances={selected.shuffle ?? true}
+      modeOptions={TESTS.map(test=>({mode:test.mode,label:test.mode==="total"?"Alla längder":test.mode==="short"?"Korta":test.mode==="medium"?"Medel":"Långa",range:test.range}))}
+      onModeChange={(nextMode)=>void navigate({to:"/puttrundan",search:{mode:nextMode},replace:true})}
       onExit={()=>void navigate({to:"/spela-runda"})}
     />;
-  }
-
-  return <main className="mx-auto min-h-screen w-full max-w-md bg-slate-50 pb-24 text-slate-950">
-    <header className="sticky top-0 z-30 border-b border-slate-200/75 bg-slate-50/92 px-5 pb-3 pt-[max(12px,env(safe-area-inset-top))] backdrop-blur-xl">
-      <div className="grid grid-cols-[40px_1fr_40px] items-center">
-        <Link to="/spela-runda" aria-label="Tillbaka" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm">
-          <ArrowLeft className="h-4 w-4"/>
-        </Link>
-        <div className="text-center"><p className="text-[9px] font-bold uppercase tracking-[.18em] text-slate-400">HCP-tester</p><p className="text-[15px] font-bold">Putting</p></div>
-        <span/>
-      </div>
-    </header>
-
-    <section className="px-5 pt-7">
-      <p className="text-[10px] font-black uppercase tracking-[.2em] text-blue-600">Putting HCP</p>
-      <h1 className="mt-1 text-[42px] font-black leading-[.98] tracking-[-.02em]">Välj ditt puttingtest</h1>
-      <p className="mt-4 max-w-sm text-[16px] font-medium leading-[1.5] text-slate-600">Putting totalt är 9 hål. Kort, medel och lång är snabba 6-hålstester med smart varierad ordning.</p>
-    </section>
-
-    <section className="mt-7 space-y-3 px-5">
-      {TESTS.map((test,index)=><Link
-        key={test.mode}
-        to="/puttrundan"
-        search={{mode:test.mode}}
-        className={`flex min-h-[138px] items-center gap-4 rounded-[26px] border p-4 shadow-sm ${index===0?"border-blue-200 bg-blue-600 text-white":"border-slate-200 bg-white"}`}
-      >
-        <div className="min-w-0 flex-1">
-          <p className={`text-[10px] font-black uppercase tracking-[.16em] ${index===0?"text-blue-100":"text-blue-600"}`}>{test.range} · {test.targets.length} hål</p>
-          <h2 className="mt-1 text-[25px] font-black leading-none">{test.title}</h2>
-          <p className={`mt-2 text-[12px] font-medium leading-snug ${index===0?"text-blue-50/85":"text-slate-500"}`}>{test.description}</p>
-        </div>
-        <ChevronRight className={`h-5 w-5 shrink-0 ${index===0?"text-white":"text-slate-400"}`}/>
-      </Link>)}
-    </section>
-  </main>;
 }
