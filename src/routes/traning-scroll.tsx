@@ -137,7 +137,7 @@ function TrainingScrollPage() {
         );
         return [section.id, ranked];
       }),
-    ) as Record<Category, TestItem[]>;
+    ) as unknown as Record<Category, TestItem[]>;
   }, [puttingFilter]);
 
   const impressionKey = SECTIONS.flatMap((section) => rankedTests[section.id].map((test) => test.to)).join("|");
