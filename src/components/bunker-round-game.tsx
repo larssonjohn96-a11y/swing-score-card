@@ -221,6 +221,7 @@ export function BunkerRoundGame({
     average = bunkerAverage(state.history),
     best = bunkerBests(state.history),
     round = state.history.find((r) => r.id === reviewId);
+  useTestViewportLock(Boolean(active && registering));
   const before = round
     ? state.history.filter(
         (r) =>
