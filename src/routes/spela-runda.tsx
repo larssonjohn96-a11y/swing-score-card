@@ -8,12 +8,12 @@ export const Route = createFileRoute("/spela-runda")({
 });
 const FAVORITES_KEY = "sg4-game-favorites-v1";
 const GAMES = [
-  { to:"/speedrundan", title:"Ball Speed", subtitle:"3 slag · mät din speed", image:"/Off_the_tee.png" },
-  { to:"/driverrundan", title:"Driver", subtitle:"Driverlängd & kontroll", image:"/Off_the_tee.png" },
-  { to:"/inspelsrundan", title:"Inspel", subtitle:"50–180 m · välj längd i testet", image:"/Approach_shot.png" },
-  { to:"/puttrundan", title:"Putting", subtitle:"1–18 m · välj längd i testet", image:"/Putting_1.png" },
-  { to:"/chipprundan", title:"Chipping", subtitle:"8 · 12 · 18 m", image:"/0d286fd4-99fa-47eb-b39c-a7ff718ebdd6.png" },
-  { to:"/bunkerrundan", title:"Bunker", subtitle:"Bunkerspel & precision", image:"/bunker-round.svg" },
+  { to:"/speedrundan", title:"Ball Speed", image:"/Off_the_tee.png" },
+  { to:"/driverrundan", title:"Driver", image:"/Off_the_tee.png" },
+  { to:"/inspelsrundan", title:"Inspel", image:"/Approach_shot.png" },
+  { to:"/puttrundan", title:"Putting", image:"/Putting_1.png" },
+  { to:"/chipprundan", title:"Chipping", image:"/0d286fd4-99fa-47eb-b39c-a7ff718ebdd6.png" },
+  { to:"/bunkerrundan", title:"Bunker", image:"/bunker-round.svg" },
 ] as const;
 
 type GameCard = (typeof GAMES)[number];
@@ -26,7 +26,7 @@ function RoundGamesPage() {
   const toggle=(id:string)=>setFavorites(cur=>{const next=cur.includes(id)?cur.filter(x=>x!==id):[...cur,id];try{localStorage.setItem(FAVORITES_KEY,JSON.stringify(next))}catch{}return next});
   const favoriteGames=ALL_GAMES.filter(game=>favorites.includes(favoriteId(game)));
   const Card=({game,small=false,portrait=false,full=false,favorite=false}:{game:GameCard;small?:boolean;portrait?:boolean;full?:boolean;favorite?:boolean})=><div className={`relative overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm ${full?"h-[190px] w-full":portrait?"h-[236px] w-[180px] shrink-0":small?"h-[190px] w-[calc((100%-8px)/2)] shrink-0":"h-[220px] w-full"}`}>
-    <Link to={game.to} className="absolute inset-0"><img src={game.image} alt="" className="h-full w-full object-cover object-[18%_50%]"/><span className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/12 to-black/5"/><span className="absolute inset-x-0 bottom-0 p-4 text-white"><strong className="font-display text-[28px] leading-none">{game.title}</strong>{!favorite?<span className="mt-2 block text-[13px] font-medium leading-snug text-white/90">{game.subtitle}</span>:null}</span></Link>
+    <Link to={game.to} className="absolute inset-0"><img src={game.image} alt="" className="h-full w-full object-cover object-[18%_50%]"/><span className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/12 to-black/5"/><span className="absolute inset-x-0 bottom-0 p-4 text-white"><strong className="font-display text-[28px] leading-none">{game.title}</strong></span></Link>
     <button type="button" aria-label={favorites.includes(favoriteId(game))?"Ta bort favorit":"Lägg till favorit"} onClick={(e)=>{e.preventDefault();e.stopPropagation();toggle(favoriteId(game))}} className="absolute right-0 top-0 z-20 flex h-[72px] w-[72px] items-start justify-end p-3"><span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-sm"><Star className={`h-4 w-4 ${favorites.includes(favoriteId(game))?"fill-amber-400 text-amber-400":"text-slate-500"}`}/></span></button>
   </div>;
   return (
