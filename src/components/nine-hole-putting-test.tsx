@@ -6,6 +6,8 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 import { buildPuttingMatchReview } from "@/lib/putting-match-review";
 import { useChipScreenColor } from "@/lib/use-chip-screen-color";
 import { StandardHcpAnalysis, ShotAnalysisList, BenchmarkStory } from "@/components/standard-hcp-analysis";
+import { HcpCountdownScreen } from "@/components/hcp-countdown-screen";
+import { useTestViewportLock } from "@/lib/use-test-viewport-lock";
 
 const DEFAULT_DIST = [1.5, 2.5, 4, 6, 8, 10, 12, 15, 18];
 const SPECIALIST_BASE_KEY = "sg4-putting-nine-hole-v1";
@@ -158,7 +160,6 @@ export function NineHolePuttingTest({
 }) {
   const initialDistances = () => smartOrder(modeKey, distances, shuffleDistances);
   const [view, setView] = useState<"intro" | "countdown" | "test" | "compiling" | "result">("intro");
-  const [countdown, setCountdown] = useState(3);
   const [putts, setPutts] = useState<number[]>([]);
   const [sessionDist, setSessionDist] = useState<number[]>(initialDistances);
   const [compile, setCompile] = useState(0);
@@ -170,6 +171,7 @@ export function NineHolePuttingTest({
   const timers = useRef<number[]>([]);
 
   useChipScreenColor(view === "countdown" || view === "compiling" || analysis);
+  useTestViewportLock(view === "test");
 
   useEffect(() => {
     document.documentElement.dataset.sg4TestActive = view === "intro" || view === "result" ? "false" : "true";
@@ -234,21 +236,6 @@ export function NineHolePuttingTest({
 
   useEffect(() => clear, []);
 
-  useEffect(() => {
-    if (view !== "countdown") return;
-    setCountdown(3);
-    const start = performance.now();
-    const duration = 2400;
-    const id = window.setInterval(() => {
-      const left = Math.max(0, duration - (performance.now() - start));
-      setCountdown(left / 800);
-      if (left <= 0) {
-        window.clearInterval(id);
-        setView("test");
-      }
-    }, 40);
-    return () => window.clearInterval(id);
-  }, [view]);
 
   useEffect(() => {
     if (view !== "compiling") return;
@@ -353,7 +340,7 @@ export function NineHolePuttingTest({
   const maxStars = shotCount * 3;
 
   return (
-    <main className="mx-auto min-h-[calc(100dvh-58px)] max-w-md bg-slate-50 px-4 pb-[max(24px,env(safe-area-inset-bottom))] pt-4 text-slate-950">
+    <main className={`mx-auto max-w-md bg-slate-50 px-4 pt-4 text-slate-950 ${view === "test" ? "h-[calc(100dvh-58px)] overflow-hidden pb-4" : "min-h-[calc(100dvh-58px)] pb-[max(24px,env(safe-area-inset-bottom))]"}`}>
       <style>{`@keyframes puttStarReveal{0%{opacity:0;transform:scale(.35) rotate(-12deg)}68%{opacity:1;transform:scale(1.18) rotate(3deg)}100%{opacity:1;transform:scale(1) rotate(0)}}@keyframes puttLabelReveal{0%{opacity:0;transform:translateY(6px)}100%{opacity:1;transform:translateY(0)}}.putt-star-reveal{animation:puttStarReveal .58s cubic-bezier(.2,.8,.3,1.2) both}.putt-label-reveal{animation:puttLabelReveal .32s ease-out both}@media(prefers-reduced-motion:reduce){.putt-star-reveal,.putt-label-reveal{animation:none!important}}`}</style>
       <Dialog open={confirmExit} onOpenChange={setConfirmExit}>
         <DialogContent className="!z-[140] w-[calc(100%-32px)] max-w-sm rounded-3xl bg-white p-6">
@@ -448,31 +435,7 @@ export function NineHolePuttingTest({
           </section>
         </div>
       ) : view === "countdown" ? (
-        <div className="fixed inset-0 z-[90] flex flex-col items-center justify-center bg-blue-600 text-center text-white">
-          <p className="text-xs font-black uppercase tracking-[.18em] text-blue-100">Putting HCP · {shotCount} hål</p>
-          <h1 className="mt-3 text-3xl font-black">Gör dig redo</h1>
-          <p className="mt-2 text-blue-100">Startar om {Math.max(1, Math.ceil(countdown))}</p>
-          <div className="relative mt-8 h-40 w-40">
-            <svg className="-rotate-90 h-full w-full" viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="5" className="text-white/20" />
-              <circle
-                cx="50"
-                cy="50"
-                r="40"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="5"
-                strokeLinecap="round"
-                strokeDasharray="251.2"
-                strokeDashoffset={251.2 * (1 - Math.max(0, countdown) / 3)}
-                className="text-white"
-              />
-            </svg>
-            <span className="absolute inset-0 flex items-center justify-center text-6xl font-black">
-              {Math.max(1, Math.ceil(countdown))}
-            </span>
-          </div>
-        </div>
+        <HcpCountdownScreen label={`Puttning HCP · ${shotCount} hål`} onComplete={() => setView("test")} />
       ) : view === "test" ? (
         <div className="space-y-4">
           <section className="rounded-3xl border border-slate-200 bg-white p-3 shadow-sm">
