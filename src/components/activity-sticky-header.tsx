@@ -45,7 +45,7 @@ function subscribeToTestState(onChange: () => void) {
   const observer = new MutationObserver(onChange);
   observer.observe(document.documentElement, {
     attributes: true,
-    attributeFilter: ["data-sg4-test-active"],
+    attributeFilter: ["data-sg4-test-active", "data-chip-screen-color"],
   });
   return () => observer.disconnect();
 }
