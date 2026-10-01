@@ -11,7 +11,7 @@ import { ComparePicker } from "./jamfor";
 type Tab = "analys" | "jamfor" | "sank";
 const TABS: Array<{ id: Tab; label: string }> = [
   { id: "analys", label: "Min analys" },
-  { id: "jamfor", label: "Jämför" },
+  { id: "jamfor", label: "Jämför H2H" },
   { id: "sank", label: "Sänk mitt HCP" },
 ];
 const HCP_CATS: CategorySlug[] = ["driving", "approach", "around-the-green", "puttning"];
@@ -25,9 +25,9 @@ export const Route = createFileRoute("/utveckling/")({
   head: () => ({
     meta: [
       { title: "Analys – Min nivå, jämför & sänk HCP | SG4" },
-      { name: "description", content: "Se din HCP per kategori, jämför dig med vänner och få en tydlig plan för att sänka ditt handicap." },
+      { name: "description", content: "Se din HCP per kategori, jämför H2H med vänner och få en tydlig plan för att sänka ditt handicap." },
       { property: "og:title", content: "Analys | SG4" },
-      { property: "og:description", content: "Min analys, jämför och sänk mitt HCP – på en sida." },
+      { property: "og:description", content: "Min analys, Jämför H2H och sänk mitt HCP – på en sida." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
