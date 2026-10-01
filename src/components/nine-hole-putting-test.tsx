@@ -144,6 +144,8 @@ export function NineHolePuttingTest({
   rangeLabel = "1,5–18 m",
   distances = DEFAULT_DIST,
   shuffleDistances = true,
+  modeOptions,
+  onModeChange,
 }: {
   onExit: () => void;
   modeKey?: string;
@@ -151,6 +153,8 @@ export function NineHolePuttingTest({
   rangeLabel?: string;
   distances?: readonly number[];
   shuffleDistances?: boolean;
+  modeOptions?: Array<{mode:"total"|"short"|"medium"|"long";label:string;range:string}>;
+  onModeChange?: (mode:"total"|"short"|"medium"|"long") => void;
 }) {
   const initialDistances = () => smartOrder(modeKey, distances, shuffleDistances);
   const [view, setView] = useState<"intro" | "countdown" | "test" | "compiling" | "result">("intro");
@@ -369,6 +373,24 @@ export function NineHolePuttingTest({
               {shotCount} hål {shuffleDistances ? "med varierade avstånd" : "över hela puttspannet"}. Håla varje boll, samla stjärnor och få ditt Putting-HCP.
             </p>
           </section>
+
+          {modeOptions?.length ? (
+            <section className="rounded-2xl border border-slate-200 bg-white p-1.5">
+              <div className="grid grid-cols-4 gap-1">
+                {modeOptions.map((option) => (
+                  <button
+                    key={option.mode}
+                    type="button"
+                    onClick={() => onModeChange?.(option.mode)}
+                    className={`min-w-0 rounded-xl px-1 py-2.5 text-[11px] font-black ${option.mode === modeKey ? "bg-blue-600 text-white" : "text-slate-500"}`}
+                  >
+                    <span className="block truncate">{option.label}</span>
+                    <span className={`mt-0.5 block text-[9px] font-semibold ${option.mode === modeKey ? "text-blue-100" : "text-slate-400"}`}>{option.range}</span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          ) : null}
 
           <section className="rounded-3xl border border-blue-100 bg-white p-4 shadow-sm">
             <img src="/Putting_1.png" alt="" className="mb-4 h-52 w-full rounded-2xl object-cover" />
