@@ -8,38 +8,25 @@ export const Route = createFileRoute("/spela-runda")({
 });
 const FAVORITES_KEY = "sg4-game-favorites-v1";
 const GAMES = [
-  { to:"/speedrundan", title:"Ball Speed", subtitle:"Hur bra är din speed egentligen? Se din HCP-nivå.", image:"/Off_the_tee.png", hcp:true },
-  { to:"/driverrundan", title:"Driver", subtitle:"Hur bra är dina driverutslag egentligen? Se din HCP-nivå.", image:"/Off_the_tee.png", hcp:true },
-  { to:"/chipprundan", title:"Chipping", subtitle:"Hur bra är din chipping egentligen? Se din HCP-nivå.", image:"/0d286fd4-99fa-47eb-b39c-a7ff718ebdd6.png", hcp:true },
-  { to:"/bunkerrundan", title:"Bunker", subtitle:"Hur bra är ditt bunkerspel egentligen? Se din HCP-nivå.", image:"/bunker-round.svg", hcp:true },
+  { to:"/speedrundan", title:"Ball Speed", subtitle:"3 slag · mät din speed", image:"/Off_the_tee.png" },
+  { to:"/driverrundan", title:"Driver", subtitle:"Driverlängd & kontroll", image:"/Off_the_tee.png" },
+  { to:"/inspelsrundan", title:"Inspel", subtitle:"50–180 m · välj längd i testet", image:"/Approach_shot.png" },
+  { to:"/puttrundan", title:"Putting", subtitle:"1–18 m · välj längd i testet", image:"/Putting_1.png" },
+  { to:"/chipprundan", title:"Chipping", subtitle:"8 · 12 · 18 m", image:"/0d286fd4-99fa-47eb-b39c-a7ff718ebdd6.png" },
+  { to:"/bunkerrundan", title:"Bunker", subtitle:"Bunkerspel & precision", image:"/bunker-round.svg" },
 ] as const;
 
-const APPROACH_GAMES = [
-  { to:"/inspelsrundan", search:{mode:"total"}, title:"Inspel totalt", subtitle:"50–165 m", image:"/Approach_shot.png", hcp:true },
-  { to:"/inspelsrundan", search:{mode:"short"}, title:"Korta inspel", subtitle:"50–110 m", image:"/Approach_shot.png", hcp:true },
-  { to:"/inspelsrundan", search:{mode:"medium"}, title:"Medellånga inspel", subtitle:"110–145 m", image:"/Approach_shot.png", hcp:true },
-  { to:"/inspelsrundan", search:{mode:"long"}, title:"Långa inspel", subtitle:"145–175 m", image:"/Approach_shot.png", hcp:true },
-] as const;
-
-const PUTTING_GAMES = [
-  { to:"/puttrundan", search:{mode:"total"}, title:"Putting totalt", subtitle:"1–18 m · 9 hål", image:"/Putting_1.png", hcp:true },
-  { to:"/puttrundan", search:{mode:"short"}, title:"Korta puttar", subtitle:"1–2 m", image:"/Putting_1.png", hcp:true },
-  { to:"/puttrundan", search:{mode:"medium"}, title:"Medellånga puttar", subtitle:"3–7 m", image:"/Putting_1.png", hcp:true },
-  { to:"/puttrundan", search:{mode:"long"}, title:"Långa puttar", subtitle:"8–18 m", image:"/Putting_1.png", hcp:true },
-] as const;
-
-type GameCard = (typeof GAMES)[number] | (typeof APPROACH_GAMES)[number] | (typeof PUTTING_GAMES)[number];
-const ALL_GAMES: readonly GameCard[] = [...GAMES, ...APPROACH_GAMES, ...PUTTING_GAMES];
-const favoriteId = (game: GameCard) =>
-  "search" in game ? `${game.to}?mode=${game.search.mode}` : game.to;
+type GameCard = (typeof GAMES)[number];
+const ALL_GAMES: readonly GameCard[] = GAMES;
+const favoriteId = (game: GameCard) => game.to;
 
 function RoundGamesPage() {
   const [favorites,setFavorites]=useState<string[]>([]);
-  useEffect(()=>{try{const v=JSON.parse(localStorage.getItem(FAVORITES_KEY)??"[]");if(Array.isArray(v)){const normalized=[...new Set(v.filter((x):x is string=>typeof x==="string").map(x=>x==="/inspelsrundan"?"/inspelsrundan?mode=total":x==="/puttrundan"?"/puttrundan?mode=total":x))];setFavorites(normalized);localStorage.setItem(FAVORITES_KEY,JSON.stringify(normalized))}}catch{}},[]);
+  useEffect(()=>{try{const v=JSON.parse(localStorage.getItem(FAVORITES_KEY)??"[]");if(Array.isArray(v)){const normalized=[...new Set(v.filter((x):x is string=>typeof x==="string").map(x=>x.startsWith("/inspelsrundan")?"/inspelsrundan":x.startsWith("/puttrundan")?"/puttrundan":x))];setFavorites(normalized);localStorage.setItem(FAVORITES_KEY,JSON.stringify(normalized))}}catch{}},[]);
   const toggle=(id:string)=>setFavorites(cur=>{const next=cur.includes(id)?cur.filter(x=>x!==id):[...cur,id];try{localStorage.setItem(FAVORITES_KEY,JSON.stringify(next))}catch{}return next});
   const favoriteGames=ALL_GAMES.filter(game=>favorites.includes(favoriteId(game)));
   const Card=({game,small=false,portrait=false,full=false,favorite=false}:{game:GameCard;small?:boolean;portrait?:boolean;full?:boolean;favorite?:boolean})=><div className={`relative overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm ${full?"h-[190px] w-full":portrait?"h-[236px] w-[180px] shrink-0":small?"h-[190px] w-[calc((100%-8px)/2)] shrink-0":"h-[220px] w-full"}`}>
-    <Link to={game.to} search={"search" in game ? game.search : undefined} className="absolute inset-0"><img src={game.image} alt="" className="h-full w-full object-cover object-[18%_50%]"/><span className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/12 to-black/5"/><span className="absolute inset-x-0 bottom-0 p-4 text-white"><strong className="font-display text-[28px] leading-none">{game.title}</strong>{!favorite?<span className="mt-2 block text-[13px] font-medium leading-snug text-white/90">{game.subtitle}</span>:null}</span></Link>
+    <Link to={game.to} className="absolute inset-0"><img src={game.image} alt="" className="h-full w-full object-cover object-[18%_50%]"/><span className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/12 to-black/5"/><span className="absolute inset-x-0 bottom-0 p-4 text-white"><strong className="font-display text-[28px] leading-none">{game.title}</strong>{!favorite?<span className="mt-2 block text-[13px] font-medium leading-snug text-white/90">{game.subtitle}</span>:null}</span></Link>
     <button type="button" aria-label={favorites.includes(favoriteId(game))?"Ta bort favorit":"Lägg till favorit"} onClick={(e)=>{e.preventDefault();e.stopPropagation();toggle(favoriteId(game))}} className="absolute right-0 top-0 z-20 flex h-[72px] w-[72px] items-start justify-end p-3"><span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-sm"><Star className={`h-4 w-4 ${favorites.includes(favoriteId(game))?"fill-amber-400 text-amber-400":"text-slate-500"}`}/></span></button>
   </div>;
   return (
@@ -64,15 +51,11 @@ function RoundGamesPage() {
       </section>
       <section className="mt-8">
         <h2 className="px-0.5 font-display text-[30px] leading-none text-slate-950">Inspel</h2>
-        <div className="-mx-5 mt-3 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {APPROACH_GAMES.map(game=><Card key={game.search.mode} game={game} portrait />)}
-        </div>
+        <div className="mt-3">{GAMES.filter(g=>g.to==="/inspelsrundan").map(game=><Card key={game.to} game={game} full />)}</div>
       </section>
       <section className="mt-8">
         <h2 className="px-0.5 font-display text-[30px] leading-none text-slate-950">Putting</h2>
-        <div className="-mx-5 mt-3 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {PUTTING_GAMES.map(game=><Card key={game.search.mode} game={game} portrait />)}
-        </div>
+        <div className="mt-3">{GAMES.filter(g=>g.to==="/puttrundan").map(game=><Card key={game.to} game={game} full />)}</div>
       </section>
       <section className="mt-8">
         <h2 className="px-0.5 font-display text-[30px] leading-none text-slate-950">Närspel</h2>
