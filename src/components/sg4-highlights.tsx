@@ -17,35 +17,69 @@ export type HighlightGroup = { label: string; cover?: StoryArt; image?: string; 
 
 export const SG4_HIGHLIGHTS: HighlightGroup[] = [
   {
-    label: "10 min över?", cover: "putting",
+    label: "Testa min nivå",
+    cover: "hcp",
     stories: [
-      { title: "En snabb puttmatch", text: "Tio minuter över? Utmana en kompis på tre hål.", action: "Starta puttmatch", href: "/match?flow=friend&category=putting", art: "putting" },
-      { title: "Vem chippar närmast?", text: "Gör uppvärmningen till en kort match mot en vän.", action: "Starta chippmatch", href: "/match?flow=friend&category=around-the-green", art: "chipping" },
-      { title: "Slå ditt puttrekord", text: "Spela själv och försök förbättra ditt personbästa.", action: "Spela puttutmaningen", href: "/puttrundan", art: "target" },
+      {
+        title: "Hur bra är du?",
+        text: "Få HCP på varje del av spelet.",
+        action: "Välj HCP-test",
+        href: "/spela-runda",
+        art: "hcp",
+      },
     ],
   },
   {
-    label: "Hur bra är jag?", cover: "hcp",
+    label: "Jämför & tävla",
+    cover: "compare",
     stories: [
-      { title: "Ett HCP för varje moment", text: "Se dina styrkor och svagheter. Testerna uppskattar din nivå – inte ditt officiella handicap.", action: "Välj HCP-test", href: "/standardiserade-tester", art: "hcp" },
-      { title: "Hur snabb är du?", text: "Mät bollhastigheten med en hastighetsmätare och följ din speed.", action: "Testa din speed", href: "/speed-test", art: "speed" },
-      { title: "Se dina framsteg", text: "Testa igen. Jämför med tidigare resultat och se vad som har blivit bättre.", action: "Se min utveckling", href: "/framsteg", art: "progress" },
-      { title: "Jämför med kompisar", text: "Se era styrkor och vem som ligger före i olika golfmoment.", action: "Jämför med en kompis", href: "/jamfor", art: "compare" },
+      {
+        title: "Jämför H2H",
+        text: "Se vem som är bäst på vad.",
+        action: "Jämför med en vän",
+        href: "/utveckling?tab=jamfor",
+        art: "compare",
+      },
+      {
+        title: "Tävla mot vänner",
+        text: "Gör samma test. Slå resultatet.",
+        action: "Starta match",
+        href: "/match?flow=friend",
+        art: "target",
+      },
     ],
   },
   {
-    label: "Tränar själv?", cover: "target",
+    label: "Sänk mitt HCP",
+    cover: "focus",
     stories: [
-      { title: "Träna med ett mål", text: "Samla poäng och försök slå ditt personbästa.", action: "Välj utmaning", href: "/spela-runda", art: "target" },
-      { title: "Vet vad du ska träna", text: "Välj ett moment. Få uppgifter och återkoppling under passet.", action: "Starta guidad träning", href: "/coach", art: "practice" },
+      {
+        title: "Se styrkor & svagheter",
+        text: "Analys visar vad du bör förbättra först.",
+        action: "Se min analys",
+        href: "/utveckling",
+        art: "focus",
+      },
+      {
+        title: "Utvecklas snabbare",
+        text: "Fokusera. Träna. Testa igen.",
+        action: "Sänk mitt HCP",
+        href: "/utveckling?tab=sank",
+        art: "progress",
+      },
     ],
   },
   {
-    label: "På banan?", cover: "course",
+    label: "Map My Bag",
+    cover: "target",
     stories: [
-      { title: "Gör rundan till en match", text: "Välj kompis och antal hål. Ingen bana behöver läggas in.", action: "Spela på bana", href: "/match?flow=friend&category=course", art: "course" },
-      { title: "Tre hål eller hela rundan?", text: "Spela en egen match på de hål ni hinner med.", action: "Starta en banmatch", href: "/match?flow=friend&category=course", art: "course" },
-      { title: "Olika bra? Ge extraslag", text: "Bestäm vem som får extraslag. SG4 fördelar dem över hålen.", action: "Spela med extraslag", href: "/match?flow=friend&category=course", art: "compare" },
+      {
+        title: "Känn dina längder",
+        text: "Mappa carry och hitta dina gap.",
+        action: "Map My Bag",
+        href: "/map-my-bag",
+        art: "target",
+      },
     ],
   },
 ];
@@ -59,7 +93,7 @@ const TONES = [
 
 export function SG4Highlights({
   groups = SG4_HIGHLIGHTS,
-  title = "När ska jag använda SG4?",
+  title = "Vad vill du göra?",
   subtitle,
   id = "sg4-highlights-title",
 }: {
