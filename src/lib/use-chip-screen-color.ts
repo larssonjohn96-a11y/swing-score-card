@@ -20,6 +20,8 @@ export function useChipScreenColor(active: boolean) {
           /,?\s*viewport-fit=[^,]+/g,
           "",
         ) + ", viewport-fit=cover";
+    const previousChipScreenColor = document.documentElement.dataset.chipScreenColor;
+    document.documentElement.dataset.chipScreenColor = "blue";
     const backgrounds = [document.documentElement, document.body].map((element) => ({
       element,
       value: element.style.getPropertyValue("background-color"),
@@ -39,6 +41,8 @@ export function useChipScreenColor(active: boolean) {
         else meta.content = oldTheme;
       } else meta.remove();
       if (viewport && oldViewport !== undefined) viewport.content = oldViewport;
+      if (previousChipScreenColor === undefined) delete document.documentElement.dataset.chipScreenColor;
+      else document.documentElement.dataset.chipScreenColor = previousChipScreenColor;
     };
   }, [active]);
 }
