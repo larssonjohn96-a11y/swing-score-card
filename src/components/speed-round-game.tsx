@@ -3,11 +3,13 @@ import { useChipScreenColor } from "@/lib/use-chip-screen-color";
 import { unusualSpeed } from "@/lib/speed-challenge-feedback";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useEffect, useRef, useState } from "react";
-import { RotateCcw, Undo2, Check, Trophy, LoaderCircle } from "lucide-react";
+import { ArrowLeft, RotateCcw, Undo2, Check, Trophy, LoaderCircle } from "lucide-react";
 import { ChipCelebration } from "@/components/chip-celebration";
 import { SpeedLeaderboard } from "@/components/speed-course-leaderboard";
 import { Button } from "@/components/ui/button";
 import { SpeedChallengeAnalysis } from "@/components/speed-challenge-analysis";
+import { HcpCountdownScreen } from "@/components/hcp-countdown-screen";
+import { useTestViewportLock } from "@/lib/use-test-viewport-lock";
 import {
   courseStorageKey,
   emptyCourse,
@@ -40,6 +42,7 @@ export function SpeedRoundGame({
   const [state, setState] = useState(emptyCourse);
   const [ready, setReady] = useState(false);
   const [view, setView] = useState<"intro" | "countdown" | "test" | "compiling" | "result">("intro");
+  useTestViewportLock(view === "test");
   useChipScreenColor(view === "countdown" || view === "compiling");
  useEffect(()=>{document.documentElement.dataset.sg4TestActive=view==="intro"?"false":"true";return()=>{delete document.documentElement.dataset.sg4TestActive}},[view]);
   const [resultId, setResultId] = useState<string | null>(null);
@@ -54,7 +57,6 @@ export function SpeedRoundGame({
   const [confirmSpeed, setConfirmSpeed] = useState<number | null>(null);
   const [confirmExit, setConfirmExit] = useState(false);
   const [compileStep, setCompileStep] = useState(0);
-  const [countdown, setCountdown] = useState(3);
   const stateRef = useRef(state);
   const key = courseStorageKey(userId);
 
@@ -183,7 +185,6 @@ export function SpeedRoundGame({
     setFeedback(null);
     setCelebrationId(null);
     setResultId(null);
-    setCountdown(3);
     setView("countdown");
   }
 
@@ -314,7 +315,7 @@ export function SpeedRoundGame({
 
   if (!ready) return <main className="p-8 text-center">Laddar Ball Speed Challenge…</main>;
   return (
-    <main className="mx-auto min-h-[calc(100dvh-58px)] max-w-md overflow-x-hidden bg-slate-50 px-4 pb-[max(24px,env(safe-area-inset-bottom))] pt-4 text-slate-950">
+    <main className={`mx-auto max-w-md overflow-x-hidden bg-slate-50 px-4 pt-4 text-slate-950 ${view === "test" ? "h-[calc(100dvh-58px)] overflow-y-hidden pb-4" : "min-h-[calc(100dvh-58px)] pb-[max(24px,env(safe-area-inset-bottom))]"}`}>
       <style>{`
         @keyframes speedSheen{0%{transform:translateX(-140%);opacity:0}12%{opacity:1}88%{opacity:1}100%{transform:translateX(240%);opacity:0}}
         @keyframes pressurePulse{0%,100%{box-shadow:0 0 0 rgba(124,58,237,0)}50%{box-shadow:0 0 24px rgba(124,58,237,.20)}}
@@ -483,20 +484,7 @@ export function SpeedRoundGame({
           />
         </div>
       ) : view === "countdown" ? (
-        <div className="fixed inset-0 z-[200] flex min-h-[100dvh] flex-col items-center justify-center bg-blue-600 px-6 text-center text-white">
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-100">Ball Speed Challenge · 3 slag</p>
-          <h1 className="mt-3 text-3xl font-black">Gör dig redo</h1>
-          <p className="mt-2 text-sm font-semibold text-blue-100">Startar om {Math.max(1, Math.ceil(countdown))}</p>
-          <div className="relative mt-8 h-40 w-40">
-            <svg className="-rotate-90 h-full w-full" viewBox="0 0 100 100" aria-hidden="true">
-              <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="5" className="text-white/20" />
-              <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="5" strokeLinecap="round"
-                strokeDasharray="251.2" strokeDashoffset={251.2 * (1 - Math.max(0, countdown) / 3)}
-                className="text-white" />
-            </svg>
-            <span className="absolute inset-0 flex items-center justify-center text-6xl font-black tabular-nums text-white">{Math.max(1, Math.ceil(countdown))}</span>
-          </div>
-        </div>
+        <HcpCountdownScreen label="Ball Speed Challenge · 3 slag" onComplete={() => setView("test")} />
       ) : view === "test" && active ? (
         <div className="space-y-3">
           <section>
@@ -683,6 +671,13 @@ export function SpeedRoundGame({
             className="min-h-14 w-full rounded-2xl bg-slate-950 text-base font-black text-white hover:bg-slate-800"
           >
             <RotateCcw /> Testa igen · 3 slag
+          </Button>
+          <Button
+            variant="outline"
+            onClick={onExit}
+            className="min-h-14 w-full rounded-2xl border-slate-200 bg-white text-slate-900"
+          >
+            <ArrowLeft /> Tillbaka till HCP-tester
           </Button>
         </div>
       ) : null}
