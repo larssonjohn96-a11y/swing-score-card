@@ -496,17 +496,9 @@ export function BunkerRoundGame({
           <button className="bunker-black" onClick={requestStart}>
             Spela igen · 6 slag
           </button>
-          <button
-            className="bunker-secondary"
-            onClick={() => {
-              setView("history");
-              setFresh(null);
-            }}
-          >
-            Alla rundor
-          </button>
-          <button data-local-navigation className="bunker-secondary" onClick={back}>
-            Tillbaka till Bunkerrundan
+          <button data-local-navigation className="bunker-secondary" onClick={onExit}>
+            <ArrowLeft className="h-4 w-4" />
+            Tillbaka till HCP-tester
           </button>
         </div>
       ) : view === "history" ? (
