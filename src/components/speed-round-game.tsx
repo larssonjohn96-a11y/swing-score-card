@@ -44,7 +44,7 @@ export function SpeedRoundGame({
   const [view, setView] = useState<"intro" | "countdown" | "test" | "compiling" | "result">("intro");
   useTestViewportLock(view === "test");
   useChipScreenColor(view === "countdown" || view === "compiling");
- useEffect(()=>{document.documentElement.dataset.sg4TestActive=view==="intro"?"false":"true";return()=>{delete document.documentElement.dataset.sg4TestActive}},[view]);
+ useEffect(()=>{document.documentElement.dataset.sg4TestActive=view==="intro"||view==="result"?"false":"true";return()=>{delete document.documentElement.dataset.sg4TestActive}},[view]);
   const [resultId, setResultId] = useState<string | null>(null);
   const [unit, setUnit] = useState<SpeedUnit>("mph");
   const [value, setValue] = useState("100");
