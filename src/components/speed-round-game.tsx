@@ -9,6 +9,7 @@ import { SpeedLeaderboard } from "@/components/speed-course-leaderboard";
 import { Button } from "@/components/ui/button";
 import { SpeedChallengeAnalysis } from "@/components/speed-challenge-analysis";
 import { HcpCountdownScreen } from "@/components/hcp-countdown-screen";
+import { HcpTestProgress } from "@/components/hcp-test-progress";
 import { useTestViewportLock } from "@/lib/use-test-viewport-lock";
 import {
   courseStorageKey,
@@ -471,6 +472,7 @@ export function SpeedRoundGame({
         <HcpCountdownScreen label="Ball Speed Challenge · 3 slag" onComplete={beginTest} />
       ) : view === "test" && active ? (
         <div className="space-y-3">
+          <HcpTestProgress current={shotIndex + 1} total={3} label="Ball Speed" />
           <section>
             <div className="flex items-center justify-between gap-2">
               <p className="text-xs font-semibold text-slate-500">Ball Speed Challenge · 3 slag</p>
