@@ -7,6 +7,7 @@ import { buildPuttingMatchReview } from "@/lib/putting-match-review";
 import { useChipScreenColor } from "@/lib/use-chip-screen-color";
 import { StandardHcpAnalysis, ShotAnalysisList, BenchmarkStory } from "@/components/standard-hcp-analysis";
 import { HcpCountdownScreen } from "@/components/hcp-countdown-screen";
+import { HcpTestProgress } from "@/components/hcp-test-progress";
 import { useTestViewportLock } from "@/lib/use-test-viewport-lock";
 
 const DEFAULT_DIST = [1.5, 2.5, 4, 6, 8, 10, 12, 15, 18];
@@ -438,6 +439,7 @@ export function NineHolePuttingTest({
         <HcpCountdownScreen label={`Puttning HCP · ${shotCount} hål`} onComplete={() => setView("test")} />
       ) : view === "test" ? (
         <div className="space-y-4">
+          <HcpTestProgress current={index + 1} total={shotCount} label="Puttning" />
           <section className="rounded-3xl border border-slate-200 bg-white p-3 shadow-sm">
             <div className="grid grid-cols-2 divide-x text-center">
               <div><strong className="text-xl">{total}</strong><p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Puttar</p></div>
