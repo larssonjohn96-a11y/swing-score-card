@@ -22,6 +22,7 @@ import { handicapLabel } from "@/lib/bunker";
 import { mergeBunkerRounds, syncBunkerRounds } from "@/lib/bunker-cloud";
 import { useChipScreenColor } from "@/lib/use-chip-screen-color";
 import { useTestViewportLock } from "@/lib/use-test-viewport-lock";
+import { HcpTestProgress } from "@/components/hcp-test-progress";
 import { BunkerStars, BunkerMilestones } from "./bunker-stars";
 import { BunkerAnalysis } from "./bunker-analysis";
 import { BunkerLeaderboard } from "./bunker-leaderboard";
@@ -327,6 +328,7 @@ export function BunkerRoundGame({
             </>
           ) : (
             <>
+              <div className="mt-3"><HcpTestProgress current={Math.min(6,index*3+shots.length+1)} total={6} label="Bunker" /></div>
               <section className="mt-4 rounded-3xl border bg-white p-4">
                 <div className="flex justify-between">
                   <h1 className="text-xl font-black text-blue-700">Omgång {index + 1}</h1>
