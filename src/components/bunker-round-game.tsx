@@ -216,7 +216,6 @@ export function BunkerRoundGame({
     timer.current = setTimeout(() => setPending(false), 1200);
   }
   const active = state.active,
-  useTestViewportLock(Boolean(active && registering));
     index = active ? active.holes.length - 1 : 0,
     shots = active?.holes[index] ?? [],
     average = bunkerAverage(state.history),
