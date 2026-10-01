@@ -21,6 +21,7 @@ import {
 import { handicapLabel } from "@/lib/bunker";
 import { mergeBunkerRounds, syncBunkerRounds } from "@/lib/bunker-cloud";
 import { useChipScreenColor } from "@/lib/use-chip-screen-color";
+import { useTestViewportLock } from "@/lib/use-test-viewport-lock";
 import { BunkerStars, BunkerMilestones } from "./bunker-stars";
 import { BunkerAnalysis } from "./bunker-analysis";
 import { BunkerLeaderboard } from "./bunker-leaderboard";
@@ -214,6 +215,7 @@ export function BunkerRoundGame({
     timer.current = setTimeout(() => setPending(false), 1200);
   }
   const active = state.active,
+  useTestViewportLock(Boolean(active && registering));
     index = active ? active.holes.length - 1 : 0,
     shots = active?.holes[index] ?? [],
     average = bunkerAverage(state.history),
@@ -270,7 +272,7 @@ export function BunkerRoundGame({
   );
   if (!ready) return <main className="p-8 text-center">Laddar Bunkerrundan…</main>;
   return (
-    <main className="bunker-game mx-auto min-h-[100dvh] max-w-md bg-slate-50 px-4 pb-5 pt-[max(12px,env(safe-area-inset-top))] text-slate-950">
+    <main className={`bunker-game mx-auto max-w-md bg-slate-50 px-4 pt-[max(12px,env(safe-area-inset-top))] text-slate-950 ${active && registering ? "h-[calc(100dvh-58px)] overflow-hidden pb-3" : "min-h-[100dvh] pb-5"}`}>
       <style>{`.bunker-primary,.bunker-secondary,.bunker-black{display:flex;min-height:52px;width:100%;align-items:center;justify-content:center;border-radius:16px;padding:12px 16px;font-weight:800}.bunker-primary{background:#2563eb;color:white}.bunker-black{background:#111827;color:white}.bunker-secondary{border:1px solid #e2e8f0;background:white;color:#1e40af}.bunker-primary:disabled{opacity:.4}.bunker-star-pop{animation:bunkerStar .55s ease-out}.bunker-level-up{transform-origin:bottom;animation:bunkerLevel .8s ease-out both}.bunker-average-win{animation:bunkerWin 1s ease-out 2}@keyframes bunkerStar{50%{transform:scale(1.1)}}@keyframes bunkerLevel{from{transform:scaleY(.25)}to{transform:scaleY(1)}}@keyframes bunkerWin{50%{box-shadow:0 0 20px #60a5fa66;transform:scale(1.02)}}@media(prefers-reduced-motion:reduce){.bunker-star-pop,.bunker-level-up,.bunker-average-win{animation:none}}`}</style>
       {holed && (
         <div
