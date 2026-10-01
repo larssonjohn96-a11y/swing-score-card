@@ -216,12 +216,12 @@ export function BunkerRoundGame({
     timer.current = setTimeout(() => setPending(false), 1200);
   }
   const active = state.active,
-  useTestViewportLock(Boolean(active && registering));
     index = active ? active.holes.length - 1 : 0,
     shots = active?.holes[index] ?? [],
     average = bunkerAverage(state.history),
     best = bunkerBests(state.history),
     round = state.history.find((r) => r.id === reviewId);
+  useTestViewportLock(Boolean(active && registering));
   const before = round
     ? state.history.filter(
         (r) =>

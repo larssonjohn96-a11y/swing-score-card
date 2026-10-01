@@ -20,11 +20,13 @@ import { Route as TutorTestHistorikRouteImport } from './routes/tutor-test-histo
 import { Route as TutorTestRouteImport } from './routes/tutor-test'
 import { Route as TurneringarRouteImport } from './routes/turneringar'
 import { Route as TrophyRouteImport } from './routes/trophy'
+import { Route as TraningScrollRouteImport } from './routes/traning-scroll'
 import { Route as TraningProgressRouteImport } from './routes/traning-progress'
 import { Route as TraningRouteImport } from './routes/traning'
 import { Route as TornadoRouteImport } from './routes/tornado'
 import { Route as TesterRouteImport } from './routes/tester'
 import { Route as TeeshotRouteImport } from './routes/teeshot'
+import { Route as StreakChallengeRouteImport } from './routes/streak-challenge'
 import { Route as StandardiseradeTesterRouteImport } from './routes/standardiserade-tester'
 import { Route as SpelaRundaRouteImport } from './routes/spela-runda'
 import { Route as SpelaRouteImport } from './routes/spela'
@@ -172,6 +174,11 @@ const TrophyRoute = TrophyRouteImport.update({
   path: '/trophy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TraningScrollRoute = TraningScrollRouteImport.update({
+  id: '/traning-scroll',
+  path: '/traning-scroll',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TraningProgressRoute = TraningProgressRouteImport.update({
   id: '/traning-progress',
   path: '/traning-progress',
@@ -195,6 +202,11 @@ const TesterRoute = TesterRouteImport.update({
 const TeeshotRoute = TeeshotRouteImport.update({
   id: '/teeshot',
   path: '/teeshot',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StreakChallengeRoute = StreakChallengeRouteImport.update({
+  id: '/streak-challenge',
+  path: '/streak-challenge',
   getParentRoute: () => rootRouteImport,
 } as any)
 const StandardiseradeTesterRoute = StandardiseradeTesterRouteImport.update({
@@ -742,11 +754,13 @@ export interface FileRoutesByFullPath {
   '/spela': typeof SpelaRoute
   '/spela-runda': typeof SpelaRundaRoute
   '/standardiserade-tester': typeof StandardiseradeTesterRoute
+  '/streak-challenge': typeof StreakChallengeRoute
   '/teeshot': typeof TeeshotRoute
   '/tester': typeof TesterRoute
   '/tornado': typeof TornadoRoute
   '/traning': typeof TraningRoute
   '/traning-progress': typeof TraningProgressRoute
+  '/traning-scroll': typeof TraningScrollRoute
   '/trophy': typeof TrophyRoute
   '/turneringar': typeof TurneringarRoute
   '/tutor-test': typeof TutorTestRoute
@@ -851,11 +865,13 @@ export interface FileRoutesByTo {
   '/spela': typeof SpelaRoute
   '/spela-runda': typeof SpelaRundaRoute
   '/standardiserade-tester': typeof StandardiseradeTesterRoute
+  '/streak-challenge': typeof StreakChallengeRoute
   '/teeshot': typeof TeeshotRoute
   '/tester': typeof TesterRoute
   '/tornado': typeof TornadoRoute
   '/traning': typeof TraningRoute
   '/traning-progress': typeof TraningProgressRoute
+  '/traning-scroll': typeof TraningScrollRoute
   '/trophy': typeof TrophyRoute
   '/turneringar': typeof TurneringarRoute
   '/tutor-test': typeof TutorTestRoute
@@ -961,11 +977,13 @@ export interface FileRoutesById {
   '/spela': typeof SpelaRoute
   '/spela-runda': typeof SpelaRundaRoute
   '/standardiserade-tester': typeof StandardiseradeTesterRoute
+  '/streak-challenge': typeof StreakChallengeRoute
   '/teeshot': typeof TeeshotRoute
   '/tester': typeof TesterRoute
   '/tornado': typeof TornadoRoute
   '/traning': typeof TraningRoute
   '/traning-progress': typeof TraningProgressRoute
+  '/traning-scroll': typeof TraningScrollRoute
   '/trophy': typeof TrophyRoute
   '/turneringar': typeof TurneringarRoute
   '/tutor-test': typeof TutorTestRoute
@@ -1072,11 +1090,13 @@ export interface FileRouteTypes {
     | '/spela'
     | '/spela-runda'
     | '/standardiserade-tester'
+    | '/streak-challenge'
     | '/teeshot'
     | '/tester'
     | '/tornado'
     | '/traning'
     | '/traning-progress'
+    | '/traning-scroll'
     | '/trophy'
     | '/turneringar'
     | '/tutor-test'
@@ -1181,11 +1201,13 @@ export interface FileRouteTypes {
     | '/spela'
     | '/spela-runda'
     | '/standardiserade-tester'
+    | '/streak-challenge'
     | '/teeshot'
     | '/tester'
     | '/tornado'
     | '/traning'
     | '/traning-progress'
+    | '/traning-scroll'
     | '/trophy'
     | '/turneringar'
     | '/tutor-test'
@@ -1290,11 +1312,13 @@ export interface FileRouteTypes {
     | '/spela'
     | '/spela-runda'
     | '/standardiserade-tester'
+    | '/streak-challenge'
     | '/teeshot'
     | '/tester'
     | '/tornado'
     | '/traning'
     | '/traning-progress'
+    | '/traning-scroll'
     | '/trophy'
     | '/turneringar'
     | '/tutor-test'
@@ -1400,11 +1424,13 @@ export interface RootRouteChildren {
   SpelaRoute: typeof SpelaRoute
   SpelaRundaRoute: typeof SpelaRundaRoute
   StandardiseradeTesterRoute: typeof StandardiseradeTesterRoute
+  StreakChallengeRoute: typeof StreakChallengeRoute
   TeeshotRoute: typeof TeeshotRoute
   TesterRoute: typeof TesterRoute
   TornadoRoute: typeof TornadoRoute
   TraningRoute: typeof TraningRoute
   TraningProgressRoute: typeof TraningProgressRoute
+  TraningScrollRoute: typeof TraningScrollRoute
   TrophyRoute: typeof TrophyRoute
   TurneringarRoute: typeof TurneringarRoute
   TutorTestRoute: typeof TutorTestRoute
@@ -1502,6 +1528,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TrophyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/traning-scroll': {
+      id: '/traning-scroll'
+      path: '/traning-scroll'
+      fullPath: '/traning-scroll'
+      preLoaderRoute: typeof TraningScrollRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/traning-progress': {
       id: '/traning-progress'
       path: '/traning-progress'
@@ -1535,6 +1568,13 @@ declare module '@tanstack/react-router' {
       path: '/teeshot'
       fullPath: '/teeshot'
       preLoaderRoute: typeof TeeshotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/streak-challenge': {
+      id: '/streak-challenge'
+      path: '/streak-challenge'
+      fullPath: '/streak-challenge'
+      preLoaderRoute: typeof StreakChallengeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/standardiserade-tester': {
@@ -2296,11 +2336,13 @@ const rootRouteChildren: RootRouteChildren = {
   SpelaRoute: SpelaRoute,
   SpelaRundaRoute: SpelaRundaRoute,
   StandardiseradeTesterRoute: StandardiseradeTesterRoute,
+  StreakChallengeRoute: StreakChallengeRoute,
   TeeshotRoute: TeeshotRoute,
   TesterRoute: TesterRoute,
   TornadoRoute: TornadoRoute,
   TraningRoute: TraningRoute,
   TraningProgressRoute: TraningProgressRoute,
+  TraningScrollRoute: TraningScrollRoute,
   TrophyRoute: TrophyRoute,
   TurneringarRoute: TurneringarRoute,
   TutorTestRoute: TutorTestRoute,
