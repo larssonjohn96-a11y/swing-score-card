@@ -44,7 +44,7 @@ function positiveShotBadge(shots:PrecisionShot[]){
 function ApproachCategorization({shots}:{shots:PrecisionShot[]}){
  const counts=GRADE_ROWS.map(item=>({ ...item,count:shots.filter(shot=>{const proximity=Math.hypot(shot.carry-shot.target,shot.offline);return approachGrade(proximity/shot.target*100)===item.grade}).length}));
  return <section className="w-full rounded-[28px] bg-white p-5 text-slate-950 shadow-sm">
-  <p className="text-[11px] font-black uppercase tracking-[.18em] text-blue-600">Dina 9 slag</p>
+  <p className="text-[11px] font-black uppercase tracking-[.18em] text-blue-600">Dina {shots.length} slag</p>
   <h2 className="mt-2 text-3xl font-black">Bedömning av dina slag</h2>
   <p className="mt-2 text-sm leading-relaxed text-slate-500">Varje slag bedöms efter hur stor missen var i förhållande till målavståndet.</p>
   <div className="mt-5 grid grid-cols-[1fr_56px] px-4 text-sm font-black"><span>Nivå</span><span className="text-center">Antal</span></div>
