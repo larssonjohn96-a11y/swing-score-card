@@ -15,6 +15,7 @@ import { OffTeeReport } from "@/components/offtee-report";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 import type { RevealState } from "@/components/test-reveal";
 import { OffTeeProcessing, OffTeeReveal } from "@/components/offtee-reveal";
+import { HcpTestProgress } from "@/components/hcp-test-progress";
 import { computeRevealState } from "@/lib/test-reveal-helpers";
 
 export const Route = createFileRoute("/offtee")({
@@ -229,7 +230,6 @@ function TestScreen({
   onBack: () => void;
   onAbort: () => void;
 }) {
-  const pct = Math.round((index / OFFTEE_TOTAL_SHOTS) * 100);
   void current;
 
   return (
@@ -253,18 +253,7 @@ function TestScreen({
       </div>
 
       <div className="mt-3">
-        <div className="flex items-baseline justify-between text-sm">
-          <span className="font-semibold">
-            Slag {index + 1} <span className="text-muted-foreground">av {OFFTEE_TOTAL_SHOTS}</span>
-          </span>
-          <span className="text-muted-foreground">{pct} %</span>
-        </div>
-        <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-muted">
-          <div
-            className="h-full rounded-full bg-primary transition-all"
-            style={{ width: `${pct}%` }}
-          />
-        </div>
+        <HcpTestProgress current={index + 1} total={OFFTEE_TOTAL_SHOTS} label="Utslag" />
       </div>
 
       <PersistentFairwayVisual flight={flight} />
