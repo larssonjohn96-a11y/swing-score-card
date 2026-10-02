@@ -25,6 +25,7 @@ import { SpeedComparisonBellCurve } from "@/components/speed-bell-curve";
 import { AgeInlinePrompt } from "@/components/age-inline-prompt";
 import { TeeNumberField } from "@/components/offtee-visuals";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
+import { HcpTestProgress } from "@/components/hcp-test-progress";
 import type { RevealState } from "@/components/test-reveal";
 import { SpeedProcessing } from "@/components/speed-processing";
 import { SpeedHcpReveal } from "@/components/speed-hcp-reveal";
@@ -240,8 +241,6 @@ function SpeedPage() {
   }
 
   if (phase === "test") {
-    const pct = Math.round((index / SPEED_TOTAL_SHOTS) * 100);
-
     return (
       <main className="mx-auto min-h-screen w-full max-w-md px-6 pb-44 pt-4">
 {isActivityComplete(phase) && <StoredActivityReview testId="speed" />}
@@ -263,18 +262,7 @@ function SpeedPage() {
         </div>
 
         <div className="mt-3">
-          <div className="flex items-baseline justify-between text-sm">
-            <span className="font-semibold">
-              Slag {index + 1} <span className="text-muted-foreground">av {SPEED_TOTAL_SHOTS}</span>
-            </span>
-            <span className="text-muted-foreground">{pct} %</span>
-          </div>
-          <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-muted">
-            <div
-              className="h-full rounded-full bg-primary transition-all"
-              style={{ width: `${pct}%` }}
-            />
-          </div>
+          <HcpTestProgress current={index + 1} total={SPEED_TOTAL_SHOTS} label="Ball Speed" />
         </div>
 
         <p className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">
