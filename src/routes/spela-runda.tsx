@@ -1,5 +1,4 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
 
 export const Route = createFileRoute("/spela-runda")({
   head: () => ({ meta: [{ title: "HCP-tester – SG4" }] }),
@@ -22,15 +21,6 @@ function RoundGamesPage() {
   </div>;
   return (
     <main className="mx-auto min-h-screen max-w-md bg-slate-50 pb-28 text-slate-950">
-      <header className="sticky top-0 z-30 border-b border-slate-200/75 bg-slate-50/92 px-5 pb-3 pt-[max(12px,env(safe-area-inset-top))] backdrop-blur-xl">
-        <div className="grid grid-cols-[40px_1fr_40px] items-center">
-          <Link to="/" aria-label="Tillbaka" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-800 shadow-sm">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-          <p className="truncate text-center text-[15px] font-bold text-slate-950">HCP-tester</p>
-          <span aria-hidden="true" />
-        </div>
-      </header>
 
       <div className="px-5">
       <section className="mt-6 px-1">

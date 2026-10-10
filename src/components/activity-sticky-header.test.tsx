@@ -87,5 +87,10 @@ describe("shared sticky headers on SG4 hub pages", () => {
     expect(tests).not.toContain("ArrowLeft");
     const analysis = readFileSync("src/routes/utveckling.index.tsx", "utf8");
     expect(analysis).toContain('<h1 className="sr-only">Analys & utveckling</h1>');
+    const round = readFileSync("src/routes/spela-runda.tsx", "utf8");
+    expect(round).not.toContain("<header");
+    expect(round).not.toContain("ArrowLeft");
+    expect(round).toContain(">HCP-tester</h1>");
+    expect(round).toContain("Testa ditt golfspel och se din HCP-nivå i varje kategori.");
   });
 });
