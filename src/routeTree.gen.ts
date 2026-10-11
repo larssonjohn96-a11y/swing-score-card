@@ -30,7 +30,6 @@ import { Route as StreakChallengeRouteImport } from './routes/streak-challenge'
 import { Route as StandardiseradeTesterRouteImport } from './routes/standardiserade-tester'
 import { Route as SpelaRundaRouteImport } from './routes/spela-runda'
 import { Route as SpelaRouteImport } from './routes/spela'
-import { Route as SpelRouteImport } from './routes/spel'
 import { Route as SpeedrundanRouteImport } from './routes/speedrundan'
 import { Route as SpeedTestRouteImport } from './routes/speed-test'
 import { Route as SpeedRouteImport } from './routes/speed'
@@ -112,8 +111,10 @@ import { Route as R50BollarResultatRouteImport } from './routes/50-bollar-result
 import { Route as R50BollarRouteImport } from './routes/50-bollar'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as UtvecklingIndexRouteImport } from './routes/utveckling.index'
+import { Route as SpelIndexRouteImport } from './routes/spel.index'
 import { Route as FramstegIndexRouteImport } from './routes/framsteg.index'
 import { Route as UtvecklingSlugRouteImport } from './routes/utveckling.$slug'
+import { Route as SpelGameIdRouteImport } from './routes/spel.$gameId'
 import { Route as KategoriSlugRouteImport } from './routes/kategori.$slug'
 import { Route as JamforUserIdRouteImport } from './routes/jamfor.$userId'
 import { Route as FramstegSlugRouteImport } from './routes/framsteg.$slug'
@@ -223,11 +224,6 @@ const SpelaRundaRoute = SpelaRundaRouteImport.update({
 const SpelaRoute = SpelaRouteImport.update({
   id: '/spela',
   path: '/spela',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SpelRoute = SpelRouteImport.update({
-  id: '/spel',
-  path: '/spel',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SpeedrundanRoute = SpeedrundanRouteImport.update({
@@ -640,6 +636,11 @@ const UtvecklingIndexRoute = UtvecklingIndexRouteImport.update({
   path: '/utveckling/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SpelIndexRoute = SpelIndexRouteImport.update({
+  id: '/spel/',
+  path: '/spel/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FramstegIndexRoute = FramstegIndexRouteImport.update({
   id: '/framsteg/',
   path: '/framsteg/',
@@ -648,6 +649,11 @@ const FramstegIndexRoute = FramstegIndexRouteImport.update({
 const UtvecklingSlugRoute = UtvecklingSlugRouteImport.update({
   id: '/utveckling/$slug',
   path: '/utveckling/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SpelGameIdRoute = SpelGameIdRouteImport.update({
+  id: '/spel/$gameId',
+  path: '/spel/$gameId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const KategoriSlugRoute = KategoriSlugRouteImport.update({
@@ -757,7 +763,6 @@ export interface FileRoutesByFullPath {
   '/speed': typeof SpeedRoute
   '/speed-test': typeof SpeedTestRoute
   '/speedrundan': typeof SpeedrundanRoute
-  '/spel': typeof SpelRoute
   '/spela': typeof SpelaRoute
   '/spela-runda': typeof SpelaRundaRoute
   '/standardiserade-tester': typeof StandardiseradeTesterRoute
@@ -783,8 +788,10 @@ export interface FileRoutesByFullPath {
   '/framsteg/$slug': typeof FramstegSlugRouteWithChildren
   '/jamfor/$userId': typeof JamforUserIdRoute
   '/kategori/$slug': typeof KategoriSlugRoute
+  '/spel/$gameId': typeof SpelGameIdRoute
   '/utveckling/$slug': typeof UtvecklingSlugRoute
   '/framsteg/': typeof FramstegIndexRoute
+  '/spel/': typeof SpelIndexRoute
   '/utveckling/': typeof UtvecklingIndexRoute
   '/framsteg/$slug/$test': typeof FramstegSlugTestRoute
 }
@@ -869,7 +876,6 @@ export interface FileRoutesByTo {
   '/speed': typeof SpeedRoute
   '/speed-test': typeof SpeedTestRoute
   '/speedrundan': typeof SpeedrundanRoute
-  '/spel': typeof SpelRoute
   '/spela': typeof SpelaRoute
   '/spela-runda': typeof SpelaRundaRoute
   '/standardiserade-tester': typeof StandardiseradeTesterRoute
@@ -895,8 +901,10 @@ export interface FileRoutesByTo {
   '/framsteg/$slug': typeof FramstegSlugRouteWithChildren
   '/jamfor/$userId': typeof JamforUserIdRoute
   '/kategori/$slug': typeof KategoriSlugRoute
+  '/spel/$gameId': typeof SpelGameIdRoute
   '/utveckling/$slug': typeof UtvecklingSlugRoute
   '/framsteg': typeof FramstegIndexRoute
+  '/spel': typeof SpelIndexRoute
   '/utveckling': typeof UtvecklingIndexRoute
   '/framsteg/$slug/$test': typeof FramstegSlugTestRoute
 }
@@ -982,7 +990,6 @@ export interface FileRoutesById {
   '/speed': typeof SpeedRoute
   '/speed-test': typeof SpeedTestRoute
   '/speedrundan': typeof SpeedrundanRoute
-  '/spel': typeof SpelRoute
   '/spela': typeof SpelaRoute
   '/spela-runda': typeof SpelaRundaRoute
   '/standardiserade-tester': typeof StandardiseradeTesterRoute
@@ -1008,8 +1015,10 @@ export interface FileRoutesById {
   '/framsteg/$slug': typeof FramstegSlugRouteWithChildren
   '/jamfor/$userId': typeof JamforUserIdRoute
   '/kategori/$slug': typeof KategoriSlugRoute
+  '/spel/$gameId': typeof SpelGameIdRoute
   '/utveckling/$slug': typeof UtvecklingSlugRoute
   '/framsteg/': typeof FramstegIndexRoute
+  '/spel/': typeof SpelIndexRoute
   '/utveckling/': typeof UtvecklingIndexRoute
   '/framsteg/$slug/$test': typeof FramstegSlugTestRoute
 }
@@ -1096,7 +1105,6 @@ export interface FileRouteTypes {
     | '/speed'
     | '/speed-test'
     | '/speedrundan'
-    | '/spel'
     | '/spela'
     | '/spela-runda'
     | '/standardiserade-tester'
@@ -1122,8 +1130,10 @@ export interface FileRouteTypes {
     | '/framsteg/$slug'
     | '/jamfor/$userId'
     | '/kategori/$slug'
+    | '/spel/$gameId'
     | '/utveckling/$slug'
     | '/framsteg/'
+    | '/spel/'
     | '/utveckling/'
     | '/framsteg/$slug/$test'
   fileRoutesByTo: FileRoutesByTo
@@ -1208,7 +1218,6 @@ export interface FileRouteTypes {
     | '/speed'
     | '/speed-test'
     | '/speedrundan'
-    | '/spel'
     | '/spela'
     | '/spela-runda'
     | '/standardiserade-tester'
@@ -1234,8 +1243,10 @@ export interface FileRouteTypes {
     | '/framsteg/$slug'
     | '/jamfor/$userId'
     | '/kategori/$slug'
+    | '/spel/$gameId'
     | '/utveckling/$slug'
     | '/framsteg'
+    | '/spel'
     | '/utveckling'
     | '/framsteg/$slug/$test'
   id:
@@ -1320,7 +1331,6 @@ export interface FileRouteTypes {
     | '/speed'
     | '/speed-test'
     | '/speedrundan'
-    | '/spel'
     | '/spela'
     | '/spela-runda'
     | '/standardiserade-tester'
@@ -1346,8 +1356,10 @@ export interface FileRouteTypes {
     | '/framsteg/$slug'
     | '/jamfor/$userId'
     | '/kategori/$slug'
+    | '/spel/$gameId'
     | '/utveckling/$slug'
     | '/framsteg/'
+    | '/spel/'
     | '/utveckling/'
     | '/framsteg/$slug/$test'
   fileRoutesById: FileRoutesById
@@ -1433,7 +1445,6 @@ export interface RootRouteChildren {
   SpeedRoute: typeof SpeedRoute
   SpeedTestRoute: typeof SpeedTestRoute
   SpeedrundanRoute: typeof SpeedrundanRoute
-  SpelRoute: typeof SpelRoute
   SpelaRoute: typeof SpelaRoute
   SpelaRundaRoute: typeof SpelaRundaRoute
   StandardiseradeTesterRoute: typeof StandardiseradeTesterRoute
@@ -1457,8 +1468,10 @@ export interface RootRouteChildren {
   WedgeStegeHistorikRoute: typeof WedgeStegeHistorikRoute
   FramstegSlugRoute: typeof FramstegSlugRouteWithChildren
   KategoriSlugRoute: typeof KategoriSlugRoute
+  SpelGameIdRoute: typeof SpelGameIdRoute
   UtvecklingSlugRoute: typeof UtvecklingSlugRoute
   FramstegIndexRoute: typeof FramstegIndexRoute
+  SpelIndexRoute: typeof SpelIndexRoute
   UtvecklingIndexRoute: typeof UtvecklingIndexRoute
 }
 
@@ -1609,13 +1622,6 @@ declare module '@tanstack/react-router' {
       path: '/spela'
       fullPath: '/spela'
       preLoaderRoute: typeof SpelaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/spel': {
-      id: '/spel'
-      path: '/spel'
-      fullPath: '/spel'
-      preLoaderRoute: typeof SpelRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/speedrundan': {
@@ -2185,6 +2191,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UtvecklingIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/spel/': {
+      id: '/spel/'
+      path: '/spel'
+      fullPath: '/spel/'
+      preLoaderRoute: typeof SpelIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/framsteg/': {
       id: '/framsteg/'
       path: '/framsteg'
@@ -2197,6 +2210,13 @@ declare module '@tanstack/react-router' {
       path: '/utveckling/$slug'
       fullPath: '/utveckling/$slug'
       preLoaderRoute: typeof UtvecklingSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/spel/$gameId': {
+      id: '/spel/$gameId'
+      path: '/spel/$gameId'
+      fullPath: '/spel/$gameId'
+      preLoaderRoute: typeof SpelGameIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/kategori/$slug': {
@@ -2353,7 +2373,6 @@ const rootRouteChildren: RootRouteChildren = {
   SpeedRoute: SpeedRoute,
   SpeedTestRoute: SpeedTestRoute,
   SpeedrundanRoute: SpeedrundanRoute,
-  SpelRoute: SpelRoute,
   SpelaRoute: SpelaRoute,
   SpelaRundaRoute: SpelaRundaRoute,
   StandardiseradeTesterRoute: StandardiseradeTesterRoute,
@@ -2377,8 +2396,10 @@ const rootRouteChildren: RootRouteChildren = {
   WedgeStegeHistorikRoute: WedgeStegeHistorikRoute,
   FramstegSlugRoute: FramstegSlugRouteWithChildren,
   KategoriSlugRoute: KategoriSlugRoute,
+  SpelGameIdRoute: SpelGameIdRoute,
   UtvecklingSlugRoute: UtvecklingSlugRoute,
   FramstegIndexRoute: FramstegIndexRoute,
+  SpelIndexRoute: SpelIndexRoute,
   UtvecklingIndexRoute: UtvecklingIndexRoute,
 }
 export const routeTree = rootRouteImport
