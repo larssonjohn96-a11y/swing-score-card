@@ -20,7 +20,7 @@ function GolfRoundIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" data-nav-icon="golf-round" {...props}>
       <path d="M11 19V3l8 4-8 4" />
-      <ellipse cx="11" cy="20" rx="5" ry="2" />
+      <ellipse cx="11" cy="20" rx="7.5" ry="2" />
     </svg>
   );
 }
