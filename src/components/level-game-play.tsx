@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { ArrowLeft, Check, Lock, RotateCcw, Undo2, X } from "lucide-react";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 import {
-  LEVEL_GAMES, LEVELS, buildRound, distanceRange, formatDistance, loadDraft, loadRounds, progressFrom,
+  LEVEL_GAMES, LEVELS, bestComparableScore, buildRound, distanceRange, formatDistance, loadDraft, loadRounds, progressFrom,
   saveDraft, saveRound, targetsFor, type Attempt, type LevelGameId, type LevelGameRound, type LevelNumber, type RoundMode,
 } from "@/lib/level-games";
 
@@ -107,7 +107,7 @@ export function LevelGamePlay({ gameId }: { gameId: LevelGameId }) {
         <div className="px-5 pt-6">
           <h1 className="text-[36px] font-black leading-none">{game.title}</h1>
           <p className="mt-3 text-[15px] font-medium text-muted-foreground">{game.description}</p>
-          {progress.pb !== null && <p className="mt-3 text-sm font-bold">Personbästa: {progress.pb} {game.scoreLabel}</p>}
+          {progress.pb !== null && <p className="mt-3 text-sm font-bold">Personbästa {progress.pbLevel ? `nivå ${progress.pbLevel}` : "placering"}: {progress.pb} {game.scoreLabel}</p>}
 
           {!hydrated ? null : progress.recommended === null ? (
             <div className="mt-6 rounded-[24px] border border-border bg-card p-5">
@@ -159,6 +159,11 @@ export function LevelGamePlay({ gameId }: { gameId: LevelGameId }) {
 function ResultView({ gameId, result, onReplay }: { gameId: LevelGameId; result: LevelGameRound; onReplay: () => void }) {
   const game = LEVEL_GAMES[gameId];
   const [progress] = useState(() => progressFrom(game, loadRounds()));
+  const mode: RoundMode = result.placement
+    ? { kind: "placement" }
+    : { kind: "level", level: result.level!, ...(result.variant ? { variant: result.variant } : {}) };
+  const pb = bestComparableScore(game, progress.rounds, mode);
+  const pbContext = result.placement ? "placering" : `nivå ${result.level}${result.variant ? " · varierade lies" : ""}`;
   const next = result.recommendedLevel as LevelNumber;
   return (
     <div className="px-5 pt-6">
@@ -169,7 +174,7 @@ function ResultView({ gameId, result, onReplay }: { gameId: LevelGameId; result:
       {result.placement && <p className="mt-2 text-sm text-muted-foreground">Preliminärt – baserat på en omgång. {result.earnedLevel ? `Du nådde kraven för nivå ${result.earnedLevel}.` : "Du nådde inte kraven för nivå 1 än."}</p>}
       <div className="mt-5 grid grid-cols-2 gap-2">
         <div className="rounded-2xl border border-border bg-card p-4"><p className="text-xs text-muted-foreground">Resultat</p><p className="text-3xl font-black">{result.score}</p><p className="text-xs">{game.scoreLabel}{result.personalBest ? " · nytt PB!" : ""}</p></div>
-        <div className="rounded-2xl border border-border bg-card p-4"><p className="text-xs text-muted-foreground">Personbästa</p><p className="text-3xl font-black">{progress.pb}</p><p className="text-xs">{game.scoreLabel}</p></div>
+        <div className="rounded-2xl border border-border bg-card p-4"><p className="text-xs text-muted-foreground">PB · {pbContext}</p><p className="text-3xl font-black">{pb ?? "–"}</p><p className="text-xs">{game.scoreLabel}</p></div>
       </div>
       <OutcomeTable gameId={gameId} attempts={result.attempts} />
       <p className="mt-5 text-sm font-bold">Klarade nivåer: {progress.cleared.length ? progress.cleared.join(", ") : "inga än"}</p>
