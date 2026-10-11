@@ -36,11 +36,8 @@ const EXISTING_SECTIONS: TestSection[] = [
       { to: "/tutor-test", title: "Tutor Test", label: "Startlinje", description: "Mät hur konsekvent du startar bollen på rätt linje.", tone: "bg-[#5B4B9A]" },
       { to: "/pga-tour-18-puttar", title: "18 Puttar", label: "Scoring", description: "Benchmark över flera puttlängder.", tone: "bg-[#5B4B9A]" },
       { to: "/lagputt", title: "Lag Putt", label: "Längdkontroll", description: "Mät fart och proximity på längre puttar.", tone: "bg-[#5B4B9A]" },
-      { to: "/green-reading", title: "Green Reading", label: "Läsning", description: "Testa beslut och greenläsning.", tone: "bg-[#5B4B9A]" },
       { to: "/klock-putt", title: "Klockputt", label: "Kortputt", description: "Standardiserad kontroll runt hålet.", tone: "bg-[#5B4B9A]" },
       { to: "/50-bollar", title: "25-bollsövningen", label: "Kortputt", description: "Fem bollar från 1–5 meter. Håla ut varje boll och räkna alla slag.", tone: "bg-[#5B4B9A]", search: { from: "tester" } },
-      { to: "/putting-streak", title: "Putting Streak", label: "Challenge", description: "En putt per nivå från 1 till 10 meter. Första missen avslutar testet.", tone: "bg-[#5B4B9A]" },
-      { to: "/lagputt-ladder", title: "Lag Putt Ladder", label: "Challenge", description: "Börja på 8 meter och klättra upp genom längre lagputtar.", tone: "bg-[#5B4B9A]" },
     ],
   },
   {
@@ -108,7 +105,7 @@ function TestCardView({ test, favorite, onToggleFavorite }: { test: TestCard; fa
 
 function StandardizedTestsPage() {
   const [favorites, setFavorites] = useState<string[]>([]);
-  const [puttingFilter, setPuttingFilter] = useState<"all" | "startlinje" | "green-reading" | "langdkontroll" | "kortputt">("all");
+  const [puttingFilter, setPuttingFilter] = useState<"all" | "startlinje" | "langdkontroll" | "kortputt">("all");
   const [favoriteFilter, setFavoriteFilter] = useState<"all" | "puttning" | "narspel" | "inspel" | "utslag">("all");
   useEffect(() => {
     try { const parsed = JSON.parse(localStorage.getItem(FAVORITES_KEY) ?? "[]"); if (Array.isArray(parsed)) setFavorites(parsed.filter((item): item is string => typeof item === "string")); } catch {}
@@ -118,7 +115,6 @@ function StandardizedTestsPage() {
   const streakChallenges: TestCard[] = [
     { to: "/fairway-streak", title: "Fairways i rad", label: "Utslag", description: "Hur många fairways kan du träffa i rad innan första missen?", tone: "bg-[#9A4E34]" },
     { to: "/streak-challenge", title: "Inspel i rad", label: "Inspel", description: "Träffa din valda målzon. Hur många klarar du i rad?", tone: "bg-[#9A4E34]", search: { type: "approach" } },
-    { to: "/putting-streak", title: "Putts i rad", label: "Puttning", description: "Sätt putten och fortsätt. Första missen avslutar streaken.", tone: "bg-[#9A4E34]" },
     { to: "/streak-challenge", title: "Bunkerslag i rad", label: "Närspel", description: "Träffa din valda målzon från bunker. Hur många klarar du i rad?", tone: "bg-[#9A4E34]", search: { type: "bunker" } },
   ];
   const favoriteCategory = (test: TestCard) => {
@@ -132,7 +128,6 @@ function StandardizedTestsPage() {
   const visibleFavoriteTests = favoriteFilter === "all" ? favoriteTests : favoriteTests.filter(test => favoriteCategory(test) === favoriteFilter);
   const filteredPuttingTests = (tests: TestCard[]) => puttingFilter === "all" ? tests : tests.filter(test => {
     if (puttingFilter === "startlinje") return test.label.toLowerCase().includes("startlinje") || test.title === "Tutor Test";
-    if (puttingFilter === "green-reading") return test.label.toLowerCase().includes("läsning") || test.title === "Green Reading";
     if (puttingFilter === "kortputt") return test.label.toLowerCase().includes("kortputt") || test.title === "Klockputt" || test.title === "25-bollsövningen";
     return test.label.toLowerCase().includes("längdkontroll") || test.title === "Lag Putt";
   });
@@ -170,7 +165,7 @@ function StandardizedTestsPage() {
         </section>
         {TEST_SECTIONS.map(section => <section key={section.title}>
           <div className="px-0.5"><h2 className="text-[24px] font-black leading-none text-foreground">{section.title}</h2><p className="mt-1.5 text-[10px] font-black uppercase tracking-[.16em] text-muted-foreground">{section.subtitle}</p>
-          {section.title === "Puttning" ? <div className="mt-3 flex gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{([["all","Alla"],["startlinje","Startlinje"],["green-reading","Green reading"],["kortputt","Kortputtar"],["langdkontroll","Längdkontroll"]] as const).map(([id,label]) => <button key={id} type="button" onClick={() => setPuttingFilter(id)} className={`shrink-0 rounded-full border px-3 py-1.5 text-[10px] font-bold transition ${puttingFilter === id ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-transparent text-muted-foreground"}`}>{label}</button>)}</div> : null}</div>
+          {section.title === "Puttning" ? <div className="mt-3 flex gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{([["all","Alla"],["startlinje","Startlinje"],["kortputt","Kortputtar"],["langdkontroll","Längdkontroll"]] as const).map(([id,label]) => <button key={id} type="button" onClick={() => setPuttingFilter(id)} className={`shrink-0 rounded-full border px-3 py-1.5 text-[10px] font-bold transition ${puttingFilter === id ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-transparent text-muted-foreground"}`}>{label}</button>)}</div> : null}</div>
           <div className="-mx-5 mt-3.5 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{(section.title === "Puttning" ? filteredPuttingTests(section.tests) : section.tests).map(test => <TestCardView key={`${section.title}-${test.title}`} test={test} favorite={favorites.includes(test.to)} onToggleFavorite={() => toggleFavorite(test.to)} />)}</div>
         </section>)}
         <section>
