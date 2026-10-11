@@ -100,6 +100,25 @@ describe("Testa hub category navigation", () => {
   });
 });
 
+describe("advanced putting catalogue", () => {
+  it("only exposes the five diagnostic putting tests", () => {
+    const source = readFileSync("src/routes/standardiserade-tester.tsx", "utf8");
+    const putting = source.split('title: "Puttning",')[1]?.split('title: "Bollkontroll",')[0] ?? "";
+    const titles = [...putting.matchAll(/to: "[^"]+", title: "([^"]+)"/g)].map((match) => match[1]);
+    expect(titles).toEqual([
+      "Tutor Test",
+      "18 Puttar",
+      "Lag Putt",
+      "Klockputt",
+      "25-bollsövningen",
+    ]);
+    expect(source).not.toContain('to: "/green-reading"');
+    expect(source).not.toContain('to: "/putting-streak"');
+    expect(source).not.toContain('to: "/lagputt-ladder"');
+    expect(source).not.toContain('["green-reading","Green reading"]');
+  });
+});
+
 describe("standalone Spel overview", () => {
   it("keeps the requested categories and five future games, without assessment links or a duplicate header", () => {
     const html = renderToStaticMarkup(<GameOverview />);
