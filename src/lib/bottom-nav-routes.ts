@@ -2,7 +2,7 @@ import { normalizeHeaderPath } from "@/lib/hub-header";
 
 export const BOTTOM_TABS = [
   { id: "home", to: "/", label: "Hem" },
-  { id: "tests", to: "/spela-runda", label: "HCP-test" },
+  { id: "tests", to: "/spela-runda", label: "Testa" },
   { id: "games", to: "/spel", label: "Spel" },
   { id: "match", to: "/spela", label: "Match" },
   { id: "analysis", to: "/utveckling", label: "Analys" },
