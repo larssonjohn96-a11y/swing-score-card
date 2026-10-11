@@ -1,11 +1,31 @@
 "use client";
 
 import { Link, useLocation } from "@tanstack/react-router";
-import { Flag, GitCompareArrows, Home, Swords, Target } from "lucide-react";
+import { ChartNoAxesColumnIncreasing, Home, UsersRound } from "lucide-react";
+import type { SVGProps } from "react";
 import { useBottomNavVisibility } from "@/lib/bottom-nav-visibility";
 import { activeBottomTab, BOTTOM_TABS, hideBottomNavOnRoute } from "@/lib/bottom-nav-routes";
 
-const TAB_ICONS = { home: Home, tests: Target, games: Flag, match: Swords, analysis: GitCompareArrows };
+function HcpIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" data-nav-icon="hcp" {...props}>
+      <path d="M9.5 17.6a7.5 7.5 0 1 1 5 0" />
+      <circle cx="9" cy="7.5" r="0.8" fill="currentColor" stroke="none" />
+      <path d="m10 19 2 3 2-3" />
+    </svg>
+  );
+}
+
+function GolfRoundIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" data-nav-icon="golf-round" {...props}>
+      <path d="M11 19V3l8 4-8 4" />
+      <ellipse cx="11" cy="20" rx="5" ry="2" />
+    </svg>
+  );
+}
+
+const TAB_ICONS = { home: Home, tests: HcpIcon, games: GolfRoundIcon, match: UsersRound, analysis: ChartNoAxesColumnIncreasing };
 
 export function BottomNav() {
   const { hidden } = useBottomNavVisibility();

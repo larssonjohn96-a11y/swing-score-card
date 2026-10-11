@@ -1,5 +1,6 @@
 # Roadmap
 
+- [x] Update only navigation icons and verify all five hubs plus all three analysis tabs on mobile.
 - [x] Restore navigation on all Analys hub tabs and verify the five main destinations on mobile.
 - [x] Replace bottom navigation with five equal tabs and preserve existing feature access.
 - [x] Add separate Spel overview, shared header, verified game availability and mobile cards.

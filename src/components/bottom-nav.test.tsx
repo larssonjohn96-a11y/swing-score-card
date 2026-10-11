@@ -33,6 +33,26 @@ describe("five equal SG4 navigation tabs", () => {
     ["/kategori/approach", "tests"], ["/spel/", "games"], ["/spel/tee-round", "games"],
     ["/spela", "match"], ["/match-bot", "match"], ["/utveckling/approach", "analysis"], ["/jamfor/player", "analysis"],
   ])("assigns %s to %s", (path, tab) => expect(activeBottomTab(path)).toBe(tab));
+  it("uses the requested golf, people and chart icons with matching stroke and size", () => {
+    state.pathname = "/spel";
+    const html = renderToStaticMarkup(<BottomNavVisibilityProvider><BottomNav /></BottomNavVisibilityProvider>);
+    expect(html).toContain('data-nav-icon="hcp"');
+    expect(html).toContain('data-nav-icon="golf-round"');
+    expect(html).toContain("<ellipse");
+    expect(html).toContain("lucide-house");
+    expect(html).toContain("lucide-users-round");
+    expect(html).toContain("lucide-chart-no-axes-column-increasing");
+    for (const oldIcon of ["lucide-target", "lucide-flag", "lucide-swords", "lucide-git-compare-arrows"]) expect(html).not.toContain(oldIcon);
+    const icons = html.match(/<svg\b[^>]*>/g) ?? [];
+    expect(icons).toHaveLength(5);
+    for (const icon of icons) {
+      expect(icon).toContain('stroke="currentColor"');
+      expect(icon).toContain('stroke-width="2"');
+      expect(icon).toContain("h-5 w-5");
+    }
+    expect(icons.filter(icon => icon.includes("stroke-[2.35]"))).toHaveLength(1);
+    expect(icons.filter(icon => icon.includes("stroke-[1.9]"))).toHaveLength(4);
+  });
   it("preserves intentional full-screen activity exclusions, not analysis routes", () => {
     for (const path of ["/match", "/match-bot", "/learn/putting", "/putting-streak", "/shot-shaping-konstant"]) expect(hideBottomNavOnRoute(path)).toBe(true);
     for (const path of ["/", "/spel", "/spela", "/spela-runda", "/utveckling/approach"]) expect(hideBottomNavOnRoute(path)).toBe(false);
