@@ -133,6 +133,24 @@ describe("advanced test categories", () => {
   });
 });
 
+describe("advanced approach tests", () => {
+  it("only lists PEI Wedge and PEI Iron, without Off the Tee", () => {
+    const src = readFileSync("src/routes/standardiserade-tester.tsx", "utf8");
+    const approach = src.split('title: "Inspel",')[1]?.split('  },\n')[0] ?? "";
+    const titles = [...approach.matchAll(/to: "[^"]+", title: "([^"]+)"/g)].map((match) => match[1]);
+    expect(titles).toEqual(["PEI Wedge", "PEI Iron"]);
+    expect(src).not.toContain('title: "Off the Tee"');
+    expect(src).not.toContain('to: "/driver-konsekvens"');
+    expect(src).not.toContain('to: "/par-3-challenge"');
+    expect(src).not.toContain('to: "/approach-pei-valj"');
+    expect(src).not.toContain('to: "/wedge-stege"');
+    expect(src).not.toContain('["utslag","Utslag"]');
+    expect(src).toContain('title: "Puttning"');
+    expect(src).toContain('title: "Närspel"');
+    expect(src).toContain('title: "Bollkontroll"');
+  });
+});
+
 describe("standalone Spel overview", () => {
   it("keeps the requested categories and five future games, without assessment links or a duplicate header", () => {
     const html = renderToStaticMarkup(<GameOverview />);
