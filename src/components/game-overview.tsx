@@ -34,7 +34,7 @@ export function GameOverview() {
                     <div className="relative mt-auto px-4 pb-5">
                       <h3 className="font-display text-[30px] leading-none tracking-normal">{game.title}</h3>
                       <p className="mt-2 text-[13px] font-medium leading-snug text-card-ink/90">{game.description}</p>
-                      <p className="mt-3 text-[10px] font-bold text-card-ink/85">{game.metadata}{p?.pb != null ? ` · PB ${p.pb}` : ""}</p>
+                      <p className="mt-3 text-[10px] font-bold text-card-ink/85">{game.metadata}{p?.pb != null ? ` · PB ${p.pb} (${p.pbLevel ? `nivå ${p.pbLevel}` : "placering"})` : ""}</p>
                     </div>
                   </Link>
                 );
