@@ -39,7 +39,7 @@ describe("five equal SG4 navigation tabs", () => {
     expect(html).toContain('data-nav-icon="hcp"');
     expect(html).toContain('data-nav-icon="golf-round"');
     expect(html).toContain("<ellipse");
-    expect(html).toContain("lucide-home");
+    expect(html).toContain("lucide-house");
     expect(html).toContain("lucide-users-round");
     expect(html).toContain("lucide-chart-no-axes-column-increasing");
     for (const oldIcon of ["lucide-target", "lucide-flag", "lucide-swords", "lucide-git-compare-arrows"]) expect(html).not.toContain(oldIcon);
