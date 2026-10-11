@@ -33,9 +33,18 @@ describe("five equal SG4 navigation tabs", () => {
     ["/kategori/approach", "tests"], ["/spel/", "games"], ["/spel/tee-round", "games"],
     ["/spela", "match"], ["/match-bot", "match"], ["/utveckling/approach", "analysis"], ["/jamfor/player", "analysis"],
   ])("assigns %s to %s", (path, tab) => expect(activeBottomTab(path)).toBe(tab));
-  it("preserves full-screen exclusions including every embedded analysis tab", () => {
-    for (const path of ["/match", "/match-bot", "/utveckling", "/utveckling/", "/putting-streak"]) expect(hideBottomNavOnRoute(path)).toBe(true);
-    for (const path of ["/", "/spel", "/spela", "/spela-runda"]) expect(hideBottomNavOnRoute(path)).toBe(false);
+  it("preserves intentional full-screen activity exclusions, not analysis routes", () => {
+    for (const path of ["/match", "/match-bot", "/learn/putting", "/putting-streak", "/shot-shaping-konstant"]) expect(hideBottomNavOnRoute(path)).toBe(true);
+    for (const path of ["/", "/spel", "/spela", "/spela-runda", "/utveckling/approach"]) expect(hideBottomNavOnRoute(path)).toBe(false);
+  });
+  it.each(["/utveckling", "/utveckling/", "/utveckling?tab=analys", "/utveckling?tab=jamfor", "/utveckling/?tab=sank"])("shows five tabs with Analys active on %s", (path) => {
+    state.pathname = path;
+    expect(hideBottomNavOnRoute(path)).toBe(false);
+    expect(activeBottomTab(path)).toBe("analysis");
+    const html = renderToStaticMarkup(<BottomNavVisibilityProvider><BottomNav /></BottomNavVisibilityProvider>);
+    expect(html.match(/<a\b/g)).toHaveLength(5);
+    expect(html.match(/aria-current="page"/g)).toHaveLength(1);
+    expect(html).toMatch(/href="\/utveckling" aria-current="page"/);
   });
 });
 
