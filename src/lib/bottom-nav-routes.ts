@@ -16,7 +16,7 @@ const TEST_PATHS = new Set([
 ]);
 
 export function activeBottomTab(pathname: string): BottomTabId {
-  const path = normalizeHeaderPath(pathname);
+  const path = normalizeHeaderPath(pathname.split(/[?#]/)[0] ?? "/");
   if (path === "/spel" || path.startsWith("/spel/")) return "games";
   if (path === "/spela" || path.startsWith("/match")) return "match";
   if (path.startsWith("/utveckling") || path.startsWith("/jamfor") || path.startsWith("/framsteg")) return "analysis";
@@ -33,9 +33,9 @@ const TRAINING_FLOW_PATHS = new Set([
   "/approach-pei-iron-historik", "/shot-shaping-9-window-historik", "/shot-shaping-konstant-historik", "/shot-shaping-vaxlande-historik", "/wedge-stege-historik",
 ]);
 
-/** Retain the existing full-screen activity exclusions and hide all analysis tabs consistently. */
+/** Only full-screen activity routes are excluded; analysis belongs to the main navigation. */
 export function hideBottomNavOnRoute(pathname: string): boolean {
-  const path = normalizeHeaderPath(pathname);
-  return path.startsWith("/match") || path.startsWith("/learn") || path.startsWith("/utveckling") ||
+  const path = normalizeHeaderPath(pathname.split(/[?#]/)[0] ?? "/");
+  return path.startsWith("/match") || path.startsWith("/learn") ||
     TRAINING_FLOW_PATHS.has(path) || path.startsWith("/shot-shaping-");
 }
