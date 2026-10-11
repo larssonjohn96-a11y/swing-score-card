@@ -30,6 +30,7 @@ import { Route as StreakChallengeRouteImport } from './routes/streak-challenge'
 import { Route as StandardiseradeTesterRouteImport } from './routes/standardiserade-tester'
 import { Route as SpelaRundaRouteImport } from './routes/spela-runda'
 import { Route as SpelaRouteImport } from './routes/spela'
+import { Route as SpelRouteImport } from './routes/spel'
 import { Route as SpeedrundanRouteImport } from './routes/speedrundan'
 import { Route as SpeedTestRouteImport } from './routes/speed-test'
 import { Route as SpeedRouteImport } from './routes/speed'
@@ -222,6 +223,11 @@ const SpelaRundaRoute = SpelaRundaRouteImport.update({
 const SpelaRoute = SpelaRouteImport.update({
   id: '/spela',
   path: '/spela',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SpelRoute = SpelRouteImport.update({
+  id: '/spel',
+  path: '/spel',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SpeedrundanRoute = SpeedrundanRouteImport.update({
@@ -751,6 +757,7 @@ export interface FileRoutesByFullPath {
   '/speed': typeof SpeedRoute
   '/speed-test': typeof SpeedTestRoute
   '/speedrundan': typeof SpeedrundanRoute
+  '/spel': typeof SpelRoute
   '/spela': typeof SpelaRoute
   '/spela-runda': typeof SpelaRundaRoute
   '/standardiserade-tester': typeof StandardiseradeTesterRoute
@@ -862,6 +869,7 @@ export interface FileRoutesByTo {
   '/speed': typeof SpeedRoute
   '/speed-test': typeof SpeedTestRoute
   '/speedrundan': typeof SpeedrundanRoute
+  '/spel': typeof SpelRoute
   '/spela': typeof SpelaRoute
   '/spela-runda': typeof SpelaRundaRoute
   '/standardiserade-tester': typeof StandardiseradeTesterRoute
@@ -974,6 +982,7 @@ export interface FileRoutesById {
   '/speed': typeof SpeedRoute
   '/speed-test': typeof SpeedTestRoute
   '/speedrundan': typeof SpeedrundanRoute
+  '/spel': typeof SpelRoute
   '/spela': typeof SpelaRoute
   '/spela-runda': typeof SpelaRundaRoute
   '/standardiserade-tester': typeof StandardiseradeTesterRoute
@@ -1087,6 +1096,7 @@ export interface FileRouteTypes {
     | '/speed'
     | '/speed-test'
     | '/speedrundan'
+    | '/spel'
     | '/spela'
     | '/spela-runda'
     | '/standardiserade-tester'
@@ -1198,6 +1208,7 @@ export interface FileRouteTypes {
     | '/speed'
     | '/speed-test'
     | '/speedrundan'
+    | '/spel'
     | '/spela'
     | '/spela-runda'
     | '/standardiserade-tester'
@@ -1309,6 +1320,7 @@ export interface FileRouteTypes {
     | '/speed'
     | '/speed-test'
     | '/speedrundan'
+    | '/spel'
     | '/spela'
     | '/spela-runda'
     | '/standardiserade-tester'
@@ -1421,6 +1433,7 @@ export interface RootRouteChildren {
   SpeedRoute: typeof SpeedRoute
   SpeedTestRoute: typeof SpeedTestRoute
   SpeedrundanRoute: typeof SpeedrundanRoute
+  SpelRoute: typeof SpelRoute
   SpelaRoute: typeof SpelaRoute
   SpelaRundaRoute: typeof SpelaRundaRoute
   StandardiseradeTesterRoute: typeof StandardiseradeTesterRoute
@@ -1596,6 +1609,13 @@ declare module '@tanstack/react-router' {
       path: '/spela'
       fullPath: '/spela'
       preLoaderRoute: typeof SpelaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/spel': {
+      id: '/spel'
+      path: '/spel'
+      fullPath: '/spel'
+      preLoaderRoute: typeof SpelRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/speedrundan': {
@@ -2333,6 +2353,7 @@ const rootRouteChildren: RootRouteChildren = {
   SpeedRoute: SpeedRoute,
   SpeedTestRoute: SpeedTestRoute,
   SpeedrundanRoute: SpeedrundanRoute,
+  SpelRoute: SpelRoute,
   SpelaRoute: SpelaRoute,
   SpelaRundaRoute: SpelaRundaRoute,
   StandardiseradeTesterRoute: StandardiseradeTesterRoute,
