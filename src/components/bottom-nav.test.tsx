@@ -170,16 +170,16 @@ describe("advanced test card simplification", () => {
 });
 
 describe("standalone Spel overview", () => {
-  it("keeps the requested categories and five future games, without assessment links or a duplicate header", () => {
+  it("shows exactly five playable level games grouped Puttning/Närspel/Inspel, without assessment links or a duplicate header", () => {
     const html = renderToStaticMarkup(<GameOverview />);
-    expect(GAME_SECTIONS.map(section => section.title)).toEqual(["Puttning", "Inspel", "Närspel", "Utslag"]);
-    expect(html.match(/Kommer snart/g)).toHaveLength(5);
-    expect(html.match(/<article\b/g)).toHaveLength(5);
-    expect(html).not.toContain("<a ");
+    expect(GAME_SECTIONS.map(section => section.title)).toEqual(["Puttning", "Närspel", "Inspel"]);
+    expect(GAME_SECTIONS.flatMap(s => s.games.map(g => g.title))).toEqual(["Kortputtning", "Långputtning", "Chipping", "Bunker", "Inspel"]);
+    expect(html).not.toContain("Kommer snart");
+    expect(html.match(/<a\b/g)).toHaveLength(5);
+    expect(html.match(/Hitta din nivå/g)).toHaveLength(5);
+    expect(html).not.toContain("/spela-runda");
     expect(html).not.toContain("<header");
     expect(html).toContain("overflow-x-auto");
-    expect(html).toContain("6 hål × 3 bollar · 18 chippar");
-    expect(html).toContain("9 hål · par 18");
     expect(getHubHeader("/spel")?.title).toBe("Spel");
     expect(readFileSync("src/routes/spela-runda.tsx", "utf8")).not.toContain("<header");
   });
