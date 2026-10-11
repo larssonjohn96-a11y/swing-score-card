@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Star } from "lucide-react";
+import { Star } from "lucide-react";
+import { TestCategoryTabs } from "@/components/test-category-tabs";
 
 export const Route = createFileRoute("/standardiserade-tester")({
   head: () => ({
@@ -144,18 +145,7 @@ function StandardizedTestsPage() {
   }
   return (
     <main className="mx-auto min-h-screen w-full max-w-md bg-background pb-28">
-      <header className="sticky top-0 z-30 border-b border-slate-200/75 bg-background/92 px-5 pb-3 pt-[max(12px,env(safe-area-inset-top))] backdrop-blur-xl">
-        <div className="grid grid-cols-[40px_1fr_40px] items-center">
-          <Link to="/" aria-label="Tillbaka" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-800 shadow-sm">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-          <div className="min-w-0 text-center">
-            <p className="text-[9px] font-bold uppercase tracking-[.18em] text-slate-400">SG4</p>
-            <p className="truncate text-[15px] font-bold text-slate-950">Avancerade tester</p>
-          </div>
-          <span aria-hidden="true" />
-        </div>
-      </header>
+      <TestCategoryTabs selected="advanced" />
 
       <div className="px-5 pt-6">
         <p className="text-[10px] font-black uppercase tracking-[.2em] text-blue-600">Testa & utveckla</p>
