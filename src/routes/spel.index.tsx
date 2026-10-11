@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { GameOverview } from "@/components/game-overview";
 
-export const Route = createFileRoute("/spel")({
+export const Route = createFileRoute("/spel/")({
   head: () => ({ meta: [
     { title: "Spel – Rekord & golfutmaningar | SG4" },
     { name: "description", content: "Upptäck Par 18, No 3-Putt Streak, Approach Round, Chip Round och Tee Round i SG4." },
