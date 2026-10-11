@@ -12,7 +12,7 @@ export function GameOverview() {
           <section key={section.title} aria-label={section.title}>
             <h2 className="text-[24px] font-black leading-none tracking-normal">{section.title}</h2>
             <p className="mt-1.5 text-xs font-bold text-muted-foreground">{section.subtitle}</p>
-            <div role="list" aria-label={`${section.title} – spel`} className="-mx-5 mt-3.5 flex snap-x snap-mandatory gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div role="list" aria-label={`${section.title} – spel`} className="-mx-5 mt-3.5 flex snap-x snap-mandatory scroll-px-5 gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {section.games.map((game) => (
                 <article key={game.title} role="listitem" className="relative flex h-[288px] w-[224px] shrink-0 snap-start flex-col overflow-hidden rounded-[26px] border border-border bg-card text-card-ink shadow-sm">
                   <img src={game.image} alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover object-[18%_50%]" />

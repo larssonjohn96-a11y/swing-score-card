@@ -1,8 +1,8 @@
 # Roadmap
 
-- [ ] Replace bottom navigation with five equal tabs and preserve existing feature access.
-- [ ] Add separate Spel overview, shared header, verified game availability and mobile cards.
-- [ ] Run focused navigation tests and mobile browser checks; inspect automatic build diagnostics.
+- [x] Replace bottom navigation with five equal tabs and preserve existing feature access.
+- [x] Add separate Spel overview, shared header, verified game availability and mobile cards.
+- [x] Run focused navigation tests and mobile browser checks; inspect automatic build diagnostics.
 
 - [x] Ball Speed Challenge redesigned; 16 focused tests pass and production build succeeds.
 - [ ] Browser mobile verification (browser runtime unavailable).
