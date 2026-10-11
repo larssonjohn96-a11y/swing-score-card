@@ -119,6 +119,19 @@ describe("advanced putting catalogue", () => {
   });
 });
 
+describe("advanced test categories", () => {
+  it("does not expose the Streak Challenge section or its three game cards", () => {
+    const source = readFileSync("src/routes/standardiserade-tester.tsx", "utf8");
+    expect(source).not.toContain("Streak Challenge");
+    expect(source).not.toContain("streakChallenges");
+    expect(source).not.toContain('title: "Fairways i rad"');
+    expect(source).not.toContain('title: "Inspel i rad"');
+    expect(source).not.toContain('title: "Bunkerslag i rad"');
+    expect(source).toContain('title: "Puttning"');
+    expect(source).toContain('title: "Bollkontroll"');
+  });
+});
+
 describe("standalone Spel overview", () => {
   it("keeps the requested categories and five future games, without assessment links or a duplicate header", () => {
     const html = renderToStaticMarkup(<GameOverview />);
