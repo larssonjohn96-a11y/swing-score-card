@@ -14,12 +14,13 @@ vi.mock("@tanstack/react-router", () => ({
 }));
 import { BottomNav } from "./bottom-nav";
 import { GameOverview } from "./game-overview";
+import { TestCategoryTabs } from "./test-category-tabs";
 
 describe("five equal SG4 navigation tabs", () => {
   it("renders exactly five links with equal tracks and no plus or menu interaction", () => {
     state.pathname = "/spel";
     const html = renderToStaticMarkup(<BottomNavVisibilityProvider><BottomNav /></BottomNavVisibilityProvider>);
-    expect(BOTTOM_TABS.map(tab => tab.label)).toEqual(["Hem", "HCP-test", "Spel", "Match", "Analys"]);
+    expect(BOTTOM_TABS.map(tab => tab.label)).toEqual(["Hem", "Testa", "Spel", "Match", "Analys"]);
     expect(html.match(/<a\b/g)).toHaveLength(5);
     expect(html).toContain("grid-cols-5");
     expect(html).toContain("safe-area-inset-bottom");
@@ -65,6 +66,37 @@ describe("five equal SG4 navigation tabs", () => {
     expect(html.match(/<a\b/g)).toHaveLength(5);
     expect(html.match(/aria-current="page"/g)).toHaveLength(1);
     expect(html).toMatch(/href="\/utveckling" aria-current="page"/);
+  });
+});
+
+describe("Testa hub category navigation", () => {
+  it.each([
+    ["hcp", "/spela-runda"],
+    ["advanced", "/standardiserade-tester"],
+  ] as const)("shows both categories with %s active", (selected, activeTo) => {
+    const html = renderToStaticMarkup(<TestCategoryTabs selected={selected} />);
+    expect(html).toContain('aria-label="Typ av tester"');
+    expect(html.match(/<a\\b/g)).toHaveLength(2);
+    expect(html).toContain('href="/spela-runda"');
+    expect(html).toContain('href="/standardiserade-tester"');
+    expect(html).toContain("HCP-tester");
+    expect(html).toContain("Avancerade tester");
+    expect(html).toContain('aria-current="page"');
+    expect(html.match(/aria-current="page"/g)).toHaveLength(1);
+    expect(html).toContain(`href="${activeTo}" aria-current="page"`);
+  });
+
+  it("keeps both original test pages and removes the duplicate header", () => {
+    const hcp = readFileSync("src/routes/spela-runda.tsx", "utf8");
+    const advanced = readFileSync("src/routes/standardiserade-tester.tsx", "utf8");
+    expect(hcp).toContain('<TestCategoryTabs selected="hcp" />');
+    expect(advanced).toContain('<TestCategoryTabs selected="advanced" />');
+    expect(hcp).not.toContain("<header");
+    expect(advanced).not.toContain("<header");
+    expect(advanced).not.toContain("ArrowLeft");
+    expect(getHubHeader("/spela-runda")?.title).toBe("Testa");
+    expect(getHubHeader("/standardiserade-tester")?.title).toBe("Testa");
+    expect(activeBottomTab("/standardiserade-tester")).toBe("tests");
   });
 });
 
