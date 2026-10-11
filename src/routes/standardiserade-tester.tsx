@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import { Star } from "lucide-react";
+import { useState } from "react";
 import { TestCategoryTabs } from "@/components/test-category-tabs";
 
 export const Route = createFileRoute("/standardiserade-tester")({
@@ -17,6 +16,7 @@ type TestCard = {
   to: string;
   title: string;
   label: string;
+  distance?: string;
   description: string;
   tone: string;
   search?: Record<string, string>;
@@ -60,8 +60,8 @@ const EXISTING_SECTIONS: TestSection[] = [
     title: "Inspel",
     subtitle: "Precision med wedge och järn",
     tests: [
-      { to: "/approach-pei-wedge", title: "PEI Wedge", label: "Wedge", description: "Precision med wedges från kontrollerade avstånd.", tone: "bg-[#2D6396]" },
-      { to: "/approach-pei-iron", title: "PEI Iron", label: "Järn", description: "Benchmark för järnslag och proximity.", tone: "bg-[#2D6396]" },
+      { to: "/approach-pei-wedge", title: "PEI Wedge", label: "Wedge", distance: "50–120 m", description: "Mät precision med wedge på 18 varierade avstånd.", tone: "bg-[#2D6396]" },
+      { to: "/approach-pei-iron", title: "PEI Iron", label: "Järn", distance: "120–190 m", description: "Mät precision med järn på 18 varierade avstånd.", tone: "bg-[#2D6396]" },
     ],
   },
 ];
@@ -71,17 +71,14 @@ const TEST_SECTIONS = TEST_ORDER
   .map(title => EXISTING_SECTIONS.find(section => section.title === title))
   .filter((section): section is TestSection => Boolean(section));
 
-const FAVORITES_KEY = "sg4-test-favorites-v1";
-function TestCardView({ test, favorite, onToggleFavorite }: { test: TestCard; favorite: boolean; onToggleFavorite: () => void }) {
+function TestCardView({ test }: { test: TestCard }) {
   return (
     <div className={`relative h-[248px] w-[188px] shrink-0 overflow-hidden rounded-[26px] border border-black/[.04] text-white shadow-sm ${test.tone}`}>
-      <button type="button" aria-label={favorite ? `Ta bort ${test.title} från favoriter` : `Lägg till ${test.title} i favoriter`} aria-pressed={favorite} onClick={onToggleFavorite} className="absolute right-3 top-3 z-20 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black/15 text-white backdrop-blur-md transition active:scale-95">
-        <Star className={`h-4.5 w-4.5 ${favorite ? "fill-amber-300 text-amber-300" : "text-white"}`} />
-      </button>
-      <Link to={test.to as any} search={(test.search ?? {}) as any} className="absolute inset-0 flex flex-col px-4.5 pb-4.5 pt-[58px]">
+      <Link to={test.to as any} search={(test.search ?? {}) as any} className="absolute inset-0 flex flex-col px-4.5 pb-4.5 pt-5">
         <div className="min-h-0">
           <h3 className="font-display text-[30px] leading-[.95] tracking-[-.01em]">{test.title}</h3>
-          <p className="mt-1.5 line-clamp-4 text-[13px] font-medium leading-[1.4] text-white/80">{test.description}</p>
+          {test.distance && <p className="mt-2 text-[15px] font-bold leading-none text-white">{test.distance}</p>}
+          <p className="mt-2 line-clamp-4 text-[13px] font-medium leading-[1.4] text-white/80">{test.description}</p>
         </div>
         <span className="mt-auto w-fit max-w-full truncate rounded-full border border-white/20 bg-black/10 px-2.5 py-1 text-[9px] font-black uppercase tracking-[.13em] text-white/85 backdrop-blur-sm">
           {test.label}
@@ -92,34 +89,12 @@ function TestCardView({ test, favorite, onToggleFavorite }: { test: TestCard; fa
 }
 
 function StandardizedTestsPage() {
-  const [favorites, setFavorites] = useState<string[]>([]);
   const [puttingFilter, setPuttingFilter] = useState<"all" | "startlinje" | "langdkontroll" | "kortputt">("all");
-  const [favoriteFilter, setFavoriteFilter] = useState<"all" | "puttning" | "narspel" | "inspel">("all");
-  useEffect(() => {
-    try { const parsed = JSON.parse(localStorage.getItem(FAVORITES_KEY) ?? "[]"); if (Array.isArray(parsed)) setFavorites(parsed.filter((item): item is string => typeof item === "string")); } catch {}
-  }, []);
-  const allTests = useMemo(() => TEST_SECTIONS.flatMap(section => section.tests), []);
-  const favoriteTests = favorites.map(to => allTests.find(test => test.to === to)).filter((test): test is TestCard => Boolean(test));
-  const favoriteCategory = (test: TestCard) => {
-    const section = TEST_SECTIONS.find(section => section.tests.some(item => item.to === test.to))?.title;
-    if (section === "Puttning") return "puttning";
-    if (section === "Närspel") return "narspel";
-    if (section === "Inspel") return "inspel";
-    return null;
-  };
-  const visibleFavoriteTests = favoriteFilter === "all" ? favoriteTests : favoriteTests.filter(test => favoriteCategory(test) === favoriteFilter);
   const filteredPuttingTests = (tests: TestCard[]) => puttingFilter === "all" ? tests : tests.filter(test => {
     if (puttingFilter === "startlinje") return test.label.toLowerCase().includes("startlinje") || test.title === "Tutor Test";
     if (puttingFilter === "kortputt") return test.label.toLowerCase().includes("kortputt") || test.title === "Klockputt" || test.title === "25-bollsövningen";
     return test.label.toLowerCase().includes("längdkontroll") || test.title === "Lag Putt";
   });
-  function toggleFavorite(to: string) {
-    setFavorites(current => {
-      const next = current.includes(to) ? current.filter(item => item !== to) : [...current, to];
-      try { localStorage.setItem(FAVORITES_KEY, JSON.stringify(next)); } catch {}
-      return next;
-    });
-  }
   return (
     <main className="mx-auto min-h-screen w-full max-w-md bg-background pb-28">
       <TestCategoryTabs selected="advanced" />
@@ -133,22 +108,10 @@ function StandardizedTestsPage() {
         </div>
       </div>
       <div className="space-y-8 px-5 pt-8">
-        <section>
-          <div className="px-0.5">
-            <h2 className="text-[24px] font-black leading-none text-foreground">Mina favoriter</h2>
-            <p className="mt-1.5 text-[10px] font-black uppercase tracking-[.16em] text-muted-foreground">Tester du gillar</p>
-            <div className="mt-3 flex gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {([["all","Alla"],["puttning","Puttning"],["narspel","Närspel"],["inspel","Inspel"]] as const).map(([id,label]) => <button key={id} type="button" onClick={() => setFavoriteFilter(id)} className={`shrink-0 rounded-full border px-3 py-1.5 text-[10px] font-bold transition ${favoriteFilter === id ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-transparent text-muted-foreground"}`}>{label}</button>)}
-            </div>
-          </div>
-          <div className="-mx-5 mt-3.5 flex min-h-[249px] gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {visibleFavoriteTests.length ? visibleFavoriteTests.map(test => <TestCardView key={`favorite-${test.to}`} test={test} favorite onToggleFavorite={() => toggleFavorite(test.to)} />) : <div className="flex h-[220px] w-[164px] shrink-0 flex-col items-center justify-center rounded-[24px] border border-dashed border-slate-200 bg-slate-50/60 px-4 text-center"><Star className="h-6 w-6 text-slate-300" /><p className="mt-3 text-sm font-bold text-slate-500">Ingen favorit sparad</p><p className="mt-1 text-[11px] leading-snug text-slate-400">Stjärnmarkera ett test för att lägga det här.</p></div>}
-          </div>
-        </section>
         {TEST_SECTIONS.map(section => <section key={section.title}>
           <div className="px-0.5"><h2 className="text-[24px] font-black leading-none text-foreground">{section.title}</h2><p className="mt-1.5 text-[10px] font-black uppercase tracking-[.16em] text-muted-foreground">{section.subtitle}</p>
           {section.title === "Puttning" ? <div className="mt-3 flex gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{([["all","Alla"],["startlinje","Startlinje"],["kortputt","Kortputtar"],["langdkontroll","Längdkontroll"]] as const).map(([id,label]) => <button key={id} type="button" onClick={() => setPuttingFilter(id)} className={`shrink-0 rounded-full border px-3 py-1.5 text-[10px] font-bold transition ${puttingFilter === id ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-transparent text-muted-foreground"}`}>{label}</button>)}</div> : null}</div>
-          <div className="-mx-5 mt-3.5 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{(section.title === "Puttning" ? filteredPuttingTests(section.tests) : section.tests).map(test => <TestCardView key={`${section.title}-${test.title}`} test={test} favorite={favorites.includes(test.to)} onToggleFavorite={() => toggleFavorite(test.to)} />)}</div>
+          <div className="-mx-5 mt-3.5 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{(section.title === "Puttning" ? filteredPuttingTests(section.tests) : section.tests).map(test => <TestCardView key={`${section.title}-${test.title}`} test={test} />)}</div>
         </section>)}
       </div>
     </main>
