@@ -58,26 +58,15 @@ const EXISTING_SECTIONS: TestSection[] = [
   },
   {
     title: "Inspel",
-    subtitle: "Precision, wedges och bollkontroll",
+    subtitle: "Precision med wedge och järn",
     tests: [
-      { to: "/par-3-challenge", title: "Par 3 Challenge", label: "6 slag", description: "6 par 3-slag från korta, medium och långa distanser.", tone: "bg-[#2D6396]" },
-      { to: "/approach-pei-valj", title: "PEI Approach", label: "Precision", description: "Mät inspelsprecision över flera avstånd.", tone: "bg-[#2D6396]" },
       { to: "/approach-pei-wedge", title: "PEI Wedge", label: "Wedge", description: "Precision med wedges från kontrollerade avstånd.", tone: "bg-[#2D6396]" },
       { to: "/approach-pei-iron", title: "PEI Iron", label: "Järn", description: "Benchmark för järnslag och proximity.", tone: "bg-[#2D6396]" },
-      { to: "/wedge-stege", title: "Wedge Stege", label: "Distance control", description: "Mät avståndskontroll genom flera wedgezoner.", tone: "bg-[#2D6396]" },
-    ],
-  },
-  {
-    title: "Off the Tee",
-    subtitle: "Precision, konsekvens och längd",
-    tests: [
-      { to: "/driver-konsekvens", title: "Driver Consistency", label: "Konsekvens", description: "Mät spridning och stabilitet med driver.", tone: "bg-[#7A5638]" },
-
     ],
   },
 ];
 
-const TEST_ORDER = ["Off the Tee", "Inspel", "Närspel", "Puttning", "Bollkontroll"] as const;
+const TEST_ORDER = ["Inspel", "Närspel", "Puttning", "Bollkontroll"] as const;
 const TEST_SECTIONS = TEST_ORDER
   .map(title => EXISTING_SECTIONS.find(section => section.title === title))
   .filter((section): section is TestSection => Boolean(section));
@@ -105,7 +94,7 @@ function TestCardView({ test, favorite, onToggleFavorite }: { test: TestCard; fa
 function StandardizedTestsPage() {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [puttingFilter, setPuttingFilter] = useState<"all" | "startlinje" | "langdkontroll" | "kortputt">("all");
-  const [favoriteFilter, setFavoriteFilter] = useState<"all" | "puttning" | "narspel" | "inspel" | "utslag">("all");
+  const [favoriteFilter, setFavoriteFilter] = useState<"all" | "puttning" | "narspel" | "inspel">("all");
   useEffect(() => {
     try { const parsed = JSON.parse(localStorage.getItem(FAVORITES_KEY) ?? "[]"); if (Array.isArray(parsed)) setFavorites(parsed.filter((item): item is string => typeof item === "string")); } catch {}
   }, []);
@@ -116,7 +105,6 @@ function StandardizedTestsPage() {
     if (section === "Puttning") return "puttning";
     if (section === "Närspel") return "narspel";
     if (section === "Inspel") return "inspel";
-    if (section === "Off the Tee" || section === "Speed") return "utslag";
     return null;
   };
   const visibleFavoriteTests = favoriteFilter === "all" ? favoriteTests : favoriteTests.filter(test => favoriteCategory(test) === favoriteFilter);
@@ -150,7 +138,7 @@ function StandardizedTestsPage() {
             <h2 className="text-[24px] font-black leading-none text-foreground">Mina favoriter</h2>
             <p className="mt-1.5 text-[10px] font-black uppercase tracking-[.16em] text-muted-foreground">Tester du gillar</p>
             <div className="mt-3 flex gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {([["all","Alla"],["puttning","Puttning"],["narspel","Närspel"],["inspel","Inspel"],["utslag","Utslag"]] as const).map(([id,label]) => <button key={id} type="button" onClick={() => setFavoriteFilter(id)} className={`shrink-0 rounded-full border px-3 py-1.5 text-[10px] font-bold transition ${favoriteFilter === id ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-transparent text-muted-foreground"}`}>{label}</button>)}
+              {([["all","Alla"],["puttning","Puttning"],["narspel","Närspel"],["inspel","Inspel"]] as const).map(([id,label]) => <button key={id} type="button" onClick={() => setFavoriteFilter(id)} className={`shrink-0 rounded-full border px-3 py-1.5 text-[10px] font-bold transition ${favoriteFilter === id ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-transparent text-muted-foreground"}`}>{label}</button>)}
             </div>
           </div>
           <div className="-mx-5 mt-3.5 flex min-h-[249px] gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
