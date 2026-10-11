@@ -33,6 +33,10 @@ export const Route = createFileRoute("/")({
     meta: [
       { title: "SG4 – Hem" },
       { name: "description", content: "Spela, testa och slå dina resultat i SG4." },
+      { property: "og:title", content: "SG4 – Hem" },
+      { property: "og:description", content: "Spela, testa och slå dina resultat i SG4." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Home,
@@ -628,6 +632,12 @@ function Home() {
               className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black"
             >
               Vänner
+            </Link>
+            <Link to="/standardiserade-tester" className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black">
+              Avancerade tester
+            </Link>
+            <Link to="/trophy" className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black">
+              Trophy Room
             </Link>
           </nav>
         </div>
