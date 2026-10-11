@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { TestCategoryTabs } from "@/components/test-category-tabs";
 
 export const Route = createFileRoute("/spela-runda")({
   head: () => ({ meta: [{ title: "HCP-tester – SG4" }] }),
@@ -21,7 +22,7 @@ function RoundGamesPage() {
   </div>;
   return (
     <main className="mx-auto min-h-screen max-w-md bg-slate-50 pb-28 text-slate-950">
-
+      <TestCategoryTabs selected="hcp" />
       <div className="px-5">
       <section className="mt-6 px-1">
         <h1 className="mt-1 text-[42px] font-black leading-[.98] tracking-[-.02em]">HCP-tester</h1>
