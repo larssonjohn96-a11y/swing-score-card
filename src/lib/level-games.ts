@@ -58,14 +58,14 @@ export const LEVEL_GAMES: Record<LevelGameId, LevelGameDef> = {
   langputt: {
     id: "langputt", title: "Långputtning", section: "Puttning", image: "/putting-card.jpg",
     description: "6 hål från 6 m och längre. Undvik treputt.", unit: "hål",
-    outcomes: ["1 putt", "2 puttar", "3+ puttar"], goodZones: 2, scoreLabel: "puttar", better: "low",
+    outcomes: ["1 putt", "2 puttar", "3+ puttar"], goodZones: 2, scoreLabel: "hål utan treputt", better: "high",
     placementTargets: [6, 8, 10, 12, 14, 16],
     levels: {
-      1: { targets: [6, 6, 7, 7, 8, 8], conditions: [{ kind: "maxWorse", zone: 2, max: 2 }, { kind: "sumMax", max: 14 }], summary: "Max 2 treputtar, ≤14 puttar (6–8 m)" },
-      2: { targets: [7, 8, 8, 9, 9, 10], conditions: [{ kind: "maxWorse", zone: 2, max: 1 }, { kind: "sumMax", max: 13 }], summary: "Max 1 treputt, ≤13 puttar (7–10 m)" },
-      3: { targets: [8, 9, 10, 10, 11, 12], conditions: [{ kind: "maxWorse", zone: 2, max: 1 }, { kind: "sumMax", max: 12 }], summary: "Max 1 treputt, ≤12 puttar (8–12 m)" },
-      4: { targets: [10, 11, 12, 12, 13, 14], conditions: [{ kind: "maxWorse", zone: 2, max: 0 }, { kind: "sumMax", max: 12 }], summary: "Ingen treputt (10–14 m)" },
-      5: { targets: [12, 13, 14, 15, 16, 18], conditions: [{ kind: "maxWorse", zone: 2, max: 0 }, { kind: "sumMax", max: 11 }], summary: "Ingen treputt, ≤11 puttar (12–18 m)" },
+      1: { targets: [6, 6, 7, 7, 8, 8], conditions: [{ kind: "maxWorse", zone: 2, max: 2 }], summary: "Högst 2 treputtar (6–8 m)" },
+      2: { targets: [7, 8, 8, 9, 9, 10], conditions: [{ kind: "maxWorse", zone: 2, max: 1 }], summary: "Högst 1 treputt (7–10 m)" },
+      3: { targets: [8, 9, 10, 10, 11, 12], conditions: [{ kind: "maxWorse", zone: 2, max: 1 }], summary: "Högst 1 treputt (8–12 m)" },
+      4: { targets: [10, 11, 12, 12, 13, 14], conditions: [{ kind: "maxWorse", zone: 2, max: 0 }], summary: "Ingen treputt (10–14 m)" },
+      5: { targets: [12, 13, 14, 15, 16, 18], conditions: [{ kind: "maxWorse", zone: 2, max: 0 }, { kind: "within", zone: 0, min: 1 }], summary: "Ingen treputt och minst 1 hålad direkt (12–18 m)" },
     },
   },
   chipping: {
@@ -174,6 +174,8 @@ export type GameProgress = {
   placementLevel: LevelNumber | null;
   recommended: LevelNumber | null;
   pb: number | null;
+  /** Nivån som personbästa avser. Null betyder placeringsomgång. */
+  pbLevel: LevelNumber | null;
 };
 
 const STORAGE_KEY = "sg4.level-games.v1";
@@ -197,9 +199,26 @@ export function progressFrom(game: LevelGameDef, all: LevelGameRound[]): GamePro
   const recommended = placementRound || highestCleared
     ? (Math.min(5, Math.max(placementLevel ?? 1, highestCleared + 1)) as LevelNumber)
     : null;
-  const scores = rounds.map(r => r.score);
-  const pb = scores.length ? (game.better === "low" ? Math.min(...scores) : Math.max(...scores)) : null;
-  return { rounds, cleared, placementLevel, recommended, pb };
+  const lastLevelRound = [...rounds].reverse().find(r => !r.placement);
+  const pbLevel = lastLevelRound?.level ?? null;
+  const comparable = lastLevelRound
+    ? rounds.filter(r => !r.placement && r.level === pbLevel && r.variant === lastLevelRound.variant)
+    : rounds.filter(r => r.placement);
+  const pb = scoreBest(game, comparable.map(r => r.score));
+  return { rounds, cleared, placementLevel, recommended, pb, pbLevel };
+}
+
+/** PB kan bara jämföras mellan samma nivå och samma lie-variant. */
+function scoreBest(game: LevelGameDef, scores: number[]): number | null {
+  if (!scores.length) return null;
+  return game.better === "low" ? Math.min(...scores) : Math.max(...scores);
+}
+
+export function bestComparableScore(game: LevelGameDef, rounds: LevelGameRound[], mode: RoundMode): number | null {
+  const sameMode = rounds.filter(r => mode.kind === "placement"
+    ? r.placement
+    : !r.placement && r.level === mode.level && r.variant === mode.variant);
+  return scoreBest(game, sameMode.map(r => r.score));
 }
 
 export function getProgress(id: LevelGameId): GameProgress {
@@ -210,11 +229,12 @@ export function getProgress(id: LevelGameId): GameProgress {
 export function buildRound(game: LevelGameDef, mode: RoundMode, attempts: Attempt[], history: LevelGameRound[], id: string, playedAt: string): LevelGameRound {
   const outcomes = attempts.map(a => a.outcome);
   const placement = mode.kind === "placement";
-  const earned = earnedLevel(game, outcomes, placement);
+  const earned = placement ? earnedLevel(game, outcomes, true) : 0;
   const passed = mode.kind === "level" && passesConditions(game.levels[mode.level].conditions, outcomes);
   const before = progressFrom(game, history);
   const score = roundScore(game, outcomes);
-  const personalBest = before.pb === null || (game.better === "low" ? score < before.pb : score > before.pb);
+  const comparableBest = bestComparableScore(game, history, mode);
+  const personalBest = comparableBest === null || (game.better === "low" ? score < comparableBest : score > comparableBest);
   let recommended: LevelNumber;
   if (placement) recommended = Math.min(5, earned === 5 ? 5 : earned + 1) as LevelNumber;
   else {
