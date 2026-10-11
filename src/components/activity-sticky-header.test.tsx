@@ -41,7 +41,8 @@ describe("shared sticky headers on SG4 hub pages", () => {
 
   it("supports trailing-slash index URLs and preserves the correct page titles", () => {
     for (const pathname of routes) expect(render(`${pathname}/`)).toBe(render(pathname));
-    expect(render("/standardiserade-tester")).toContain("Standardiserade tester");
+    expect(render("/standardiserade-tester")).toContain("Testa");
+    expect(render("/spela-runda")).toContain("Testa");
     expect(render("/utveckling/")).toContain("Analys &amp; utveckling");
     expect(render("/spela")).toContain("Match");
   });
