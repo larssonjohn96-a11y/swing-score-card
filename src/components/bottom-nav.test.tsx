@@ -125,6 +125,7 @@ describe("advanced test categories", () => {
     expect(source).not.toContain("Streak Challenge");
     expect(source).not.toContain("streakChallenges");
     expect(source).not.toContain('title: "Fairways i rad"');
+    expect(source).not.toContain('to: "/fairway-streak"');
     expect(source).not.toContain('title: "Inspel i rad"');
     expect(source).not.toContain('title: "Bunkerslag i rad"');
     expect(source).toContain('title: "Puttning"');
