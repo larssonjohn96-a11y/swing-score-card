@@ -42,6 +42,10 @@
   --color-tint: var(--tint);
   --color-tint-strong: var(--tint-strong);
   --color-primary-bright: var(--primary-bright);
+  --color-nav-active: var(--nav-active);
+  --color-nav-active-surface: var(--nav-active-surface);
+  --color-art-overlay: var(--art-overlay);
+  --shadow-bottom-nav: var(--shadow-bottom-nav-value);
   --shadow-glow: 0 1px 2px oklch(0.3 0.05 160 / 0.05), 0 12px 30px -24px oklch(0.3 0.06 160 / 0.45);
   --radius-sm: 0.5rem;
   --radius-md: 0.625rem;
@@ -86,6 +90,10 @@
 }
 
 :root {
+  --nav-active: oklch(0.7 0.15 255);
+  --nav-active-surface: oklch(0.32 0.045 255);
+  --art-overlay: oklch(0.15 0.015 250);
+  --shadow-bottom-nav-value: 0 18px 48px -20px oklch(0.2 0.02 250 / 0.35);
   --radius: 1rem;
   --background: oklch(0.19 0.008 250);
   --foreground: oklch(0.97 0.003 250);
@@ -144,6 +152,8 @@
 }
 
 .light {
+  --nav-active: oklch(0.53 0.2 260);
+  --nav-active-surface: oklch(0.94 0.025 255);
   --background: oklch(0.995 0.005 110);
   --foreground: oklch(0.18 0.035 160);
   --card: oklch(1 0 0);

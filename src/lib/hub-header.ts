@@ -4,6 +4,7 @@ const HUB_HEADERS: Readonly<Record<string, HubHeader>> = {
   "/spela-runda": { title: "HCP-tester", to: "/" },
   "/utveckling": { title: "Analys & utveckling", to: "/" },
   "/spela": { title: "Match", to: "/" },
+  "/spel": { title: "Spel", to: "/" },
 };
 
 /** Index routes may be reached with or without a trailing slash. */
