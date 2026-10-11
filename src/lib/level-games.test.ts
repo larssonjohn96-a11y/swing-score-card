@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { LEVEL_GAMES, LEVEL_GAME_ORDER, LEVELS, buildRound, earnedLevel, passesConditions, progressFrom, targetsFor, type Attempt, type LevelGameRound } from "./level-games";
+import { LEVEL_GAMES, LEVEL_GAME_ORDER, LEVELS, bestComparableScore, buildRound, earnedLevel, passesConditions, progressFrom, roundScore, targetsFor, type Attempt, type LevelGameRound } from "./level-games";
 
 const att = (ts: number[], outs: number[]): Attempt[] => ts.map((target, i) => ({ target, outcome: outs[i], outcomeLabel: "x" }));
 
@@ -41,6 +41,36 @@ describe("level game definitions", () => {
     const b = LEVEL_GAMES.bunker;
     expect(earnedLevel(b, [5, 5, 5, 5, 5, 6], false)).toBe(1);
     expect(earnedLevel(b, [3, 3, 3, 3, 4, 4], false)).toBe(3);
+  });
+
+  it("scores lag putting by holes without three-putts, not a fictional exact number", () => {
+    const g = LEVEL_GAMES.langputt;
+    expect(roundScore(g, [0, 1, 1, 2, 2, 1])).toBe(4);
+    expect(g.scoreLabel).toBe("hål utan treputt");
+    for (const l of LEVELS) {
+      expect(g.levels[l].conditions.every(c => c.kind !== "sumMax")).toBe(true);
+    }
+    expect(passesConditions(g.levels[5].conditions, [1, 1, 1, 1, 1, 1])).toBe(false);
+    expect(passesConditions(g.levels[5].conditions, [0, 1, 1, 1, 1, 1])).toBe(true);
+  });
+
+  it("compares PB only on matching level and variant", () => {
+    const g = LEVEL_GAMES.kortputt;
+    const easy = buildRound(g, { kind: "level", level: 1 }, att(g.levels[1].targets, Array(9).fill(0)), [], "easy", "2026-01-01");
+    const hard = buildRound(g, { kind: "level", level: 5 }, att(g.levels[5].targets, [0, 0, 0, 0, 0, 0, 1, 1, 1]), [easy], "hard", "2026-01-02");
+    expect(hard.personalBest).toBe(true);
+    expect(hard.earnedLevel).toBe(0);
+    const p = progressFrom(g, [easy, hard]);
+    expect(p.pb).toBe(6);
+    expect(p.pbLevel).toBe(5);
+    expect(bestComparableScore(g, [easy, hard], { kind: "level", level: 1 })).toBe(9);
+    expect(bestComparableScore(g, [easy, hard], { kind: "level", level: 5 })).toBe(6);
+    const harderReplay = buildRound(g, { kind: "level", level: 5 }, att(g.levels[5].targets, [0, 0, 0, 0, 0, 1, 1, 1, 1]), [easy, hard], "replay", "2026-01-03");
+    expect(harderReplay.personalBest).toBe(false);
+
+    const bunker = LEVEL_GAMES.bunker;
+    const normal = buildRound(bunker, { kind: "level", level: 5 }, att(bunker.levels[5].targets, Array(6).fill(0)), [], "b1", "2026-01-01");
+    expect(bestComparableScore(bunker, [normal], { kind: "level", level: 5, variant: "varied-lies" })).toBeNull();
   });
 
   it("placement compares against all levels, is preliminary and never clears a level", () => {
