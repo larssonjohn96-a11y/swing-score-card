@@ -114,6 +114,7 @@ import { Route as UtvecklingIndexRouteImport } from './routes/utveckling.index'
 import { Route as SpelIndexRouteImport } from './routes/spel.index'
 import { Route as FramstegIndexRouteImport } from './routes/framsteg.index'
 import { Route as UtvecklingSlugRouteImport } from './routes/utveckling.$slug'
+import { Route as SpelGameIdRouteImport } from './routes/spel.$gameId'
 import { Route as KategoriSlugRouteImport } from './routes/kategori.$slug'
 import { Route as JamforUserIdRouteImport } from './routes/jamfor.$userId'
 import { Route as FramstegSlugRouteImport } from './routes/framsteg.$slug'
@@ -650,6 +651,11 @@ const UtvecklingSlugRoute = UtvecklingSlugRouteImport.update({
   path: '/utveckling/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SpelGameIdRoute = SpelGameIdRouteImport.update({
+  id: '/spel/$gameId',
+  path: '/spel/$gameId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const KategoriSlugRoute = KategoriSlugRouteImport.update({
   id: '/kategori/$slug',
   path: '/kategori/$slug',
@@ -782,6 +788,7 @@ export interface FileRoutesByFullPath {
   '/framsteg/$slug': typeof FramstegSlugRouteWithChildren
   '/jamfor/$userId': typeof JamforUserIdRoute
   '/kategori/$slug': typeof KategoriSlugRoute
+  '/spel/$gameId': typeof SpelGameIdRoute
   '/utveckling/$slug': typeof UtvecklingSlugRoute
   '/framsteg/': typeof FramstegIndexRoute
   '/spel/': typeof SpelIndexRoute
@@ -894,6 +901,7 @@ export interface FileRoutesByTo {
   '/framsteg/$slug': typeof FramstegSlugRouteWithChildren
   '/jamfor/$userId': typeof JamforUserIdRoute
   '/kategori/$slug': typeof KategoriSlugRoute
+  '/spel/$gameId': typeof SpelGameIdRoute
   '/utveckling/$slug': typeof UtvecklingSlugRoute
   '/framsteg': typeof FramstegIndexRoute
   '/spel': typeof SpelIndexRoute
@@ -1007,6 +1015,7 @@ export interface FileRoutesById {
   '/framsteg/$slug': typeof FramstegSlugRouteWithChildren
   '/jamfor/$userId': typeof JamforUserIdRoute
   '/kategori/$slug': typeof KategoriSlugRoute
+  '/spel/$gameId': typeof SpelGameIdRoute
   '/utveckling/$slug': typeof UtvecklingSlugRoute
   '/framsteg/': typeof FramstegIndexRoute
   '/spel/': typeof SpelIndexRoute
@@ -1121,6 +1130,7 @@ export interface FileRouteTypes {
     | '/framsteg/$slug'
     | '/jamfor/$userId'
     | '/kategori/$slug'
+    | '/spel/$gameId'
     | '/utveckling/$slug'
     | '/framsteg/'
     | '/spel/'
@@ -1233,6 +1243,7 @@ export interface FileRouteTypes {
     | '/framsteg/$slug'
     | '/jamfor/$userId'
     | '/kategori/$slug'
+    | '/spel/$gameId'
     | '/utveckling/$slug'
     | '/framsteg'
     | '/spel'
@@ -1345,6 +1356,7 @@ export interface FileRouteTypes {
     | '/framsteg/$slug'
     | '/jamfor/$userId'
     | '/kategori/$slug'
+    | '/spel/$gameId'
     | '/utveckling/$slug'
     | '/framsteg/'
     | '/spel/'
@@ -1456,6 +1468,7 @@ export interface RootRouteChildren {
   WedgeStegeHistorikRoute: typeof WedgeStegeHistorikRoute
   FramstegSlugRoute: typeof FramstegSlugRouteWithChildren
   KategoriSlugRoute: typeof KategoriSlugRoute
+  SpelGameIdRoute: typeof SpelGameIdRoute
   UtvecklingSlugRoute: typeof UtvecklingSlugRoute
   FramstegIndexRoute: typeof FramstegIndexRoute
   SpelIndexRoute: typeof SpelIndexRoute
@@ -2199,6 +2212,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UtvecklingSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/spel/$gameId': {
+      id: '/spel/$gameId'
+      path: '/spel/$gameId'
+      fullPath: '/spel/$gameId'
+      preLoaderRoute: typeof SpelGameIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/kategori/$slug': {
       id: '/kategori/$slug'
       path: '/kategori/$slug'
@@ -2376,6 +2396,7 @@ const rootRouteChildren: RootRouteChildren = {
   WedgeStegeHistorikRoute: WedgeStegeHistorikRoute,
   FramstegSlugRoute: FramstegSlugRouteWithChildren,
   KategoriSlugRoute: KategoriSlugRoute,
+  SpelGameIdRoute: SpelGameIdRoute,
   UtvecklingSlugRoute: UtvecklingSlugRoute,
   FramstegIndexRoute: FramstegIndexRoute,
   SpelIndexRoute: SpelIndexRoute,
