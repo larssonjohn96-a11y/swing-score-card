@@ -76,7 +76,7 @@ describe("Testa hub category navigation", () => {
   ] as const)("shows both categories with %s active", (selected, activeTo) => {
     const html = renderToStaticMarkup(<TestCategoryTabs selected={selected} />);
     expect(html).toContain('aria-label="Typ av tester"');
-    expect(html.match(/<a\\b/g)).toHaveLength(2);
+    expect(html.match(/<a\b/g)).toHaveLength(2);
     expect(html).toContain('href="/spela-runda"');
     expect(html).toContain('href="/standardiserade-tester"');
     expect(html).toContain("HCP-tester");
