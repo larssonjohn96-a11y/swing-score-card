@@ -1,3 +1,4 @@
+import { loadPeiSessions, peiRankingAverage } from "./pei-ranking";
 import { speedRankingAverage } from "./speed-challenge-feedback";
 import { syncSpeedRounds } from "./speed-cloud";
 import {
@@ -196,6 +197,13 @@ export async function pushPlayerSnapshot(expectedUserId?: string): Promise<boole
   const byCat = (slug: CategorySlug) => cats.find((c) => c.slug === slug)?.handicap ?? null;
   const radarProfile = computeLocalSocialRadarProfile();
   const comparisonProfile = computeLocalComparisonProfile();
+  for (const kind of ["wedge", "iron"] as const) {
+    const ranking = peiRankingAverage(loadPeiSessions(kind), kind);
+    if (ranking.average !== null) comparisonProfile.training.push(
+      { key: `pei-${kind}-fixed-average`, label: `${kind === "wedge" ? "Wedge" : "Iron"} PEI · snitt`, value: ranking.average, unit: "%", decimals: 2, higherIsBetter: false },
+      { key: `pei-${kind}-fixed-count`, label: "PEI · tester i snittet", value: ranking.count, unit: "", decimals: 0, higherIsBetter: true },
+    );
+  }
   const chipHistory = parseCourse(localStorage.getItem(courseStorageKey(userData.user.id))).history;
   const chip = chipAverage(chipHistory);
   const { data: previousChip, error: previousChipError } = await supabase

@@ -45,7 +45,7 @@ function subscribeToTestState(onChange: () => void) {
   const observer = new MutationObserver(onChange);
   observer.observe(document.documentElement, {
     attributes: true,
-    attributeFilter: ["data-sg4-test-active", "data-chip-screen-color"],
+    attributeFilter: ["data-sg4-test-active", "data-chip-screen-color", "data-sg4-pei-result"],
   });
   return () => observer.disconnect();
 }
@@ -54,13 +54,22 @@ function getTestActive() {
   return document.documentElement.dataset.sg4TestActive === "true";
 }
 
+function getPeiResult() {
+  return document.documentElement.dataset.sg4PeiResult === "true";
+}
+
 export function ActivityStickyHeader({ pathname }: { pathname: string }) {
   const normalizedPath = normalizeHeaderPath(pathname);
   const hub = getHubHeader(normalizedPath);
   const title = hub?.title ?? ACTIVITY_HEADER_TITLES[normalizedPath];
   const activeTest = useSyncExternalStore(subscribeToTestState, getTestActive, () => false);
+  const peiResult = useSyncExternalStore(subscribeToTestState, getPeiResult, () => false);
   if (!title) return null;
-  if (typeof document !== "undefined" && document.documentElement.dataset.chipScreenColor === "blue") return null;
+  if (
+    typeof document !== "undefined" &&
+    document.documentElement.dataset.chipScreenColor === "blue"
+  )
+    return null;
 
   return (
     <header
@@ -68,15 +77,63 @@ export function ActivityStickyHeader({ pathname }: { pathname: string }) {
       className="sticky top-0 z-[60] border-b border-slate-200/70 bg-white/88 pt-[env(safe-area-inset-top)] backdrop-blur-2xl"
     >
       <div className="mx-auto grid h-[58px] w-full max-w-md grid-cols-[44px_minmax(0,1fr)_44px] items-center px-3">
-        {activeTest ? <span aria-hidden="true" /> : (normalizedPath === "/approach-pei-wedge" || normalizedPath === "/approach-pei-iron") ? (
-          <Link to="/standardiserade-tester" data-local-navigation aria-label="Tillbaka till avancerade tester" className={BACK_BUTTON_CLASS}><ArrowLeft className="h-5 w-5" aria-hidden="true" /></Link>
+        {activeTest ? (
+          <span aria-hidden="true" />
+        ) : normalizedPath === "/approach-pei-wedge" || normalizedPath === "/approach-pei-iron" ? (
+          peiResult ? (
+            <button
+              type="button"
+              data-local-navigation
+              aria-label="Tillbaka till PEI"
+              onClick={() => window.dispatchEvent(new CustomEvent("sg4-pei-landing"))}
+              className={BACK_BUTTON_CLASS}
+            >
+              <ArrowLeft className="h-5 w-5" aria-hidden="true" />
+            </button>
+          ) : (
+            <Link
+              to="/standardiserade-tester"
+              data-local-navigation
+              aria-label="Tillbaka till avancerade tester"
+              className={BACK_BUTTON_CLASS}
+            >
+              <ArrowLeft className="h-5 w-5" aria-hidden="true" />
+            </Link>
+          )
         ) : hub ? (
-          <Link to={hub.to} data-local-navigation aria-label="Tillbaka till startsidan" className={BACK_BUTTON_CLASS}><ArrowLeft className="h-5 w-5" aria-hidden="true" /></Link>
+          <Link
+            to={hub.to}
+            data-local-navigation
+            aria-label="Tillbaka till startsidan"
+            className={BACK_BUTTON_CLASS}
+          >
+            <ArrowLeft className="h-5 w-5" aria-hidden="true" />
+          </Link>
         ) : (
-          <button type="button" data-dynamic-back aria-label="Tillbaka" className={BACK_BUTTON_CLASS}><ArrowLeft className="h-5 w-5" aria-hidden="true" /></button>
+          <button
+            type="button"
+            data-dynamic-back
+            aria-label="Tillbaka"
+            className={BACK_BUTTON_CLASS}
+          >
+            <ArrowLeft className="h-5 w-5" aria-hidden="true" />
+          </button>
         )}
-        <p className="min-w-0 truncate text-center text-[14px] font-extrabold tracking-[-.01em] text-slate-950">{title}</p>
-        {activeTest && normalizedPath !== "/approach-pei-wedge" && normalizedPath !== "/approach-pei-iron" ? <button type="button" data-test-abort aria-label="Avbryt test" className={BACK_BUTTON_CLASS}><X className="h-5 w-5" aria-hidden="true" /></button> : <span aria-hidden="true" />}
+        <p className="min-w-0 truncate text-center text-[14px] font-extrabold tracking-[-.01em] text-slate-950">
+          {title}
+        </p>
+        {activeTest ? (
+          <button
+            type="button"
+            data-test-abort
+            aria-label="Avbryt test"
+            className={BACK_BUTTON_CLASS}
+          >
+            <X className="h-5 w-5" aria-hidden="true" />
+          </button>
+        ) : (
+          <span aria-hidden="true" />
+        )}
       </div>
     </header>
   );

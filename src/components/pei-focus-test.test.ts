@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, it, expect } from "vitest";
-import { WEDGE_TARGETS } from "./pei-focus-test";
+import { IRON_TARGETS, WEDGE_TARGETS } from "./pei-focus-test";
 
 const EXPECTED_TARGETS = [30, 40, 50, 60, 70, 80, 90, 100, 110];
 
@@ -13,13 +13,8 @@ const startFn = source.slice(
 );
 const commitFn = source.slice(
   source.indexOf("function commit()"),
-  source.indexOf("function back()"),
+  source.indexOf('if (phase === "intro")'),
 );
-const generator = source.slice(
-  source.indexOf("function generateDistances"),
-  source.indexOf("function shotPei"),
-);
-
 describe("Wedge PEI fixed nine-shot sequence", () => {
   it("uses the exact 9 ascending targets, one shot per distance", () => {
     expect([...WEDGE_TARGETS]).toEqual(EXPECTED_TARGETS);
@@ -37,29 +32,24 @@ describe("Wedge PEI fixed nine-shot sequence", () => {
     expect(source).toContain("Slag {index + 1} / {shots.length}");
     expect(source).toContain('index === shots.length - 1 ? "Avsluta test"');
     expect(source).toContain("(index / shots.length) * 100");
-    expect(source).toContain("Starta {cfg.shotCount} slag");
+    expect(source).toContain("Starta {cfg.title}");
     expect(source).not.toContain("index === 17");
     expect(source).not.toMatch(/\/ 18</);
     expect(source).not.toMatch(/Starta 18 slag/);
   });
 
-  it("keeps Iron PEI at 18 randomised shots between 120 and 190 m", () => {
-    expect(ironConfig).not.toContain("targets:");
-    expect(ironConfig).toContain("shotCount: 18");
-    expect(ironConfig).toContain("min: 120, max: 190");
-    expect(startFn).toContain("generateDistances(cfg.min, cfg.max, cfg.shotCount)");
-    expect(generator).toContain(
-      "function generateDistances(min: number, max: number, count: number)",
-    );
-    expect(generator).toContain("Math.random");
-    expect(generator).not.toContain("const count = 18");
+  it("uses the agreed nine fixed iron targets from 120 to 175 m", () => {
+    expect([...IRON_TARGETS]).toEqual([120, 125, 135, 140, 150, 155, 165, 170, 175]);
+    expect(ironConfig).toContain("targets: IRON_TARGETS");
+    expect(ironConfig).toContain("shotCount: IRON_TARGETS.length");
+    expect(startFn).toContain("[...cfg.targets]");
   });
 
   it("describes 9 fixed ascending shots from 30 to 110 m without claiming randomisation", () => {
     expect(wedgeConfig).toContain("9 slag på fasta, stigande avstånd från 30 till 110 m");
     expect(wedgeConfig).toContain("Ett slag per avstånd");
     expect(wedgeConfig).not.toMatch(/slump/i);
-    expect(ironConfig).toContain("18 kontrollerat slumpade avstånd mellan 120–190 m");
+    expect(ironConfig).toContain("9 slag på fasta, stigande avstånd från 120 till 175 m");
 
     const choose = readFileSync("src/routes/approach-pei-valj.tsx", "utf8");
     const wedgeCard = choose.slice(
@@ -85,9 +75,9 @@ describe("Wedge PEI fixed nine-shot sequence", () => {
       "(Math.hypot(shot.actual - shot.target, shot.lateral) / shot.target) * 100",
     );
     expect(source).toContain("shots.reduce((sum, shot) => sum + shotPei(shot), 0) / shots.length");
-    expect(wedgeConfig).toContain('key: LEGACY_KEYS.peiWedge, testId: "pei-wedge"');
-    expect(ironConfig).toContain('key: LEGACY_KEYS.peiIron, testId: "pei-iron"');
+    expect(wedgeConfig).toMatch(/key: LEGACY_KEYS.peiWedge,\s*testId: "pei-wedge"/);
+    expect(ironConfig).toMatch(/key: LEGACY_KEYS.peiIron,\s*testId: "pei-iron"/);
     expect(source).toContain("recordSessionSaved(cfg.testId, record)");
-    expect(commitFn).toContain("setPhase(\"result\")");
+    expect(commitFn).toContain('setPhase("result")');
   });
 });
