@@ -93,7 +93,7 @@ function StepButtons({
           type="button"
           onClick={() => onAdjust(delta)}
           disabled={disableNegative && delta < 0}
-          className="min-h-11 rounded-xl border border-slate-200 bg-white py-2 font-display text-lg text-slate-900 shadow-[0_10px_26px_-22px_rgba(15,23,42,.45)] backdrop-blur-xl transition-all active:scale-95 disabled:opacity-25"
+          className="rounded-2xl border border-slate-300/85 bg-white/58 min-h-[clamp(32px,6dvh,48px)] py-1.5 font-display text-lg text-slate-900 shadow-[0_10px_26px_-22px_rgba(15,23,42,.45)] backdrop-blur-xl transition-all active:scale-95 disabled:opacity-25"
         >
           {delta > 0 ? `+${delta}` : delta}
         </button>
@@ -280,7 +280,7 @@ export function PeiFocusTest({ kind }: { kind: FocusKind }) {
     return (
       <main
         style={LIGHT_SURFACE}
-        className="mx-auto flex h-[calc(100dvh-58px-env(safe-area-inset-top))] w-full max-w-md flex-col gap-2 overflow-hidden bg-background px-4 pt-3 pb-[max(12px,env(safe-area-inset-bottom))] text-foreground"
+        className="mx-auto flex h-[calc(100dvh-58px-env(safe-area-inset-top))] w-full max-w-md flex-col overflow-hidden bg-background px-5 pt-2 text-foreground"
       >
         {isActivityComplete(phase) && (
           <ActivityReview
@@ -313,80 +313,92 @@ export function PeiFocusTest({ kind }: { kind: FocusKind }) {
           Slag {index + 1} / {shots.length}
         </p>
 
-        <div className="h-1.5 shrink-0 overflow-hidden rounded-full bg-slate-200/65">
+        <div className="mt-1.5 h-1.5 shrink-0 overflow-hidden rounded-full bg-slate-200/65">
           <div className="h-full rounded-full bg-blue-500/70" style={{ width: `${progress}%` }} />
         </div>
 
-        <section className="flex shrink-0 items-center justify-between rounded-2xl border border-slate-200 bg-white/75 px-4 py-3">
-          <p className="text-xs font-bold uppercase tracking-[.15em] text-slate-500">Mål</p>
-          <p className="font-display text-4xl leading-none text-slate-900">
+        <section className="mt-1.5 shrink-0 rounded-3xl border border-slate-300/85 bg-gradient-to-br from-slate-200/82 via-slate-100/75 to-white/65 px-4 py-[clamp(6px,1dvh,16px)] text-center shadow-[0_18px_42px_-30px_rgba(15,23,42,.42)] backdrop-blur-2xl">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">Mål</p>
+          <p className="mt-0.5 font-display text-[clamp(28px,5.5dvh,48px)] leading-none text-slate-700">
             {current.target}
             <span className="ml-1 text-lg text-slate-500">m</span>
           </p>
         </section>
 
-        <section className="my-auto shrink-0 rounded-3xl border border-slate-200 bg-white/75 p-3 shadow-sm">
-          <div className="pei-entry-fields grid gap-3">
-            <div>
-              <button
-                type="button"
-                onClick={() => setDistanceActive(true)}
-                className="mb-2 flex w-full items-center justify-between gap-3 text-left"
-              >
-                <span>
-                  <span className="block text-xs font-bold text-slate-600">Faktisk längd</span>
-                  <span className="mt-1 block text-[11px] text-slate-400">
-                    {lengthDelta === 0
-                      ? "På mål"
-                      : lengthDelta < 0
-                        ? `${Math.abs(lengthDelta)} m kort`
-                        : `${lengthDelta} m lång`}
-                  </span>
-                </span>
-                <span
-                  className={`font-display text-4xl leading-none tabular-nums ${distanceActive ? "text-slate-950" : "text-slate-500"}`}
-                >
-                  {actual}
-                  <span className="ml-1 text-base text-slate-400">m</span>
-                </span>
-              </button>
-              <StepButtons onAdjust={adjustDistance} />
-            </div>
-            <div className="pei-lateral-field border-t border-slate-200/70 pt-3">
-              <div className="mb-2 flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-xs font-bold text-slate-600">Sidled från mål</p>
-                  <p className="mt-1 text-[11px] text-slate-400">Endast avstånd</p>
-                </div>
-                <p className="font-display text-4xl leading-none tabular-nums text-slate-950">
-                  {lateral}
-                  <span className="ml-1 text-base text-slate-400">m</span>
-                </p>
-              </div>
-              <StepButtons onAdjust={adjustLateral} disableNegative={lateral === 0} />
-            </div>
+        <section className="mt-1.5 shrink-0 rounded-3xl border border-slate-300/80 bg-white/68 px-4 py-[clamp(6px,1.3dvh,16px)] shadow-[0_18px_42px_-32px_rgba(15,23,42,.35)] backdrop-blur-2xl">
+          <button
+            type="button"
+            onClick={() => setDistanceActive(true)}
+            className="w-full text-center"
+          >
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+              Faktisk längd
+            </p>
+            <p
+              className={`mt-0.5 font-display text-[clamp(28px,5.5dvh,48px)] leading-none transition-colors ${distanceActive ? "text-slate-950" : "text-slate-500/70"}`}
+            >
+              {actual}
+              <span className="ml-1 text-lg">m</span>
+            </p>
+            <p className="mt-0.5 text-xs text-slate-500">
+              {lengthDelta === 0
+                ? "På mål"
+                : lengthDelta < 0
+                  ? `${Math.abs(lengthDelta)} m kort`
+                  : `${lengthDelta} m lång`}
+            </p>
+          </button>
+          <div className="mt-2">
+            <StepButtons onAdjust={adjustDistance} />
           </div>
         </section>
 
-        <div className="mt-auto shrink-0">
-          <div className="mb-2 flex items-center justify-between px-1 text-xs text-slate-500">
-            <span>
-              Total miss{" "}
-              <strong className="text-slate-800">{missDistance(preview).toFixed(1)} m</strong>
-            </span>
-            <span>
-              PEI <strong className="text-blue-700">{shotPei(preview).toFixed(1)}%</strong>
-            </span>
+        <section className="mt-1.5 shrink-0 rounded-3xl border border-slate-300/80 bg-white/68 px-4 py-[clamp(6px,1.3dvh,16px)] text-center shadow-[0_18px_42px_-32px_rgba(15,23,42,.35)] backdrop-blur-2xl">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Sidled från mål
+          </p>
+          <p className="mt-0.5 font-display text-[clamp(28px,5.5dvh,48px)] leading-none text-slate-950">
+            {lateral}
+            <span className="ml-1 text-lg text-slate-500">m</span>
+          </p>
+          <p className="mt-0.5 text-xs text-slate-500">Endast avstånd</p>
+          <div className="mt-2">
+            <StepButtons onAdjust={adjustLateral} disableNegative={lateral === 0} />
+          </div>
+        </section>
+
+        <div className="mt-auto shrink-0 -mx-5 border-t border-slate-200/70 bg-white/66 px-5 pb-[max(8px,env(safe-area-inset-bottom))] pt-2 backdrop-blur-2xl">
+          <div className="mx-auto max-w-md rounded-3xl border border-slate-200/80 bg-white/55 px-4 py-1.5 shadow-[0_16px_36px_-30px_rgba(15,23,42,.4)] backdrop-blur-2xl">
+            <div className="grid grid-cols-4 gap-2 text-center">
+              <div>
+                <p className="text-[9px] uppercase text-slate-500">Mål</p>
+                <p className="font-semibold">{current.target} m</p>
+              </div>
+              <div>
+                <p className="text-[9px] uppercase text-slate-500">Längd</p>
+                <p className="font-semibold">{actual} m</p>
+              </div>
+              <div>
+                <p className="text-[9px] uppercase text-slate-500">Sidled</p>
+                <p className="font-semibold">{lateral} m</p>
+              </div>
+              <div>
+                <p className="text-[9px] uppercase text-slate-500">PEI</p>
+                <p className="font-semibold">{shotPei(preview).toFixed(1)}%</p>
+              </div>
+            </div>
+            <p className="mt-0.5 text-center text-[10px] text-slate-500">
+              Total miss {missDistance(preview).toFixed(1)} m
+            </p>
           </div>
           <button
             onClick={commit}
-            className="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 py-3 font-display text-xl text-white shadow-sm transition active:scale-[.99] hover:bg-blue-700"
+            className="mx-auto mt-1.5 flex w-full max-w-md items-center justify-center gap-2 rounded-2xl border border-blue-300/75 bg-gradient-to-br from-blue-500/[0.18] via-blue-400/[0.13] to-white/55 min-h-[clamp(40px,7dvh,56px)] py-2 font-display text-xl text-blue-800 shadow-[0_18px_40px_-28px_rgba(37,99,235,.75)] backdrop-blur-2xl"
           >
             {index === shots.length - 1 ? "Avsluta test" : "Nästa slag"}
             <ArrowRight className="h-5 w-5" />
           </button>
         </div>
-        <style>{`@media (max-height: 550px) and (min-width: 600px) { .pei-entry-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; } .pei-lateral-field { border-top: 0; padding-top: 0; } }`}</style>
       </main>
     );
   }
