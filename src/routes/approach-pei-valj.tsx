@@ -28,9 +28,9 @@ const TESTS = [
   {
     to: "/approach-pei-iron" as const,
     title: "Iron Precision",
-    range: "120–190 m",
+    range: "120–175 m",
     method: "PEI Iron",
-    description: "Mät precisionen på dina järninspel över varierade avstånd.",
+    description: "9 slag på fasta stigande avstånd, ett slag per avstånd – 120 till 175 m.",
   },
   {
     to: "/approach-pei" as const,
