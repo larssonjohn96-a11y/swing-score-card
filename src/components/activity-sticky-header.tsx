@@ -76,7 +76,7 @@ export function ActivityStickyHeader({ pathname }: { pathname: string }) {
           <button type="button" data-dynamic-back aria-label="Tillbaka" className={BACK_BUTTON_CLASS}><ArrowLeft className="h-5 w-5" aria-hidden="true" /></button>
         )}
         <p className="min-w-0 truncate text-center text-[14px] font-extrabold tracking-[-.01em] text-slate-950">{title}</p>
-        {activeTest ? <button type="button" data-test-abort aria-label="Avbryt test" className={BACK_BUTTON_CLASS}><X className="h-5 w-5" aria-hidden="true" /></button> : <span aria-hidden="true" />}
+        {activeTest && normalizedPath !== "/approach-pei-wedge" && normalizedPath !== "/approach-pei-iron" ? <button type="button" data-test-abort aria-label="Avbryt test" className={BACK_BUTTON_CLASS}><X className="h-5 w-5" aria-hidden="true" /></button> : <span aria-hidden="true" />}
       </div>
     </header>
   );
