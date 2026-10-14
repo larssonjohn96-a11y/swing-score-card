@@ -155,9 +155,9 @@ describe("advanced test card simplification", () => {
   it("shows the real PEI distances on cards and removes favorite actions", () => {
     const page = readFileSync("src/routes/standardiserade-tester.tsx", "utf8");
     const pei = readFileSync("src/components/pei-focus-test.tsx", "utf8");
-    expect(pei).toContain('wedge: { title: "Wedge PEI", min: 50, max: 120');
+    expect(pei).toContain('wedge: { title: "Wedge PEI", min: 30, max: 110');
     expect(pei).toContain('iron: { title: "Iron PEI", min: 120, max: 190');
-    expect(page).toContain('title: "PEI Wedge", label: "Wedge", distance: "50–120 m"');
+    expect(page).toContain('title: "PEI Wedge", label: "Wedge", distance: "30–110 m"');
     expect(page).toContain('title: "PEI Iron", label: "Järn", distance: "120–190 m"');
     expect(page).toContain("{test.distance &&");
     expect(page).not.toContain("Mina favoriter");

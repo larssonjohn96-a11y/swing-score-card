@@ -21,9 +21,9 @@ const TESTS = [
   {
     to: "/approach-pei-wedge" as const,
     title: "Wedge Precision",
-    range: "50–120 m",
+    range: "30–110 m",
     method: "PEI Wedge",
-    description: "Mät hur nära målet du slår dina wedges över varierade avstånd.",
+    description: "9 slag på fasta stigande avstånd, ett slag per avstånd – 30 till 110 m.",
   },
   {
     to: "/approach-pei-iron" as const,

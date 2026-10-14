@@ -12,16 +12,15 @@ export type FocusKind = "wedge" | "iron";
 type Shot = { target: number; actual: number; lateral: number };
 type Session = { id: string; date: string; pei: number; shots?: Shot[] };
 
-/** Fasta, stigande målavstånd för Wedge PEI – samma sekvens varje gång. */
-export const WEDGE_TARGETS = [
-  30, 40, 40, 50, 50, 60, 60, 70, 70, 80, 80, 90, 90, 100, 100, 110, 110, 120,
-] as const;
+/** Fasta, stigande målavstånd för Wedge PEI – ett slag per avstånd, samma sekvens varje gång. */
+export const WEDGE_TARGETS = [30, 40, 50, 60, 70, 80, 90, 100, 110] as const;
 
 type FocusConfig = {
   title: string;
-  /** Endast used when a test has no fixed targets. */
+  /** Avståndsband – endast använt av tester utan fasta targets. */
   min: number;
   max: number;
+  shotCount: number;
   key: string;
   testId: string;
   intro: string;
@@ -29,12 +28,11 @@ type FocusConfig = {
 };
 
 const CONFIG: Record<FocusKind, FocusConfig> = {
-  wedge: { title: "Wedge PEI", min: 50, max: 120, key: LEGACY_KEYS.peiWedge, testId: "pei-wedge", targets: WEDGE_TARGETS, intro: "18 slag på fasta, stigande avstånd från 30 till 120 m. Samma sekvens varje gång." },
-  iron: { title: "Iron PEI", min: 120, max: 190, key: LEGACY_KEYS.peiIron, testId: "pei-iron", intro: "18 kontrollerat slumpade avstånd mellan 120–190 m. Hela spannet täcks varje gång och ordningen blandas." },
+  wedge: { title: "Wedge PEI", min: 30, max: 110, shotCount: WEDGE_TARGETS.length, key: LEGACY_KEYS.peiWedge, testId: "pei-wedge", targets: WEDGE_TARGETS, intro: "9 slag på fasta, stigande avstånd från 30 till 110 m. Ett slag per avstånd, i samma ordning varje gång." },
+  iron: { title: "Iron PEI", min: 120, max: 190, shotCount: 18, key: LEGACY_KEYS.peiIron, testId: "pei-iron", intro: "18 kontrollerat slumpade avstånd mellan 120–190 m. Hela spannet täcks varje gång och ordningen blandas." },
 };
 
-function generateDistances(min: number, max: number) {
-  const count = 18;
+function generateDistances(min: number, max: number, count: number) {
   const width = (max - min) / count;
   const values = Array.from({ length: count }, (_, i) => Math.round(min + i * width + Math.random() * width));
   for (let i = values.length - 1; i > 0; i -= 1) {
@@ -95,7 +93,7 @@ export function PeiFocusTest({ kind }: { kind: FocusKind }) {
   const [result, setResult] = useState<number | null>(null);
 
   function start() {
-    const distances = cfg.targets ? [...cfg.targets] : generateDistances(cfg.min, cfg.max);
+    const distances = cfg.targets ? [...cfg.targets] : generateDistances(cfg.min, cfg.max, cfg.shotCount);
     const next = distances.map((target) => ({ target, actual: target, lateral: 0 }));
     setShots(next);
     setIndex(0);
@@ -118,7 +116,7 @@ export function PeiFocusTest({ kind }: { kind: FocusKind }) {
   function commit() {
     const updated = shots.map((shot, i) => (i === index ? { ...shot, actual, lateral } : shot));
     setShots(updated);
-    if (index === 17) {
+    if (index === updated.length - 1) {
       const pei = totalPei(updated);
       const sessions = load(cfg.key);
       const id = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : String(Date.now());
@@ -157,7 +155,7 @@ export function PeiFocusTest({ kind }: { kind: FocusKind }) {
           <p className="mt-4 text-sm leading-relaxed text-slate-600">{cfg.intro}</p>
         </section>
         <p className="mt-4 rounded-2xl border border-slate-300/80 bg-white/58 p-4 text-xs text-slate-600 backdrop-blur-xl">Träningstest · Ej HCP-grundande</p>
-        <button onClick={start} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl border border-blue-300/70 bg-blue-500/[0.12] py-5 font-display text-2xl text-blue-700 shadow-[0_18px_40px_-28px_rgba(37,99,235,.7)] backdrop-blur-2xl">Starta 18 slag <ArrowRight className="h-5 w-5" /></button>
+        <button onClick={start} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl border border-blue-300/70 bg-blue-500/[0.12] py-5 font-display text-2xl text-blue-700 shadow-[0_18px_40px_-28px_rgba(37,99,235,.7)] backdrop-blur-2xl">Starta {cfg.shotCount} slag <ArrowRight className="h-5 w-5" /></button>
       </main>
     );
   }
@@ -166,14 +164,14 @@ export function PeiFocusTest({ kind }: { kind: FocusKind }) {
     const current = shots[index];
     const preview = { ...current, actual, lateral };
     const lengthDelta = actual - current.target;
-    const progress = Math.round((index / 18) * 100);
+    const progress = Math.round((index / shots.length) * 100);
 
     return (
       <main style={LIGHT_SURFACE} className="mx-auto min-h-screen w-full max-w-md bg-background px-5 pb-36 pt-3 text-foreground">
 {isActivityComplete(phase) && <ActivityReview input={{ title: kind === "iron" ? "Iron PEI" : "Wedge PEI", outcomes: rawActivityOutcomes(shots) }} />}
         <div className="flex items-center justify-between">
           <button onClick={back} disabled={index === 0} className="rounded-full border border-slate-300/75 bg-white/58 p-2 text-slate-600 backdrop-blur-xl disabled:opacity-30"><ArrowLeft className="h-4 w-4" /></button>
-          <span className="text-sm font-semibold">Slag {index + 1} / 18</span>
+          <span className="text-sm font-semibold">Slag {index + 1} / {shots.length}</span>
           <Link to="/approach-pei-valj" className="flex items-center gap-1 text-xs text-slate-600"><X className="h-4 w-4" /> Avbryt</Link>
         </div>
 
@@ -210,7 +208,7 @@ export function PeiFocusTest({ kind }: { kind: FocusKind }) {
             </div>
             <p className="mt-1 text-center text-[10px] text-slate-500">Total miss {missDistance(preview).toFixed(1)} m</p>
           </div>
-          <button onClick={commit} className="mx-auto mt-2 flex w-full max-w-md items-center justify-center gap-2 rounded-2xl border border-blue-300/75 bg-gradient-to-br from-blue-500/[0.18] via-blue-400/[0.13] to-white/55 py-3.5 font-display text-xl text-blue-800 shadow-[0_18px_40px_-28px_rgba(37,99,235,.75)] backdrop-blur-2xl">{index === 17 ? "Avsluta test" : "Nästa slag"}<ArrowRight className="h-5 w-5" /></button>
+          <button onClick={commit} className="mx-auto mt-2 flex w-full max-w-md items-center justify-center gap-2 rounded-2xl border border-blue-300/75 bg-gradient-to-br from-blue-500/[0.18] via-blue-400/[0.13] to-white/55 py-3.5 font-display text-xl text-blue-800 shadow-[0_18px_40px_-28px_rgba(37,99,235,.75)] backdrop-blur-2xl">{index === shots.length - 1 ? "Avsluta test" : "Nästa slag"}<ArrowRight className="h-5 w-5" /></button>
         </div>
       </main>
     );
