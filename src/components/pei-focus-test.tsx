@@ -14,6 +14,8 @@ type Session = { id: string; date: string; pei: number; shots?: Shot[] };
 
 /** Fasta, stigande målavstånd för Wedge PEI – ett slag per avstånd, samma sekvens varje gång. */
 export const WEDGE_TARGETS = [30, 40, 50, 60, 70, 80, 90, 100, 110] as const;
+/** Fasta, stigande målavstånd för Iron PEI – nio slag som täcker 120–175 m. */
+export const IRON_TARGETS = [120, 125, 135, 140, 150, 155, 165, 170, 175] as const;
 
 type FocusConfig = {
   title: string;
@@ -29,7 +31,7 @@ type FocusConfig = {
 
 const CONFIG: Record<FocusKind, FocusConfig> = {
   wedge: { title: "Wedge PEI", min: 30, max: 110, shotCount: WEDGE_TARGETS.length, key: LEGACY_KEYS.peiWedge, testId: "pei-wedge", targets: WEDGE_TARGETS, intro: "9 slag på fasta, stigande avstånd från 30 till 110 m. Ett slag per avstånd, i samma ordning varje gång." },
-  iron: { title: "Iron PEI", min: 120, max: 190, shotCount: 18, key: LEGACY_KEYS.peiIron, testId: "pei-iron", intro: "18 kontrollerat slumpade avstånd mellan 120–190 m. Hela spannet täcks varje gång och ordningen blandas." },
+  iron: { title: "Iron PEI", min: 120, max: 175, shotCount: IRON_TARGETS.length, key: LEGACY_KEYS.peiIron, testId: "pei-iron", targets: IRON_TARGETS, intro: "9 slag på fasta, stigande avstånd från 120 till 175 m. Ett slag per avstånd, i samma ordning varje gång." },
 };
 
 function generateDistances(min: number, max: number, count: number) {
