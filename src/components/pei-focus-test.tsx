@@ -150,13 +150,11 @@ export function PeiFocusTest({ kind }: { kind: FocusKind }) {
     return (
       <main style={LIGHT_SURFACE} className="mx-auto min-h-screen w-full max-w-md bg-background px-6 pb-16 pt-8 text-foreground">
 {isActivityComplete(phase) && <ActivityReview input={{ title: kind === "iron" ? "Iron PEI" : "Wedge PEI", outcomes: rawActivityOutcomes(shots) }} />}
-        <Link to="/approach-pei-valj" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-300/80 bg-white/68 backdrop-blur-xl"><ArrowLeft className="h-4 w-4" /></Link>
         <section className="mt-6 rounded-[30px] border border-slate-300/80 bg-white/76 p-5 shadow-[0_20px_48px_-32px_rgba(15,23,42,.42)] backdrop-blur-2xl">
           <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Approach · PEI Precision</p>
           <h1 className="mt-2 text-5xl leading-none">{cfg.title}</h1>
           <p className="mt-4 text-sm leading-relaxed text-slate-600">{cfg.intro}</p>
         </section>
-        <p className="mt-4 rounded-2xl border border-slate-300/80 bg-white/58 p-4 text-xs text-slate-600 backdrop-blur-xl">Träningstest · Ej HCP-grundande</p>
         <button onClick={start} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl border border-blue-300/70 bg-blue-500/[0.12] py-5 font-display text-2xl text-blue-700 shadow-[0_18px_40px_-28px_rgba(37,99,235,.7)] backdrop-blur-2xl">Starta {cfg.shotCount} slag <ArrowRight className="h-5 w-5" /></button>
       </main>
     );
@@ -174,7 +172,7 @@ export function PeiFocusTest({ kind }: { kind: FocusKind }) {
         <div className="flex items-center justify-between">
           <button onClick={back} disabled={index === 0} className="rounded-full border border-slate-300/75 bg-white/58 p-2 text-slate-600 backdrop-blur-xl disabled:opacity-30"><ArrowLeft className="h-4 w-4" /></button>
           <span className="text-sm font-semibold">Slag {index + 1} / {shots.length}</span>
-          <Link to="/approach-pei-valj" className="flex items-center gap-1 text-xs text-slate-600"><X className="h-4 w-4" /> Avbryt</Link>
+          <Link to="/standardiserade-tester" className="flex items-center gap-1 text-xs text-slate-600"><X className="h-4 w-4" /> Avbryt</Link>
         </div>
 
         <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-200/65"><div className="h-full rounded-full bg-blue-500/70" style={{ width: `${progress}%` }} /></div>
@@ -222,7 +220,6 @@ export function PeiFocusTest({ kind }: { kind: FocusKind }) {
   return (
     <main style={LIGHT_SURFACE} className="mx-auto min-h-screen w-full max-w-md bg-background px-6 pb-16 pt-8 text-foreground">
 {isActivityComplete(phase) && <ActivityReview input={{ title: kind === "iron" ? "Iron PEI" : "Wedge PEI", outcomes: rawActivityOutcomes(shots) }} />}
-      <Link to="/approach-pei-valj" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-300/80 bg-white/68 backdrop-blur-xl"><ArrowLeft className="h-4 w-4" /></Link>
       <p className="mt-7 text-xs uppercase tracking-[0.22em] text-slate-500">{cfg.title}</p>
       <h1 className="mt-1 text-4xl">Resultat</h1>
       <div className="mt-5 rounded-3xl border border-slate-300/80 bg-white/68 p-6 text-center shadow-[0_18px_42px_-30px_rgba(15,23,42,.35)] backdrop-blur-2xl"><p className="text-xs text-slate-500">PEI</p><p className="font-display text-7xl text-blue-700">{result?.toFixed(2)}%</p><p className="mt-2 text-xs text-slate-500">PB {best.toFixed(2)}%</p></div>
