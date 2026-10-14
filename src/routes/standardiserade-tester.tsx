@@ -61,7 +61,7 @@ const EXISTING_SECTIONS: TestSection[] = [
     subtitle: "Precision med wedge och järn",
     tests: [
       { to: "/approach-pei-wedge", title: "PEI Wedge", label: "Wedge", distance: "30–110 m", description: "Mät precision med wedge på 9 fasta stigande avstånd.", tone: "bg-[#2D6396]" },
-      { to: "/approach-pei-iron", title: "PEI Iron", label: "Järn", distance: "120–190 m", description: "Mät precision med järn på 18 varierade avstånd.", tone: "bg-[#2D6396]" },
+      { to: "/approach-pei-iron", title: "PEI Iron", label: "Järn", distance: "120–175 m", description: "Mät precision med järn på 9 fasta stigande avstånd.", tone: "bg-[#2D6396]" },
     ],
   },
 ];
