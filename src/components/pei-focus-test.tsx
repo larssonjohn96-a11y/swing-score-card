@@ -1,7 +1,7 @@
 import { ActivityReview } from "@/components/activity-review";
 import { rawActivityOutcomes, isActivityComplete } from "@/lib/activity-review";
 import { Link } from "@tanstack/react-router";
-import { ArrowLeft, ArrowRight, BarChart3, RotateCcw, X } from "lucide-react";
+import { ArrowRight, BarChart3, RotateCcw, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 import { LEGACY_KEYS } from "@/lib/sessions/keys";
@@ -154,16 +154,6 @@ export function PeiFocusTest({ kind }: { kind: FocusKind }) {
     setActual(updated[nextIndex].target);
     setLateral(0);
     setDistanceActive(false);
-  }
-
-  function back() {
-    if (index === 0) return;
-    const previousIndex = index - 1;
-    const previous = shots[previousIndex];
-    setIndex(previousIndex);
-    setActual(previous.actual || previous.target);
-    setLateral(previous.lateral);
-    setDistanceActive(true);
   }
 
   if (phase === "intro") {
