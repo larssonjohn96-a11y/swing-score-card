@@ -1,3 +1,6 @@
+import { ApproachLevelSummary } from "@/components/approach-level-summary";
+import { PeiHistoryCard } from "@/components/pei-history-card";
+import { peiHistoryRows } from "@/lib/approach-history";
 import { ActivityReview } from "@/components/activity-review";
 import { rawActivityOutcomes, isActivityComplete } from "@/lib/activity-review";
 import { Link } from "@tanstack/react-router";
@@ -247,6 +250,8 @@ export function PeiFocusTest({ kind }: { kind: FocusKind }) {
             <strong>{ranking.best.toFixed(2).replace(".", ",")}%</strong>
           </div>
         )}
+        <ApproachLevelSummary rows={peiHistoryRows(history)} />
+        <PeiHistoryCard sessions={history} kind={kind} preview />
         <PeiLeaderboard
           kind={kind}
           history={history}
