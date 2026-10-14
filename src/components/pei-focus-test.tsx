@@ -12,10 +12,26 @@ export type FocusKind = "wedge" | "iron";
 type Shot = { target: number; actual: number; lateral: number };
 type Session = { id: string; date: string; pei: number; shots?: Shot[] };
 
-const CONFIG = {
-  wedge: { title: "Wedge PEI", min: 50, max: 120, key: LEGACY_KEYS.peiWedge, testId: "pei-wedge" },
-  iron: { title: "Iron PEI", min: 120, max: 190, key: LEGACY_KEYS.peiIron, testId: "pei-iron" },
-} as const;
+/** Fasta, stigande målavstånd för Wedge PEI – samma sekvens varje gång. */
+export const WEDGE_TARGETS = [
+  30, 40, 40, 50, 50, 60, 60, 70, 70, 80, 80, 90, 90, 100, 100, 110, 110, 120,
+] as const;
+
+type FocusConfig = {
+  title: string;
+  /** Endast used when a test has no fixed targets. */
+  min: number;
+  max: number;
+  key: string;
+  testId: string;
+  intro: string;
+  targets?: readonly number[];
+};
+
+const CONFIG: Record<FocusKind, FocusConfig> = {
+  wedge: { title: "Wedge PEI", min: 50, max: 120, key: LEGACY_KEYS.peiWedge, testId: "pei-wedge", targets: WEDGE_TARGETS, intro: "18 slag på fasta, stigande avstånd från 30 till 120 m. Samma sekvens varje gång." },
+  iron: { title: "Iron PEI", min: 120, max: 190, key: LEGACY_KEYS.peiIron, testId: "pei-iron", intro: "18 kontrollerat slumpade avstånd mellan 120–190 m. Hela spannet täcks varje gång och ordningen blandas." },
+};
 
 function generateDistances(min: number, max: number) {
   const count = 18;
@@ -79,7 +95,8 @@ export function PeiFocusTest({ kind }: { kind: FocusKind }) {
   const [result, setResult] = useState<number | null>(null);
 
   function start() {
-    const next = generateDistances(cfg.min, cfg.max).map((target) => ({ target, actual: target, lateral: 0 }));
+    const distances = cfg.targets ? [...cfg.targets] : generateDistances(cfg.min, cfg.max);
+    const next = distances.map((target) => ({ target, actual: target, lateral: 0 }));
     setShots(next);
     setIndex(0);
     setActual(next[0].target);
@@ -137,7 +154,7 @@ export function PeiFocusTest({ kind }: { kind: FocusKind }) {
         <section className="mt-6 rounded-[30px] border border-slate-300/80 bg-white/76 p-5 shadow-[0_20px_48px_-32px_rgba(15,23,42,.42)] backdrop-blur-2xl">
           <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Approach · PEI Precision</p>
           <h1 className="mt-2 text-5xl leading-none">{cfg.title}</h1>
-          <p className="mt-4 text-sm leading-relaxed text-slate-600">18 kontrollerat slumpade avstånd mellan {cfg.min}–{cfg.max} m. Hela spannet täcks varje gång och ordningen blandas.</p>
+          <p className="mt-4 text-sm leading-relaxed text-slate-600">{cfg.intro}</p>
         </section>
         <p className="mt-4 rounded-2xl border border-slate-300/80 bg-white/58 p-4 text-xs text-slate-600 backdrop-blur-xl">Träningstest · Ej HCP-grundande</p>
         <button onClick={start} className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl border border-blue-300/70 bg-blue-500/[0.12] py-5 font-display text-2xl text-blue-700 shadow-[0_18px_40px_-28px_rgba(37,99,235,.7)] backdrop-blur-2xl">Starta 18 slag <ArrowRight className="h-5 w-5" /></button>
