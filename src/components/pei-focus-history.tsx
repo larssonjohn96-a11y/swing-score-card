@@ -8,7 +8,7 @@ import { ApproachLevelSummary } from "@/components/approach-level-summary";
 import { PeiHistoryCard } from "@/components/pei-history-card";
 import { SESSIONS_CHANGED_EVENT } from "@/lib/sessions/sync";
 export function PeiFocusHistory({ kind }: { kind: FocusKind }) {
-  const title = kind === "wedge" ? "Wedge PEI" : "Iron PEI";
+  const title = kind === "wedge" ? "Korta inspel" : "Inspel järn";
   const [sessions, setSessions] = useState<PeiSession[]>([]);
   useEffect(() => {
     const refresh = () =>

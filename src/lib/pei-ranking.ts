@@ -7,6 +7,7 @@ export type PeiSession = {
   id: string;
   date: string;
   pei: number;
+  handicap?: number;
   shots?: Array<{ target: number; actual: number; lateral: number }>;
 };
 
@@ -37,8 +38,7 @@ export function peiRankingAverage(history: PeiSession[], kind: FocusKind) {
           shot.target === targets[i] &&
           Number.isFinite(shot.actual) &&
           shot.actual >= 0 &&
-          Number.isFinite(shot.lateral) &&
-          shot.lateral >= 0,
+          Number.isFinite(shot.lateral),
       ),
   );
   const recent = [...eligible].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);

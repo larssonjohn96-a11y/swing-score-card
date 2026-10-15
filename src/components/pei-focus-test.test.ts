@@ -29,10 +29,10 @@ describe("Wedge PEI fixed nine-shot sequence", () => {
     expect(wedgeConfig).toContain("targets: WEDGE_TARGETS");
     expect(wedgeConfig).toContain("shotCount: WEDGE_TARGETS.length");
     expect(commitFn).toContain("if (index === updated.length - 1)");
-    expect(source).toContain("Slag {index + 1} / {shots.length}");
-    expect(source).toContain('index === shots.length - 1 ? "Avsluta test"');
-    expect(source).toContain("(index / shots.length) * 100");
-    expect(source).toContain("Starta {cfg.title}");
+    expect(source).toContain("current={index + 1} total={shots.length}");
+    expect(source).toContain("Registrera slag");
+    expect(source).toContain('setPhase("compiling")');
+    expect(source).toContain("Starta testet");
     expect(source).not.toContain("index === 17");
     expect(source).not.toMatch(/\/ 18</);
     expect(source).not.toMatch(/Starta 18 slag/);
@@ -42,7 +42,7 @@ describe("Wedge PEI fixed nine-shot sequence", () => {
     expect([...IRON_TARGETS]).toEqual([120, 125, 135, 140, 150, 155, 165, 170, 175]);
     expect(ironConfig).toContain("targets: IRON_TARGETS");
     expect(ironConfig).toContain("shotCount: IRON_TARGETS.length");
-    expect(startFn).toContain("[...cfg.targets]");
+    expect(startFn).toContain("cfg.targets.map");
   });
 
   it("describes 9 fixed ascending shots from 30 to 110 m without claiming randomisation", () => {
@@ -66,7 +66,7 @@ describe("Wedge PEI fixed nine-shot sequence", () => {
       tests.indexOf('to: "/approach-pei-iron"'),
     );
     expect(wedgeTestCard).toContain('distance: "30–110 m"');
-    expect(wedgeTestCard).toContain("9 fasta stigande avstånd");
+    expect(wedgeTestCard).toContain("9 slag med wedge på fasta stigande avstånd");
     expect(wedgeTestCard).not.toContain("18 varierade");
   });
 
@@ -78,6 +78,18 @@ describe("Wedge PEI fixed nine-shot sequence", () => {
     expect(wedgeConfig).toMatch(/key: LEGACY_KEYS.peiWedge,\s*testId: "pei-wedge"/);
     expect(ironConfig).toMatch(/key: LEGACY_KEYS.peiIron,\s*testId: "pei-iron"/);
     expect(source).toContain("recordSessionSaved(cfg.testId, record)");
-    expect(commitFn).toContain('setPhase("result")');
+    expect(commitFn).toContain('setPhase("compiling")');
+    expect(source).toContain('window.setTimeout(() => setPhase("result"), 3100)');
+  });
+
+  it("uses the HCP-style flow and explicit left/right input without a last-chance label", () => {
+    expect(source).toContain("HcpCountdownScreen");
+    expect(source).toContain("Sammanställer testet…");
+    expect(source).toContain("Visa min HCP-analys");
+    expect(source).toContain("← Vänster");
+    expect(source).toContain("Höger →");
+    expect(source).toContain("Välj först vänster eller höger");
+    expect(source).not.toContain("Sista chansen");
+    expect(source).not.toContain("Sista slaget");
   });
 });

@@ -134,11 +134,11 @@ describe("advanced test categories", () => {
 });
 
 describe("advanced approach tests", () => {
-  it("only lists PEI Wedge and PEI Iron, without Off the Tee", () => {
+  it("only lists the two descriptive PEI approach tests, without Off the Tee", () => {
     const src = readFileSync("src/routes/standardiserade-tester.tsx", "utf8");
     const approach = src.split('title: "Inspel",')[1]?.split('  },\n')[0] ?? "";
     const titles = [...approach.matchAll(/to: "[^"]+", title: "([^"]+)"/g)].map((match) => match[1]);
-    expect(titles).toEqual(["PEI Wedge", "PEI Iron"]);
+    expect(titles).toEqual(["Korta inspel", "Inspel järn"]);
     expect(src).not.toContain('title: "Off the Tee"');
     expect(src).not.toContain('to: "/driver-konsekvens"');
     expect(src).not.toContain('to: "/par-3-challenge"');
@@ -155,10 +155,10 @@ describe("advanced test card simplification", () => {
   it("shows the real PEI distances on cards and removes favorite actions", () => {
     const page = readFileSync("src/routes/standardiserade-tester.tsx", "utf8");
     const pei = readFileSync("src/components/pei-focus-test.tsx", "utf8");
-    expect(pei).toContain('wedge: { title: "Wedge PEI", min: 30, max: 110');
-    expect(pei).toContain('iron: { title: "Iron PEI", min: 120, max: 175');
-    expect(page).toContain('title: "PEI Wedge", label: "Wedge", distance: "30–110 m"');
-    expect(page).toContain('title: "PEI Iron", label: "Järn", distance: "120–175 m"');
+    expect(pei).toContain('wedge: { title: "Korta inspel", min: 30, max: 110');
+    expect(pei).toContain('iron: { title: "Inspel järn", min: 120, max: 175');
+    expect(page).toContain('title: "Korta inspel", label: "Wedge", distance: "30–110 m"');
+    expect(page).toContain('title: "Inspel järn", label: "Järn", distance: "120–175 m"');
     expect(page).toContain("{test.distance &&");
     expect(page).not.toContain("Mina favoriter");
     expect(page).not.toContain("FAVORITES_KEY");
