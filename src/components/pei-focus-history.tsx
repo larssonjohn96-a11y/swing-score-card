@@ -1,3 +1,4 @@
+import { precisionScoreFromPei } from "@/lib/precision-score";
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -17,7 +18,7 @@ export function PeiFocusHistory({ kind }: { kind: FocusKind }) {
     window.addEventListener(SESSIONS_CHANGED_EVENT, refresh);
     return () => window.removeEventListener(SESSIONS_CHANGED_EVENT, refresh);
   }, [kind]);
-  const data = sessions.map((s, i) => ({ n: i + 1, pei: Number(s.pei.toFixed(2)) }));
+  const data = sessions.map((s, i) => ({ n: i + 1, score: Number(precisionScoreFromPei(s.pei).toFixed(2)) }));
   return (
     <main className="mx-auto min-h-screen w-full max-w-md space-y-4 bg-slate-50 px-4 pb-16 pt-4 text-slate-950">
       <Link
@@ -36,19 +37,19 @@ export function PeiFocusHistory({ kind }: { kind: FocusKind }) {
       <PeiHistoryCard sessions={sessions} kind={kind} />
       {sessions.length > 0 && (
         <section className="rounded-3xl border border-blue-100 bg-white p-4 shadow-sm">
-          <h2 className="font-black">PEI-utveckling</h2>
-          <p className="mt-1 text-xs text-slate-500">Lägre procent är bättre</p>
+          <h2 className="font-black">Precision Score över tid</h2>
+          <p className="mt-1 text-xs text-slate-500">Högre poäng är bättre · 0–100</p>
           <div className="mt-4 h-64">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={data} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
                 <XAxis dataKey="n" tickLine={false} axisLine={false} />
-                <YAxis tickLine={false} axisLine={false} domain={["auto", "auto"]} />
+                <YAxis tickLine={false} axisLine={false} domain={[0, 100]} />
                 <Tooltip
-                  formatter={(v) => [`${Number(v).toFixed(1).replace(".", ",")} %`, "PEI"]}
+                  formatter={(v) => [`${Number(v).toFixed(1).replace(".", ",")} /100`, "Precision Score"]}
                 />
                 <Line
                   type="monotone"
-                  dataKey="pei"
+                  dataKey="score"
                   stroke="#2563eb"
                   strokeWidth={2.5}
                   dot={{ r: 3 }}

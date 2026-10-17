@@ -22,14 +22,14 @@ const TESTS = [
     to: "/approach-pei-wedge" as const,
     title: "Korta inspel",
     range: "30–110 m",
-    method: "Wedge · PEI",
+    method: "Wedge · Precision Score",
     description: "9 slag på fasta stigande avstånd, ett slag per avstånd – 30 till 110 m.",
   },
   {
     to: "/approach-pei-iron" as const,
     title: "Inspel järn",
     range: "120–175 m",
-    method: "Järn · PEI",
+    method: "Järn · Precision Score",
     description: "9 slag på fasta stigande avstånd, ett slag per avstånd – 120 till 175 m.",
   },
   {

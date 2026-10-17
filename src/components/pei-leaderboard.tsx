@@ -1,3 +1,4 @@
+import { precisionScoreFromPei } from "@/lib/precision-score";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Trophy } from "lucide-react";
@@ -35,9 +36,10 @@ export function PeiLeaderboard({
           accepted.map(async (f) => {
             const snapshot = await fetchFriendSnapshot(f.other.id, true);
             const metrics = snapshot?.comparisonProfile.training ?? [];
-            const average =
-              metrics.find((m) => m.key === `pei-${kind}-fixed-average`)?.value ?? null;
-            const count = metrics.find((m) => m.key === `pei-${kind}-fixed-count`)?.value ?? 0;
+            const current = metrics.find((m) => m.key === `precision-${kind}-fixed-average`);
+            const legacy = metrics.find((m) => m.key === `pei-${kind}-fixed-average`);
+            const average = current?.value ?? (legacy ? precisionScoreFromPei(legacy.value) : null);
+            const count = metrics.find((m) => m.key === `${current ? "precision" : "pei"}-${kind}-fixed-count`)?.value ?? 0;
             return {
               id: f.other.id,
               name: f.other.displayName,
@@ -60,12 +62,12 @@ export function PeiLeaderboard({
   }, [userId, kind, history, retry]);
   const own = peiRankingAverage(history, kind);
   const all = [
-    { id: userId ?? "guest", name: playerName === "Du" ? "Du" : `${playerName} · Du`, ...own },
+    { id: userId ?? "guest", name: playerName === "Du" ? "Du" : `${playerName} · Du`, ...own, average: own.average === null ? null : precisionScoreFromPei(own.average) },
     ...rows,
   ].sort(
     (a, b) =>
       Number(b.count > 0) - Number(a.count > 0) ||
-      (a.average ?? Infinity) - (b.average ?? Infinity) ||
+      (b.average ?? -Infinity) - (a.average ?? -Infinity) ||
       a.name.localeCompare(b.name),
   );
   return (
@@ -76,17 +78,17 @@ export function PeiLeaderboard({
           Topplista
         </h2>
         <p className="mt-1 text-sm text-slate-500">
-          Snitt av senaste 5 testerna · lägre PEI är bättre
+          Snitt av senaste 5 testerna · högre Precision Score är bättre
         </p>
       </div>
       <div className="flex justify-between px-4 pt-3 text-xs font-bold uppercase text-slate-400">
         <span>Spelare</span>
-        <span>Snitt PEI</span>
+        <span>Precision Score</span>
       </div>
       <ol className="px-4">
         {all.map((r) => {
           const rank = r.count
-            ? all.filter((x) => x.count > 0 && x.average !== null && x.average < r.average!)
+            ? all.filter((x) => x.count > 0 && x.average !== null && x.average > r.average!)
                 .length + 1
             : null;
           return (
@@ -108,7 +110,7 @@ export function PeiLeaderboard({
                 </p>
               </div>
               <strong className="tabular-nums">
-                {r.count && r.average !== null ? `${r.average.toFixed(2).replace(".", ",")}%` : "–"}
+                {r.count && r.average !== null ? `${r.average.toFixed(1).replace(".", ",")} /100` : "–"}
               </strong>
             </li>
           );

@@ -1,3 +1,4 @@
+import { precisionScoreFromPei } from "@/lib/precision-score";
 import { approachHistorySummary, type ApproachHistoryRow } from "@/lib/approach-history";
 const fmt = (value: number | null, unit: string) =>
   value === null || !Number.isFinite(value) ? "–" : `${value.toFixed(1).replace(".", ",")} ${unit}`;
@@ -25,9 +26,9 @@ export function ApproachLevelSummary({ rows }: { rows: ApproachHistoryRow[] }) {
             <p className="mt-1 text-[10px] font-medium text-slate-400">Snitt från flaggan</p>
             <div className="mt-3 border-t border-slate-200/70 pt-2">
               <p className="text-lg font-bold tabular-nums text-blue-600">
-                {fmt(metrics?.pei ?? null, "%")}
+                {fmt(metrics?.pei == null ? null : precisionScoreFromPei(metrics.pei), "/100")}
               </p>
-              <p className="text-[10px] font-semibold text-slate-400">PEI</p>
+              <p className="text-[10px] font-semibold text-slate-400">Precision Score</p>
             </div>
           </div>
         ))}

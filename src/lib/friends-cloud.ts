@@ -1,3 +1,4 @@
+import { precisionScoreFromPei } from "@/lib/precision-score";
 import { loadPeiSessions, peiRankingAverage } from "./pei-ranking";
 import { speedRankingAverage } from "./speed-challenge-feedback";
 import { syncSpeedRounds } from "./speed-cloud";
@@ -200,8 +201,8 @@ export async function pushPlayerSnapshot(expectedUserId?: string): Promise<boole
   for (const kind of ["wedge", "iron"] as const) {
     const ranking = peiRankingAverage(loadPeiSessions(kind), kind);
     if (ranking.average !== null) comparisonProfile.training.push(
-      { key: `pei-${kind}-fixed-average`, label: `${kind === "wedge" ? "Wedge" : "Iron"} PEI · snitt`, value: ranking.average, unit: "%", decimals: 2, higherIsBetter: false },
-      { key: `pei-${kind}-fixed-count`, label: "PEI · tester i snittet", value: ranking.count, unit: "", decimals: 0, higherIsBetter: true },
+      { key: `precision-${kind}-fixed-average`, label: `${kind === "wedge" ? "Wedge" : "Järn"} Precision Score`, value: precisionScoreFromPei(ranking.average), unit: "/100", decimals: 1, higherIsBetter: true },
+      { key: `precision-${kind}-fixed-count`, label: "Precision Score · tester i snittet", value: ranking.count, unit: "", decimals: 0, higherIsBetter: true },
     );
   }
   const chipHistory = parseCourse(localStorage.getItem(courseStorageKey(userData.user.id))).history;

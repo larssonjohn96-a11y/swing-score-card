@@ -1,3 +1,4 @@
+import { precisionScoreFromPei } from "@/lib/precision-score";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { peiHistoryRows } from "@/lib/approach-history";
@@ -28,7 +29,7 @@ export function PeiHistoryCard({
       <div className="flex items-center justify-between border-b border-blue-100 p-4">
         <div>
           <h2 className="text-lg font-black">Historik</h2>
-          <p className="text-sm text-slate-500">Snitt från flaggan · PEI</p>
+          <p className="text-sm text-slate-500">Snitt från flaggan · Precision Score</p>
         </div>
         <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-500">
           {rows.length}
@@ -36,15 +37,15 @@ export function PeiHistoryCard({
       </div>
       {rows.length ? (
         <>
-          <div className="grid grid-cols-[56px_minmax(0,1fr)_60px] gap-2 border-b border-slate-100 px-4 py-2.5 text-[10px] font-black uppercase tracking-[.12em] text-slate-400">
+          <div className="grid grid-cols-[56px_minmax(0,1fr)_80px] gap-2 border-b border-slate-100 px-4 py-2.5 text-[10px] font-black uppercase tracking-[.12em] text-slate-400">
             <span>Datum</span>
             <span>Resultat</span>
-            <span className="text-right">PEI</span>
+            <span className="text-right">Score</span>
           </div>
           {rows.slice(0, preview ? 5 : limit).map((row) => (
             <div
               key={row.id}
-              className="grid grid-cols-[56px_minmax(0,1fr)_60px] items-center gap-2 border-b border-slate-100 px-4 py-3.5 last:border-0"
+              className="grid grid-cols-[56px_minmax(0,1fr)_80px] items-center gap-2 border-b border-slate-100 px-4 py-3.5 last:border-0"
             >
               <span className="text-[12px] font-semibold text-slate-500">
                 {new Date(row.date).toLocaleDateString("sv-SE", { day: "numeric", month: "short" })}
@@ -58,7 +59,7 @@ export function PeiHistoryCard({
                 )}
               </div>
               <strong className="text-right text-sm tabular-nums text-blue-600">
-                {fmt(row.pei, "%")}
+                {fmt(row.pei === null ? null : precisionScoreFromPei(row.pei), "/100")}
               </strong>
             </div>
           ))}
