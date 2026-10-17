@@ -92,9 +92,9 @@ export function ActivityStickyHeader({ pathname }: { pathname: string }) {
             </button>
           ) : (
             <Link
-              to="/standardiserade-tester"
+              to="/spela-runda"
               data-local-navigation
-              aria-label="Tillbaka till avancerade tester"
+              aria-label="Tillbaka till tester"
               className={BACK_BUTTON_CLASS}
             >
               <ArrowLeft className="h-5 w-5" aria-hidden="true" />

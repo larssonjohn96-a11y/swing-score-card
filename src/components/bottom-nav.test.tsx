@@ -14,7 +14,6 @@ vi.mock("@tanstack/react-router", () => ({
 }));
 import { BottomNav } from "./bottom-nav";
 import { GameOverview } from "./game-overview";
-import { TestCategoryTabs } from "./test-category-tabs";
 
 describe("five equal SG4 navigation tabs", () => {
   it("renders exactly five links with equal tracks and no plus or menu interaction", () => {
@@ -69,103 +68,27 @@ describe("five equal SG4 navigation tabs", () => {
   });
 });
 
-describe("Testa hub category navigation", () => {
-  it.each([
-    ["hcp", "/spela-runda"],
-    ["advanced", "/standardiserade-tester"],
-  ] as const)("shows both categories with %s active", (selected, activeTo) => {
-    const html = renderToStaticMarkup(<TestCategoryTabs selected={selected} />);
-    expect(html).toContain('aria-label="Typ av tester"');
-    expect(html.match(/<a\b/g)).toHaveLength(2);
-    expect(html).toContain('href="/spela-runda"');
-    expect(html).toContain('href="/standardiserade-tester"');
-    expect(html).toContain("HCP-tester");
-    expect(html).toContain("Avancerade tester");
-    expect(html).toContain('aria-current="page"');
-    expect(html.match(/aria-current="page"/g)).toHaveLength(1);
-    expect(html).toContain(`href="${activeTo}" aria-current="page"`);
+describe("unified test catalogue", () => {
+  it("lists eight image cards with two direct putting and approach entries", () => {
+    const page = readFileSync("src/routes/spela-runda.tsx", "utf8");
+    const cards = page.slice(page.indexOf("const GAMES"), page.indexOf("type GameCard"));
+    expect(cards.match(/title:/g)).toHaveLength(8);
+    for (const title of ["Ball Speed", "Driver", "Korta inspel", "Inspel järn", "Kortputt", "Långputt", "Chippning", "Bunker"]) expect(cards).toContain(`title:"${title}"`);
+    expect(cards.match(/image:/g)).toHaveLength(8);
+    expect(cards).toContain('search:{mode:"short"}');
+    expect(cards).toContain('search:{mode:"long"}');
+    expect(cards).not.toContain('/inspelsrundan');
+    expect(page).not.toContain("TestCategoryTabs");
+    expect(page).not.toContain("<header");
+    expect(readFileSync("src/routes/standardiserade-tester.tsx", "utf8")).toContain('redirect({ to: "/spela-runda", replace: true })');
   });
-
-  it("keeps both original test pages and removes the duplicate header", () => {
-    const hcp = readFileSync("src/routes/spela-runda.tsx", "utf8");
-    const advanced = readFileSync("src/routes/standardiserade-tester.tsx", "utf8");
-    expect(hcp).toContain('<TestCategoryTabs selected="hcp" />');
-    expect(advanced).toContain('<TestCategoryTabs selected="advanced" />');
-    expect(hcp).not.toContain("<header");
-    expect(advanced).not.toContain("<header");
-    expect(advanced).not.toContain("ArrowLeft");
-    expect(getHubHeader("/spela-runda")?.title).toBe("Testa");
-    expect(getHubHeader("/standardiserade-tester")?.title).toBe("Testa");
-    expect(activeBottomTab("/standardiserade-tester")).toBe("tests");
-  });
-});
-
-describe("advanced putting catalogue", () => {
-  it("only exposes the five diagnostic putting tests", () => {
-    const source = readFileSync("src/routes/standardiserade-tester.tsx", "utf8");
-    const putting = source.split('title: "Puttning",')[1]?.split('title: "Bollkontroll",')[0] ?? "";
-    const titles = [...putting.matchAll(/to: "[^"]+", title: "([^"]+)"/g)].map((match) => match[1]);
-    expect(titles).toEqual([
-      "Tutor Test",
-      "18 Puttar",
-      "Lag Putt",
-      "Klockputt",
-      "25-bollsövningen",
-    ]);
-    expect(source).not.toContain('to: "/green-reading"');
-    expect(source).not.toContain('to: "/putting-streak"');
-    expect(source).not.toContain('to: "/lagputt-ladder"');
-    expect(source).not.toContain('["green-reading","Green reading"]');
-  });
-});
-
-describe("advanced test categories", () => {
-  it("does not expose the Streak Challenge section or its three game cards", () => {
-    const source = readFileSync("src/routes/standardiserade-tester.tsx", "utf8");
-    expect(source).not.toContain("Streak Challenge");
-    expect(source).not.toContain("streakChallenges");
-    expect(source).not.toContain('title: "Fairways i rad"');
-    expect(source).not.toContain('to: "/fairway-streak"');
-    expect(source).not.toContain('title: "Inspel i rad"');
-    expect(source).not.toContain('title: "Bunkerslag i rad"');
-    expect(source).toContain('title: "Puttning"');
-    expect(source).toContain('title: "Bollkontroll"');
-  });
-});
-
-describe("advanced approach tests", () => {
-  it("only lists the two descriptive PEI approach tests, without Off the Tee", () => {
-    const src = readFileSync("src/routes/standardiserade-tester.tsx", "utf8");
-    const approach = src.split('title: "Inspel",')[1]?.split('  },\n')[0] ?? "";
-    const titles = [...approach.matchAll(/to: "[^"]+", title: "([^"]+)"/g)].map((match) => match[1]);
-    expect(titles).toEqual(["Korta inspel", "Inspel järn"]);
-    expect(src).not.toContain('title: "Off the Tee"');
-    expect(src).not.toContain('to: "/driver-konsekvens"');
-    expect(src).not.toContain('to: "/par-3-challenge"');
-    expect(src).not.toContain('to: "/approach-pei-valj"');
-    expect(src).not.toContain('to: "/wedge-stege"');
-    expect(src).not.toContain('["utslag","Utslag"]');
-    expect(src).toContain('title: "Puttning"');
-    expect(src).toContain('title: "Närspel"');
-    expect(src).toContain('title: "Bollkontroll"');
-  });
-});
-
-describe("advanced test card simplification", () => {
-  it("shows the real PEI distances on cards and removes favorite actions", () => {
-    const page = readFileSync("src/routes/standardiserade-tester.tsx", "utf8");
-    const pei = readFileSync("src/components/pei-focus-test.tsx", "utf8");
-    expect(pei).toContain('wedge: { title: "Korta inspel", min: 30, max: 110');
-    expect(pei).toContain('iron: { title: "Inspel järn", min: 120, max: 175');
-    expect(page).toContain('title: "Korta inspel", label: "Wedge", distance: "30–110 m"');
-    expect(page).toContain('title: "Inspel järn", label: "Järn", distance: "120–175 m"');
-    expect(page).toContain("{test.distance &&");
-    expect(page).not.toContain("Mina favoriter");
-    expect(page).not.toContain("FAVORITES_KEY");
-    expect(page).not.toContain("favoriteFilter");
-    expect(page).not.toContain("onToggleFavorite");
-    expect(page).not.toContain("<Star");
-    expect(page).not.toContain("aria-pressed={favorite}");
+  it("uses two fixed nine-hole putting protocols without a second mode selector", () => {
+    const putting = readFileSync("src/routes/puttrundan.tsx", "utf8");
+    expect(putting).toContain('targets: [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5]');
+    expect(putting).toContain('targets: [6, 7, 8, 9, 10, 12, 14, 16, 18]');
+    expect(putting).not.toContain('mode: "total"');
+    expect(putting).not.toContain('mode: "medium"');
+    expect(putting).not.toContain('modeOptions=');
   });
 });
 

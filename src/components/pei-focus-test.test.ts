@@ -60,14 +60,10 @@ describe("Wedge PEI fixed nine-shot sequence", () => {
     expect(wedgeCard).toContain("9 slag");
     expect(wedgeCard).toContain("fasta stigande avstånd");
 
-    const tests = readFileSync("src/routes/standardiserade-tester.tsx", "utf8");
-    const wedgeTestCard = tests.slice(
-      tests.indexOf('to: "/approach-pei-wedge"'),
-      tests.indexOf('to: "/approach-pei-iron"'),
-    );
-    expect(wedgeTestCard).toContain('distance: "30–110 m"');
-    expect(wedgeTestCard).toContain("9 slag med wedge på fasta stigande avstånd");
-    expect(wedgeTestCard).not.toContain("18 varierade");
+    const tests = readFileSync("src/routes/spela-runda.tsx", "utf8");
+    expect(tests).toContain('to:"/approach-pei-wedge"');
+    expect(tests).toContain('detail:"30–110 m · 9 slag"');
+    expect(tests).toContain('detail:"120–175 m · 9 slag"');
   });
 
   it("leaves PEI scoring, storage keys and history wiring unchanged", () => {

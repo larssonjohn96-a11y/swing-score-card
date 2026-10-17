@@ -1,27 +1,15 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { CATEGORIES } from "./categories";
 import { FIFTY_PUTT_TOTAL, FIFTY_PUTT_DISTANCES, FIFTY_PUTT_ROUNDS } from "./fifty-putts";
 
 const source = (file: string) => readFileSync(`src/${file}`, "utf8");
 
 describe("training and standardized test categorization", () => {
-  it("lists the unchanged 25-ball protocol under Putting only", () => {
-    const library = source("routes/standardiserade-tester.tsx");
-    const putting = library.slice(library.indexOf('title: "Puttning"'), library.indexOf('title: "Närspel"'));
-    const shortGame = library.slice(library.indexOf('title: "Närspel"'), library.indexOf('title: "Inspel"'));
-    expect(putting).toContain('to: "/50-bollar", title: "25-bollsövningen", label: "Kortputt"');
-    expect(shortGame).not.toContain('/50-bollar');
-    expect(library).not.toContain('title: "50 Bollar"');
+  it("redirects the retired advanced catalogue without deleting old exercise protocols", () => {
+    expect(source("routes/standardiserade-tester.tsx")).toContain('redirect({ to: "/spela-runda", replace: true })');
     expect(FIFTY_PUTT_TOTAL).toBe(25);
     expect(FIFTY_PUTT_ROUNDS).toBe(5);
     expect([...FIFTY_PUTT_DISTANCES]).toEqual([1, 2, 3, 4, 5]);
-  });
-  it("moves only the configurable bunker activity out of Tests", () => {
-    const library = source("routes/standardiserade-tester.tsx");
-    expect(library).not.toContain('/bunker-traning');
-    expect(library).toContain('/fairway-streak');
-    expect(CATEGORIES.flatMap(category => category.tests).some(test => test.to === '/bunker-test')).toBe(true);
   });
   it("keeps both bunker practice choices under the existing coach entry", () => {
     const coach = source("routes/coach.tsx");

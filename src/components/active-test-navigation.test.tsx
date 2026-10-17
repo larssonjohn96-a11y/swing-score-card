@@ -48,21 +48,21 @@ describe("active test navigation", () => {
   });
 
   it.each(["/approach-pei-wedge", "/approach-pei-iron"])(
-    "%s returns to advanced tests and has only abort during a test",
+    "%s returns to tests and has only abort during a test",
     (pathname) => {
       const dataset = { sg4TestActive: "false", sg4PeiResult: "false" };
       vi.stubGlobal("document", { documentElement: { dataset } });
       const render = () => renderToStaticMarkup(<ActivityStickyHeader pathname={pathname} />);
-      expect(render()).toContain('href="/standardiserade-tester"');
+      expect(render()).toContain('href="/spela-runda"');
       expect(render()).not.toContain("data-dynamic-back");
       dataset.sg4TestActive = "true";
-      expect(render()).not.toContain('href="/standardiserade-tester"');
+      expect(render()).not.toContain('href="/spela-runda"');
       expect(render().match(/<button\b/g)).toHaveLength(1);
       expect(render()).toContain("data-test-abort");
       dataset.sg4TestActive = "false";
       dataset.sg4PeiResult = "true";
       expect(render()).toContain('aria-label="Tillbaka till PEI"');
-      expect(render()).not.toContain('href="/standardiserade-tester"');
+      expect(render()).not.toContain('href="/spela-runda"');
     },
   );
 

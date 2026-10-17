@@ -47,7 +47,7 @@ type QuickStart = {
   eyebrow: string;
   title: string;
   detail: string;
-  to: "/standardiserade-tester" | "/spela";
+  to: "/spela-runda" | "/spela";
   activityId: string;
 };
 type CompareTarget = "30" | "20" | "10" | "0" | "+3" | "tour";
@@ -529,7 +529,7 @@ function Home() {
         eyebrow: "Kom igång",
         title: "Gör ditt första test",
         detail: "Få ett första resultat och börja bygga din spelarprofil.",
-        to: "/standardiserade-tester",
+        to: "/spela-runda",
         activityId: "hcp-test",
       };
     const playScore = Math.max(
@@ -541,7 +541,7 @@ function Home() {
         eyebrow: "Snabbstart",
         title: "Gör ett nytt test",
         detail: "Få ett nytt resultat direkt.",
-        to: "/standardiserade-tester",
+        to: "/spela-runda",
         activityId: "hcp-test",
       };
     return {
@@ -633,8 +633,8 @@ function Home() {
             >
               Vänner
             </Link>
-            <Link to="/standardiserade-tester" className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black">
-              Avancerade tester
+            <Link to="/spela-runda" className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black">
+              Tester
             </Link>
             <Link to="/trophy" className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black">
               Trophy Room
