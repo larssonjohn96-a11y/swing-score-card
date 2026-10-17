@@ -93,12 +93,12 @@ describe("unified test catalogue", () => {
 });
 
 describe("standalone Spel overview", () => {
-  it("shows exactly five playable level games grouped Puttning/Närspel/Inspel, without assessment links or a duplicate header", () => {
+  it("shows six playable games grouped Utslag/Puttning/Närspel/Inspel, without assessment links or a duplicate header", () => {
     const html = renderToStaticMarkup(<GameOverview />);
-    expect(GAME_SECTIONS.map(section => section.title)).toEqual(["Puttning", "Närspel", "Inspel"]);
-    expect(GAME_SECTIONS.flatMap(s => s.games.map(g => g.title))).toEqual(["Kortputtning", "Långputtning", "Chipping", "Bunker", "Inspel"]);
+    expect(GAME_SECTIONS.map(section => section.title)).toEqual(["Utslag", "Puttning", "Närspel", "Inspel"]);
+    expect(GAME_SECTIONS.flatMap(s => s.games.map(g => g.title))).toEqual(["Fairwaystegen", "Kortputtning", "Långputtning", "Chipping", "Bunker", "Inspel"]);
     expect(html).not.toContain("Kommer snart");
-    expect(html.match(/<a\b/g)).toHaveLength(5);
+    expect(html.match(/<a\b/g)).toHaveLength(6);
     expect(html.match(/Hitta din nivå/g)).toHaveLength(5);
     expect(html).not.toContain("/spela-runda");
     expect(html).not.toContain("<header");
