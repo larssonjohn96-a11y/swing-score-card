@@ -13,7 +13,7 @@ export function chipTestMetrics(shots: readonly ChipPoints[]) {
   const metres = [7, 2.5, 1.5, 0.5, 0];
   return {
     average: shots.length
-      ? shots.reduce((sum, points) => sum + metres[points], 0) / shots.length
+      ? shots.reduce<number>((sum, points) => sum + metres[points], 0) / shots.length
       : 0,
     within1m: shots.filter((points) => points >= 3).length,
     holed: shots.filter((points) => points === 4).length,
