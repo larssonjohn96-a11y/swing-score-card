@@ -11,5 +11,5 @@ export const GAME_SECTIONS = [
   { title: "Utslag", subtitle: "Träffa fairwayen när den krymper", games: [{ id: "fairwaystegen" as const, title: "Fairwaystegen", description: "En träff, nästa nivå. Hur smalt klarar du med tre hjärtan?", image: "/Off_the_tee.png", metadata: "8 nivåer · 3 hjärtan · välj carry" }] },
   { title: "Puttning", subtitle: "Sänk korta, undvik treputt", games: [g("kortputt"), g("langputt")] },
   { title: "Närspel", subtitle: "Chipping & bunker", games: [g("chipping"), g("bunker")] },
-  { title: "Inspel", subtitle: "Precision mot flaggan", games: [g("inspel")] },
+  { title: "Inspel", subtitle: "Precision mot flaggan", games: [{ ...g("inspel"), title: "Flaggjakten", description: "Wedge eller järn. Samla nio stjärnor på varje HCP-utmaning.", metadata: "9 slag · 7 stjärnor klarar nivån" }] },
 ] as const;
