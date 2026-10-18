@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { RotateCcw } from "lucide-react";
+import { AnalysisHistoryChart } from "@/components/analysis-history-chart";
 import {
   CATEGORY_LABELS,
   computeEstimatedHandicap,
@@ -124,70 +125,22 @@ function AnalysisTab({ data }: { data: Data }) {
         <p className="mt-2 text-xs text-slate-500">
           Grönt: relativ styrka · Blått: jämn nivå · Gult: utvecklingsområde
         </p>
-        <div className="mt-3 space-y-3">
+        <div className="mt-3 grid grid-cols-2 gap-3">
           {HCP_CATS.map((slug) => {
             const cat = data.cats.find((c) => c.slug === slug);
-            const hcp = cat?.count ? cat.handicap : undefined;
             return (
-              <details
+              <CategoryFlipCard
                 key={slug}
-                className={`group overflow-hidden rounded-2xl border ${categoryTone(hcp, baseline)}`}
-              >
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 [&::-webkit-details-marker]:hidden">
-                  <div>
-                    <h3 className="font-bold">{CATEGORY_LABELS[slug]}</h3>
-                    <p className="mt-1 text-xs text-slate-500">
-                      {cat?.count ? `${cat.count} test` : "Ej testad"}
-                    </p>
-                  </div>
-                  <div className="ml-auto text-right">
-                    <p className="text-3xl font-black">{hcp === undefined ? "–" : hcpLabel(hcp)}</p>
-                    <span className="text-[10px] font-bold uppercase text-slate-500">
-                      Uppskattat HCP
-                    </span>
-                  </div>
-                  <span className="ml-2 flex flex-col items-center gap-1 text-slate-500">
-                    <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
-                    <span className="text-[10px] group-open:hidden">Visa delar</span>
-                    <span className="hidden text-[10px] group-open:block">Dölj</span>
-                  </span>
-                </summary>
-                <div className="border-t border-black/5 px-4 pb-4">
-                  <p className="py-3 text-xs text-slate-500">
-                    Delresultat från upp till 5 senaste testerna. Kategori-HCP kan bygga på fler
-                    tester.
-                  </p>
-                  {(data.parts[slug] ?? []).map((part) => (
-                    <div
-                      key={part.label}
-                      className="flex items-center justify-between gap-3 border-b border-black/5 py-3 last:border-0"
-                    >
-                      <div>
-                        <p className="text-sm font-semibold">{part.label}</p>
-                        {part.note && (
-                          <p className="mt-1 text-[11px] text-slate-500">{part.note}</p>
-                        )}
-                      </div>
-                      <strong className="shrink-0 text-sm">
-                        {part.hcp !== undefined
-                          ? `HCP ${hcpLabel(part.hcp)}`
-                          : (part.value ?? "Ej testad")}
-                      </strong>
-                    </div>
-                  ))}
-                  <Link
-                    to="/utveckling/$slug"
-                    params={{ slug }}
-                    className="mt-3 inline-flex min-h-10 items-center text-sm font-bold text-blue-700"
-                  >
-                    Se utveckling över tid →
-                  </Link>
-                </div>
-              </details>
+                slug={slug}
+                cat={cat}
+                parts={data.parts[slug] ?? []}
+                baseline={baseline}
+              />
             );
           })}
         </div>
       </section>
+      <AnalysisHistoryChart />
       {!tested.length && (
         <Link
           to="/spela-runda"
@@ -197,5 +150,86 @@ function AnalysisTab({ data }: { data: Data }) {
         </Link>
       )}
     </div>
+  );
+}
+
+function CategoryFlipCard({
+  slug,
+  cat,
+  parts,
+  baseline,
+}: {
+  slug: CategorySlug;
+  cat: CategoryHandicap | undefined;
+  parts: NonNullable<AnalysisParts[CategorySlug]>;
+  baseline: number | undefined;
+}) {
+  const [flipped, setFlipped] = useState(false);
+  const hcp = cat?.count ? cat.handicap : undefined;
+  const tone = categoryTone(hcp, baseline);
+  const visibleParts = parts.filter((part) => part.label !== "Samlat utslag");
+  return (
+    <button
+      type="button"
+      onClick={() => setFlipped((value) => !value)}
+      aria-pressed={flipped}
+      aria-label={`${CATEGORY_LABELS[slug]} – ${flipped ? "visa kategori-HCP" : "visa delresultat"}`}
+      className="h-[230px] min-w-0 rounded-2xl text-left outline-none [perspective:1000px] focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+    >
+      <span
+        className="relative block h-full w-full transition-transform duration-500 motion-reduce:transition-none [transform-style:preserve-3d]"
+        style={{ transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)" }}
+      >
+        <span
+          aria-hidden={flipped}
+          className={`absolute inset-0 flex flex-col rounded-2xl border p-4 [backface-visibility:hidden] ${tone}`}
+        >
+          <span className="text-base font-bold">{CATEGORY_LABELS[slug]}</span>
+          <span className="my-auto block">
+            <span className="block text-5xl font-black">
+              {hcp === undefined ? "–" : hcpLabel(hcp)}
+            </span>
+            <span className="mt-2 block text-[10px] font-bold uppercase text-slate-500">
+              Uppskattat HCP
+            </span>
+          </span>
+          <span className="text-xs text-slate-500">
+            {cat?.count ? `${cat.count} test` : "Ej testad"}
+          </span>
+          <span className="mt-3 flex items-center gap-1 text-[11px] font-semibold text-slate-500">
+            <RotateCcw className="h-3 w-3" />
+            Tryck för delar
+          </span>
+        </span>
+        <span
+          aria-hidden={!flipped}
+          className={`absolute inset-0 flex flex-col rounded-2xl border p-3 [backface-visibility:hidden] ${tone}`}
+          style={{ transform: "rotateY(180deg)" }}
+        >
+          <span className="text-sm font-bold">{CATEGORY_LABELS[slug]}</span>
+          <span className="mt-1 text-[9px] text-slate-500">Upp till 5 senaste testerna</span>
+          <span className="my-auto block">
+            {visibleParts.map((part) => (
+              <span
+                key={part.label}
+                className="flex items-center justify-between gap-1 border-b border-black/5 py-3 last:border-0"
+              >
+                <span className="text-[11px] font-medium">{part.label.split(" · ")[0]}</span>
+                <span className="shrink-0 text-xs font-black">
+                  {part.hcp !== undefined ? `HCP ${hcpLabel(part.hcp)}` : (part.value ?? "–")}
+                </span>
+              </span>
+            ))}
+          </span>
+          <span className="text-[9px] text-slate-500">
+            {slug === "driving" ? "Fairway ±16 m · OB över 28 m" : "– = inte testad"}
+          </span>
+          <span className="mt-2 flex items-center gap-1 text-[11px] font-semibold text-slate-500">
+            <RotateCcw className="h-3 w-3" />
+            Vänd tillbaka
+          </span>
+        </span>
+      </span>
+    </button>
   );
 }
