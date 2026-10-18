@@ -23,3 +23,11 @@ export function storeStarRound(round: ApproachStarRound) {
   localStorage.setItem(KEY, JSON.stringify(history));
   return history;
 }
+
+/** Advanced challenges unlock in sequence, separately for wedge and iron. */
+export function isStarLevelUnlocked(rounds: ApproachStarRound[], kind: FocusKind, hcp: ApproachHcp) {
+  if (hcp >= 10) return true;
+  const index = APPROACH_HCP_LEVELS.indexOf(hcp);
+  return APPROACH_HCP_LEVELS.slice(APPROACH_HCP_LEVELS.indexOf(10), index)
+    .every(previous => (bestStars(rounds, kind, previous) ?? 0) >= 7);
+}

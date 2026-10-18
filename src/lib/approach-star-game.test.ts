@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { APPROACH_HCP_LEVELS, APPROACH_MODEL_VERSION, approachPercentForHcp, approachZoneRadius } from "./approach-hcp-model";
 import { handicapFromPct, PRECISION_BENCHMARKS } from "./precision";
-import { bestStars, loadStarRounds, starStatus, starTargets, storeStarRound, type ApproachStarRound } from "./approach-star-game";
+import { bestStars, isStarLevelUnlocked, loadStarRounds, starStatus, starTargets, storeStarRound, type ApproachStarRound } from "./approach-star-game";
 const make = (hits: boolean[], hcp: ApproachStarRound["hcp"]=20, kind: ApproachStarRound["kind"]="wedge"):ApproachStarRound=>({id:"one",date:"2026-10-18",kind,hcp,model:APPROACH_MODEL_VERSION,hits});
 afterEach(()=>vi.unstubAllGlobals());
 describe("approach HCP challenges",()=>{
@@ -28,6 +28,18 @@ describe("approach HCP challenges",()=>{
    const rounds=[make([true,...Array(8).fill(false)]),make([false,...Array(8).fill(true)]),make(Array(9).fill(true),10),make(Array(9).fill(true),20,"iron"),{...make(Array(9).fill(true)),model:"other"}];
    expect(bestStars(rounds,"wedge",20)).toBe(8);
    expect(bestStars(rounds,"wedge",5)).toBeNull();
+ });
+ it("unlocks advanced levels in sequence and separately for wedge and iron",()=>{
+   for(const h of [40,30,20,10] as const) expect(isStarLevelUnlocked([],"wedge",h)).toBe(true);
+   for(const h of [5,0,-3] as const) expect(isStarLevelUnlocked([],"wedge",h)).toBe(false);
+   const pass=(h:ApproachStarRound["hcp"])=>make([...Array(7).fill(true),false,false],h);
+   expect(isStarLevelUnlocked([make([...Array(6).fill(true),false,false,false],10)],"wedge",5)).toBe(false);
+   expect(isStarLevelUnlocked([pass(10)],"wedge",5)).toBe(true);
+   expect(isStarLevelUnlocked([pass(10)],"iron",5)).toBe(false);
+   expect(isStarLevelUnlocked([pass(10)],"wedge",0)).toBe(false);
+   expect(isStarLevelUnlocked([pass(10),pass(5)],"wedge",0)).toBe(true);
+   expect(isStarLevelUnlocked([pass(10),pass(5)],"wedge",-3)).toBe(false);
+   expect(isStarLevelUnlocked([pass(10),pass(5),pass(0)],"wedge",-3)).toBe(true);
  });
  it("undoes saved final shots without duplicate records",()=>{
    const data=new Map<string,string>();vi.stubGlobal("window",{});vi.stubGlobal("localStorage",{getItem:(k:string)=>data.get(k)??null,setItem:(k:string,v:string)=>data.set(k,v)});
