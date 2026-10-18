@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { CHIP_ZONES, type ChipPoints } from "@/lib/chip-stations";
 import { courseHandicap, holeStars, roundStars, type CourseRound } from "@/lib/chip-course";
-import { chipTestStars, chipStationComplete } from "@/lib/chip-test-progress";
+import { chipTestStars, chipStationComplete, chipTestMetrics } from "@/lib/chip-test-progress";
 import { BunkerStars } from "@/components/bunker-stars";
 import { useChipScreenColor } from "@/lib/use-chip-screen-color";
 import {
@@ -29,6 +29,13 @@ export function NineShotChipTest({ onExit }: { onExit: () => void }) {
     [confirmExit, setConfirmExit] = useState(false),
     [analysis, setAnalysis] = useState(false),
     [hcpReady, setHcpReady] = useState(false);
+  const [flash, setFlash] = useState<{ points: ChipPoints; id: number } | null>(null);
+  useEffect(() => {
+    if (!flash) return;
+    const timer = window.setTimeout(() => setFlash(null), 650);
+    return () => window.clearTimeout(timer);
+  }, [flash]);
+  const metrics = chipTestMetrics(balls.flat());
   const timers = useRef<number[]>([]);
   const lastInput = useRef(0);
   useChipScreenColor(view === "countdown" || view === "compiling" || analysis);
@@ -46,8 +53,7 @@ export function NineShotChipTest({ onExit }: { onExit: () => void }) {
     return () => window.removeEventListener("sg4-test-abort", handler);
   }, []);
   const done = balls.reduce((a, b) => a + b.length, 0),
-    current = balls[station],
-    stars = balls.reduce((sum, b, i) => sum + holeStars(b, i, "Fairway", 4), 0);
+    current = balls[station];
   const chipHistory =
     typeof window === "undefined"
       ? []
@@ -105,6 +111,7 @@ export function NineShotChipTest({ onExit }: { onExit: () => void }) {
     return () => window.clearTimeout(id);
   }, [analysis]);
   function start() {
+    setFlash(null);
     lastInput.current = 0;
     setBalls([[], [], []]);
     setStation(0);
@@ -114,6 +121,7 @@ export function NineShotChipTest({ onExit }: { onExit: () => void }) {
     if (view !== "test" || chipStationComplete(current) || Date.now() - lastInput.current < 350)
       return;
     lastInput.current = Date.now();
+    setFlash({ points: p, id: lastInput.current });
     setBalls(balls.map((b, i) => (i === station ? [...b, p] : b)));
   }
   function continueTest() {
@@ -152,6 +160,7 @@ export function NineShotChipTest({ onExit }: { onExit: () => void }) {
     setView("compiling");
   }
   function undo() {
+    setFlash(null);
     if (current.length) setBalls((a) => a.map((b, i) => (i === station ? b.slice(0, -1) : b)));
     else if (station > 0) {
       setStation(station - 1);
@@ -278,7 +287,7 @@ export function NineShotChipTest({ onExit }: { onExit: () => void }) {
             </p>
           </section>
           <section className="rounded-3xl border border-blue-100 bg-white p-4">
-            {chipStationComplete(current) ? (
+            {chipStationComplete(current) && !flash ? (
               <div className="text-center">
                 <p className="mb-3 font-bold">
                   {DIST[station]} m klart · {fmt(chipTestStars(current))} stjärnor
@@ -303,10 +312,19 @@ export function NineShotChipTest({ onExit }: { onExit: () => void }) {
                       key={z.points}
                       variant="outline"
                       onClick={() => score(z.points)}
-                      className="min-h-12 justify-between rounded-2xl px-4"
+                      disabled={chipStationComplete(current)}
+                      className={`min-h-12 justify-between rounded-2xl px-4 transition-colors disabled:opacity-100 ${flash?.points === z.points ? "border-blue-300 bg-blue-50 text-blue-700 hover:bg-blue-50" : ""}`}
                     >
                       <span className="font-bold">{z.label}</span>
-                      <span className="text-slate-400">+{z.points} p</span>
+                      {flash?.points === z.points ? (
+                        <Check
+                          key={flash.id}
+                          aria-label="Registrerad"
+                          className="h-4 w-4 animate-in zoom-in duration-150 text-blue-600"
+                        />
+                      ) : (
+                        <span className="text-slate-400">+{z.points} p</span>
+                      )}
                     </Button>
                   ))}
                 </div>
@@ -357,18 +375,38 @@ export function NineShotChipTest({ onExit }: { onExit: () => void }) {
           <section className="rounded-3xl border border-blue-100 bg-white p-5 text-center">
             <p className="text-xs font-black uppercase text-blue-600">CHIPPNINGSTEST KLART</p>
             <h1 className="mt-1 text-3xl font-black">Ditt resultat</h1>
-            <p className="mt-4 text-5xl font-black text-amber-500">{fmt(stars)} ★</p>
-            <p className="text-sm text-slate-500">av 9 stjärnor</p>
-            <div className="mt-5 grid grid-cols-3 gap-2">
+            <div className="mt-5 rounded-3xl bg-slate-50 p-6">
+              <p className="text-6xl font-black">{fmt(metrics.average)} m</p>
+              <p className="mt-2 text-sm font-semibold text-slate-500">
+                Uppskattat snitt från hålet
+              </p>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-2xl font-black">{metrics.within1m}/9</p>
+                <p className="text-sm text-slate-500">Inom 1 m</p>
+              </div>
+              <div>
+                <p className="text-2xl font-black">{metrics.holed}/9</p>
+                <p className="text-sm text-slate-500">Sänkta</p>
+              </div>
+            </div>
+            <p className="mt-5 text-xs font-semibold text-slate-500">
+              Uppskattat snitt per avstånd
+            </p>
+            <div className="mt-2 grid grid-cols-3 gap-2">
               {balls.map((b, i) => (
                 <div key={DIST[i]} className="rounded-2xl bg-slate-50 p-3">
-                  <strong>{DIST[i]} m</strong>
-                  <p className="mt-1 text-lg font-black text-amber-500">
-                    {fmt(holeStars(b, i, "Fairway", 4))} ★
-                  </p>
+                  <p className="text-xs text-slate-500">Från {DIST[i]} m</p>
+                  <strong className="mt-1 block text-lg">
+                    {fmt(chipTestMetrics(b).average)} m
+                  </strong>
                 </div>
               ))}
             </div>
+            <p className="mt-3 text-xs text-slate-400">
+              Sänkta ingår i inom 1 m. Snittet uppskattas från zonerna; över 3 m räknas som 7 m.
+            </p>
           </section>
           <Button
             onClick={() => setAnalysis(true)}

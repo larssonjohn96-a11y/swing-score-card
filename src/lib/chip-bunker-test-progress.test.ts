@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { chipTestStars, chipStationComplete } from "./chip-test-progress";
+import { chipTestStars, chipStationComplete, chipTestMetrics } from "./chip-test-progress";
 import { holeStars } from "./chip-course";
 import { BUNKER_TEST_INTERVALS, computeBunkerResult } from "./bunker";
 
@@ -29,5 +29,15 @@ describe("six bunker zones", () => {
     expect(result.within2m).toBe(2);
     expect(computeBunkerResult([{index: 1, interval: "50cm-1m"}]).avgProximity).toBe(0.75);
     expect(computeBunkerResult([{index: 1, interval: "4-6m"}]).avgProximity).toBe(5);
+  });
+});
+
+describe("chip result metrics", () => {
+  it("includes holed shots within one metre and estimates proximity from zones", () => {
+    const metrics = chipTestMetrics([4,3,2,1,0,4,3,2,1]);
+    expect(metrics.holed).toBe(2);
+    expect(metrics.within1m).toBe(4);
+    expect(metrics.average).toBeCloseTo(16 / 9);
+    expect(chipTestMetrics([4,3,2]).average).toBeCloseTo(2 / 3);
   });
 });

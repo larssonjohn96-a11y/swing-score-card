@@ -82,9 +82,11 @@ describe("Wedge PEI fixed nine-shot sequence", () => {
     expect(source).toContain("HcpCountdownScreen");
     expect(source).toContain("Sammanställer testet…");
     expect(source).toContain("Visa min HCP-analys");
-    expect(source).toContain("← Vänster");
-    expect(source).toContain("Höger →");
-    expect(source).toContain("Välj först vänster eller höger");
+    expect(source).toContain("Carrylängd");
+    expect(source).toContain('direction === -1 ? "Vänster" : "Höger"');
+    expect(source).toContain("[-10, -5, 5, 10]");
+    expect(source).toContain("Nollställ sidled");
+    expect(source).toContain("actualEntry.replace");
     expect(source).not.toContain("Sista chansen");
     expect(source).not.toContain("Sista slaget");
   });
