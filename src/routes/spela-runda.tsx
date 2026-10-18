@@ -9,7 +9,7 @@ const GAMES = [
   { to:"/driverrundan", title:"Driver", image:"/Off_the_tee.png" },
   { to:"/approach-pei-wedge", title:"Korta inspel", image:"/Approach_shot.png", detail:"30–110 m · 9 slag" },
   { to:"/approach-pei-iron", title:"Inspel järn", image:"/Approach_shot.png", detail:"120–175 m · 9 slag" },
-  { to:"/puttrundan", search:{mode:"short"}, title:"Kortputt", image:"/Putting_1.png", detail:"1–5 m · 9 hål" },
+  { to:"/puttrundan", search:{mode:"short"}, title:"Kortputt", image:"/Putting_1.png", detail:"1–4 m · 9 hål" },
   { to:"/puttrundan", search:{mode:"long"}, title:"Långputt", image:"/Putting_1.png", detail:"6–18 m · 9 hål" },
   { to:"/chipprundan", title:"Chippning", image:"/0d286fd4-99fa-47eb-b39c-a7ff718ebdd6.png" },
   { to:"/bunkerrundan", title:"Bunker", image:"/bunker-round.svg" },

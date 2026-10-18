@@ -5,7 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { buildPuttingMatchReview } from "@/lib/putting-match-review";
 import { useChipScreenColor } from "@/lib/use-chip-screen-color";
-import { StandardHcpAnalysis, ShotAnalysisList, BenchmarkStory } from "@/components/standard-hcp-analysis";
+import {
+  StandardHcpAnalysis,
+  ShotAnalysisList,
+  BenchmarkStory,
+} from "@/components/standard-hcp-analysis";
 import { HcpCountdownScreen } from "@/components/hcp-countdown-screen";
 import { HcpTestProgress } from "@/components/hcp-test-progress";
 import { useTestViewportLock } from "@/lib/use-test-viewport-lock";
@@ -14,6 +18,7 @@ const DEFAULT_DIST = [1.5, 2.5, 4, 6, 8, 10, 12, 15, 18];
 const SPECIALIST_BASE_KEY = "sg4-putting-nine-hole-v1";
 const TOTAL_KEY = "sg4-putting-total-nine-v2";
 const fmt = (n: number) => n.toFixed(1).replace(".", ",");
+const distanceLabel = (n: number) => n.toLocaleString("sv-SE", { maximumFractionDigits: 1 });
 
 type Saved = {
   id: string;
@@ -76,14 +81,9 @@ function smartOrder(modeKey: string, values: readonly number[], enabled: boolean
     const hard = values.filter((value) => value > 12);
     const hardest = Math.max(...hard);
     const beforeHardest = shuffle(hard.filter((value) => value !== hardest));
-    const order = [
-      warm[0],
-      warm[1],
-      beforeHardest[0],
-      warm[2],
-      beforeHardest[1],
-      hardest,
-    ].filter((value): value is number => typeof value === "number");
+    const order = [warm[0], warm[1], beforeHardest[0], warm[2], beforeHardest[1], hardest].filter(
+      (value): value is number => typeof value === "number",
+    );
     return order.length === values.length ? order : shuffle(values);
   }
 
@@ -122,7 +122,7 @@ function feedbackLabel(distance: number, putts: number) {
   if (putts >= 4) return "Stort tapp";
   if (putts === 3) return distance >= 12 ? "Miss" : "Stort tapp";
   if (putts === 2) {
-    if (distance <= 2) return "Miss";
+    if (distance <= 2) return "Två puttar";
     if (distance <= 4) return "Godkänt";
     if (distance <= 7) return "Bra";
     return "Mycket bra";
@@ -156,11 +156,17 @@ export function NineHolePuttingTest({
   rangeLabel?: string;
   distances?: readonly number[];
   shuffleDistances?: boolean;
-  modeOptions?: Array<{mode:"total"|"short"|"medium"|"long";label:string;range:string}>;
-  onModeChange?: (mode:"total"|"short"|"medium"|"long") => void;
+  modeOptions?: Array<{
+    mode: "total" | "short" | "medium" | "long";
+    label: string;
+    range: string;
+  }>;
+  onModeChange?: (mode: "total" | "short" | "medium" | "long") => void;
 }) {
   const initialDistances = () => smartOrder(modeKey, distances, shuffleDistances);
-  const [view, setView] = useState<"intro" | "countdown" | "test" | "compiling" | "result">("intro");
+  const [view, setView] = useState<"intro" | "countdown" | "test" | "compiling" | "result">(
+    "intro",
+  );
   const [putts, setPutts] = useState<number[]>([]);
   const [sessionDist, setSessionDist] = useState<number[]>(initialDistances);
   const [compile, setCompile] = useState(0);
@@ -175,7 +181,8 @@ export function NineHolePuttingTest({
   useTestViewportLock(view === "test");
 
   useEffect(() => {
-    document.documentElement.dataset.sg4TestActive = view === "intro" || view === "result" ? "false" : "true";
+    document.documentElement.dataset.sg4TestActive =
+      view === "intro" || view === "result" ? "false" : "true";
     return () => {
       delete document.documentElement.dataset.sg4TestActive;
     };
@@ -204,23 +211,34 @@ export function NineHolePuttingTest({
   const puttingHistory =
     typeof window === "undefined"
       ? []
-      : load(key).filter((entry) => entry.putts.length === shotCount);
+      : load(key).filter(
+          (entry) =>
+            entry.putts.length === shotCount &&
+            (modeKey !== "short" ||
+              JSON.stringify([...(entry.distances ?? [])].sort((a, b) => a - b)) ===
+                JSON.stringify([...distances].sort((a, b) => a - b))),
+        );
 
   const best = puttingHistory
     .map((entry) => entry.putts.reduce((sum, value) => sum + value, 0))
-    .reduce<number | null>((current, value) => (current === null ? value : Math.min(current, value)), null);
+    .reduce<number | null>(
+      (current, value) => (current === null ? value : Math.min(current, value)),
+      null,
+    );
 
   const recentFive = puttingHistory.slice(-5);
   const entryStars = (entry: Saved) => {
     if (typeof entry.stars === "number") return entry.stars;
-    const entryDistances = entry.distances?.length === entry.putts.length ? entry.distances : distances;
+    const entryDistances =
+      entry.distances?.length === entry.putts.length ? entry.distances : distances;
     return entry.putts.reduce(
       (sum, puttCount, shotIndex) => sum + starsFor(entryDistances[shotIndex] ?? 0, puttCount),
       0,
     );
   };
   const avgPutts = recentFive.length
-    ? recentFive.reduce((sum, entry) => sum + entry.putts.reduce((a, b) => a + b, 0), 0) / recentFive.length
+    ? recentFive.reduce((sum, entry) => sum + entry.putts.reduce((a, b) => a + b, 0), 0) /
+      recentFive.length
     : null;
   const avgStars = recentFive.length
     ? recentFive.reduce((sum, entry) => sum + entryStars(entry), 0) / recentFive.length
@@ -236,7 +254,6 @@ export function NineHolePuttingTest({
   };
 
   useEffect(() => clear, []);
-
 
   useEffect(() => {
     if (view !== "compiling") return;
@@ -341,14 +358,20 @@ export function NineHolePuttingTest({
   const maxStars = shotCount * 3;
 
   return (
-    <main className={`mx-auto max-w-md bg-slate-50 px-4 pt-4 text-slate-950 ${view === "test" ? "h-[calc(100dvh-58px)] overflow-hidden pb-4" : "min-h-[calc(100dvh-58px)] pb-[max(24px,env(safe-area-inset-bottom))]"}`}>
+    <main
+      className={`mx-auto max-w-md bg-slate-50 px-4 pt-4 text-slate-950 ${view === "test" ? "h-[calc(100dvh-58px)] overflow-hidden pb-4" : "min-h-[calc(100dvh-58px)] pb-[max(24px,env(safe-area-inset-bottom))]"}`}
+    >
       <style>{`@keyframes puttStarReveal{0%{opacity:0;transform:scale(.35) rotate(-12deg)}68%{opacity:1;transform:scale(1.18) rotate(3deg)}100%{opacity:1;transform:scale(1) rotate(0)}}@keyframes puttLabelReveal{0%{opacity:0;transform:translateY(6px)}100%{opacity:1;transform:translateY(0)}}.putt-star-reveal{animation:puttStarReveal .58s cubic-bezier(.2,.8,.3,1.2) both}.putt-label-reveal{animation:puttLabelReveal .32s ease-out both}@media(prefers-reduced-motion:reduce){.putt-star-reveal,.putt-label-reveal{animation:none!important}}`}</style>
       <Dialog open={confirmExit} onOpenChange={setConfirmExit}>
         <DialogContent className="!z-[140] w-[calc(100%-32px)] max-w-sm rounded-3xl bg-white p-6">
           <DialogTitle className="text-2xl font-black">Avbryta testet?</DialogTitle>
           <DialogDescription>Dina registrerade hål i det här testet sparas inte.</DialogDescription>
-          <Button onClick={abort} className="min-h-12 bg-slate-950 text-white">Avbryt test</Button>
-          <Button variant="outline" onClick={() => setConfirmExit(false)}>Fortsätt testet</Button>
+          <Button onClick={abort} className="min-h-12 bg-slate-950 text-white">
+            Avbryt test
+          </Button>
+          <Button variant="outline" onClick={() => setConfirmExit(false)}>
+            Fortsätt testet
+          </Button>
         </DialogContent>
       </Dialog>
 
@@ -358,7 +381,8 @@ export function NineHolePuttingTest({
             <p className="text-xs font-black uppercase text-blue-600">Putting HCP</p>
             <h1 className="mt-1 text-4xl font-black">{testTitle}</h1>
             <p className="mt-2 text-sm text-slate-600">
-              {shotCount} hål {shuffleDistances ? "med varierade avstånd" : "över hela puttspannet"}. Håla varje boll, samla stjärnor och få ditt Putting-HCP.
+              {shotCount} hål {shuffleDistances ? "med varierade avstånd" : "över hela puttspannet"}
+              . Håla varje boll, samla stjärnor och få ditt Putting-HCP.
             </p>
           </section>
 
@@ -373,7 +397,11 @@ export function NineHolePuttingTest({
                     className={`min-w-0 rounded-xl px-1 py-2.5 text-[11px] font-black ${option.mode === modeKey ? "bg-blue-600 text-white" : "text-slate-500"}`}
                   >
                     <span className="block truncate">{option.label}</span>
-                    <span className={`mt-0.5 block text-[9px] font-semibold ${option.mode === modeKey ? "text-blue-100" : "text-slate-400"}`}>{option.range}</span>
+                    <span
+                      className={`mt-0.5 block text-[9px] font-semibold ${option.mode === modeKey ? "text-blue-100" : "text-slate-400"}`}
+                    >
+                      {option.range}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -381,10 +409,14 @@ export function NineHolePuttingTest({
           ) : null}
 
           <section className="rounded-3xl border border-blue-100 bg-white p-4 shadow-sm">
-            <img src="/Putting_1.png" alt="" className="mb-4 h-52 w-full rounded-2xl object-cover" />
+            <img
+              src="/Putting_1.png"
+              alt=""
+              className="mb-4 h-52 w-full rounded-2xl object-cover"
+            />
             <div className="grid grid-cols-3 divide-x rounded-2xl bg-slate-50 py-3 text-center">
               {[
-                [`${shotCount} hål`, "Speltest"],
+                [`${shotCount} hål`, "HCP-test"],
                 ["★", "Direkt feedback"],
                 [rangeLabel, shuffleDistances ? "Varierade avstånd" : "Hela spannet"],
               ].map(([a, b]) => (
@@ -395,7 +427,10 @@ export function NineHolePuttingTest({
                 </div>
               ))}
             </div>
-            <Button onClick={start} className="mt-4 min-h-14 w-full rounded-2xl bg-blue-600 text-base font-black text-white">
+            <Button
+              onClick={start}
+              className="mt-4 min-h-14 w-full rounded-2xl bg-blue-600 text-base font-black text-white"
+            >
               Starta {testTitle}
             </Button>
           </section>
@@ -413,44 +448,79 @@ export function NineHolePuttingTest({
                 <Trophy className="h-5 w-5" />
                 Topplista
               </h2>
-              <p className="mt-1 text-xs text-blue-100">Snitt av dina senaste {Math.min(5, recentFive.length) || 5} test</p>
+              <p className="mt-1 text-xs text-blue-100">
+                Snitt av dina senaste {Math.min(5, recentFive.length) || 5} test
+              </p>
             </div>
             {recentFive.length ? (
               <>
-                <div className={`grid ${modeKey === "short" ? "grid-cols-[1fr_86px_86px]" : "grid-cols-[1fr_76px_76px_54px]"} gap-1 border-b border-slate-100 px-4 py-2.5 text-[9px] font-black uppercase tracking-[.08em] text-slate-400`}>
+                <div
+                  className={`grid ${modeKey === "short" ? "grid-cols-[1fr_86px_86px]" : "grid-cols-[1fr_76px_76px_54px]"} gap-1 border-b border-slate-100 px-4 py-2.5 text-[9px] font-black uppercase tracking-[.08em] text-slate-400`}
+                >
                   <span>Spelare</span>
                   <span className="text-center">Snitt puttar</span>
                   <span className="text-center">Snitt ★</span>
                   {modeKey !== "short" && <span className="text-center">3+</span>}
                 </div>
-                <div className={`grid ${modeKey === "short" ? "grid-cols-[1fr_86px_86px]" : "grid-cols-[1fr_76px_76px_54px]"} items-center gap-1 px-4 py-4`}>
+                <div
+                  className={`grid ${modeKey === "short" ? "grid-cols-[1fr_86px_86px]" : "grid-cols-[1fr_76px_76px_54px]"} items-center gap-1 px-4 py-4`}
+                >
                   <strong className="text-[15px]">Du</strong>
-                  <strong className="text-center text-[17px]">{avgPutts === null ? "–" : fmt(avgPutts)}</strong>
-                  <strong className="text-center text-[17px] text-amber-600">{avgStars === null ? "–" : fmt(avgStars)} ★</strong>
-                  {modeKey !== "short" && <strong className="text-center text-[17px]">{recentThreePutts}</strong>}
+                  <strong className="text-center text-[17px]">
+                    {avgPutts === null ? "–" : fmt(avgPutts)}
+                  </strong>
+                  <strong className="text-center text-[17px] text-amber-600">
+                    {avgStars === null ? "–" : fmt(avgStars)} ★
+                  </strong>
+                  {modeKey !== "short" && (
+                    <strong className="text-center text-[17px]">{recentThreePutts}</strong>
+                  )}
                 </div>
               </>
             ) : (
-              <p className="p-4 text-sm text-slate-500">Gör ditt första test för att sätta ditt snitt.</p>
+              <p className="p-4 text-sm text-slate-500">
+                Gör ditt första test för att sätta ditt snitt.
+              </p>
             )}
           </section>
         </div>
       ) : view === "countdown" ? (
-        <HcpCountdownScreen label={`Puttning HCP · ${shotCount} hål`} onComplete={() => setView("test")} />
+        <HcpCountdownScreen
+          label={`Puttning HCP · ${shotCount} hål`}
+          onComplete={() => setView("test")}
+        />
       ) : view === "test" ? (
         <div className="space-y-4">
           <HcpTestProgress current={index + 1} total={shotCount} label="Puttning" />
           <section className="rounded-3xl border border-slate-200 bg-white p-3 shadow-sm">
             <div className="grid grid-cols-2 divide-x text-center">
-              <div><strong className="text-xl">{total}</strong><p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Puttar</p></div>
-              <div><strong className="text-xl text-amber-500">{starTotal} ★</strong><p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">av {maxStars}</p></div>
+              <div>
+                <strong className="text-xl">{total}</strong>
+                <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                  Puttar
+                </p>
+              </div>
+              <div>
+                <strong className="text-xl text-amber-500">{starTotal} ★</strong>
+                <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                  av {maxStars}
+                </p>
+              </div>
             </div>
-            {best !== null && <p className="mt-2 text-center text-[10px] font-semibold text-slate-400">PB · {best} puttar</p>}
+            {best !== null && (
+              <p className="mt-2 text-center text-[10px] font-semibold text-slate-400">
+                PB · {best} puttar
+              </p>
+            )}
           </section>
 
           <section className="text-center">
-            <p className="text-[18px] font-black text-slate-700">Hål {index + 1} av {shotCount}</p>
-            <h1 className="mt-2 text-5xl font-black text-blue-700">{fmt(currentDistance)} m</h1>
+            <p className="text-[18px] font-black text-slate-700">
+              Hål {index + 1} av {shotCount}
+            </p>
+            <h1 className="mt-2 text-5xl font-black text-blue-700">
+              {distanceLabel(currentDistance)} m
+            </h1>
             <div className="mt-4 flex min-h-12 justify-center gap-2">
               {[0, 1, 2].map((star) => {
                 const earned = Boolean(feedback && star < feedback.stars);
@@ -482,7 +552,11 @@ export function NineHolePuttingTest({
               >
                 {putts.length === shotCount ? "Visa resultat" : "Nästa hål"}
               </Button>
-              <Button variant="ghost" onClick={editRegisteredHole} className="mt-1 w-full text-slate-500">
+              <Button
+                variant="ghost"
+                onClick={editRegisteredHole}
+                className="mt-1 w-full text-slate-500"
+              >
                 <Undo2 />
                 Ändra registrering
               </Button>
@@ -496,7 +570,9 @@ export function NineHolePuttingTest({
               )}
 
               <section className="rounded-3xl border border-blue-100 bg-white p-4">
-                <p className="mb-3 text-center text-sm font-semibold text-slate-500">Hur många puttar för att håla ut?</p>
+                <p className="mb-3 text-center text-sm font-semibold text-slate-500">
+                  Hur många puttar för att håla ut?
+                </p>
                 <div className="grid grid-cols-2 gap-2">
                   {[
                     [1, "1 putt"],
@@ -541,17 +617,30 @@ export function NineHolePuttingTest({
         createPortal(
           <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-blue-600 p-6 text-center text-white">
             <span className="mb-7 flex h-16 w-16 items-center justify-center rounded-full bg-white text-blue-600">
-              {compile >= 3 ? <Check className="h-9 w-9" /> : <LoaderCircle className="h-9 w-9 motion-safe:animate-spin" />}
+              {compile >= 3 ? (
+                <Check className="h-9 w-9" />
+              ) : (
+                <LoaderCircle className="h-9 w-9 motion-safe:animate-spin" />
+              )}
             </span>
-            <h1 className="text-3xl font-black">{compile >= 3 ? "Resultatet klart" : "Sammanställer testet…"}</h1>
+            <h1 className="text-3xl font-black">
+              {compile >= 3 ? "Resultatet klart" : "Sammanställer testet…"}
+            </h1>
             <div className="mt-6 space-y-4 text-left text-blue-100">
               {[
                 `Sammanställer dina ${shotCount} hål`,
                 "Räknar score och stjärnor",
                 "Förbereder din HCP-analys",
               ].map((item, itemIndex) => (
-                <p key={item} className={`flex gap-3 ${itemIndex <= compile ? "opacity-100" : "opacity-0"}`}>
-                  {itemIndex < compile || compile >= 3 ? <Check /> : <LoaderCircle className="motion-safe:animate-spin" />}
+                <p
+                  key={item}
+                  className={`flex gap-3 ${itemIndex <= compile ? "opacity-100" : "opacity-0"}`}
+                >
+                  {itemIndex < compile || compile >= 3 ? (
+                    <Check />
+                  ) : (
+                    <LoaderCircle className="motion-safe:animate-spin" />
+                  )}
                   {item}
                 </p>
               ))}
@@ -571,20 +660,36 @@ export function NineHolePuttingTest({
               {starTotal} / {maxStars}
             </div>
             <div className="mt-5 grid grid-cols-3 gap-2 rounded-2xl bg-slate-50 p-4">
-              <div><strong>{review.onePutts}</strong><p className="text-xs text-slate-500">1-puttar</p></div>
-              <div><strong>{review.threePutts}</strong><p className="text-xs text-slate-500">3+</p></div>
-              <div><strong>{fmt(review.average)}</strong><p className="text-xs text-slate-500">snitt</p></div>
+              <div>
+                <strong>{review.onePutts}</strong>
+                <p className="text-xs text-slate-500">1-puttar</p>
+              </div>
+              <div>
+                <strong>{review.threePutts}</strong>
+                <p className="text-xs text-slate-500">3+</p>
+              </div>
+              <div>
+                <strong>{fmt(review.average)}</strong>
+                <p className="text-xs text-slate-500">snitt</p>
+              </div>
             </div>
           </section>
 
-          <Button onClick={() => setAnalysis(true)} className="min-h-14 w-full rounded-2xl bg-blue-600 font-black text-white">
+          <Button
+            onClick={() => setAnalysis(true)}
+            className="min-h-14 w-full rounded-2xl bg-blue-600 font-black text-white"
+          >
             Visa min HCP-analys
           </Button>
           <Button onClick={start} className="min-h-14 w-full rounded-2xl bg-slate-950 text-white">
             <RotateCcw />
             Testa igen · {shotCount} hål
           </Button>
-          <Button variant="outline" onClick={onExit} className="min-h-14 w-full rounded-2xl border-slate-200 bg-white text-slate-900">
+          <Button
+            variant="outline"
+            onClick={onExit}
+            className="min-h-14 w-full rounded-2xl border-slate-200 bg-white text-slate-900"
+          >
             <ArrowLeft />
             Tillbaka till HCP-tester
           </Button>
@@ -606,7 +711,7 @@ export function NineHolePuttingTest({
                   <ShotAnalysisList
                     title={`Dina ${shotCount} hål`}
                     rows={putts.map((puttCount, shotIndex) => ({
-                      label: `Hål ${shotIndex + 1} · ${fmt(sessionDist[shotIndex])} m`,
+                      label: `Hål ${shotIndex + 1} · ${distanceLabel(sessionDist[shotIndex])} m`,
                       value:
                         puttCount === 1
                           ? "1 putt"
@@ -622,14 +727,21 @@ export function NineHolePuttingTest({
                 key: "profile",
                 content: (
                   <section>
-                    <p className="text-sm font-bold uppercase tracking-widest text-blue-100">Din profil idag</p>
+                    <p className="text-sm font-bold uppercase tracking-widest text-blue-100">
+                      Din profil idag
+                    </p>
                     <h2 className="mt-3 text-3xl font-black">Putting per längd</h2>
                     <div className="mt-5 space-y-3">
                       {review.bands
                         .filter((band) => band.count > 0)
                         .map((band) => (
-                          <div key={band.label} className="flex justify-between rounded-2xl bg-white/10 p-4">
-                            <strong>{band.label} · {band.range}</strong>
+                          <div
+                            key={band.label}
+                            className="flex justify-between rounded-2xl bg-white/10 p-4"
+                          >
+                            <strong>
+                              {band.label} · {band.range}
+                            </strong>
                             <span>{band.average === null ? "–" : fmt(band.average)} puttar</span>
                           </div>
                         ))}
@@ -639,18 +751,40 @@ export function NineHolePuttingTest({
               },
               {
                 key: "benchmark",
-                content: <BenchmarkStory title="Mot hög nivå" hcp={review.estimate ?? 0} tourLabel="Referens" tourValue="Expected putts" />,
+                content: (
+                  <BenchmarkStory
+                    title="Mot hög nivå"
+                    hcp={review.estimate ?? 0}
+                    tourLabel="Referens"
+                    tourValue="Expected putts"
+                  />
+                ),
               },
               {
                 key: "potential",
                 content: (
                   <section className="text-center">
-                    <p className="text-sm font-bold uppercase tracking-widest text-blue-100">Din score</p>
+                    <p className="text-sm font-bold uppercase tracking-widest text-blue-100">
+                      Din score
+                    </p>
                     <h2 className="mt-4 text-3xl font-black">Spelet före HCP:t</h2>
                     <div className="mt-6 rounded-3xl bg-white/10 p-5 text-left">
-                      <p className="flex justify-between"><span>Stjärnor</span><strong>{starTotal} / {maxStars}</strong></p>
-                      <p className="mt-3 flex justify-between"><span>1-puttar</span><strong>{review.onePutts}</strong></p>
-                      <p className="mt-3 flex justify-between"><span>2-puttar eller bättre</span><strong>{putts.filter((value) => value <= 2).length} / {shotCount}</strong></p>
+                      <p className="flex justify-between">
+                        <span>Stjärnor</span>
+                        <strong>
+                          {starTotal} / {maxStars}
+                        </strong>
+                      </p>
+                      <p className="mt-3 flex justify-between">
+                        <span>1-puttar</span>
+                        <strong>{review.onePutts}</strong>
+                      </p>
+                      <p className="mt-3 flex justify-between">
+                        <span>2-puttar eller bättre</span>
+                        <strong>
+                          {putts.filter((value) => value <= 2).length} / {shotCount}
+                        </strong>
+                      </p>
                     </div>
                   </section>
                 ),

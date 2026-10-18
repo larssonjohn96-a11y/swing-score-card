@@ -8,8 +8,8 @@ const TESTS = [
   {
     mode: "short" as const,
     title: "Kortputt",
-    range: "1–5 m",
-    targets: [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5],
+    range: "1–4 m",
+    targets: [1, 1.5, 2, 3, 4, 1.5, 2, 3, 4],
   },
   {
     mode: "long" as const,

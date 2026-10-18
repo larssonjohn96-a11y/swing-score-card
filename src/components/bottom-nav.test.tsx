@@ -84,7 +84,7 @@ describe("unified test catalogue", () => {
   });
   it("uses two fixed nine-hole putting protocols without a second mode selector", () => {
     const putting = readFileSync("src/routes/puttrundan.tsx", "utf8");
-    expect(putting).toContain('targets: [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5]');
+    expect(putting).toContain('targets: [1, 1.5, 2, 3, 4, 1.5, 2, 3, 4]');
     expect(putting).toContain('targets: [6, 7, 8, 9, 10, 12, 14, 16, 18]');
     expect(putting).not.toContain('mode: "total"');
     expect(putting).not.toContain('mode: "medium"');
