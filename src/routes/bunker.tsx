@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight, Check, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
   BUNKER_INTERVALS,
+  BUNKER_TEST_INTERVALS,
   BUNKER_TOTAL_SHOTS,
   computeBunkerResult,
   emptyBunkerShots,
@@ -163,7 +164,7 @@ function BunkerPage() {
             Hur nära hålet stannade bollen?
           </p>
           <div className="mt-2 grid grid-cols-2 gap-2">
-            {BUNKER_INTERVALS.map((iv) => (
+            {BUNKER_TEST_INTERVALS.map((iv) => (
               <button
                 key={iv.key}
                 type="button"

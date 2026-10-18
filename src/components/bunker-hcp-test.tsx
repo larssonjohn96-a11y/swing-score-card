@@ -8,6 +8,7 @@ import { HcpTestProgress } from "@/components/hcp-test-progress";
 import { StandardHcpAnalysis } from "@/components/standard-hcp-analysis";
 import {
   BUNKER_INTERVALS,
+  BUNKER_TEST_INTERVALS,
   BUNKER_TOTAL_SHOTS,
   computeBunkerResult,
   saveBunkerSession,
@@ -124,12 +125,12 @@ export function BunkerHcpTest({ onExit }: { onExit: () => void }) {
           </section>
           <section className="rounded-3xl border border-blue-100 bg-white p-3">
             <div className="grid grid-cols-2 gap-2">
-              {BUNKER_INTERVALS.map((option) => (
+              {BUNKER_TEST_INTERVALS.map((option) => (
                 <Button
                   key={option.key}
                   variant="outline"
                   onClick={() => register(option.key)}
-                  className={`min-h-12 rounded-2xl ${option.key === "not-out" ? "col-span-2 border-red-100 bg-red-50 text-red-800" : ""}`}
+                  className={`min-h-12 rounded-2xl ${option.key === "not-out" ? "border-red-100 bg-red-50 text-red-800" : ""}`}
                 >
                   {option.key === "holed" ? "Sänkt" : option.label}
                 </Button>
@@ -168,8 +169,12 @@ export function BunkerHcpTest({ onExit }: { onExit: () => void }) {
               <p className="mt-2 text-slate-500">Uppskattat snitt från hålet</p>
             </div>
             <p className="mt-4 text-sm text-slate-500">
-              {BUNKER_TOTAL_SHOTS - result.notOutCount} av 6 upp ur bunkern · {result.within2m} inom
-              2 m
+              {BUNKER_TOTAL_SHOTS - result.notOutCount} av 6 upp ur bunkern ·{" "}
+              {
+                shots.filter((shot) => ["holed", "within-1m", "1-3m"].includes(shot.interval ?? ""))
+                  .length
+              }{" "}
+              inom 3 m
             </p>
           </section>
           {saveError && (

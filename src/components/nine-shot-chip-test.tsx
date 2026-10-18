@@ -1,12 +1,13 @@
 import { toast } from "sonner";
 import { createPortal } from "react-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Check, LoaderCircle, RotateCcw, Star, Trophy, Undo2 } from "lucide-react";
+import { ArrowLeft, Check, LoaderCircle, RotateCcw, Trophy, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { CHIP_ZONES, type ChipPoints } from "@/lib/chip-stations";
 import { courseHandicap, holeStars, roundStars, type CourseRound } from "@/lib/chip-course";
-import { handicapLabel } from "@/lib/shortgame";
+import { chipTestStars, chipStationComplete } from "@/lib/chip-test-progress";
+import { BunkerStars } from "@/components/bunker-stars";
 import { useChipScreenColor } from "@/lib/use-chip-screen-color";
 import {
   StandardHcpAnalysis,
@@ -14,7 +15,6 @@ import {
   BenchmarkStory,
 } from "@/components/standard-hcp-analysis";
 import { HcpCountdownScreen } from "@/components/hcp-countdown-screen";
-import { HcpTestProgress } from "@/components/hcp-test-progress";
 import { useTestViewportLock } from "@/lib/use-test-viewport-lock";
 const DIST = [8, 12, 18],
   fmt = (n: number) => n.toFixed(1).replace(".", ","),
@@ -30,6 +30,7 @@ export function NineShotChipTest({ onExit }: { onExit: () => void }) {
     [analysis, setAnalysis] = useState(false),
     [hcpReady, setHcpReady] = useState(false);
   const timers = useRef<number[]>([]);
+  const lastInput = useRef(0);
   useChipScreenColor(view === "countdown" || view === "compiling" || analysis);
   useTestViewportLock(view === "test");
   useEffect(() => {
@@ -104,24 +105,51 @@ export function NineShotChipTest({ onExit }: { onExit: () => void }) {
     return () => window.clearTimeout(id);
   }, [analysis]);
   function start() {
+    lastInput.current = 0;
     setBalls([[], [], []]);
     setStation(0);
     setView("countdown");
   }
   function score(p: ChipPoints) {
-    if (view !== "test" || done >= 9) return;
-    const next = balls.map((b, i) => (i === station ? [...b, p] : b));
-    setBalls(next);
-    if (next[station].length === 3) {
-      if (station === 2) {
-        const completed: CourseRound = { id: crypto.randomUUID(), model: 4, lie: "Fairway", startedAt: Date.now(), finishedAt: Date.now(), holes: next, status: "front", distances: DIST };
-        try {
-          localStorage.setItem(CHIP_HISTORY_KEY, JSON.stringify([...chipHistory, { id: completed.id, at: Date.now(), balls: next, stars: roundStars(completed), hcp: courseHandicap(completed) }]));
-        } catch { toast.error("Resultatet kunde inte sparas på den här enheten."); }
-        setView("compiling");
-      }
-      else setStation(station + 1);
+    if (view !== "test" || chipStationComplete(current) || Date.now() - lastInput.current < 350)
+      return;
+    lastInput.current = Date.now();
+    setBalls(balls.map((b, i) => (i === station ? [...b, p] : b)));
+  }
+  function continueTest() {
+    if (!chipStationComplete(current)) return;
+    if (station < DIST.length - 1) {
+      setStation(station + 1);
+      return;
     }
+    const completed: CourseRound = {
+      id: crypto.randomUUID(),
+      model: 4,
+      lie: "Fairway",
+      startedAt: Date.now(),
+      finishedAt: Date.now(),
+      holes: balls,
+      status: "front",
+      distances: DIST,
+    };
+    try {
+      localStorage.setItem(
+        CHIP_HISTORY_KEY,
+        JSON.stringify([
+          ...chipHistory,
+          {
+            id: completed.id,
+            at: Date.now(),
+            balls,
+            stars: roundStars(completed),
+            hcp: courseHandicap(completed),
+          },
+        ]),
+      );
+    } catch {
+      toast.error("Resultatet kunde inte sparas på den här enheten.");
+    }
+    setView("compiling");
   }
   function undo() {
     if (current.length) setBalls((a) => a.map((b, i) => (i === station ? b.slice(0, -1) : b)));
@@ -206,40 +234,84 @@ export function NineShotChipTest({ onExit }: { onExit: () => void }) {
         <HcpCountdownScreen label="Chippning HCP · 9 slag" onComplete={() => setView("test")} />
       ) : view === "test" ? (
         <div className="space-y-4">
-          <HcpTestProgress current={Math.min(9, done + 1)} total={9} label="Chippning" />
+          <div
+            className="grid grid-cols-3 gap-3"
+            aria-label="Tre avstånd med tre bollar per avstånd"
+          >
+            {DIST.map((distance, index) => (
+              <div
+                key={distance}
+                aria-current={index === station ? "step" : undefined}
+                className={index === station ? "text-blue-700" : "text-slate-400"}
+              >
+                <div className="mb-2 flex items-center justify-between text-sm font-bold">
+                  <span>{distance} m</span>
+                  {chipStationComplete(balls[index]) && <Check className="h-4 w-4" />}
+                </div>
+                <div className="flex gap-1">
+                  {[0, 1, 2].map((ball) => (
+                    <span
+                      key={ball}
+                      className={`h-2 flex-1 rounded-full ${ball < balls[index].length ? "bg-blue-600" : index === station ? "bg-blue-200" : "bg-slate-200"}`}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
           <section className="text-center">
-            <p className="text-xs font-semibold text-slate-500">
-              Chipping HCP · Avstånd {station + 1} av 3
+            <p className="text-sm font-bold text-slate-500">Avstånd {station + 1} av 3</p>
+            <h1 className="mt-1 text-5xl font-black text-blue-700">{DIST[station]} m</h1>
+            <p className="mt-1 font-bold">
+              {chipStationComplete(current)
+                ? "Alla 3 bollar registrerade"
+                : `Boll ${current.length + 1} av 3`}
             </p>
-            <h1 className="mt-2 text-5xl font-black text-blue-700">{DIST[station]} m</h1>
-            <p className="mt-1 font-bold">Boll {current.length + 1} av 3</p>
-            <div className="mt-3 flex justify-center gap-1">
-              {[0, 1, 2].map((i) => (
-                <Star
-                  key={i}
-                  className={`h-7 w-7 ${i < Math.floor(holeStars(current, station, "Fairway", 4)) ? "fill-amber-400 text-amber-400" : "text-slate-200"}`}
-                />
-              ))}
+            <div className="mt-3 flex justify-center">
+              <BunkerStars count={chipTestStars(current)} large />
             </div>
-            <p className="mt-1 text-xs text-slate-500">
-              {fmt(holeStars(current, station, "Fairway", 4))} / 3 ★
+            <p className="mt-1 text-xs text-slate-500">{fmt(chipTestStars(current))} / 3 ★</p>
+            <p aria-live="polite" className="mt-2 min-h-5 text-sm font-semibold text-blue-700">
+              {current.length > 0
+                ? `Boll ${current.length} registrerad · ${CHIP_ZONES.find((z) => z.points === current[current.length - 1])?.label}`
+                : "Registrera tre bollar från detta avstånd"}
             </p>
           </section>
           <section className="rounded-3xl border border-blue-100 bg-white p-4">
-            <p className="mb-3 text-center text-sm font-semibold text-slate-500">Hur nära hålet?</p>
-            <div className="grid grid-cols-2 gap-2">
-              {CHIP_ZONES.map((z) => (
+            {chipStationComplete(current) ? (
+              <div className="text-center">
+                <p className="mb-3 font-bold">
+                  {DIST[station]} m klart · {fmt(chipTestStars(current))} stjärnor
+                </p>
                 <Button
-                  key={z.points}
-                  variant="outline"
-                  onClick={() => score(z.points)}
-                  className="min-h-14 justify-between rounded-2xl px-4"
+                  onClick={continueTest}
+                  className="min-h-14 w-full rounded-2xl bg-blue-600 font-bold text-white"
                 >
-                  <span className="font-bold">{z.label}</span>
-                  <span className="text-slate-400">+{z.points}</span>
+                  {station < DIST.length - 1
+                    ? `Nästa avstånd · ${DIST[station + 1]} m →`
+                    : "Se mitt resultat →"}
                 </Button>
-              ))}
-            </div>
+              </div>
+            ) : (
+              <>
+                <p className="mb-3 text-center text-sm font-semibold text-slate-500">
+                  Hur nära hålet?
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {CHIP_ZONES.map((z) => (
+                    <Button
+                      key={z.points}
+                      variant="outline"
+                      onClick={() => score(z.points)}
+                      className="min-h-12 justify-between rounded-2xl px-4"
+                    >
+                      <span className="font-bold">{z.label}</span>
+                      <span className="text-slate-400">+{z.points} p</span>
+                    </Button>
+                  ))}
+                </div>
+              </>
+            )}
             {done > 0 && (
               <Button variant="ghost" onClick={undo} className="mt-2 w-full text-slate-500">
                 <Undo2 />

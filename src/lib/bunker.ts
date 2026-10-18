@@ -1,7 +1,7 @@
 /**
  * Bunkerslag – samma format som Närspelstest: 6 slag, ett i taget, med
- * avstånd-från-hål registrerat som intervall (återanvänder samma
- * intervallskala som Närspelstest) istället för att skriva in exakta fot.
+ * avstånd-från-hål registrerat i sex enkla zoner. Äldre sparade
+ * intervall behålls oförändrade för historik och analys.
  *
  * Sex likvärdiga bunkerslag – inget separat läge att välja, bollen läggs
  * bara upp på nytt i bunkern inför varje slag.
@@ -21,12 +21,23 @@ import {
   type IntervalKey as ShortGameIntervalKey,
 } from "@/lib/shortgame";
 
-export type BunkerIntervalKey = ShortGameIntervalKey | "not-out";
+export type BunkerIntervalKey =
+  ShortGameIntervalKey | "not-out" | "within-1m" | "1-3m" | "3-5m" | "5m+";
 
-/** Samma avståndsintervall som Närspelstest, plus "Kom inte upp ur bunker". */
-export const BUNKER_INTERVALS: { key: BunkerIntervalKey; label: string; midpoint: number }[] = [
-  ...SHORTGAME_INTERVALS,
-  { key: "not-out", label: "Kom inte upp ur bunker", midpoint: 10 },
+/** Six choices for new tests. Distinct keys keep historical intervals unchanged. */
+export const BUNKER_TEST_INTERVALS: { key: BunkerIntervalKey; label: string; midpoint: number }[] =
+  [
+    { key: "holed", label: "Sänkt", midpoint: 0 },
+    { key: "within-1m", label: "Inom 1 m", midpoint: 0.5 },
+    { key: "1-3m", label: "Inom 3 m", midpoint: 2 },
+    { key: "3-5m", label: "Inom 5 m", midpoint: 4 },
+    { key: "5m+", label: "+5 meter", midpoint: 7 },
+    { key: "not-out", label: "Kom inte upp", midpoint: 10 },
+  ];
+/** Lookup includes legacy zones for saved tests and aggregate analysis. */
+export const BUNKER_INTERVALS = [
+  ...SHORTGAME_INTERVALS.filter((option) => option.key !== "holed"),
+  ...BUNKER_TEST_INTERVALS,
 ];
 
 const INTERVAL_MIDPOINT: Record<BunkerIntervalKey, number> = Object.fromEntries(
@@ -125,7 +136,10 @@ export function computeBunkerResult(shots: BunkerShot[]): BunkerResult {
   const score = count ? scoreFromHandicap(handicap) : 0;
 
   const notOutCount = played.filter((s) => s.interval === "not-out").length;
-  const within2m = proximities.filter((p) => p <= 2).length;
+  // A 1–3 m response cannot be classified as definitely within 2 m.
+  const within2m = played.filter((s) =>
+    ["holed", "0-50cm", "50cm-1m", "1-2m", "within-1m"].includes(s.interval),
+  ).length;
 
   const analysis = buildAnalysis(avgProximity, notOutCount, count);
 
