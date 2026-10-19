@@ -12,8 +12,15 @@ import {
 } from "@/lib/sg-handicap";
 import { computeStableCategoryHandicaps } from "@/lib/category-index";
 import { AnalysisRadarSwitcher } from "@/components/analysis-radar-switcher";
-import { loadAnalysisParts, type AnalysisParts } from "@/lib/analysis-category-parts";
+import { loadAnalysisParts } from "@/lib/analysis-category-parts";
 import { SESSIONS_CHANGED_EVENT } from "@/lib/sessions/sync";
+import { useAuth } from "@/hooks/use-auth";
+import {
+  loadAnalysisHistory,
+  type AnalysisHistoryPoint,
+  type HistoryKind,
+} from "@/lib/analysis-history";
+import { categoryKpis, type CategoryKpi } from "@/lib/category-kpis";
 import { ComparePicker } from "./jamfor";
 
 type Tab = "analys" | "jamfor";
@@ -68,9 +75,11 @@ function loadData(userId: string | null): Data {
 function UtvecklingPage() {
   const { tab = "analys" } = Route.useSearch();
   const navigate = Route.useNavigate();
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
   const [data, setData] = useState<Data | null>(null);
   useEffect(() => {
-    const refresh = () => setData(loadData());
+    const refresh = () => setData(loadData(userId));
     refresh();
     window.addEventListener(SESSIONS_CHANGED_EVENT, refresh);
     window.addEventListener("storage", refresh);
@@ -80,7 +89,7 @@ function UtvecklingPage() {
       window.removeEventListener("storage", refresh);
       window.removeEventListener("focus", refresh);
     };
-  }, []);
+  }, [userId]);
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-5 pb-28 pt-3">
       <h1 className="sr-only">Analys</h1>
