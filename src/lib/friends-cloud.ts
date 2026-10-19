@@ -197,7 +197,7 @@ export async function pushPlayerSnapshot(expectedUserId?: string): Promise<boole
   const cats = computeStableCategoryHandicaps(undefined, real ?? undefined);
   const byCat = (slug: CategorySlug) => cats.find((c) => c.slug === slug)?.handicap ?? null;
   const radarProfile = computeLocalSocialRadarProfile();
-  const comparisonProfile = computeLocalComparisonProfile();
+  const comparisonProfile = computeLocalComparisonProfile(userData.user.id);
   for (const kind of ["wedge", "iron"] as const) {
     const ranking = peiRankingAverage(loadPeiSessions(kind), kind);
     if (ranking.average !== null) comparisonProfile.training.push(

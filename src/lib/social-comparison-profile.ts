@@ -1,4 +1,4 @@
-import { loadOffTeeSessions } from "@/lib/offtee-store";
+import { latestAverage, loadAnalysisHistory } from "@/lib/analysis-history";
 import { collectApproachShots, approachProximityPct } from "@/lib/approach-global";
 import { collectAroundGreenShots } from "@/lib/around-green-global";
 import { collectLagHoleOutStarts, collectPuttStarts, groupedLagHoleOutStats, puttingMakeStats } from "@/lib/putting-global";
@@ -107,27 +107,25 @@ function categoryForProgress(slug: string): ComparisonCategory | undefined {
   return undefined;
 }
 
-export function computeLocalComparisonProfile(): SocialComparisonProfile {
+export function computeLocalComparisonProfile(userId: string | null = null): SocialComparisonProfile {
   const performance: ComparisonMetric[] = [];
   const records: ComparisonMetric[] = [];
 
-  const offTeeSessions = loadOffTeeSessions();
-  const teeShots = offTeeSessions.flatMap((session) => session.shots.filter((shot) => shot.filled));
-  if (teeShots.length) {
-    const totals = teeShots.map((shot) => shot.total).filter(Number.isFinite);
-    const sides = teeShots.map((shot) => shot.sidled).filter(Number.isFinite);
-    performance.push(
-      { key: "avg-drive", label: "Snittdrive", value: avg(totals), unit: "m", decimals: 0, higherIsBetter: true, category: "driving" },
-      { key: "fairway", label: "Fairwayträffar", value: teeShots.filter((shot) => Math.abs(shot.sidled) <= 16).length / teeShots.length * 100, unit: "%", decimals: 0, higherIsBetter: true, category: "driving" },
-      { key: "driver-dispersion", label: "Driver dispersion", value: stdDev(sides), unit: "m", decimals: 1, higherIsBetter: false, category: "driving", overview: false },
-    );
-  }
+  // Prestations-KPI:er = snitt av senaste 5 giltiga testpass (per pass, ej alla äldre pass).
+  const driving = loadAnalysisHistory("driving", userId);
+  const drive = latestAverage(driving, "avgDrive");
+  const fairway = latestAverage(driving, "fairwayPct");
+  const ob = latestAverage(driving, "obPct");
+  if (drive.value !== undefined) performance.push({ key: "avg-drive", label: "Snittdrive", value: drive.value, unit: "m", decimals: 0, higherIsBetter: true, category: "driving" });
+  if (fairway.value !== undefined) performance.push({ key: "fairway", label: "Fairwayträffar", value: fairway.value, unit: "%", decimals: 0, higherIsBetter: true, category: "driving" });
+  if (ob.value !== undefined) performance.push({ key: "ob", label: "OB", value: ob.value, unit: "%", decimals: 0, higherIsBetter: false, category: "driving" });
 
-  const approach = collectApproachShots();
-  if (approach.length) performance.push({ key:"approach-proximity", label:"Snitt närhet inspel", value:avg(approach.map(shot => Math.hypot(shot.actual - shot.target, shot.lateral))), unit:"m", decimals:1, higherIsBetter:false, category:"approach" });
+  const approachRows = [...loadAnalysisHistory("wedge", userId), ...loadAnalysisHistory("iron", userId)];
+  const prox = latestAverage(approachRows, "proximity");
+  if (prox.value !== undefined) performance.push({ key:"approach-proximity", label:"Snitt närhet inspel", value:prox.value, unit:"m", decimals:1, higherIsBetter:false, category:"approach" });
 
-  const speedShots = loadSpeedSessions().flatMap(session => session.shots.map(shot => shot.ballSpeed).filter(value => Number.isFinite(value) && value > 0));
-  if (speedShots.length) performance.push({ key:"avg-ball-speed", label:"Snitt ball speed", value:avg(speedShots), unit:"mph", decimals:1, higherIsBetter:true, category:"driving" });
+  const speed = latestAverage(loadAnalysisHistory("speed", userId), "ballSpeed");
+  if (speed.value !== undefined) performance.push({ key:"avg-ball-speed", label:"Snitt ball speed", value:speed.value, unit:"mph", decimals:1, higherIsBetter:true, category:"driving" });
 
   const oneToTwo = puttingOneToTwoPct();
   if (oneToTwo !== undefined) performance.push({ key: "putting-1-2", label: "Sänk% 1–2 m", value: oneToTwo, unit: "%", decimals: 0, higherIsBetter: true, category: "puttning" });

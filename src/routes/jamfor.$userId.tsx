@@ -318,7 +318,7 @@ export function CompareFriendContent({ userId, onBack }: { userId:string; onBack
       real: real ?? undefined,
       total: computeEstimatedHandicap(cats),
       categories: Object.fromEntries(cats.map((cat) => [cat.slug, cat.handicap])) as Partial<Record<CategorySlug, number>>,
-      comparison: computeLocalComparisonProfile(),
+      comparison: computeLocalComparisonProfile(user.id),
     });
     void pushPlayerSnapshot();
     void supabase.from("profiles").select("display_name, avatar_url").eq("id",user.id).maybeSingle().then(({data}) => {
@@ -368,7 +368,7 @@ export function CompareFriendContent({ userId, onBack }: { userId:string; onBack
 
   const performanceRows = useMemo(() => {
     if (!local || !friendSnapshot) return [];
-    const allowed = new Set(["avg-ball-speed","avg-drive","approach-proximity","three-putt-avoid","putting-1-2"]);
+    const allowed = new Set(["avg-ball-speed","avg-drive","fairway","ob","approach-proximity","three-putt-avoid","putting-1-2"]);
     return matchRows(local.comparison.performance.filter(item=>allowed.has(item.key)), friendSnapshot.comparisonProfile.performance.filter(item=>allowed.has(item.key)), focus);
   },[local,friendSnapshot,focus]);
 
