@@ -368,7 +368,7 @@ export function CompareFriendContent({ userId, onBack }: { userId:string; onBack
 
   const performanceRows = useMemo(() => {
     if (!local || !friendSnapshot) return [];
-    const allowed = new Set(["avg-ball-speed","avg-drive","fairway","ob","approach-proximity","three-putt-avoid","putting-1-2"]);
+    const allowed = new Set(["avg-ball-speed","avg-drive","fairway","ob","approach-proximity","recent-short-putts","recent-long-putts"]);
     return matchRows(local.comparison.performance.filter(item=>allowed.has(item.key)), friendSnapshot.comparisonProfile.performance.filter(item=>allowed.has(item.key)), focus);
   },[local,friendSnapshot,focus]);
 
@@ -381,6 +381,11 @@ export function CompareFriendContent({ userId, onBack }: { userId:string; onBack
     <header className={`flex items-center justify-center rounded-[1.75rem] px-3 py-2.5 ${glassCard}`}>
       <div className="text-center"><p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">SG4 Social</p><h1 className="font-display text-3xl">Head-to-head</h1></div>
     </header>
+    <div className="mt-3 flex justify-end">
+      {onBack
+        ? <button type="button" onClick={onBack} className="text-xs font-semibold text-muted-foreground underline underline-offset-4">Byt spelare</button>
+        : <Link to="/jamfor" className="text-xs font-semibold text-muted-foreground underline underline-offset-4">Byt spelare</Link>}
+    </div>
 
     <section className={`mt-5 grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-[2rem] px-4 py-5 ${glassCard}`}>
       <div className="flex min-w-0 flex-col items-center text-center"><Avatar name={selfName} url={selfAvatar} side="left"/><p className="mt-2 max-w-[8rem] truncate text-sm font-bold">{selfName}</p><p className="mt-0.5 text-xs font-semibold text-blue-600 dark:text-blue-400">HCP {formatHcp(local?.real)}</p></div>

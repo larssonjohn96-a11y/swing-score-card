@@ -4,8 +4,7 @@ import { useEffect, useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { fetchFriendSnapshot, listFriendships, type Friendship } from "@/lib/friends-cloud";
 import { loadCardProfile } from "@/lib/rating-card";
-import { computeStableCategoryHandicaps } from "@/lib/category-index";
-import { computeEstimatedHandicap, loadRealHandicap } from "@/lib/sg-handicap";
+import { loadRealHandicap } from "@/lib/sg-handicap";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,9 +37,7 @@ export function ComparePicker({embedded=false}:{embedded?:boolean}){
   const [localBag] = useState(() => computeLocalComparisonProfile().bag);
 
   useEffect(()=>{
-    const real=loadRealHandicap();
-    const cats=computeStableCategoryHandicaps(undefined,real??undefined);
-    setSelfHcp(computeEstimatedHandicap(cats));
+    setSelfHcp(loadRealHandicap() ?? undefined);
 
     if(loading)return;
     if(!user){
@@ -70,7 +67,7 @@ export function ComparePicker({embedded=false}:{embedded?:boolean}){
     setFriendHcp(undefined);
     setPickerOpen(false);
     const snapshot=await fetchFriendSnapshot(friend.other.id);
-    setFriendHcp(snapshot?.estHcp??snapshot?.realHcp??undefined);
+    setFriendHcp(snapshot?.realHcp??undefined);
   }
 
   const loadingSocial=loading||friendsLoading;

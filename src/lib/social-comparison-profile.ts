@@ -1,5 +1,6 @@
 import { loadOffTeeSessions } from "@/lib/offtee-store";
 import { latestAverage, loadAnalysisHistory } from "@/lib/analysis-history";
+import { loadPeiSessions } from "@/lib/pei-ranking";
 import { collectApproachShots, approachProximityPct } from "@/lib/approach-global";
 import { collectAroundGreenShots } from "@/lib/around-green-global";
 import { collectLagHoleOutStarts, collectPuttStarts, groupedLagHoleOutStats, puttingMakeStats } from "@/lib/putting-global";
@@ -76,6 +77,23 @@ const stdDev = (values: number[]) => {
   return Math.sqrt(avg(values.map((value) => (value - mean) ** 2)));
 };
 
+/** New three-shot tests have a separate store from legacy Off the Tee tests. */
+function countNewOffTeeTests(): number {
+  if (typeof window === "undefined") return 0;
+  try {
+    const sessions = JSON.parse(localStorage.getItem("sg4-offtee-three-shot-v1") || "[]");
+    if (!Array.isArray(sessions)) return 0;
+    return sessions.filter((session) =>
+      session && Number.isFinite(session.at) &&
+      Array.isArray(session.shots) && session.shots.length === 3 &&
+      session.shots.every((shot: { distance?: number; lateral?: number }) =>
+        typeof shot.distance === "number" && Number.isFinite(shot.distance) &&
+        shot.distance > 0 && typeof shot.lateral === "number" && Number.isFinite(shot.lateral)
+      ),
+    ).length;
+  } catch { return 0; }
+}
+
 function loadEightBallSessions(): EightBallSession[] {
   if (typeof window === "undefined") return [];
   try {
@@ -127,6 +145,18 @@ export function computeLocalComparisonProfile(userId: string | null = null): Soc
 
   const speed = latestAverage(loadAnalysisHistory("speed", userId), "ballSpeed");
   if (speed.value !== undefined) performance.push({ key:"avg-ball-speed", label:"Snitt ball speed", value:speed.value, unit:"mph", decimals:1, higherIsBetter:true, category:"driving" });
+
+  // H2H comparison uses per-session averages from the latest five nine-hole tests.
+  for (const [kind, key, label] of [
+    ["short", "recent-short-putts", "Kortputt · snittputtar"],
+    ["long", "recent-long-putts", "Långputt · snittputtar"],
+  ] as const) {
+    const result = latestAverage(loadAnalysisHistory(kind, userId), "avgPutts");
+    if (result.value !== undefined) performance.push({
+      key, label, value: result.value, unit: "puttar", decimals: 2,
+      higherIsBetter: false, category: "puttning",
+    });
+  }
 
   const oneToTwo = puttingOneToTwoPct();
   if (oneToTwo !== undefined) performance.push({ key: "putting-1-2", label: "Sänk% 1–2 m", value: oneToTwo, unit: "%", decimals: 0, higherIsBetter: true, category: "puttning" });
@@ -196,24 +226,40 @@ export function computeLocalComparisonProfile(userId: string | null = null): Soc
 
   const teeShots = loadOffTeeSessions().flatMap((session) => session.shots.filter((shot) => shot.filled));
   const progressTests = PROGRESS_TESTS.reduce((sum, test) => sum + test.load().length, 0);
-  const tests = progressTests + eightBallSessions.length;
+  // Current HCP formats are not in legacy PROGRESS_TESTS; count complete sessions.
+  const newTests: Record<ComparisonCategory, number> = {
+    driving: countNewOffTeeTests(),
+    approach: loadAnalysisHistory("wedge", userId).length + loadAnalysisHistory("iron", userId).length,
+    "around-the-green": loadAnalysisHistory("chipping", userId).length,
+    puttning: loadAnalysisHistory("short", userId).length + loadAnalysisHistory("long", userId).length,
+  };
+  const newPeiShots = (["wedge", "iron"] as const)
+    .flatMap((kind) => loadPeiSessions(kind))
+    .reduce((sum, s) => sum + (s.shots?.length ?? 0), 0);
+  const modernShots = newTests.driving * 3 + newPeiShots +
+    newTests["around-the-green"] * 9 + newTests.puttning * 9;
+  const tests = progressTests + eightBallSessions.length +
+    Object.values(newTests).reduce((sum, count) => sum + count, 0);
   const approachShots = collectApproachShots().length;
   const aroundShots = collectAroundGreenShots().length;
   const puttShots = collectPuttStarts().length;
   const lagShots = collectLagHoleOutStarts().length;
   const eightBallShots = eightBallSessions.reduce((sum, session) => sum + (Array.isArray(session.scores) ? session.scores.length : 40), 0);
-  const shots = teeShots.length + approachShots + aroundShots + puttShots + lagShots + eightBallShots;
+  const shots = teeShots.length + approachShots + aroundShots + puttShots + lagShots + eightBallShots + modernShots;
 
   const byCategory = emptyCategoryActivity();
   for (const test of PROGRESS_TESTS) {
     const category = categoryForProgress(test.categorySlug);
     if (category) byCategory[category].tests += test.load().length;
   }
-  byCategory.driving.shots = teeShots.length;
-  byCategory.approach.shots = approachShots;
+  for (const category of Object.keys(newTests) as ComparisonCategory[]) {
+    byCategory[category].tests += newTests[category];
+  }
+  byCategory.driving.shots = teeShots.length + newTests.driving * 3;
+  byCategory.approach.shots = approachShots + newPeiShots;
   byCategory["around-the-green"].tests += eightBallSessions.length;
-  byCategory["around-the-green"].shots = aroundShots + eightBallShots;
-  byCategory.puttning.shots = puttShots + lagShots;
+  byCategory["around-the-green"].shots = aroundShots + eightBallShots + newTests["around-the-green"] * 9;
+  byCategory.puttning.shots = puttShots + lagShots + newTests.puttning * 9;
 
   const latestBag = latestCompletedBagMap();
   const bag: ComparisonBagProfile | undefined = latestBag
