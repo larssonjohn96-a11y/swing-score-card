@@ -1,3 +1,4 @@
+import { loadOffTeeSessions } from "@/lib/offtee-store";
 import { latestAverage, loadAnalysisHistory } from "@/lib/analysis-history";
 import { collectApproachShots, approachProximityPct } from "@/lib/approach-global";
 import { collectAroundGreenShots } from "@/lib/around-green-global";
@@ -193,6 +194,7 @@ export function computeLocalComparisonProfile(userId: string | null = null): Soc
     training.push({ key: "eight-ball", label: "8-bollsövningen", value: Math.max(...eightBallScores), unit: "p", decimals: 0, higherIsBetter: true, category: "around-the-green" });
   }
 
+  const teeShots = loadOffTeeSessions().flatMap((session) => session.shots.filter((shot) => shot.filled));
   const progressTests = PROGRESS_TESTS.reduce((sum, test) => sum + test.load().length, 0);
   const tests = progressTests + eightBallSessions.length;
   const approachShots = collectApproachShots().length;
