@@ -36,8 +36,12 @@ export const Route = createFileRoute("/utveckling/")({
   }),
   component: UtvecklingPage,
 });
-type Data = { cats: CategoryHandicap[]; totalHandicap: number | undefined; parts: AnalysisParts };
-function loadData(): Data {
+type Data = {
+  cats: CategoryHandicap[];
+  totalHandicap: number | undefined;
+  kpis: Partial<Record<CategorySlug, CategoryKpi[]>>;
+};
+function loadData(userId: string | null): Data {
   const real = loadRealHandicap();
   const parts = loadAnalysisParts();
   const cats = computeStableCategoryHandicaps(undefined, real ?? undefined).map((cat) => {
@@ -53,13 +57,13 @@ function loadData(): Data {
       count: values.reduce((sum, p) => sum + p.count, 0),
     };
   });
-  return { cats, totalHandicap: computeEstimatedHandicap(cats), parts };
-}
-export function categoryTone(hcp: number | undefined, baseline: number | undefined) {
-  if (hcp === undefined || baseline === undefined) return "border-slate-200 bg-white";
-  if (hcp < baseline - 2) return "border-emerald-200 bg-emerald-50/70";
-  if (hcp > baseline + 2) return "border-amber-200 bg-amber-50/70";
-  return "border-blue-100 bg-blue-50/50";
+  const cache = new Map<HistoryKind, AnalysisHistoryPoint[]>();
+  const history = (kind: HistoryKind) => {
+    if (!cache.has(kind)) cache.set(kind, loadAnalysisHistory(kind, userId));
+    return cache.get(kind)!;
+  };
+  const kpis = Object.fromEntries(HCP_CATS.map((slug) => [slug, categoryKpis(slug, history)]));
+  return { cats, totalHandicap: computeEstimatedHandicap(cats), kpis };
 }
 function UtvecklingPage() {
   const { tab = "analys" } = Route.useSearch();
@@ -115,29 +119,20 @@ function AnalysisTab({ data }: { data: Data }) {
   const tested = data.cats.filter(
     (c) => HCP_CATS.includes(c.slug) && c.count > 0 && c.handicap !== undefined,
   );
-  const baseline =
-    tested.length > 1 ? tested.reduce((sum, c) => sum + c.handicap!, 0) / tested.length : undefined;
   return (
     <div className="mt-4">
       <AnalysisRadarSwitcher cats={data.cats} totalHandicap={data.totalHandicap} />
       <section className="mt-6" aria-label="HCP per kategori">
         <h2 className="text-2xl font-black">HCP per kategori</h2>
-        <p className="mt-2 text-xs text-slate-500">
-          Grönt: relativ styrka · Blått: jämn nivå · Gult: utvecklingsområde
-        </p>
         <div className="mt-3 grid grid-cols-2 gap-3">
-          {HCP_CATS.map((slug) => {
-            const cat = data.cats.find((c) => c.slug === slug);
-            return (
-              <CategoryFlipCard
-                key={slug}
-                slug={slug}
-                cat={cat}
-                parts={data.parts[slug] ?? []}
-                baseline={baseline}
-              />
-            );
-          })}
+          {HCP_CATS.map((slug) => (
+            <CategoryFlipCard
+              key={slug}
+              slug={slug}
+              cat={data.cats.find((c) => c.slug === slug)}
+              kpis={data.kpis[slug] ?? []}
+            />
+          ))}
         </div>
       </section>
       <AnalysisHistoryChart />
@@ -156,75 +151,98 @@ function AnalysisTab({ data }: { data: Data }) {
 function CategoryFlipCard({
   slug,
   cat,
-  parts,
-  baseline,
+  kpis,
 }: {
   slug: CategorySlug;
   cat: CategoryHandicap | undefined;
-  parts: NonNullable<AnalysisParts[CategorySlug]>;
-  baseline: number | undefined;
+  kpis: CategoryKpi[];
 }) {
   const [flipped, setFlipped] = useState(false);
   const hcp = cat?.count ? cat.handicap : undefined;
-  const tone = categoryTone(hcp, baseline);
-  const visibleParts = parts.filter((part) => part.label !== "Samlat utslag");
+  const face =
+    "absolute inset-0 flex flex-col rounded-2xl border border-border bg-card [backface-visibility:hidden]";
+  const counts = [...new Set(kpis.filter((k) => k.count > 0).map((k) => k.count))];
   return (
     <button
       type="button"
       onClick={() => setFlipped((value) => !value)}
       aria-pressed={flipped}
-      aria-label={`${CATEGORY_LABELS[slug]} – ${flipped ? "visa kategori-HCP" : "visa delresultat"}`}
-      className="h-[230px] min-w-0 rounded-2xl text-left outline-none [perspective:1000px] focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+      aria-label={`${CATEGORY_LABELS[slug]} – ${flipped ? "visa kategori-HCP" : "vänd för mätvärden"}`}
+      className="h-[340px] min-w-0 rounded-2xl text-left outline-none [perspective:1000px] focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
     >
       <span
         className="relative block h-full w-full transition-transform duration-500 motion-reduce:transition-none [transform-style:preserve-3d]"
         style={{ transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)" }}
       >
-        <span
-          aria-hidden={flipped}
-          className={`absolute inset-0 flex flex-col rounded-2xl border p-4 [backface-visibility:hidden] ${tone}`}
-        >
-          <span className="text-base font-bold">{CATEGORY_LABELS[slug]}</span>
+        <span aria-hidden={flipped} className={`${face} p-4`}>
+          <span className="flex items-start justify-between gap-2">
+            <span className="text-base font-bold">{CATEGORY_LABELS[slug]}</span>
+            <RotateCcw className="mt-1 h-4 w-4 shrink-0 text-muted-foreground" />
+          </span>
           <span className="my-auto block">
             <span className="block text-5xl font-black">
               {hcp === undefined ? "–" : hcpLabel(hcp)}
             </span>
-            <span className="mt-2 block text-[10px] font-bold uppercase text-slate-500">
+            <span className="mt-2 block text-[10px] font-bold uppercase text-muted-foreground">
               Uppskattat HCP
             </span>
           </span>
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-muted-foreground">
             {cat?.count ? `${cat.count} test` : "Ej testad"}
           </span>
-          <span className="mt-3 flex items-center gap-1 text-[11px] font-semibold text-slate-500">
-            <RotateCcw className="h-3 w-3" />
-            Tryck för delar
+          <span className="mt-3 flex min-h-9 items-center justify-center gap-1.5 rounded-full border border-border bg-muted/50 text-[11px] font-semibold text-foreground">
+            <RotateCcw className="h-3.5 w-3.5" />
+            Vänd för mätvärden
           </span>
         </span>
         <span
           aria-hidden={!flipped}
-          className={`absolute inset-0 flex flex-col rounded-2xl border p-3 [backface-visibility:hidden] ${tone}`}
+          className={`${face} p-3`}
           style={{ transform: "rotateY(180deg)" }}
         >
-          <span className="text-sm font-bold">{CATEGORY_LABELS[slug]}</span>
-          <span className="mt-1 text-[9px] text-slate-500">Upp till 5 senaste testerna</span>
-          <span className="my-auto block">
-            {visibleParts.map((part) => (
-              <span
-                key={part.label}
-                className="flex items-center justify-between gap-1 border-b border-black/5 py-3 last:border-0"
-              >
-                <span className="text-[11px] font-medium">{part.label.split(" · ")[0]}</span>
-                <span className="shrink-0 text-xs font-black">
-                  {part.hcp !== undefined ? `HCP ${hcpLabel(part.hcp)}` : (part.value ?? "–")}
+          <span className="flex items-baseline justify-between gap-1">
+            <span className="text-sm font-bold">{CATEGORY_LABELS[slug]}</span>
+            <span className="text-[11px] font-black">
+              HCP {hcp === undefined ? "–" : hcpLabel(hcp)}
+            </span>
+          </span>
+          <span className="mt-0.5 text-[9px] text-muted-foreground">
+            {counts.length === 0
+              ? "Inga mätvärden ännu"
+              : counts.length === 1
+                ? `Senaste ${counts[0]} ${counts[0] === 1 ? "test" : "tester"}`
+                : "Snitt av senaste ≤5 tester per test"}
+          </span>
+          <span className="mt-2 flex flex-1 flex-col justify-around">
+            {kpis.map((k) => (
+              <span key={k.key} className="block border-t border-border pt-1.5 first:border-0">
+                <span className="block text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  {k.label}
                 </span>
+                <span className="block leading-none">
+                  <span className="text-[26px] font-black tabular-nums">
+                    {k.value === undefined
+                      ? "–"
+                      : k.value.toLocaleString("sv-SE", {
+                          minimumFractionDigits: k.def.decimals,
+                          maximumFractionDigits: k.def.decimals,
+                        })}
+                  </span>
+                  {k.value !== undefined && (
+                    <span className="ml-1 text-xs font-semibold text-muted-foreground">
+                      {k.def.unit}
+                    </span>
+                  )}
+                </span>
+                {counts.length > 1 && k.count > 0 && (
+                  <span className="block text-[9px] text-muted-foreground">
+                    senaste {k.count} test
+                  </span>
+                )}
               </span>
             ))}
           </span>
-          <span className="text-[9px] text-slate-500">
-            {slug === "driving" ? "Fairway ±16 m · OB över 28 m" : "– = inte testad"}
-          </span>
-          <span className="mt-2 flex items-center gap-1 text-[11px] font-semibold text-slate-500">
+          <span className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-muted-foreground">
             <RotateCcw className="h-3 w-3" />
             Vänd tillbaka
           </span>
