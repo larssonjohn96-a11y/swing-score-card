@@ -18,6 +18,7 @@ export const Route = createFileRoute("/jamfor/$userId")({
 type Focus = "all" | ComparisonCategory;
 type MetricRow = { key:string; label:string; left?:number; right?:number; unit?:string; decimals?:number; higherIsBetter:boolean };
 type LocalSnapshot = {
+  real?: number;
   total?: number;
   categories: Partial<Record<CategorySlug, number>>;
   comparison: SocialComparisonProfile;
