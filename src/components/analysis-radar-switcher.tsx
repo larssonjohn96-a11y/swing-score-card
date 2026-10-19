@@ -377,14 +377,6 @@ export function AnalysisRadarSwitcher({ cats, totalHandicap }: { cats: CategoryH
     <p className="mt-4 text-center text-xs uppercase tracking-[0.25em] text-muted-foreground">Din nivå jämfört med {targetLabel}</p>
 
     <div className="mt-4 overflow-hidden rounded-3xl border border-border bg-card">
-      <div className="border-b border-border/60">
-        <p className="py-2 text-center text-[9px] font-black uppercase tracking-[.16em] text-muted-foreground">Totalt HCP</p>
-        <div className="grid grid-cols-[1fr_auto_1fr] items-stretch">
-          <div className="flex items-center justify-center gap-2 bg-blue-500/10 px-3 py-2.5 text-blue-700"><span className="text-[10px] font-bold uppercase">Du</span><strong className="font-display text-xl">{totalHandicap === undefined ? "–" : Math.round(totalHandicap)}</strong></div>
-          <div className="flex items-center justify-center px-3 text-[10px] font-black uppercase text-muted-foreground">vs</div>
-          <div className="flex items-center justify-center gap-2 bg-red-500/10 px-3 py-2.5 text-red-700"><span className="max-w-[78px] truncate text-[10px] font-bold uppercase">{target.isFriend ? target.label : "HCP"}</span><strong className="font-display text-xl">{Math.round(target.hcp)}</strong></div>
-        </div>
-      </div>
       <div className="h-96 w-full p-2">
       <ResponsiveContainer width="100%" height="100%">
         <RadarChart data={data} outerRadius="70%">
