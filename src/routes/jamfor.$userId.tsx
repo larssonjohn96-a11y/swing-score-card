@@ -276,20 +276,11 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   return <div className="mb-3 text-center"><h2 className="font-display text-2xl">{children}</h2></div>;
 }
 
-function BackControl({ onBack }: { onBack?: () => void }) {
-  const cls = "inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/70 bg-background/75 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/5";
-  return onBack
-    ? <button type="button" onClick={onBack} className={cls} aria-label="Tillbaka"><ArrowLeft className="h-4 w-4" /></button>
-    : <Link to="/jamfor" className={cls} aria-label="Tillbaka"><ArrowLeft className="h-4 w-4" /></Link>;
-}
-
 /** Stabilt skal som renderas direkt så sidan inte hoppar mellan laddning och innehåll. */
 function Shell({ onBack, note }: { onBack?: () => void; note?: string | null }) {
   return <main className="mx-auto min-h-screen w-full max-w-md bg-background px-5 pb-10 pt-7">
-    <header className={`flex items-center justify-between rounded-[1.75rem] px-3 py-2.5 ${glassCard}`}>
-      <BackControl onBack={onBack} />
+    <header className={`flex items-center justify-center rounded-[1.75rem] px-3 py-2.5 ${glassCard}`}>
       <div className="text-center"><p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">SG4 Social</p><h1 className="font-display text-3xl">Head-to-head</h1></div>
-      <span className="h-10 w-10" />
     </header>
     <section className={`mt-5 grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-[2rem] px-4 py-5 ${glassCard}`}>
       <div className="flex min-w-0 flex-col items-center text-center"><Avatar name="" side="left" /><p className="mt-2 h-5 w-20 rounded bg-muted/70" /><p className="mt-1 h-4 w-12 rounded bg-muted/50" /></div>
@@ -311,7 +302,6 @@ export function CompareFriendContent({ userId, onBack }: { userId:string; onBack
   const { user, loading } = useAuth();
   const [focus,setFocus] = useState<Focus>("all");
   const [focusOpen,setFocusOpen] = useState(false);
-  const [compareMode,setCompareMode] = useState<"game"|"bag">("game");
   const [friend,setFriend] = useState<Profile|null>(null);
   const [friendSnapshot,setFriendSnapshot] = useState<PlayerSnapshot|null>(null);
   const [selfName,setSelfName] = useState("Du");
@@ -324,6 +314,7 @@ export function CompareFriendContent({ userId, onBack }: { userId:string; onBack
     const real = loadRealHandicap();
     const cats = computeStableCategoryHandicaps(undefined, real ?? undefined);
     setLocal({
+      real: real ?? undefined,
       total: computeEstimatedHandicap(cats),
       categories: Object.fromEntries(cats.map((cat) => [cat.slug, cat.handicap])) as Partial<Record<CategorySlug, number>>,
       comparison: computeLocalComparisonProfile(),
@@ -359,6 +350,9 @@ export function CompareFriendContent({ userId, onBack }: { userId:string; onBack
     ];
   },[local,friendSnapshot,focus]);
 
+  const testsRow = activityRows.find((row) => row.key.endsWith("tests"));
+  const shotRows = activityRows.filter((row) => !row.key.endsWith("tests"));
+
   const levelRows = useMemo<MetricRow[]>(() => {
     if (!local || !friendSnapshot) return [];
     if (focus !== "all") {
@@ -366,7 +360,7 @@ export function CompareFriendContent({ userId, onBack }: { userId:string; onBack
       return selected ? [{ key:selected.slug, label:`${selected.label} HCP`, left:local.categories[selected.slug], right:friendSnapshot.categoryHcp[selected.slug], higherIsBetter:false }] : [];
     }
     return [
-      { key:"total", label:"SG4 HCP", left:local.total, right:friendSnapshot.estHcp ?? undefined, higherIsBetter:false },
+      { key:"real", label:"Riktigt HCP", left:local.real, right:friendSnapshot.realHcp ?? undefined, higherIsBetter:false },
       ...CATEGORY_ROWS.map(({slug,label}) => ({ key:slug, label, left:local.categories[slug], right:friendSnapshot.categoryHcp[slug], higherIsBetter:false })),
     ];
   },[local,friendSnapshot,focus]);
@@ -383,36 +377,18 @@ export function CompareFriendContent({ userId, onBack }: { userId:string; onBack
   const focusLabel = FOCUS_OPTIONS.find(([key]) => key === focus)?.[1] ?? "Hela spelet";
 
   return <main className="mx-auto min-h-screen w-full max-w-md bg-background px-5 pb-10 pt-7">
-    <header className={`flex items-center justify-between rounded-[1.75rem] px-3 py-2.5 ${glassCard}`}>
-      {onBack ? <button type="button" onClick={onBack} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/70 bg-background/75 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/5" aria-label="Tillbaka"><ArrowLeft className="h-4 w-4" /></button> : <Link to="/jamfor" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/70 bg-background/75 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/5" aria-label="Tillbaka"><ArrowLeft className="h-4 w-4" /></Link>}
+    <header className={`flex items-center justify-center rounded-[1.75rem] px-3 py-2.5 ${glassCard}`}>
       <div className="text-center"><p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">SG4 Social</p><h1 className="font-display text-3xl">Head-to-head</h1></div>
-      <span className="h-10 w-10" />
     </header>
 
-    {compareMode === "game" ? <section className={`mt-5 grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-[2rem] px-4 py-5 ${glassCard}`}>
-      <div className="flex min-w-0 flex-col items-center text-center"><Avatar name={selfName} url={selfAvatar} side="left"/><p className="mt-2 max-w-[8rem] truncate text-sm font-bold">{selfName}</p><p className="mt-0.5 text-xs font-semibold text-blue-600 dark:text-blue-400">HCP {formatHcp(local?.total)}</p></div>
+    <section className={`mt-5 grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-[2rem] px-4 py-5 ${glassCard}`}>
+      <div className="flex min-w-0 flex-col items-center text-center"><Avatar name={selfName} url={selfAvatar} side="left"/><p className="mt-2 max-w-[8rem] truncate text-sm font-bold">{selfName}</p><p className="mt-0.5 text-xs font-semibold text-blue-600 dark:text-blue-400">HCP {formatHcp(local?.real)}</p></div>
       <div className="flex flex-col items-center"><span className="rounded-xl bg-foreground px-3 py-2 font-display text-2xl text-background shadow-sm">VS</span></div>
-      <div className="flex min-w-0 flex-col items-center text-center"><Avatar name={friend?.displayName ?? "Vän"} url={friend?.avatarUrl} side="right"/><p className="mt-2 max-w-[8rem] truncate text-sm font-bold">{friend?.displayName ?? "Vän"}</p><p className="mt-0.5 text-xs font-semibold text-red-600 dark:text-red-400">HCP {formatHcp(friendSnapshot?.estHcp ?? undefined)}</p></div>
-    </section> : null}
+      <div className="flex min-w-0 flex-col items-center text-center"><Avatar name={friend?.displayName ?? "Vän"} url={friend?.avatarUrl} side="right"/><p className="mt-2 max-w-[8rem] truncate text-sm font-bold">{friend?.displayName ?? "Vän"}</p><p className="mt-0.5 text-xs font-semibold text-red-600 dark:text-red-400">HCP {formatHcp(friendSnapshot?.realHcp ?? undefined)}</p></div>
+    </section>
 
-    <div className={`mt-5 grid grid-cols-2 gap-1 rounded-2xl p-1 ${glassCard}`}>
-      <button
-        type="button"
-        onClick={() => setCompareMode("game")}
-        className={`min-h-11 rounded-xl text-sm font-bold transition ${compareMode === "game" ? "bg-foreground text-background shadow-sm" : "text-muted-foreground"}`}
-      >
-        Spel
-      </button>
-      <button
-        type="button"
-        onClick={() => setCompareMode("bag")}
-        className={`min-h-11 rounded-xl text-sm font-bold transition ${compareMode === "bag" ? "bg-foreground text-background shadow-sm" : "text-muted-foreground"}`}
-      >
-        Jämför bag
-      </button>
-    </div>
 
-    {compareMode === "game" ? <><div className="relative mt-5">
+    <div className="relative mt-5">
       <span className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Jämför kategori</span>
       <button type="button" onClick={() => setFocusOpen((value) => !value)} className={`flex h-12 w-full items-center justify-between rounded-2xl px-4 text-sm font-semibold ${glassCard}`} aria-haspopup="listbox" aria-expanded={focusOpen}>
         <span>{focusLabel}</span>
@@ -434,6 +410,11 @@ export function CompareFriendContent({ userId, onBack }: { userId:string; onBack
 
     {message ? <div className={`mt-5 rounded-2xl p-4 text-sm text-muted-foreground ${glassCard}`}>{message}</div> : null}
 
+    {testsRow ? <section className="mt-7">
+      <SectionTitle>Aktivitet</SectionTitle>
+      <MetricTable rows={[testsRow]}/>
+    </section> : null}
+
     <section className="mt-7">
       <SectionTitle>Handicap per kategori{focus !== "all" ? ` · ${focusLabel}` : ""}</SectionTitle>
       <MetricTable rows={levelRows} hcp/>
@@ -442,23 +423,16 @@ export function CompareFriendContent({ userId, onBack }: { userId:string; onBack
     <section className="mt-7">
       <SectionTitle>Spelstatistik{focus !== "all" ? ` · ${focusLabel}` : ""}</SectionTitle>
       {performanceRows.length ? <MetricTable rows={performanceRows}/> : <Empty/>}
+      {performanceRows.length ? <p className="mt-2 text-center text-[10px] text-muted-foreground">Snitt av senaste 5 giltiga testpass per test.</p> : null}
     </section>
+
+    {shotRows.length ? <section className="mt-7">
+      <SectionTitle>Slag registrerade</SectionTitle>
+      <MetricTable rows={shotRows}/>
+    </section> : null}
 
 
     <p className="mt-7 text-center text-[11px] leading-relaxed text-muted-foreground">Jämförelsen bygger på aggregerade snitt och handicapnivåer – inte enskilda rekordslag.</p>
-    </> : (
-      <div className="mt-7">
-        <SectionTitle>Jämför bag</SectionTitle>
-        <BagComparison
-          left={local?.comparison.bag}
-          friendBag={friendSnapshot?.comparisonProfile.bag}
-          leftName={selfName}
-          friendName={friend?.displayName ?? "Vän"}
-          leftAvatar={selfAvatar}
-          friendAvatar={friend?.avatarUrl}
-        />
-      </div>
-    )}
   </main>;
 }
 
