@@ -1,12 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { ArrowLeft, ArrowRight, RotateCcw, BarChart3 } from "lucide-react";
+import { ArrowLeft, ArrowRight, RotateCcw } from "lucide-react";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 import { LIGHT_SURFACE } from "./8-bollar";
 
 /** V2 uses a separate storage key so legacy 18-putt signed scores are not mixed in. */
 const KEY = "sg4-lag-putting-zones-v2";
-const DISTANCES = [4, 6, 8, 10, 12, 14, 16, 10, 14] as const;
+const DISTANCES = [4, 6, 8, 10, 10, 12, 14, 14, 16] as const;
 const ZONES = [
   { points: 3, label: "Hålad" },
   { points: 2, label: "Inom 0,5 m" },
