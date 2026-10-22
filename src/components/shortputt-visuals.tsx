@@ -1,6 +1,6 @@
 import type { Direction, ShortPuttDirectionStat, ShortPuttDistance } from "@/lib/shortputt";
 
-/** Hero: top-down-vy av en green med fyra startlinjer (klockan 12/3/6/9) runt hålet. */
+/** Hero: top-down-vy av en green med tre startlinjer (klockan 12/3/6/9) runt hålet. */
 export function PuttingHero({ className = "h-44 w-full" }: { className?: string }) {
   const c = 150;
   const cy = 95;
@@ -8,7 +8,7 @@ export function PuttingHero({ className = "h-44 w-full" }: { className?: string 
     <svg
       viewBox="0 0 300 190"
       role="img"
-      aria-label="Illustration av en green ovanifrån med fyra startlinjer runt hålet"
+      aria-label="Illustration av en green ovanifrån med tre startlinjer runt hålet"
       className={className}
     >
       <circle cx={c} cy={cy} r="82" className="fill-fairway" />
@@ -69,75 +69,47 @@ export function PuttingHero({ className = "h-44 w-full" }: { className?: string 
   );
 }
 
-/**
- * Visar vilken av de 12 positionerna (4 riktningar × 1/2/3 m) som gäller
- * för det aktuella slaget – samma korsformade layout som green-illustrationen,
- * men med den aktiva positionen tydligt markerad i rött.
- */
+/** Visar aktuell putt och historiken för samtliga nio positioner. */
 export function PuttingPositionDiagram({
   activeDirection,
   activeDistance,
+  putts = [],
+  currentIndex = 0,
 }: {
   activeDirection: Direction;
   activeDistance: ShortPuttDistance;
+  putts?: { direction: Direction; distance: ShortPuttDistance; holed: boolean }[];
+  currentIndex?: number;
 }) {
   const cx = 130;
   const cy = 110;
-  const R = [22, 40, 58];
-
-  const arms: { direction: Direction; dx: number; dy: number }[] = [
-    { direction: "12", dx: 0, dy: -1 },
-    { direction: "3", dx: 1, dy: 0 },
-    { direction: "6", dx: 0, dy: 1 },
-    { direction: "9", dx: -1, dy: 0 },
-  ];
-
+  const radii = [30, 56, 82];
+  const angles: Record<Direction, number> = { "12": -Math.PI / 2, "4": Math.PI / 6, "8": 5 * Math.PI / 6 };
   return (
-    <svg
-      viewBox="0 0 260 220"
-      className="h-40 w-full"
-      role="img"
-      aria-label={`Puttposition: klockan ${activeDirection}, ${activeDistance} meter`}
-    >
-      <circle cx={cx} cy={cy} r="100" className="fill-fairway" />
-
-      {arms.map(({ direction, dx, dy }) => {
-        const points = R.map((r) => ({ x: cx + dx * r, y: cy + dy * r }));
-        return (
-          <g key={direction}>
-            <line
-              x1={cx}
-              y1={cy}
-              x2={points[2].x}
-              y2={points[2].y}
-              className="stroke-flag"
-              strokeWidth="2"
-              strokeDasharray="4 5"
-            />
-            {points.map((p, i) => {
-              const distance = (i + 1) as ShortPuttDistance;
-              const active = direction === activeDirection && distance === activeDistance;
-              return (
-                <circle
-                  key={distance}
-                  cx={p.x}
-                  cy={p.y}
-                  r={active ? 7 : 5.5}
-                  className={
-                    active
-                      ? "fill-destructive stroke-destructive"
-                      : "fill-background stroke-foreground/70"
-                  }
-                  strokeWidth={active ? 2 : 1.5}
-                />
-              );
-            })}
-          </g>
-        );
+    <svg viewBox="0 0 260 220" className="h-52 w-full" role="img"
+      aria-label={`Aktuell putt klockan ${activeDirection}, ${activeDistance} meter. Fylld blå är aktuell, bock är satt och kryss är missad.`}>
+      <circle cx={cx} cy={cy} r="101" className="fill-fairway" />
+      {radii.map(r => <circle key={r} cx={cx} cy={cy} r={r} fill="none" stroke="currentColor" strokeOpacity=".2" strokeDasharray="3 5" />)}
+      {(Object.keys(angles) as Direction[]).map(direction => {
+        const a = angles[direction];
+        return <g key={direction}>
+          <line x1={cx} y1={cy} x2={cx + Math.cos(a)*85} y2={cy + Math.sin(a)*85} stroke="currentColor" strokeOpacity=".26" strokeDasharray="3 4"/>
+          {radii.map((r,i) => {
+            const distance = (i+1) as ShortPuttDistance;
+            const x = cx + Math.cos(a)*r, y=cy + Math.sin(a)*r;
+            const active = direction===activeDirection && distance===activeDistance;
+            const shotIndex=putts.findIndex(p=>p.direction===direction&&p.distance===distance);
+            const done=shotIndex>=0 && shotIndex<currentIndex;
+            const made=done&&putts[shotIndex].holed;
+            return <g key={distance}>
+              {active && <circle cx={x} cy={y} r="16" fill="none" stroke="#2563eb" strokeWidth="2.5"/>}
+              <circle cx={x} cy={y} r="11" fill={active?"#2563eb":done?(made?"#16a34a":"#dc2626"):"#e2e8f0"} stroke={active?"#1d4ed8":"#94a3b8"} strokeWidth="1"/>
+              <text x={x} y={y+3.5} textAnchor="middle" fontSize="11" fontWeight="700" fill={active||done?"white":"#334155"}>{done?(made?"✓":"×"):distance}</text>
+            </g>;
+          })}
+        </g>;
       })}
-
-      <circle cx={cx} cy={cy} r="7" className="fill-foreground" />
-      <circle cx={cx} cy={cy} r="7" className="fill-none stroke-background" strokeWidth="1.5" />
+      <circle cx={cx} cy={cy} r="10" fill="#1e293b" stroke="white" strokeWidth="2"/>
     </svg>
   );
 }
@@ -154,9 +126,8 @@ export function PuttingResultCompass({ byDirection }: { byDirection: ShortPuttDi
 
   const arms: { direction: Direction; dx: number; dy: number }[] = [
     { direction: "12", dx: 0, dy: -1 },
-    { direction: "3", dx: 1, dy: 0 },
-    { direction: "6", dx: 0, dy: 1 },
-    { direction: "9", dx: -1, dy: 0 },
+    { direction: "4", dx: 0.866, dy: 0.5 },
+    { direction: "8", dx: -0.866, dy: 0.5 },
   ];
 
   return (
