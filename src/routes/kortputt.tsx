@@ -28,11 +28,11 @@ import { computeRevealState } from "@/lib/test-reveal-helpers";
 export const Route = createFileRoute("/kortputt")({
   head: () => ({
     meta: [
-      { title: "Short Putting Test – 12 puttar från 1–3 m | SG4" },
+      { title: "Short Putting Test – 9 puttar från 1–3 m | SG4" },
       {
         name: "description",
         content:
-          "Short Putting Test: 12 puttar från fyra riktningar (klockan 12/3/6/9) på 1, 2 och 3 meter. Short Putting HCP, score och analys per riktning.",
+          "Short Putting Test: 9 puttar från tre riktningar (klockan 12/4/8) på 1, 2 och 3 meter. Short Putting HCP, score och analys per riktning.",
       },
     ],
   }),
@@ -60,6 +60,7 @@ function ShortPuttPage() {
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [hcpInfoOpen, setHcpInfoOpen] = useState(false);
+  const [analysisOpen, setAnalysisOpen] = useState(false);
   const [reveal, setReveal] = useState<RevealData | null>(null);
 
   useHideBottomNav(phase !== "setup");
@@ -220,6 +221,8 @@ function ShortPuttPage() {
           <PuttingPositionDiagram
             activeDirection={current.direction}
             activeDistance={current.distance}
+            putts={putts}
+            currentIndex={index}
           />
         </div>
 
@@ -359,7 +362,7 @@ function ShortPuttPage() {
 
       {aboutOpen && (
         <p className="mt-3 rounded-2xl border border-border bg-card/60 p-3 text-xs leading-relaxed text-muted-foreground">
-          12 puttar från fyra riktningar – klockan 12, 3, 6 och 9 – på 1, 2 och 3 meter. Satta
+          9 puttar från fyra riktningar – klockan 12, 3, 6 och 9 – på 1, 2 och 3 meter. Satta
           puttar viktas efter avstånd eftersom en miss från nära håll väger tyngre. Green:{" "}
           {greenType === "sloped" ? "lutande" : "rak"}.
         </p>
@@ -459,7 +462,12 @@ function ShortPuttPage() {
         </div>
       </div>
 
-      {result.byDirection.length > 0 && (
+      <button type="button" onClick={() => setAnalysisOpen(v => !v)}
+        className="mt-4 w-full rounded-2xl bg-blue-600 px-5 py-4 text-center font-semibold text-white">
+        {analysisOpen ? "Dölj HCP-analys" : "Visa HCP-analys"}
+      </button>
+
+      {analysisOpen && result.byDirection.length > 0 && (
         <div className="mt-4 rounded-3xl border border-border bg-card p-5">
           <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
             Träffbild (hålprocent)
@@ -468,7 +476,7 @@ function ShortPuttPage() {
         </div>
       )}
 
-      {(strengthText || improvementText) && (
+      {analysisOpen && (strengthText || improvementText) && (
         <div className="mt-4 rounded-3xl border border-border bg-card p-5">
           <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
             Styrkor &amp; Utvecklingsområden
@@ -500,7 +508,7 @@ function ShortPuttPage() {
         </div>
       )}
 
-      {trainingText && (
+      {analysisOpen && trainingText && (
         <div className="mt-4 rounded-2xl border border-primary/30 bg-primary/[0.06] p-4">
           <p className="text-xs uppercase tracking-[0.2em] text-primary">Rekommenderad träning</p>
           <p className="mt-1.5 text-sm leading-relaxed">{trainingText}</p>
