@@ -1,51 +1,28 @@
 import { LEGACY_KEYS } from "@/lib/sessions/keys";
 import { recordSessionDeleted, recordSessionSaved } from "@/lib/sessions/sync";
 import { recordPuttingSession } from "@/lib/shot-bank";
-/**
- * Short Putting Test (tidigare "Kortputt").
- *
- * Fyra startlinjer runt hålet (klockan 12/3/6/9) × tre avstånd (1/2/3 m),
- * i två varv = 24 puttar totalt (samma upplägg som Approach Test). De fyra
- * riktningarna fångar uppförs-, nedförs- och sidlutande puttar på samma
- * green, så testet mäter både startlinje/teknik och – på en lutande green
- * – greenläsning och fartkontroll.
- *
- * Innan testet startar väljer spelaren om hålet man puttar mot är rakt
- * eller lutande, så resultatet går att jämföra rättvist över tid och
- * mellan tester.
- *
- * Varje putt registreras bara som Satt eller Missad. En miss straffar mer
- * ju kortare putten är (en 1-metersputt ska normalt sättas betydligt oftare
- * än en 3-metersputt), så satta puttar viktas efter avstånd:
- *   1 m = 2 poäng, 2 m = 3 poäng, 3 m = 4 poäng.
- *
- * Ett HCP-baserat resultat efter ett enda test är fortfarande ett relativt
- * litet stickprov – resultatsidan visar därför en HCP-*range* snarare än
- * en falskt exakt decimal. Ett stabilare, mer precist tal fås genom det
- * rullande snittet av de senaste 3–5 testerna (se lib/sg-handicap.ts).
- */
+/** Short Putting Test: tre riktningar, 1/2/3 m per riktning, 9 puttar. */
 
-export type Direction = "12" | "3" | "6" | "9";
+export type Direction = "12" | "4" | "8";
 
 export const DIRECTIONS: { key: Direction; label: string }[] = [
   { key: "12", label: "Klockan 12" },
-  { key: "3", label: "Klockan 3" },
-  { key: "6", label: "Klockan 6" },
-  { key: "9", label: "Klockan 9" },
+  { key: "4", label: "Klockan 4" },
+  { key: "8", label: "Klockan 8" },
 ];
 
 export const SHORT_PUTT_DISTANCES = [1, 2, 3] as const;
 export type ShortPuttDistance = (typeof SHORT_PUTT_DISTANCES)[number];
 
 /** Poäng för en satt putt, per avstånd. */
-export const POINTS_BY_DISTANCE: Record<ShortPuttDistance, number> = { 1: 2, 2: 3, 3: 4 };
+export const POINTS_BY_DISTANCE: Record<ShortPuttDistance, number> = { 1: 1, 2: 2, 3: 3 };
 
 export const SHORT_PUTT_ROUNDS = 1;
-export const SHORT_PUTT_TOTAL = DIRECTIONS.length * SHORT_PUTT_DISTANCES.length * SHORT_PUTT_ROUNDS; // 12
+export const SHORT_PUTT_TOTAL = DIRECTIONS.length * SHORT_PUTT_DISTANCES.length * SHORT_PUTT_ROUNDS; // 9
 export const MAX_POINTS =
   DIRECTIONS.length *
   SHORT_PUTT_ROUNDS *
-  SHORT_PUTT_DISTANCES.reduce((a, d) => a + POINTS_BY_DISTANCE[d], 0); // 72
+  SHORT_PUTT_DISTANCES.reduce((a, d) => a + POINTS_BY_DISTANCE[d], 0); // 18
 
 export type GreenType = "flat" | "sloped";
 
@@ -150,7 +127,7 @@ function weightedPoints(putts: ShortPutt[]): number {
 }
 
 /** Max möjliga poäng FÖR DEN HÄR SPECIFIKA SERIEN (inte den fasta
- *  MAX_POINTS-konstanten, som bara stämmer för hela 12-puttarserien) –
+ *  MAX_POINTS-konstanten, som bara stämmer för hela 9-puttarserien) –
  *  gör funktionen korrekt oavsett hur många putts som faktiskt spelades
  *  (t.ex. Putting Test-huvudtestets 3 puttar). Samma typ av fix som
  *  gjordes för Approach-testets precisionResult()/statsByTarget() när
