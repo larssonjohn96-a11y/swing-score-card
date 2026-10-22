@@ -1,349 +1,122 @@
-import { StoredActivityReview } from "@/components/stored-activity-review";
-import { isActivityComplete } from "@/lib/activity-review";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, ArrowRight, BarChart3, RotateCcw, X } from "lucide-react";
-import { Fragment, useState } from "react";
+import { useState } from "react";
+import { ArrowLeft, ArrowRight, RotateCcw, BarChart3 } from "lucide-react";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 import { LIGHT_SURFACE } from "./8-bollar";
-import {
-  LAG18_BENCHMARKS,
-  LAG18_DISTANCES,
-  LAG18_SCORES,
-  LAG18_TOTAL,
-  distanceGroups,
-  fmtScore,
-  loadLag18Sessions,
-  saveLag18Session,
-  sumRange,
-} from "@/lib/lagputt18";
 
+/** V2 uses a separate storage key so legacy 18-putt signed scores are not mixed in. */
+const KEY = "sg4-lag-putting-zones-v2";
+const DISTANCES = [4, 6, 8, 10, 12, 14, 16, 10, 14] as const;
+const ZONES = [
+  { points: 3, label: "Hålad" },
+  { points: 2, label: "Inom 0,5 m" },
+  { points: 1, label: "Inom 1,5 m" },
+  { points: 0, label: "Utanför 1,5 m" },
+] as const;
+const MAX = DISTANCES.length * 3;
+type Session = { id: string; at: string; scores: number[]; total: number };
+function load(): Session[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const parsed = JSON.parse(localStorage.getItem(KEY) || "[]");
+    return Array.isArray(parsed) ? parsed.filter((s) => Array.isArray(s.scores) && s.scores.length === DISTANCES.length) : [];
+  } catch { return []; }
+}
+function save(scores: number[]): Session {
+  const session: Session = {
+    id: crypto.randomUUID(), at: new Date().toISOString(),
+    scores, total: scores.reduce((sum, score) => sum + score, 0),
+  };
+  localStorage.setItem(KEY, JSON.stringify([...load(), session]));
+  return session;
+}
 export const Route = createFileRoute("/lagputt")({
-  head: () => ({
-    meta: [
-      { title: "Lag putt – 18 puttar 8–22 m | SG4" },
-      {
-        name: "description",
-        content:
-          "Lagputtest: 18 puttar från 8 till 22 meter. Signerad poäng per putt, lägre totalscore är bättre. ",
-      },
-      { property: "og:title", content: "Lag putt – 18 puttar | SG4" },
-      {
-        property: "og:description",
-        content: "18 puttar, 8–22 meter. 18 puttar från 8–22 meter. Hur lågt kan du gå?",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-    ],
-  }),
+  head: () => ({ meta: [
+    { title: "Långputtning – 9 puttar, 4–16 m | SG4" },
+    { name: "description", content: "Nio långputtar med poängzoner: hålad, inom 0,5 m, inom 1,5 m eller utanför." },
+  ] }),
   component: LagPuttPage,
 });
-
-type Phase = "intro" | "test" | "result";
-
 function LagPuttPage() {
   useHideBottomNav(true);
-  const [phase, setPhase] = useState<Phase>("intro");
-  const [index, setIndex] = useState(0);
+  const [phase, setPhase] = useState<"intro" | "test" | "result">("intro");
   const [scores, setScores] = useState<number[]>([]);
-  const [result, setResult] = useState<number | null>(null);
-
+  const [saved, setSaved] = useState<Session | null>(null);
+  const [analysis, setAnalysis] = useState(false);
+  const index = scores.length;
+  const total = scores.reduce((sum, s) => sum + s, 0);
+  const history = phase === "result" ? load() : [];
+  const best = history.length ? Math.max(...history.map((s) => s.total)) : total;
+  const inside = scores.filter((score) => score >= 1).length;
+  const pct = scores.length ? Math.round(inside / scores.length * 100) : 0;
   function start() {
-    setIndex(0);
-    setScores([]);
-    setResult(null);
-    setPhase("test");
+    setScores([]); setSaved(null); setAnalysis(false); setPhase("test");
   }
-
   function register(points: number) {
+    if (index >= DISTANCES.length) return;
     const next = [...scores, points];
-    if (next.length >= LAG18_TOTAL) {
-      const saved = saveLag18Session(next);
-      setScores(next);
-      setResult(saved.total);
+    setScores(next);
+    if (next.length === DISTANCES.length) {
+      setSaved(save(next));
       setPhase("result");
-    } else {
-      setScores(next);
-      setIndex((v) => v + 1);
     }
   }
-
-  if (phase === "intro") {
-    return (
-      <main
-        style={LIGHT_SURFACE}
-        className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background px-5 pb-5 pt-4 text-foreground"
-      >
-{isActivityComplete(phase) && <StoredActivityReview testId="lag-putt-18" />}
-        <div className="flex shrink-0 items-center justify-between">
-          <Link to="/traning" search={{ category: undefined }} className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-          
-        </div>
-
-        <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-          Putting · 18 puttar
-        </p>
-        <h1 className="mt-2 font-display text-3xl leading-none">Lag putt</h1>
-        <p className="mt-2.5 text-[13px] leading-relaxed text-muted-foreground">
-          18 puttar från 8 till 22 meter – ett test av din längdkontroll. Slå varje putt från en ny
-          riktning mot hålet. Lägre totalscore är bättre.
-        </p>
-
-        <div className="mt-4 rounded-2xl border border-border bg-card p-3.5">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-            Hål · avstånd
-          </p>
-          <div className="mt-2 grid grid-cols-3 gap-x-3 gap-y-1 text-[12px] tabular-nums">
-            {LAG18_DISTANCES.map((d, i) => (
-              <div key={i} className="flex items-center justify-between">
-                <span className="text-muted-foreground">{i + 1}</span>
-                <span className="font-semibold">{d} m</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-4 rounded-2xl border border-border bg-card p-3.5">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-            Poäng per putt
-          </p>
-          <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1.5 text-[13px]">
-            {LAG18_SCORES.map((s) => (
-              <div key={s.score} className="flex items-center justify-between border-b border-border/60 pb-1">
-                <span className="text-muted-foreground">{s.label}</span>
-                <span className="font-semibold tabular-nums">{fmtScore(s.score)}</span>
-              </div>
-            ))}
-          </div>
-          <p className="mt-2 text-[11px] text-muted-foreground">
-            Lägre är bättre. Bästa möjliga resultat är −36.
-          </p>
-        </div>
-
-        <button
-          onClick={start}
-          className="mt-auto flex w-full shrink-0 items-center justify-center gap-2 rounded-2xl bg-primary py-4 font-display text-xl text-primary-foreground"
-        >
-          Starta test <ArrowRight className="h-5 w-5" />
-        </button>
-      </main>
-    );
-  }
-
-  if (phase === "test") {
-    const running = scores.reduce((a, b) => a + b, 0);
-    const distance = LAG18_DISTANCES[index];
-    return (
-      <main
-        style={LIGHT_SURFACE}
-        className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background px-5 pb-6 text-foreground"
-      >
-{isActivityComplete(phase) && <StoredActivityReview testId="lag-putt-18" />}
-        <div className="flex items-center justify-between pt-[max(1rem,env(safe-area-inset-top))]">
-          <span className="text-sm font-semibold">
-            Putt {index + 1} av {LAG18_TOTAL}
-          </span>
-          <Link
-            to="/traning" search={{ category: undefined }}
-            className="flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground"
-          >
-            <X className="h-3.5 w-3.5" /> Avbryt
-          </Link>
-        </div>
-
-        <div className="mt-3 rounded-2xl border border-border bg-card p-3 shadow-sm">
-          <div className="flex gap-1">
-            {LAG18_DISTANCES.map((_, i) => (
-              <div
-                key={i}
-                className={`h-2 flex-1 rounded-full ${i < index ? "bg-primary" : i === index ? "bg-primary/50" : "bg-muted"}`}
-              />
-            ))}
-          </div>
-          <p className="mt-2 text-center text-[10px] font-semibold text-muted-foreground">
-            {index < 9 ? "OUT · hål 1–9" : "IN · hål 10–18"}
-          </p>
-        </div>
-
-        <section className="mt-3 flex h-[150px] flex-col items-center justify-center rounded-2xl border border-border bg-card px-4 text-center shadow-sm">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-            Hål {index + 1}
-          </p>
-          <p className="mt-2 font-display text-4xl leading-none">{distance} m</p>
-          <p className="mt-2 text-sm font-semibold text-primary">Ny riktning mot hålet</p>
-        </section>
-
-        <p className="mt-4 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-          Avstånd kvar
-        </p>
-        <div className="mt-2 grid grid-cols-3 gap-2">
-          {LAG18_SCORES.map((s) => (
-            <button
-              key={s.score}
-              onClick={() => register(s.score)}
-              className="flex h-[96px] flex-col items-center justify-center rounded-2xl border border-border bg-card px-1 shadow-sm transition-transform active:scale-95"
-            >
-              <span className="font-display text-3xl leading-none text-primary">{fmtScore(s.score)}</span>
-              <span className="mt-2 text-[11px] font-semibold">{s.label}</span>
-            </button>
-          ))}
-        </div>
-
-        <div className="mt-3 flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3 text-sm shadow-sm">
-          <span className="text-muted-foreground">Hittills · lägre är bättre</span>
-          <span className="font-semibold tabular-nums">{fmtScore(running)} poäng</span>
-        </div>
-      </main>
-    );
-  }
-
-  const total = result ?? 0;
-  const out = sumRange(scores, 0, 9);
-  const inn = sumRange(scores, 9, 18);
-  const bestHalf = Math.min(out, inn);
-  const holed = scores.filter((s) => s === -2).length;
-  const within1 = scores.filter((s) => s <= 0).length;
-  const sessions = loadLag18Sessions();
-  const best = sessions.length ? Math.min(...sessions.map((s) => s.total)) : total;
-  const groups = distanceGroups([scores]);
-  const strongest = groups.length ? groups.reduce((a, b) => (b.avg < a.avg ? b : a)) : null;
-  const weakest = groups.length ? groups.reduce((a, b) => (b.avg > a.avg ? b : a)) : null;
-
   return (
-    <main
-      style={LIGHT_SURFACE}
-      className="mx-auto min-h-screen w-full max-w-md bg-background px-5 pb-16 pt-6 text-foreground"
-    >
-{isActivityComplete(phase) && <StoredActivityReview testId="lag-putt-18" />}
-      <header className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link to="/traning" search={{ category: undefined }} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-          <div>
-            <h1 className="text-lg font-semibold leading-tight">Lag putt</h1>
-            <p className="text-xs text-muted-foreground">Resultat</p>
-          </div>
-        </div>
-        <Link
-          to="/lagputt-historik"
-          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-2 text-xs font-semibold text-muted-foreground"
-        >
-          <BarChart3 className="h-3.5 w-3.5" /> Progress
-        </Link>
-      </header>
-
-      <section className="mt-5 rounded-3xl border border-border bg-card p-6 text-center">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Totalscore</p>
-        <p className="mt-2 font-display text-6xl leading-none text-primary">
-          {fmtScore(total)}
-          <span className="ml-2 text-xl text-muted-foreground">poäng</span>
-        </p>
-        <p className="mt-4 text-xs text-muted-foreground">
-          Lägre är bättre · bästa resultat {fmtScore(best)} poäng
-        </p>
-      </section>
-
-      <div className="mt-3 grid grid-cols-2 gap-3">
-        <Kpi label="Bästa nio" value={fmtScore(bestHalf)} hint={bestHalf === out ? "OUT hål 1–9" : "IN hål 10–18"} />
-        <Kpi label="Snitt per putt" value={(total / LAG18_TOTAL).toFixed(2)} hint="Poäng per putt" />
-        <Kpi label="Hålade puttar" value={String(holed)} hint={`av ${LAG18_TOTAL}`} />
-        <Kpi label="Inom 1 meter" value={String(within1)} hint="Hålade + ≤ 1 m" />
+    <main style={LIGHT_SURFACE} className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background px-5 pb-8 pt-5 text-foreground">
+      <div className="flex items-center justify-between">
+        <Link to="/traning" search={{ category: undefined }} aria-label="Tillbaka" className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card"><ArrowLeft className="h-4 w-4"/></Link>
+        <span className="text-xs font-semibold text-muted-foreground">Långputtning · 4–16 m</span>
       </div>
-
-      {strongest && weakest ? (
-        <section className="mt-3 rounded-2xl border border-border bg-card p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Snabb analys</p>
-          <div className="mt-3 space-y-2">
-            <div className="flex items-center justify-between rounded-xl bg-primary/8 px-3 py-2.5">
-              <span className="text-sm"><b className="text-primary">Starkast:</b> {strongest.distance} m</span>
-              <span className="shrink-0 text-sm font-semibold tabular-nums">{strongest.avg.toFixed(1)} snitt</span>
-            </div>
-            <div className="flex items-center justify-between rounded-xl bg-muted px-3 py-2.5">
-              <span className="text-sm"><b>Fokus:</b> {weakest.distance} m</span>
-              <span className="shrink-0 text-sm font-semibold tabular-nums">{weakest.avg.toFixed(1)} snitt</span>
-            </div>
+      {phase === "intro" ? <>
+        <p className="mt-8 text-xs font-semibold uppercase tracking-widest text-primary">SG4 Putting</p>
+        <h1 className="mt-2 font-display text-4xl">Långputtning</h1>
+        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">9 puttar med successivt ökande avstånd. Registrera var första putten stannar – du behöver inte putta färdigt.</p>
+        <div className="mt-6 rounded-3xl border border-border bg-card p-5">
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Avstånd i testet</p>
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            {DISTANCES.map((distance, i) => <div key={i} className="rounded-xl bg-muted px-3 py-3 text-center text-sm font-semibold">{distance} m</div>)}
           </div>
-          <p className="mt-3 text-xs text-muted-foreground">Snittpoäng per måldistans – lägre är starkare.</p>
-        </section>
-      ) : null}
-
-      <section className="mt-3 rounded-2xl border border-border bg-card p-4">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Hål för hål</p>
-        <table className="mt-3 w-full text-xs">
-          <thead>
-            <tr className="text-muted-foreground">
-              <th className="py-2 text-left font-semibold">Hål</th>
-              <th className="py-2 text-left font-semibold">Avstånd</th>
-              <th className="py-2 text-right font-semibold">Poäng</th>
-            </tr>
-          </thead>
-          <tbody>
-            {scores.map((value, i) => (
-              <Fragment key={i}>
-                <tr className="border-t border-border/60">
-                  <td className="py-2">{i + 1}</td>
-                  <td className="py-2 text-muted-foreground">{LAG18_DISTANCES[i]} m</td>
-                  <td className="py-2 text-right font-semibold tabular-nums">{fmtScore(value)}</td>
-                </tr>
-                {i === 8 ? (
-                  <tr className="border-t border-border bg-muted/60 font-semibold">
-                    <td className="py-2" colSpan={2}>OUT</td>
-                    <td className="py-2 text-right tabular-nums">{fmtScore(out)}</td>
-                  </tr>
-                ) : null}
-              </Fragment>
-            ))}
-            <tr className="border-t border-border bg-muted/60 font-semibold">
-              <td className="py-2" colSpan={2}>IN</td>
-              <td className="py-2 text-right tabular-nums">{fmtScore(inn)}</td>
-            </tr>
-            <tr className="border-t border-border font-semibold">
-              <td className="py-2" colSpan={2}>Totalt</td>
-              <td className="py-2 text-right tabular-nums">{fmtScore(total)}</td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section className="mt-3 rounded-2xl border border-border bg-card p-4">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Referensnivåer</p>
-        <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5 text-[13px]">
-          {LAG18_BENCHMARKS.map((b) => (
-            <div key={b.label} className="flex items-center justify-between border-b border-border/60 pb-1">
-              <span className="text-muted-foreground">{b.label}</span>
-              <span className="font-semibold tabular-nums">{b.score}</span>
-            </div>
-          ))}
+          <p className="mt-3 text-xs text-muted-foreground">10 och 14 meter upprepas för att få totalt nio puttar.</p>
         </div>
-        <p className="mt-3 text-xs text-muted-foreground">
-          Ungefärliga snittresultat i testet – ingen handicapberäkning.
-        </p>
-      </section>
-
-      <button
-        onClick={start}
-        className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white py-4 font-display text-xl text-slate-950"
-      >
-        <RotateCcw className="h-5 w-5" /> Kör igen
-      </button>
-      <Link
-        to="/lagputt-historik"
-        className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-border bg-card py-4 font-semibold"
-      >
-        <BarChart3 className="h-4 w-4" /> Se utveckling
-      </Link>
+        <div className="mt-4 rounded-3xl border border-border bg-card p-5">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Poäng per putt</p>
+          {ZONES.map(z => <div key={z.points} className="flex justify-between border-t border-border py-2.5 text-sm"><span>{z.label}</span><strong>{z.points} p</strong></div>)}
+          <p className="mt-2 text-xs text-muted-foreground">Max 27 poäng. Mät gärna upp 0,5 och 1,5 m med ett snöre i förväg.</p>
+        </div>
+        <button onClick={start} className="mt-auto flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-5 font-display text-xl text-primary-foreground">Starta test <ArrowRight className="h-5 w-5"/></button>
+      </> : phase === "test" ? <>
+        <div className="mt-6 flex items-center justify-between text-sm font-semibold"><span>Putt {index+1} av 9</span><span>{total} / 27 p</span></div>
+        <div className="mt-3 flex gap-1">{DISTANCES.map((_,i)=><div key={i} className={`h-2 flex-1 rounded-full ${i<index?"bg-primary":i===index?"bg-primary/50":"bg-muted"}`}/>)}</div>
+        <section className="mt-8 rounded-3xl border border-border bg-card px-4 py-12 text-center">
+          <p className="text-xs uppercase tracking-widest text-muted-foreground">Aktuellt avstånd</p>
+          <p className="mt-3 font-display text-7xl text-primary">{DISTANCES[index]}<span className="ml-2 text-2xl">m</span></p>
+          <p className="mt-3 text-sm text-muted-foreground">Slå en putt och välj var bollen stannade.</p>
+        </section>
+        <p className="mt-7 text-center text-xs font-bold uppercase tracking-widest text-muted-foreground">Resultat på första putten</p>
+        <div className="mt-3 grid grid-cols-2 gap-3">
+          {ZONES.map(zone => <button key={zone.points} onClick={()=>register(zone.points)} className="flex min-h-28 flex-col items-center justify-center rounded-2xl border-2 border-border bg-card p-2 transition-transform active:scale-95"><span className="font-display text-3xl text-primary">{zone.points} p</span><span className="mt-2 text-sm font-semibold">{zone.label}</span></button>)}
+        </div>
+        <button disabled={!scores.length} onClick={()=>setScores(current=>current.slice(0,-1))} className="mt-4 text-center text-sm text-muted-foreground disabled:opacity-30">Ångra senaste</button>
+      </> : <>
+        <h1 className="mt-8 font-display text-4xl">Testresultat</h1>
+        <div className="mt-5 rounded-3xl border border-border bg-card p-6">
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Poäng</p>
+          <p className="mt-2 font-display text-6xl text-primary">{saved?.total ?? total}<span className="ml-2 text-xl text-muted-foreground">/ 27</span></p>
+          <p className="mt-2 text-xs text-muted-foreground">Personbästa: {best}/27</p>
+        </div>
+        <div className="mt-3 rounded-3xl border border-border bg-card p-5">
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Inom 1,5 meter</p>
+          <p className="mt-2 font-display text-4xl">{inside}/9 <span className="text-lg text-muted-foreground">({pct} %)</span></p>
+        </div>
+        <button onClick={()=>setAnalysis(v=>!v)} className="mt-4 w-full rounded-2xl bg-blue-600 px-5 py-4 font-semibold text-white">{analysis?"Dölj analys":"Visa analys"}</button>
+        {analysis && <div className="mt-3 rounded-2xl border border-border bg-card p-4">
+          <p className="mb-3 text-sm font-semibold">Putt för putt</p>
+          {scores.map((points,i)=><div key={i} className="flex justify-between border-b border-border py-2 text-sm"><span>{DISTANCES[i]} m</span><span>{ZONES.find(z=>z.points===points)?.label} · {points} p</span></div>)}
+          <p className="mt-3 text-xs text-muted-foreground">SG4 HCP behöver kalibreras för den nya poängskalan och visas därför inte som ett påhittat värde.</p>
+        </div>}
+        <button onClick={start} className="mt-6 flex items-center justify-center gap-2 rounded-2xl bg-primary py-4 font-display text-xl text-primary-foreground"><RotateCcw className="h-5 w-5"/> Nytt test</button>
+        <Link to="/traning" search={{category:undefined}} className="mt-4 text-center text-sm text-muted-foreground">Tillbaka till träning</Link>
+      </>}
     </main>
-  );
-}
-
-function Kpi({ label, value, hint }: { label: string; value: string; hint?: string }) {
-  return (
-    <div className="rounded-2xl border border-border bg-card p-4">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
-      <p className="mt-2 font-display text-3xl leading-none">{value}</p>
-      {hint ? <p className="mt-1 text-xs text-muted-foreground">{hint}</p> : null}
-    </div>
   );
 }
