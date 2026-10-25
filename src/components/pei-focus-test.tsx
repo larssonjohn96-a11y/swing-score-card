@@ -347,7 +347,7 @@ export function PeiFocusTest({ kind }: { kind: FocusKind }) {
     return (
       <main
         style={LIGHT_SURFACE}
-        className="mx-auto flex h-[calc(100dvh-58px)] w-full max-w-md flex-col overflow-hidden bg-slate-50 px-4 pb-[max(10px,env(safe-area-inset-bottom))] pt-2 text-slate-950"
+        className="mx-auto flex min-h-[calc(100dvh-58px)] w-full max-w-md flex-col bg-slate-50 px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-2 text-slate-950"
       >
         <Dialog open={confirmExit} onOpenChange={setConfirmExit}>
           <DialogContent className="!z-[140] w-[calc(100%-32px)] max-w-sm rounded-3xl bg-white p-6 text-slate-950">
@@ -384,133 +384,86 @@ export function PeiFocusTest({ kind }: { kind: FocusKind }) {
             <span className="ml-1 text-xl font-bold text-slate-400">m</span>
           </div>
         </section>
-        <section className="mt-1.5 min-h-0 flex-1 rounded-3xl border border-slate-200 bg-white p-[clamp(10px,1.6dvh,16px)] shadow-sm">
-          <label
-            htmlFor="approach-carry"
-            className="block text-center text-lg font-bold text-slate-600"
-          >
+        <section className="mt-2 shrink-0 rounded-3xl border border-slate-200 bg-white p-3 shadow-sm">
+          <label htmlFor="approach-carry" className="block text-center text-sm font-bold text-slate-700">
             Carrylängd
           </label>
-          <div className="my-[clamp(6px,1.4dvh,16px)] grid grid-cols-[48px_1fr_48px] items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => adjustDistance(-1)}
-              className="h-12 w-12 rounded-xl bg-white p-0 font-black"
-            >
-              −1
-            </Button>
+          <div className="my-2 grid grid-cols-[48px_1fr_48px] items-center gap-2">
+            <Button type="button" variant="outline" onClick={() => adjustDistance(-1)}
+              aria-label="Minska carry med 1 meter"
+              className="h-12 w-12 rounded-xl bg-white p-0 font-black">−1</Button>
             <div className="flex min-w-0 items-baseline justify-center">
-              <input
-                id="approach-carry"
-                inputMode="decimal"
-                value={actualEntry}
-                onChange={(event) => {
-                  setActualEntry(event.target.value);
-                  setDistanceActive(true);
-                }}
-                className={`w-28 min-w-0 bg-transparent text-center text-[clamp(38px,6dvh,60px)] font-black leading-none outline-none transition-colors ${distanceActive ? "text-slate-700" : "text-slate-400"}`}
+              <input id="approach-carry" inputMode="decimal" value={actualEntry}
+                onFocus={(event) => event.currentTarget.select()}
+                onChange={(event) => { setActualEntry(event.target.value); setDistanceActive(true); }}
+                aria-label="Faktisk carrylängd i meter"
+                className="w-28 min-w-0 bg-transparent text-center text-5xl font-black leading-none text-slate-950 outline-none focus:text-blue-700"
               />
-              <span className="text-lg text-slate-400">m</span>
+              <span className="text-base font-semibold text-slate-500">m</span>
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => adjustDistance(1)}
-              className="h-12 w-12 rounded-xl bg-white p-0 font-black"
-            >
-              +1
-            </Button>
+            <Button type="button" variant="outline" onClick={() => adjustDistance(1)}
+              aria-label="Öka carry med 1 meter"
+              className="h-12 w-12 rounded-xl bg-white p-0 font-black">+1</Button>
           </div>
           <div className="grid grid-cols-4 gap-2">
             {[-10, -5, 5, 10].map((delta) => (
-              <Button
-                key={delta}
-                variant="outline"
-                onClick={() => adjustDistance(delta)}
-                className="min-h-10 bg-white"
-              >
-                {delta > 0 ? "+" : ""}
-                {delta}
+              <Button key={delta} type="button" variant="outline" onClick={() => adjustDistance(delta)}
+                className="min-h-10 bg-white text-slate-800">
+                {delta > 0 ? "+" : ""}{delta}
               </Button>
             ))}
           </div>
-          <div className="my-[clamp(6px,1.3dvh,20px)] border-t border-slate-200" />
-          <label className="block text-center text-lg font-bold text-slate-600">
-            Sidled från mitten
-          </label>
-          <div className="my-[clamp(5px,1dvh,16px)] flex items-baseline justify-center">
-            <span
-              className={`text-[clamp(30px,4.5dvh,40px)] font-black leading-none ${side ? "text-slate-700" : "text-slate-400"}`}
-            >
-              {lateral}
-            </span>
-            <span className="ml-1 text-sm text-slate-400">m</span>
-            {lateral > 0 && side && (
-              <span className="ml-2 text-base font-bold text-slate-600">
-                – {side === -1 ? "Vänster" : "Höger"}
-              </span>
+          <div className="my-3 border-t border-slate-200" />
+          <p className="text-center text-sm font-bold text-slate-700">Sidled från mållinjen</p>
+          <div className="mt-2 grid grid-cols-3 gap-2" role="group" aria-label="Riktning för sidled">
+            <button type="button" aria-pressed={side === -1}
+              onClick={() => setSide(-1)}
+              className={`min-h-11 rounded-xl border text-sm font-bold ${side === -1 ? "border-blue-600 bg-blue-600 text-white" : "border-slate-200 bg-slate-50 text-slate-700"}`}>
+              ← Vänster
+            </button>
+            <button type="button" aria-pressed={lateral === 0 && side === null}
+              onClick={() => { setLateral(0); setSide(null); }}
+              className={`min-h-11 rounded-xl border text-sm font-bold ${lateral === 0 && side === null ? "border-blue-600 bg-blue-50 text-blue-700" : "border-slate-200 bg-slate-50 text-slate-700"}`}>
+              Mitt 0 m
+            </button>
+            <button type="button" aria-pressed={side === 1}
+              onClick={() => setSide(1)}
+              className={`min-h-11 rounded-xl border text-sm font-bold ${side === 1 ? "border-blue-600 bg-blue-600 text-white" : "border-slate-200 bg-slate-50 text-slate-700"}`}>
+              Höger →
+            </button>
+          </div>
+          <div className="mt-2 flex items-baseline justify-center gap-1" aria-live="polite">
+            <span className="text-4xl font-black tabular-nums text-slate-950">{lateral}</span>
+            <span className="text-sm font-semibold text-slate-500">m</span>
+            {lateral > 0 && side !== null && (
+              <span className="ml-1 text-sm font-semibold text-blue-700">{side === -1 ? "vänster" : "höger"}</span>
             )}
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            {([-1, 1] as const).map((direction) => (
-              <div
-                key={direction}
-                className={`rounded-2xl border p-2 transition-colors ${side === direction ? "border-slate-400 bg-slate-100" : "border-slate-200 bg-slate-50"}`}
-              >
-                <p className="mb-2 text-center text-sm font-bold text-slate-600">
-                  {direction === -1 ? "Vänster" : "Höger"}
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  {(direction === -1 ? [5, 1] : [1, 5]).map((delta) => (
-                    <Button
-                      key={delta}
-                      variant="outline"
-                      aria-label={`${direction === -1 ? "Vänster" : "Höger"} +${delta} m`}
-                      onClick={() => {
-                        setLateral(Math.min(80, side === direction ? lateral + delta : delta));
-                        setSide(direction);
-                      }}
-                      className="min-h-10 bg-white"
-                    >
-                      +{delta}
-                    </Button>
-                  ))}
-                </div>
-              </div>
+          <div className="mt-2 grid grid-cols-4 gap-2">
+            {[-5, -1, 1, 5].map((delta) => (
+              <button key={delta} type="button"
+                aria-label={`${delta > 0 ? "Öka" : "Minska"} sidled med ${Math.abs(delta)} meter`}
+                onClick={() => setLateral((value) => Math.max(0, Math.min(80, value + delta)))}
+                className="min-h-11 rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-800 shadow-sm">
+                {delta > 0 ? "+" : ""}{delta}
+              </button>
             ))}
           </div>
-          <button
-            type="button"
-            onClick={() => {
-              setLateral(0);
-              setSide(null);
-            }}
-            className="mx-auto mt-1 block text-xs font-semibold text-slate-500"
-          >
-            Nollställ sidled
-          </button>
           {directionMissing ? (
-            <p className="mt-1 text-center text-xs font-bold text-amber-600">
-              Välj vänster eller höger.
-            </p>
+            <p className="mt-2 text-center text-xs font-bold text-amber-700">Välj vänster eller höger innan du registrerar.</p>
           ) : (
-            <p className="mt-1 text-center text-xs text-slate-500">
-              Avstånd från mål: {fmt(missDistance(preview))} m
+            <p className="mt-2 text-center text-xs font-medium text-slate-600">
+              Avstånd från mål: <strong className="text-slate-900">{fmt(missDistance(preview))} m</strong>
             </p>
           )}
           {index > 0 && (
-            <button
-              type="button"
-              onClick={undo}
-              className="mx-auto mt-1 flex items-center gap-1.5 text-xs font-semibold text-slate-500"
-            >
-              <Undo2 className="h-4 w-4" />
-              Ändra förra slaget
+            <button type="button" onClick={undo}
+              className="mx-auto mt-2 flex items-center gap-1.5 text-xs font-semibold text-slate-600">
+              <Undo2 className="h-4 w-4" /> Ändra förra slaget
             </button>
           )}
         </section>
-        <div className="shrink-0 pt-2">
+        <div className="mt-auto shrink-0 pt-3">
           <p className="mb-1.5 text-center text-[13px] text-slate-600">
             Slaget landade <strong>{actual} m</strong> och{" "}
             {lateral === 0 ? (
