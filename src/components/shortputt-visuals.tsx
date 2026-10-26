@@ -20,7 +20,8 @@ export function PuttingPositionDiagram({
   const cx = 130;
   const cy = 110;
   const radii = [30, 56, 82];
-  const angles: Record<Direction, number> = { "12": -Math.PI / 2, "4": Math.PI / 6, "8": 5 * Math.PI / 6 };
+  // Standalone short-putt visual draws 12/4/8; the combined test also accepts 6 o'clock.
+  const angles: Record<Exclude<Direction, "6">, number> = { "12": -Math.PI / 2, "4": Math.PI / 6, "8": 5 * Math.PI / 6 };
   return (
     <svg viewBox="0 0 260 220" className="h-52 w-full" role="img"
       aria-label={`Aktuell putt klockan ${activeDirection}, ${activeDistance} meter. Fylld blå är aktuell, bock är satt och kryss är missad.`}>
