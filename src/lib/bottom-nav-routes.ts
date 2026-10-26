@@ -17,7 +17,7 @@ const TEST_PATHS = new Set([
 
 export function activeBottomTab(pathname: string): BottomTabId {
   const path = normalizeHeaderPath(pathname.split(/[?#]/)[0] ?? "/");
-  if (path === "/spel" || path.startsWith("/spel/")) return "games";
+  if (path === "/tempotranare" || path === "/spel" || path.startsWith("/spel/")) return "games";
   if (path === "/spela" || path.startsWith("/match")) return "match";
   if (path.startsWith("/utveckling") || path.startsWith("/jamfor") || path.startsWith("/framsteg")) return "analysis";
   if (TEST_PATHS.has(path) || path.startsWith("/kategori/")) return "tests";
@@ -25,7 +25,7 @@ export function activeBottomTab(pathname: string): BottomTabId {
 }
 
 const TRAINING_FLOW_PATHS = new Set([
-  "/traning-scroll", "/traning", "/traning-progress", "/speed", "/longdrive", "/fairway-streak", "/driver-konsekvens",
+  "/tempotranare", "/traning-scroll", "/traning", "/traning-progress", "/speed", "/longdrive", "/fairway-streak", "/driver-konsekvens",
   "/approach-pei-valj", "/approach-pei", "/approach-pei-wedge", "/approach-pei-iron", "/shot-shaping", "/8-bollar", "/upp-och-in",
   "/bunker-traning", "/putting-streak", "/lagputt-ladder", "/klock-putt", "/pga-tour-18-puttar", "/50-bollar", "/lagputt", "/tutor-test",
   "/green-reading", "/putting-data", "/50-bollar-resultat", "/8-bollar-historik", "/lagputt-historik", "/driver-konsekvens-historik",

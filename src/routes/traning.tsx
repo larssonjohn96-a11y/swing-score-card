@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, BarChart3, ChevronRight, Crosshair, Grid3x3 } from "lucide-react";
+import { ArrowLeft, AudioLines, BarChart3, ChevronRight, Crosshair, Grid3x3 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { rankEngineActivities, type EngineSkill } from "@/lib/sg4-engine";
 import { recordRecommendationImpressions, recordRecommendationOpen } from "@/lib/sg4-recommender";
@@ -211,6 +211,17 @@ function TrainingTestsPage() {
               ))}
             </div>
 
+            <Link to="/tempotranare"
+              className="mt-4 flex w-full items-center gap-4 rounded-[24px] border border-slate-200 bg-white p-4 text-left shadow-sm transition active:scale-[.99]">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-700">
+                <AudioLines className="h-5 w-5" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <strong className="block text-sm font-semibold">Tempoträning</strong>
+                <span className="mt-1 block text-[11px] leading-snug text-slate-600">Ljudmetronom för full sving, närspel och puttning · ej HCP-test</span>
+              </span>
+              <ChevronRight className="h-5 w-5 shrink-0 text-slate-400" />
+            </Link>
             <Link
               to="/traning-progress"
               className="mt-4 flex w-full items-center gap-4 rounded-[24px] border border-slate-200 bg-white p-4 text-left shadow-sm transition-all active:scale-[0.99]"

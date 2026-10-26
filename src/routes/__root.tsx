@@ -122,6 +122,7 @@ const TRAINING_DETAIL_PARENT: Record<string, string> = {
 
 function trainingFallback(pathname: string, search: string) {
   const params = new URLSearchParams(search);
+  if (pathname === "/tempotranare") return "/spel";
   if (pathname === "/traning") return params.has("category") ? "/traning" : "/";
   if (pathname === "/traning-progress") {
     const category = params.get("category");

@@ -4,6 +4,7 @@ import { ArrowLeft, X } from "lucide-react";
 import { getHubHeader, normalizeHeaderPath } from "@/lib/hub-header";
 
 const ACTIVITY_HEADER_TITLES: Record<string, string> = {
+  "/tempotranare": "Tempoträning",
   "/spela-runda": "HCP-tester",
   "/speedrundan": "Ball Speed Challenge",
   "/driverrundan": "Utslag",
