@@ -1,16 +1,17 @@
 import type { TempoMode } from "./tempo-trainer";
 
-/** The same AudioContext clock that schedules the three audible cues drives the animation. */
+/** Visual sampling comes from exactly the AudioContext clock used for audio cue scheduling. */
 export type TempoClock = {
   now: number;
   first: number;
   back: number;
-  total: number;
+  total: number; // Start to impact; tempo ratio and speed are independent.
+  follow: number; // Visible travel from impact to finish.
   period: number;
 };
 export type TempoCue = "start" | "top" | "impact";
 export type TempoMotionFrame = {
-  phase: "idle" | "countdown" | "back" | "down" | "impact" | "rest";
+  phase: "idle" | "countdown" | "back" | "down" | "through" | "finish" | "rest";
   progress: number;
   countdown: number;
   cycle: number;
@@ -21,52 +22,59 @@ export const IDLE_MOTION: TempoMotionFrame = {
   phase: "idle", progress: 0, countdown: 0, cycle: -1, cue: null, pulse: 0,
 };
 const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
+const EPS = 1e-9;
 
-/** Pure projection of scheduled cue times onto the visible stroke. No independent animation timer. */
+/** Motion is calculated from timestamps; no separate setTimeout/CSS timing drift. */
 export function tempoMotionAt(clock: TempoClock | null): TempoMotionFrame {
   if (!clock) return IDLE_MOTION;
   const elapsed = clock.now - clock.first;
   if (elapsed < 0) return {
-    phase: "countdown", progress: 0, countdown: Math.max(1, Math.ceil(-elapsed)),
-    cycle: -1, cue: null, pulse: 0,
+    phase: "countdown", progress: 0,
+    countdown: Math.max(1, Math.ceil(-elapsed)), cycle: -1, cue: null, pulse: 0,
   };
-  // Absorb floating-point rounding at exact cue boundaries (e.g. 100.8 - 100).
-  const cycle = Math.floor((elapsed + 1e-9) / clock.period);
+  const cycle = Math.floor((elapsed + EPS) / clock.period);
   const t = Math.max(0, elapsed - cycle * clock.period);
-  if (t < clock.back - 1e-9) return {
+  if (t < clock.back - EPS) return {
     phase: "back", progress: clamp01(t / clock.back), countdown: 0, cycle,
-    cue: t < .085 ? "start" : null, pulse: clamp01(1 - t / .16),
+    cue: t < .09 ? "start" : null, pulse: clamp01(1 - t / .14),
   };
-  if (t < clock.total - 1e-9) {
-    const fromTop = t - clock.back;
+  if (t < clock.total - EPS) {
+    const sinceTop = t - clock.back;
     return {
-      phase: "down", progress: 1 - clamp01(fromTop / (clock.total - clock.back)),
-      countdown: 0, cycle, cue: fromTop < .085 ? "top" : null,
-      pulse: clamp01(1 - fromTop / .16),
+      phase: "down", progress: 1 - clamp01(sinceTop / (clock.total - clock.back)),
+      countdown: 0, cycle, cue: sinceTop < .09 ? "top" : null,
+      pulse: clamp01(1 - sinceTop / .14),
     };
   }
-  const fromImpact = t - clock.total;
-  if (fromImpact < .18) return {
-    phase: "impact", progress: 0, countdown: 0, cycle,
-    cue: fromImpact < .085 ? "impact" : null, pulse: clamp01(1 - fromImpact / .18),
+  const sinceImpact = t - clock.total;
+  if (sinceImpact < clock.follow - EPS) return {
+    phase: "through", progress: clamp01(sinceImpact / clock.follow),
+    countdown: 0, cycle, cue: sinceImpact < .09 ? "impact" : null,
+    pulse: clamp01(1 - sinceImpact / .14),
   };
-  return { phase: "rest", progress: 0, countdown: 0, cycle, cue: null, pulse: 0 };
+  if (sinceImpact < clock.follow + .28) return {
+    phase: "finish", progress: 1, countdown: 0, cycle, cue: null, pulse: 0,
+  };
+  return { phase: "rest", progress: 1, countdown: 0, cycle, cue: null, pulse: 0 };
 }
-
 export type TempoPoint = { x: number; y: number };
+function anglePoint(cx: number, cy: number, radius: number, degrees: number): TempoPoint {
+  const rad = degrees * Math.PI / 180;
+  return { x: cx + radius * Math.cos(rad), y: cy + radius * Math.sin(rad) };
+}
 export function tempoArc(mode: TempoMode) {
-  // 6 o'clock (address) to 11 o'clock (full swing); smaller arc for chips.
-  const center: TempoPoint = mode === "putt" ? { x: 180, y: 94 } : { x: 180, y: 214 };
-  const radius = mode === "full" ? 147 : mode === "short" ? 123 : 176;
-  const start = 90;
-  const end = mode === "full" ? 244 : mode === "short" ? 216 : 126;
-  const point = (progress: number): TempoPoint => {
-    const radians = (start + (end - start) * clamp01(progress)) * Math.PI / 180;
-    return { x: center.x + radius * Math.cos(radians), y: center.y + radius * Math.sin(radians) };
-  };
-  const a = point(0), b = point(1);
+  const center: TempoPoint = mode === "putt" ? { x: 180, y: 174 } : { x: 180, y: 208 };
+  const radius = mode === "full" ? 154 : mode === "short" ? 120 : 124;
+  const topAngle = mode === "full" ? 242 : mode === "short" ? 220 : 150;
+  const finishAngle = mode === "full" ? 298 : mode === "short" ? 320 : 30;
+  const backPoint = (progress: number) =>
+    anglePoint(center.x, center.y, radius, 90 + (topAngle - 90) * clamp01(progress));
+  const throughPoint = (progress: number) =>
+    anglePoint(center.x, center.y, radius, 90 + ((finishAngle - 360) - 90) * clamp01(progress));
+  const start = backPoint(0), top = backPoint(1), finish = throughPoint(1);
   return {
-    center, radius, point, start: a, top: b,
-    path: `M ${a.x} ${a.y} A ${radius} ${radius} 0 0 1 ${b.x} ${b.y}`,
+    center, radius, start, top, finish, backPoint, throughPoint,
+    backPath: `M ${start.x} ${start.y} A ${radius} ${radius} 0 0 1 ${top.x} ${top.y}`,
+    throughPath: `M ${start.x} ${start.y} A ${radius} ${radius} 0 0 0 ${finish.x} ${finish.y}`,
   };
 }

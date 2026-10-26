@@ -1,11 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, AudioLines, Check, ChevronDown, Minus, Pause, Play, Plus, RotateCcw, Settings2, Smartphone, Volume2, VolumeX } from "lucide-react";
+import { ArrowLeft, AudioLines, Minus, Pause, Play, Plus, RotateCcw, Settings2, Smartphone, Volume2, VolumeX, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { TempoMotion } from "@/components/tempo-motion";
 import type { TempoClock } from "@/lib/tempo-visual";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 import {
-  DEFAULT_TEMPO, PRESETS, loadTempo, loadTempoSessions, storeTempo, storeTempoSession, tempoTiming,
+  DEFAULT_TEMPO, PRESETS, TEMPO_RATIOS, loadTempo, loadTempoSessions, storeTempo, storeTempoSession, tempoTiming,
   type TempoMode, type TempoSettings, type TempoSound, type TempoSession,
 } from "@/lib/tempo-trainer";
 
@@ -29,6 +29,7 @@ type Engine = {
   back: number;
   down: number;
   total: number;
+  follow: number;
   period: number;
   settings: TempoSettings;
   voices: Set<OscillatorNode>;
@@ -45,8 +46,6 @@ const SOUNDS: Array<{ id: TempoSound; label: string; sub: string }> = [
   { id: "click", label: "Klick", sub: "Korta klick" },
   { id: "off", label: "Tyst", sub: "Visuell guide" },
 ];
-const SELECTED = "border-blue-700 bg-blue-700 text-white";
-const UNSELECTED = "border-slate-200 bg-white text-slate-700";
 const fmt = (s: number) => s.toLocaleString("sv-SE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const labelMode = (mode: TempoMode) => MODES.find((m) => m.id === mode)?.label ?? "Full sving";
 function audioClass(): typeof AudioContext | null {
@@ -110,7 +109,7 @@ function TempoPage() {
   const [phase, setPhase] = useState("Redo att svinga");
   const [cue, setCue] = useState<Cue>(null);
   const [error, setError] = useState<string | null>(null);
-  const [expanded, setExpanded] = useState(false);
+  const [panel, setPanel] = useState<"ratio" | "settings" | null>(null);
   const [hapticAvailable, setHapticAvailable] = useState(false);
 
   const engine = useRef<Engine | null>(null);
@@ -120,16 +119,14 @@ function TempoPage() {
   const doneRef = useRef(0);
   const ticket = useRef(0);
   const wakeHandle = useRef<WakeHandle | null>(null);
-  const settingsSection = useRef<HTMLDivElement | null>(null);
-  const hero = useRef<HTMLElement | null>(null);
   const readClock = useCallback((): TempoClock | null => {
     const e = engine.current;
-    return e ? { now: e.ctx.currentTime, first: e.first, back: e.back, total: e.total, period: e.period } : null;
+    return e ? { now: e.ctx.currentTime, first: e.first, back: e.back, total: e.total, follow: e.follow, period: e.period } : null;
   }, []);
 
-  const timing = tempoTiming(settings.mode, settings.speeds[settings.mode]);
+  const timing = tempoTiming(settings.mode, settings.durations[settings.mode], settings.ratios[settings.mode]);
   const limit = settings.single ? 1 : settings.count === "unlimited" ? null : settings.count;
-  const locked = status === "running" || status === "paused";
+  const locked = status === "running";
 
   useEffect(() => { setSettings(loadTempo()); setHistory(loadTempoSessions()); setHydrated(true); }, []);
   useEffect(() => { setHapticAvailable(typeof navigator !== "undefined" && typeof navigator.vibrate === "function"); }, []);
@@ -167,7 +164,8 @@ function TempoPage() {
     setHistory(storeTempoSession({
       at: new Date().toISOString(),
       mode: cfg.mode,
-      speed: cfg.speeds[cfg.mode],
+      speed: tempoTiming(cfg.mode, cfg.durations[cfg.mode], cfg.ratios[cfg.mode]).back,
+      ratio: cfg.ratios[cfg.mode],
       sequences: n,
       complete,
     }));
@@ -212,7 +210,6 @@ function TempoPage() {
     setShot(count);
   }
   async function start() {
-    hero.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     closePreview();
     closeAudio();
     setError(null);
@@ -237,11 +234,12 @@ function TempoPage() {
       return;
     }
     if (ticket.current !== id) { if (ctx.state !== "closed") void ctx.close().catch(() => undefined); return; }
-    const t = tempoTiming(settings.mode, settings.speeds[settings.mode]);
+    const t = tempoTiming(settings.mode, settings.durations[settings.mode], settings.ratios[settings.mode]);
     const first = ctx.currentTime + settings.delay + .08;
     const e: Engine = {
-      ctx, first, next: 0, base: from, limit, back: t.back, down: t.down, total: t.total,
-      period: t.total + settings.rest, settings: { ...settings, speeds: { ...settings.speeds } }, voices: new Set(),
+      ctx, first, next: 0, base: from, limit, back: t.back, down: t.down, total: t.total, follow: t.follow,
+      period: t.total + t.follow + settings.rest,
+      settings: { ...settings, durations: { ...settings.durations }, ratios: { ...settings.ratios } }, voices: new Set(),
     };
     engine.current = e;
     for (let n = 3; n >= 1; n--) {
@@ -271,13 +269,13 @@ function TempoPage() {
       const elapsed = now - e.first;
       if (elapsed < 0) {
         setPhase("Förbered dig");
-        setRemaining(Math.ceil(-elapsed));
+        setRemaining(Math.min(settings.delay, Math.ceil(-elapsed)));
         setShot(e.base + 1);
         setCue(null);
         return;
       }
       if (e.limit !== null && count >= e.limit &&
-        elapsed >= (e.limit - e.base - 1) * e.period + e.total + .22) {
+        elapsed >= (e.limit - e.base - 1) * e.period + e.total + e.follow + .22) {
         finish(e);
         return;
       }
@@ -285,7 +283,7 @@ function TempoPage() {
       const within = elapsed - index * e.period;
       setShot(e.base + index + 1);
       setRemaining(0);
-      setPhase(within < e.back ? "Baksving" : within < e.total ? "Nedsving" : "Förbered nästa sving");
+      setPhase(within < e.back ? "Baksving" : within < e.total ? "Nedsving" : within < e.total + e.follow ? "Genomsvängning" : "Finish");
       setCue(within < .15 ? "start"
         : within >= e.back && within < e.back + .15 ? "top"
         : within >= e.total && within < e.total + .18 ? "impact" : null);
@@ -320,9 +318,27 @@ function TempoPage() {
   }
   function changeSpeed(s: number) {
     if (locked) return;
-    const value = Math.max(.45, Math.min(1.1, Math.round(s * 100) / 100));
-    edit({ speeds: { ...settings.speeds, [settings.mode]: value } });
+    const value = Math.max(.6, Math.min(1.8, Math.round(s * 100) / 100));
+    edit({ durations: { ...settings.durations, [settings.mode]: value } });
   }
+  const changeRatio = (ratio: number) => {
+    if (locked || !TEMPO_RATIOS[settings.mode].includes(ratio)) return;
+    edit({ ratios: { ...settings.ratios, [settings.mode]: ratio } });
+    setPanel(null);
+  };
+  const openPanel = (name: "ratio" | "settings") => {
+    // Pause before editing so audio and animation always share the same new timeline.
+    if (status === "running") pause();
+    setPanel(name);
+  };
+  useEffect(() => {
+    if (!panel) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setPanel(null);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [panel]);
   useEffect(() => {
     const onVisibility = () => {
       if (document.visibilityState === "hidden" && engine.current) pause();
@@ -347,277 +363,264 @@ function TempoPage() {
     };
   }, []);
 
-  const cues = [
-    { id: "start" as const, label: "Start" },
-    { id: "top" as const, label: "Vändning" },
-    { id: "impact" as const, label: "Träff" },
-  ];
-  const choice = (active: boolean) =>
-    "rounded-xl border px-3 py-2.5 text-xs font-bold transition disabled:opacity-40 " + (active ? SELECTED : UNSELECTED);
-  const toggleSettings = () => {
-    setExpanded((v) => !v);
-    if (!expanded) window.setTimeout(() => settingsSection.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
-  };
 
+  const pickClass = (on: boolean) =>
+    "min-h-10 rounded-xl border px-2 py-2 text-center text-xs font-semibold transition disabled:opacity-40 " +
+    (on ? "border-[#70b6ff] bg-blue-600/30 text-white" : "border-white/15 bg-white/[.055] text-[#b9cae3]");
+  const ratioText = `${timing.ratio}:1`;
+  const speedText = fmt(timing.total);
   return (
-    <main className="mx-auto min-h-[100dvh] w-full max-w-md bg-[#f5f8fd] px-4 pb-[max(30px,env(safe-area-inset-bottom))] pt-[max(13px,env(safe-area-inset-top))] text-slate-950">
-      <header className="flex h-12 items-center justify-between">
+    <main className="relative mx-auto flex h-[100dvh] w-full max-w-md flex-col overflow-hidden bg-[#081b37] px-4 text-white"
+      style={{ paddingTop: "max(10px, env(safe-area-inset-top))", paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}>
+      <header className="z-10 flex h-11 shrink-0 items-center justify-between">
         <Link to="/spel" aria-label="Tillbaka till Spel"
-          className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white">
+          className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-white/[.05]">
           <ArrowLeft className="h-5 w-5" />
         </Link>
-        <div className="text-center">
-          <p className="text-[9px] font-bold uppercase tracking-[.21em] text-blue-600">SG4 · Träningsverktyg</p>
-          <h1 className="font-display text-[24px] leading-tight">Tempoträning</h1>
-        </div>
-        <button type="button" onClick={toggleSettings} aria-label="Visa inställningar" aria-expanded={expanded}
-          aria-controls="tempo-extra"
-          className={"flex h-11 w-11 items-center justify-center rounded-full border bg-white " + (expanded ? "border-blue-500 text-blue-700" : "border-slate-200 text-slate-600")}>
+        <h1 className="font-display text-[21px] leading-tight tracking-tight">Tempoträning</h1>
+        <button type="button" onClick={() => openPanel("settings")} aria-label="Träningsinställningar"
+          className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-white/[.05]">
           <Settings2 className="h-5 w-5" />
         </button>
       </header>
 
-      <div className="mt-4 grid grid-cols-3 gap-1.5 rounded-2xl bg-slate-200/60 p-1" role="group" aria-label="Välj slagtyp">
+      <div className="z-10 mt-3 grid shrink-0 grid-cols-3 gap-1 rounded-2xl bg-white/[.07] p-1"
+        role="group" aria-label="Välj slagtyp">
         {MODES.map((mode) => (
-          <button type="button" key={mode.id} disabled={locked} aria-pressed={settings.mode === mode.id}
-            onClick={() => edit({ mode: mode.id })}
-            className={"min-h-11 rounded-xl text-[12px] font-bold transition disabled:opacity-50 " +
-              (settings.mode === mode.id ? "bg-white text-blue-700 shadow-sm" : "text-slate-600")}>
+          <button type="button" key={mode.id} aria-pressed={settings.mode === mode.id}
+            onClick={() => {
+              if (status === "running") pause();
+              setSettings((s) => ({ ...s, mode: mode.id }));
+            }}
+            className={"min-h-11 rounded-xl text-[12px] font-semibold transition " +
+              (settings.mode === mode.id ? "bg-[#3485ea] text-white" : "text-[#aebfdb]")}>
             {mode.label}
           </button>
         ))}
       </div>
 
-      <section ref={hero} aria-label="Animerad tempoguide"
-        className="relative mt-3 h-[clamp(350px,57dvh,610px)] overflow-hidden rounded-[32px] bg-[#091b39] text-white shadow-[0_22px_42px_-27px_rgba(9,27,57,.7)]">
-        <div className="pointer-events-none absolute inset-x-5 top-5 z-10 flex items-center justify-between">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[.16em] text-[#93b7eb]">Ditt tempo</p>
-            <p className="mt-1 font-display text-[20px] leading-none">{fmt(timing.back)} <span className="text-xs font-medium text-[#a2bfe8]">s bak</span></p>
-          </div>
-          <div className="text-right">
-            <p className="text-[10px] font-bold uppercase tracking-[.16em] text-[#93b7eb]">Sekvens</p>
-            <p className="mt-1 font-display text-xl leading-none">
-              {limit === null ? played : `${Math.min(shot, limit)} / ${limit}`}
-            </p>
-          </div>
+      <section className="relative min-h-0 flex-1" aria-label="Visuell svingsimulator">
+        <TempoMotion mode={settings.mode} running={status === "running"} finished={status === "finished"}
+          haptics={hapticAvailable && settings.haptics} clock={readClock} />
+
+        <div className="absolute left-1/2 top-[43%] z-10 w-[66%] -translate-x-1/2 -translate-y-1/2 text-center">
+          {status === "running" && remaining > 0 ? (
+            <div aria-label={`Startar om ${remaining} sekunder`}>
+              <div className="font-display text-[74px] leading-none">{remaining}</div>
+              <p className="mt-2 text-[11px] font-semibold uppercase tracking-[.16em] text-[#8eb8ec]">Startar snart</p>
+            </div>
+          ) : (
+            <button type="button" onClick={() => openPanel("ratio")}
+              aria-label={`Ändra tempoförhållande. Nu ${ratioText}. Baksvingen tar ${timing.ratio} gånger så lång tid som nedsvingen.`}
+              className="w-full rounded-2xl px-1 py-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-300">
+              <div className="font-display text-[clamp(60px,16vw,86px)] leading-none tracking-[-.04em]">{ratioText}</div>
+              <p className="mt-1 text-[11px] font-bold uppercase tracking-[.15em] text-[#a8c7ed]">Tempo · baksving : nedsving</p>
+              <p className="mt-2 text-[11px] leading-snug text-[#8aadd8]">Baksvingen tar {timing.ratio} gånger så lång tid som nedsvingen</p>
+              <p className="mt-2 text-[10px] font-semibold text-[#6eacff]">Tryck för att ändra</p>
+            </button>
+          )}
         </div>
 
-        <TempoMotion mode={settings.mode} ratio={timing.ratio} total={timing.total}
-          running={status === "running"} haptics={hapticAvailable && settings.haptics} clock={readClock} />
-
-        <div className="absolute inset-x-5 bottom-5 z-10">
-          <div className="mb-4 h-7 text-center text-[13px] font-semibold tracking-wide text-[#dceeff]"
-            role="status" aria-live="polite">
-            {status === "running" && remaining > 0
-              ? `Start om ${remaining} s`
-              : status === "paused" ? "Pausad · fortsätt när du är redo"
-              : status === "finished" ? `Klart · ${played} ljudsekvenser` : phase}
-          </div>
-          <div className="flex items-center justify-center gap-6">
-            {cues.map((stage) => (
-              <span key={stage.id}
-                className={"flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[.08em] transition-colors " +
-                  (status === "running" && cue === stage.id ? "text-white" : "text-[#81a2d1]")}>
-                <span className={"h-1.5 w-1.5 rounded-full " + (status === "running" && cue === stage.id ? "bg-[#64b8ff]" : "bg-[#536d93]")} />
-                {stage.label}
-              </span>
-            ))}
-          </div>
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 text-center">
+          <p className="text-[14px] font-medium tracking-wide text-[#c7e0ff]" aria-live="off">
+            {status === "running" && remaining > 0 ? "Förbered dig"
+              : status === "paused" ? "Pausad"
+              : status === "finished" ? "Passet klart"
+              : status === "running" ? phase : "Starta när du är redo"}
+          </p>
+          <p className="mt-1 text-[11px] text-[#7899c8]">
+            {status === "finished" ? `${played} sekvenser klara`
+              : `Sekvens ${status === "running" || status === "paused" ? shot : 1}${limit === null ? "" : ` av ${limit}`}`}
+          </p>
         </div>
       </section>
 
-      <div className="mt-4 flex items-center gap-3">
-        <button type="button" disabled={locked || timing.back <= .45}
-          onClick={() => changeSpeed(timing.back - .02)}
-          aria-label="Snabbare svingtempo" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white disabled:opacity-35">
-          <Minus className="h-5 w-5" />
-        </button>
-        <div className="min-w-0 flex-1 text-center">
-          <p className="text-[11px] font-bold text-slate-900">{fmt(timing.back)} s <span className="font-medium text-slate-500">bak</span> · {fmt(timing.down)} s <span className="font-medium text-slate-500">ner</span></p>
-          <p className="mt-1 text-[10px] text-slate-500">{timing.ratio}:1 · {labelMode(settings.mode)} · {settings.single ? "En sving" : settings.count === "unlimited" ? "Obegränsat" : `${settings.count} repetitioner`}</p>
+      <div className="z-10 mt-4 shrink-0 border-t border-white/10 pt-3">
+        <div className="flex items-center justify-between gap-2">
+          <button type="button" aria-label="Öka hastigheten"
+            disabled={locked || timing.total <= .6}
+            onClick={() => changeSpeed(timing.total - .05)}
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-white/[.06] disabled:opacity-30">
+            <Minus className="h-5 w-5" />
+          </button>
+          <div className="min-w-0 flex-1 text-center">
+            <p className="text-[10px] font-bold uppercase tracking-[.17em] text-[#9ebbe2]">Hastighet</p>
+            <p className="font-display text-[27px] leading-tight">{speedText} s</p>
+            <p className="text-[10px] leading-tight text-[#92acd0]">Total tid från start till impact</p>
+          </div>
+          <button type="button" aria-label="Minska hastigheten"
+            disabled={locked || timing.total >= 1.8}
+            onClick={() => changeSpeed(timing.total + .05)}
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-white/[.06] disabled:opacity-30">
+            <Plus className="h-5 w-5" />
+          </button>
         </div>
-        <button type="button" disabled={locked || timing.back >= 1.1}
-          onClick={() => changeSpeed(timing.back + .02)}
-          aria-label="Lugnare svingtempo" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white disabled:opacity-35">
-          <Plus className="h-5 w-5" />
-        </button>
-      </div>
-
-      <div className="mt-3 flex gap-2">
-        {status === "running" ? (
-          <>
-            <button type="button" onClick={pause}
-              className="flex min-h-14 flex-1 items-center justify-center gap-2 rounded-2xl bg-blue-700 text-[16px] font-bold text-white">
-              <Pause className="h-5 w-5" /> Pausa
-            </button>
-            <button type="button" onClick={stop}
-              className="min-h-14 rounded-2xl border border-slate-200 bg-white px-5 text-[13px] font-bold">Avsluta</button>
-          </>
-        ) : (
-          <>
-            <button type="button" onClick={() => void start()}
-              className="flex min-h-14 flex-1 items-center justify-center gap-2 rounded-2xl bg-blue-700 text-[16px] font-bold text-white">
-              {status === "finished" ? <RotateCcw className="h-5 w-5" /> : <Play className="h-5 w-5" />}
-              {status === "paused" ? "Fortsätt" : status === "finished" ? "Starta igen" : "Starta"}
-            </button>
-            {status === "paused" ? (
+        <div className="mt-3 flex gap-2">
+          {status === "running" ? (
+            <>
+              <button type="button" onClick={pause}
+                className="flex min-h-14 flex-1 items-center justify-center gap-2 rounded-2xl bg-[#438ff5] text-[16px] font-bold text-white">
+                <Pause className="h-5 w-5" /> Pausa
+              </button>
               <button type="button" onClick={stop}
-                className="min-h-14 rounded-2xl border border-slate-200 bg-white px-5 text-[13px] font-bold">Avsluta</button>
-            ) : null}
-          </>
-        )}
-      </div>
-      {error ? <p className="mt-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800" role="alert">{error}</p> : null}
-
-      <div ref={settingsSection} id="tempo-extra" className="scroll-mt-4">
-        <button type="button" onClick={toggleSettings} aria-expanded={expanded} aria-controls="tempo-panel"
-          className="mt-4 flex w-full items-center justify-center gap-2 py-3 text-xs font-semibold text-slate-500">
-          {expanded ? "Dölj inställningar" : "Fler inställningar"}
-          <ChevronDown className={"h-4 w-4 transition-transform " + (expanded ? "rotate-180" : "")} />
-        </button>
-        {expanded ? (
-          <section id="tempo-panel" aria-label="Fler inställningar"
-            className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm">
-            {locked ? <p className="mb-4 text-xs text-slate-500">Pausa och avsluta passet för att ändra inställningarna.</p> : null}
-            <div>
-              <div className="flex items-center justify-between">
-                <h2 className="text-[15px] font-bold">Hastighet</h2>
-                <span className="text-xs font-semibold text-blue-700">{timing.ratio}:1</span>
-              </div>
-              <div className="mt-3 grid grid-cols-5 gap-1.5">
-                {PRESETS[settings.mode].map((v, i) => (
-                  <button type="button" key={i} disabled={locked} aria-label={`Tempo ${i + 1}: ${fmt(v)} sekunder baksving`}
-                    aria-pressed={Math.abs(timing.back - v) < .005} onClick={() => changeSpeed(v)}
-                    className={"min-h-12 rounded-xl border text-xs font-bold disabled:opacity-40 " +
-                      (Math.abs(timing.back - v) < .005 ? SELECTED : UNSELECTED)}>
-                    {fmt(v)}
-                  </button>
-                ))}
-              </div>
-              <p className="mt-1 text-[10px] text-slate-500">Lugnare ← · → Snabbare</p>
-            </div>
-
-            <div className="mt-5 border-t border-slate-100 pt-5">
-              <h2 className="text-[15px] font-bold">Träningspass</h2>
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                <button type="button" disabled={locked} onClick={() => edit({ single: true })}
-                  className={choice(settings.single)}>En sving</button>
-                <button type="button" disabled={locked} onClick={() => edit({ single: false })}
-                  className={choice(!settings.single)}>Repetera</button>
-              </div>
-              {!settings.single ? (
-                <>
-                  <p className="mb-2 mt-4 text-xs font-semibold">Antal sekvenser</p>
-                  <div className="grid grid-cols-4 gap-2">
-                    {([5, 10, 20, "unlimited"] as const).map((n) => (
-                      <button type="button" key={n} disabled={locked} onClick={() => edit({ count: n })}
-                        className={choice(settings.count === n)}>{n === "unlimited" ? "∞" : n}</button>
-                    ))}
-                  </div>
-                </>
+                className="min-h-14 rounded-2xl border border-white/20 px-4 text-[13px] font-bold">Avsluta</button>
+            </>
+          ) : (
+            <>
+              <button type="button" onClick={() => void start()}
+                className="flex min-h-14 flex-1 items-center justify-center gap-2 rounded-2xl bg-[#438ff5] text-[16px] font-bold text-white">
+                {status === "finished" ? <RotateCcw className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+                {status === "paused" ? "Fortsätt" : status === "finished" ? "Starta igen" : "Starta"}
+              </button>
+              {status === "paused" ? (
+                <button type="button" onClick={stop}
+                  className="min-h-14 rounded-2xl border border-white/20 px-4 text-[13px] font-bold">Avsluta</button>
               ) : null}
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                <div>
-                  <p className="mb-2 text-xs font-semibold">Nedräkning</p>
-                  <div className="grid grid-cols-3 gap-1">
-                    {([3, 5, 10] as const).map((n) => (
-                      <button type="button" key={n} disabled={locked} onClick={() => edit({ delay: n })}
-                        className={choice(settings.delay === n)}>{n}s</button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <p className="mb-2 text-xs font-semibold">Paus mellan slag</p>
-                  <div className="grid grid-cols-3 gap-1">
-                    {([3, 5, 8] as const).map((n) => (
-                      <button type="button" key={n} disabled={locked || settings.single}
-                        onClick={() => edit({ rest: n })}
-                        className={choice(settings.rest === n)}>{n}s</button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
+            </>
+          )}
+        </div>
+        <button type="button" onClick={() => openPanel("settings")}
+          className="mt-1 flex min-h-9 w-full items-center justify-center gap-2 text-[11px] text-[#9ab6da]">
+          {settings.sound === "off" ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
+          <span>{settings.sound === "off" ? "Tyst" : "Ljud på"}</span>
+          <span className="text-white/20">·</span>
+          <span>{hapticAvailable ? settings.haptics ? "Haptik på" : "Haptik av" : "Haptik stöds inte"}</span>
+          <span className="text-white/20">·</span>
+          <span>{settings.single ? "En sving" : settings.count === "unlimited" ? "Obegränsat" : `${settings.count} svingar`}</span>
+        </button>
+      </div>
 
-            <div className="mt-5 border-t border-slate-100 pt-5">
-              <h2 className="flex items-center gap-2 text-[15px] font-bold">
-                <AudioLines className="h-4 w-4 text-blue-700" /> Ljud
-              </h2>
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                {SOUNDS.map((sound) => (
-                  <button type="button" key={sound.id} disabled={locked} aria-pressed={settings.sound === sound.id}
-                    onClick={() => edit({ sound: sound.id })}
-                    className={"relative min-h-16 rounded-xl border p-3 text-left disabled:opacity-40 " +
-                      (settings.sound === sound.id ? "border-blue-700 bg-blue-50 text-blue-950" : UNSELECTED)}>
-                    {settings.sound === sound.id ? <Check className="absolute right-2 top-2 h-4 w-4 text-blue-700" /> : null}
-                    <span className="block text-xs font-bold">{sound.label}</span>
-                    <span className="mt-1 block text-[10px] text-slate-500">{sound.sub}</span>
-                  </button>
-                ))}
-              </div>
-              <div className="mt-4 flex items-center gap-3">
-                <VolumeX className="h-4 w-4 text-slate-500" />
-                <input type="range" min={0} max={100} step={5} value={Math.round(settings.volume * 100)}
-                  aria-label="Volym" disabled={locked || settings.sound === "off"}
-                  onChange={(e) => edit({ volume: Number(e.target.value) / 100 })}
-                  className="w-full accent-blue-700 disabled:opacity-40" />
-                <Volume2 className="h-4 w-4 text-slate-500" />
-              </div>
-              <button type="button" disabled={locked || settings.sound === "off" || settings.volume === 0}
-                onClick={() => void preview()}
-                className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-blue-100 bg-blue-50 text-xs font-semibold text-blue-700 disabled:opacity-40">
-                <AudioLines className="h-4 w-4" /> Testa ljud
+      {error ? <div role="alert" className="absolute inset-x-4 bottom-32 z-30 rounded-xl border border-red-300 bg-[#3b1928] p-3 text-xs text-white">{error}</div> : null}
+
+      {panel !== null ? (
+        <div className="absolute inset-0 z-50 flex items-end justify-center bg-[#020b1a]/80 p-3 backdrop-blur-md"
+          style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}>
+          <button type="button" className="absolute inset-0" onClick={() => setPanel(null)}
+            aria-label="Stäng inställningar" />
+          <div role="dialog" aria-modal="true"
+            aria-label={panel === "ratio" ? "Ändra tempo" : "Träningsinställningar"}
+            className="relative z-10 w-full max-h-[calc(100dvh-42px)] overflow-y-auto rounded-[26px] border border-white/15 bg-[#112c52] p-5 shadow-2xl [scrollbar-width:thin]">
+            <div className="flex items-center justify-between">
+              <h2 className="font-display text-[28px] leading-none">{panel === "ratio" ? "Tempo" : "Inställningar"}</h2>
+              <button type="button" onClick={() => setPanel(null)} aria-label="Stäng"
+                className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10">
+                <X className="h-5 w-5" />
               </button>
             </div>
-
-            <div className="mt-5 border-t border-slate-100 pt-5">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <Smartphone className="h-4 w-4 text-blue-700" />
-                  <div>
-                    <h2 className="text-[15px] font-bold">Haptik</h2>
-                    <p className="text-[11px] text-slate-500">Vibration vid start, vändning och träff</p>
+            {panel === "ratio" ? (
+              <>
+                <p className="mt-3 text-[13px] leading-relaxed text-[#a8c7ed]">
+                  Tempot är förhållandet mellan baksving och nedsving.
+                  Exempel: 3:1 betyder att baksvingen tar tre gånger så lång tid.
+                </p>
+                <div className="mt-5 grid grid-cols-5 gap-1.5">
+                  {TEMPO_RATIOS[settings.mode].map((ratio) => (
+                    <button type="button" key={ratio} aria-pressed={settings.ratios[settings.mode] === ratio}
+                      onClick={() => changeRatio(ratio)}
+                      className={pickClass(settings.ratios[settings.mode] === ratio)}>
+                      {ratio}:1
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-4 rounded-2xl bg-white/[.05] p-3 text-[12px] leading-relaxed text-[#b5cbe8]">
+                  <strong className="text-white">Hastighet förändras inte:</strong> totalt {speedText} s.
+                  SG4 fördelar tiden annorlunda mellan baksving och nedsving.
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="mt-1 text-xs text-[#a8c7ed]">Allt kan justeras här utan att lämna träningsvyn.</p>
+                <div className="mt-5">
+                  <h3 className="text-[13px] font-bold">Träningspass</h3>
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    <button type="button" onClick={() => edit({ single: true })} className={pickClass(settings.single)}>En sving</button>
+                    <button type="button" onClick={() => edit({ single: false })} className={pickClass(!settings.single)}>Repetera</button>
+                  </div>
+                  {!settings.single ? (
+                    <div className="mt-3 grid grid-cols-4 gap-1.5">
+                      {([5, 10, 20, "unlimited"] as const).map((value) => (
+                        <button type="button" key={value} onClick={() => edit({ count: value })}
+                          className={pickClass(settings.count === value)}>
+                          {value === "unlimited" ? "∞" : value}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                  <div className="mt-3 grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="mb-1.5 text-[11px] text-[#acc4e5]">Start om</p>
+                      <div className="grid grid-cols-3 gap-1">
+                        {([3, 5, 10] as const).map((n) => (
+                          <button type="button" key={n} onClick={() => edit({ delay: n })}
+                            className={pickClass(settings.delay === n)}>{n}s</button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="mb-1.5 text-[11px] text-[#acc4e5]">Paus mellan</p>
+                      <div className="grid grid-cols-3 gap-1">
+                        {([3, 5, 8] as const).map((n) => (
+                          <button type="button" key={n} disabled={settings.single}
+                            onClick={() => edit({ rest: n })} className={pickClass(settings.rest === n)}>{n}s</button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <button type="button" role="switch" aria-checked={hapticAvailable && settings.haptics}
-                  aria-label="Aktivera vibrationer"
-                  disabled={locked || !hapticAvailable}
-                  onClick={() => edit({ haptics: !settings.haptics })}
-                  className={"relative h-8 w-14 shrink-0 rounded-full transition-colors disabled:opacity-40 " +
-                    (hapticAvailable && settings.haptics ? "bg-blue-700" : "bg-slate-200")}>
-                  <span className={"absolute top-1 h-6 w-6 rounded-full bg-white shadow transition-all " +
-                    (hapticAvailable && settings.haptics ? "left-7" : "left-1")} />
-                </button>
-              </div>
-              {!hapticAvailable ? <p className="mt-2 text-[11px] leading-relaxed text-slate-500">Vibration stöds inte av den här webbläsaren (t.ex. Safari på iPhone). Ljud och animation fungerar ändå.</p> :
-                <p className="mt-2 text-[11px] leading-relaxed text-slate-500">Valfri vibration. Tidpunkten kan variera något mellan telefoner.</p>}
-            </div>
-          </section>
-        ) : null}
-      </div>
-
-      {history.length ? (
-        <details className="mt-2 rounded-2xl border border-slate-200 bg-white p-4">
-          <summary className="cursor-pointer text-xs font-semibold text-slate-600">Tidigare pass · {history.length}</summary>
-          <p className="mt-3 text-[11px] text-slate-500">Spelade ljudsekvenser, inte uppmätta golfslag.</p>
-          <div className="divide-y divide-slate-100">
-            {history.slice(0, 5).map((row, index) => (
-              <div key={row.at + index} className="flex items-center justify-between py-3 text-xs">
-                <div>
-                  <strong className="block">{labelMode(row.mode)} · {fmt(row.speed)} s</strong>
-                  <span className="text-slate-500">{new Date(row.at).toLocaleDateString("sv-SE")} · {row.complete ? "Klart" : "Avslutat"}</span>
+                <div className="mt-4 border-t border-white/15 pt-4">
+                  <h3 className="flex items-center gap-2 text-[13px] font-bold">
+                    <AudioLines className="h-4 w-4" /> Ljud
+                  </h3>
+                  <div className="mt-2 grid grid-cols-4 gap-1.5">
+                    {SOUNDS.map((sound) => (
+                      <button type="button" key={sound.id} aria-pressed={settings.sound === sound.id}
+                        onClick={() => edit({ sound: sound.id })} className={pickClass(settings.sound === sound.id)}>
+                        {sound.label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="mt-3 flex items-center gap-3">
+                    <VolumeX className="h-4 w-4 shrink-0 text-[#9fbade]" />
+                    <input type="range" min={0} max={100} step={5} value={Math.round(settings.volume * 100)}
+                      aria-label="Ljudvolym" disabled={settings.sound === "off"}
+                      onChange={(ev) => edit({ volume: Number(ev.target.value) / 100 })}
+                      className="w-full accent-blue-400 disabled:opacity-40" />
+                    <Volume2 className="h-4 w-4 shrink-0 text-[#9fbade]" />
+                    <button type="button" disabled={settings.sound === "off" || settings.volume === 0}
+                      onClick={() => void preview()}
+                      className="shrink-0 rounded-lg border border-white/25 px-2 py-1.5 text-[11px] font-semibold disabled:opacity-40">
+                      Testa
+                    </button>
+                  </div>
                 </div>
-                <strong className="text-blue-700">{row.sequences} st</strong>
-              </div>
-            ))}
+                <div className="mt-4 flex items-center justify-between gap-3 border-t border-white/15 pt-4">
+                  <div>
+                    <h3 className="flex items-center gap-2 text-[13px] font-bold">
+                      <Smartphone className="h-4 w-4" /> Haptik
+                    </h3>
+                    <p className="mt-1 text-[11px] text-[#a8c7ed]">
+                      {hapticAvailable ? "Vibration vid start, vändning och träff." : "Stöds inte i den här webbläsaren."}
+                    </p>
+                  </div>
+                  <button type="button" role="switch" aria-checked={hapticAvailable && settings.haptics}
+                    aria-label="Aktivera haptik" disabled={!hapticAvailable}
+                    onClick={() => edit({ haptics: !settings.haptics })}
+                    className={"relative h-8 w-14 shrink-0 rounded-full transition-colors disabled:opacity-40 " +
+                      (hapticAvailable && settings.haptics ? "bg-blue-500" : "bg-white/20")}>
+                    <span className={"absolute top-1 h-6 w-6 rounded-full bg-white shadow transition-all " +
+                      (hapticAvailable && settings.haptics ? "left-7" : "left-1")} />
+                  </button>
+                </div>
+                {history.length ? (
+                  <p className="mt-4 text-[11px] leading-relaxed text-[#829ec8]">
+                    {history.length} tidigare pass sparade. Sekvenserna är uppspelade ljud, inte uppmätta golfslag.
+                  </p>
+                ) : null}
+              </>
+            )}
           </div>
-        </details>
+        </div>
       ) : null}
-      <p className="mt-5 text-center text-[11px] leading-relaxed text-slate-500">
-        Ljud, rörelse och valfri vibration följer samma tidpunkter. SG4 guidar ditt tempo, men mäter ännu inte din faktiska sving.
-        Bluetooth kan introducera ljudfördröjning.
-      </p>
     </main>
   );
 }

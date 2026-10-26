@@ -7,30 +7,21 @@ import {
 
 type Props = {
   mode: TempoMode;
-  ratio: number;
-  total: number;
   running: boolean;
+  finished: boolean;
   haptics: boolean;
   clock: () => TempoClock | null;
 };
 
-const phaseText: Record<TempoMotionFrame["phase"], string> = {
-  idle: "Redo", countdown: "Förbered", back: "Baksving",
-  down: "Nedsving", impact: "Träff", rest: "Nästa slag",
-};
-
-/**
- * Visual and audible cues read the same AudioContext timeline.
- * Vibration is best-effort: browser support varies and haptics are not sample-accurate.
- */
-export function TempoMotion({ mode, ratio, total, running, haptics, clock }: Props) {
+/** One marker only, travelling backwards, through impact, and all the way to finish. */
+export function TempoMotion({ mode, running, finished, haptics, clock }: Props) {
   const [frame, setFrame] = useState<TempoMotionFrame>(IDLE_MOTION);
   const lastVibration = useRef("");
   const arc = useMemo(() => tempoArc(mode), [mode]);
 
   useEffect(() => {
     if (!running) {
-      setFrame(IDLE_MOTION);
+      setFrame(finished ? { ...IDLE_MOTION, phase: "finish", progress: 1 } : IDLE_MOTION);
       lastVibration.current = "";
       return;
     }
@@ -43,79 +34,56 @@ export function TempoMotion({ mode, ratio, total, running, haptics, clock }: Pro
         const key = `${next.cycle}:${next.cue}`;
         if (key !== lastVibration.current) {
           lastVibration.current = key;
-          const durations: Record<TempoCue, number> = { start: 15, top: 24, impact: 38 };
-          try { navigator.vibrate(durations[next.cue]); } catch { /* unsupported device */ }
+          const ms: Record<TempoCue, number> = { start: 16, top: 27, impact: 38 };
+          try { navigator.vibrate(ms[next.cue]); } catch { /* unsupported browser */ }
         }
       }
       animationId = window.requestAnimationFrame(update);
     };
     animationId = window.requestAnimationFrame(update);
     return () => window.cancelAnimationFrame(animationId);
-  }, [running, clock, haptics]);
+  }, [running, finished, clock, haptics]);
 
-  const dot = arc.point(frame.progress);
-  const atTop = frame.phase === "down" && frame.pulse > 0;
-  const impact = frame.phase === "impact";
-  const isMoving = frame.phase === "back" || frame.phase === "down";
-  const showPulse = atTop || impact || (frame.phase === "back" && frame.pulse > 0);
-  const ringCenter = atTop ? arc.top : impact ? arc.start : dot;
-  const ringRadius = 18 + 25 * frame.pulse;
-  const progressText = frame.phase === "countdown" ? String(frame.countdown) : `${ratio}:1`;
-  const subText = frame.phase === "countdown" ? "STARTAR SNART" : phaseText[frame.phase];
+  const onBack = frame.phase === "back" || frame.phase === "down";
+  const onFinish = frame.phase === "through" || frame.phase === "finish" || frame.phase === "rest";
+  const point = onBack ? arc.backPoint(frame.progress)
+    : onFinish ? arc.throughPoint(frame.progress) : arc.start;
+  const backStroke = frame.phase === "back" ? frame.progress
+    : frame.phase === "down" ? 1
+    : onFinish ? 1 : 0;
+  const throughStroke = onFinish ? frame.progress : 0;
+  const cueFlash = Boolean(frame.cue === "top" || frame.cue === "impact");
+  const radius = cueFlash ? 16 : 12;
 
   return (
     <svg className="pointer-events-none absolute inset-0 h-full w-full select-none"
-      viewBox="0 0 360 440" preserveAspectRatio="xMidYMid meet"
+      viewBox="0 0 360 480" preserveAspectRatio="xMidYMid meet"
       aria-hidden="true" focusable="false">
       <defs>
-        <radialGradient id="sg4-tempo-halo" cx="50%" cy="45%" r="60%">
-          <stop offset="0" stopColor="#174a91" stopOpacity=".5" />
-          <stop offset="1" stopColor="#081832" stopOpacity="0" />
-        </radialGradient>
-        <linearGradient id="sg4-tempo-stroke" x1="0" y1="1" x2="1" y2="0">
-          <stop offset="0" stopColor="#2f7dff" />
-          <stop offset="1" stopColor="#76c6ff" />
+        <linearGradient id="sg4-motion-blue" x1="0" x2="1" y1="1" y2="0">
+          <stop offset="0" stopColor="#367cff" />
+          <stop offset="1" stopColor="#74c7ff" />
         </linearGradient>
       </defs>
-      <circle cx="180" cy="214" r="176" fill="url(#sg4-tempo-halo)" />
-      <circle cx="180" cy="214" r="109" fill="#102a50" fillOpacity=".54" stroke="#7aabeb" strokeOpacity=".12" />
-      <circle cx="180" cy="214" r="83" fill="none" stroke="#7aabeb" strokeOpacity=".09" />
-      {mode === "putt" ? (
-        <>
-          <path d={`M ${arc.center.x} ${arc.center.y} L ${arc.start.x} ${arc.start.y}`}
-            fill="none" stroke="#c5ddff" strokeWidth="2" strokeDasharray="4 9" strokeOpacity=".2" />
-          <path d={`M ${arc.center.x} ${arc.center.y} L ${dot.x} ${dot.y}`}
-            fill="none" stroke="#a7d8ff" strokeWidth="3.5" strokeOpacity=".83" strokeLinecap="round" />
-          <circle cx={arc.center.x} cy={arc.center.y} r="8" fill="#8cbaff" fillOpacity=".6" />
-        </>
-      ) : (
-        <path d={`M ${arc.center.x} ${arc.center.y} L ${arc.start.x} ${arc.start.y}`}
-          stroke="#7aabeb" strokeOpacity=".13" strokeDasharray="4 9" />
-      )}
-      <path d={arc.path} fill="none" stroke="#8eb7ef" strokeOpacity=".16"
-        strokeWidth="11" strokeLinecap="round" />
-      <path d={arc.path} fill="none" stroke="url(#sg4-tempo-stroke)"
-        pathLength={1} strokeDasharray="1 1" strokeDashoffset={1 - frame.progress}
-        strokeWidth="11" strokeLinecap="round" />
-      <circle cx={arc.top.x} cy={arc.top.y} r="6" fill="#d2e7ff" fillOpacity=".48" />
-      <circle cx={arc.start.x} cy={arc.start.y} r="6" fill="#d2e7ff" fillOpacity=".48" />
-      {showPulse ? (
-        <circle cx={ringCenter.x} cy={ringCenter.y} r={ringRadius}
-          fill="none" stroke={impact ? "#ffffff" : "#6cb6ff"}
-          strokeWidth={impact ? 6 : 4} strokeOpacity={Math.min(.8, frame.pulse * .75)} />
-      ) : null}
-      <circle cx={dot.x} cy={dot.y} r={isMoving ? 17 : 13} fill="#3e97ff" opacity=".23" />
-      <circle cx={dot.x} cy={dot.y} r="9" fill="#e9f6ff" />
-      <circle cx={dot.x} cy={dot.y} r="4" fill="#2d89ff" />
-      <text x="194" y="206" textAnchor="middle" fill="#f8fbff" fontSize="69"
-        fontWeight="750" letterSpacing="-3">{progressText}</text>
-      <text x="194" y="237" textAnchor="middle" fill="#a9c9f8" fontSize="12"
-        letterSpacing="2.1" fontWeight="700">{subText.toUpperCase()}</text>
-      <text x="194" y="263" textAnchor="middle" fill="#729bce" fontSize="12">{total.toFixed(2).replace(".", ",")} s</text>
-      <text x={arc.top.x - (mode === "putt" ? 10 : 0)} y={arc.top.y - 21}
-        textAnchor="middle" fill="#96b8e6" fontSize="10" letterSpacing="1.5">TOPP</text>
-      <text x={arc.start.x + (mode === "putt" ? 30 : 0)} y={arc.start.y + 29}
-        textAnchor="middle" fill="#96b8e6" fontSize="10" letterSpacing="1.2">TRÄFF</text>
+      <path d={arc.backPath} fill="none" stroke="#89abdf" strokeOpacity=".23"
+        strokeWidth="5" strokeLinecap="round" />
+      <path d={arc.throughPath} fill="none" stroke="#89abdf" strokeOpacity=".23"
+        strokeWidth="5" strokeLinecap="round" />
+      <path d={arc.backPath} fill="none" stroke="url(#sg4-motion-blue)"
+        strokeOpacity={onFinish ? .44 : 1} strokeWidth="6" strokeLinecap="round"
+        pathLength={1} strokeDasharray="1 1" strokeDashoffset={1 - backStroke} />
+      <path d={arc.throughPath} fill="none" stroke="url(#sg4-motion-blue)"
+        strokeWidth="6" strokeLinecap="round"
+        pathLength={1} strokeDasharray="1 1" strokeDashoffset={1 - throughStroke} />
+      <text x={arc.top.x - 8} y={arc.top.y - 24} textAnchor="middle"
+        fill="#a3c3ee" fontSize="12" fontWeight="600">TOPP</text>
+      <text x={arc.finish.x + 3} y={arc.finish.y - 24} textAnchor="middle"
+        fill="#a3c3ee" fontSize="12" fontWeight="600">FINISH</text>
+      <text x={arc.start.x} y={arc.start.y + 30} textAnchor="middle"
+        fill="#a3c3ee" fontSize="11" fontWeight="600">IMPACT</text>
+      <circle cx={point.x} cy={point.y} r={radius}
+        fill={cueFlash ? "#ffffff" : "#68b2ff"}
+        stroke="none" />
     </svg>
   );
 }

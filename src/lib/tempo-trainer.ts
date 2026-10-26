@@ -1,9 +1,25 @@
 export type TempoMode = "full" | "short" | "putt";
 export type TempoSound = "soft" | "digital" | "click" | "off";
 export type TempoCount = 5 | 10 | 20 | "unlimited";
+
+export const TEMPO_RATIOS: Record<TempoMode, readonly number[]> = {
+  full: [2, 2.5, 3, 3.5, 4],
+  short: [1.5, 2, 2.5, 3],
+  putt: [1.5, 2, 2.5, 3],
+};
+export const PRESETS: Record<TempoMode, readonly number[]> = {
+  // Total elapsed time between swing start and impact, not backswing time.
+  full: [1.33, 1.2, 1.07, .93, .8],
+  short: [1.35, 1.2, 1.05, .9, .75],
+  putt: [1.35, 1.2, 1.05, .9, .75],
+};
+
 export type TempoSettings = {
   mode: TempoMode;
-  speeds: Record<TempoMode, number>;
+  /** Total start-to-impact time in seconds. Independent of tempo ratio. */
+  durations: Record<TempoMode, number>;
+  /** Backswing/downswing ratio, stored per swing type. */
+  ratios: Record<TempoMode, number>;
   single: boolean;
   count: TempoCount;
   delay: 3 | 5 | 10;
@@ -15,18 +31,15 @@ export type TempoSettings = {
 export type TempoSession = {
   at: string;
   mode: TempoMode;
-  speed: number;
+  speed: number; // Historical field; stores backswing seconds in legacy sessions.
+  ratio?: number;
   sequences: number;
   complete: boolean;
 };
-export const PRESETS: Record<TempoMode, readonly number[]> = {
-  full: [1, .9, .8, .7, .6],
-  short: [.9, .8, .7, .6, .5],
-  putt: [.9, .8, .7, .6, .5],
-};
 export const DEFAULT_TEMPO: TempoSettings = {
   mode: "full",
-  speeds: { full: .8, short: .7, putt: .7 },
+  durations: { full: 1.07, short: 1.05, putt: 1.05 },
+  ratios: { full: 3, short: 2, putt: 2 },
   single: false,
   count: 10,
   delay: 3,
@@ -35,25 +48,50 @@ export const DEFAULT_TEMPO: TempoSettings = {
   volume: .7,
   haptics: false,
 };
-const SETTINGS_KEY = "sg4-tempo-settings-v1";
+const SETTINGS_KEY = "sg4-tempo-settings-v2";
+const LEGACY_SETTINGS_KEY = "sg4-tempo-settings-v1";
 const HISTORY_KEY = "sg4-tempo-history-v1";
-function validSpeed(value: unknown, fallback: number) {
-  return typeof value === "number" && Number.isFinite(value) && value >= .45 && value <= 1.1
-    ? Math.round(value * 100) / 100 : fallback;
-}
-export function tempoTiming(mode: TempoMode, back: number) {
-  const ratio = mode === "full" ? 3 : 2;
-  return { ratio, back, down: back / ratio, total: back * (1 + 1 / ratio) };
+
+const roundHundredth = (value: number) => Math.round(value * 100) / 100;
+const validDuration = (value: unknown, fallback: number) =>
+  typeof value === "number" && Number.isFinite(value) && value >= .6 && value <= 1.8
+    ? roundHundredth(value) : fallback;
+const defaultRatio = (mode: TempoMode) => DEFAULT_TEMPO.ratios[mode];
+const validRatio = (mode: TempoMode, value: unknown) =>
+  typeof value === "number" && TEMPO_RATIOS[mode].includes(value) ? value : defaultRatio(mode);
+
+/** Tempo is the ratio; speed is the independent total start-to-impact duration. */
+export function tempoTiming(mode: TempoMode, duration: number, chosenRatio?: number) {
+  const ratio = validRatio(mode, chosenRatio ?? defaultRatio(mode));
+  const back = duration * ratio / (ratio + 1);
+  const down = duration / (ratio + 1);
+  const follow = mode === "full" ? Math.max(.42, down * 1.75)
+    : mode === "short" ? Math.max(.35, down * 1.1)
+    : Math.max(.3, down * 1.1);
+  return { ratio, back, down, total: duration, follow };
 }
 export function normalizeTempo(raw: unknown): TempoSettings {
-  if (!raw || typeof raw !== "object") return { ...DEFAULT_TEMPO, speeds: { ...DEFAULT_TEMPO.speeds } };
-  const row = raw as Partial<TempoSettings>;
+  if (!raw || typeof raw !== "object")
+    return { ...DEFAULT_TEMPO, durations: { ...DEFAULT_TEMPO.durations }, ratios: { ...DEFAULT_TEMPO.ratios } };
+  const row = raw as Partial<TempoSettings> & { speeds?: Partial<Record<TempoMode, number>> };
+  const durationFor = (mode: TempoMode): number => {
+    const existing = row.durations?.[mode];
+    if (typeof existing === "number") return validDuration(existing, DEFAULT_TEMPO.durations[mode]);
+    // Non-destructive migration: v1 persisted backswing seconds instead of total swing time.
+    const old = row.speeds?.[mode];
+    if (typeof old === "number" && Number.isFinite(old) && old >= .45 && old <= 1.1) {
+      const ratio = defaultRatio(mode);
+      return validDuration(old * (1 + 1 / ratio), DEFAULT_TEMPO.durations[mode]);
+    }
+    return DEFAULT_TEMPO.durations[mode];
+  };
   return {
     mode: row.mode === "short" || row.mode === "putt" ? row.mode : "full",
-    speeds: {
-      full: validSpeed(row.speeds?.full, DEFAULT_TEMPO.speeds.full),
-      short: validSpeed(row.speeds?.short, DEFAULT_TEMPO.speeds.short),
-      putt: validSpeed(row.speeds?.putt, DEFAULT_TEMPO.speeds.putt),
+    durations: { full: durationFor("full"), short: durationFor("short"), putt: durationFor("putt") },
+    ratios: {
+      full: validRatio("full", row.ratios?.full),
+      short: validRatio("short", row.ratios?.short),
+      putt: validRatio("putt", row.ratios?.putt),
     },
     single: row.single === true,
     count: row.count === 5 || row.count === 20 || row.count === "unlimited" ? row.count : 10,
@@ -66,8 +104,10 @@ export function normalizeTempo(raw: unknown): TempoSettings {
 }
 export function loadTempo(): TempoSettings {
   if (typeof window === "undefined") return normalizeTempo(null);
-  try { return normalizeTempo(JSON.parse(window.localStorage.getItem(SETTINGS_KEY) || "null")); }
-  catch { return normalizeTempo(null); }
+  try {
+    const raw = window.localStorage.getItem(SETTINGS_KEY) ?? window.localStorage.getItem(LEGACY_SETTINGS_KEY);
+    return normalizeTempo(JSON.parse(raw || "null"));
+  } catch { return normalizeTempo(null); }
 }
 export function storeTempo(settings: TempoSettings) {
   if (typeof window === "undefined") return;
