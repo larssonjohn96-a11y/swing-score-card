@@ -616,6 +616,12 @@ function Home() {
             </Link>
                         
             <Link
+              to="/tempotranare"
+              className="shrink-0 rounded-full border border-blue-200 bg-blue-50 px-4 py-2.5 text-xs font-black text-blue-800"
+            >
+              Tempoträning
+            </Link>
+            <Link
               to="/utveckling"
               className="shrink-0 rounded-full border border-border bg-card/85 px-4 py-2.5 text-xs font-black"
             >

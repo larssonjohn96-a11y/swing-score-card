@@ -6,6 +6,7 @@ const HUB_HEADERS: Readonly<Record<string, HubHeader>> = {
   "/utveckling": { title: "Analys & utveckling", to: "/" },
   "/spela": { title: "Match", to: "/" },
   "/spel": { title: "Spel", to: "/" },
+  "/tempotranare": { title: "Tempoträning", to: "/" },
 };
 
 /** Index routes may be reached with or without a trailing slash. */
