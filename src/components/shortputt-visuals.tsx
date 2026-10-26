@@ -27,7 +27,7 @@ export function PuttingPositionDiagram({
       aria-label={`Aktuell putt klockan ${activeDirection}, ${activeDistance} meter. Fylld blå är aktuell, bock är satt och kryss är missad.`}>
       <circle cx={cx} cy={cy} r="101" className="fill-fairway" />
       {radii.map(r => <circle key={r} cx={cx} cy={cy} r={r} fill="none" stroke="currentColor" strokeOpacity=".2" strokeDasharray="3 5" />)}
-      {(Object.keys(angles) as Direction[]).map(direction => {
+      {(Object.keys(angles) as Array<Exclude<Direction, "6">>).map(direction => {
         const a = angles[direction];
         return <g key={direction}>
           <line x1={cx} y1={cy} x2={cx + Math.cos(a)*85} y2={cy + Math.sin(a)*85} stroke="currentColor" strokeOpacity=".26" strokeDasharray="3 4"/>
