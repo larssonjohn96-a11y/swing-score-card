@@ -5,13 +5,14 @@ import { TempoMotion } from "@/components/tempo-motion";
 import type { TempoClock } from "@/lib/tempo-visual";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 import {
-  DEFAULT_TEMPO, PRESETS, TEMPO_RATIOS, loadTempo, loadTempoSessions, storeTempo, storeTempoSession, tempoTiming,
+  DEFAULT_TEMPO, formatTempoRatio, nextTempoRatio, tempoProfile, loadTempo, loadTempoSessions, storeTempo, storeTempoSession, tempoTiming,
   type TempoMode, type TempoSettings, type TempoSound, type TempoSession,
 } from "@/lib/tempo-trainer";
 
 export const Route = createFileRoute("/tempotranare")({
   head: () => ({ meta: [
     { title: "Tempoträning – SG4" },
+    { name: "theme-color", content: "#081b37" },
     { name: "description", content: "Träna golfens svingtempo med tre exakta ljudsignaler för start, vändning och bollträff." },
   ] }),
   component: TempoPage,
@@ -109,7 +110,7 @@ function TempoPage() {
   const [phase, setPhase] = useState("Redo att svinga");
   const [cue, setCue] = useState<Cue>(null);
   const [error, setError] = useState<string | null>(null);
-  const [panel, setPanel] = useState<"ratio" | "settings" | null>(null);
+  const [panel, setPanel] = useState<"settings" | null>(null);
   const [hapticAvailable, setHapticAvailable] = useState(false);
 
   const engine = useRef<Engine | null>(null);
@@ -209,15 +210,17 @@ function TempoPage() {
     setCue(null);
     setShot(count);
   }
-  async function start() {
+  async function start(cfg: TempoSettings = settings, resumeFrom?: number) {
     closePreview();
     closeAudio();
     setError(null);
     const Audio = audioClass();
     if (!Audio) { setError("Ljuduppspelning stöds inte i den här webbläsaren."); return; }
-    const from = status === "paused" ? doneRef.current : 0;
-    if (status !== "paused") { doneRef.current = 0; setPlayed(0); }
-    if (limit !== null && from >= limit) { setStatus("finished"); return; }
+    const from = resumeFrom ?? (status === "paused" ? doneRef.current : 0);
+    doneRef.current = from;
+    setPlayed(from);
+    const currentLimit = cfg.single ? 1 : cfg.count === "unlimited" ? null : cfg.count;
+    if (currentLimit !== null && from >= currentLimit) { setStatus("finished"); return; }
     let ctx: AudioContext;
     try { ctx = new Audio(); }
     catch { setError("Kunde inte öppna ljudmotorn. Kontrollera webbläsarens ljudinställningar."); return; }
@@ -234,16 +237,16 @@ function TempoPage() {
       return;
     }
     if (ticket.current !== id) { if (ctx.state !== "closed") void ctx.close().catch(() => undefined); return; }
-    const t = tempoTiming(settings.mode, settings.durations[settings.mode], settings.ratios[settings.mode]);
-    const first = ctx.currentTime + settings.delay + .08;
+    const t = tempoTiming(cfg.mode, cfg.durations[cfg.mode], cfg.ratios[cfg.mode]);
+    const first = ctx.currentTime + cfg.delay + .08;
     const e: Engine = {
-      ctx, first, next: 0, base: from, limit, back: t.back, down: t.down, total: t.total, follow: t.follow,
+      ctx, first, next: 0, base: from, limit: currentLimit, back: t.back, down: t.down, total: t.total, follow: t.follow,
       period: t.total + t.follow + settings.rest,
-      settings: { ...settings, durations: { ...settings.durations }, ratios: { ...settings.ratios } }, voices: new Set(),
+      settings: { ...cfg, durations: { ...cfg.durations }, ratios: { ...cfg.ratios } }, voices: new Set(),
     };
     engine.current = e;
     for (let n = 3; n >= 1; n--) {
-      if (settings.sound !== "off") pulse(ctx, first - n, 440, .065, settings.volume * .055, "sine", e.voices);
+      if (cfg.sound !== "off") pulse(ctx, first - n, 440, .065, cfg.volume * .055, "sine", e.voices);
     }
     const nav = navigator as Navigator & { wakeLock?: { request: (type: "screen") => Promise<WakeHandle> } };
     if (nav.wakeLock) {
@@ -269,7 +272,7 @@ function TempoPage() {
       const elapsed = now - e.first;
       if (elapsed < 0) {
         setPhase("Förbered dig");
-        setRemaining(Math.min(settings.delay, Math.ceil(-elapsed)));
+        setRemaining(Math.min(cfg.delay, Math.ceil(-elapsed)));
         setShot(e.base + 1);
         setCue(null);
         return;
@@ -321,15 +324,25 @@ function TempoPage() {
     const value = Math.max(.6, Math.min(1.8, Math.round(s * 100) / 100));
     edit({ durations: { ...settings.durations, [settings.mode]: value } });
   }
-  const changeRatio = (ratio: number) => {
-    if (locked || !TEMPO_RATIOS[settings.mode].includes(ratio)) return;
-    edit({ ratios: { ...settings.ratios, [settings.mode]: ratio } });
-    setPanel(null);
-  };
-  const openPanel = (name: "ratio" | "settings") => {
-    // Pause before editing so audio and animation always share the same new timeline.
+
+  function cycleRatio() {
+    const mode = settings.mode;
+    const nextRatio = nextTempoRatio(mode, settings.ratios[mode]);
+    const updated = { ...settings, ratios: { ...settings.ratios, [mode]: nextRatio } };
+    if (status === "running") {
+      // An in-flight sequence cannot change its cue timestamps. Restart the
+      // timeline with a new countdown, preserving already completed sequences.
+      const e = engine.current;
+      const completed = e ? playedCount(e, e.ctx.currentTime) : doneRef.current;
+      setSettings(updated);
+      void start(updated, completed);
+    } else {
+      edit({ ratios: updated.ratios });
+    }
+  }
+  const openPanel = () => {
     if (status === "running") pause();
-    setPanel(name);
+    setPanel("settings");
   };
   useEffect(() => {
     if (!panel) return;
@@ -367,7 +380,9 @@ function TempoPage() {
   const pickClass = (on: boolean) =>
     "min-h-10 rounded-xl border px-2 py-2 text-center text-xs font-semibold transition disabled:opacity-40 " +
     (on ? "border-[#70b6ff] bg-blue-600/30 text-white" : "border-white/15 bg-white/[.055] text-[#b9cae3]");
-  const ratioText = `${timing.ratio}:1`;
+  const ratioText = formatTempoRatio(timing.ratio);
+  const nextRatioText = formatTempoRatio(nextTempoRatio(settings.mode, timing.ratio));
+  const profile = tempoProfile(settings.mode, timing.ratio);
   const speedText = fmt(timing.total);
   return (
     <main className="relative mx-auto flex h-[100dvh] w-full max-w-md flex-col overflow-hidden bg-[#081b37] px-4 text-white"
@@ -378,7 +393,7 @@ function TempoPage() {
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <h1 className="font-display text-[21px] leading-tight tracking-tight">Tempoträning</h1>
-        <button type="button" onClick={() => openPanel("settings")} aria-label="Träningsinställningar"
+        <button type="button" onClick={openPanel} aria-label="Träningsinställningar"
           className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-white/[.05]">
           <Settings2 className="h-5 w-5" />
         </button>
@@ -410,13 +425,13 @@ function TempoPage() {
               <p className="mt-2 text-[11px] font-semibold uppercase tracking-[.16em] text-[#8eb8ec]">Startar snart</p>
             </div>
           ) : (
-            <button type="button" onClick={() => openPanel("ratio")}
-              aria-label={`Ändra tempoförhållande. Nu ${ratioText}. Baksvingen tar ${timing.ratio} gånger så lång tid som nedsvingen.`}
+            <button type="button" onClick={cycleRatio}
+              aria-label={`Växla tempo. Nu ${ratioText}, ${profile.title}. Nästa ${nextRatioText}.`}
               className="w-full rounded-2xl px-1 py-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-300">
               <div className="font-display text-[clamp(60px,16vw,86px)] leading-none tracking-[-.04em]">{ratioText}</div>
-              <p className="mt-1 text-[11px] font-bold uppercase tracking-[.15em] text-[#a8c7ed]">Tempo · baksving : nedsving</p>
-              <p className="mt-2 text-[11px] leading-snug text-[#8aadd8]">Baksvingen tar {timing.ratio} gånger så lång tid som nedsvingen</p>
-              <p className="mt-2 text-[10px] font-semibold text-[#6eacff]">Tryck för att ändra</p>
+              <p className="mt-1 text-[13px] font-bold uppercase tracking-[.09em] text-[#a8c7ed]">{profile.title}</p>
+              <p className="mx-auto mt-2 max-w-[240px] text-[11px] leading-relaxed text-[#8aadd8]">{profile.description}</p>
+              <p className="mt-2 text-[10px] font-semibold text-[#6eacff]">Tryck för nästa tempo · {nextRatioText}</p>
             </button>
           )}
         </div>
@@ -479,7 +494,7 @@ function TempoPage() {
             </>
           )}
         </div>
-        <button type="button" onClick={() => openPanel("settings")}
+        <button type="button" onClick={openPanel}
           className="mt-1 flex min-h-9 w-full items-center justify-center gap-2 text-[11px] text-[#9ab6da]">
           {settings.sound === "off" ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
           <span>{settings.sound === "off" ? "Tyst" : "Ljud på"}</span>
@@ -498,37 +513,16 @@ function TempoPage() {
           <button type="button" className="absolute inset-0" onClick={() => setPanel(null)}
             aria-label="Stäng inställningar" />
           <div role="dialog" aria-modal="true"
-            aria-label={panel === "ratio" ? "Ändra tempo" : "Träningsinställningar"}
+            aria-label="Träningsinställningar"
             className="relative z-10 w-full max-h-[calc(100dvh-42px)] overflow-y-auto rounded-[26px] border border-white/15 bg-[#112c52] p-5 shadow-2xl [scrollbar-width:thin]">
             <div className="flex items-center justify-between">
-              <h2 className="font-display text-[28px] leading-none">{panel === "ratio" ? "Tempo" : "Inställningar"}</h2>
+              <h2 className="font-display text-[28px] leading-none">Inställningar</h2>
               <button type="button" onClick={() => setPanel(null)} aria-label="Stäng"
                 className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10">
                 <X className="h-5 w-5" />
               </button>
             </div>
-            {panel === "ratio" ? (
-              <>
-                <p className="mt-3 text-[13px] leading-relaxed text-[#a8c7ed]">
-                  Tempot är förhållandet mellan baksving och nedsving.
-                  Exempel: 3:1 betyder att baksvingen tar tre gånger så lång tid.
-                </p>
-                <div className="mt-5 grid grid-cols-5 gap-1.5">
-                  {TEMPO_RATIOS[settings.mode].map((ratio) => (
-                    <button type="button" key={ratio} aria-pressed={settings.ratios[settings.mode] === ratio}
-                      onClick={() => changeRatio(ratio)}
-                      className={pickClass(settings.ratios[settings.mode] === ratio)}>
-                      {ratio}:1
-                    </button>
-                  ))}
-                </div>
-                <div className="mt-4 rounded-2xl bg-white/[.05] p-3 text-[12px] leading-relaxed text-[#b5cbe8]">
-                  <strong className="text-white">Hastighet förändras inte:</strong> totalt {speedText} s.
-                  SG4 fördelar tiden annorlunda mellan baksving och nedsving.
-                </div>
-              </>
-            ) : (
-              <>
+            <>
                 <p className="mt-1 text-xs text-[#a8c7ed]">Allt kan justeras här utan att lämna träningsvyn.</p>
                 <div className="mt-5">
                   <h3 className="text-[13px] font-bold">Träningspass</h3>
@@ -616,8 +610,7 @@ function TempoPage() {
                     {history.length} tidigare pass sparade. Sekvenserna är uppspelade ljud, inte uppmätta golfslag.
                   </p>
                 ) : null}
-              </>
-            )}
+            </>
           </div>
         </div>
       ) : null}

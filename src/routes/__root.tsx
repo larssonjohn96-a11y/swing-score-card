@@ -152,6 +152,7 @@ function RootComponent() {
   const location = useLocation();
   const router = useRouter();
   const routeTransitionKey = `${location.pathname}${location.searchStr ?? ""}`;
+  const fullScreenTempo = location.pathname === "/tempotranare";
 
   useEffect(() => startSessionSync(), []);
   useEffect(() => startShotSync(), []);
@@ -248,13 +249,22 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <SubscriptionProvider>
         <BottomNavVisibilityProvider>
-          <div className="relative min-h-screen pb-20">
-            <ActivityStickyHeader pathname={location.pathname} />
-            <div key={routeTransitionKey} className="sg4-route-transition"><Outlet /></div>
-            <ActiveMultiplayerBanner />
-            <ShotSyncStatus />
-            <BottomNav />
-            <DevPlanSwitcher />
+          <div className={fullScreenTempo
+            ? "relative h-[100dvh] overflow-hidden bg-[#081b37]"
+            : "relative min-h-screen pb-20"}>
+            {!fullScreenTempo && <ActivityStickyHeader pathname={location.pathname} />}
+            <div key={routeTransitionKey}
+              className={fullScreenTempo ? "h-[100dvh] bg-[#081b37]" : "sg4-route-transition"}>
+              <Outlet />
+            </div>
+            {!fullScreenTempo && (
+              <>
+                <ActiveMultiplayerBanner />
+                <ShotSyncStatus />
+                <BottomNav />
+                <DevPlanSwitcher />
+              </>
+            )}
           </div>
           {show && <SplashScreen onDismiss={dismiss} />}
         </BottomNavVisibilityProvider>

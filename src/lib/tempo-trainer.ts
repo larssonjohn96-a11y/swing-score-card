@@ -36,6 +36,77 @@ export type TempoSession = {
   sequences: number;
   complete: boolean;
 };
+
+/**
+ * Common training ratios, ordered for a single-tap cycle starting at the default.
+ * 2.5:1–3.5:1 spans the range observed among playing pros; other ratios are
+ * alternatives for experimentation, not claims about every player's measured motion.
+ */
+export const TEMPO_CYCLES: Record<TempoMode, readonly number[]> = {
+  full: [3, 2.5, 3.5, 2, 4],
+  short: [2, 1.5, 2.5, 3],
+  putt: [2, 1.5, 2.5, 3],
+};
+
+export type TempoProfile = {
+  title: string;
+  description: string;
+};
+
+export function nextTempoRatio(mode: TempoMode, ratio: number): number {
+  const ratios = TEMPO_CYCLES[mode];
+  const position = ratios.indexOf(ratio);
+  return ratios[(position + 1) % ratios.length] ?? ratios[0]!;
+}
+
+export function formatTempoRatio(ratio: number): string {
+  return `${ratio.toString().replace(".", ",")}:1`;
+}
+
+export function tempoProfile(mode: TempoMode, ratio: number): TempoProfile {
+  if (mode === "full") {
+    if (ratio === 3) return {
+      title: "Tourpro-tempo",
+      description: "Klassiskt riktvärde för full sving hos tourspelare.",
+    };
+    if (ratio === 2.5) return {
+      title: "Tourpro-variation",
+      description: "Relativt kortare baksving, nära nedre delen av uppmätt tourintervall.",
+    };
+    if (ratio === 3.5) return {
+      title: "Tourpro-variation",
+      description: "Relativt längre baksving, nära övre delen av uppmätt tourintervall.",
+    };
+    if (ratio === 2) return {
+      title: "Närspelslik rytm",
+      description: "Vanligare riktvärde vid chip och putt än vid full sving.",
+    };
+    return {
+      title: "Utdragen baksving",
+      description: "Längre baksving i förhållande till nedsvingen än typiskt tourtempo.",
+    };
+  }
+  if (ratio === 2) return mode === "putt" ? {
+    title: "Tourinspirerad puttrytm",
+    description: "2:1 används som vanligt riktvärde för puttning.",
+  } : {
+    title: "Tourinspirerat närspel",
+    description: "2:1 används som vanligt riktvärde för chip och pitch.",
+  };
+  if (ratio === 1.5) return {
+    title: "Kortare bakrörelse",
+    description: "Närmare lika tid bakåt och framåt än standardrytmen.",
+  };
+  if (ratio === 2.5) return {
+    title: "Längre bakrörelse",
+    description: "Något mer tid bakåt i förhållande till framrörelsen.",
+  };
+  return {
+    title: "Fullsvingslik rytm",
+    description: "3:1 är det klassiska riktvärdet för fulla slag.",
+  };
+}
+
 export const DEFAULT_TEMPO: TempoSettings = {
   mode: "full",
   durations: { full: 1.07, short: 1.05, putt: 1.05 },

@@ -1,7 +1,35 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_TEMPO, normalizeTempo, tempoTiming } from "./tempo-trainer";
+import { DEFAULT_TEMPO, TEMPO_CYCLES, formatTempoRatio, nextTempoRatio, normalizeTempo, tempoProfile, tempoTiming } from "./tempo-trainer";
 
 describe("SG4 tempoträning", () => {
+
+  it("växlar med ett tryck mellan fullsvingens vanliga rytmer och går runt", () => {
+    let ratio = 3;
+    const visited = [ratio];
+    for (let i = 0; i < TEMPO_CYCLES.full.length; i++) {
+      ratio = nextTempoRatio("full", ratio);
+      visited.push(ratio);
+    }
+    expect(visited).toEqual([3, 2.5, 3.5, 2, 4, 3]);
+  });
+  it("har puttning och närspel med 2:1 som utgångsläge", () => {
+    expect(nextTempoRatio("short", 2)).toBe(1.5);
+    expect(nextTempoRatio("putt", 3)).toBe(2);
+    expect(formatTempoRatio(2.5)).toBe("2,5:1");
+  });
+  it("visar relevant profilbeskrivning när tempot växlas", () => {
+    expect(tempoProfile("full", 3).title).toContain("Tourpro");
+    expect(tempoProfile("short", 2).title).toContain("närspel");
+    expect(tempoProfile("putt", 2).title).toContain("puttrytm");
+    expect(tempoProfile("full", 4).title).toContain("Utdragen");
+  });
+  it("byter bara förhållandet utan att ändra hela svingtiden", () => {
+    const initial = tempoTiming("full", 1.07, 3);
+    const subsequent = tempoTiming("full", 1.07, nextTempoRatio("full", 3));
+    expect(initial.total).toBe(subsequent.total);
+    expect(initial.back).not.toEqual(subsequent.back);
+  });
+
   it("skiljer tempo (3:1) från hastighet (total tid) för full sving", () => {
     const t = tempoTiming("full", 1.2, 3);
     expect(t.ratio).toBe(3);
