@@ -1,7 +1,52 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_TEMPO, TEMPO_CYCLES, formatTempoRatio, nextTempoRatio, normalizeTempo, tempoProfile, tempoTiming } from "./tempo-trainer";
+import { DEFAULT_TEMPO, TEMPO_CYCLES, TEMPO_SOUND_PRESETS, matchingSoundPreset, scheduledSoundCues, formatTempoRatio, nextTempoRatio, normalizeTempo, tempoProfile, tempoTiming } from "./tempo-trainer";
 
 describe("SG4 tempoträning", () => {
+
+  it("erbjuder alla tre signalerna eller bara start och toppen", () => {
+    const all = TEMPO_SOUND_PRESETS.find(p => p.id === "all")!;
+    const bottomTop = TEMPO_SOUND_PRESETS.find(p => p.id === "bottom-top")!;
+    expect(scheduledSoundCues(all.cues, .8, 1.07)).toEqual([
+      { cue: "start", offset: 0 },
+      { cue: "top", offset: .8 },
+      { cue: "impact", offset: 1.07 },
+    ]);
+    expect(scheduledSoundCues(bottomTop.cues, .8, 1.07)).toEqual([
+      { cue: "start", offset: 0 },
+      { cue: "top", offset: .8 },
+    ]);
+    expect(matchingSoundPreset(bottomTop.cues)).toBe("bottom-top");
+  });
+  it("stödjer bara toppen, bara impact och egna ljudkombinationer", () => {
+    const topOnly = TEMPO_SOUND_PRESETS.find(p => p.id === "top-only")!;
+    expect(scheduledSoundCues(topOnly.cues, .8, 1.07)).toEqual([{ cue: "top", offset: .8 }]);
+    expect(scheduledSoundCues({start: false, top: false, impact: true}, .8, 1.07))
+      .toEqual([{cue: "impact", offset: 1.07}]);
+    const custom = { start: true, top: false, impact: true };
+    expect(matchingSoundPreset(custom)).toBe(null);
+    expect(scheduledSoundCues(custom, .8, 1.07)).toEqual([
+      { cue: "start", offset: 0 },
+      { cue: "impact", offset: 1.07 },
+    ]);
+    expect(scheduledSoundCues({ start: false, top: false, impact: false }, .8, 1.07)).toEqual([]);
+  });
+  it("sparar ljudpunkter, återläser gamla inställningar och normaliserar felaktiga värden", () => {
+    const chosen = normalizeTempo({
+      mode: "short", soundCues: { start: false, top: true, impact: false },
+      countdownSound: false, sound: "digital",
+    });
+    expect(chosen.soundCues).toEqual({ start: false, top: true, impact: false });
+    expect(chosen.countdownSound).toBe(false);
+    expect(normalizeTempo(chosen).soundCues).toEqual(chosen.soundCues);
+    const legacy = normalizeTempo({ sound: "soft" });
+    expect(legacy.soundCues).toEqual(DEFAULT_TEMPO.soundCues);
+    expect(legacy.countdownSound).toBe(true);
+    const malformed = normalizeTempo({ soundCues: { start: "false", top: false, impact: 0 } });
+    expect(malformed.soundCues).toEqual({ start: true, top: false, impact: true });
+    const fresh = normalizeTempo(null);
+    fresh.soundCues.start = false;
+    expect(DEFAULT_TEMPO.soundCues.start).toBe(true);
+  });
 
   it("växlar med ett tryck mellan fullsvingens vanliga rytmer och går runt", () => {
     let ratio = 3;

@@ -1,6 +1,43 @@
 export type TempoMode = "full" | "short" | "putt";
 export type TempoSound = "soft" | "digital" | "click" | "off";
 export type TempoCount = 5 | 10 | 20 | "unlimited";
+export type TempoSoundCue = "start" | "top" | "impact";
+export type TempoSoundCues = Record<TempoSoundCue, boolean>;
+
+/** Start = address/bottom, top = transition, impact = bottom at the ball. */
+export const TEMPO_SOUND_PRESETS: ReadonlyArray<{
+  id: "all" | "bottom-top" | "top-only" | "impact-only";
+  label: string;
+  cues: TempoSoundCues;
+}> = [
+  { id: "all", label: "Alla tre", cues: { start: true, top: true, impact: true } },
+  { id: "bottom-top", label: "Botten + topp", cues: { start: true, top: true, impact: false } },
+  { id: "top-only", label: "Bara toppen", cues: { start: false, top: true, impact: false } },
+  { id: "impact-only", label: "Bara impact", cues: { start: false, top: false, impact: true } },
+];
+export const TEMPO_SOUND_CUE_KEYS: readonly TempoSoundCue[] = ["start", "top", "impact"];
+
+export function matchingSoundPreset(cues: TempoSoundCues) {
+  return TEMPO_SOUND_PRESETS.find(preset =>
+    TEMPO_SOUND_CUE_KEYS.every(key => preset.cues[key] === cues[key]))?.id ?? null;
+}
+export function scheduledSoundCues(cues: TempoSoundCues, back: number, total: number): Array<{ cue: TempoSoundCue; offset: number }> {
+  const candidates: Array<{ cue: TempoSoundCue; offset: number }> = [
+    { cue: "start", offset: 0 },
+    { cue: "top", offset: back },
+    { cue: "impact", offset: total },
+  ];
+  return candidates.filter(point => cues[point.cue]);
+}
+function normalizeSoundCues(raw: unknown): TempoSoundCues {
+  if (!raw || typeof raw !== "object") return { ...DEFAULT_TEMPO.soundCues };
+  const values = raw as Partial<Record<TempoSoundCue, unknown>>;
+  return {
+    start: typeof values.start === "boolean" ? values.start : true,
+    top: typeof values.top === "boolean" ? values.top : true,
+    impact: typeof values.impact === "boolean" ? values.impact : true,
+  };
+}
 
 export const TEMPO_RATIOS: Record<TempoMode, readonly number[]> = {
   full: [2, 2.5, 3, 3.5, 4],
@@ -25,6 +62,10 @@ export type TempoSettings = {
   delay: 3 | 5 | 10;
   rest: 3 | 5 | 8;
   sound: TempoSound;
+  /** Independently selectable sound/haptic timing. Motion never stops following all phases. */
+  soundCues: TempoSoundCues;
+  /** Separate from the three swing cue points, so "top only" really sounds top only. */
+  countdownSound: boolean;
   volume: number;
   haptics: boolean;
 };
@@ -116,6 +157,8 @@ export const DEFAULT_TEMPO: TempoSettings = {
   delay: 3,
   rest: 5,
   sound: "soft",
+  soundCues: { start: true, top: true, impact: true },
+  countdownSound: true,
   volume: .7,
   haptics: false,
 };
@@ -143,7 +186,7 @@ export function tempoTiming(mode: TempoMode, duration: number, chosenRatio?: num
 }
 export function normalizeTempo(raw: unknown): TempoSettings {
   if (!raw || typeof raw !== "object")
-    return { ...DEFAULT_TEMPO, durations: { ...DEFAULT_TEMPO.durations }, ratios: { ...DEFAULT_TEMPO.ratios } };
+    return { ...DEFAULT_TEMPO, durations: { ...DEFAULT_TEMPO.durations }, ratios: { ...DEFAULT_TEMPO.ratios }, soundCues: { ...DEFAULT_TEMPO.soundCues } };
   const row = raw as Partial<TempoSettings> & { speeds?: Partial<Record<TempoMode, number>> };
   const durationFor = (mode: TempoMode): number => {
     const existing = row.durations?.[mode];
@@ -169,6 +212,8 @@ export function normalizeTempo(raw: unknown): TempoSettings {
     delay: row.delay === 5 || row.delay === 10 ? row.delay : 3,
     rest: row.rest === 3 || row.rest === 8 ? row.rest : 5,
     sound: row.sound === "digital" || row.sound === "click" || row.sound === "off" ? row.sound : "soft",
+    soundCues: normalizeSoundCues(row.soundCues),
+    countdownSound: row.countdownSound !== false,
     volume: typeof row.volume === "number" && Number.isFinite(row.volume) ? Math.max(0, Math.min(1, row.volume)) : .7,
     haptics: row.haptics === true,
   };

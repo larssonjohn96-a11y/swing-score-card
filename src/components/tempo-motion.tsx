@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { TempoMode } from "@/lib/tempo-trainer";
+import type { TempoMode, TempoSoundCues } from "@/lib/tempo-trainer";
 import {
   IDLE_MOTION, tempoArc, tempoMotionAt,
   type TempoClock, type TempoCue, type TempoMotionFrame,
@@ -10,11 +10,12 @@ type Props = {
   running: boolean;
   finished: boolean;
   haptics: boolean;
+  soundCues: TempoSoundCues;
   clock: () => TempoClock | null;
 };
 
 /** One marker only, travelling backwards, through impact, and all the way to finish. */
-export function TempoMotion({ mode, running, finished, haptics, clock }: Props) {
+export function TempoMotion({ mode, running, finished, haptics, soundCues, clock }: Props) {
   const [frame, setFrame] = useState<TempoMotionFrame>(IDLE_MOTION);
   const lastVibration = useRef("");
   const arc = useMemo(() => tempoArc(mode), [mode]);
@@ -29,7 +30,7 @@ export function TempoMotion({ mode, running, finished, haptics, clock }: Props) 
     const update = () => {
       const next = tempoMotionAt(clock());
       setFrame(next);
-      if (haptics && next.cue && next.cycle >= 0 &&
+      if (haptics && next.cue && soundCues[next.cue] && next.cycle >= 0 &&
         typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
         const key = `${next.cycle}:${next.cue}`;
         if (key !== lastVibration.current) {
@@ -42,7 +43,7 @@ export function TempoMotion({ mode, running, finished, haptics, clock }: Props) 
     };
     animationId = window.requestAnimationFrame(update);
     return () => window.cancelAnimationFrame(animationId);
-  }, [running, finished, clock, haptics]);
+  }, [running, finished, clock, haptics, soundCues]);
 
   const onBack = frame.phase === "back" || frame.phase === "down";
   const onFinish = frame.phase === "through" || frame.phase === "finish" || frame.phase === "rest";

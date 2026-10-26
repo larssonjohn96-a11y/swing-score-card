@@ -5,15 +5,16 @@ import { TempoMotion } from "@/components/tempo-motion";
 import type { TempoClock } from "@/lib/tempo-visual";
 import { useHideBottomNav } from "@/lib/bottom-nav-visibility";
 import {
-  DEFAULT_TEMPO, formatTempoRatio, nextTempoRatio, tempoProfile, loadTempo, loadTempoSessions, storeTempo, storeTempoSession, tempoTiming,
-  type TempoMode, type TempoSettings, type TempoSound, type TempoSession,
+  DEFAULT_TEMPO, TEMPO_SOUND_PRESETS, TEMPO_SOUND_CUE_KEYS, matchingSoundPreset, scheduledSoundCues,
+  formatTempoRatio, nextTempoRatio, tempoProfile, loadTempo, loadTempoSessions, storeTempo, storeTempoSession, tempoTiming,
+  type TempoMode, type TempoSettings, type TempoSound, type TempoSession, type TempoSoundCues, type TempoSoundCue,
 } from "@/lib/tempo-trainer";
 
 export const Route = createFileRoute("/tempotranare")({
   head: () => ({ meta: [
     { title: "Tempoträning – SG4" },
     { name: "theme-color", content: "#081b37" },
-    { name: "description", content: "Träna golfens svingtempo med tre exakta ljudsignaler för start, vändning och bollträff." },
+    { name: "description", content: "Träna svingtempo med visuell guide och valfria ljud vid start, vändning och bollträff." },
   ] }),
   component: TempoPage,
 });
@@ -241,12 +242,14 @@ function TempoPage() {
     const first = ctx.currentTime + cfg.delay + .08;
     const e: Engine = {
       ctx, first, next: 0, base: from, limit: currentLimit, back: t.back, down: t.down, total: t.total, follow: t.follow,
-      period: t.total + t.follow + settings.rest,
+      period: t.total + t.follow + cfg.rest,
       settings: { ...cfg, durations: { ...cfg.durations }, ratios: { ...cfg.ratios } }, voices: new Set(),
     };
     engine.current = e;
-    for (let n = 3; n >= 1; n--) {
-      if (cfg.sound !== "off") pulse(ctx, first - n, 440, .065, cfg.volume * .055, "sine", e.voices);
+    if (cfg.countdownSound && cfg.sound !== "off") {
+      for (let n = 3; n >= 1; n--) {
+        pulse(ctx, first - n, 440, .065, cfg.volume * .055, "sine", e.voices);
+      }
     }
     const nav = navigator as Navigator & { wakeLock?: { request: (type: "screen") => Promise<WakeHandle> } };
     if (nav.wakeLock) {
@@ -261,9 +264,9 @@ function TempoPage() {
       while ((e.limit === null || e.base + e.next < e.limit) &&
         e.first + e.next * e.period < now + .4) {
         const at = e.first + e.next * e.period;
-        playTone(ctx, at, "start", e.settings.sound, e.settings.volume, e.voices);
-        playTone(ctx, at + e.back, "top", e.settings.sound, e.settings.volume, e.voices);
-        playTone(ctx, at + e.total, "impact", e.settings.sound, e.settings.volume, e.voices);
+        for (const point of scheduledSoundCues(e.settings.soundCues, e.back, e.total)) {
+          playTone(ctx, at + point.offset, point.cue, e.settings.sound, e.settings.volume, e.voices);
+        }
         e.next += 1;
       }
       const count = playedCount(e, now);
@@ -296,7 +299,7 @@ function TempoPage() {
   }
   async function preview() {
     closePreview();
-    if (settings.sound === "off" || settings.volume <= 0) return;
+    if (settings.sound === "off" || settings.volume <= 0 || !TEMPO_SOUND_CUE_KEYS.some(cue => settings.soundCues[cue])) return;
     const Audio = audioClass();
     if (!Audio) { setError("Ljud stöds inte i den här webbläsaren."); return; }
     try {
@@ -305,10 +308,11 @@ function TempoPage() {
       await ctx.resume();
       if (previewCtx.current !== ctx) return;
       const now = ctx.currentTime + .08;
-      playTone(ctx, now, "start", settings.sound, settings.volume);
-      playTone(ctx, now + .48, "top", settings.sound, settings.volume);
-      playTone(ctx, now + .96, "impact", settings.sound, settings.volume);
-      previewTimer.current = window.setTimeout(closePreview, 1600);
+      const previewTiming = tempoTiming(settings.mode, settings.durations[settings.mode], settings.ratios[settings.mode]);
+      for (const point of scheduledSoundCues(settings.soundCues, previewTiming.back, previewTiming.total)) {
+        playTone(ctx, now + point.offset, point.cue, settings.sound, settings.volume);
+      }
+      previewTimer.current = window.setTimeout(closePreview, Math.max(1600, (previewTiming.total + .5) * 1000));
     } catch {
       closePreview();
       setError("Kunde inte spela upp ljudet. Kontrollera volym och ljudutgång.");
@@ -384,6 +388,21 @@ function TempoPage() {
   const nextRatioText = formatTempoRatio(nextTempoRatio(settings.mode, timing.ratio));
   const profile = tempoProfile(settings.mode, timing.ratio);
   const speedText = fmt(timing.total);
+  const enabledCueCount = TEMPO_SOUND_CUE_KEYS.filter(key => settings.soundCues[key]).length;
+  const cuePreset = matchingSoundPreset(settings.soundCues);
+  const cueSummary = settings.sound === "off" || settings.volume <= 0 || enabledCueCount === 0
+    ? "Tyst" : cuePreset === "all" ? "Alla ljud" : cuePreset === "bottom-top" ? "Botten + topp"
+    : cuePreset === "top-only" ? "Bara toppen" : cuePreset === "impact-only" ? "Bara impact"
+    : `${enabledCueCount} signaler`;
+  const changeSoundCues = (soundCues: TempoSoundCues) => {
+    edit({
+      soundCues: { ...soundCues },
+      // Sparse profiles have no unrelated 3–2–1 beeps unless explicitly re-enabled.
+      countdownSound: TEMPO_SOUND_CUE_KEYS.every(key => soundCues[key]) ? settings.countdownSound : false,
+    });
+  };
+  const toggleSoundCue = (key: TempoSoundCue) =>
+    changeSoundCues({ ...settings.soundCues, [key]: !settings.soundCues[key] });
   return (
     <main className="relative mx-auto flex h-[100dvh] w-full max-w-md flex-col overflow-hidden bg-[#081b37] px-4 text-white"
       style={{ paddingTop: "max(10px, env(safe-area-inset-top))", paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}>
@@ -416,7 +435,7 @@ function TempoPage() {
 
       <section className="relative min-h-0 flex-1" aria-label="Visuell svingsimulator">
         <TempoMotion mode={settings.mode} running={status === "running"} finished={status === "finished"}
-          haptics={hapticAvailable && settings.haptics} clock={readClock} />
+          haptics={hapticAvailable && settings.haptics} soundCues={settings.soundCues} clock={readClock} />
 
         <div className="absolute left-1/2 top-[43%] z-10 w-[66%] -translate-x-1/2 -translate-y-1/2 text-center">
           {status === "running" && remaining > 0 ? (
@@ -497,7 +516,7 @@ function TempoPage() {
         <button type="button" onClick={openPanel}
           className="mt-1 flex min-h-9 w-full items-center justify-center gap-2 text-[11px] text-[#9ab6da]">
           {settings.sound === "off" ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
-          <span>{settings.sound === "off" ? "Tyst" : "Ljud på"}</span>
+          <span>{cueSummary}</span>
           <span className="text-white/20">·</span>
           <span>{hapticAvailable ? settings.haptics ? "Haptik på" : "Haptik av" : "Haptik stöds inte"}</span>
           <span className="text-white/20">·</span>
@@ -573,6 +592,52 @@ function TempoPage() {
                       </button>
                     ))}
                   </div>
+                  <div className="mt-4 rounded-2xl border border-white/10 bg-white/[.035] p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <h4 className="text-[13px] font-semibold text-white">När ska ljudet höras?</h4>
+                      <span className="text-[10px] font-medium text-[#8aaad3]">{enabledCueCount} av 3</span>
+                    </div>
+                    <p className="mt-1 text-[11px] leading-relaxed text-[#a8c7ed]">
+                      Botten betyder svingstart. Impact är när klubban återkommer till bollen.
+                    </p>
+                    <div className="mt-3 grid grid-cols-2 gap-1.5" role="group" aria-label="Snabbval för ljudsignaler">
+                      {TEMPO_SOUND_PRESETS.map(preset => (
+                        <button type="button" key={preset.id} aria-pressed={cuePreset === preset.id}
+                          onClick={() => changeSoundCues(preset.cues)}
+                          className={pickClass(cuePreset === preset.id)}>
+                          {preset.label}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="mb-2 mt-3 text-[10px] font-semibold uppercase tracking-wider text-[#94b8e4]">Eget val</p>
+                    <div className="grid grid-cols-3 gap-1.5" role="group" aria-label="Välj signaler var för sig">
+                      {([
+                        { key: "start" as const, label: "Start", sub: "Botten" },
+                        { key: "top" as const, label: "Toppen", sub: "Vändning" },
+                        { key: "impact" as const, label: "Impact", sub: "Träff" },
+                      ]).map(point => (
+                        <button key={point.key} type="button" aria-pressed={settings.soundCues[point.key]}
+                          onClick={() => toggleSoundCue(point.key)}
+                          className={"flex min-h-14 flex-col items-center justify-center rounded-xl border px-1 py-2 text-center transition " +
+                            (settings.soundCues[point.key]
+                              ? "border-[#70b6ff] bg-blue-600/30 text-white"
+                              : "border-white/15 bg-white/[.04] text-[#8da5c5]")}>
+                          <span className="text-xs font-semibold">{point.label}</span>
+                          <span className="mt-1 text-[10px]">{point.sub}</span>
+                        </button>
+                      ))}
+                    </div>
+                    <button type="button" role="switch" aria-checked={settings.countdownSound}
+                      onClick={() => edit({ countdownSound: !settings.countdownSound })}
+                      className="mt-3 flex min-h-10 w-full items-center justify-between border-t border-white/10 pt-3 text-xs text-[#a8c7ed]">
+                      <span>Ljud under nedräkningen (3–2–1)</span>
+                      <span className={"relative h-7 w-12 rounded-full transition-colors " +
+                        (settings.countdownSound ? "bg-blue-500" : "bg-white/20")}>
+                        <span className={"absolute top-1 h-5 w-5 rounded-full bg-white transition-all " +
+                          (settings.countdownSound ? "left-6" : "left-1")} />
+                      </span>
+                    </button>
+                  </div>
                   <div className="mt-3 flex items-center gap-3">
                     <VolumeX className="h-4 w-4 shrink-0 text-[#9fbade]" />
                     <input type="range" min={0} max={100} step={5} value={Math.round(settings.volume * 100)}
@@ -580,7 +645,7 @@ function TempoPage() {
                       onChange={(ev) => edit({ volume: Number(ev.target.value) / 100 })}
                       className="w-full accent-blue-400 disabled:opacity-40" />
                     <Volume2 className="h-4 w-4 shrink-0 text-[#9fbade]" />
-                    <button type="button" disabled={settings.sound === "off" || settings.volume === 0}
+                    <button type="button" disabled={settings.sound === "off" || settings.volume === 0 || enabledCueCount === 0}
                       onClick={() => void preview()}
                       className="shrink-0 rounded-lg border border-white/25 px-2 py-1.5 text-[11px] font-semibold disabled:opacity-40">
                       Testa
@@ -593,7 +658,7 @@ function TempoPage() {
                       <Smartphone className="h-4 w-4" /> Haptik
                     </h3>
                     <p className="mt-1 text-[11px] text-[#a8c7ed]">
-                      {hapticAvailable ? "Vibration vid start, vändning och träff." : "Stöds inte i den här webbläsaren."}
+                      {hapticAvailable ? "Vibration vid de markerade ljudpunkterna." : "Stöds inte i den här webbläsaren."}
                     </p>
                   </div>
                   <button type="button" role="switch" aria-checked={hapticAvailable && settings.haptics}
