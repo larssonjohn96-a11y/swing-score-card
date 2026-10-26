@@ -27,6 +27,11 @@ describe("SG4 tempoträning", () => {
     expect(cfg.sound).toBe("soft");
     expect(cfg.count).toBe(10);
     expect(cfg.delay).toBe(3);
+    expect(cfg.haptics).toBe(false);
+  });
+  it("sparar haptik endast om den aktiverats uttryckligen", () => {
+    expect(normalizeTempo({ haptics: true }).haptics).toBe(true);
+    expect(normalizeTempo({ haptics: "true" }).haptics).toBe(false);
   });
   it("ger en separat kopia av standardinställningarna", () => {
     const cfg = normalizeTempo(null);

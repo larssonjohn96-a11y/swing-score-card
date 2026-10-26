@@ -10,6 +10,7 @@ export type TempoSettings = {
   rest: 3 | 5 | 8;
   sound: TempoSound;
   volume: number;
+  haptics: boolean;
 };
 export type TempoSession = {
   at: string;
@@ -32,6 +33,7 @@ export const DEFAULT_TEMPO: TempoSettings = {
   rest: 5,
   sound: "soft",
   volume: .7,
+  haptics: false,
 };
 const SETTINGS_KEY = "sg4-tempo-settings-v1";
 const HISTORY_KEY = "sg4-tempo-history-v1";
@@ -59,6 +61,7 @@ export function normalizeTempo(raw: unknown): TempoSettings {
     rest: row.rest === 3 || row.rest === 8 ? row.rest : 5,
     sound: row.sound === "digital" || row.sound === "click" || row.sound === "off" ? row.sound : "soft",
     volume: typeof row.volume === "number" && Number.isFinite(row.volume) ? Math.max(0, Math.min(1, row.volume)) : .7,
+    haptics: row.haptics === true,
   };
 }
 export function loadTempo(): TempoSettings {
