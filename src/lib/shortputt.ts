@@ -3,7 +3,9 @@ import { recordSessionDeleted, recordSessionSaved } from "@/lib/sessions/sync";
 import { recordPuttingSession } from "@/lib/shot-bank";
 /** Short Putting Test: tre riktningar, 1/2/3 m per riktning, 9 puttar. */
 
-export type Direction = "12" | "4" | "8";
+// Klockan 6 används av det kombinerade Putting Test (12/6).
+// DIRECTIONS för det fristående kortputtningstestet är fortfarande 12/4/8.
+export type Direction = "12" | "4" | "8" | "6";
 
 export const DIRECTIONS: { key: Direction; label: string }[] = [
   { key: "12", label: "Klockan 12" },
